@@ -244,29 +244,29 @@ Limits to be honest about:
   that only accepts signed GitHub webhooks and forwards them into the
   tailnet, so the main control plane stays private.
 
-## 5. VM spec baseline
+## 5. VM spec baseline: measured on the reference machine
 
-The request is that a task VM matches the machine this research is
-running on. The probe to record the exact figures was not run in this
-session, so the numbers below are placeholders to be filled from a
-future run of the probe command. The shape of the spec is what matters:
+The reference is the sandbox this research ran in, which is a Claude
+Code on the web session. Measured on 2026-09-10:
 
-| Dimension | Baseline (to confirm) | Notes |
-|-----------|----------------------|-------|
-| vCPU | 2 to 4 | cgroups-enforced via the jailer |
-| Memory | 4 GB default, 8 GB max | the range the user asked for |
-| Disk | overlay: 20 GB thin; home volume: 20 GB persistent | thin overlays cost only what is written |
-| Kernel | Linux 6.x, Firecracker-supported config | same major as the host in this session |
-| Base image | Debian or Ubuntu LTS, Docker, git, tmux, Node LTS, Python 3, Go, build-essential, ripgrep, the Claude and Codex CLIs preinstalled | matches the Claude Code on the web tool list |
-| Network | egress via host proxy only, no inbound | modes: trusted / limited / none |
-| Hardware virtualization | not exposed to the guest | Docker inside the VM does not need it; nested KVM is a later option |
+| Dimension | Measured | Use as our default |
+|-----------|----------|--------------------|
+| Hypervisor | **Firecracker** (kernel `6.18.44-fc-v24`, virtio disk `/dev/vda`) | Firecracker, as planned in note 03 |
+| vCPU | 4 × Intel Xeon @ 2.80 GHz, 1 thread per core, no vmx/svm exposed | 4 vCPU |
+| Memory | 15 GiB, no swap | 8 GiB default on the slider, 16 GiB max |
+| Disk | 252 GB virtio volume, ~30 GB writable allowance per session | 20 GB thin overlay per task, quota-enforced |
+| OS | Ubuntu 24.04.4 LTS | Ubuntu 24.04 LTS rootfs built from a Dockerfile |
+| Nested virt | none (`/dev/kvm` absent) | not exposed to guests; Docker inside does not need it |
+| In-guest user | root, full capabilities, no seccomp inside the guest | same: the VM boundary is the sandbox, the guest is unrestricted |
+| Docker | 29.x, daemon running inside the guest | Docker preinstalled and started by init |
+| Toolchain | Node 22, Bun 1.3, Python 3.11, Go, git 2.43, tmux, ripgrep 14 | same list plus the Claude and Codex CLIs |
+| Network | all egress via a local agent proxy; git credentials proxy-injected | egress proxy on the host, per note 02 |
 
-Probe to run on the reference machine and paste into this table:
-
-```
-nproc; lscpu | grep -E 'Model name|Core|Thread'; free -h; df -h /; uname -r
-cat /sys/fs/cgroup/cpu.max /sys/fs/cgroup/memory.max; ls /dev/kvm
-```
+Two things this confirms: Anthropic runs the exact architecture in note
+03 (Firecracker guest, root inside, Docker inside, credentials outside),
+and the 4 vCPU / 15 GiB shape is generous enough that the user's asked-for
+4 to 8 GB range is a floor, not a ceiling. Make memory a per-target
+slider from 4 to 16 GiB with 8 GiB default.
 
 ## 6. What to do before any real credential touches the system
 
