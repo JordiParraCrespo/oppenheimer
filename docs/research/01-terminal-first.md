@@ -149,3 +149,45 @@ Orca over SSH, the rest is UI.
 - SSH worktree docs: <https://www.onorca.dev/docs/ssh>
 - Repo: <https://github.com/stablyai/orca>
 - Blank-pane reconnect issue: <https://github.com/stablyai/orca/issues/18495>
+
+## 7. Subscriptions and logins, done legitimately
+
+Constraint from discussion: use Claude and Codex **subscriptions**, and
+do it by the book. Opening a terminal and typing `claude` is the
+sanctioned path, and the platform must stay on it.
+
+What "by the book" means for us, and what it rules out:
+
+- **The platform never touches the vendor credential.** No copying
+  `~/.claude` or `~/.codex` between machines, no central store of OAuth
+  tokens that gets injected into VMs, no proxying API traffic through our
+  server. Both vendors have restricted subscription OAuth to their own
+  official CLIs and treat token sharing or reuse in third-party harnesses
+  as a violation. We run the official CLI unmodified, so the CLI does the
+  login, the CLI stores the credential, and the credential belongs to the
+  machine. That is the same posture as Orca's "bring your own
+  subscription, runs unmodified", and it is why Orca has not had a policy
+  problem.
+- **The platform helps with the login, not the credential.** The CLI
+  prints a login URL or a device code. The web terminal detects it,
+  makes it clickable, and shows a "waiting for login" badge on the
+  session. You finish the OAuth in another tab and you are done. That is
+  the whole feature.
+- **Persistent home per target.** A long-lived target (server, Mac
+  Studio) logs in once. For VMs we spin up, mount a per-target
+  persistent home volume (or at least the CLI's config directory) so a
+  fresh VM for the same target does not require a fresh login. This is
+  still a normal single-user login on a machine you own.
+- **One target, one human.** A target is bound to the person who logged
+  the CLI in on it. The platform does not let another user open a
+  session on that target's home. If two people share a server, they get
+  two targets with two homes. This keeps "one subscription, one person"
+  true without us enforcing anything at the token level.
+- **API keys for unattended work.** Webhook-triggered runs where nobody
+  is at a terminal use an API key from the project's secret vault, not a
+  subscription. That is what keys are for, and it is the only place the
+  vault holds a vendor credential.
+
+The platform's job in this area is therefore small and clear: bring the
+terminal to the machine, make the login link one click, keep the home
+directory around, and stay out of the credential's way.
