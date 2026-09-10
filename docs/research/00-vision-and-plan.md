@@ -218,7 +218,7 @@ scoped per task and never appear in logs.
 | Phase | Deliverable | Notes |
 |-------|-------------|-------|
 | 0 | Repo skeleton, protocol package, ADRs | this doc → `docs/adr/` |
-| 1 | Runner runs one Agent SDK session locally from a JSON job file, writes events to stdout | proves the harness integration with zero infra |
+| 1 | Runner + WS hub + xterm.js page: a persistent terminal on a remote target from a browser | see `01-terminal-first.md` §6 |
 | 2 | Control plane + runner WebSocket: register target, dispatch job, persist events | no UI, curl only |
 | 3 | Web app: login, project, target list, task create, live session tail | first thing you can demo |
 | 4 | Secrets vault + scoped injection + log scrubbing | before any real credential touches it |
@@ -226,18 +226,18 @@ scoped per task and never appear in logs.
 | 6 | Delegation MCP server (`spawn_task`, `wait_task`) | multi-agent |
 | 7 | Triggers: webhook, cron, GitHub issue label | automation |
 
-Phase 1 is the risk-retirement step. If running Claude Code headless through
-the SDK on a Mac and streaming its events cleanly is harder than expected,
-we want to know in week one, not week six.
+Phase 1 is the risk-retirement step. If the remote terminal does not feel
+as smooth as Orca over SSH, nothing else matters, so we want to know in
+week one, not week six.
 
 ## 7. Decisions I would make now, and why
 
-- **Agent SDK, not shelling out to the `claude` binary.** Structured events,
-  permission callbacks, and sub-agents are first-class in the SDK. Shelling
-  out means parsing terminal output, which is how these projects rot.
-- **Claude only for the MVP.** Multi-harness is an adapter interface we
-  leave room for, not something we ship. Orca's 25 agents are a feature for
-  a desktop cockpit; for a platform they multiply the test matrix.
+- **Terminal first, not the Agent SDK.** Superseded after discussion, see
+  `01-terminal-first.md`. The core primitive is a real PTY in the browser;
+  any CLI agent (`claude`, `codex`) runs unmodified inside it. The SDK is a
+  later add-on for unattended runs.
+- **Agent-agnostic by construction.** Because the unit is a terminal,
+  Claude and Codex both work on day one with no adapters.
 - **Events are the source of truth.** Session state is derived from the
   event log. This gives replay, resume after runner reconnect, and audit
   for free.
