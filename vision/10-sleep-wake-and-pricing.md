@@ -101,7 +101,56 @@ The one rule worth fixing now: **sleeping sessions are free**. That is
 what makes "open thirty sessions and forget them" feel safe, and it is
 true on the cost side because they cost disk only.
 
-## 6. What this changes in the plan
+## 6. The same two tiers on AWS and other clouds
+
+The cloud adapter from note 03 §4 is the runner running in the control
+plane instead of on a host, calling a provider API. The session
+lifecycle stays identical; only what each state costs changes, and that
+is the whole story of cloud sessions.
+
+| Provider | Suspend (RAM kept) | Hibernate (disk kept) | Cost while asleep | Notes |
+|----------|--------------------|-----------------------|-------------------|-------|
+| **AWS EC2** | native hibernation: RAM written to the encrypted EBS root, instance stops, resume restores processes | stop the instance, EBS volumes stay | EBS only, roughly $0.08 per GB-month for gp3, so a 60 GB root plus an 8 GB memory image is about $5 a month; compute is zero | hibernation needs an encrypted root volume, a supported instance family (most current general-purpose ones), and RAM under the documented limit; both fit our 8 GB shape |
+| **GCP Compute Engine** | native suspend and resume, memory to persistent disk | stop the instance | persistent disk plus the suspended memory storage | supported on most machine types, not on preemptible |
+| **Azure** | hibernation, generally available | deallocate | disk only | needs a hibernation-enabled VM and page file sizing |
+| **Fly Machines** | none | stop the machine, attached volume stays; start is seconds | rootfs storage only, roughly cents; volumes billed per GB-month | closest to our own host in feel: per-second billing, sub-second stops, fast starts |
+| **Hetzner Cloud** | none | shut down, or snapshot and delete | a stopped Hetzner cloud server is billed the full price; only a snapshot plus delete stops the bill | so on Hetzner Cloud, hibernate means snapshot and delete, wake means create from snapshot, which is minutes, not seconds |
+
+What the adapter does per state:
+
+- **Suspend** → EC2 `StopInstances` with hibernate, GCP `suspend`, Azure
+  hibernate. Where the provider has no suspend (Fly, Hetzner Cloud), the
+  adapter skips this tier and goes straight to hibernate.
+- **Hibernate** → stop or deallocate, keep the volumes; on Hetzner Cloud,
+  snapshot then delete.
+- **Wake** → start or resume, then the same token rotation and clock
+  check as on our host.
+- **Destroy** → terminate, delete volumes except the account volume,
+  which is a provider block volume that lives on.
+
+Two things stay the same everywhere: the guest agent, image, and vsock
+contract do not exist on clouds, so the guest agent connects **out** to
+the control plane over TLS instead, with the same JIT identity; and the
+account volume is a provider volume attached to one instance at a time,
+exactly the F13 rule.
+
+Cost reality for a hosted plan, per always-available session slot:
+
+| Where | Running, per hour | Asleep, per month | Wake from suspend |
+|-------|-------------------|-------------------|-------------------|
+| Own AX42-class host | ~€0.01 amortised over six slots | ~€0 (disk we already own) | seconds |
+| EC2 t3.xlarge or similar, 4 vCPU 16 GB | ~$0.17 on demand | ~$5 EBS | tens of seconds (hibernate resume) |
+| Fly Machine, 4 vCPU 8 GB | ~$0.10 | cents | seconds, but from a cold process state |
+| Hetzner Cloud CPX31 | ~€0.03 | full price if merely stopped | minutes via snapshot |
+
+So the pricing shape in §5 gets one more line: **cloud sessions bill per
+running hour plus storage while asleep, at the provider's price plus a
+margin**, and the console shows the meter. The user picks where a host
+lives when they add it: their own machine, or a cloud account they
+connect. AWS first, because it has real hibernation and the largest
+audience; Fly second for its speed; GCP and Azure after.
+
+## 7. What this changes in the plan
 
 - Note 07's lifetime decision becomes the two-tier policy above, with
   suspend as the first tier and hibernate as the second.
@@ -109,6 +158,9 @@ true on the cost side because they cost disk only.
   id, next to `managedsave`.
 - Note 08's "two-VM cap" is a configurable per-host limit; the default
   for an AX42-class host is six.
+- The cloud adapter of note 03 gets an order: AWS first, Fly second,
+  GCP and Azure after. It is a post-MVP slice; the MVP host is the
+  Hetzner machine.
 
 ## Sources
 
@@ -120,5 +172,9 @@ true on the cost side because they cost disk only.
   <https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/>
 - Hetzner cloud pricing 2026: <https://www.bitdoze.com/hetzner-cloud-cost-optimized-plans/>,
   <https://northflank.com/blog/hetzner-cloud-server-price-increases>
+- AWS EC2 hibernation prerequisites and behavior: AWS docs, "Hibernate your Amazon EC2 instance".
+- GCP suspend and resume: Google Cloud docs, "Suspend and resume an instance".
+- Fly Machines stop and start billing: Fly.io docs, "Machines" and pricing.
+- Hetzner Cloud billing of stopped servers: Hetzner Cloud docs, billing FAQ.
 - Claude Code on the web, environment expiry and restore:
   <https://code.claude.com/docs/en/claude-code-on-the-web>
