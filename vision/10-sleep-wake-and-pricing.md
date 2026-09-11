@@ -94,6 +94,22 @@ newer AX-class host with 8 cores would double the running slots for a
 similar price (AX42 class, 8 cores, 64 GB, NVMe, roughly €47 to €57 a
 month after the June 2026 repricing).
 
+### If switching hosts
+
+| Host | Cores / threads | RAM | Disk | Running 4 vCPU sessions | Suspend wake | Price, approx. |
+|------|-----------------|-----|------|-------------------------|--------------|----------------|
+| i7-6700 auction box (current) | 4 / 8 | 64 GB | 2 × 512 GB SATA | 2 | ~15 s | €63 |
+| AX42 (Ryzen 7 PRO 8700GE) | 8 / 16 | 64 GB | 2 × 512 GB NVMe | 4, or 6 with light overcommit | ~3 s | €47 to €57 plus setup |
+| AX52 (Ryzen 7 7700) | 8 / 16 | 64 GB, DDR5 | 2 × 1 TB NVMe | 4 to 6 | ~2 s | ~€64 plus setup |
+
+Recommendation: **build the MVP on the machine you have**, because it is
+already installed and hardened and the two-VM cap matches its CPU. The
+moment the demo scene works, move to an AX42 or AX52 class host: two to
+three times the running slots, NVMe turns suspend into seconds, and the
+same monthly money or less. The runner is a fresh install on the new
+box; account volumes and hibernated overlays copy across as files. If
+the auction box is not ordered yet, skip it and start on the AX42.
+
 Cloud comparison: one always-on 4 vCPU, 8 GB Hetzner cloud VM (CPX31
 class) is €16 to €25 a month, so even two of them with no sleep cost
 most of this host, which sleeps for free.
