@@ -178,7 +178,46 @@ lives when they add it: their own machine, or a cloud account they
 connect. AWS first, because it has real hibernation and the largest
 audience; Fly second for its speed; GCP and Azure after.
 
-## 7. What this changes in the plan
+## 7. Own host versus cloud versus sandbox services, for this workload
+
+Corrected numbers after the June 2026 Hetzner repricing (the CPX31
+figures earlier in this note were pre-repricing): Hetzner Cloud CPX32,
+4 vCPU / 8 GB / 160 GB NVMe, is €35.99 a month or €0.0577 an hour, and
+a stopped Hetzner cloud server is still billed.
+
+The workload to price is a personal workspace: **two sessions running
+about six hours a day, ten more asleep**, every session needing a real
+Linux VM with Docker inside and a lifetime of days.
+
+| Option | Shape | Running cost | Asleep cost | Fits the workload? | Rough monthly |
+|--------|-------|--------------|-------------|--------------------|---------------|
+| **Own dedicated host, AX42 class** | 8 cores, 64 GB, NVMe | flat | free | yes: Docker inside, days-long, sleep tiers, 4 to 6 running | **€47 to €57** |
+| Own auction host, i7-6700 | 4 cores, 64 GB, SATA | flat | free | yes, but only 2 running and slow suspend | €63 |
+| Hetzner Cloud CPX32 per session | 4 vCPU, 8 GB | €0.0577 / h | **full price while stopped** | no sleep economics: 12 sessions would be €432; only 2 always-on ones is €72 and nothing sleeps | €72 for 2, no sleeping sessions |
+| AWS EC2 t3a.xlarge per session | 4 vCPU, 16 GB | ~$0.15 / h on demand | EBS only, ~$0.08 per GB-month | yes: native hibernation, Docker inside, days-long; pay only while running | ~$55 compute + ~$30 EBS for 12 volumes ≈ **$85** |
+| Fly Machines per session | 4 shared vCPU, 8 GB | ~$0.10 / h | rootfs cents, volumes ~$0.15 per GB-month | mostly: stop and start in seconds, but no memory suspend and Docker-in-machine is not a supported path | ~$36 compute + ~$54 volumes ≈ $90 |
+| E2B sandboxes | Firecracker microVM, per vCPU and GiB | $0.0504 per vCPU-hour + $0.0162 per GiB-hour, so ~$0.33 / h at 4 vCPU 8 GB | pause keeps memory and filesystem; snapshot storage billed | partly: pause and resume is excellent, but no Docker daemon inside a sandbox, and the Pro tier has a $150 floor | **$150 minimum**, ~$119 of usage inside it |
+| Vercel Sandbox | Firecracker microVM, 2 to 32 vCPU | $0.128 per active vCPU-hour | n/a | **no**: maximum lifetime 45 minutes on Hobby and 5 hours on Pro; built for short agent runs, not days-long terminals | not applicable |
+
+What the table says:
+
+- **A dedicated host is the cheapest by a wide margin and the only
+  option where sleeping is free.** That is the whole reason the runner
+  host exists, and an AX42 is the right one. The i7 works but is worse
+  value than the AX42 it is being compared to.
+- **Hetzner Cloud is the wrong product for sessions** because it bills
+  stopped servers. It is fine for the control plane, which is always
+  on and small (a CPX22 at €19.99 is plenty).
+- **AWS is the right cloud adapter for later**, because EC2 hibernation
+  gives real suspend and you pay only while running. It costs more than
+  the dedicated host for a personal workspace, but it scales to zero and
+  to many, which the host cannot.
+- **E2B and Vercel Sandbox are sandbox APIs for short agent code runs.**
+  They are not the shape of this product: no Docker inside, lifetime
+  caps, and a pricing floor. E2B's pause and resume is a good reference
+  for what we build on libvirt, not a place to run it.
+
+## 8. What this changes in the plan
 
 - Note 07's lifetime decision becomes the three-tier policy above:
   pause in RAM, then suspend to disk, then hibernate.
@@ -199,6 +238,10 @@ audience; Fly second for its speed; GCP and Azure after.
 - Hetzner AX42: <https://www.hetzner.com/dedicated-rootserver/ax42/>,
   price adjustment 15 June 2026:
   <https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/>
+- Hetzner Cloud prices after June 2026 (CPX32 €35.99, screenshot of the live console): <https://www.hetzner.com/cloud/>
+- Vercel Sandbox pricing and limits: <https://vercel.com/docs/sandbox/pricing>, <https://vercel.com/docs/limits>
+- E2B pricing: <https://www.morphllm.com/e2b-pricing>, <https://bex.co/blog/2026/09/10/e2b-firecracker-sandbox-pricing-vs-owning-fleet>
+- AWS t3a.xlarge pricing: <https://instances.vantage.sh/aws/ec2/t3a.xlarge>
 - Hetzner cloud pricing 2026: <https://www.bitdoze.com/hetzner-cloud-cost-optimized-plans/>,
   <https://northflank.com/blog/hetzner-cloud-server-price-increases>
 - AWS EC2 hibernation prerequisites and behavior: AWS docs, "Hibernate your Amazon EC2 instance".
