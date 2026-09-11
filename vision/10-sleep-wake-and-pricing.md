@@ -264,7 +264,34 @@ Two adjustments that recover most of the density argument:
 Neither changes the two-VM cap in the existing CI controller, which
 sizes for CPU-hungry build jobs. Sessions get their own cap.
 
-## 9. What this changes in the plan
+## 9. Fifty agents running at once
+
+Assumptions: the 4 vCPU / 8 GB session shape, agents busy 10 to 30 % of
+the time so 2.5:1 CPU overcommit holds, balloon reclaim keeps average
+guest memory near 3 to 4 GB, and "running" means eight hours a day, 22
+days a month, 8,800 agent-hours.
+
+| Where | How | Compute per month |
+|-------|-----|-------------------|
+| Own dedicated hosts, AX42 class | 5 hosts: 80 threads for 200 vCPU at 2.5:1, 320 GB RAM | **€250 to €300** flat, whether 8 or 24 hours a day |
+| Own dedicated hosts, AX102 class (16 cores, 128 GB) | 3 hosts | ~€350 flat, fewer boxes to run |
+| AWS t3a.xlarge on demand | 8,800 h × $0.15 | ~$1,300, plus ~$150 EBS; ~$5,400 if 24/7 |
+| AWS spot | 8,800 h × ~$0.05 | ~$450, with interruptions to handle |
+| Hetzner Cloud CPX32 | 50 × €36, billed whether running or stopped | €1,800 |
+| E2B | 8,800 h × $0.33 | ~$2,900 |
+
+And the number that dwarfs all of them: **the model.** 8,800 agent-hours
+at even $2 to $5 an hour of API usage is $18,000 to $44,000 a month.
+Subscriptions cap the bill but also cap the rate: one Codex or Claude
+Max seat cannot drive fifty concurrent agents, and fifty seats is
+$10,000 a month. At fifty agents the question is never the VMs; it is
+who pays for the tokens and how many accounts are legitimately yours.
+
+For a personal workspace, the honest ceiling is the number of agents one
+person's subscriptions can drive at once, which is a handful, and a
+single AX42 covers that with room to spare.
+
+## 10. What this changes in the plan
 
 - Note 07's lifetime decision becomes the three-tier policy above:
   pause in RAM, then suspend to disk, then hibernate.
