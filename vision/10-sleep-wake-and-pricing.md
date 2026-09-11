@@ -291,7 +291,39 @@ For a personal workspace, the honest ceiling is the number of agents one
 person's subscriptions can drive at once, which is a handful, and a
 single AX42 covers that with room to spare.
 
-## 10. What this changes in the plan
+## 10. Ephemeral sessions, and the realistic scale
+
+Realistic scale for a personal workspace: **at most about ten sessions
+running at once**, usually two or three, many more asleep. One AX42
+with 2:1 overcommit handles ten. The cloud is for the days you exceed
+that, or for when the host is down.
+
+To keep cloud cost honest, a session carries a **lifetime** chosen at
+creation, next to host, repo, branch, and agent:
+
+| Lifetime | Behavior | Cost while not running | Use it for |
+|----------|----------|------------------------|------------|
+| **Keep** (default on your own host) | the three sleep tiers, destroyed only when you close it | free on your host; storage on a cloud | long-running work you return to for days |
+| **Ephemeral** (default on cloud hosts) | runs, sleeps briefly, and is **destroyed after N hours idle** (default 2 h). The agent is told at start that the VM is disposable, so it pushes its branch; the runner also auto-pushes the working branch before destroying, and keeps the last scrollback in the session log | nothing: no volume, no memory image, no instance | one task, one PR, done |
+
+What "ephemeral" keeps: the pushed branch on GitHub, the session log
+and scrollback in the control plane, and the account volume (that is
+per account, not per session). What it drops: the VM, its overlay, and
+anything not pushed. The sidebar shows an ephemeral session with a
+timer instead of a moon.
+
+On AWS an ephemeral session is pure running-hours: ten sessions,
+four hours each on a working day, 22 days, is 880 hours, about **$130 a
+month on demand or $45 on spot**, and $0 on the days you do not use it.
+On your own host the same sessions are free either way, so Keep is the
+default there and Ephemeral is just a tidiness option.
+
+Placement follows the same logic: the **host chip** lists your own
+hosts and any connected cloud accounts. Own host first; cloud when the
+host is full, marked with its per-hour price on the chip so the choice
+is visible.
+
+## 11. What this changes in the plan
 
 - Note 07's lifetime decision becomes the three-tier policy above:
   pause in RAM, then suspend to disk, then hibernate.

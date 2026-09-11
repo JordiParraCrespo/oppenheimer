@@ -55,8 +55,9 @@ later idea, not the MVP.
 2. **Sidebar.** Sessions with a state dot, name, and age. New session at
    the top. Your name at the bottom. Hosts and accounts live under a
    small settings drawer, not in the main navigation.
-3. **New session.** The four chips, host, repo, branch, agent, and a text
-   box for a name or a first task. Chips remember the last choice.
+3. **New session.** The four chips, host, repo, branch, agent, plus a
+   lifetime toggle, Keep or Ephemeral (note 10 §10), and a text box for
+   a name or a first task. Chips remember the last choice.
 4. **Session.** Terminal full-bleed. Tabs for more terminals. A thin
    status line: host, branch, account, usage meters for the active
    account if the CLI exposes them, permissions mode. Login URLs printed
