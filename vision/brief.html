@@ -1,0 +1,593 @@
+<title>Oppenheimer Research Brief</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F5F7F5; --surface:#FFFFFF; --ink:#151B18; --ink-2:#4B5551; --muted:#7A847F;
+  --line:#D8DED9; --accent:#177A62; --accent-ink:#0F5A48; --accent-soft:#DDF1EA;
+  --term-bg:#0E1512; --term-fg:#D6E4DC; --term-green:#5EE0B0; --term-dim:#6F8A7F;
+  --warn:#9A5B12; --warn-soft:#F7EBD8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1412; --surface:#151C18; --ink:#E4ECE7; --ink-2:#B3BFB8; --muted:#7E8A84;
+    --line:#26302B; --accent:#4FD1A6; --accent-ink:#7FE3C2; --accent-soft:#16302A;
+    --warn:#E0A860; --warn-soft:#2E2416;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#151C18; --ink:#E4ECE7; --ink-2:#B3BFB8; --muted:#7E8A84;
+  --line:#26302B; --accent:#4FD1A6; --accent-ink:#7FE3C2; --accent-soft:#16302A;
+  --warn:#E0A860; --warn-soft:#2E2416;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.6;padding-inline:20px;padding-block:0 80px}
+.wrap{max-width:860px;margin:0 auto}
+h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif;text-wrap:balance;line-height:1.1;margin:0}
+h1{font-size:clamp(34px,6vw,54px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:26px;font-weight:700;margin-top:64px;margin-bottom:16px;padding-top:16px;border-top:2px solid var(--ink)}
+h3{font-size:18px;font-weight:700;margin:28px 0 8px}
+p{margin:0 0 14px;max-width:66ch}
+a{color:var(--accent-ink)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font-size:.9em;background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+header{padding-block:56px 32px}
+.lede{font-size:19px;color:var(--ink-2);max-width:60ch;margin-top:18px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-top:24px}
+nav.toc{position:sticky;top:0;background:var(--bg);border-block:1px solid var(--line);padding:10px 0;z-index:2;overflow-x:auto}
+nav.toc ul{display:flex;gap:18px;list-style:none;margin:0;padding:0;white-space:nowrap}
+nav.toc a{font-family:"IBM Plex Mono",monospace;font-size:12px;text-decoration:none;color:var(--ink-2)}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent-ink);outline:none;text-decoration:underline}
+ul.plain{padding-left:20px;margin:0 0 14px;max-width:66ch}
+ul.plain li{margin-bottom:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);background:var(--surface);padding:18px 20px}
+.panel h3{margin-top:0}
+.panel .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px}
+.panel ul{padding-left:18px;margin:0}
+.panel li{margin-bottom:6px;font-size:15px}
+.verdict{border-left:3px solid var(--accent);padding:12px 18px;background:var(--accent-soft);margin:22px 0;max-width:66ch}
+.verdict p{margin:0}
+.diagram{border:1px solid var(--line);background:var(--surface);padding:12px;overflow-x:auto;margin:20px 0}
+.diagram svg{display:block;width:100%;height:auto;min-width:560px}
+.caption{font-size:13px;color:var(--muted);margin-top:6px}
+.term{background:var(--term-bg);color:var(--term-fg);font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:1.55;padding:16px 18px;border-radius:4px;overflow-x:auto;margin:20px 0;max-width:720px}
+.term .bar{display:flex;gap:14px;color:var(--term-dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;border-bottom:1px solid #1E2A25;padding-bottom:8px}
+.term .bar b{color:var(--term-green);font-weight:500}
+.term .g{color:var(--term-green)}.term .d{color:var(--term-dim)}
+.term .lnk{text-decoration:underline;text-decoration-color:var(--term-green);text-underline-offset:3px}
+.term .badge{display:inline-block;border:1px solid var(--term-green);color:var(--term-green);padding:0 6px;font-size:11px;border-radius:2px;margin-left:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:18px 0}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--accent-ink);white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.rule{display:grid;grid-template-columns:auto 1fr;gap:12px 16px;margin:16px 0;max-width:66ch}
+.rule .k{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);padding-top:4px;white-space:nowrap}
+.rule .k.no{color:var(--warn)}
+.q{counter-reset:q}
+.q li{margin-bottom:14px}
+.q li b{display:block}
+.q li span{color:var(--ink-2);font-size:15px}
+.note{background:var(--warn-soft);border:1px solid var(--line);padding:12px 16px;font-size:14px;max-width:66ch;margin:20px 0}
+@media (prefers-reduced-motion:no-preference){nav.toc a{transition:color .15s}}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Research brief · September 2026</p>
+  <h1>A terminal and VM orchestrator you log in to from anywhere</h1>
+  <p class="lede">Open a browser, pick a machine you own or a fresh VM, get a terminal that survives everything, type <code>claude</code> or <code>codex</code>. Run thirty of them. That is the product. This brief records what we learned from OpenClaw and Orca, the architecture that follows, and what to build first.</p>
+  <div class="meta"><span>repo: oppenheimer</span><span>branch: claude/nation-orchestrator-research</span><span>status: research, no code yet</span></div>
+</header>
+
+<nav class="toc"><ul>
+  <li><a href="#thesis">Thesis</a></li>
+  <li><a href="#lessons">OpenClaw vs Orca</a></li>
+  <li><a href="#terminal">How Orca's terminal works</a></li>
+  <li><a href="#arch">Architecture</a></li>
+  <li><a href="#targets">Two target modes</a></li>
+  <li><a href="#login">Logins, legitimately</a></li>
+  <li><a href="#accounts">Multiple accounts</a></li>
+  <li><a href="#github">GitHub experience</a></li>
+  <li><a href="#machines">Machines and VMs</a></li>
+  <li><a href="#security">Security review</a></li>
+  <li><a href="#mvp">The MVP</a></li>
+  <li><a href="#phases">Phases</a></li>
+  <li><a href="#questions">Open questions</a></li>
+</ul></nav>
+
+<h2 id="thesis">Thesis</h2>
+<p>Do not build an agent framework. Build a thin product over agents we do not own. The unit of the product is a real PTY on a real machine, shown in a browser. Every coding agent that runs in a terminal is supported by construction, with zero adapters.</p>
+<div class="verdict"><p><strong>The platform owns three things:</strong> the terminal experience, the fleet of machines and workspaces, and the board that shows what every session is doing. It does not own the agent loop, the model credential, or a plugin marketplace.</p></div>
+<p>Software development only for the MVP. Other verticals wait until the core loop is boring.</p>
+
+<h2 id="lessons">What OpenClaw and Orca taught us</h2>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">Rejected · OpenClaw</span>
+    <h3>A framework for a different problem</h3>
+    <ul>
+      <li>Always-on personal assistant: gateway, 15+ chat channels, memory, skills marketplace, all in one process. Four days lost just building it.</li>
+      <li>A published security analysis found trust scattered across layers, exec allowlists bypassable by shell parsing, and an unverified skill supply chain.</li>
+      <li>Nothing can be adopted piecemeal. That is what "too large" costs.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Reference · Orca</span>
+    <h3>A cockpit around unmodified agents</h3>
+    <ul>
+      <li>Electron app. Runs Claude Code, Codex, and 25+ CLIs in parallel git worktrees. Wraps the environment, never the agent.</li>
+      <li>Bring your own subscription. No proxy through the vendor.</li>
+      <li>First commit March 2026, 50k+ stars by August. The shape is right.</li>
+      <li>Limit for us: state lives on one laptop, remote is SSH only, no sandboxes, no scoped secrets.</li>
+    </ul>
+  </div>
+</div>
+
+<h2 id="terminal">How Orca's remote terminal actually works</h2>
+<p>The smoothness does not come from the widget. It comes from who owns the PTY.</p>
+<h3>Renderer</h3>
+<ul class="plain">
+  <li>xterm.js with the WebGL addon, plus fit and search. GPU rendering keeps noisy builds from stalling the tab.</li>
+  <li>Only the active worktree's terminals are mounted. Idle ones are "cold parked", so a fleet of thirty sessions does not cost thirty live renderers.</li>
+</ul>
+<h3>The relay daemon</h3>
+<ul class="plain">
+  <li>On first connect Orca uploads a small Node package to the host over SSH and launches it. Everything after that goes through the relay.</li>
+  <li>JSON-RPC 2.0 with notifications, multiplexed over one SSH channel. PTY bytes, git, filesystem, and port scanning share it.</li>
+  <li>The relay spawns PTYs with node-pty and keeps a recent-output buffer per PTY, so a reconnecting pane replays the tail instead of going blank.</li>
+  <li>PTYs belong to the daemon, not to the SSH session. When the link drops, the daemon holds them for a grace period and reattaches over a Unix socket. Closing the laptop does not kill the agent.</li>
+  <li>Reconnect is a state machine with an exponential backoff ladder.</li>
+</ul>
+<div class="note">Their two pain points: node-pty is native and fails to compile on hosts without a C++ toolchain, and most open bugs live in the reconnect path. We ship prebuilt binaries and treat reconnect as the feature that gets the most tests.</div>
+
+<h2 id="arch">Architecture</h2>
+<p>A browser cannot SSH, so the topology inverts. Each machine runs a runner daemon that dials <em>out</em> to the control plane. The Mac Studio behind a home router and the server in a datacenter are the same case: no inbound ports, no SSH key distribution.</p>
+<div class="diagram">
+<svg viewBox="0 0 760 330" role="img" aria-label="Browser to control plane to runner daemons on three targets">
+  <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--ink)">
+    <rect x="230" y="14" width="300" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+    <text x="380" y="37" text-anchor="middle" font-weight="500">Browser</text>
+    <text x="380" y="56" text-anchor="middle" fill="var(--muted)">xterm.js + WebGL · board · login links</text>
+
+    <line x1="380" y1="70" x2="380" y2="112" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ah)"/>
+    <text x="392" y="95" fill="var(--muted)">binary WS frames + JSON control</text>
+
+    <rect x="180" y="116" width="400" height="66" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+    <text x="380" y="140" text-anchor="middle" font-weight="500">Control plane</text>
+    <text x="380" y="160" text-anchor="middle" fill="var(--ink-2)">auth · projects · targets · secret vault</text>
+    <text x="380" y="175" text-anchor="middle" fill="var(--ink-2)">dumb relay for PTY bytes, routed by session id</text>
+
+    <g stroke="var(--muted)" stroke-width="1.5" fill="none">
+      <path d="M130,262 C130,215 230,215 250,182" marker-end="url(#ah)"/>
+      <path d="M380,262 L380,182" marker-end="url(#ah)"/>
+      <path d="M630,262 C630,215 530,215 510,182" marker-end="url(#ah)"/>
+    </g>
+    <text x="392" y="228" fill="var(--muted)">outbound, per-target token</text>
+
+    <g>
+      <rect x="20" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="130" y="284" text-anchor="middle" font-weight="500">Linux server</text>
+      <text x="130" y="303" text-anchor="middle" fill="var(--muted)">runner · node-pty · tmux · docker</text>
+      <rect x="270" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="380" y="284" text-anchor="middle" font-weight="500">Mac Studio</text>
+      <text x="380" y="303" text-anchor="middle" fill="var(--muted)">runner · node-pty · tmux · worktrees</text>
+      <rect x="520" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+      <text x="630" y="284" text-anchor="middle" font-weight="500">Cloud VM</text>
+      <text x="630" y="303" text-anchor="middle" fill="var(--muted)">runner · persistent home volume</text>
+    </g>
+  </g>
+</svg>
+<p class="caption">Runners connect out, so the control plane never needs to reach a target. The browser never talks to a target directly.</p>
+</div>
+
+<h3>What makes it feel local</h3>
+<div class="rule">
+  <span class="k">bytes</span><span>Binary WebSocket frames end to end. No JSON wrapping, no base64, one frame per PTY read.</span>
+  <span class="k">flow</span><span>The browser acks consumed bytes and the runner pauses the PTY when the window is exhausted, so a runaway build cannot flood the tab.</span>
+  <span class="k">resize</span><span>Cols and rows go straight to the PTY, coalesced during drags.</span>
+  <span class="k">buffer</span><span>A few-MB ring buffer per session on the runner replays the tail on reattach. Scrollback survives page reloads via the serialize addon.</span>
+  <span class="k">reconnect</span><span>Backoff ladder, and the pane keeps its last frame. Never blank.</span>
+  <span class="k">survival</span><span>Each PTY is backed by tmux, so sessions outlive the tab, the link, and even a runner restart.</span>
+</div>
+
+<h3>Layers</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Layer</th><th>MVP</th><th>Later</th></tr></thead>
+<tbody>
+<tr><td>Terminal</td><td>xterm.js WebGL, binary WS, reattach, splits</td><td>serialized scrollback, search, clickable paths</td></tr>
+<tr><td>Runner</td><td>node-pty + tmux, outbound WS, ring buffer</td><td>own PTY ownership, prebuilt binaries per platform</td></tr>
+<tr><td>Workspace</td><td>git worktree per session on a direct-mode target</td><td>Firecracker VM per task with Docker inside</td></tr>
+<tr><td>Agents</td><td>none built in: whatever you type</td><td>status hooks, "new session with prompt", Agent SDK for unattended runs</td></tr>
+<tr><td>Board</td><td>sessions per project and target with live status</td><td>delegation via a small MCP server</td></tr>
+<tr><td>Secrets</td><td>env injection when the shell starts</td><td>scoped per task, scrubbed from output</td></tr>
+</tbody></table></div>
+
+
+<h2 id="targets">Two target modes</h2>
+<p>A target is any machine the runner daemon is installed on. It registers in one of two modes, and a project can use both. The browser sees the same thing either way: a session with a PTY, a file tree, a diff, and a git remote. The mode only changes what the runner does before it opens the PTY.</p>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">Mode A · Direct machine</span>
+    <h3>Full access, local or remote</h3>
+    <ul>
+      <li>Runner runs as you on a machine you own: laptop, Mac Studio, bare server. Sessions are PTYs in a worktree under a path you pick.</li>
+      <li>No isolation beyond worktrees. The agent sees your home, toolchains, docker socket, and logged-in CLIs. This is Orca over SSH, and the right default for a box that is yours alone.</li>
+      <li>Local and remote are the same to the platform. The runner dials out either way.</li>
+      <li>One install command. launchd on macOS, a systemd user unit on Linux, so it survives reboots.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Mode B · Isolated VM</span>
+    <h3>Fresh VM per task, Docker inside</h3>
+    <ul>
+      <li>Runner acts as a provisioner on a hypervisor host. Each task gets a VM with 4 to 8 GB RAM and 2 to 4 vCPUs, Docker preinstalled, the repo cloned at the requested branch.</li>
+      <li>The setup script runs inside the VM, then the PTY opens inside it. The agent can bring up Postgres or Redis for the task without touching the host.</li>
+      <li>Created on session start, paused when idle, destroyed after retention. A persistent per-target home volume keeps <code>claude</code> logged in across fresh VMs.</li>
+      <li>Linux host: Firecracker microVM. macOS host: Apple Virtualization via tart. Cloud: a provider adapter instead of a daemon.</li>
+    </ul>
+  </div>
+</div>
+<p>Order: mode A on day one, since it is the terminal from the section above. Mode B after secrets, starting with Linux and Firecracker because the images are reusable for the cloud adapter later. macOS VM hosting after that.</p>
+
+<h2 id="login">Logins and subscriptions, done legitimately</h2>
+<p>The constraint is firm: use the Claude and Codex subscriptions by the book. Opening a terminal and typing <code>claude</code> is the sanctioned path, and the platform stays on it. The platform helps with the <em>login</em>, never with the <em>credential</em>.</p>
+
+<div class="term">
+  <div class="bar"><span>target <b>mac-studio</b></span><span>session <b>s-4f2a</b></span><span>workspace <b>oppenheimer/wt-3</b></span></div>
+  <div><span class="g">jordi@mac-studio</span> <span class="d">~/work/oppenheimer/wt-3 $</span> claude</div>
+  <div class="d">Claude Code v2.x</div>
+  <div>Browser didn't open? Use the url below to sign in:</div>
+  <div><span class="lnk">https://claude.ai/oauth/authorize?code=true&amp;client_id=…</span> <span class="badge">open in new tab</span></div>
+  <div class="d">Paste code here if prompted &gt; <span style="opacity:.6">▍</span></div>
+  <div style="margin-top:10px" class="d">── board: session s-4f2a · <span class="g">waiting for login</span> ──</div>
+</div>
+<p class="caption">The web terminal detects the login URL, makes it clickable, and badges the session. You finish OAuth in another tab. That is the whole feature.</p>
+
+<div class="rule">
+  <span class="k no">never</span><span>Copy <code>~/.claude</code> or <code>~/.codex</code> between machines, keep a central token store that gets injected into VMs, or proxy model traffic through our server. Both vendors restrict subscription OAuth to their official CLIs, and token reuse in third-party harnesses is what gets accounts flagged.</span>
+  <span class="k">always</span><span>Run the official CLI unmodified. The CLI does the login, the CLI stores the credential, the credential belongs to that machine. Same posture as Orca, which is why Orca has had no policy problem.</span>
+  <span class="k">home</span><span>Each target gets a persistent home volume. A long-lived server logs in once. A fresh VM for the same target reuses its own home, so no fresh login.</span>
+  <span class="k">one human</span><span>A target is bound to the person who logged the CLI in on it. Two people on one server means two targets with two homes. "One subscription, one person" stays true without us touching tokens.</span>
+  <span class="k">API keys</span><span>Unattended runs (webhook, cron, issue label) use an API key from the project vault, not a subscription. That is the only vendor credential the vault ever holds.</span>
+</div>
+
+
+
+<h2 id="accounts">Multiple accounts per provider</h2>
+<p>Orca lets one person hold several Claude, Codex, Kimi, OpenCode, Gemini, and MiniMax accounts, switch in one click, and see usage per account. It does this without ever holding a credential, and the mechanism maps directly onto what the platform already has.</p>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">Orca · discovery and hot-swap</span>
+    <h3>A viewer over files the CLI owns</h3>
+    <ul>
+      <li>Log in to each account from a terminal once. Orca scans <code>~/.claude</code>, <code>~/.codex</code> and friends, and you label what it finds.</li>
+      <li>Each managed account gets a runtime home. New sessions launch with the CLI's config-dir variable pointing at the active one. Running sessions keep their account until restart.</li>
+      <li>The user's real config is mirrored into every account home, so hooks and MCP servers follow the person, not the account. On Codex it also maintains <code>trusted_hash</code> entries so its status hooks are trusted.</li>
+      <li>A guard stops two sessions from refreshing the same token at once.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Orca · usage meters</span>
+    <h3>No API calls, no extra auth</h3>
+    <ul>
+      <li>Reads the usage state each CLI keeps on disk. Shows plan, 5-hour, daily, and weekly windows with reset times, and warns at 80 percent.</li>
+      <li>Status bar follows the active account. The popover lists every provider and account with independent bars. The mobile app has the same switcher.</li>
+      <li>Numbers lag by one turn because they update when the agent writes its file. Cost estimates come from a local pricing table and are labelled as not authoritative.</li>
+    </ul>
+  </div>
+</div>
+
+<h3>The per-CLI facts we depend on</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>CLI</th><th>Config-dir variable</th><th>Credential</th><th>Login</th></tr></thead>
+<tbody>
+<tr><td>Claude Code</td><td><code>CLAUDE_CONFIG_DIR</code></td><td>Linux: a credentials file in the dir. macOS: Keychain item keyed to the dir, file fallback when locked</td><td>browser OAuth or a URL printed in the terminal</td></tr>
+<tr><td>Codex</td><td><code>CODEX_HOME</code></td><td><code>auth.json</code> in the home; profiles as sibling files</td><td>ChatGPT login or API key</td></tr>
+<tr><td>Kimi Code</td><td><code>KIMI_CODE_HOME</code></td><td><code>credentials/</code> under the home</td><td>device-code flow, prints URL and code</td></tr>
+<tr><td>OpenCode</td><td>relocate with <code>XDG_DATA_HOME</code></td><td><code>~/.local/share/opencode/auth.json</code>, one credential per provider</td><td><code>/connect</code></td></tr>
+<tr><td>Gemini CLI</td><td><code>~/.gemini</code>, override to verify</td><td>OAuth cache in the home</td><td>Google OAuth</td></tr>
+</tbody></table></div>
+<div class="verdict"><p><strong>The common shape is one directory per account, one environment variable to select it, one login run inside a terminal to populate it.</strong> That is exactly the primitive the platform already has.</p></div>
+
+<h3>How we do it</h3>
+<div class="rule">
+  <span class="k">object</span><span>An account is first-class: provider, label, the target or home volume it lives on, the human who logged it in, a status, and the last usage snapshot.</span>
+  <span class="k">add</span><span>"Add account, Claude, on mac-studio" opens a PTY with the config-dir variable set to a fresh directory and runs the vendor login. The login URL gets the clickable badge. When the CLI writes its credential, the account is marked logged in.</span>
+  <span class="k">select</span><span>A session picks an account per provider and the runner sets the variable in that shell only. Two sessions on one target can run two Claude accounts at once. There is no global swap, so nothing to guard.</span>
+  <span class="k">mirror</span><span>Settings follow the user, credentials follow the account. The base config is mirrored into each account home at session start without touching the credential file.</span>
+  <span class="k">vms</span><span>Accounts live on the target's persistent home volume, so a fresh VM sees all of them.</span>
+  <span class="k">meters</span><span>The runner reads each account's usage file after every agent turn and reports it in the heartbeat. The board shows the same bars and 80 percent warning. "Use the account with the most headroom" is an option, restricted to accounts the same human owns.</span>
+  <span class="k no">never</span><span>The platform never reads a credential file's contents, never pools accounts across users, and never rotates through accounts to exceed what one person is entitled to. Each account is one human's own login on a machine they own.</span>
+</div>
+<div class="verdict"><p><strong>macOS is resolved.</strong> Since Claude Code 2.1.144 the Keychain entry is keyed to <code>CLAUDE_CONFIG_DIR</code>, so two config dirs are two independent logins on one Mac. When the Keychain is locked, as under a launchd agent or SSH, Claude Code falls back to a credentials file inside the config dir, the same as Linux. A Mac Studio driven by the runner behaves like a Linux target. Orca does nothing macOS-specific beyond launching with the variable set.</p></div>
+<div class="note"><strong>Yes, you log in once per machine per account.</strong> A credential is issued to a CLI on a machine, and Orca's own instruction is "log in from a terminal at least once" on each one. The platform makes it a thirty-second two-click flow with a login button, keeps accounts on the persistent home volume so a fleet of VMs counts as one machine, and flags needs-login and expired on the board. For unattended machines where nobody will click, Claude Code's documented path is <code>claude setup-token</code>, a one-year subscription token meant for CI, stored in the vault and injected per session like any secret.</div>
+
+<h2 id="github">The GitHub experience, the Claude Code on the web way</h2>
+<p>Two halves. First the credential: it never enters the machine, a proxy attaches it on the way out. Then everything the user touches, from connect to auto-fix, verified from the docs and from inside one of its sessions.</p>
+<div class="term">
+  <div class="bar"><span>inside a claude.ai/code sandbox</span><span><b>env | grep -i github</b></span></div>
+  <div><span class="g">GITHUB_TOKEN</span>=proxy-injected</div>
+  <div><span class="g">GH_TOKEN</span>=proxy-injected</div>
+  <div><span class="g">HTTPS_PROXY</span>=http://127.0.0.1:46279</div>
+  <div><span class="g">GIT_SSL_CAINFO</span>=/root/.ccr/ca-bundle.crt</div>
+  <div class="d" style="margin-top:8px">git@github.com: remotes rewritten to https · TLS re-terminated at the egress proxy · real scoped token added to requests for github.com</div>
+</div>
+<div class="rule">
+  <span class="k">authorize</span><span>Once, in the browser. The user authorizes a GitHub App. The control plane now holds a user-level credential server-side. Installing the App on a repo only turns on PR webhooks.</span>
+  <span class="k">placeholder</span><span>Inside the VM the token variables hold the literal string <code>proxy-injected</code>. Unmodified <code>git</code> and <code>gh</code> work because they never see a real secret.</span>
+  <span class="k">proxy</span><span>All HTTPS leaves through a local proxy that tunnels to a policy-enforcing egress proxy. TLS is re-terminated with the platform CA, and requests to github.com get a session-scoped token attached.</span>
+  <span class="k">scope</span><span>The proxy knows which session is asking and which repos it was granted. Widening scope mid-session is a control-plane call, not a new token in the VM.</span>
+  <span class="k">generalizes</span><span>API keys added to the environment ride the same path. The sandbox sees placeholders, the proxy sees secrets. Network policy (trusted, limited, none) lives in the same proxy.</span>
+</div>
+<h3>How it maps onto our modes</h3>
+<ul class="plain">
+  <li><strong>Mode B, VM:</strong> the full copy. The runner on the host runs the egress proxy, the VM routes through it, the platform CA is baked into the image, and the control plane mints a GitHub App installation token per session, repo-scoped and expiring in one hour by design.</li>
+  <li><strong>Mode A, direct machine:</strong> your machine, so exfiltration is not the threat, but convenience still is. Preferred: the same proxy, per session, with the env vars set only in that session's shell and nothing written to disk. Fallback: a git credential helper that asks the runner for a fresh scoped token on each operation. Or nothing, since the box already has your own <code>gh</code> login.</li>
+</ul>
+<div class="tablewrap"><table>
+<thead><tr><th>Piece</th><th>Where</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>GitHub App and install flow in the web UI</td><td>control plane</td><td>small, well documented</td></tr>
+<tr><td>Token minting: installation token scoped to the session's repos, 1h TTL</td><td>control plane</td><td>small</td></tr>
+<tr><td>Egress proxy: TLS re-termination, per-session allowlist, header injection for github.com</td><td>runner</td><td>medium, the core security piece; use an existing MITM proxy library</td></tr>
+<tr><td>CA bundle per install, baked into images, exported to direct-mode shells</td><td>runner</td><td>small</td></tr>
+<tr><td>Widen-scope call for adding a repo mid-session</td><td>control plane and UI</td><td>small</td></tr>
+<tr><td>PR webhooks from the App into the session event log</td><td>control plane</td><td>medium, later</td></tr>
+</tbody></table></div>
+<div class="note">GitHub App over OAuth App: installation tokens are repo-scoped and short-lived at mint time, the proxy scopes again at use time, and the App's webhooks are needed for triggers in phase 7 anyway.</div>
+<h3>What the session sees inside</h3>
+<div class="term">
+  <div class="bar"><span>inside a claude.ai/code session</span><span><b>git config --show-origin</b></span></div>
+  <div><span class="d">~/.gitconfig</span>   user.name=<span class="g">Claude</span>  user.email=noreply@anthropic.com</div>
+  <div><span class="d">~/.gitconfig</span>   user.signingkey=/home/claude/.ssh/commit_signing_key.pub   <span class="d"># key lives outside the VM</span></div>
+  <div><span class="d">env</span>            credential.interactive=<span class="g">false</span></div>
+  <div><span class="d">env</span>            url.https://github.com/.insteadOf=git@github.com:</div>
+  <div><span class="d">clone</span>          shallow, depth 1 · branch <span class="g">claude/&lt;slug&gt;-&lt;id&gt;</span></div>
+</div>
+<div class="rule">
+  <span class="k">identity</span><span>Commits are authored by the agent with a co-author trailer and a session link. PRs and comments carry a "Generated by Claude Code" footer. The PR itself is opened under the user's authorization, so history stays honest about who did what.</span>
+  <span class="k">signing</span><span>The config points at a public key path. Signing happens at the proxy like the token does, so commits show Verified with no private key in the VM.</span>
+  <span class="k">env-injected</span><span>The rewrites and non-interactive flag arrive as environment config, not files, so no gitconfig in the repo can override them.</span>
+  <span class="k">push rules</span><span><code>claude/</code> branches are always accepted. Any other branch is checked first and refused if protected, if someone else has an open PR from it, or if it carries commits by someone other than the user. Enforced by the platform, not by the agent's manners.</span>
+</div>
+
+<h3>From connect to auto-fix</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>What it does</th><th>Ours</th></tr></thead>
+<tbody>
+<tr><td>Connect</td><td>One OAuth authorization. Sessions reach any repo the account can see. Installing the App on a repo only adds webhooks. A <code>gh</code> token import exists for terminal people.</td><td>same, phase 3</td></tr>
+<tr><td>Start</td><td>Repo selector with a branch selector, multiple repos per session, permission mode dropdown, prefill by URL for issue-tracker deep links, live provisioning checklist.</td><td>same, phase 3</td></tr>
+<tr><td>Review</td><td>A <code>+42 -18</code> indicator opens a diff view. Inline comments on lines queue up and are bundled into the next message as "at file:line, do X". The user never describes a location in words.</td><td>phase 5</td></tr>
+<tr><td>PR</td><td>Full, draft, or GitHub compose page with a generated title and body. Mirrors the repo's PR template. The agent has no <code>gh</code>; it gets a scoped GitHub API surface through the proxy, so "no token in the VM" and "the agent opens PRs" are both true.</td><td>phase 5</td></tr>
+<tr><td>Auto-fix</td><td>A session subscribes to a PR. Review comments, CI failures, and check successes arrive as wake envelopes that name which JSON keys are untrusted text. The platform synthesizes merge-conflict and base-recovered notices GitHub never sends.</td><td>phase 7</td></tr>
+<tr><td>Routines</td><td>Schedule, API fire with a bearer token, or GitHub events (pull request, release) with filters on author, title, base, head, labels, draft, merged. Each firing is a fresh session on a <code>claude/</code> branch. Fire text arrives wrapped as untrusted.</td><td>phase 8</td></tr>
+<tr><td>Environments</td><td>Network levels Trusted, Custom, Full, None with a default registry allowlist and <code>x-deny-reason</code> on blocks. Setup script with a five-minute budget, cached as a snapshot. Env vars visible, API credentials proxy-injected.</td><td>phases 4 and 6</td></tr>
+</tbody></table></div>
+<div class="verdict"><p><strong>Nothing here needs new research.</strong> It is a list of small features on top of three primitives already designed: the outbound runner, the credential-injecting proxy, and the session event log.</p></div>
+
+
+
+<h2 id="machines">Connecting machines and provisioning VMs</h2>
+<p>Three projects each solve one slice of this well. herdr for owning terminals on many machines, the GitHub Actions runner for registering machines behind firewalls, Actuated for a Firecracker VM per job on hosts you own.</p>
+
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">herdr · take the state detection</span>
+    <h3>Server owns the PTY, client only renders</h3>
+    <ul>
+      <li>One Rust binary, client and server. Remote machines are SSH to a herdr server on the remote, each with independent reconnect.</li>
+      <li>Pane state from two layers: the foreground process, plus "screen manifests" that match the bottom of the live screen. Every pane is <code>working</code>, <code>blocked</code>, <code>done</code>, <code>idle</code>, or <code>unknown</code>. No agent integration needed.</li>
+      <li>After a restart, processes die but agents resume by their native session id. Scrollback is not persisted by default because it holds secrets.</li>
+      <li>Socket API with wait conditions: prompt an agent and block until it is settled. That is the delegation primitive.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Actions runner · take the registration</span>
+    <h3>Registration token, keypair, outbound only</h3>
+    <ul>
+      <li>UI shows a one-hour registration token embedded in an install command. The runner generates an RSA keypair, sends the public key, gets a clientId. The user's credentials never touch the machine.</li>
+      <li>Every boot: sign a JWT with the private key, exchange for a short-lived session token, open an outbound connection and wait for work.</li>
+      <li>Per job: a token scoped to that job, lifetime of the job plus ten minutes, delivered encrypted to the runner's public key, held in env only, scrubbed from logs.</li>
+      <li>Two flavors: persistent (our direct machines) and ephemeral just-in-time (the identity a fresh VM gets).</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Actuated: what running Firecracker per job taught them</h3>
+<ul class="plain">
+  <li>Agent on the host, one single-tenant microVM per job, immutable rootfs with Docker already running, VM deleted when the job exits. Boot to ready in one to two seconds.</li>
+  <li>Images are 80/20. A lean Dockerfile with common toolchains beats replicating GitHub's 3,000-package image.</li>
+  <li>The VM is fast and everything around it is slow: webhook delivery, API limits, DNS on the host. Design for missing and out-of-order events. Run a registry pull-through cache on the host.</li>
+  <li>Autoscaling was hard because they could not predict which VM gets which job. We sidestep it: the scheduler picks the target before the VM exists, so there is no pool to size.</li>
+</ul>
+
+<h3>The VM provisioner, step by step</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>Mechanism</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Kernel</td><td>one uncompressed <code>vmlinux</code> per arch, shipped with the runner</td><td>no bootloader</td></tr>
+<tr><td>Root filesystem</td><td>ext4 image built from a Dockerfile, read-only base</td><td>versioned, cached on the host</td></tr>
+<tr><td>Per-task disk</td><td>copy-on-write overlay on the base</td><td>task writes go to a thin layer</td></tr>
+<tr><td>Persistent home</td><td>second block device per target at <code>/home/agent</code></td><td>keeps CLI logins across VMs</td></tr>
+<tr><td>Networking</td><td>one tap device per VM on a host bridge, NAT to the uplink</td><td>private IP, nothing inbound</td></tr>
+<tr><td>Egress policy</td><td>the VM's only route is the host, which runs the credential-injecting proxy</td><td>trusted / limited / none</td></tr>
+<tr><td>Host to guest</td><td>vsock, not the network</td><td>PTY bytes, file ops, status</td></tr>
+<tr><td>Sandbox</td><td>Firecracker jailer: chroot, cgroups, seccomp per VM</td><td>free hardening, on from day one</td></tr>
+<tr><td>Budget</td><td>2 vCPU and 4 GB default, 8 GB max on the slider</td><td>cgroups enforce it</td></tr>
+<tr><td>Docker inside</td><td>dockerd started by guest init on the overlay</td><td>Docker in a VM, not in Docker</td></tr>
+<tr><td>Warm start</td><td>snapshot a booted VM, restore per task</td><td>~150 ms instead of ~1 s, later</td></tr>
+</tbody></table></div>
+
+<div class="diagram">
+<svg viewBox="0 0 760 120" role="img" aria-label="VM lifecycle: requested, provisioning, ready, running, paused, stopped, destroyed">
+  <defs><marker id="ah2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--ink)">
+    <g stroke="var(--ink)" stroke-width="1.2" fill="var(--surface)">
+      <rect x="8" y="34" width="92" height="34" rx="3"/><rect x="128" y="34" width="104" height="34" rx="3"/>
+      <rect x="260" y="34" width="80" height="34" rx="3"/><rect x="368" y="34" width="84" height="34" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <rect x="480" y="34" width="80" height="34" rx="3"/><rect x="588" y="34" width="80" height="34" rx="3"/><rect x="668" y="86" width="84" height="28" rx="3"/>
+    </g>
+    <text x="54" y="55" text-anchor="middle">requested</text><text x="180" y="55" text-anchor="middle">provisioning</text>
+    <text x="300" y="55" text-anchor="middle">ready</text><text x="410" y="55" text-anchor="middle" font-weight="500">running</text>
+    <text x="520" y="55" text-anchor="middle">paused</text><text x="628" y="55" text-anchor="middle">stopped</text><text x="710" y="104" text-anchor="middle">destroyed</text>
+    <g stroke="var(--muted)" stroke-width="1.2" fill="none" marker-end="url(#ah2)">
+      <line x1="100" y1="51" x2="124" y2="51"/><line x1="232" y1="51" x2="256" y2="51"/><line x1="340" y1="51" x2="364" y2="51"/>
+      <path d="M452,45 L476,45"/><path d="M480,58 L456,58"/><line x1="560" y1="51" x2="584" y2="51"/>
+      <path d="M452,68 C452,90 560,100 664,100"/>
+    </g>
+    <g fill="var(--muted)" font-size="10">
+      <text x="180" y="24" text-anchor="middle">overlay + boot</text><text x="300" y="24" text-anchor="middle">JIT identity, clone, setup</text>
+      <text x="466" y="86" text-anchor="middle">idle timeout</text><text x="628" y="24" text-anchor="middle">close: VM killed, overlay kept</text>
+    </g>
+  </g>
+</svg>
+<p class="caption">Same lifecycle for a Firecracker guest on Linux, a tart guest on macOS, a cloud VM through a provider adapter, or a container on a KVM-less host labelled as such.</p>
+</div>
+
+<h3>Service decomposition</h3>
+<p>Turborepo, yes. Microservices on day one, no. Split by package boundary now and by process later. The control plane is one Node process with identity, fleet, scheduler, relay, vault, and events as modules behind interfaces. The relay is the first to split out, because it is stateless, bandwidth-heavy, and the only piece that benefits from running close to the targets.</p>
+<div class="verdict"><p><strong>One change from the earlier stack: the runner should be Go, not Node.</strong> Everything here that runs on other people's machines is a single static binary. node-pty's native build is Orca's top install complaint, and a Firecracker, vsock, and tap orchestrator in Node fights the language. Go has first-class Firecracker, vsock, and netlink libraries and cross-compiles to every target. Web and control plane stay TypeScript, and the protocol package becomes the contract between the two languages.</p></div>
+<div class="tablewrap"><table>
+<thead><tr><th>Runner subcommand</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>agent</code></td><td>mode A: PTYs, tmux-backed, screen manifests, outbound WebSocket</td></tr>
+<tr><td><code>hypervisor</code></td><td>mode B: Firecracker or tart lifecycle, overlay disks, tap and bridge, vsock</td></tr>
+<tr><td><code>guest</code></td><td>in-guest agent: registers the JIT identity, clones, runs setup, opens PTYs over vsock</td></tr>
+<tr><td><code>proxy</code></td><td>the credential-injecting egress proxy</td></tr>
+</tbody></table></div>
+
+
+<h2 id="security">Security review</h2>
+<p>Assets in order of how bad losing them is: vendor subscription logins on targets, GitHub access, project secrets, the targets themselves, code and scrollback, the control plane database. The attacker that matters most is the agent itself, steered by a README, an issue, or a dependency. Everything below is the same set of controls Claude Code on the web, the Actions runner, and Actuated already run.</p>
+
+<h3>The findings that gate any real credential</h3>
+<div class="tablewrap"><table>
+<thead><tr><th>#</th><th>Boundary</th><th>Control</th></tr></thead>
+<tbody>
+<tr><td class="num">F1</td><td>browser to relay</td><td>Terminal sockets present a single-use, seconds-lived ticket minted after an ownership check. A session id alone is never enough.</td></tr>
+<tr><td class="num">F6</td><td>runner to control plane</td><td>The install command pins the control plane URL and key fingerprint. A runner refuses any other host, so nobody can hand it jobs.</td></tr>
+<tr><td class="num">F7</td><td>job payloads</td><td>Every job is encrypted to the runner's public key at the API layer. Relay, logs, and database never hold plaintext secrets.</td></tr>
+<tr><td class="num">F13</td><td>persistent home volume</td><td>One per target per human. Mounted into one VM at a time under a host lock. Encrypted at rest. Never in snapshots or images.</td></tr>
+<tr><td class="num">F14</td><td>VM egress</td><td>The proxy lives on the host, never in the guest. The guest's only route is the host bridge. Unset the proxy inside and you get no network, not an unproxied one.</td></tr>
+<tr><td class="num">F15</td><td>isolation labels</td><td>A target reports "vm" only after it has booted a jailed Firecracker guest. No KVM means a "container" target, in a different color, with stricter defaults.</td></tr>
+<tr><td class="num">F17</td><td>host to guest</td><td>vsock connections accepted only from the CID assigned to that VM, authenticated with the JIT token injected at boot, never via a file in the image.</td></tr>
+<tr><td class="num">F20</td><td>GitHub App key</td><td>The most sensitive thing the control plane holds. KMS or environment-only, never in the database.</td></tr>
+<tr><td class="num">F26</td><td>updates</td><td>Runner binaries and rootfs images are signed with an offline key and verified before use. The control plane can offer a version, never push arbitrary code.</td></tr>
+</tbody></table></div>
+
+<div class="note"><strong>Accepted by design: direct-mode targets have no isolation.</strong> The agent has your whole machine, the same as Orca or herdr. The UI says "full access" and never calls it a sandbox. Secrets are env vars in that shell only, the runner never runs as root, and scrollback is not written to disk unless you opt in per target.</div>
+
+<h3>Tailscale as the perimeter</h3>
+<p>Wanted, not mandatory, so it is a layer that switches on without changing the design. Both the control plane and the Go runner embed Tailscale as a library. With a flag and an auth key they listen only on the tailnet. Without it, they listen normally behind whatever reverse proxy you have. Same binary, two modes.</p>
+<div class="rule">
+  <span class="k">no public surface</span><span>The control plane and relay are unreachable from the internet. Scanning, brute force, and leaked-URL risks disappear.</span>
+  <span class="k">identity</span><span>The control plane reads the caller's tailnet identity from the connection and uses it as a second factor on top of the GitHub login.</span>
+  <span class="k">runners</span><span>A Mac Studio behind NAT reaches the control plane over the tailnet with no port forwarding on either side, plus mutual authentication at the network layer. Registration tokens and keypairs still apply on top.</span>
+  <span class="k">acls</span><span>Runners may reach the control plane's WebSocket port. Users may reach it on 443. Nothing may reach a runner inbound. Task VMs are not on the tailnet at all; they only see the host bridge.</span>
+  <span class="k">webhooks</span><span>GitHub App events need a public endpoint. Keep it as a tiny separate receiver that verifies signatures and forwards into the tailnet, so the main control plane stays private.</span>
+  <span class="k">limit</span><span>Tailscale protects the perimeter. It does nothing about the agent inside a session, so the VM controls above stand regardless.</span>
+</div>
+
+<h3>Reference VM spec, measured</h3>
+<p>The sandbox this brief was researched in is a Claude Code on the web session. Its kernel is <code>6.18.44-fc-v24</code>, a Firecracker guest with a virtio disk. Anthropic runs exactly the architecture in the previous section: Firecracker guest, root inside, Docker inside, credentials outside.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Dimension</th><th>Measured</th><th>Our default</th></tr></thead>
+<tbody>
+<tr><td>vCPU</td><td>4 × Intel Xeon @ 2.80 GHz</td><td>4 vCPU</td></tr>
+<tr><td>Memory</td><td>15 GiB, no swap</td><td>8 GiB default, slider from 4 to 16</td></tr>
+<tr><td>Disk</td><td>252 GB virtio volume, ~30 GB writable per session</td><td>20 GB thin overlay per task</td></tr>
+<tr><td>OS</td><td>Ubuntu 24.04.4 LTS</td><td>Ubuntu 24.04 rootfs from a Dockerfile</td></tr>
+<tr><td>Nested virtualization</td><td>none</td><td>not exposed; Docker inside does not need it</td></tr>
+<tr><td>In-guest user</td><td>root, full capabilities</td><td>same; the VM boundary is the sandbox</td></tr>
+<tr><td>Toolchain</td><td>Docker 29, Node 22, Bun 1.3, Python 3.11, Go, git, tmux, ripgrep</td><td>same plus the Claude and Codex CLIs</td></tr>
+</tbody></table></div>
+
+
+<h2 id="mvp">The MVP is sessions</h2>
+<p>A session is a persistent terminal on one of your machines, opened from a browser, that survives everything. If you can do a thing by typing in that terminal, it is not in the MVP.</p>
+<div class="verdict"><p>You open the site on your phone. <code>mac-studio</code> is online. You click New session and a terminal appears in under two seconds in your home directory. You <code>cd</code> to a repo, type <code>claude</code>, log in by tapping the URL it prints, give it a task, close the phone. On the laptop the same session is still running. You run three more.</p></div>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Piece</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Runner</td><td>One Go binary on the target. Dials out with a target token. One tmux-backed PTY per session. Streams bytes, resizes, ring buffer, tail replay on attach, reconnect ladder. Survives its own restart via tmux.</td></tr>
+<tr><td>Control plane</td><td>One process, Postgres. Login. Targets with a token. Sessions with id, name, target, cwd. A relay that pairs browser and runner sockets by session id with a per-session ticket.</td></tr>
+<tr><td>Web</td><td>Two screens. Sessions: a list grouped by target with online dots and New session. Session: the terminal full-bleed with a thin bar, login URLs as a button, phone layout.</td></tr>
+<tr><td>Install</td><td>One curl command that drops the runner and a launchd or systemd unit. <code>docker compose up</code> for the control plane.</td></tr>
+</tbody></table></div>
+
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">You do it in the terminal, for now</span>
+    <ul>
+      <li>Clone, worktrees, branches, PRs with <code>gh</code></li>
+      <li><code>claude</code>, <code>codex</code>, <code>kimi</code> login and use. Multiple accounts by setting the config-dir variable yourself</li>
+      <li>Secrets already live on the machine</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Next slice, in order</span>
+    <ul>
+      <li>Board states from screen manifests, the first thing you miss with ten sessions open</li>
+      <li>Project, worktree and branch per session, Create PR</li>
+      <li>GitHub App with per-session tokens</li>
+      <li>Accounts as objects with per-session selection</li>
+      <li>Mode B VMs, which brings the egress proxy and the rest of the security review</li>
+    </ul>
+  </div>
+</div>
+
+<div class="tablewrap"><table>
+<thead><tr><th>Step</th><th>You can now</th><th>Size</th></tr></thead>
+<tbody>
+<tr><td class="num">1</td><td>Runner on the Mac, one page, tmux-backed terminal, close the tab, reopen, still there</td><td>1 week</td></tr>
+<tr><td class="num">2</td><td>Control plane with login, targets, sessions list, tickets, docker compose</td><td>1 week</td></tr>
+<tr><td class="num">3</td><td>Phone layout, reconnect ladder, tail replay polish, login URL button, a second target on Linux</td><td>1 week</td></tr>
+</tbody></table></div>
+<p>Three weeks. Step 1 is still the gate: if it does not feel like Orca over SSH, fix that first. Done means the scene runs on a real Mac Studio and a real Linux server from a phone, sessions survive browser close, wifi loss, and a runner restart, and the control plane stores no credential except its own login and the target tokens.</p>
+
+<h2 id="phases">Phases</h2>
+<p>Phase 1 is the risk-retirement step. If the remote terminal does not feel as smooth as Orca over SSH, nothing else matters, so we find out in week one.</p>
+<div class="tablewrap"><table>
+<thead><tr><th>Phase</th><th>Deliverable</th><th>Why it comes here</th></tr></thead>
+<tbody>
+<tr><td class="num">0</td><td>Repo skeleton, shared zod protocol package, ADRs</td><td>the protocol is the only contract that matters</td></tr>
+<tr><td class="num">1</td><td>Go runner with Actions-style registration + WS hub + one xterm.js page: a persistent terminal on a remote target from a browser</td><td>run <code>claude</code> from a phone, close the laptop, check it is alive in the morning</td></tr>
+<tr><td class="num">2</td><td>Control plane with Postgres: register target, sessions, event log, curl only</td><td>state survives the runner and the browser</td></tr>
+<tr><td class="num">3</td><td>Web app: GitHub login, projects, target list, session board, login-link detection</td><td>first demo</td></tr>
+<tr><td class="num">4</td><td>GitHub App, per-session token minting, egress proxy with injection, secret vault, security findings F1 to F26, Tailscale mode</td><td>before any real credential touches the platform</td></tr>
+<tr><td class="num">5</td><td>Worktree automation, branch and PR flow, N parallel sessions on direct-mode targets</td><td>the Orca moment</td></tr>
+<tr><td class="num">6</td><td>Mode B: Firecracker VM per task on one Linux host, JIT guest identity, overlay disks, Docker inside, persistent home volume</td><td>isolated tasks with real resource budgets</td></tr>
+<tr><td class="num">7</td><td>Delegation: an MCP server with spawn_task and wait_task, Agent SDK for unattended runs</td><td>multi-agent, without inventing a DSL</td></tr>
+<tr><td class="num">8</td><td>Triggers: App webhooks, cron, GitHub issue label. macOS VM hosting via tart</td><td>automation</td></tr>
+</tbody></table></div>
+
+<h3>Stack</h3>
+<p>TypeScript for the web app and control plane, Go for the runner. pnpm and Turborepo monorepo. Next.js web app, Hono control plane with Drizzle on Postgres, a single static Go runner binary, and a shared protocol package that both languages generate from. Rejected: Python on targets (second toolchain on user machines), Electron (state must live server-side), Kubernetes (targets are pets, not cattle).</p>
+
+<h2 id="questions">Open questions</h2>
+<ol class="q">
+  <li><b>Who is the user on day one?</b><span>Just us, or other developers too. Decides whether multi-tenant auth and billing land in phase 3 or phase 9.</span></li>
+  <li><b>Self-hosted first, or hosted control plane?</b><span>The runner model works for both. Recommendation: self-hosted via docker compose first. It keeps us honest about simplicity, which is the OpenClaw lesson.</span></li>
+  <li><b>Do child sessions share the parent's workspace?</b><span>Shared is simpler for "fix these three files", separate is safer for "try three approaches". Recommendation: separate by default, shared as an option.</span></li>
+  <li><b>How much of Orca's cockpit to replicate?</b><span>Splits, tabs, diff view, and port forwarding are essential. Monaco editor and embedded browser can wait.</span></li>
+  <li><b>Name.</b><span>The idea is "nation orchestrator", the repo is oppenheimer. Pick before the protocol package gets named.</span></li>
+</ol>
+
+<h2>Sources</h2>
+<ul class="plain" style="font-size:14px">
+  <li><a href="https://deepwiki.com/stablyai/orca/5-terminal-system">Orca terminal system</a> and <a href="https://deepwiki.com/stablyai/orca/2.5-ssh-and-remote-connections">SSH and remote connections</a></li>
+  <li><a href="https://www.onorca.dev/docs/ssh">Orca SSH worktree docs</a>, <a href="https://github.com/stablyai/orca">repository</a>, <a href="https://github.com/stablyai/orca/issues/18495">blank remote pane issue</a></li>
+  <li><a href="https://arxiv.org/html/2603.27517v3">Security analysis of OpenClaw</a>, <a href="https://vallettasoftware.com/blog/post/openclaw-architecture-diagram-2026">OpenClaw architecture</a></li>
+  <li><a href="https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration">Claude Managed Agents multiagent orchestration</a></li>
+  <li><a href="https://code.claude.com/docs/en/web-quickstart">Claude Code on the web quickstart</a>, <a href="https://code.claude.com/docs/en/claude-code-on-the-web">reference</a>, <a href="https://code.claude.com/docs/en/cloud-environments">cloud environments</a>, <a href="https://code.claude.com/docs/en/routines">routines</a></li>
+  <li><a href="https://www.onorca.dev/docs/agents/codex-hot-swap">Orca hot-swap accounts</a>, <a href="https://www.onorca.dev/docs/agents/usage-tracking">usage tracking</a>, <a href="https://learn.chatgpt.com/docs/config-file/config-reference">Codex config reference</a>, <a href="https://www.kimi-cli.com/en/configuration/data-locations.html">Kimi data locations</a>, <a href="https://opencode.ai/docs/providers/">OpenCode providers</a>, <a href="https://code.claude.com/docs/en/authentication">Claude Code authentication</a></li>
+  <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
+  <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
+  <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
+</ul>
+</div>
