@@ -83,7 +83,7 @@ later idea, not the MVP.
 | Repo and branch chips backed by the GitHub App installation (all or selected repositories, note 09) | Create PR button, diff view, auto-fix, routines |
 | Agent chip: Codex first | Claude Code next, then Kimi, OpenCode, Gemini |
 | Accounts per host, one persistent volume per account, selected per session | Usage-based account routing |
-| Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser |
+| Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser, preview URLs |
 | Sidebar state dot from screen manifests, working / blocked / idle | Delegation between sessions |
 | Scoped one-hour GitHub token delivered by cloud-init seed, as the runner config is today | Host egress proxy with token injection (next slice), signed auto-update |
 
@@ -140,3 +140,21 @@ it must feel like the one in step 1.
   except the runner on their host.
 - **VM lifetime:** pause after ten idle minutes, suspend after two
   hours, hibernate after a day, wake on visit, destroy on close (note 10).
+
+## 9. Parked for after the MVP: preview URLs
+
+A URL to inspect what a session is running, the way Codespaces forwards
+a port or a hosted preview exposes an app. Shape when it comes:
+
+- The runner detects listening ports in the guest (the port scanner
+  Orca already has) and shows them on the session bar.
+- Clicking one opens `https://<session>-<port>.preview.<our domain>`,
+  served by the control plane's relay through the same runner link,
+  gated by the user's login. Optional public toggle per port with an
+  expiry, for showing someone a build.
+- On the tailnet, the same port is also reachable directly at the
+  host's tailnet address, no relay.
+
+Nothing about it changes the MVP; it rides on the relay and the vsock
+channel that exist by step 2. Second slice after the MVP, next to the
+Mac runtime and Create PR.
