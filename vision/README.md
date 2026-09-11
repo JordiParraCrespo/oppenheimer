@@ -15,6 +15,7 @@ for the detail and sources.
 | 06 | [Multiple accounts](06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
 | 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a KVM guest on the Hetzner host, each just a terminal; Codex first; hosted web control plane |
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
+| 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -39,3 +40,8 @@ earlier note:
 - Note 07 chose Firecracker first. Note 08 replaced it with libvirt/KVM
   because an existing, hardened controller already runs that on the
   target host. Firecracker is now a later cold-start optimization.
+- Notes 02 and 05 described Claude Code on the web's access model, where
+  the user's OAuth grant reaches any repository the account can see and
+  the App only adds webhooks. Note 09 chooses the stricter model: the
+  App installation, with all or selected repositories, is the access
+  control.

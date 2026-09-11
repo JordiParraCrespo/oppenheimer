@@ -340,6 +340,15 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <tr><td>PR webhooks from the App into the session event log</td><td>control plane</td><td>medium, later</td></tr>
 </tbody></table></div>
 <div class="note">GitHub App over OAuth App: installation tokens are repo-scoped and short-lived at mint time, the proxy scopes again at use time, and the App's webhooks are needed for triggers in phase 7 anyway.</div>
+
+<h3>Access is the App installation</h3>
+<p>Decided: the user signs in with GitHub for identity, then installs the app and gets GitHub's own dialog, all repositories or only selected ones, per account. That installation is the access control. Sessions reach the repositories it covers and nothing else. The repo chip lists them live; a Manage on GitHub link changes them; installation webhooks keep the chip fresh. No tokens to create, nothing to paste.</p>
+<div class="rule">
+  <span class="k">stricter</span><span>Claude Code on the web reaches any repo the user's OAuth grant can see and uses the App only for webhooks. We choose least privilege enforced by GitHub, and it is the same model the runner host already uses.</span>
+  <span class="k">permissions</span><span>Contents read and write, Metadata read, Pull requests read and write, Workflows read and write. No Administration. A separate, narrower App from the runner host's, with its own key.</span>
+  <span class="k">per session</span><span>One installation token narrowed to that one repository, one-hour lifetime, minted by the control plane, delivered encrypted to the runner, seeded into the guest's credential helper, rotated over vsock before expiry. The host egress proxy later removes the token from the guest entirely.</span>
+</div>
+
 <h3>What the session sees inside</h3>
 <div class="term">
   <div class="bar"><span>inside a claude.ai/code session</span><span><b>git config --show-origin</b></span></div>
@@ -536,7 +545,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
       <li>Personal workspace, one user, GitHub sign-in</li>
       <li>Hosts you own, token and keypair registration</li>
       <li>VM per session: libvirt/KVM on the Hetzner host, reusing the runner codebase</li>
-      <li>Repo and branch chips via the existing GitHub App code, one-hour scoped token delivered by cloud-init seed</li>
+      <li>Repo and branch chips from the App installation, all or selected repositories, one-hour repo-scoped token delivered by seed</li>
       <li>Agent chip: Codex first</li>
       <li>Accounts per host, selected per session</li>
       <li>Terminal with reattach, tabs, phone layout, state dots from screen manifests</li>
@@ -560,7 +569,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <tbody>
 <tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab</td><td>1 week</td></tr>
 <tr><td class="num">2</td><td>The runner boots a libvirt guest from a new golden image, guest agent over vsock, terminal inside, managedsave when idle, destroy on close</td><td>1 week</td></tr>
-<tr><td class="num">3</td><td>GitHub sign-in, host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
+<tr><td class="num">3</td><td>GitHub sign-in, App install with all or selected repos, host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
 <tr><td class="num">4</td><td>Repo and branch chips: reuse App auth and token minting, deliver the token by seed, clone into the VM</td><td>1 week</td></tr>
 <tr><td class="num">5</td><td>Accounts, one volume each, add a Codex account by login, per-session selection, login URL button</td><td>1 week</td></tr>
 <tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>

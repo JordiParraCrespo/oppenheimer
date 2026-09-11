@@ -69,7 +69,7 @@ later idea, not the MVP.
 | Personal workspace, one user, GitHub sign-in | Orgs, teams, sharing, billing |
 | Hosts you own, registered with the token and keypair flow | Cloud provider adapters |
 | Mode B: VM per session, libvirt/KVM on the existing Hetzner host, reusing the runner codebase | Firecracker cold-start path, tart for Mac hosts, mode A direct-machine sessions |
-| Repo and branch chips backed by the GitHub App and proxy-injected tokens | Create PR button, diff view, auto-fix, routines |
+| Repo and branch chips backed by the GitHub App installation (all or selected repositories, note 09) | Create PR button, diff view, auto-fix, routines |
 | Agent chip: Codex first | Claude Code next, then Kimi, OpenCode, Gemini |
 | Accounts per host, one persistent volume per account, selected per session | Usage-based account routing |
 | Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser |
@@ -93,7 +93,7 @@ stays out.
 |------|-------------|------|
 | 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
 | 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, `managedsave` when idle, destroy on close | 1 week |
-| 3 | Sign in with GitHub, register a host, sidebar and New session with host and agent chips | 1 week |
+| 3 | Sign in with GitHub, install the App with all or selected repos, register a host, sidebar and New session with host and agent chips | 1 week |
 | 4 | Repo and branch chips: reuse the App auth and token minting, deliver the token by seed, clone into the VM | 1 week |
 | 5 | Accounts: one volume per account, add a Codex account via login, per-session selection, login URL button | 1 week |
 | 6 | State dots from screen manifests, tabs, phone layout, reconnect polish | 1 week |
