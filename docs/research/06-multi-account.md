@@ -143,16 +143,48 @@ exceed what one person is entitled to; every account is one human's own
 login on a machine that human owns, which is the posture from note 01
 and the same one Orca ships with.
 
-### macOS Keychain caveat
+### macOS: resolved, with one headless detail
 
-Claude Code on macOS stores the OAuth credential in the login Keychain,
-keyed by account, not by config dir. Two accounts on one Mac therefore
-need either two macOS users, or an API-key-based login for the second
-account, or verification that current Claude Code versions scope the
-Keychain item by `CLAUDE_CONFIG_DIR` (to be tested in phase 1 on a real
-Mac Studio). On Linux targets and in VMs there is no Keychain and the
-per-directory model works as described. Codex, Kimi, and OpenCode keep
-files, so they are unaffected.
+Verified against the official authentication docs and the `claude-account`
+tool: since **Claude Code 2.1.144** the macOS Keychain entry is keyed to
+`CLAUDE_CONFIG_DIR` (hashed), and `CLAUDE_SECURESTORAGE_CONFIG_DIR` can
+pin the Keychain scope explicitly. Two config dirs mean two Keychain
+items and two independent logins on one Mac, no second macOS user
+needed. This is what Orca's per-account runtime homes rely on; Orca does
+nothing macOS-specific beyond launching with the variable set.
+
+The headless detail: when the Keychain rejects a write, which is what
+happens in an SSH session or under a launchd agent with no unlocked
+login Keychain, Claude Code falls back to `.credentials.json` (mode 0600)
+inside the config dir, exactly as on Linux. So a Mac Studio driven by our
+runner behaves like a Linux target: file-based credentials per account
+dir. The runner should pass both variables and pin the Claude Code
+version floor at 2.1.144. Codex, Kimi, and OpenCode keep files
+everywhere, so they were never affected.
+
+### Yes, you log in once per machine per account
+
+There is no way around this, and it is the right property. A credential
+is issued to a CLI on a machine; Orca's own instructions are "log in
+from a terminal at least once" on every machine, and its SSH docs say
+nothing about remote login because the remote just runs the CLI. The
+platform makes it painless rather than making it disappear:
+
+- "Add account on <target>" is a two-click flow that opens the PTY with
+  the right env, runs the login, and turns the printed URL into a button.
+  Thirty seconds per account per machine, once.
+- Accounts live on the persistent home volume for VM targets, so a fleet
+  of ephemeral VMs behind one target counts as one machine.
+- The board shows which targets have which accounts and flags
+  `needs_login` or `expired` (Claude Code warns three days before a login
+  expires and `/status` reports the expired state).
+- For unattended runs on a machine where nobody will click a link,
+  Claude Code's documented escape hatch is `claude setup-token`: a
+  one-year OAuth token for a subscription, meant for CI, passed as
+  `CLAUDE_CODE_OAUTH_TOKEN`. It is still one human's own token and it
+  lands in the project vault as a normal secret, injected per session
+  like any other. It cannot start Remote Control or fetch claude.ai
+  connectors, which is fine for a headless task.
 
 ## 4. What this adds to the plan
 
@@ -164,7 +196,7 @@ files, so they are unaffected.
 | Config mirroring into account homes; Codex `trusted_hash` maintenance | runner | small | 5 |
 | Usage snapshot per account in heartbeat; board meters and 80 % warning | runner + web | medium | 5 |
 | "Most headroom" account selection for a task | scheduler | small | 5 |
-| Keychain behavior test on macOS | phase-1 spike | tiny | 1 |
+| Verify Keychain scoping and file fallback on a real Mac Studio, Claude Code ≥ 2.1.144 | phase-1 spike | tiny | 1 |
 
 ## Sources
 
@@ -178,4 +210,6 @@ files, so they are unaffected.
 - Kimi Code CLI data locations and OAuth: <https://www.kimi-cli.com/en/configuration/data-locations.html>,
   <https://deepwiki.com/MoonshotAI/kimi-cli/9.7-oauth-and-authentication>
 - OpenCode providers and `auth.json`: <https://opencode.ai/docs/providers/>
+- Claude Code authentication and credential storage: <https://code.claude.com/docs/en/authentication>
+- `claude-account` (per-profile Keychain scoping, 2.1.144 floor): <https://github.com/hamzarehmandeveloper/claude-account>
 - Two Claude accounts on one machine (community write-up): <https://dev.to/daksh-gargas/one-brain-two-wallets-two-claude-code-accounts-on-one-machine-5ejb>
