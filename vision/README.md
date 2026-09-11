@@ -13,7 +13,8 @@ for the detail and sources.
 | 04 | [Security review](04-security-review.md) | 28 findings by trust boundary, Tailscale as an optional perimeter, the measured reference VM spec |
 | 05 | [GitHub experience](05-github-experience.md) | Connect, start, review, PR, auto-fix, routines, environments, and what each piece costs |
 | 06 | [Multiple accounts](06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
-| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a Firecracker VM on your Linux host, each just a terminal; Codex first; hosted web control plane |
+| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a KVM guest on the Hetzner host, each just a terminal; Codex first; hosted web control plane |
+| 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -35,3 +36,6 @@ earlier note:
 - Note 07 records the VM lifetime decision: pause while idle, resume on
   visit, destroy on close. The phase table in note 00 is superseded by
   the order of work in note 07.
+- Note 07 chose Firecracker first. Note 08 replaced it with libvirt/KVM
+  because an existing, hardened controller already runs that on the
+  target host. Firecracker is now a later cold-start optimization.

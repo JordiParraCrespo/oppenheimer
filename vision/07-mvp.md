@@ -20,8 +20,10 @@ You open three more the same way and switch between them in the sidebar.
 
 ## 2. What a session is
 
-- **A VM** on a host you own. The MVP host is a Linux machine, so
-  Firecracker is the only backend built; tart for Mac hosts comes later. 4 vCPU, 8 GB by default. Docker inside. **Lifetime: paused when
+- **A VM** on a host you own. The MVP host is the existing Hetzner
+  runner host, so the backend is **libvirt/KVM with the existing golden
+  image pipeline** (note 08). Firecracker becomes a later cold-start
+  optimization; tart for Mac hosts comes later. 4 vCPU, 8 GB by default. Docker inside. **Lifetime: paused when
   idle, resumed on the next visit, destroyed only when you close the
   session.** Pause keeps memory, so the tmux server, the agent process,
   and the terminal scrollback come back exactly as they were. Rebuilding
@@ -66,13 +68,13 @@ later idea, not the MVP.
 |----|-----------------|
 | Personal workspace, one user, GitHub sign-in | Orgs, teams, sharing, billing |
 | Hosts you own, registered with the token and keypair flow | Cloud provider adapters |
-| Mode B: VM per session, Firecracker on one Linux host | tart for Mac hosts; mode A direct-machine sessions (both come back as chip options later) |
+| Mode B: VM per session, libvirt/KVM on the existing Hetzner host, reusing the runner codebase | Firecracker cold-start path, tart for Mac hosts, mode A direct-machine sessions |
 | Repo and branch chips backed by the GitHub App and proxy-injected tokens | Create PR button, diff view, auto-fix, routines |
 | Agent chip: Codex first | Claude Code next, then Kimi, OpenCode, Gemini |
 | Accounts per host, one persistent volume per account, selected per session | Usage-based account routing |
 | Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser |
 | Sidebar state dot from screen manifests, working / blocked / idle | Delegation between sessions |
-| Egress proxy on the host, since VMs must not hold tokens | Tailscale mode, signed auto-update |
+| Scoped one-hour GitHub token delivered by cloud-init seed, as the runner config is today | Host egress proxy with token injection (next slice), signed auto-update |
 
 ## 5. What changed from the previous cut
 
@@ -90,20 +92,20 @@ stays out.
 | Step | You can now | Size |
 |------|-------------|------|
 | 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
-| 2 | The runner boots a Firecracker VM on that host, opens the terminal inside it, pauses it when idle, destroys it on close | 2 weeks |
+| 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, `managedsave` when idle, destroy on close | 1 week |
 | 3 | Sign in with GitHub, register a host, sidebar and New session with host and agent chips | 1 week |
-| 4 | Repo and branch chips: GitHub App, token minting, egress proxy on the host, clone into the VM | 2 weeks |
+| 4 | Repo and branch chips: reuse the App auth and token minting, deliver the token by seed, clone into the VM | 1 week |
 | 5 | Accounts: one volume per account, add a Codex account via login, per-session selection, login URL button | 1 week |
 | 6 | State dots from screen manifests, tabs, phone layout, reconnect polish | 1 week |
 
-About eight weeks for one person. Step 2 is the new gate next to step
-1: the VM must boot in a few seconds and the terminal inside it must
-feel like the one in step 1.
+About six weeks for one person. Step 2 is the new gate next to step 1:
+the guest must be usable within a minute of Go and the terminal inside
+it must feel like the one in step 1.
 
 ## 7. Done means
 
-- The scene runs on a real Linux host from a phone browser, with a Codex
-  session in a Firecracker VM cloned from a private repo.
+- The scene runs on the Hetzner host from a phone browser, with a Codex
+  session in a KVM guest cloned from a private repo.
 - Closing the browser, losing wifi, and restarting the runner do not kill
   a session. Closing the session destroys the VM.
 - No GitHub token or vendor credential is ever inside a VM image or the
@@ -114,12 +116,14 @@ feel like the one in step 1.
 
 ## 8. Decisions that closed the open questions
 
-- **Host:** the MVP host is a Linux machine. Firecracker is the first and
-  only VM backend in the MVP. tart for Mac hosts is a later slice.
+- **Host:** the MVP host is the existing Hetzner runner host. The VM
+  backend is libvirt/KVM reusing the GitHub Actions runner codebase
+  (note 08). Firecracker and tart are later slices.
 - **Agent:** Codex first. Claude Code is the next agent in the chip,
   then the rest. Everything in note 06 applies to Codex through
   `CODEX_HOME` and `auth.json`, with hooks trusted via `trusted_hash`.
-- **Control plane:** hosted by us and fully web based. Nothing to
-  install for the user except the runner on their host. The phone always
-  has an endpoint.
+- **Control plane:** hosted by us and fully web based, in a different
+  place from the runners. Browsers reach it over public HTTPS; the
+  runner reaches it over the tailnet. Nothing to install for the user
+  except the runner on their host.
 - **VM lifetime:** pause while idle, resume on visit, destroy on close.
