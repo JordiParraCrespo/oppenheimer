@@ -16,6 +16,7 @@ for the detail and sources.
 | 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a KVM guest on the Hetzner host, each just a terminal; Codex first; hosted web control plane |
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
+| 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt, what an AX42 host holds, sleeping sessions are free, pricing shape |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -45,3 +46,5 @@ earlier note:
   the App only adds webhooks. Note 09 chooses the stricter model: the
   App installation, with all or selected repositories, is the access
   control.
+- Note 07's single "pause when idle" became note 10's two tiers: suspend
+  after ten idle minutes, hibernate after a day asleep.

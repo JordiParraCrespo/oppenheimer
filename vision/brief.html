@@ -95,6 +95,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#security">Security review</a></li>
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
+  <li><a href="#sleep">Sleep and pricing</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -523,7 +524,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h3>What a session is</h3>
 <div class="rule">
-  <span class="k">vm</span><span>libvirt/KVM on the Hetzner host, reusing the existing runner controller; Firecracker and tart later. 4 vCPU, 8 GB, 60 GB overlay, Docker inside. Idle means libvirt managedsave: memory to disk, RAM freed, everything back on resume. Destroyed on close.</span>
+  <span class="k">vm</span><span>libvirt/KVM on the Hetzner host, reusing the existing runner controller; Firecracker and tart later. 4 vCPU, 8 GB, 60 GB overlay, Docker inside. Two tiers of sleep: suspend after ten idle minutes with memory to disk and wake in seconds, hibernate after a day asleep with only disks kept and wake by resuming the agent by its session id. Destroyed on close. Sleeping sessions are free.</span>
   <span class="k">clone</span><span>The chosen repo at the chosen branch, inside the VM, with a token the VM never sees.</span>
   <span class="k">terminal</span><span>tmux-backed, streamed to the browser, the chosen agent launched in it. Tabs open more terminals into the same VM. Nothing is rendered as chat.</span>
   <span class="k">account</span><span>One persistent volume per account, attached to the VM that selected it. Two sessions with different accounts attach different volumes. The same account in two VMs at once is blocked in the MVP; tart hosts, later, share directories and lift that.</span>
@@ -619,6 +620,48 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <p class="caption">Website and runners in different places. The host keeps its no-public-services property; guests are reachable from nowhere.</p>
 </div>
 <div class="note"><strong>Trade made:</strong> a cloud-init KVM guest boots in tens of seconds where Firecracker boots in one. For a session that starts once and lives for days, with fast resume from managedsave, that is acceptable, and it removes a month of provisioner work. Firecracker stays as a later cold-start optimization behind the same runner interface.</div>
+
+
+<h2 id="sleep">Sleep, wake, and what it costs</h2>
+<p>Yes, sessions can sleep and wake like a Claude Code on the web session that expires and comes back. On our own KVM host it is better, because there are two kinds of sleep and we get both.</p>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">Suspend · like closing a laptop lid</span>
+    <ul>
+      <li>libvirt managedsave: guest memory to a file on the host, VM stops, RAM and VM slot freed</li>
+      <li>Everything survives: the agent mid-task, tmux, scrollback, open files</li>
+      <li>Wake in a few seconds from NVMe, cursor where it was</li>
+      <li>Costs disk for the memory image, up to 8 GB</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Hibernate · like environment expired</span>
+    <ul>
+      <li>VM destroyed, overlay and account volume kept</li>
+      <li>Working tree, uncommitted changes, and login survive; processes do not</li>
+      <li>Wake by booting the existing overlay, relaunching tmux, resuming the agent by its session id, showing the old scrollback tail</li>
+      <li>Costs disk for the overlay only</li>
+    </ul>
+  </div>
+</div>
+<div class="diagram">
+<svg viewBox="0 0 760 110" role="img" aria-label="running to suspended after ten idle minutes, to hibernated after a day asleep, to destroyed on close; wake from either back to running">
+  <defs><marker id="ah4" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--ink)">
+    <g stroke="var(--ink)" stroke-width="1.2" fill="var(--surface)">
+      <rect x="10" y="34" width="110" height="34" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/><rect x="210" y="34" width="120" height="34" rx="3"/><rect x="430" y="34" width="120" height="34" rx="3"/><rect x="640" y="34" width="110" height="34" rx="3"/>
+    </g>
+    <text x="65" y="55" text-anchor="middle" font-weight="500">running</text><text x="270" y="55" text-anchor="middle">suspended</text><text x="490" y="55" text-anchor="middle">hibernated</text><text x="695" y="55" text-anchor="middle">destroyed</text>
+    <g stroke="var(--muted)" stroke-width="1.2" fill="none" marker-end="url(#ah4)"><line x1="120" y1="45" x2="206" y2="45"/><line x1="330" y1="45" x2="426" y2="45"/><line x1="550" y1="45" x2="636" y2="45"/><path d="M210,60 C180,90 100,90 70,72"/><path d="M430,62 C380,105 130,105 62,72"/></g>
+    <g fill="var(--muted)" font-size="10"><text x="163" y="38" text-anchor="middle">idle 10 min</text><text x="378" y="38" text-anchor="middle">asleep 24 h</text><text x="593" y="38" text-anchor="middle">close</text><text x="150" y="96" text-anchor="middle">wake, seconds</text><text x="330" y="106" text-anchor="middle">wake, tens of seconds</text></g>
+  </g>
+</svg>
+</div>
+<div class="rule">
+  <span class="k">watch</span><span>Disks must not change while suspended. Tokens expire while asleep, so the runner mints and rotates a fresh one before announcing ready. The guest clock jumps, so chrony is in the image. Agent session ids are captured continuously, not at sleep time.</span>
+  <span class="k">capacity</span><span>An AX42-class host (8 cores, 64 GB, two 512 GB NVMe, roughly €47 to €57 a month) runs six 4 vCPU 8 GB sessions at once and holds dozens asleep. Six always-on cloud VMs of that size cost two to three times more with no sleep. The two-VM cap becomes a per-host setting with a default of six.</span>
+  <span class="k">pricing</span><span>Compute is the user's host, so the product charges for the console: a flat personal plan. Hosted hosts later at pass-through plus margin or per running-VM-hour. One rule fixed now: sleeping sessions are free, because they cost disk only.</span>
+</div>
 
 <h2 id="phases">Phases</h2>
 <div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6. The MVP now starts with VMs in step 2, tart or Firecracker depending on the first host. After the MVP, the remaining slices in order are: Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>

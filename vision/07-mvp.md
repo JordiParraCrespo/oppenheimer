@@ -95,7 +95,7 @@ stays out.
 | Step | You can now | Size |
 |------|-------------|------|
 | 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
-| 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, `managedsave` when idle, destroy on close | 1 week |
+| 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, suspend and hibernate when idle, resume by agent session id, destroy on close | 1 week |
 | 3 | Continue with GitHub as one flow (identity plus App install with all or selected repos), register a host, sidebar and New session with host and agent chips | 1 week |
 | 4 | Repo and branch chips: reuse the App auth and token minting, deliver the token by seed, clone into the VM | 1 week |
 | 5 | Accounts: one volume per account, add a Codex account via login, per-session selection, login URL button | 1 week |
@@ -129,4 +129,5 @@ it must feel like the one in step 1.
   place from the runners. Browsers reach it over public HTTPS; the
   runner reaches it over the tailnet. Nothing to install for the user
   except the runner on their host.
-- **VM lifetime:** pause while idle, resume on visit, destroy on close.
+- **VM lifetime:** suspend after ten idle minutes, hibernate after a
+  day asleep, wake on visit, destroy on close (note 10).
