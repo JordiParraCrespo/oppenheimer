@@ -93,7 +93,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#github">GitHub experience</a></li>
   <li><a href="#machines">Machines and VMs</a></li>
   <li><a href="#security">Security review</a></li>
-  <li><a href="#mvp">The MVP</a></li>
+  <li><a href="#mvp">MVP</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -507,36 +507,49 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </tbody></table></div>
 
 
-<h2 id="mvp">The MVP is sessions</h2>
-<p>A session is a persistent terminal on one of your machines, opened from a browser, that survives everything. If you can do a thing by typing in that terminal, it is not in the MVP.</p>
-<div class="verdict"><p>You open the site on your phone. <code>mac-studio</code> is online. You click New session and a terminal appears in under two seconds in your home directory. You <code>cd</code> to a repo, type <code>claude</code>, log in by tapping the URL it prints, give it a task, close the phone. On the laptop the same session is still running. You run three more.</p></div>
+<h2 id="mvp">The MVP: a personal workspace of sessions in VMs</h2>
+<p>After the console mockups: one user, sessions that each run in a VM on a host you own, and every session is just a terminal, as in Orca. The Create session screen is the product. The sidebar lists sessions. No enterprise layer.</p>
+<div class="verdict"><p>You sign in with GitHub on your phone. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Claude Code</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>claude</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
 
-<div class="tablewrap"><table>
-<thead><tr><th>Piece</th><th>What it does</th></tr></thead>
-<tbody>
-<tr><td>Runner</td><td>One Go binary on the target. Dials out with a target token. One tmux-backed PTY per session. Streams bytes, resizes, ring buffer, tail replay on attach, reconnect ladder. Survives its own restart via tmux.</td></tr>
-<tr><td>Control plane</td><td>One process, Postgres. Login. Targets with a token. Sessions with id, name, target, cwd. A relay that pairs browser and runner sockets by session id with a per-session ticket.</td></tr>
-<tr><td>Web</td><td>Two screens. Sessions: a list grouped by target with online dots and New session. Session: the terminal full-bleed with a thin bar, login URLs as a button, phone layout.</td></tr>
-<tr><td>Install</td><td>One curl command that drops the runner and a launchd or systemd unit. <code>docker compose up</code> for the control plane.</td></tr>
-</tbody></table></div>
+<h3>What a session is</h3>
+<div class="rule">
+  <span class="k">vm</span><span>tart on a Mac host, Firecracker on a Linux host. 4 vCPU, 8 GB by default, Docker inside. Paused when idle, destroyed on close.</span>
+  <span class="k">clone</span><span>The chosen repo at the chosen branch, inside the VM, with a token the VM never sees.</span>
+  <span class="k">terminal</span><span>tmux-backed, streamed to the browser, the chosen agent launched in it. Tabs open more terminals into the same VM. Nothing is rendered as chat.</span>
+  <span class="k">account</span><span>The agent's config dir points at your account's home on the host's persistent volume, so login survives across VMs.</span>
+</div>
+
+<h3>Screens</h3>
+<div class="rule">
+  <span class="k">sign in</span><span>GitHub only.</span>
+  <span class="k">sidebar</span><span>Sessions with a state dot, name, and age. New session on top. Hosts and accounts in a settings drawer, not in the main navigation.</span>
+  <span class="k">new session</span><span>Host, repo, branch, agent chips and a box for a name or first task. Chips remember the last choice.</span>
+  <span class="k">session</span><span>Terminal full-bleed, tabs, a thin status line with host, branch, account, usage meters where the CLI exposes them, permissions mode. Login URLs become a button.</span>
+  <span class="k">settings</span><span>Hosts with the install command and a one-hour token. Accounts added by running the login in a terminal.</span>
+</div>
 
 <div class="grid2">
   <div class="panel">
-    <span class="tag">You do it in the terminal, for now</span>
+    <span class="tag">In</span>
     <ul>
-      <li>Clone, worktrees, branches, PRs with <code>gh</code></li>
-      <li><code>claude</code>, <code>codex</code>, <code>kimi</code> login and use. Multiple accounts by setting the config-dir variable yourself</li>
-      <li>Secrets already live on the machine</li>
+      <li>Personal workspace, one user, GitHub sign-in</li>
+      <li>Hosts you own, token and keypair registration</li>
+      <li>VM per session: tart on macOS, Firecracker on Linux</li>
+      <li>Repo and branch chips via the GitHub App and proxy-injected tokens, egress proxy on the host</li>
+      <li>Agent chip: Claude Code first, Codex if time allows</li>
+      <li>Accounts per host, selected per session</li>
+      <li>Terminal with reattach, tabs, phone layout, state dots from screen manifests</li>
     </ul>
   </div>
   <div class="panel">
-    <span class="tag">Next slice, in order</span>
+    <span class="tag">Out, on purpose</span>
     <ul>
-      <li>Board states from screen manifests, the first thing you miss with ten sessions open</li>
-      <li>Project, worktree and branch per session, Create PR</li>
-      <li>GitHub App with per-session tokens</li>
-      <li>Accounts as objects with per-session selection</li>
-      <li>Mode B VMs, which brings the egress proxy and the rest of the security review</li>
+      <li>Orgs, teams, sharing, billing</li>
+      <li>Cloud provider adapters; direct-machine sessions return later as a chip option</li>
+      <li>Create PR, diff view, auto-fix, routines</li>
+      <li>Chat rendering, editor, embedded browser, the Agent SDK</li>
+      <li>Delegation between sessions, usage-based account routing</li>
+      <li>Tailscale mode, signed auto-update</li>
     </ul>
   </div>
 </div>
@@ -544,11 +557,15 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="tablewrap"><table>
 <thead><tr><th>Step</th><th>You can now</th><th>Size</th></tr></thead>
 <tbody>
-<tr><td class="num">1</td><td>Runner on the Mac, one page, tmux-backed terminal, close the tab, reopen, still there</td><td>1 week</td></tr>
-<tr><td class="num">2</td><td>Control plane with login, targets, sessions list, tickets, docker compose</td><td>1 week</td></tr>
-<tr><td class="num">3</td><td>Phone layout, reconnect ladder, tail replay polish, login URL button, a second target on Linux</td><td>1 week</td></tr>
+<tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab</td><td>1 week</td></tr>
+<tr><td class="num">2</td><td>The runner boots a VM on that host, opens the terminal inside it, tears it down on close</td><td>2 weeks</td></tr>
+<tr><td class="num">3</td><td>GitHub sign-in, host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
+<tr><td class="num">4</td><td>Repo and branch chips: GitHub App, token minting, egress proxy on the host, clone into the VM</td><td>2 weeks</td></tr>
+<tr><td class="num">5</td><td>Accounts on the persistent home volume, add by login, per-session selection, login URL button</td><td>1 week</td></tr>
+<tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>
 </tbody></table></div>
-<p>Three weeks. Step 1 is still the gate: if it does not feel like Orca over SSH, fix that first. Done means the scene runs on a real Mac Studio and a real Linux server from a phone, sessions survive browser close, wifi loss, and a runner restart, and the control plane stores no credential except its own login and the target tokens.</p>
+<p>About eight weeks for one person. Steps 1 and 2 are the gates: the terminal must feel like Orca over SSH, and the VM must boot in seconds with the same feel inside.</p>
+<div class="note"><strong>Still open:</strong> is the first host a Mac or a Linux box, which decides tart or Firecracker first. Codex in the agent chip or Claude Code only. Control plane self-hosted on one of your hosts or hosted. VM paused between visits or rebuilt from a snapshot.</div>
 
 <h2 id="phases">Phases</h2>
 <p>Phase 1 is the risk-retirement step. If the remote terminal does not feel as smooth as Orca over SSH, nothing else matters, so we find out in week one.</p>

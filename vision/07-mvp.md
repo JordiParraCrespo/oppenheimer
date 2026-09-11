@@ -1,69 +1,113 @@
-# 07 — The MVP is sessions
+# 07 — The MVP: a personal workspace of sessions in VMs
 
-Decision from discussion: the MVP is sessions, nothing else. A session
-is a persistent terminal on one of your machines, opened from a browser,
-that survives everything. If you can do a thing by typing in that
-terminal, it is not in the MVP.
+Decision from discussion, after seeing the console mockups: the MVP is
+a **personal workspace** where you create **sessions**, each one a
+**VM on a host you own**, and each session is **just a terminal**, as
+in Orca. The Create session screen is the product. The sidebar lists
+sessions. There is no enterprise layer.
 
 ## 1. The scene
 
-You open the site on your phone. You see `mac-studio` online. You click
-**New session**, name it, and a terminal appears in under two seconds in
-your home directory. You `cd` to a repo, type `claude`, log in by tapping
-the URL it prints, give it a task, close the phone. On the laptop you
-open the same session and it is still running. You run three more.
+You open the console on your phone and sign in with GitHub. The sidebar
+lists your sessions with a colored state dot. You click **New session**
+and set the scope with four chips: host `optimus`, repo `xrp-mobile`,
+branch `main`, agent `Claude Code`. You type a name, or a first task, and
+press go. A VM boots on `optimus`, the repo is cloned at `main`, and a
+terminal appears with `claude` already running on your account. You tap
+the login URL once if that host has never seen this account. You give
+the task and close the phone. On the laptop the session is still there.
+You open three more the same way and switch between them in the sidebar.
 
-## 2. What is in
+## 2. What a session is
 
-| Piece | What it does |
-|-------|--------------|
-| Runner | One Go binary on the target. Dials out over WebSocket with a target token. Spawns `tmux new -A -s <id>` under a PTY per session. Streams bytes, resizes, keeps a ring buffer, replays the tail on attach. Reconnect ladder. Survives its own restart via tmux. |
-| Control plane | One process, Postgres. Login with GitHub OAuth or a single password. Targets with a token. Sessions: id, name, target, cwd, created, last seen. Relay that pairs browser sockets to runner sockets by session id with a per-session ticket. |
-| Web | Two screens. **Sessions**: a list grouped by target with online dots and New session. **Session**: the terminal full-bleed with xterm.js WebGL, a thin bar with target, name, close, and login URLs turned into a button. Phone layout. |
-| Install | `curl … | sh` that drops the runner and a launchd or systemd unit with the target token. `docker compose up` for the control plane. |
+- **A VM** on a host you own: tart on a Mac host, Firecracker on a Linux
+  host. 4 vCPU, 8 GB by default. Docker inside. Torn down when you close
+  the session, paused when idle.
+- **A clone** of the chosen repo at the chosen branch, inside the VM,
+  using a token the VM never sees (note 02).
+- **A terminal**, tmux-backed, streamed to the browser, with the chosen
+  agent launched in it. Extra tabs open more terminals into the same VM.
+- **An account**: the agent's config dir points at your account's home
+  on the host's persistent volume, so login survives across VMs (notes
+  01 §7 and 06).
 
-That is the whole MVP. Four things, two screens.
+Nothing is rendered as chat. The terminal is the whole session view.
+Anything with structured output, chat bubbles, or a model picker is a
+later idea, not the MVP.
 
-## 3. What you do yourself in the terminal, for now
+## 3. Screens
 
-- `git clone`, worktrees, branches, PRs with `gh`.
-- `claude`, `codex`, `kimi` login and use. Multiple accounts by setting
-  `CLAUDE_CONFIG_DIR` yourself.
-- Secrets: they live on the machine already.
+1. **Sign in.** GitHub only. Google and email come later if ever.
+2. **Sidebar.** Sessions with a state dot, name, and age. New session at
+   the top. Your name at the bottom. Hosts and accounts live under a
+   small settings drawer, not in the main navigation.
+3. **New session.** The four chips, host, repo, branch, agent, and a text
+   box for a name or a first task. Chips remember the last choice.
+4. **Session.** Terminal full-bleed. Tabs for more terminals. A thin
+   status line: host, branch, account, usage meters for the active
+   account if the CLI exposes them, permissions mode. Login URLs printed
+   by the CLI become a button.
+5. **Settings drawer.** Hosts (install command with a one-hour token,
+   online dot, backend), accounts (add by running the login in a
+   terminal, per note 06).
 
-## 4. Deliberately out
+## 4. In and out
 
-Everything in notes 02 to 06 that is not in the table above: GitHub
-App, per-session tokens, worktree automation, Create PR, account
-objects, screen-manifest states, usage meters, VMs, egress proxy, Tailscale
-mode, signed updates, multi-tenant.
+| In | Out, on purpose |
+|----|-----------------|
+| Personal workspace, one user, GitHub sign-in | Orgs, teams, sharing, billing |
+| Hosts you own, registered with the token and keypair flow | Cloud provider adapters |
+| Mode B: VM per session, tart on macOS, Firecracker on Linux | Mode A direct-machine sessions (they come back as a chip option later) |
+| Repo and branch chips backed by the GitHub App and proxy-injected tokens | Create PR button, diff view, auto-fix, routines |
+| Agent chip: Claude Code first, Codex second if time allows | Kimi, OpenCode, Gemini in the chip |
+| Accounts per host with per-session selection | Usage-based account routing |
+| Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser |
+| Sidebar state dot from screen manifests, working / blocked / idle | Delegation between sessions |
+| Egress proxy on the host, since VMs must not hold tokens | Tailscale mode, signed auto-update |
 
-## 5. Order
+## 5. What changed from the previous cut
+
+The previous version of this note was "sessions only, on direct-mode
+machines, no GitHub, no accounts". The mockups made three things
+non-negotiable: the session runs in a VM, the Create session screen
+carries repo and branch, and the agent is picked at creation. That
+pulls mode B, the GitHub App with proxy-injected tokens, and the account
+object into the MVP. It also fixes an earlier worry from the mockups:
+the session view is a terminal, not a rendered chat, so the Agent SDK
+stays out.
+
+## 6. Order of work
 
 | Step | You can now | Size |
 |------|-------------|------|
-| 1 | Runner on the Mac, one page, tmux-backed terminal, close the tab, reopen, still there | 1 week |
-| 2 | Control plane with login, targets, sessions list, tickets, docker compose | 1 week |
-| 3 | Phone layout, reconnect ladder, tail replay polish, login URL button, second target on Linux | 1 week |
+| 1 | Runner on `optimus`, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
+| 2 | The runner boots a VM on that host, opens the terminal inside it, tears it down on close | 2 weeks |
+| 3 | Sign in with GitHub, register a host, sidebar and New session with host and agent chips | 1 week |
+| 4 | Repo and branch chips: GitHub App, token minting, egress proxy on the host, clone into the VM | 2 weeks |
+| 5 | Accounts: persistent home volume, add account via login, per-session selection, login URL button | 1 week |
+| 6 | State dots from screen manifests, tabs, phone layout, reconnect polish | 1 week |
 
-Three weeks. Step 1 is still the gate: if it does not feel like Orca
-over SSH, fix that first.
+About eight weeks for one person. Step 2 is the new gate next to step
+1: the VM must boot in a few seconds and the terminal inside it must
+feel like the one in step 1.
 
-## 6. Done means
+## 7. Done means
 
-- The scene runs on a real Mac Studio and a real Linux server from a
-  phone.
+- The scene runs on a real host from a phone browser, with a Claude
+  Code session in a VM cloned from a private repo.
 - Closing the browser, losing wifi, and restarting the runner do not kill
-  a session.
-- The control plane stores no credential except its own login and the
-  target tokens.
+  a session. Closing the session destroys the VM.
+- No GitHub token or vendor credential is ever inside a VM image or the
+  control plane database.
+- Two sessions on one host run two different Claude accounts at once.
+- A cold clone plus `docker compose up` brings up the control plane.
 
-## 7. The next slice, in order
+## 8. Questions still open
 
-1. Board states from screen manifests (working / blocked / done), because
-   it is the first thing you miss with ten sessions open.
-2. Project + worktree + branch per session, and Create PR.
-3. GitHub App with per-session tokens.
-4. Accounts as objects with per-session selection.
-5. Mode B VMs, which brings the egress proxy and the rest of the security
-   review.
+1. Is `optimus` a Mac or a Linux box? It decides whether tart or
+   Firecracker is built first.
+2. Codex in the MVP agent chip, or Claude Code only?
+3. Control plane on one of your hosts via docker compose, or hosted?
+   Personal suggests self-hosted; phone-first wants an always-on endpoint.
+4. VM lifetime: paused while idle and resumed on the next visit, or
+   rebuilt from a snapshot each time?

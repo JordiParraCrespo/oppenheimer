@@ -13,7 +13,7 @@ for the detail and sources.
 | 04 | [Security review](04-security-review.md) | 28 findings by trust boundary, Tailscale as an optional perimeter, the measured reference VM spec |
 | 05 | [GitHub experience](05-github-experience.md) | Connect, start, review, PR, auto-fix, routines, environments, and what each piece costs |
 | 06 | [Multiple accounts](06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
-| 07 | [MVP](07-mvp.md) | The MVP is sessions: four pieces, two screens, three weeks |
+| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a VM on a host you own, each just a terminal; Create session with host, repo, branch, agent |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -25,5 +25,7 @@ earlier note:
 - Note 06 first flagged the macOS Keychain as a blocker for multiple
   Claude accounts; it then verified that Claude Code 2.1.144+ scopes the
   Keychain entry per config dir, so it is not.
-- Note 07 was first written as a five-screen MVP and then cut to sessions
-  only.
+- Note 07 was first written as a five-screen MVP, then cut to sessions
+  only on direct machines, then, after seeing the console mockups,
+  reset to sessions in VMs with repo, branch, and agent chosen at
+  creation. The session view stays a terminal; the Agent SDK stays out.
