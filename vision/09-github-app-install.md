@@ -6,27 +6,31 @@ GitHub shows for any GitHub App. That installation is the access
 control. Sessions can reach the repositories the installation covers and
 nothing else.
 
-## 1. The user flow
+## 1. One flow, one dialog
 
-1. **Sign in with GitHub.** OAuth, identity only. This is who you are.
-2. **Install the app.** A button sends you to
-   `github.com/apps/<our-app>/installations/new`. GitHub shows its own
-   dialog: pick the account (your user, or an organization you admin),
-   then **All repositories** or **Only select repositories** with a
-   picker. Approve. GitHub redirects back with an `installation_id`,
-   which we store against your user.
-3. **Repo chip.** New session lists the repositories of your
-   installations, fetched live from GitHub, grouped by account. Nothing
-   we invent; the list is whatever the installation says.
-4. **Change your mind later.** A "Manage on GitHub" link opens
-   GitHub's configure page for the installation, where you add or remove
-   repositories or uninstall. GitHub sends us an `installation` or
-   `installation_repositories` webhook and the chip updates.
-5. **Several accounts.** Install once per account you want (personal,
-   each org). Each is a separate installation under the same user.
+A GitHub App can be configured to **request user authorization during
+installation**. With that setting on, there is exactly one GitHub round
+trip and it does both jobs:
 
-There is no step where the user creates a token, pastes anything, or
-runs a command. That is the "same experience".
+1. **Continue with GitHub.** The only button on the sign-in page. It
+   sends you to `github.com/apps/<our-app>/installations/new`.
+2. **GitHub's dialog.** Pick the account (your user or an org you
+   admin), then **All repositories** or **Only select repositories**,
+   approve. GitHub redirects back once, with both an OAuth `code`
+   (who you are) and an `installation_id` (what you granted). We create
+   your user and store the installation in the same request.
+3. **You are in.** The repo chip lists the repositories of that
+   installation, fetched live from GitHub.
+
+Returning users click the same button. If the App is already installed
+on their account, GitHub skips the picker and only completes the
+authorization, so it is a plain sign-in. Adding repositories, adding
+another account, or uninstalling all happen on GitHub's configure page,
+reached from a "Manage on GitHub" link, and the `installation` and
+`installation_repositories` webhooks keep the chip current.
+
+There is no separate sign-in step, no token, nothing to paste, and no
+second App to install. One button, one GitHub screen.
 
 ## 2. How it differs from Claude Code on the web, and why
 
@@ -96,7 +100,7 @@ scoping are identical either way.
 | Piece | Where | Size |
 |-------|-------|------|
 | Register the sessions GitHub App, store its private key in the control plane secret store | ops | tiny |
-| Install button, callback handling, installation records per user | control plane + web | small |
+| One callback that handles the OAuth code and the installation id together; user and installation records | control plane + web | small |
 | Live repository and branch listing for the chips | control plane + web | small |
 | Installation webhooks to refresh the list | control plane | small |
 | Per-session narrowed token minting and rotation | control plane + runner | small, reuses the runner host's App client |

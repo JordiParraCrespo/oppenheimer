@@ -342,7 +342,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="note">GitHub App over OAuth App: installation tokens are repo-scoped and short-lived at mint time, the proxy scopes again at use time, and the App's webhooks are needed for triggers in phase 7 anyway.</div>
 
 <h3>Access is the App installation</h3>
-<p>Decided: the user signs in with GitHub for identity, then installs the app and gets GitHub's own dialog, all repositories or only selected ones, per account. That installation is the access control. Sessions reach the repositories it covers and nothing else. The repo chip lists them live; a Manage on GitHub link changes them; installation webhooks keep the chip fresh. No tokens to create, nothing to paste.</p>
+<p>Decided: one button, Continue with GitHub. The App requests user authorization during installation, so a single GitHub dialog does both jobs: who you are, and all repositories or only selected ones for that account. Returning users get a plain sign-in because the install already exists. That installation is the access control. Sessions reach the repositories it covers and nothing else. The repo chip lists them live; a Manage on GitHub link changes them; installation webhooks keep the chip fresh. No tokens to create, nothing to paste.</p>
 <div class="rule">
   <span class="k">stricter</span><span>Claude Code on the web reaches any repo the user's OAuth grant can see and uses the App only for webhooks. We choose least privilege enforced by GitHub, and it is the same model the runner host already uses.</span>
   <span class="k">permissions</span><span>Contents read and write, Metadata read, Pull requests read and write, Workflows read and write. No Administration. A separate, narrower App from the runner host's, with its own key.</span>
@@ -519,7 +519,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h2 id="mvp">The MVP: a personal workspace of sessions in VMs</h2>
 <p>After the console mockups: one user, sessions that each run in a KVM guest on the existing Hetzner runner host, and every session is just a terminal, as in Orca. Codex first, Claude Code next. The control plane is hosted and fully web based. The Create session screen is the product. The sidebar lists sessions. No enterprise layer.</p>
-<div class="verdict"><p>You sign in with GitHub on your phone. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Codex</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>codex</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
+<div class="verdict"><p>You tap Continue with GitHub on your phone and pick the repositories the app may see. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Codex</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>codex</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
 
 <h3>What a session is</h3>
 <div class="rule">
@@ -531,7 +531,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h3>Screens</h3>
 <div class="rule">
-  <span class="k">sign in</span><span>GitHub only.</span>
+  <span class="k">sign in</span><span>One button, Continue with GitHub, which is also the App install with all or selected repositories.</span>
   <span class="k">sidebar</span><span>Sessions with a state dot, name, and age. New session on top. Hosts and accounts in a settings drawer, not in the main navigation.</span>
   <span class="k">new session</span><span>Host, repo, branch, agent chips and a box for a name or first task. Chips remember the last choice.</span>
   <span class="k">session</span><span>Terminal full-bleed, tabs, a thin status line with host, branch, account, usage meters where the CLI exposes them, permissions mode. Login URLs become a button.</span>
@@ -569,7 +569,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <tbody>
 <tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab</td><td>1 week</td></tr>
 <tr><td class="num">2</td><td>The runner boots a libvirt guest from a new golden image, guest agent over vsock, terminal inside, managedsave when idle, destroy on close</td><td>1 week</td></tr>
-<tr><td class="num">3</td><td>GitHub sign-in, App install with all or selected repos, host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
+<tr><td class="num">3</td><td>Continue with GitHub as one flow (identity plus App install with all or selected repos), host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
 <tr><td class="num">4</td><td>Repo and branch chips: reuse App auth and token minting, deliver the token by seed, clone into the VM</td><td>1 week</td></tr>
 <tr><td class="num">5</td><td>Accounts, one volume each, add a Codex account by login, per-session selection, login URL button</td><td>1 week</td></tr>
 <tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>

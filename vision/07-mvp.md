@@ -8,7 +8,8 @@ sessions. There is no enterprise layer.
 
 ## 1. The scene
 
-You open the console on your phone and sign in with GitHub. The sidebar
+You open the console on your phone, tap Continue with GitHub, and pick
+which repositories the app may see. The sidebar
 lists your sessions with a colored state dot. You click **New session**
 and set the scope with four chips: host `optimus`, repo `xrp-mobile`,
 branch `main`, agent `Codex`. You type a name, or a first task, and
@@ -48,7 +49,9 @@ later idea, not the MVP.
 
 ## 3. Screens
 
-1. **Sign in.** GitHub only. Google and email come later if ever.
+1. **Sign in.** One button, Continue with GitHub, which is also the App
+   installation with all or selected repositories (note 09). Google and
+   email come later if ever.
 2. **Sidebar.** Sessions with a state dot, name, and age. New session at
    the top. Your name at the bottom. Hosts and accounts live under a
    small settings drawer, not in the main navigation.
@@ -93,7 +96,7 @@ stays out.
 |------|-------------|------|
 | 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
 | 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, `managedsave` when idle, destroy on close | 1 week |
-| 3 | Sign in with GitHub, install the App with all or selected repos, register a host, sidebar and New session with host and agent chips | 1 week |
+| 3 | Continue with GitHub as one flow (identity plus App install with all or selected repos), register a host, sidebar and New session with host and agent chips | 1 week |
 | 4 | Repo and branch chips: reuse the App auth and token minting, deliver the token by seed, clone into the VM | 1 week |
 | 5 | Accounts: one volume per account, add a Codex account via login, per-session selection, login URL button | 1 week |
 | 6 | State dots from screen manifests, tabs, phone layout, reconnect polish | 1 week |
