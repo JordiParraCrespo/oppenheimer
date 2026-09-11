@@ -97,6 +97,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
   <li><a href="#layout">Workspace layout</a></li>
+  <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -692,6 +693,32 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">runtimes</span><span>The host chip carries one of three runtimes with the same layout. Shared workspace: the per-repo VM, one worktree per session, for quick tasks and several agents on one repo. Clean VM: a VM for this session alone with Docker inside and nothing else running, for anything that starts Postgres or the app on a port, the Claude Code on the web feeling. This machine: the runner in direct mode on a Mac Studio, so Xcode simulators, Android emulators, adb, and screenshots all work for QA and auto-bugfix; simulators cannot run in a Linux VM. The MVP ships the first two; the Mac runtime is the second slice after.</span>
 </div>
 
+
+<h2 id="grok">Lessons from a reconstructed desktop agent app</h2>
+<p>A reverse-engineered Electron app whose desktop asks a broker for a persistent remote box, then talks HTTP with bearer tokens to a gateway and an exec daemon inside it. The connection itself is unremarkable. The operational layer around it is what a product like this spends its second year on, and it is worth copying.</p>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">Take</span>
+    <ul>
+      <li>A brokered descriptor with structured hints: blocked with retry-after, update required. Our session attach ticket carries the same.</li>
+      <li>Migration as a phased, resumable stream with offset keys, 3-second reconnects, 30-second stall detection, and a remembered terminal event. For host moves, image updates, and hibernate-to-wake progress.</li>
+      <li>Update equals recreate with data preserved. Workspace VMs get new golden images that way, keeping worktrees and account volumes.</li>
+      <li>Disk-pressure guard surfaced as a status event. Epoch counter so a late reconnect cannot clobber a newer one.</li>
+      <li>Background terminals persisted as text files with frontmatter and an exit footer, the format for archived scrollback.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Leave</span>
+    <ul>
+      <li>Pipes instead of a PTY. Its agents read command output as text; ours get a terminal. That is the product difference.</li>
+      <li>One forever box per user. We have a workspace VM per repo plus clean VMs.</li>
+      <li>VNC inside the box for computer use. On the Mac Studio the agent drives the simulator directly.</li>
+      <li>An egress tunnel through the user's desktop. The tailnet gives that as a firewall rule.</li>
+      <li>A gateway of 34 plugin extensions. The OpenClaw shape again.</li>
+    </ul>
+  </div>
+</div>
+
 <h2 id="phases">Phases</h2>
 <div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6. The MVP now starts with VMs in step 2, tart or Firecracker depending on the first host. After the MVP, the remaining slices in order are: Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
@@ -714,6 +741,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration">Claude Managed Agents multiagent orchestration</a></li>
   <li><a href="https://code.claude.com/docs/en/web-quickstart">Claude Code on the web quickstart</a>, <a href="https://code.claude.com/docs/en/claude-code-on-the-web">reference</a>, <a href="https://code.claude.com/docs/en/cloud-environments">cloud environments</a>, <a href="https://code.claude.com/docs/en/routines">routines</a></li>
   <li><a href="https://www.onorca.dev/docs/agents/codex-hot-swap">Orca hot-swap accounts</a>, <a href="https://www.onorca.dev/docs/agents/usage-tracking">usage tracking</a>, <a href="https://learn.chatgpt.com/docs/config-file/config-reference">Codex config reference</a>, <a href="https://www.kimi-cli.com/en/configuration/data-locations.html">Kimi data locations</a>, <a href="https://opencode.ai/docs/providers/">OpenCode providers</a>, <a href="https://code.claude.com/docs/en/authentication">Claude Code authentication</a></li>
+  <li><a href="https://github.com/b-nnett/grok-bot-0.18-reconstructed">Grok Bot 0.18 reconstructed</a></li>
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
