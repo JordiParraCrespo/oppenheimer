@@ -11,25 +11,34 @@ sessions. There is no enterprise layer.
 You open the console on your phone and sign in with GitHub. The sidebar
 lists your sessions with a colored state dot. You click **New session**
 and set the scope with four chips: host `optimus`, repo `xrp-mobile`,
-branch `main`, agent `Claude Code`. You type a name, or a first task, and
+branch `main`, agent `Codex`. You type a name, or a first task, and
 press go. A VM boots on `optimus`, the repo is cloned at `main`, and a
-terminal appears with `claude` already running on your account. You tap
+terminal appears with `codex` already running on your account. You tap
 the login URL once if that host has never seen this account. You give
 the task and close the phone. On the laptop the session is still there.
 You open three more the same way and switch between them in the sidebar.
 
 ## 2. What a session is
 
-- **A VM** on a host you own: tart on a Mac host, Firecracker on a Linux
-  host. 4 vCPU, 8 GB by default. Docker inside. Torn down when you close
-  the session, paused when idle.
+- **A VM** on a host you own. The MVP host is a Linux machine, so
+  Firecracker is the only backend built; tart for Mac hosts comes later. 4 vCPU, 8 GB by default. Docker inside. **Lifetime: paused when
+  idle, resumed on the next visit, destroyed only when you close the
+  session.** Pause keeps memory, so the tmux server, the agent process,
+  and the terminal scrollback come back exactly as they were. Rebuilding
+  from a snapshot is not used for live sessions; snapshots are only a
+  boot accelerator for new ones.
 - **A clone** of the chosen repo at the chosen branch, inside the VM,
   using a token the VM never sees (note 02).
 - **A terminal**, tmux-backed, streamed to the browser, with the chosen
   agent launched in it. Extra tabs open more terminals into the same VM.
-- **An account**: the agent's config dir points at your account's home
-  on the host's persistent volume, so login survives across VMs (notes
-  01 §7 and 06).
+- **An account**: the agent's config dir points at that account's own
+  persistent volume, one volume per account, attached to the VM that
+  selected it. Login survives across VMs (notes 01 §7 and 06). Two
+  sessions with two different accounts on one host attach two different
+  volumes. The same account in two VMs at once is not allowed in the
+  MVP, since a block device can be mounted by one VM at a time; the
+  account chip shows it as in use. tart hosts, later, share the directory
+  instead and will not have this limit.
 
 Nothing is rendered as chat. The terminal is the whole session view.
 Anything with structured output, chat bubbles, or a model picker is a
@@ -57,10 +66,10 @@ later idea, not the MVP.
 |----|-----------------|
 | Personal workspace, one user, GitHub sign-in | Orgs, teams, sharing, billing |
 | Hosts you own, registered with the token and keypair flow | Cloud provider adapters |
-| Mode B: VM per session, tart on macOS, Firecracker on Linux | Mode A direct-machine sessions (they come back as a chip option later) |
+| Mode B: VM per session, Firecracker on one Linux host | tart for Mac hosts; mode A direct-machine sessions (both come back as chip options later) |
 | Repo and branch chips backed by the GitHub App and proxy-injected tokens | Create PR button, diff view, auto-fix, routines |
-| Agent chip: Claude Code first, Codex second if time allows | Kimi, OpenCode, Gemini in the chip |
-| Accounts per host with per-session selection | Usage-based account routing |
+| Agent chip: Codex first | Claude Code next, then Kimi, OpenCode, Gemini |
+| Accounts per host, one persistent volume per account, selected per session | Usage-based account routing |
 | Terminal with reattach, tabs, phone layout | Chat rendering, editor, embedded browser |
 | Sidebar state dot from screen manifests, working / blocked / idle | Delegation between sessions |
 | Egress proxy on the host, since VMs must not hold tokens | Tailscale mode, signed auto-update |
@@ -80,11 +89,11 @@ stays out.
 
 | Step | You can now | Size |
 |------|-------------|------|
-| 1 | Runner on `optimus`, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
-| 2 | The runner boots a VM on that host, opens the terminal inside it, tears it down on close | 2 weeks |
+| 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
+| 2 | The runner boots a Firecracker VM on that host, opens the terminal inside it, pauses it when idle, destroys it on close | 2 weeks |
 | 3 | Sign in with GitHub, register a host, sidebar and New session with host and agent chips | 1 week |
 | 4 | Repo and branch chips: GitHub App, token minting, egress proxy on the host, clone into the VM | 2 weeks |
-| 5 | Accounts: persistent home volume, add account via login, per-session selection, login URL button | 1 week |
+| 5 | Accounts: one volume per account, add a Codex account via login, per-session selection, login URL button | 1 week |
 | 6 | State dots from screen manifests, tabs, phone layout, reconnect polish | 1 week |
 
 About eight weeks for one person. Step 2 is the new gate next to step
@@ -93,21 +102,24 @@ feel like the one in step 1.
 
 ## 7. Done means
 
-- The scene runs on a real host from a phone browser, with a Claude
-  Code session in a VM cloned from a private repo.
+- The scene runs on a real Linux host from a phone browser, with a Codex
+  session in a Firecracker VM cloned from a private repo.
 - Closing the browser, losing wifi, and restarting the runner do not kill
   a session. Closing the session destroys the VM.
 - No GitHub token or vendor credential is ever inside a VM image or the
   control plane database.
-- Two sessions on one host run two different Claude accounts at once.
+- Two sessions on one host run two different Codex accounts at once,
+  each on its own account volume.
 - A cold clone plus `docker compose up` brings up the control plane.
 
-## 8. Questions still open
+## 8. Decisions that closed the open questions
 
-1. Is `optimus` a Mac or a Linux box? It decides whether tart or
-   Firecracker is built first.
-2. Codex in the MVP agent chip, or Claude Code only?
-3. Control plane on one of your hosts via docker compose, or hosted?
-   Personal suggests self-hosted; phone-first wants an always-on endpoint.
-4. VM lifetime: paused while idle and resumed on the next visit, or
-   rebuilt from a snapshot each time?
+- **Host:** the MVP host is a Linux machine. Firecracker is the first and
+  only VM backend in the MVP. tart for Mac hosts is a later slice.
+- **Agent:** Codex first. Claude Code is the next agent in the chip,
+  then the rest. Everything in note 06 applies to Codex through
+  `CODEX_HOME` and `auth.json`, with hooks trusted via `trusted_hash`.
+- **Control plane:** hosted by us and fully web based. Nothing to
+  install for the user except the runner on their host. The phone always
+  has an endpoint.
+- **VM lifetime:** pause while idle, resume on visit, destroy on close.

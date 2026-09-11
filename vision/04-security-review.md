@@ -110,12 +110,18 @@ Design: PTY in a git worktree, tmux-backed, as the user's own account.
 Design: Firecracker microVM, jailer, overlay disk, persistent home volume,
 tap on a bridge with NAT, vsock to the host, egress proxy on the host.
 
-- **F13 (high) The persistent home volume is the crown jewel.** It holds
-  the vendor login. Rules:
-  - One volume per target per human, never shared between targets.
-  - Mounted only into VMs for that target, read-write, one VM at a time
-    (a lock on the host prevents two VMs from mounting it, which would
-    also corrupt the filesystem).
+- **F13 (high) The persistent account volumes are the crown jewels.**
+  They hold the vendor logins. Rules:
+  - One volume per **account** (not per target), owned by one human, never
+    shared between targets. A VM attaches only the volumes of the accounts
+    its session selected, so two concurrent sessions with different
+    accounts on one host attach different volumes.
+  - Each volume is mounted read-write by one VM at a time (a lock on the
+    host prevents two VMs from mounting it, which would also corrupt the
+    filesystem). On Firecracker hosts this means the same account cannot
+    run in two VMs at once; the UI shows it as in use. On tart hosts the
+    account directory is shared via the hypervisor's directory sharing,
+    which is safe for concurrent use.
   - Encrypted at rest on the host (LUKS or the host's disk encryption).
   - Never included in snapshots or VM images.
   - The agent inside the VM *can* read it. That is unavoidable and is

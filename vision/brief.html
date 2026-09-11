@@ -299,7 +299,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">add</span><span>"Add account, Claude, on mac-studio" opens a PTY with the config-dir variable set to a fresh directory and runs the vendor login. The login URL gets the clickable badge. When the CLI writes its credential, the account is marked logged in.</span>
   <span class="k">select</span><span>A session picks an account per provider and the runner sets the variable in that shell only. Two sessions on one target can run two Claude accounts at once. There is no global swap, so nothing to guard.</span>
   <span class="k">mirror</span><span>Settings follow the user, credentials follow the account. The base config is mirrored into each account home at session start without touching the credential file.</span>
-  <span class="k">vms</span><span>Accounts live on the target's persistent home volume, so a fresh VM sees all of them.</span>
+  <span class="k">vms</span><span>Each account is its own persistent volume on the host, attached only to the VMs whose sessions selected it.</span>
   <span class="k">meters</span><span>The runner reads each account's usage file after every agent turn and reports it in the heartbeat. The board shows the same bars and 80 percent warning. "Use the account with the most headroom" is an option, restricted to accounts the same human owns.</span>
   <span class="k no">never</span><span>The platform never reads a credential file's contents, never pools accounts across users, and never rotates through accounts to exceed what one person is entitled to. Each account is one human's own login on a machine they own.</span>
 </div>
@@ -471,7 +471,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <tr><td class="num">F1</td><td>browser to relay</td><td>Terminal sockets present a single-use, seconds-lived ticket minted after an ownership check. A session id alone is never enough.</td></tr>
 <tr><td class="num">F6</td><td>runner to control plane</td><td>The install command pins the control plane URL and key fingerprint. A runner refuses any other host, so nobody can hand it jobs.</td></tr>
 <tr><td class="num">F7</td><td>job payloads</td><td>Every job is encrypted to the runner's public key at the API layer. Relay, logs, and database never hold plaintext secrets.</td></tr>
-<tr><td class="num">F13</td><td>persistent home volume</td><td>One per target per human. Mounted into one VM at a time under a host lock. Encrypted at rest. Never in snapshots or images.</td></tr>
+<tr><td class="num">F13</td><td>account volumes</td><td>One per account, owned by one human. A VM attaches only the accounts its session selected. Each mounted by one VM at a time under a host lock. Encrypted at rest. Never in snapshots or images.</td></tr>
 <tr><td class="num">F14</td><td>VM egress</td><td>The proxy lives on the host, never in the guest. The guest's only route is the host bridge. Unset the proxy inside and you get no network, not an unproxied one.</td></tr>
 <tr><td class="num">F15</td><td>isolation labels</td><td>A target reports "vm" only after it has booted a jailed Firecracker guest. No KVM means a "container" target, in a different color, with stricter defaults.</td></tr>
 <tr><td class="num">F17</td><td>host to guest</td><td>vsock connections accepted only from the CID assigned to that VM, authenticated with the JIT token injected at boot, never via a file in the image.</td></tr>
@@ -508,15 +508,15 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 
 <h2 id="mvp">The MVP: a personal workspace of sessions in VMs</h2>
-<p>After the console mockups: one user, sessions that each run in a VM on a host you own, and every session is just a terminal, as in Orca. The Create session screen is the product. The sidebar lists sessions. No enterprise layer.</p>
-<div class="verdict"><p>You sign in with GitHub on your phone. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Claude Code</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>claude</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
+<p>After the console mockups: one user, sessions that each run in a Firecracker VM on your Linux host, and every session is just a terminal, as in Orca. Codex first, Claude Code next. The control plane is hosted and fully web based. The Create session screen is the product. The sidebar lists sessions. No enterprise layer.</p>
+<div class="verdict"><p>You sign in with GitHub on your phone. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Codex</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>codex</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
 
 <h3>What a session is</h3>
 <div class="rule">
-  <span class="k">vm</span><span>tart on a Mac host, Firecracker on a Linux host. 4 vCPU, 8 GB by default, Docker inside. Paused when idle, destroyed on close.</span>
+  <span class="k">vm</span><span>Firecracker on the Linux host; tart for Mac hosts comes later. 4 vCPU, 8 GB by default, Docker inside. Lifetime decided: paused when idle with memory kept, resumed on the next visit, destroyed only on close. Snapshots only accelerate new boots.</span>
   <span class="k">clone</span><span>The chosen repo at the chosen branch, inside the VM, with a token the VM never sees.</span>
   <span class="k">terminal</span><span>tmux-backed, streamed to the browser, the chosen agent launched in it. Tabs open more terminals into the same VM. Nothing is rendered as chat.</span>
-  <span class="k">account</span><span>The agent's config dir points at your account's home on the host's persistent volume, so login survives across VMs.</span>
+  <span class="k">account</span><span>One persistent volume per account, attached to the VM that selected it. Two sessions with different accounts attach different volumes. The same account in two VMs at once is blocked in the MVP; tart hosts, later, share directories and lift that.</span>
 </div>
 
 <h3>Screens</h3>
@@ -534,9 +534,9 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <ul>
       <li>Personal workspace, one user, GitHub sign-in</li>
       <li>Hosts you own, token and keypair registration</li>
-      <li>VM per session: tart on macOS, Firecracker on Linux</li>
+      <li>VM per session: Firecracker on one Linux host</li>
       <li>Repo and branch chips via the GitHub App and proxy-injected tokens, egress proxy on the host</li>
-      <li>Agent chip: Claude Code first, Codex if time allows</li>
+      <li>Agent chip: Codex first</li>
       <li>Accounts per host, selected per session</li>
       <li>Terminal with reattach, tabs, phone layout, state dots from screen manifests</li>
     </ul>
@@ -545,10 +545,10 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <span class="tag">Out, on purpose</span>
     <ul>
       <li>Orgs, teams, sharing, billing</li>
-      <li>Cloud provider adapters; direct-machine sessions return later as a chip option</li>
+      <li>tart for Mac hosts, cloud adapters, direct-machine sessions; all return later as chip options</li>
       <li>Create PR, diff view, auto-fix, routines</li>
       <li>Chat rendering, editor, embedded browser, the Agent SDK</li>
-      <li>Delegation between sessions, usage-based account routing</li>
+      <li>Claude Code, Kimi, OpenCode, Gemini in the chip; delegation between sessions; usage-based account routing</li>
       <li>Tailscale mode, signed auto-update</li>
     </ul>
   </div>
@@ -558,31 +558,17 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <thead><tr><th>Step</th><th>You can now</th><th>Size</th></tr></thead>
 <tbody>
 <tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab</td><td>1 week</td></tr>
-<tr><td class="num">2</td><td>The runner boots a VM on that host, opens the terminal inside it, tears it down on close</td><td>2 weeks</td></tr>
+<tr><td class="num">2</td><td>The runner boots a Firecracker VM on that host, opens the terminal inside it, pauses it when idle, destroys it on close</td><td>2 weeks</td></tr>
 <tr><td class="num">3</td><td>GitHub sign-in, host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
 <tr><td class="num">4</td><td>Repo and branch chips: GitHub App, token minting, egress proxy on the host, clone into the VM</td><td>2 weeks</td></tr>
-<tr><td class="num">5</td><td>Accounts on the persistent home volume, add by login, per-session selection, login URL button</td><td>1 week</td></tr>
+<tr><td class="num">5</td><td>Accounts, one volume each, add a Codex account by login, per-session selection, login URL button</td><td>1 week</td></tr>
 <tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>
 </tbody></table></div>
 <p>About eight weeks for one person. Steps 1 and 2 are the gates: the terminal must feel like Orca over SSH, and the VM must boot in seconds with the same feel inside.</p>
-<div class="note"><strong>Still open:</strong> is the first host a Mac or a Linux box, which decides tart or Firecracker first. Codex in the agent chip or Claude Code only. Control plane self-hosted on one of your hosts or hosted. VM paused between visits or rebuilt from a snapshot.</div>
+<div class="verdict"><p><strong>Decided:</strong> Linux host, so Firecracker first. Codex first, Claude Code next. Control plane hosted by us, fully web based, nothing to install but the runner. VMs pause while idle, resume on visit, are destroyed on close.</p></div>
 
 <h2 id="phases">Phases</h2>
-<p>Phase 1 is the risk-retirement step. If the remote terminal does not feel as smooth as Orca over SSH, nothing else matters, so we find out in week one.</p>
-<div class="tablewrap"><table>
-<thead><tr><th>Phase</th><th>Deliverable</th><th>Why it comes here</th></tr></thead>
-<tbody>
-<tr><td class="num">0</td><td>Repo skeleton, shared zod protocol package, ADRs</td><td>the protocol is the only contract that matters</td></tr>
-<tr><td class="num">1</td><td>Go runner with Actions-style registration + WS hub + one xterm.js page: a persistent terminal on a remote target from a browser</td><td>run <code>claude</code> from a phone, close the laptop, check it is alive in the morning</td></tr>
-<tr><td class="num">2</td><td>Control plane with Postgres: register target, sessions, event log, curl only</td><td>state survives the runner and the browser</td></tr>
-<tr><td class="num">3</td><td>Web app: GitHub login, projects, target list, session board, login-link detection</td><td>first demo</td></tr>
-<tr><td class="num">4</td><td>GitHub App, per-session token minting, egress proxy with injection, secret vault, security findings F1 to F26, Tailscale mode</td><td>before any real credential touches the platform</td></tr>
-<tr><td class="num">5</td><td>Worktree automation, branch and PR flow, N parallel sessions on direct-mode targets</td><td>the Orca moment</td></tr>
-<tr><td class="num">6</td><td>Mode B: Firecracker VM per task on one Linux host, JIT guest identity, overlay disks, Docker inside, persistent home volume</td><td>isolated tasks with real resource budgets</td></tr>
-<tr><td class="num">7</td><td>Delegation: an MCP server with spawn_task and wait_task, Agent SDK for unattended runs</td><td>multi-agent, without inventing a DSL</td></tr>
-<tr><td class="num">8</td><td>Triggers: App webhooks, cron, GitHub issue label. macOS VM hosting via tart</td><td>automation</td></tr>
-</tbody></table></div>
-
+<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6. The MVP now starts with VMs in step 2, tart or Firecracker depending on the first host. After the MVP, the remaining slices in order are: Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
 <p>TypeScript for the web app and control plane, Go for the runner. pnpm and Turborepo monorepo. Next.js web app, Hono control plane with Drizzle on Postgres, a single static Go runner binary, and a shared protocol package that both languages generate from. Rejected: Python on targets (second toolchain on user machines), Electron (state must live server-side), Kubernetes (targets are pets, not cattle).</p>
 

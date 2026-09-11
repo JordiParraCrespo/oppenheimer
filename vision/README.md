@@ -13,7 +13,7 @@ for the detail and sources.
 | 04 | [Security review](04-security-review.md) | 28 findings by trust boundary, Tailscale as an optional perimeter, the measured reference VM spec |
 | 05 | [GitHub experience](05-github-experience.md) | Connect, start, review, PR, auto-fix, routines, environments, and what each piece costs |
 | 06 | [Multiple accounts](06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
-| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a VM on a host you own, each just a terminal; Create session with host, repo, branch, agent |
+| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a Firecracker VM on your Linux host, each just a terminal; Codex first; hosted web control plane |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -29,3 +29,9 @@ earlier note:
   only on direct machines, then, after seeing the console mockups,
   reset to sessions in VMs with repo, branch, and agent chosen at
   creation. The session view stays a terminal; the Agent SDK stays out.
+- Note 04 first proposed one persistent home volume per target. After a
+  review found that conflicted with running two accounts concurrently,
+  notes 04, 06, and 07 now use one volume per account.
+- Note 07 records the VM lifetime decision: pause while idle, resume on
+  visit, destroy on close. The phase table in note 00 is superseded by
+  the order of work in note 07.
