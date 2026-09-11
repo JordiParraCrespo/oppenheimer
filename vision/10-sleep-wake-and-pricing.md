@@ -20,23 +20,35 @@ Claude Code on the web only has the second kind. It restores the
 conversation onto a fresh VM and tells you that background work is gone.
 We have both, because the host is ours.
 
-## 2. The policy: two tiers, like a laptop
+## 2. The policy: three tiers, tuned to the actual host
+
+The MVP host is a Hetzner auction box: Intel Core i7-6700 (4 cores, 8
+threads), 64 GB RAM, two 512 GB SATA SSDs, about €63 a month. That
+shape is RAM-rich and CPU-poor, and its SSDs are SATA, so writing an
+8 GB memory image takes around fifteen seconds rather than a few. The
+tiers use RAM first, disk second:
 
 ```
-running ──(idle 10 min)──► suspended ──(asleep 24 h)──► hibernated ──(close)──► destroyed
-   ▲                           │                             │
-   └──── wake, seconds ────────┘                             │
-   └──── wake, tens of seconds ──────────────────────────────┘
+running ──(idle 10 min)──► paused ──(idle 2 h)──► suspended ──(asleep 24 h)──► hibernated ──(close)──► destroyed
+   ▲                          │                       │                            │
+   └──── wake, instant ───────┘                       │                            │
+   └──── wake, ~15 s ─────────────────────────────────┘                            │
+   └──── wake, tens of seconds ────────────────────────────────────────────────────┘
 ```
 
 - **Idle ten minutes**: no terminal input, no output, no agent activity
-  from the screen manifest. Suspend. The sidebar dot turns grey with a
-  moon. Memory image on the host, RAM freed, VM cap freed.
-- **Asleep 24 hours**: hibernate. Drop the memory image, keep the disks.
-  The agent's session id was recorded when it went idle, so wake can
-  resume it.
-- **Wake**: opening the session, or sending input, wakes it. From suspend
-  the terminal is live in a few seconds with the cursor where it was.
+  from the screen manifest. **Pause** (`virsh suspend`): the VM keeps its
+  RAM but uses no CPU. Wake is instant. The sidebar dot turns grey with
+  a moon. A paused VM frees a running slot, since slots are CPU-bound on
+  this host, but not its 8 GB.
+- **Idle two hours**: **suspend** (`managedsave`): memory to disk, RAM
+  freed. Wake is about fifteen seconds on SATA.
+- **Asleep 24 hours**: **hibernate**. Drop the memory image, keep the
+  disks. The agent's session id was recorded when it went idle, so wake
+  can resume it.
+- **Wake**: opening the session, or sending input, wakes it. From pause
+  it is instant; from suspend the terminal is live in about fifteen
+  seconds with the cursor where it was.
   From hibernate the guest boots, tmux starts, the agent is relaunched
   with `resume`, and the terminal shows the tail of the old scrollback
   above the new prompt.
@@ -65,26 +77,26 @@ Timeouts are per-user settings with those defaults.
 
 All of it is libvirt and the runner; nothing new to invent.
 
-## 4. What a host holds
+## 4. What this host holds
 
-Using the AX42 class host as the reference (8 cores, 64 GB RAM, two
-512 GB NVMe, roughly €47 to €57 a month depending on when it was ordered;
-Hetzner repriced dedicated servers on 15 June 2026, so check the live
-page):
-
-| Resource | Per session | Host holds |
-|----------|-------------|-----------|
-| Running VM | 4 vCPU, 8 GB | 6 concurrently, keeping 16 GB and two cores for the host |
-| Suspended session | up to 8 GB memory image + overlay | disk-bound |
+| Resource | Per session | The i7-6700 / 64 GB host holds |
+|----------|-------------|-------------------------------|
+| Running VM | 4 vCPU, 8 GB | **2** at once: 8 threads on the host, 4 per VM, and the existing cap of two is exactly right. Three at 2 vCPU each is possible if we lower the VM size. |
+| Paused VM (RAM kept, no CPU) | 8 GB | **up to 5 more** beside the two running ones: 7 × 8 = 56 GB, leaving 8 GB for the host. This is the tier that makes the box feel big. |
+| Suspended session | 8 GB memory image on disk + overlay | disk-bound, ~15 s to wake on SATA |
 | Hibernated session | overlay only, thin, typically 5 to 15 GB used | disk-bound |
-| Disk | | ~900 GB usable: for example 20 suspended (160 GB) plus 50 hibernated (500 GB) plus images |
+| Disk | | 1 TB raw. If the two SSDs are mirrored, ~470 GB usable: for example 10 suspended (80 GB) plus 25 hibernated (250 GB) plus images. Unmirrored doubles that at the cost of safety; mirror it, sessions are user data. |
 
-The existing cap of two VMs is a policy number, not a hardware one; on
-this host it can rise to six. Cloud comparison: one always-on 4 vCPU,
-8 GB Hetzner cloud VM (CPX31 class) is €16 to €25 a month, so six of
-them cost two to three times the dedicated host, with no sleep and no
-shared disk. A dedicated host with sleep is the cheap option, which is
-why the runner host exists.
+So on this host the honest numbers are: two working, five more ready
+to resume instantly, ten more resumable in fifteen seconds, dozens more
+resumable in under a minute. The CPU, not the RAM, is the limit, and a
+newer AX-class host with 8 cores would double the running slots for a
+similar price (AX42 class, 8 cores, 64 GB, NVMe, roughly €47 to €57 a
+month after the June 2026 repricing).
+
+Cloud comparison: one always-on 4 vCPU, 8 GB Hetzner cloud VM (CPX31
+class) is €16 to €25 a month, so even two of them with no sleep cost
+most of this host, which sleeps for free.
 
 ## 5. Pricing model for the product
 
@@ -152,12 +164,13 @@ audience; Fly second for its speed; GCP and Azure after.
 
 ## 7. What this changes in the plan
 
-- Note 07's lifetime decision becomes the two-tier policy above, with
-  suspend as the first tier and hibernate as the second.
+- Note 07's lifetime decision becomes the three-tier policy above:
+  pause in RAM, then suspend to disk, then hibernate.
 - Step 2 of the MVP order gains hibernate-and-resume by agent session
   id, next to `managedsave`.
-- Note 08's "two-VM cap" is a configurable per-host limit; the default
-  for an AX42-class host is six.
+- Note 08's "two-VM cap" is a configurable per-host limit. On the
+  i7-6700 host two running is correct; the paused tier is what lets
+  many more sessions stay warm.
 - The cloud adapter of note 03 gets an order: AWS first, Fly second,
   GCP and Azure after. It is a post-MVP slice; the MVP host is the
   Hetzner machine.

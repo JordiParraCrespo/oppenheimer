@@ -46,5 +46,6 @@ earlier note:
   the App only adds webhooks. Note 09 chooses the stricter model: the
   App installation, with all or selected repositories, is the access
   control.
-- Note 07's single "pause when idle" became note 10's two tiers: suspend
-  after ten idle minutes, hibernate after a day asleep.
+- Note 07's single "pause when idle" became note 10's three tiers,
+  tuned to the real host (i7-6700, 64 GB, SATA SSD): pause in RAM after
+  ten minutes, suspend to disk after two hours, hibernate after a day.

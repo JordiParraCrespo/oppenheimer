@@ -129,5 +129,5 @@ it must feel like the one in step 1.
   place from the runners. Browsers reach it over public HTTPS; the
   runner reaches it over the tailnet. Nothing to install for the user
   except the runner on their host.
-- **VM lifetime:** suspend after ten idle minutes, hibernate after a
-  day asleep, wake on visit, destroy on close (note 10).
+- **VM lifetime:** pause after ten idle minutes, suspend after two
+  hours, hibernate after a day, wake on visit, destroy on close (note 10).
