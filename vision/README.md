@@ -17,7 +17,7 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo, `main/` plus one worktree per session, as in Orca; Keep sessions share a workspace VM per repo, Ephemeral sessions get their own |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo, `main/` plus one worktree per session, as in Orca; three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:

@@ -32,9 +32,13 @@ You open three more the same way and switch between them in the sidebar.
   boot accelerator for new ones.
 - **A worktree** under `~/oppenheimer-ai/workspaces/<repo>/worktrees/`
   created from that repo's `main/` checkout at the chosen branch (note
-  11). Keep sessions share one long-lived workspace VM per repo per
-  host; Ephemeral sessions get their own VM with the same layout. The
-  clone uses a token the VM never holds for long (note 09).
+  11). The host chip carries a runtime: **Shared workspace** (one
+  long-lived VM per repo per host, a worktree per session) or **Clean
+  VM** (a VM for this session alone, Docker inside, nothing else
+  running, for anything that starts services). **This machine**, the
+  direct runtime for the Mac Studio with simulators, is the second slice
+  after the MVP. The clone uses a token the VM never holds for long
+  (note 09).
 - **A terminal**, tmux-backed, streamed to the browser, with the chosen
   agent launched in it. Extra tabs open more terminals into the same VM.
 - **An account**: the agent's config dir points at that account's own
@@ -75,7 +79,7 @@ later idea, not the MVP.
 |----|-----------------|
 | Personal workspace, one user, GitHub sign-in | Orgs, teams, sharing, billing |
 | Hosts you own, registered with the token and keypair flow | Cloud provider adapters |
-| Mode B: VM per session, libvirt/KVM on the existing Hetzner host, reusing the runner codebase | Firecracker cold-start path, tart for Mac hosts, mode A direct-machine sessions |
+| Shared workspace VMs and Clean VMs on libvirt/KVM on the existing Hetzner host, reusing the runner codebase | Firecracker cold-start path, tart for Mac hosts, the This-machine runtime on the Mac Studio (second slice after the MVP) |
 | Repo and branch chips backed by the GitHub App installation (all or selected repositories, note 09) | Create PR button, diff view, auto-fix, routines |
 | Agent chip: Codex first | Claude Code next, then Kimi, OpenCode, Gemini |
 | Accounts per host, one persistent volume per account, selected per session | Usage-based account routing |

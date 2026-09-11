@@ -87,3 +87,51 @@ platform only creates, lists, and removes things under
 `~/oppenheimer-ai/workspaces`, and the sidebar only knows worktrees. If
 someone wants a different layout they are using the wrong product,
 which is the point.
+
+## 5. Three runtimes, one layout
+
+Two wishes from discussion pull in different directions. One is the
+Claude Code on the web feeling: a VM that is mine, where the agent
+installs Docker and Postgres and runs the app cleanly with nothing else
+on the box. The other is a Mac Studio with Xcode simulators and Android
+emulators, where an agent runs QA on a mobile app or auto-fixes a bug
+it sees on screen. A shared workspace VM per repo gives neither.
+
+So the **host chip** carries a runtime, and the layout is the same in
+all three:
+
+| Runtime | What it is | Isolation | When |
+|---------|------------|-----------|------|
+| **Shared workspace** | the per-repo workspace VM from §2, one worktree per session | between repos | quick tasks, several agents on one repo, Orca feel |
+| **Clean VM** | a VM for this session alone, same layout, one worktree, Docker inside, nothing else running | full | anything that starts services: Postgres, Redis, the app on a port, integration tests. The Claude Code on the web feeling. Keep or Ephemeral. |
+| **This machine** | the runner in direct mode (note 02 mode A) on a machine you own, same layout under your home, no VM | none, it is your machine | the Mac Studio: Xcode simulators, Android emulators, real devices over USB, screenshots and taps for QA. Anything that needs a GUI or hardware. |
+
+Port and service clashes decide the first two: a session that needs
+`:5432` or `:3000` belongs in a Clean VM. In a Shared workspace, the
+runner still keeps worktrees from fighting by giving each a
+`COMPOSE_PROJECT_NAME` and a port offset, but the honest default for
+"run the app" is Clean VM.
+
+### The Mac Studio case
+
+- The runner runs as you on the Mac (launchd), so `xcrun simctl`,
+  the Android emulator, `adb`, and screen capture all work, because
+  they are the same tools you would use in Terminal.
+- Sessions are worktrees under `~/oppenheimer-ai/workspaces` exactly as
+  in a VM. Sleep tiers do not apply; the Mac is always on. State dots,
+  tabs, accounts, and the login button all work unchanged.
+- An agent doing QA needs eyes: screenshots from the simulator into its
+  context and taps back. That is agent-side tooling (an MCP server for
+  simctl and adb, or the agent's own computer-use), not platform work.
+  The platform's job is to put the agent on the machine that has the
+  simulator, which is this runtime.
+- Simulators inside a Linux VM are the wrong path: Xcode does not run
+  there at all, and the Android emulator needs nested virtualization,
+  which the runner host disables on purpose.
+
+### What this changes
+
+Mode A, direct machine, comes back into the plan as the third runtime
+and is the second slice after the MVP, because the runner already has
+everything it needs for it except the macOS install path. The MVP ships
+Shared workspace and Clean VM on the Linux host.

@@ -546,7 +546,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <ul>
       <li>Personal workspace, one user, GitHub sign-in</li>
       <li>Hosts you own, token and keypair registration</li>
-      <li>VM per session: libvirt/KVM on the Hetzner host, reusing the runner codebase</li>
+      <li>Shared workspace VMs and Clean VMs on libvirt/KVM on the Hetzner host, reusing the runner codebase</li>
       <li>Repo and branch chips from the App installation, all or selected repositories, one-hour repo-scoped token delivered by seed</li>
       <li>Agent chip: Codex first</li>
       <li>Accounts per host, selected per session</li>
@@ -557,7 +557,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <span class="tag">Out, on purpose</span>
     <ul>
       <li>Orgs, teams, sharing, billing</li>
-      <li>Host egress proxy with token injection, Firecracker cold starts, tart for Mac hosts, direct-machine sessions</li>
+      <li>Host egress proxy with token injection, Firecracker cold starts, tart for Mac hosts, the This-machine runtime on the Mac Studio (second slice after the MVP)</li>
       <li>Create PR, diff view, auto-fix, routines</li>
       <li>Chat rendering, editor, embedded browser, the Agent SDK</li>
       <li>Claude Code, Kimi, OpenCode, Gemini in the chip; delegation between sessions; usage-based account routing</li>
@@ -689,6 +689,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">create</span><span>Host and repo pick or boot the workspace VM. Branch is the base for a new worktree on a session-named branch, or checks out an existing feature branch. Agent launches in the worktree with the account's config dir.</span>
   <span class="k">close</span><span>Push the branch, remove the worktree. Main stays.</span>
   <span class="k">fixed</span><span>The platform creates, lists, and removes only under the workspaces path, and the sidebar only knows worktrees. Two agents in one repo VM can see each other's worktrees, which is fine for a personal workspace and is what Orca does.</span>
+  <span class="k">runtimes</span><span>The host chip carries one of three runtimes with the same layout. Shared workspace: the per-repo VM, one worktree per session, for quick tasks and several agents on one repo. Clean VM: a VM for this session alone with Docker inside and nothing else running, for anything that starts Postgres or the app on a port, the Claude Code on the web feeling. This machine: the runner in direct mode on a Mac Studio, so Xcode simulators, Android emulators, adb, and screenshots all work for QA and auto-bugfix; simulators cannot run in a Linux VM. The MVP ships the first two; the Mac runtime is the second slice after.</span>
 </div>
 
 <h2 id="phases">Phases</h2>
