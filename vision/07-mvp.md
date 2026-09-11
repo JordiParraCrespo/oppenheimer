@@ -30,8 +30,11 @@ You open three more the same way and switch between them in the sidebar.
   and the terminal scrollback come back exactly as they were. Rebuilding
   from a snapshot is not used for live sessions; snapshots are only a
   boot accelerator for new ones.
-- **A clone** of the chosen repo at the chosen branch, inside the VM,
-  using a token the VM never sees (note 02).
+- **A worktree** under `~/oppenheimer-ai/workspaces/<repo>/worktrees/`
+  created from that repo's `main/` checkout at the chosen branch (note
+  11). Keep sessions share one long-lived workspace VM per repo per
+  host; Ephemeral sessions get their own VM with the same layout. The
+  clone uses a token the VM never holds for long (note 09).
 - **A terminal**, tmux-backed, streamed to the browser, with the chosen
   agent launched in it. Extra tabs open more terminals into the same VM.
 - **An account**: the agent's config dir points at that account's own
@@ -115,7 +118,8 @@ it must feel like the one in step 1.
 - No GitHub token or vendor credential is ever inside a VM image or the
   control plane database.
 - Two sessions on one host run two different Codex accounts at once,
-  each on its own account volume.
+  each on its own account volume. Two Keep sessions on one repo share
+  a workspace VM and appear as two worktrees.
 - A cold clone plus `docker compose up` brings up the control plane.
 
 ## 8. Decisions that closed the open questions

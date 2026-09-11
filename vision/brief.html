@@ -96,6 +96,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
+  <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -525,7 +526,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <h3>What a session is</h3>
 <div class="rule">
   <span class="k">vm</span><span>libvirt/KVM on the Hetzner host, reusing the existing runner controller; Firecracker and tart later. 4 vCPU, 8 GB, 60 GB overlay, Docker inside. Three tiers of sleep: pause in RAM after ten idle minutes with instant wake, suspend to disk after two hours with wake in about fifteen seconds, hibernate after a day with only disks kept and wake by resuming the agent by its session id. Destroyed on close. Sleeping sessions are free.</span>
-  <span class="k">clone</span><span>The chosen repo at the chosen branch, inside the VM, with a token the VM never sees.</span>
+  <span class="k">worktree</span><span>A git worktree under a fixed path, created from the repo's main checkout at the chosen branch. Keep sessions share one workspace VM per repo per host; Ephemeral sessions get their own VM with the same layout.</span>
   <span class="k">terminal</span><span>tmux-backed, streamed to the browser, the chosen agent launched in it. Tabs open more terminals into the same VM. Nothing is rendered as chat.</span>
   <span class="k">account</span><span>One persistent volume per account, attached to the VM that selected it. Two sessions with different accounts attach different volumes. The same account in two VMs at once is blocked in the MVP; tart hosts, later, share directories and lift that.</span>
 </div>
@@ -666,6 +667,28 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">per task</span><span>An hour-long agent task costs one to three cents of compute on the own host, about fifteen cents on AWS, and two to twenty euros of model. Compute is one to five percent of a task, never the reason to change the architecture. VMs stay for isolation, Docker inside, and the day a second person shows up. Two adjustments recover density: overcommit CPU 2:1 because agents mostly wait, giving about four running sessions on the i7 host and eight to twelve on an AX42, and let the balloon driver reclaim idle guest memory.</span>
   <span class="k">fifty agents</span><span>Eight hours a day, 22 days: about €250 to €300 a month on five AX42 hosts, about $1,300 on AWS on demand or $450 on spot, €1,800 on Hetzner Cloud, about $2,900 on E2B. The model for the same 8,800 agent-hours is $18,000 to $44,000 on API pricing, and one subscription cannot drive fifty agents. At that scale the question is tokens and accounts, never VMs.</span>
   <span class="k">ephemeral</span><span>Realistic scale is at most ten running at once, which one AX42 handles. Each session carries a lifetime: Keep, the default on your host, with the sleep tiers; or Ephemeral, the default on cloud hosts, destroyed after two idle hours with the branch auto-pushed and the scrollback kept in the log. Ten ephemeral sessions of four hours a day on AWS cost about $130 a month on demand or $45 on spot, and nothing on days you do not use them. The host chip shows cloud hosts with their per-hour price.</span>
+</div>
+
+
+<h2 id="layout">Workspace layout</h2>
+<p>No free-form filesystem. Every repo lives in one fixed place with one main checkout and one worktree per session, exactly Orca's model, so the UX is the same.</p>
+<div class="term">
+  <div class="bar"><span>inside a workspace VM</span><span><b>tree ~/oppenheimer-ai -L 3</b></span></div>
+  <div>~/oppenheimer-ai/</div>
+  <div>  workspaces/</div>
+  <div>    xrp-mobile/</div>
+  <div>      <span class="g">main/</span>                <span class="d"># default branch, fetch source, never edited</span></div>
+  <div>      worktrees/</div>
+  <div>        <span class="g">port-121-api-config/</span> <span class="d"># one worktree per session, on its branch</span></div>
+  <div>        <span class="g">nightly-ingest/</span></div>
+  <div>  accounts/              <span class="d"># per-provider config dirs from the account volumes</span></div>
+</div>
+<div class="rule">
+  <span class="k">keep</span><span>One long-lived workspace VM per repo per host. Each Keep session is a worktree plus a tmux session inside it. Ten sessions on one repo share one clone, one setup, one Docker daemon, one warm cache. The VM sleeps when all its sessions are idle and wakes when any is opened. The VM cap counts workspace VMs, not sessions.</span>
+  <span class="k">ephemeral</span><span>Its own disposable VM with the same layout and a single worktree.</span>
+  <span class="k">create</span><span>Host and repo pick or boot the workspace VM. Branch is the base for a new worktree on a session-named branch, or checks out an existing feature branch. Agent launches in the worktree with the account's config dir.</span>
+  <span class="k">close</span><span>Push the branch, remove the worktree. Main stays.</span>
+  <span class="k">fixed</span><span>The platform creates, lists, and removes only under the workspaces path, and the sidebar only knows worktrees. Two agents in one repo VM can see each other's worktrees, which is fine for a personal workspace and is what Orca does.</span>
 </div>
 
 <h2 id="phases">Phases</h2>
