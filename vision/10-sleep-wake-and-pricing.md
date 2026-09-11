@@ -217,15 +217,63 @@ What the table says:
   caps, and a pricing floor. E2B's pause and resume is a good reference
   for what we build on libvirt, not a place to run it.
 
-## 8. What this changes in the plan
+## 8. What a task actually costs, and whether VMs are worth it
+
+A typical agent task, say one hour of Codex working on a repo, spends
+most of that hour waiting on the model. CPU is busy maybe 10 to 30 % of
+the time, for installs, builds, and tests. So the compute bill for one
+hour-long task is:
+
+| Where | Compute for a one-hour task | The model for the same task |
+|-------|-----------------------------|-----------------------------|
+| Own AX42 host, amortised over ~150 task-hours a month | about €0.01 to €0.03 | €2 to €20 on API pricing, or part of a subscription |
+| AWS t3a.xlarge | about $0.15 | same |
+| E2B | about $0.33 | same |
+
+Compute is one to five percent of what a task costs. It is never the
+reason to change the architecture. The reasons to pick VMs or
+containers are isolation, density, and what the agent can do inside.
+
+| | VM per session (KVM) | Container per session (Docker on the host) |
+|---|---|---|
+| Isolation | hardware boundary; an escape stays in the guest | kernel shared with the host and every other session; an escape is the host |
+| Docker inside | yes, a real daemon | needs privileged mode or a sysbox-style runtime; the usual pain |
+| Memory per idle session | the guest kernel plus whatever is used; with the balloon driver and free-page reporting the host reclaims unused pages, so an idle guest costs far less than its 8 GB ceiling | tens of MB |
+| Start | tens of seconds from cloud-init, seconds from a saved image | under a second |
+| Sleep | pause in RAM, managedsave to disk, hibernate: all mature | cgroup freeze is instant; checkpoint to disk (CRIU) is fragile |
+| Density on the i7 host | 2 running by the strict 4 vCPU rule; 4 with 2:1 CPU overcommit, since agents mostly wait | 8 to 10 |
+| Multi-tenant later | yes | no, not with agents running with permissions bypassed |
+
+Decision: **keep VMs**, for three reasons that have nothing to do with
+compute cost. The hardened pipeline already exists. Docker inside works
+without tricks. And the day a second person uses the product, VMs are
+the only acceptable boundary between two people's agents running with
+permissions bypassed.
+
+Two adjustments that recover most of the density argument:
+
+- **Overcommit CPU 2:1.** Agent sessions are idle most of the time, so
+  the running cap is set by measured host load, not by counting 4 vCPU
+  per VM. On the i7 host that means about four running sessions instead
+  of two; on an AX42, eight to twelve.
+- **Let the balloon reclaim memory.** With `virtio-balloon` and free
+  page reporting in the image, an idle 8 GB guest gives back most of its
+  RAM to the host, so paused-in-RAM sessions are cheaper than the earlier
+  "8 GB each" arithmetic assumed.
+
+Neither changes the two-VM cap in the existing CI controller, which
+sizes for CPU-hungry build jobs. Sessions get their own cap.
+
+## 9. What this changes in the plan
 
 - Note 07's lifetime decision becomes the three-tier policy above:
   pause in RAM, then suspend to disk, then hibernate.
 - Step 2 of the MVP order gains hibernate-and-resume by agent session
   id, next to `managedsave`.
-- Note 08's "two-VM cap" is a configurable per-host limit. On the
-  i7-6700 host two running is correct; the paused tier is what lets
-  many more sessions stay warm.
+- Note 08's "two-VM cap" stays for CI jobs. Sessions get their own cap
+  set by measured load with 2:1 CPU overcommit: about four running on
+  the i7-6700 host, eight to twelve on an AX42. The paused tier plus
+  balloon reclaim is what lets many more sessions stay warm.
 - The cloud adapter of note 03 gets an order: AWS first, Fly second,
   GCP and Azure after. It is a post-MVP slice; the MVP host is the
   Hetzner machine.
