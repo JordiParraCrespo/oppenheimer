@@ -115,9 +115,12 @@ Account
   hooks, MCP servers) into each account home at session start, without
   touching the credential file. On Codex, this includes maintaining the
   `trusted_hash` entries for our status hooks.
-- **On VMs, accounts live on the persistent home volume** (note 02, 04
-  F13). The account directory is just a subdirectory there. A fresh VM
-  for that target sees all of that target's accounts.
+- **On VMs, each account is its own persistent volume** (note 04 F13),
+  attached only to the VM whose session selected it. A fresh VM sees
+  exactly the accounts it was given. Two sessions on one host with
+  different accounts run concurrently on different volumes; the same
+  account in two VMs at once is blocked on Firecracker hosts and allowed
+  on tart hosts, which share directories instead of block devices.
 - **The platform never reads the credential file's contents.** It reads
   the usage file and the presence and mtime of the credential file, and
   nothing else. This keeps note 01 §7 true with many accounts.
@@ -173,8 +176,8 @@ platform makes it painless rather than making it disappear:
 - "Add account on <target>" is a two-click flow that opens the PTY with
   the right env, runs the login, and turns the printed URL into a button.
   Thirty seconds per account per machine, once.
-- Accounts live on the persistent home volume for VM targets, so a fleet
-  of ephemeral VMs behind one target counts as one machine.
+- Each account is a persistent volume on the host, so a fleet of
+  ephemeral VMs behind one host counts as one machine.
 - The board shows which targets have which accounts and flags
   `needs_login` or `expired` (Claude Code warns three days before a login
   expires and `/status` reports the expired state).

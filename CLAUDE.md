@@ -11,5 +11,6 @@ orchestrator. There is no code yet.
   silently rewrite history in earlier notes.
 - The one-page brief `vision/brief.html` is regenerated from the notes;
   keep it in sync when a note changes.
-- The MVP is sessions only (`vision/07-mvp.md`). Anything else is a
-  later slice.
+- The MVP is a personal workspace of sessions in KVM guests on the
+  existing Hetzner runner host, reusing its Go controller (note 08), each session a terminal, Codex first, hosted control
+  plane (`vision/07-mvp.md`). Anything else is a later slice.

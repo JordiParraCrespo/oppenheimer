@@ -209,6 +209,9 @@ Kubernetes (targets are pets, not cattle, at this stage).
 
 ## 6. MVP definition and phases
 
+> **Superseded.** The MVP and its order of work are defined in
+> `07-mvp.md`. The table below is the original sketch, kept for history.
+
 **MVP done means**: from a browser, on a project with a registered Linux
 server and a registered Mac Studio, you can create three tasks, run them in
 parallel on different targets, watch them live, answer a permission prompt,

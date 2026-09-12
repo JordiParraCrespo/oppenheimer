@@ -10,4 +10,4 @@ Status: planning. No code yet.
   order they were decided.
 - [`vision/brief.html`](vision/brief.html): the one-page brief.
 
-The MVP is sessions. See [`vision/07-mvp.md`](vision/07-mvp.md).
+The MVP is a personal workspace of terminal sessions in VMs. See [`vision/07-mvp.md`](vision/07-mvp.md).
