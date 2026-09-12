@@ -14,8 +14,14 @@ own host under each session instead of your laptop.
 - Create session chips: host with runtime (Shared workspace or Clean
   VM), repo, branch, agent (Codex), lifetime (Keep or Ephemeral).
 - Fixed layout: `~/oppenheimer-ai/workspaces/<repo>/{main,worktrees/<slug>}`.
-- Sleep: pause after 10 idle minutes, suspend after 2 hours, hibernate
-  after a day, destroy on close. Sleeping is free.
+- Lifetime is chosen per session. **Keep**: pause after 10 idle
+  minutes, suspend after 2 hours, hibernate after a day, destroy only on
+  close; sleeping is free. **Ephemeral**: after the idle timeout the
+  runner auto-pushes the working branch, keeps the scrollback in the
+  session log, and destroys the VM and overlay; only the pushed branch
+  and the account volume survive (note 10 §10). Sleep is driven per
+  runtime VM, not per session: a Shared workspace VM sleeps only when
+  every session in it is idle.
 - Accounts: one persistent volume per account, selected per session.
 - Sidebar with state dots from screen manifests.
 - Hosted control plane in the same Hetzner region, public HTTPS for the

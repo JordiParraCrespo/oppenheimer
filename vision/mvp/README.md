@@ -22,3 +22,6 @@ at the bottom of this file.
 
 - 2026-09-12: directory created; documents seeded with decisions from
   the research notes and open questions.
+- 2026-09-12: review fixes: Ephemeral lifecycle stated in scope; sleep
+  scheduling aggregated per runtime VM with `runtime_vms` in the data
+  model; security checklist F15 and F16 rewritten for libvirt/QEMU.
