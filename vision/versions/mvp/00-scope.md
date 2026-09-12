@@ -7,9 +7,14 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 
 ## Decided
 
-- **Personal workspace.** One user. Continue with GitHub is the only
-  sign-in and is also the App installation with all or selected
-  repositories (note 09).
+- **Personal workspace.** One user. Teams and multiplayer come later
+  on the same users table with an org membership added.
+- **Sign-in on day one: GitHub, Google, and email plus password**, from
+  a base project that already ships account linking (Better Auth on
+  Hono or equivalent). Connect GitHub is a separate step after sign-in:
+  the App installation with all or selected repositories, attached to
+  whatever account you signed in with (note 09). Identity and
+  repository access are two different things.
 - **Hosts are your own machines, direct mode** (note 02 mode A). The
   runner runs as your user on the host, installed with one command that
   carries a one-hour registration token; it generates a keypair, dials
@@ -35,8 +40,17 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   to that session's shell. Nothing written to disk (note 02 §"Mode A"
   option 2).
 - **Sidebar** of sessions with a state dot from screen manifests
-  (working, blocked, idle) and a name. Tabs for more terminals into the
-  same worktree.
+  (working, blocked, idle) and a name. Tabs are tmux windows in the
+  session's own tmux session: window 0 is the agent, tabs 1 and up are
+  plain shells in the same worktree (02 §tmux).
+- **No ports on the host, ever.** The runner holds one outbound
+  WebSocket to the control plane; the browser connects to the control
+  plane; the control plane relays. Tailscale is an optional fast path
+  later, never a requirement.
+- **Onboarding is four screens**: sign in, connect GitHub, add a host
+  (paste one command or hand an agent the install prompt), create the
+  first session on the real New session screen with chips prefilled
+  (05 §onboarding).
 - **Sleep is not a platform concern.** The host is always on; tmux
   keeps sessions alive; the browser reattaches. Closing a session
   pushes the branch and removes the worktree.
@@ -79,8 +93,8 @@ more and switch in the sidebar.
 
 ## Open questions
 
-1. Tabs: several terminals per session, or one terminal and tmux
-   windows inside it?
+1. ~~Tabs~~: decided, tmux windows in one tmux session per session
+   (02 §tmux).
 2. Session naming: typed by the user, derived from the first task, or
    from the branch?
 3. Branch chip: base for a new session-named branch, or check out an

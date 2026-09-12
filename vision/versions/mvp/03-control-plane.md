@@ -4,8 +4,16 @@
 
 - One Node process (Hono, Drizzle, Postgres) with modules: identity,
   installations, hosts, sessions, events, relay, tokens. Split by process later; the relay first.
-- Hosted in the same Hetzner region as the host. Joins the tailnet as a
-  node for the runner link; public HTTPS for browsers.
+- Identity from a base project with GitHub, Google, and email plus
+  password on day one and account linking built in (Better Auth or
+  equivalent). Connect GitHub is a separate step that attaches an App
+  installation to the signed-in user.
+- Hosted in the same Hetzner region as the host. Public HTTPS for
+  browsers and for the runners' outbound WebSocket; no inbound port on
+  any host. Tailscale on the control plane is optional and only an
+  admin path in the MVP.
+- Serves the versioned install command and agent install prompt for
+  Add host, with the current runner checksums.
 - GitHub: one App with user authorization during installation. The
   installation is the access control. Per-session installation tokens
   narrowed to one repository, one-hour lifetime, rotated (note 09).

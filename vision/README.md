@@ -63,3 +63,6 @@ earlier note:
 - Note 07's VM-based MVP is superseded by `versions/mvp/00-scope.md`: the MVP
   is Orca on the web without VMs, sessions directly on your own hosts,
   Claude Code first. The VM design is the slice after, not deleted.
+- Sign-in was GitHub-only; it is now GitHub, Google, and email plus
+  password on day one, with Connect GitHub as a separate step
+  (`versions/mvp/00-scope.md`).

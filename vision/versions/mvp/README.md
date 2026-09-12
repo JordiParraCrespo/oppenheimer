@@ -31,3 +31,10 @@ at the bottom of this file.
   account objects, no guest image in the MVP; all VM design is deferred
   to the next slice, not deleted. Only `workspaces/` exists under
   `~/oppenheimer-ai` for now.
+- 2026-09-12: sign-in is GitHub, Google, and email plus password on
+  day one from a base auth project; Connect GitHub is a separate step.
+  Tabs are tmux windows in one tmux session per session on a dedicated
+  tmux socket. No inbound ports on hosts, relay only, Tailscale
+  optional. Pairing by pasted command with a one-hour single-use token,
+  plus a copyable agent install prompt served by the control plane.
+  Onboarding is four screens ending on the real New session screen.
