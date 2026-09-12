@@ -193,13 +193,23 @@ Three rules that follow:
 Step 1 measures this and shows it in the status line. It is not done
 until the number is under 50 ms median from your laptop.
 
-## 11. Web stack: a client app, not server components
+## 11. Web stack: open, with a recommendation
 
-The console is a real-time client: xterm.js over a WebSocket, a live
-sidebar, an installable PWA that survives flaky links. Server rendering
-buys nothing there and RSC adds a second runtime and a server-client
-boundary in every component. Decision: **Vite + React SPA** with
-TanStack Router and Query, talking to the Hono control plane over HTTP
-for data and one WebSocket for the terminal and live updates. Sign-in
-and any marketing page are static. If a content-heavy public site ever
-appears, it is a separate Next.js site; the console stays a SPA.
+Not locked in. The one firm point is that the console is a real-time
+client: xterm.js over a WebSocket, a live sidebar, an installable PWA
+that survives flaky links. Server rendering buys nothing for that, so
+whatever framework is chosen should be used as a client app, with
+server components at most for the sign-in and marketing pages.
+
+- **Recommendation:** Vite + React SPA with TanStack Router and Query,
+  talking to the Hono control plane over HTTP for data and one
+  WebSocket for the terminal and live updates. Smallest surface.
+- **Also fine:** Next.js with the App Router, treating the console
+  routes as client components and letting the control plane stay the
+  only backend. Costs a second runtime, gains nothing the console
+  needs, but is a reasonable choice if it is the team's default.
+- **Not for the console:** heavy use of server components, server
+  actions, or framework caching on live data.
+
+Decide at step 3, when the first screens are built. Nothing before that
+depends on it.
