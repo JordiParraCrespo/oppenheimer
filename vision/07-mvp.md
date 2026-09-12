@@ -109,7 +109,7 @@ stays out.
 
 | Step | You can now | Size |
 |------|-------------|------|
-| 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there | 1 week |
+| 1 | Runner on the Linux host, one page, tmux-backed terminal in the browser, close and reopen, still there. The status line shows measured keystroke echo; done means under 50 ms median from Barcelona to the Hetzner host on wifi | 1 week |
 | 2 | The runner boots a libvirt guest from a new golden image revision, guest agent over vsock, terminal inside, suspend and hibernate when idle, resume by agent session id, destroy on close | 1 week |
 | 3 | Continue with GitHub as one flow (identity plus App install with all or selected repos), register a host, sidebar and New session with host and agent chips | 1 week |
 | 4 | Repo and branch chips: reuse the App auth and token minting, deliver the token by seed, clone into the VM | 1 week |
@@ -165,3 +165,30 @@ a port or a hosted preview exposes an app. Shape when it comes:
 Nothing about it changes the MVP; it rides on the relay and the vsock
 channel that exist by step 2. Second slice after the MVP, next to the
 Mac runtime and Create PR.
+
+## 10. Latency budget
+
+Keystroke echo from Barcelona to the Hetzner host, with the control
+plane in the same Hetzner region:
+
+| Hop | Typical |
+|-----|---------|
+| device to control plane | 30 to 40 ms round trip |
+| control plane to runner over the tailnet, same datacenter | 1 to 2 ms |
+| runner to guest over vsock, tmux, back | under 1 ms |
+| xterm.js render | one frame |
+| total | about 35 to 50 ms, the same as SSH to the same host |
+
+Three rules that follow:
+
+1. **The control plane lives next to the hosts.** Falkenstein or
+   Nuremberg for a Hetzner host. Never a different continent. This is
+   the one placement decision that decides feel.
+2. **Local echo prediction** in the page, Mosh-style, via the xterm.js
+   addon, so typing feels local even on a bad link.
+3. **Direct path on the tailnet.** When the browser's device is on the
+   tailnet, the page connects to the host directly and skips the relay,
+   like Orca over SSH. Off the tailnet it uses the relay. Same page.
+
+Step 1 measures this and shows it in the status line. It is not done
+until the number is under 50 ms median from your laptop.

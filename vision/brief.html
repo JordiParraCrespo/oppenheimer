@@ -570,7 +570,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="tablewrap"><table>
 <thead><tr><th>Step</th><th>You can now</th><th>Size</th></tr></thead>
 <tbody>
-<tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab</td><td>1 week</td></tr>
+<tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab. The status line shows measured keystroke echo; done means under 50 ms median from Barcelona to the Hetzner host</td><td>1 week</td></tr>
 <tr><td class="num">2</td><td>The runner boots a libvirt guest from a new golden image, guest agent over vsock, terminal inside, managedsave when idle, destroy on close</td><td>1 week</td></tr>
 <tr><td class="num">3</td><td>Continue with GitHub as one flow (identity plus App install with all or selected repos), host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
 <tr><td class="num">4</td><td>Repo and branch chips: reuse App auth and token minting, deliver the token by seed, clone into the VM</td><td>1 week</td></tr>
@@ -578,6 +578,9 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>
 </tbody></table></div>
 <p>About six weeks for one person. Steps 1 and 2 are the gates: the terminal must feel like Orca over SSH, and the guest must be usable within a minute with the same feel inside.</p>
+<div class="rule">
+  <span class="k">latency</span><span>Budget for a keystroke from Barcelona: 30 to 40 ms to a control plane in the same Hetzner region, 1 to 2 ms to the runner over the tailnet, under 1 ms over vsock, one frame to render. About 35 to 50 ms, the same as SSH to that host. Three rules: the control plane lives next to the hosts, never on another continent; Mosh-style local echo prediction in the page; and a direct path that skips the relay when the device is on the tailnet.</span>
+</div>
 <div class="verdict"><p><strong>Decided:</strong> the Hetzner runner host with libvirt/KVM, reusing its controller. Codex first, Claude Code next. Control plane hosted by us in a different place, public HTTPS for browsers, tailnet for the runner. VMs are saved to disk while idle, resumed on visit, destroyed on close.</p></div>
 
 
