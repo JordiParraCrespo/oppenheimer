@@ -192,3 +192,14 @@ Three rules that follow:
 
 Step 1 measures this and shows it in the status line. It is not done
 until the number is under 50 ms median from your laptop.
+
+## 11. Web stack: a client app, not server components
+
+The console is a real-time client: xterm.js over a WebSocket, a live
+sidebar, an installable PWA that survives flaky links. Server rendering
+buys nothing there and RSC adds a second runtime and a server-client
+boundary in every component. Decision: **Vite + React SPA** with
+TanStack Router and Query, talking to the Hono control plane over HTTP
+for data and one WebSocket for the terminal and live updates. Sign-in
+and any marketing page are static. If a content-heavy public site ever
+appears, it is a separate Next.js site; the console stays a SPA.

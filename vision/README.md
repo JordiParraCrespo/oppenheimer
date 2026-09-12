@@ -55,3 +55,6 @@ earlier note:
   sessions and makes Keep sessions worktrees inside one workspace VM per
   repo per host, so the worktree UX matches Orca and ten sessions on a
   repo share one clone, one setup, and one Docker daemon.
+- Note 00 proposed Next.js for the web app. Note 07 §11 changes the
+  console to a Vite + React SPA with no server components, since it is
+  a real-time client, not a rendered site.
