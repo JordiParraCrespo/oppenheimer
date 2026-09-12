@@ -1,5 +1,12 @@
 # 07 — The MVP: a personal workspace of sessions in VMs
 
+> In one line: **Orca's core, rebuilt as a hosted web app, with a VM on
+> your own host under each session instead of your laptop.** Same
+> sidebar, worktrees, terminal, tabs, and account switcher. Different
+> in where it runs, how it starts (one GitHub flow, clone on demand),
+> and that sessions sleep for free. No editor, browser, design mode,
+> or mobile app.
+
 Decision from discussion, after seeing the console mockups: the MVP is
 a **personal workspace** where you create **sessions**, each one a
 **VM on a host you own**, and each session is **just a terminal**, as
