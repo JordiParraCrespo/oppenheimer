@@ -520,25 +520,27 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </tbody></table></div>
 
 
-<h2 id="mvp">The MVP: a personal workspace of sessions in VMs</h2>
-<p><strong>In one line: Orca's core, rebuilt as a hosted web app, with a VM on your own host under each session instead of your laptop.</strong> One user, sessions that each run in a KVM guest on the existing Hetzner runner host, and every session is just a terminal, as in Orca. Codex first, Claude Code next. The control plane is hosted and fully web based. The Create session screen is the product. The sidebar lists sessions. No enterprise layer.</p>
-<div class="verdict"><p>You tap Continue with GitHub on your phone and pick the repositories the app may see. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Codex</code>. Go. A VM boots on the host, the repo is cloned, and a terminal appears with <code>codex</code> running on your account. You tap the login URL once if that host has never seen this account, give the task, close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
+<h2 id="mvp">The MVP: Orca on the web, no virtual machines</h2>
+<p><strong>In one line: connect a host you own, then run sessions on it. Claude Code first, Codex next.</strong> One user, hosts in direct mode only, every session a git worktree plus a tmux terminal streamed to the browser. The control plane is hosted and fully web based. The Create session screen is the product. The sidebar lists sessions. No VMs, no sleep tiers, no accounts model, no enterprise layer. Those are the slices after.</p>
+<div class="note"><strong>Reset on 2026-09-12.</strong> The earlier MVP (sessions in KVM guests on the runner host, Codex first) is kept in the notes as history. The in-depth design now lives in <code>vision/mvp/</code>, one document per area, starting with <code>00-scope.md</code>.</div>
+<div class="verdict"><p>You tap Continue with GitHub and pick the repositories the app may see. In settings you paste one install command on the Hetzner box or the Mac Studio; the host appears. New session, four chips: host <code>optimus</code>, repo <code>xrp-mobile</code>, branch <code>main</code>, agent <code>Claude Code</code>. Go. The runner fetches main, adds a worktree, opens a tmux window in it, runs <code>claude</code>. If that host has never seen your account, the login URL becomes a button. You give the task and close the phone. On the laptop it is still there. You open three more and switch in the sidebar.</p></div>
 
 <h3>What a session is</h3>
 <div class="rule">
-  <span class="k">vm</span><span>libvirt/KVM on the Hetzner host, reusing the existing runner controller; Firecracker and tart later. 4 vCPU, 8 GB, 60 GB overlay, Docker inside. Three tiers of sleep: pause in RAM after ten idle minutes with instant wake, suspend to disk after two hours with wake in about fifteen seconds, hibernate after a day with only disks kept and wake by resuming the agent by its session id. Destroyed on close. Sleeping sessions are free.</span>
-  <span class="k">worktree</span><span>A git worktree under a fixed path, created from the repo's main checkout at the chosen branch. Keep sessions share one workspace VM per repo per host; Ephemeral sessions get their own VM with the same layout.</span>
-  <span class="k">terminal</span><span>tmux-backed, streamed to the browser, the chosen agent launched in it. Tabs open more terminals into the same VM. Nothing is rendered as chat.</span>
-  <span class="k">account</span><span>One persistent volume per account, attached to the VM that selected it. Two sessions with different accounts attach different volumes. The same account in two VMs at once is blocked in the MVP; tart hosts, later, share directories and lift that.</span>
+  <span class="k">host</span><span>A machine you own with the runner installed: a single static Go binary, Linux or macOS, running as your user under systemd or launchd. It dials out to the control plane; nothing listens on the host. Registered with a one-hour token from settings and its own keypair after that.</span>
+  <span class="k">worktree</span><span>A git worktree under the fixed layout <code>~/oppenheimer-ai/workspaces/&lt;repo&gt;/main</code> and <code>worktrees/&lt;slug&gt;</code>, created from the main checkout at the chosen base branch. Only the workspaces tree exists in the MVP; agent personalities and the rest of the layout come later.</span>
+  <span class="k">terminal</span><span>tmux-backed, owned by the runner, streamed to the browser over the relay, the chosen agent launched in it. Survives closing the tab, wifi drops, and runner restarts. Nothing is rendered as chat.</span>
+  <span class="k">github</span><span>Per-session installation token, one repo, one hour, handed to git through a credential helper bound to that session's shell. The runner never stores it on disk.</span>
+  <span class="k">agent login</span><span>The host's own <code>claude</code> login, done once per host by you in the terminal. The platform never copies or stores vendor credentials.</span>
 </div>
 
 <h3>Screens</h3>
 <div class="rule">
   <span class="k">sign in</span><span>One button, Continue with GitHub, which is also the App install with all or selected repositories.</span>
-  <span class="k">sidebar</span><span>Sessions with a state dot, name, and age. New session on top. Hosts and accounts in a settings drawer, not in the main navigation.</span>
-  <span class="k">new session</span><span>Host, repo, branch, agent chips, a Keep or Ephemeral lifetime toggle, and a box for a name or first task. Chips remember the last choice.</span>
-  <span class="k">session</span><span>Terminal full-bleed, tabs, a thin status line with host, branch, account, usage meters where the CLI exposes them, permissions mode. Login URLs become a button.</span>
-  <span class="k">settings</span><span>Hosts with the install command and a one-hour token. Accounts added by running the login in a terminal.</span>
+  <span class="k">sidebar</span><span>Sessions with a state dot, name, and age. New session on top. Hosts in a settings drawer, not in the main navigation.</span>
+  <span class="k">new session</span><span>Host, repo, branch, agent chips and a box for a name or first task. Chips remember the last choice.</span>
+  <span class="k">session</span><span>Terminal full-bleed, tabs, a thin status line with host, repo, branch, agent. Login URLs become a button.</span>
+  <span class="k">settings</span><span>Hosts with the install command and a one-hour token. Nothing else.</span>
 </div>
 
 <div class="grid2">
@@ -546,23 +548,21 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <span class="tag">In</span>
     <ul>
       <li>Personal workspace, one user, GitHub sign-in</li>
-      <li>Hosts you own, token and keypair registration</li>
-      <li>Shared workspace VMs and Clean VMs on libvirt/KVM on the Hetzner host, reusing the runner codebase</li>
-      <li>Repo and branch chips from the App installation, all or selected repositories, one-hour repo-scoped token delivered by seed</li>
-      <li>Agent chip: Codex first</li>
-      <li>Accounts per host, selected per session</li>
-      <li>Terminal with reattach, tabs, phone layout, state dots from screen manifests</li>
+      <li>Hosts you own in direct mode, token and keypair registration, Linux and macOS</li>
+      <li>Session = worktree in the fixed layout + tmux terminal, Claude Code launched in it</li>
+      <li>Repo and branch chips from the App installation, one-hour repo-scoped token by credential helper</li>
+      <li>Sidebar with state dots, tabs, phone layout, reconnect that survives tab close and runner restart</li>
     </ul>
   </div>
   <div class="panel">
     <span class="tag">Out, on purpose</span>
     <ul>
-      <li>Orgs, teams, sharing, billing</li>
-      <li>Host egress proxy with token injection, Firecracker cold starts, tart for Mac hosts, the This-machine runtime on the Mac Studio (second slice after the MVP)</li>
-      <li>Create PR, diff view, auto-fix, routines</li>
-      <li>Chat rendering, editor, embedded browser, the Agent SDK, preview URLs for ports the session is serving (second slice, on the same relay)</li>
-      <li>Claude Code, Kimi, OpenCode, Gemini in the chip; delegation between sessions; usage-based account routing</li>
-      <li>Tailscale mode, signed auto-update</li>
+      <li>Virtual machines of any kind, sleep tiers, guest images, cloud adapters</li>
+      <li>Accounts model, usage meters, per-session account selection</li>
+      <li>Codex and the other CLIs in the chip (Codex is the next slice)</li>
+      <li>Create PR, diff view, auto-fix, routines, preview URLs</li>
+      <li>Chat rendering, editor, embedded browser, the Agent SDK</li>
+      <li>Orgs, teams, sharing, billing, Tailscale mode, signed auto-update</li>
     </ul>
   </div>
 </div>
@@ -570,14 +570,12 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <div class="tablewrap"><table>
 <thead><tr><th>Step</th><th>You can now</th><th>Size</th></tr></thead>
 <tbody>
-<tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab. The status line shows measured keystroke echo; done means under 50 ms median from Barcelona to the Hetzner host</td><td>1 week</td></tr>
-<tr><td class="num">2</td><td>The runner boots a libvirt guest from a new golden image, guest agent over vsock, terminal inside, managedsave when idle, destroy on close</td><td>1 week</td></tr>
-<tr><td class="num">3</td><td>Continue with GitHub as one flow (identity plus App install with all or selected repos), host registration, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
-<tr><td class="num">4</td><td>Repo and branch chips: reuse App auth and token minting, deliver the token by seed, clone into the VM</td><td>1 week</td></tr>
-<tr><td class="num">5</td><td>Accounts, one volume each, add a Codex account by login, per-session selection, login URL button</td><td>1 week</td></tr>
-<tr><td class="num">6</td><td>State dots, tabs, phone layout, reconnect polish</td><td>1 week</td></tr>
+<tr><td class="num">1</td><td>Runner on the host, one page, tmux-backed terminal in the browser that survives closing the tab. The status line shows measured keystroke echo; done means under 50 ms median from Barcelona to the Hetzner host, and <code>claude</code> usable from the phone</td><td>1 week</td></tr>
+<tr><td class="num">2</td><td>Continue with GitHub as one flow (identity plus App install with all or selected repos), host registration with the install command, sidebar and New session with host and agent chips</td><td>1 week</td></tr>
+<tr><td class="num">3</td><td>Repo and branch chips: fetch main into the fixed layout, <code>git worktree add</code>, credential helper with the one-hour token, launch <code>claude</code> in the worktree</td><td>1 week</td></tr>
+<tr><td class="num">4</td><td>State dots, tabs, phone layout, reconnect polish, login URL button</td><td>1 week</td></tr>
 </tbody></table></div>
-<p>About six weeks for one person. Steps 1 and 2 are the gates: the terminal must feel like Orca over SSH, and the guest must be usable within a minute with the same feel inside.</p>
+<p>About four weeks for one person. Step 1 is the gate: the terminal must feel like Orca over SSH. VMs (the old step 2) and accounts come as the first slices after.</p>
 <div class="rule">
   <span class="k">latency</span><span>Budget for a keystroke from Barcelona: 30 to 40 ms to a control plane in the same Hetzner region, 1 to 2 ms to the runner over the tailnet, under 1 ms over vsock, one frame to render. About 35 to 50 ms, the same as SSH to that host. Three rules: the control plane lives next to the hosts, never on another continent; Mosh-style local echo prediction in the page; and a direct path that skips the relay when the device is on the tailnet.</span>
 </div>
@@ -723,7 +721,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 
 <h2 id="phases">Phases</h2>
-<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6. The MVP now starts with VMs in step 2, tart or Firecracker depending on the first host. After the MVP, the remaining slices in order are: Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
+<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, Codex and the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
 <p>TypeScript for the web app and control plane, Go for the runner. pnpm and Turborepo monorepo. The web framework is not locked in: the recommendation is a Vite + React SPA, and Next.js used as a client app is also fine. The firm point is that the console is a real-time client over a WebSocket, so server components stay out of the session and sidebar screens. Hono control plane with Drizzle on Postgres, a single static Go runner binary, and a shared protocol package that both languages generate from. Rejected: Python on targets (second toolchain on user machines), Electron (state must live server-side), Kubernetes (targets are pets, not cattle).</p>
 
