@@ -60,3 +60,6 @@ earlier note:
   framework open with a recommendation for a Vite + React SPA; Next.js
   used as a client app is also fine. The firm point is only that the
   console is a real-time client, not a server-rendered site.
+- Note 07's VM-based MVP is superseded by `mvp/00-scope.md`: the MVP
+  is Orca on the web without VMs, sessions directly on your own hosts,
+  Claude Code first. The VM design is the slice after, not deleted.

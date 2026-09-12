@@ -1,5 +1,9 @@
 # 04 — Guest image
 
+> **Deferred.** The MVP runs sessions directly on hosts you own, with
+> no VMs, so there is no guest image to build. This document is kept
+> for the VM slice that follows the MVP. Nothing below is MVP work.
+
 ## Decided
 
 - Built by the existing golden-image script from a verified Ubuntu

@@ -13,7 +13,7 @@ at the bottom of this file.
 | 01 | [Protocol](01-protocol.md) | Messages between browser, control plane, and runner; PTY frames; tickets; events |
 | 02 | [Runner](02-runner.md) | The Go binary: sessions, tmux, ring buffer, reconnect, screen manifests, libvirt, vsock, sleep, account volumes |
 | 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, sleep scheduler |
-| 04 | [Guest image](04-guest-image.md) | What is in the golden image, the guest agent, workspace layout, build and rollout |
+| 04 | [Guest image](04-guest-image.md) | Deferred with the VM slice; kept for later |
 | 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, settings drawer; components and states |
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
@@ -25,3 +25,9 @@ at the bottom of this file.
 - 2026-09-12: review fixes: Ephemeral lifecycle stated in scope; sleep
   scheduling aggregated per runtime VM with `runtime_vms` in the data
   model; security checklist F15 and F16 rewritten for libvirt/QEMU.
+- 2026-09-12: **MVP reset to Orca-on-the-web without VMs.** Sessions
+  run directly on hosts you own (direct mode), one worktree plus a tmux
+  terminal each. Claude Code first, Codex next. No sleep tiers, no
+  account objects, no guest image in the MVP; all VM design is deferred
+  to the next slice, not deleted. Only `workspaces/` exists under
+  `~/oppenheimer-ai` for now.

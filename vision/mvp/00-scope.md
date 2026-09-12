@@ -1,56 +1,90 @@
 # 00 — Scope
 
+## In one line
+
+Orca, as a hosted web app: connect a host you own, then run sessions
+on it. No virtual machines in the MVP. Claude Code first, Codex next.
+
 ## Decided
 
-One line: Orca's core, rebuilt as a hosted web app, with a VM on your
-own host under each session instead of your laptop.
+- **Personal workspace.** One user. Continue with GitHub is the only
+  sign-in and is also the App installation with all or selected
+  repositories (note 09).
+- **Hosts are your own machines, direct mode** (note 02 mode A). The
+  runner runs as your user on the host, installed with one command that
+  carries a one-hour registration token; it generates a keypair, dials
+  out to the control plane, and stays connected. Linux and macOS.
+- **A session is a worktree plus a terminal on a host.** No VM, no
+  container. The runner creates a git worktree under the fixed layout,
+  starts a tmux session in it, launches the agent, and streams the PTY
+  to the browser.
+- **Fixed layout on every host:**
+  `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
+  edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
+  (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
+  personalities and the like come later (note 11 §1).
+- **Create session chips:** host, repo, branch, agent. Agent is Claude
+  Code in the MVP; Codex is the next entry.
+- **Agent login is the host's own.** The runner launches `claude` with
+  the host's existing config; you log in once per host by typing it in
+  the terminal, and the login URL becomes a button. No account objects,
+  no volumes, no config-dir switching yet (note 06 comes later).
+- **GitHub access for clone and push:** the runner obtains a one-hour
+  installation token scoped to the session's repository from the
+  control plane and exposes it through a git credential helper bound
+  to that session's shell. Nothing written to disk (note 02 §"Mode A"
+  option 2).
+- **Sidebar** of sessions with a state dot from screen manifests
+  (working, blocked, idle) and a name. Tabs for more terminals into the
+  same worktree.
+- **Sleep is not a platform concern.** The host is always on; tmux
+  keeps sessions alive; the browser reattaches. Closing a session
+  pushes the branch and removes the worktree.
+- **Hosted control plane** in the same Hetzner region as your hosts,
+  public HTTPS for the browser, outbound WebSocket from runners.
 
-- Personal workspace. One user. Continue with GitHub is the only sign-in
-  and is also the App installation with all or selected repositories.
-- Hosts you own, registered with a one-hour token and a keypair. The
-  MVP host is the Hetzner i7-6700 box running the existing runner
-  controller.
-- Sessions are terminals. No chat rendering, no Agent SDK.
-- Create session chips: host with runtime (Shared workspace or Clean
-  VM), repo, branch, agent (Codex), lifetime (Keep or Ephemeral).
-- Fixed layout: `~/oppenheimer-ai/workspaces/<repo>/{main,worktrees/<slug>}`.
-- Lifetime is chosen per session. **Keep**: pause after 10 idle
-  minutes, suspend after 2 hours, hibernate after a day, destroy only on
-  close; sleeping is free. **Ephemeral**: after the idle timeout the
-  runner auto-pushes the working branch, keeps the scrollback in the
-  session log, and destroys the VM and overlay; only the pushed branch
-  and the account volume survive (note 10 §10). Sleep is driven per
-  runtime VM, not per session: a Shared workspace VM sleeps only when
-  every session in it is idle.
-- Accounts: one persistent volume per account, selected per session.
-- Sidebar with state dots from screen manifests.
-- Hosted control plane in the same Hetzner region, public HTTPS for the
-  browser, tailnet for the runner.
+## Out, for later slices
 
-## Out
+Virtual machines in any form (Shared workspace VM, Clean VM,
+Firecracker, tart, cloud adapters), sleep tiers, account objects and
+volumes, the egress proxy, Codex and other agents, Create PR and diff
+view, preview URLs, auto-fix and routines, usage meters, delegation,
+Tailscale mode, signed auto-update, orgs and billing, agent
+personalities and any other directory under `~/oppenheimer-ai`.
 
-Claude Code and other agents in the chip (next), the Mac Studio
-runtime, Create PR and diff view, preview URLs, auto-fix and routines,
-usage meters, delegation, cloud adapters, Firecracker, Tailscale mode
-for the control plane itself, signed auto-update, orgs and billing.
+The VM design already written (notes 08, 10, 11 §2 and §5, and the VM
+parts of the documents in this directory) stays as the next slice. It
+is not deleted, it is deferred.
 
 ## The demo scene
 
-See `../07-mvp.md` §1. The MVP is done when that scene runs on the real
-host from a phone, sessions survive browser close, wifi loss, and a
-runner restart, no GitHub token or vendor credential is stored by the
-control plane, two sessions run two Codex accounts at once, and
-`docker compose up` brings the control plane up on a fresh machine.
+You tap Continue with GitHub on your phone and pick the repositories
+the app may see. In Settings you add a host: copy one command, run it
+on your Mac Studio or your Hetzner box, and the host appears online.
+New session: host `mac-studio`, repo `xrp-mobile`, branch `main`, agent
+Claude Code. A terminal appears in a fresh worktree with `claude`
+running. You tap the login URL once on that host, give the task, close
+the phone. On the laptop the session is still there. You open three
+more and switch in the sidebar.
+
+## Done means
+
+- The scene runs on a real Mac and a real Linux host from a phone.
+- Closing the browser, losing wifi, and restarting the runner do not
+  kill a session.
+- No GitHub token is ever stored by the control plane beyond the
+  one-hour scoped tokens it mints, and none is written to a host's
+  disk. No vendor credential is ever stored by the platform.
+- `docker compose up` brings the control plane up on a fresh machine.
 
 ## Open questions
 
-1. Is a second agent in the chip (Claude Code) cheap enough to include
-   from the start, given note 06 says the mechanism is identical, or
-   does it stay strictly next?
-2. Tabs: multiple terminals per session in the MVP, or one terminal
-   and tmux windows inside it?
-3. Ephemeral default idle timeout: two hours as written, or shorter for
-   cloud later?
-4. Does the MVP need Clean VM at all, or is Shared workspace enough
-   for the first month? Clean VM costs a second boot path and a second
-   image role.
+1. Tabs: several terminals per session, or one terminal and tmux
+   windows inside it?
+2. Session naming: typed by the user, derived from the first task, or
+   from the branch?
+3. Branch chip: base for a new session-named branch, or check out an
+   existing branch directly? Both, with new-branch as default?
+4. Should the runner refuse to start a session if the host has no
+   `claude` login, or start it and let the login prompt appear? Let it
+   appear; that is the flow.

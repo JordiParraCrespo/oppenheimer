@@ -5,13 +5,14 @@
 - Sign-in: one button, Continue with GitHub.
 - Sidebar: sessions with a state dot, name, age; New session on top;
   user at the bottom; hosts and accounts in a settings drawer.
-- New session: chips for host (with runtime), repo, branch, agent,
-  lifetime; a box for a name or first task; chips remember last choice.
+- New session: chips for host, repo, branch, agent; a box for a name
+  or first task; chips remember last choice. Runtime and lifetime chips
+  arrive with the VM slice.
 - Session: terminal full-bleed, tabs, thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
-- Settings drawer: hosts with the install command, accounts with Add
-  account.
+- Settings drawer: hosts with the install command and an online dot.
+  Accounts arrive with the accounts slice.
 - Web framework open: Vite SPA recommended, Next.js as a client app
   acceptable. Decide at step 3.
 

@@ -11,29 +11,16 @@ feature lands.
 - [ ] F6 runner pins the control plane's key fingerprint
 - [ ] F7 job payloads encrypted to the runner key
 - [ ] F8 runner private key 0600, rotation supported
-- [ ] F13 account volumes: one per account, one VM at a time, encrypted at rest, never in images
-- [ ] F15 isolation label "vm" is proven, not declared: the runner
-      reports it only after it has booted a guest on this host and
-      verified the running domain against the F16 controls below; a
-      host without KVM is a "container" target with stricter defaults
-- [ ] F16, libvirt/QEMU form (the Firecracker jailer wording in note 04
-      does not apply to the MVP backend): the domain XML carries no host
-      filesystem mounts, no host device passthrough, no sockets; nested
-      virtualization off; QEMU runs as a dedicated unprivileged user;
-      libvirt's security driver (sVirt via AppArmor or SELinux) confines
-      each QEMU process; QEMU's seccomp sandbox is on; cgroups enforce
-      the vCPU and memory budget; guest-to-host traffic denied except
-      DHCP and DNS. The runner asserts each of these from the live
-      domain and host configuration before marking the VM "vm".
-- [ ] F17 vsock accepts only the assigned CID, guest agent authenticates with the JIT token
-- [ ] F18 overlays deleted on retention deadline with confirmation
+- [ ] F10 direct-mode hosts are labelled "full access", never "sandbox"; the runner never runs as root; secrets and tokens are env or socket-scoped to the session's shell, nothing written to disk by the runner
+- [ ] F11 a worktree is never presented as a boundary
+- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed
 - [ ] F20 App private key in the secret store, never the database
 - [ ] F21 installation tokens narrowed to one repo, one hour
 - [ ] F23 no vendor credential ever stored by the platform
 - [ ] F24 every object owned by the user; queries scoped
 - [ ] F25 unguessable session ids plus ticket authorization
 
-Deferred to later slices: F14 host egress proxy (tokens delivered by
-seed in the MVP), F26 signed updates, Tailscale mode for the control
-plane itself, and the Firecracker jailer form of F16, which applies
-only when that backend arrives.
+Deferred to later slices, with the VMs: F13 account volumes, F14 host
+egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
+retention. Also deferred: F26 signed updates and Tailscale mode for the
+control plane itself.

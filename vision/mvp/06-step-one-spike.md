@@ -2,14 +2,14 @@
 
 ## Goal
 
-A tmux-backed terminal on the Hetzner host, streamed to one browser
-page, that survives closing the tab, losing wifi, and restarting the
+A tmux-backed terminal on a host you own (the Mac Studio and the
+Hetzner box, both), streamed to one browser page, that survives closing the tab, losing wifi, and restarting the
 runner. Judged by feel and by a number.
 
 ## Build
 
-- `runner` command in the existing Go module: spawn `tmux new -A -s
-  <id>`, attach a PTY, stream bytes over one outbound WebSocket to a
+- `runner` command, a Go binary for macOS and Linux: spawn `tmux new -A
+  -s <id>`, attach a PTY, stream bytes over one outbound WebSocket to a
   tiny relay, resize, ring buffer of a few MB, tail replay on attach,
   reconnect ladder with an epoch counter.
 - Tiny relay: pairs one browser socket to one runner socket by session
@@ -24,7 +24,8 @@ runner. Judged by feel and by a number.
   same Hetzner region as the host.
 - Close the tab, reopen: same screen, cursor where it was.
 - Kill the runner, restart it: session still there via tmux.
-- Run `codex` in it from a phone browser and give it a task.
+- Run `claude` in it from a phone browser, log in via the printed URL,
+  and give it a task.
 
 ## Open questions
 

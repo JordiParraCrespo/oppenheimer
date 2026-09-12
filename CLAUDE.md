@@ -11,9 +11,10 @@ orchestrator. There is no code yet.
   silently rewrite history in earlier notes.
 - The one-page brief `vision/brief.html` is regenerated from the notes;
   keep it in sync when a note changes.
-- The MVP is a personal workspace of sessions in KVM guests on the
-  existing Hetzner runner host, reusing its Go controller (note 08), each session a terminal, Codex first, hosted control
-  plane (`vision/07-mvp.md`). Anything else is a later slice.
+- The MVP is Orca on the web without VMs: connect a host you own, run
+  sessions on it as worktrees with a tmux terminal, Claude Code first
+  (`vision/mvp/00-scope.md`). VMs, sleep, accounts, and Codex are the
+  slices after. `vision/07-mvp.md` is superseded and kept for history.
 - In-depth MVP design lives in `vision/mvp/`, one document per area,
   each with decided points and open questions, and its own decision
   log in `vision/mvp/README.md`.
