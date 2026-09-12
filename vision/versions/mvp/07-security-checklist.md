@@ -1,6 +1,6 @@
 # 07 — Security checklist
 
-Findings from `../04-security-review.md` that the MVP must satisfy,
+Findings from `../../04-security-review.md` that the MVP must satisfy,
 as a checklist. The rest of that note applies when the corresponding
 feature lands.
 

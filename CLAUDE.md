@@ -13,8 +13,8 @@ orchestrator. There is no code yet.
   keep it in sync when a note changes.
 - The MVP is Orca on the web without VMs: connect a host you own, run
   sessions on it as worktrees with a tmux terminal, Claude Code first
-  (`vision/mvp/00-scope.md`). VMs, sleep, accounts, and Codex are the
+  (`vision/versions/mvp/00-scope.md`). VMs, sleep, accounts, and Codex are the
   slices after. `vision/07-mvp.md` is superseded and kept for history.
-- In-depth MVP design lives in `vision/mvp/`, one document per area,
+- In-depth MVP design lives in `vision/versions/mvp/`, one document per area,
   each with decided points and open questions, and its own decision
-  log in `vision/mvp/README.md`.
+  log in `vision/versions/mvp/README.md`.

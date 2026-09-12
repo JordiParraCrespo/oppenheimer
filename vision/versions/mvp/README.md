@@ -1,6 +1,6 @@
 # MVP design
 
-In-depth design of the MVP defined in [`../07-mvp.md`](../07-mvp.md).
+In-depth design of the MVP defined in [`../../07-mvp.md`](../../07-mvp.md).
 One document per area, in the order they unblock each other. Each
 document opens with what is already decided in the research notes,
 then the questions still open. Decisions made here are final for the
