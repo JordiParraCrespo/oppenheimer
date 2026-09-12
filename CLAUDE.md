@@ -14,3 +14,6 @@ orchestrator. There is no code yet.
 - The MVP is a personal workspace of sessions in KVM guests on the
   existing Hetzner runner host, reusing its Go controller (note 08), each session a terminal, Codex first, hosted control
   plane (`vision/07-mvp.md`). Anything else is a later slice.
+- In-depth MVP design lives in `vision/mvp/`, one document per area,
+  each with decided points and open questions, and its own decision
+  log in `vision/mvp/README.md`.
