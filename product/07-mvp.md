@@ -1,5 +1,10 @@
 # 07 — The MVP: a personal workspace of sessions in VMs
 
+> **Superseded on 2026-09-12 by `versions/mvp/00-scope.md`.** The MVP no longer
+> includes VMs. Sessions run directly on hosts you own, Orca-style, with
+> Claude Code first. Everything VM-related in this note is the slice
+> after the MVP. Kept for history.
+
 > In one line: **Orca's core, rebuilt as a hosted web app, with a VM on
 > your own host under each session instead of your laptop.** Same
 > sidebar, worktrees, terminal, tabs, and account switcher. Different
