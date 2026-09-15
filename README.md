@@ -19,21 +19,34 @@ tooling (see [Trimming the monorepo](#trimming-the-monorepo)).
 
 ## What's included
 
-### Apps
+### The MVP
+
+| App           | Description                                                                            |
+| ------------- | -------------------------------------------------------------------------------------- |
+| `apps/api`    | NestJS control plane — identity, hosts, sessions, relay, GitHub App tokens (Domain-Driven Hexagon, DB-backed RBAC, queues, caching, storage, email) |
+| `apps/web`    | The console — Vite + TanStack Router SPA: sessions, New session, hosts, settings       |
+| `apps/runner` | The Go host agent — worktrees, tmux, PTY stream, outbound connection to the control plane |
+| `apps/docs`   | Docusaurus — architecture and error catalog                                            |
+| `e2e`         | Playwright suites against the running API and web app                                  |
+
+Start these with `pnpm dev:mvp`.
+
+### Kept for later slices
+
+Carried from the starter so the slice that needs them starts with them in
+place. Nothing in the MVP builds on them.
 
 | App                    | Description                                                              |
 | ----------------------- | -------------------------------------------------------------------------- |
-| `apps/api`              | NestJS REST API — Domain-Driven Hexagon architecture, DB-backed RBAC, queues, caching, storage, email |
-| `apps/web`               | Consumer Vite + TanStack Router SPA                                       |
-| `apps/mobile`            | Consumer Expo app — NativeWind, i18next, SecureStore                     |
 | `apps/admin-web`         | Admin control plane (web) — users, roles and permissions                 |
 | `apps/admin-mobile`      | Admin control plane (Expo) — users and roles                             |
-| `apps/docs`              | Docusaurus — project documentation                                       |
+| `apps/mobile`            | Consumer Expo app — NativeWind, i18next, SecureStore                     |
 | `apps/cli`               | `oppenheimer` command-line interface — commander, scoped API tokens            |
 | `apps/mcp`               | MCP server — stdio + Streamable HTTP, scope-filtered tools                |
-| `apps/runner`            | Go service template (REST + WS, API keys) the API delegates long-lived work to |
 | `apps/web-showcase`      | Next.js showcase for the web design system                                |
 | `apps/mobile-showcase`   | Expo showcase for the mobile design system                                |
+| `qa`                     | Scenario-driven Playwright QA pack with maturity tracking and screenshots |
+| `helm`                   | Kubernetes chart for the Tier 2 deployment                               |
 
 ### Packages
 
@@ -52,13 +65,6 @@ tooling (see [Trimming the monorepo](#trimming-the-monorepo)).
 | `packages/config`                 | Shared TypeScript configs                                          |
 | `packages/nitro-app-info`         | Nitro native module (Swift/Kotlin) exposing native app info to the mobile apps |
 
-### Testing
-
-| Workspace | Description                                                                |
-| --------- | ---------------------------------------------------------------------------- |
-| `e2e`     | Playwright suites against the running API and web app                       |
-| `qa`      | Scenario-driven Playwright QA pack with maturity tracking and screenshots    |
-
 ## Quick start
 
 ```bash
@@ -71,8 +77,8 @@ pnpm docker:dev
 # Copy the environment file (one .env at the repo root serves every app)
 cp .env.example .env
 
-# Start all apps in dev mode
-pnpm dev
+# Start the MVP: api + web + runner (pnpm dev starts every app)
+pnpm dev:mvp
 ```
 
 <!-- oppenheimer:begin starter -->
@@ -125,7 +131,8 @@ file that mentions one wraps those lines in `oppenheimer:begin`/`oppenheimer:end
 ## Scripts
 
 ```bash
-pnpm dev                 # Start all apps in dev mode
+pnpm dev:mvp             # Start the MVP loop: api, web, runner
+pnpm dev                 # Start every app
 pnpm build                # Build all apps and packages
 pnpm test                 # Run unit tests
 pnpm test:integration     # Run integration tests

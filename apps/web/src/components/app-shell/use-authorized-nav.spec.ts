@@ -48,52 +48,52 @@ describe('useAuthorizedNav', () => {
   it('offers an owner everything', () => {
     signedInWith([{ action: 'manage', subject: 'all' }]);
 
-    expect(routesOffered()).toEqual(['/dashboard', '/settings']);
+    expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
   });
 
   it('offers a member holding nothing only the ungated rows', () => {
     signedInWith([]);
 
-    expect(routesOffered()).toEqual(['/dashboard', '/settings']);
+    expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
   });
 
   it('keeps control-plane permissions out of consumer navigation', () => {
     signedInWith([{ action: 'read', subject: 'Member' }]);
 
-    expect(routesOffered()).toEqual(['/dashboard', '/settings']);
+    expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
   });
 
   it('shows only the ungated rows while the permission set is loading', () => {
     stillLoading();
 
-    expect(routesOffered()).toEqual(['/dashboard', '/settings']);
+    expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
   });
 
   it('keeps the consumer shell usable when permissions could not be fetched', () => {
     couldNotBeFetched();
 
-    expect(routesOffered()).toEqual(['/dashboard', '/settings']);
+    expect(routesOffered()).toEqual(['/sessions', '/sessions/new', '/settings']);
   });
 });
 
 describe('useLandingRoute', () => {
-  it('is the dashboard for a role that can read it', () => {
+  it('is the sessions list for a role that can read it', () => {
     signedInWith([{ action: 'manage', subject: 'all' }]);
 
-    expect(landing()).toBe('/dashboard');
+    expect(landing()).toBe('/sessions');
   });
 
-  it('is the dashboard even for a reader holding nothing — it reads only their own profile', () => {
+  it('is the sessions list even for a reader holding nothing — the workspace is their own profile', () => {
     signedInWith([]);
 
-    expect(landing()).toBe('/dashboard');
+    expect(landing()).toBe('/sessions');
   });
 
-  it('remains the dashboard while permissions are loading or unavailable', () => {
+  it('remains the sessions list while permissions are loading or unavailable', () => {
     stillLoading();
-    expect(landing()).toBe('/dashboard');
+    expect(landing()).toBe('/sessions');
 
     couldNotBeFetched();
-    expect(landing()).toBe('/dashboard');
+    expect(landing()).toBe('/sessions');
   });
 });

@@ -14,7 +14,7 @@ export const namespaces = namespaceList as unknown as readonly [
   'validation',
   'errors',
   'auth',
-  'dashboard',
+  'sessions',
   'home',
   'nav',
   'control',

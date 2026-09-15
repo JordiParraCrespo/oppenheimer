@@ -53,14 +53,14 @@ export const webAuthClient: IAuthClient = {
   async signInSocial(provider, intent = 'sign-in') {
     const url = (path: string) => new URL(path, window.location.origin).toString();
 
-    // Redirects the browser to the provider and back to /dashboard — but only
+    // Redirects the browser to the provider and back to /sessions — but only
     // when the call to start the round-trip succeeds. It is the one method
     // here that used to skip `unwrap`, so a provider the API rejected resolved
     // as if it had worked and the screen had nothing to show.
     unwrap(
       await authClient.signIn.social({
         provider,
-        callbackURL: url('/dashboard'),
+        callbackURL: url('/sessions'),
         // A failed round-trip comes back here with `?error=<code>` appended, so
         // it has to land on the screen the person actually started from —
         // otherwise a rejected sign-up reports itself on the login screen,

@@ -10,9 +10,9 @@ import { inviteByApi, provisionedUser, signInAs } from '../../support/web';
  *
  * A workspace's owner holds the org-scoped owner role and sees the whole nav. A
  * plain member holds only the default `user` role, which grants nothing on
- * `Member`, so Team is hidden — not merely disabled. Dashboard and Settings
- * declare no policy: the dashboard reads only the caller's own profile, and
- * every user manages their own API tokens.
+ * `Member`, so Team is hidden — not merely disabled. Sessions and Settings
+ * declare no policy: a workspace is personal, and every user manages their
+ * own API tokens.
  */
 
 /** The primary nav landmark, addressed by its accessible name. */

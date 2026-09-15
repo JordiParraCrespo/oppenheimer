@@ -2,17 +2,17 @@ import { Body, Controller, Post, UseGuards, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { BillingSessionResponseDto } from '../../dtos/billing-session.response.dto';
 import { CreateCheckoutCommand } from './create-checkout.command';
 import { CreateCheckoutRequest } from './create-checkout.request.dto';
 
 @ApiTags('Billing')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(ApiAuthGuard)
 @Controller('billing')
 export class CreateCheckoutHttpController {
   constructor(private readonly commandBus: CommandBus) {}

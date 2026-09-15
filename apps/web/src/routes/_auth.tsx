@@ -13,13 +13,13 @@ export const Route = createFileRoute('/_auth')({
 
     // A signed-in invitee still has to redeem the invitation. Keep this one
     // auth-layout route reachable so an existing user can sign in and return
-    // to the same link instead of being bounced to the dashboard first.
+    // to the same link instead of being bounced to the sessions list first.
     if (location.pathname === '/accept-invitation') return;
 
     // A deep link opened cold is matched before the session store has caught
     // up with the restore query, so `_authenticated` bounces it here with the
     // original path in `redirect`. Honour it: without this the reader silently
-    // lands on the dashboard instead of the page they asked for.
+    // lands on the sessions list instead of the page they asked for.
     //
     // Sanitised with the same rule the login form applies before it sends a
     // reader on: `?redirect=https://evil.example` on a link an authenticated
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_auth')({
     const requested = sanitizeRedirect((location.search as { redirect?: unknown }).redirect);
 
     if (requested) throw redirect({ href: requested });
-    throw redirect({ to: '/dashboard' });
+    throw redirect({ to: '/sessions' });
   },
   component: AuthLayout,
 });

@@ -81,7 +81,7 @@ func TestMiddleware(t *testing.T) {
 	if code := do("/me", ""); code != 401 {
 		t.Fatalf("no credential: %d", code)
 	}
-	if code := do("/me", "flr_unknown"); code != 401 {
+	if code := do("/me", "opr_unknown"); code != 401 {
 		t.Fatalf("unsupported format: %d", code)
 	}
 	reader, _ := j.Issue("r", "", scope.NewSet(scope.Scope("keys:read")), time.Minute, time.Now())

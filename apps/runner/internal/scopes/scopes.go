@@ -7,15 +7,13 @@ import "github.com/jordiparracrespo/oppenheimer/packages/go/auth/scope"
 
 // Catalog entries.
 const (
-	JobsRead   scope.Scope = "jobs:read"
-	JobsWrite  scope.Scope = "jobs:write"
 	KeysRead   scope.Scope = "keys:read"
 	KeysWrite  scope.Scope = "keys:write"
 	EventsRead scope.Scope = "events:read"
 )
 
 // Catalog is what keys and tokens are validated against.
-var Catalog = scope.NewCatalog(JobsRead, JobsWrite, KeysRead, KeysWrite, EventsRead)
+var Catalog = scope.NewCatalog(KeysRead, KeysWrite, EventsRead)
 
 // All lists every scope, for the bootstrap principal and listings.
 func All() []scope.Scope { return Catalog.All() }

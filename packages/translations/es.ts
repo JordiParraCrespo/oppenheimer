@@ -3,7 +3,6 @@ import auth from './es/auth.json';
 import common from './es/common.json';
 import consent from './es/consent.json';
 import control from './es/control.json';
-import dashboard from './es/dashboard.json';
 import emails from './es/emails.json';
 import errors from './es/errors.json';
 import home from './es/home.json';
@@ -13,6 +12,7 @@ import onboarding from './es/onboarding.json';
 import pages from './es/pages.json';
 import profile from './es/profile.json';
 import publicCopy from './es/public.json';
+import sessions from './es/sessions.json';
 import settings from './es/settings.json';
 import table from './es/table.json';
 import theme from './es/theme.json';
@@ -24,7 +24,6 @@ const es = {
   validation,
   errors,
   auth,
-  dashboard,
   home,
   nav,
   control,
@@ -35,6 +34,7 @@ const es = {
   pages,
   profile,
   public: publicCopy,
+  sessions,
   settings,
   table,
   theme,

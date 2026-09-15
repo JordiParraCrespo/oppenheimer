@@ -13,6 +13,7 @@ import { Pool } from 'pg';
 import { orUndefined } from '../config/env';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue';
 import { buildInvitationUrl } from './invitation-url';
+import { provisionPersonalWorkspace } from './personal-workspace';
 
 /**
  * Access-control roles for the admin plugin. Every name listed in `adminRoles`
@@ -293,16 +294,27 @@ export const auth = betterAuth({
           } catch {
             // Roles table not migrated yet, or transient error — ignore.
           }
-          // Sign-up deliberately stops here: a new account holds nothing and
-          // belongs nowhere until it creates a workspace or an invitation puts
-          // it in one. This used to provision a personal organization with an
-          // `owner` membership, which read as generosity and was the opposite —
-          // the default `user` role grants none of the CRM, so the account
-          // owned an organization it had no permission to open, and the
-          // dashboard the app redirects to answered 403 on the first screen
-          // after registering. Creating an organization is now what grants
-          // access to it (see `OrganizationsService.create`), so the two are
-          // one act instead of two mechanisms that disagreed.
+          // Sign-up creates the personal workspace: the organization row the
+          // account lives in, with the account as its single owner and the
+          // org-scoped `owner` role that opens it (the same pair
+          // `OrganizationsService.create` writes). One transaction, so a
+          // half-provisioned workspace cannot exist. Best-effort like the
+          // role assignment above: if it fails, the account still exists and
+          // the web app's onboarding screen offers to create the workspace.
+          const client = await pool.connect();
+          try {
+            await client.query('BEGIN');
+            await provisionPersonalWorkspace(client, user);
+            await client.query('COMMIT');
+          } catch (error) {
+            await client.query('ROLLBACK').catch(() => undefined);
+            new Logger('BetterAuth').error(
+              `Could not provision the personal workspace for ${user.email}`,
+              error instanceof Error ? error.stack : String(error),
+            );
+          } finally {
+            client.release();
+          }
         },
       },
     },

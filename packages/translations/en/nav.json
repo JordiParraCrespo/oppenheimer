@@ -1,6 +1,5 @@
 {
   "menu": "Menu",
-  "dashboard": "Dashboard",
   "logOut": "Log out",
   "apiTokens": "API tokens",
   "commandEmpty": "No matches.",
@@ -14,5 +13,7 @@
   "users": "Users",
   "roles": "Roles",
   "toggleSidebar": "Toggle sidebar",
-  "viewProfile": "View profile"
+  "viewProfile": "View profile",
+  "sessions": "Sessions",
+  "newSession": "New session"
 }

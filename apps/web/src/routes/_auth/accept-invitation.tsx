@@ -125,7 +125,7 @@ function AcceptInvitationPage() {
       // Awaited: the shell redirects on a settled empty list, and navigating
       // while the cached `[]` is still being refetched would race it.
       await queryClient.invalidateQueries();
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/sessions' });
     },
   });
 

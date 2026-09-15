@@ -242,18 +242,18 @@
     },
     "showPassword": "Show password"
   },
-  "dashboard": {
-    "title": "Dashboard",
-    "welcome": "Welcome back, {{name}}.",
-    "totalUsers": "Total Users",
-    "activeSessions": "Active Sessions",
-    "apiCalls": "API Calls",
-    "uptime": "Uptime",
-    "gettingStarted": "Getting Started",
-    "gettingStartedDescription": "This is a placeholder dashboard. Connect your data and customize it.",
-    "accountStatus": "Your role is <role>{{role}}</role> and your account is <status>{{status}}</status>.",
-    "active": "active",
-    "inactive": "inactive"
+  "sessions": {
+    "title": "Sessions",
+    "subtitle": "Each session is a worktree with a terminal on a host you own.",
+    "newSession": "New session",
+    "emptyTitle": "No sessions yet",
+    "emptyDescription": "Add a host under Settings, then start your first session.",
+    "new": {
+      "title": "New session",
+      "subtitle": "Pick a host, a repository, a branch and an agent.",
+      "emptyTitle": "Coming with the first host",
+      "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+    }
   },
   "home": {
     "greeting": "Welcome back, {{name}}",
@@ -281,7 +281,6 @@
   },
   "nav": {
     "menu": "Menu",
-    "dashboard": "Dashboard",
     "logOut": "Log out",
     "apiTokens": "API tokens",
     "commandEmpty": "No matches.",
@@ -295,7 +294,9 @@
     "users": "Users",
     "roles": "Roles",
     "toggleSidebar": "Toggle sidebar",
-    "viewProfile": "View profile"
+    "viewProfile": "View profile",
+    "sessions": "Sessions",
+    "newSession": "New session"
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -439,7 +440,7 @@
     "deny": "Deny",
     "invalidTitle": "This link has expired",
     "invalidDescription": "Start the connection again from the application that sent you here.",
-    "backToDashboard": "Back to dashboard",
+    "backToSessions": "Back to sessions",
     "noRedirect": "The server did not say where to send you next."
   },
   "onboarding": {
@@ -869,7 +870,8 @@
       "integrations": "Integrations",
       "label": "Settings sections",
       "notifications": "Notifications",
-      "security": "Security"
+      "security": "Security",
+      "hosts": "Hosts"
     },
     "saved": "Saved",
     "security": {
@@ -884,7 +886,11 @@
     },
     "subtitle": "Workspace-wide configuration for {{organization}}.",
     "subtitleFallback": "Workspace-wide configuration.",
-    "title": "Settings"
+    "title": "Settings",
+    "hosts": {
+      "emptyTitle": "No hosts yet",
+      "emptyDescription": "A host is a machine you own. Pairing is one pasted command; the host appears here once it connects."
+    }
   },
   "table": {
     "clearFilter": "Clear filter",

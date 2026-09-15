@@ -27,7 +27,6 @@ import { auth } from './auth/auth';
 import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
 import { AuthzModule } from './authz/authz.module';
-import { BillingModule } from './billing/billing.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
@@ -40,7 +39,6 @@ import {
 } from './config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { HealthModule } from './health/health.module';
-import { LeadsModule } from './leads/leads.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -174,12 +172,16 @@ import { UsersModule } from './users/user.module';
     UsersModule,
     ProfileModule,
     RolesModule,
+    // The Better Auth organization row is the personal workspace
+    // (`product/versions/mvp/00-scope.md`); the roster and invitation routes
+    // it ships stay until the teams slice needs them. The starter's `leads`
+    // reference module and `billing` are not composed: they are not in the
+    // MVP and the product contexts (hosts, installations, sessions, relay)
+    // take their place here as they land.
     OrganizationsModule,
-    LeadsModule,
     AdminModule,
     HealthModule,
     QueueModule,
-    BillingModule,
   ],
   providers: [
     // Keyed on the calling credential, not the source IP — see the guard.

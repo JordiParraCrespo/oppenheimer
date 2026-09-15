@@ -14,9 +14,7 @@ import (
 	keyspg "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/apikeys/adapters/postgres"
 	keysapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/apikeys/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/config"
-	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/jobs"
-	jobspg "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/jobs/adapters/postgres"
-	jobsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/jobs/app"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/scopes"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/auth"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/health"
@@ -38,7 +36,6 @@ const (
 type Server struct {
 	Handler http.Handler
 	Hub     *ws.Hub
-	Jobs    *jobs.Module
 	APIKeys *apikeys.Module
 	Health  *health.Module
 	// pool is non-nil when RUNNER_DATABASE_URL is set; closed on Shutdown.
@@ -72,7 +69,6 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 	var (
 		pool     *pgxpool.Pool
 		keysRepo keysapp.Repository
-		jobsRepo jobsapp.Repository
 	)
 	if cfg.DatabaseURL != "" {
 		p, err := pg.Open(ctx, cfg.DatabaseURL, pg.Options{})
@@ -81,10 +77,6 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 		}
 		pool = p
 		if keysRepo, err = keyspg.New(ctx, pool); err != nil {
-			pool.Close()
-			return nil, err
-		}
-		if jobsRepo, err = jobspg.New(ctx, pool); err != nil {
 			pool.Close()
 			return nil, err
 		}
@@ -107,21 +99,7 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 		Logger:       logger,
 		Repository:   keysRepo,
 	})
-	jobsModule := jobs.New(jobs.Options{
-		Hub:        hub,
-		Problems:   problems,
-		Logger:     logger,
-		Workers:    cfg.Jobs.Workers,
-		QueueSize:  cfg.Jobs.QueueSize,
-		Repository: jobsRepo,
-	})
 	healthModule := health.New(cfg.Version, capabilities)
-	healthModule.Register(health.CheckerFunc{CheckName: "jobs_queue", Fn: func(context.Context) error {
-		if jobsModule.Service.Depth() >= cfg.Jobs.QueueSize {
-			return errQueueSaturated
-		}
-		return nil
-	}})
 	if pool != nil {
 		healthModule.Register(pg.Checker{Pool: pool})
 	}
@@ -147,33 +125,31 @@ func New(ctx context.Context, cfg *config.Config, logger *slog.Logger) (*Server,
 	root.Group(func(api *httpx.Router) {
 		api.Use(auth.Authenticate(problems, logger, verifiers...))
 		keys.Mount(api)
-		jobsModule.Mount(api)
-		api.Handle("GET /v1/ws", ws.Handler(hub, problems, logger, jobsModule.Authorize()))
+		api.Handle("GET /v1/ws", ws.Handler(hub, problems, logger, authorizeEvents))
 	})
 
-	return &Server{Handler: root, Hub: hub, Jobs: jobsModule, APIKeys: keys, Health: healthModule, pool: pool, logger: logger}, nil
+	return &Server{Handler: root, Hub: hub, APIKeys: keys, Health: healthModule, pool: pool, logger: logger}, nil
 }
 
-// Start launches background work (the job workers). It returns at once.
-func (s *Server) Start(ctx context.Context) {
-	s.Jobs.Start(ctx)
-	// Reconcile jobs a previous run left behind (persistent store only).
-	if err := s.Jobs.Recover(ctx); err != nil {
-		s.logger.Error("job recovery failed", slog.Any("error", err))
+// authorizeEvents is the topic rule for the event stream until a product
+// context (sessions, hosts) owns topics of its own: every topic needs
+// events:read. When a context arrives it supplies its own ws.Authorizer and
+// the composition root chains them here.
+func authorizeEvents(_ context.Context, p *auth.Principal, topic string) error {
+	if !p.Can(scopes.EventsRead) {
+		return problem.ErrForbidden.WithDetail("topic %q needs %s", topic, scopes.EventsRead)
 	}
+	return nil
 }
 
-// Shutdown closes long-lived connections and waits for workers.
+// Start launches background work. Nothing runs in the background yet; the
+// hook stays so main.go and the tests keep one lifecycle.
+func (s *Server) Start(context.Context) {}
+
+// Shutdown closes long-lived connections.
 func (s *Server) Shutdown(ctx context.Context) {
 	s.Hub.Close(ctx)
-	s.Jobs.Service.Wait()
 	if s.pool != nil {
 		s.pool.Close()
 	}
 }
-
-type saturated struct{}
-
-func (saturated) Error() string { return "job queue saturated" }
-
-var errQueueSaturated error = saturated{}

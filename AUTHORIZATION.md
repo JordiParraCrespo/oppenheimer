@@ -1,4 +1,15 @@
-# Oppenheimer — Authorization Kernel
+# Authorization Kernel (starter design, kept as history)
+
+> **Read this first.** This document is the design of the authorization
+> kernel the Flama starter shipped with, and it describes the starter's
+> imagined products (a CRM with leads, a WMS, a support desk). Oppenheimer
+> is none of those: the MVP is a single-user terminal orchestrator with a
+> personal workspace per account, and its auth model fits on one page:
+> [`product/versions/mvp/08-auth.md`](product/versions/mvp/08-auth.md).
+> The kernel's mechanics (resource registry, fail-closed `PoliciesGuard`,
+> scopes, grants) are still what runs in `apps/api`, so this stays as the
+> reference for *how* they work. Nothing below is a product decision for
+> Oppenheimer; where the two disagree, the product notes win.
 
 > **Status:** the kernel is built. Phases 0–2 and the grant-safety half of
 > Phase 3 are implemented, tested and on `main`'s branch; the audit log and the
@@ -28,9 +39,9 @@
 
 ## Part 1 — What we are building, and why
 
-Oppenheimer is a boilerplate. The next product built on it might be a CRM with leads,
-a WMS with warehouses, a support desk with queues, or a billing console with
-invoices. Authorization is the part of a boilerplate that is most expensive to
+The starter this codebase began from is a boilerplate. The next product built
+on it might be a CRM with leads, a WMS with warehouses, a support desk with
+queues, or a billing console with invoices. Authorization is the part of a boilerplate that is most expensive to
 retrofit and most damaging to get wrong, so it has to be **generic on the way
 in**.
 

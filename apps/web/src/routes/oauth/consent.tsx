@@ -90,7 +90,7 @@ function ConsentPage() {
   if (!search.consent_code) {
     return (
       <CenteredCard title={t('consent.invalidTitle')} description={t('consent.invalidDescription')}>
-        <Button render={<Link to="/dashboard" />}>{t('consent.backToDashboard')}</Button>
+        <Button render={<Link to="/sessions" />}>{t('consent.backToSessions')}</Button>
       </CenteredCard>
     );
   }

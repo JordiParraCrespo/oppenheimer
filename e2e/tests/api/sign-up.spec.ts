@@ -49,28 +49,18 @@ test.describe('sign-up', () => {
   });
 
   /**
-   * The inverse of what this file used to assert.
-   *
-   * Sign-up provisioned a personal organization and a "General" workspace until
-   * the account got them by creating one instead — the hook handed out an
-   * organization the default `user` role could not open, so registering landed
-   * on a dashboard that answered 403 (see the note in
-   * `apps/api/src/auth/auth.ts`). These two specs kept asserting the old
-   * behaviour and had been failing ever since; nothing ran them. Re-pointed at
-   * the contract that replaced it, so re-introducing the hook fails here.
-   *
-   * The other half — onboarding turning a bare account into a workspace — is
-   * `e2e/tests/web/onboarding.spec.ts`.
+   * The personal workspace (`product/versions/mvp/00-scope.md`): sign-up
+   * provisions one organization owned by the account and nothing else — no
+   * "General" team, no second membership. The hook is best-effort and runs a
+   * beat behind the response; onboarding (`e2e/tests/web/onboarding.spec.ts`)
+   * is the recovery path when it did not land.
    */
-  test('provisions nothing: an account belongs nowhere until onboarding', async () => {
+  test('provisions the personal workspace: one owned organization, no team', async () => {
     const { userId } = await signedUpContext('org');
 
-    // The provisioning under test ran in an after-create database hook, a beat
-    // behind the response. Wait that beat out before reading, or this would
-    // pass just as happily with the hook back in place.
-    await new Promise((resolve) => setTimeout(resolve, 1_000));
-
-    expect(await findOrganizationsForUser(userId)).toEqual([]);
+    await expect
+      .poll(async () => findOrganizationsForUser(userId), { timeout: 10_000 })
+      .toEqual([expect.objectContaining({ role: 'owner' })]);
     expect(await findTeamsForUser(userId)).toEqual([]);
   });
 

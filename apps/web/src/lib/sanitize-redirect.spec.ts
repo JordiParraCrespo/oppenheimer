@@ -4,7 +4,7 @@ import { sanitizeRedirect } from './sanitize-redirect';
 describe('sanitizeRedirect', () => {
   it('keeps a same-origin path, search string included', () => {
     expect(sanitizeRedirect('/settings?section=security')).toBe('/settings?section=security');
-    expect(sanitizeRedirect('/dashboard')).toBe('/dashboard');
+    expect(sanitizeRedirect('/sessions')).toBe('/sessions');
   });
 
   it('drops an absolute URL', () => {

@@ -10,6 +10,6 @@
   "deny": "Denegar",
   "invalidTitle": "Este enlace ha caducado",
   "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
-  "backToDashboard": "Volver al panel",
+  "backToSessions": "Volver a las sesiones",
   "noRedirect": "El servidor no ha indicado a dónde continuar."
 }

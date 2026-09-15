@@ -3,9 +3,9 @@ import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import type { SubscriptionEntity } from '../../domain/subscription.entity';
 import { SubscriptionMapper } from '../../subscription.mapper';
@@ -19,7 +19,7 @@ import { FindSubscriptionsRequest } from './find-subscriptions.request.dto';
   description: "The caller's roles do not permit this",
   code: 'AUTH_002',
 })
-@UseGuards(AuthGuard, PoliciesGuard)
+@UseGuards(ApiAuthGuard, PoliciesGuard)
 @Controller('billing')
 export class FindSubscriptionsHttpController {
   constructor(

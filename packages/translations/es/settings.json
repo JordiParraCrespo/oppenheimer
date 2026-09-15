@@ -43,7 +43,8 @@
     "integrations": "Integraciones",
     "label": "Secciones de configuración",
     "notifications": "Notificaciones",
-    "security": "Seguridad"
+    "security": "Seguridad",
+    "hosts": "Máquinas"
   },
   "saved": "Guardado",
   "security": {
@@ -58,5 +59,9 @@
   },
   "subtitle": "Configuración de todo el espacio de trabajo de {{organization}}.",
   "subtitleFallback": "Configuración de todo el espacio de trabajo.",
-  "title": "Configuración"
+  "title": "Configuración",
+  "hosts": {
+    "emptyTitle": "Aún no hay máquinas",
+    "emptyDescription": "Una máquina es un ordenador tuyo. Emparejarla es pegar un comando; aparece aquí en cuanto se conecta."
+  }
 }

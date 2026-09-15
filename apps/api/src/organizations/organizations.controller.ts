@@ -13,12 +13,15 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { isOrganizationAllowed } from '@oppenheimer/shared';
 import type { Request } from 'express';
 import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decorator';
+import { CurrentScope } from '../auth/decorators/current-scope.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
+import type { ScopeContext } from '../auth/scope-context';
 import {
   CheckSlugRequest,
   CreateOrganizationRequest,
@@ -84,8 +87,17 @@ export class OrganizationsController {
   @CheckPolicies({ action: 'read', subject: 'Organization' })
   @ApiOperation({ summary: "List the caller's organizations" })
   @ApiResponse({ status: 200, type: [OrganizationResponseDto] })
-  list(@Req() req: Request): Promise<OrganizationResponseDto[]> {
-    return this.organizations.list(req.headers);
+  async list(
+    @Req() req: Request,
+    @CurrentScope() scope: ScopeContext | null,
+  ): Promise<OrganizationResponseDto[]> {
+    const organizations = await this.organizations.list(req.headers);
+    // A collection route names no organization for `ScopesGuard` to check, so
+    // a token pinned to one organization would otherwise see every one its
+    // owner belongs to. Apply the credential's restriction row by row instead.
+    return organizations.filter((organization) =>
+      isOrganizationAllowed(scope?.resourceScope, organization.id),
+    );
   }
 
   @Post('check-slug')

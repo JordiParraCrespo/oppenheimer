@@ -23,10 +23,10 @@ export function useAuthorizedNav(): NavItem[] {
  * Where to send someone when the product, not the reader, picks the screen —
  * or `null` when there is nowhere honest to send them.
  *
- * The first `NAV` row the reader's ability reaches. The dashboard declares no
- * policy (it reads only the caller's own profile), so today this is always the
- * dashboard once permissions are known; the hook exists so a gated first row
- * added later never lands a reader on a screen that answers 403.
+ * The first `NAV` row the reader's ability reaches. The sessions list declares
+ * no policy (a workspace is personal), so today this is always the sessions
+ * list once permissions are known; the hook exists so a gated first row added
+ * later never lands a reader on a screen that answers 403.
  *
  * Settings is deliberately not a fallback: `null` says no destination is
  * better than the one we are on, and the caller keeps its own honest error on

@@ -22,9 +22,20 @@ import (
 
 const bootstrap = "test-bootstrap-key-0123456789abcdef0123456789"
 
+var servers = map[*httptest.Server]*Server{}
+
+func serverOf(t *testing.T, ts *httptest.Server) *Server {
+	t.Helper()
+	srv, ok := servers[ts]
+	if !ok {
+		t.Fatal("unknown test server")
+	}
+	return srv
+}
+
 func newTestServer(t *testing.T, extra map[string]string) *httptest.Server {
 	t.Helper()
-	env := map[string]string{"RUNNER_BOOTSTRAP_API_KEY": bootstrap, "RUNNER_ENV": "test", "RUNNER_JOB_WORKERS": "2"}
+	env := map[string]string{"RUNNER_BOOTSTRAP_API_KEY": bootstrap, "RUNNER_ENV": "test"}
 	for k, v := range extra {
 		env[k] = v
 	}
@@ -40,7 +51,9 @@ func newTestServer(t *testing.T, extra map[string]string) *httptest.Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	srv.Start(ctx)
 	ts := httptest.NewServer(srv.Handler)
+	servers[ts] = srv
 	t.Cleanup(func() {
+		delete(servers, ts)
 		ts.Close()
 		cancel()
 		srv.Shutdown(context.Background())
@@ -73,7 +86,7 @@ func call(t *testing.T, ts *httptest.Server, method, path, token string, body an
 func TestHealthIsPublic(t *testing.T) {
 	ts := newTestServer(t, nil)
 	res, body := call(t, ts, http.MethodGet, "/readyz", "", nil)
-	if res.StatusCode != 200 || !strings.Contains(string(body), `"jobs_queue":"up"`) {
+	if res.StatusCode != 200 || !strings.Contains(string(body), `"status":"ok"`) {
 		t.Fatalf("%d %s", res.StatusCode, body)
 	}
 	res, body = call(t, ts, http.MethodGet, "/health/capabilities", "", nil)
@@ -107,7 +120,7 @@ func TestKeyLifecycleAndScopes(t *testing.T) {
 	ts := newTestServer(t, nil)
 
 	// Bootstrap mints a read-only key.
-	res, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "reader", "scopes": []string{"jobs:read"}})
+	res, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "reader", "scopes": []string{"events:read"}})
 	if res.StatusCode != 201 {
 		t.Fatalf("%d %s", res.StatusCode, body)
 	}
@@ -115,18 +128,18 @@ func TestKeyLifecycleAndScopes(t *testing.T) {
 		ID, Token, Prefix string
 	}
 	_ = json.Unmarshal(body, &created)
-	if !strings.HasPrefix(created.Token, "flr_") || !strings.HasPrefix(created.Token, created.Prefix) {
+	if !strings.HasPrefix(created.Token, "opr_") || !strings.HasPrefix(created.Token, created.Prefix) {
 		t.Fatalf("token %q prefix %q", created.Token, created.Prefix)
 	}
 
-	// The reader can read jobs but neither write them nor mint keys.
-	if res, _ = call(t, ts, http.MethodGet, "/v1/jobs", created.Token, nil); res.StatusCode != 200 {
+	// The reader can see itself but neither list keys nor mint them.
+	if res, _ = call(t, ts, http.MethodGet, "/v1/me", created.Token, nil); res.StatusCode != 200 {
 		t.Fatalf("read: %d", res.StatusCode)
 	}
-	if res, _ = call(t, ts, http.MethodPost, "/v1/jobs", created.Token, map[string]any{"kind": "sleep"}); res.StatusCode != 403 {
-		t.Fatalf("write should be forbidden: %d", res.StatusCode)
+	if res, _ = call(t, ts, http.MethodGet, "/v1/api-keys", created.Token, nil); res.StatusCode != 403 {
+		t.Fatalf("listing keys should be forbidden: %d", res.StatusCode)
 	}
-	if res, _ = call(t, ts, http.MethodPost, "/v1/api-keys", created.Token, map[string]any{"name": "x", "scopes": []string{"jobs:read"}}); res.StatusCode != 403 {
+	if res, _ = call(t, ts, http.MethodPost, "/v1/api-keys", created.Token, map[string]any{"name": "x", "scopes": []string{"events:read"}}); res.StatusCode != 403 {
 		t.Fatalf("minting should be forbidden: %d", res.StatusCode)
 	}
 
@@ -134,7 +147,7 @@ func TestKeyLifecycleAndScopes(t *testing.T) {
 	_, body = call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "minter", "scopes": []string{"keys:write"}})
 	var minter struct{ Token string }
 	_ = json.Unmarshal(body, &minter)
-	res, body = call(t, ts, http.MethodPost, "/v1/api-keys", minter.Token, map[string]any{"name": "esc", "scopes": []string{"jobs:write"}})
+	res, body = call(t, ts, http.MethodPost, "/v1/api-keys", minter.Token, map[string]any{"name": "esc", "scopes": []string{"events:read"}})
 	if res.StatusCode != 403 || !strings.Contains(string(body), "APIKEY_003") {
 		t.Fatalf("escalation: %d %s", res.StatusCode, body)
 	}
@@ -143,7 +156,7 @@ func TestKeyLifecycleAndScopes(t *testing.T) {
 	if res, _ = call(t, ts, http.MethodDelete, "/v1/api-keys/"+created.ID, bootstrap, nil); res.StatusCode != 204 {
 		t.Fatalf("revoke: %d", res.StatusCode)
 	}
-	if res, _ = call(t, ts, http.MethodGet, "/v1/jobs", created.Token, nil); res.StatusCode != 401 {
+	if res, _ = call(t, ts, http.MethodGet, "/v1/me", created.Token, nil); res.StatusCode != 401 {
 		t.Fatalf("revoked key still works: %d", res.StatusCode)
 	}
 	if res, _ = call(t, ts, http.MethodDelete, "/v1/api-keys/"+created.ID, bootstrap, nil); res.StatusCode != 409 {
@@ -160,7 +173,7 @@ func TestServiceTokens(t *testing.T) {
 	if !strings.Contains(string(body), "service_tokens") {
 		t.Fatalf("capability missing: %s", body)
 	}
-	res, body := call(t, ts, http.MethodPost, "/v1/service-tokens", bootstrap, map[string]any{"subject": "agent-7", "scopes": []string{"jobs:write", "events:read"}})
+	res, body := call(t, ts, http.MethodPost, "/v1/service-tokens", bootstrap, map[string]any{"subject": "agent-7", "scopes": []string{"events:read"}})
 	if res.StatusCode != 201 {
 		t.Fatalf("%d %s", res.StatusCode, body)
 	}
@@ -177,18 +190,17 @@ func TestServiceTokens(t *testing.T) {
 
 func TestServiceTokensDisabledIs501(t *testing.T) {
 	ts := newTestServer(t, nil)
-	res, body := call(t, ts, http.MethodPost, "/v1/service-tokens", bootstrap, map[string]any{"subject": "a", "scopes": []string{"jobs:read"}})
+	res, body := call(t, ts, http.MethodPost, "/v1/service-tokens", bootstrap, map[string]any{"subject": "a", "scopes": []string{"events:read"}})
 	if res.StatusCode != 501 || !strings.Contains(string(body), "APIKEY_004") {
 		t.Fatalf("%d %s", res.StatusCode, body)
 	}
 }
 
-func TestJobsOverRestAndWebSocket(t *testing.T) {
+func TestEventStreamDeliversPublishedEvents(t *testing.T) {
 	ts := newTestServer(t, nil)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Subscribe before submitting so no event is missed.
 	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(ts.URL, "http")+"/v1/ws", &websocket.DialOptions{
 		HTTPHeader: http.Header{"Authorization": {"Bearer " + bootstrap}},
 	})
@@ -198,71 +210,25 @@ func TestJobsOverRestAndWebSocket(t *testing.T) {
 	defer c.CloseNow()
 	var env ws.Envelope
 	_ = wsjson.Read(ctx, c, &env) // hello
-	_ = wsjson.Write(ctx, c, ws.Envelope{Type: ws.TypeSubscribe, ID: "s", Topics: []string{"jobs"}})
+	_ = wsjson.Write(ctx, c, ws.Envelope{Type: ws.TypeSubscribe, ID: "s", Topics: []string{"hosts"}})
 	_ = wsjson.Read(ctx, c, &env)
 	if env.Type != ws.TypeSubscribed {
 		t.Fatalf("subscribe: %+v", env)
 	}
 
-	res, body := call(t, ts, http.MethodPost, "/v1/jobs", bootstrap, map[string]any{"kind": "sleep", "payload": map[string]int{"durationMs": 50}})
-	if res.StatusCode != 202 || res.Header.Get("Location") == "" {
-		t.Fatalf("%d %s", res.StatusCode, body)
+	srv := serverOf(t, ts)
+	srv.Hub.Publish("hosts", "host.online", map[string]string{"id": "h1"})
+	if err := wsjson.Read(ctx, c, &env); err != nil {
+		t.Fatal(err)
 	}
-	var job struct{ ID, Status string }
-	_ = json.Unmarshal(body, &job)
-
-	seen := map[string]bool{}
-	for len(seen) < 3 {
-		if err := wsjson.Read(ctx, c, &env); err != nil {
-			t.Fatalf("events so far %v: %v", seen, err)
-		}
-		if env.Type == ws.TypeEvent && env.Topic == "jobs" {
-			seen[env.Event] = true
-		}
-	}
-	if !seen["job.queued"] || !seen["job.started"] || !seen["job.finished"] {
-		t.Fatalf("events %v", seen)
-	}
-
-	res, body = call(t, ts, http.MethodGet, "/v1/jobs/"+job.ID, bootstrap, nil)
-	if res.StatusCode != 200 || !strings.Contains(string(body), `"status":"succeeded"`) {
-		t.Fatalf("%d %s", res.StatusCode, body)
-	}
-
-	// Unknown kind and cancel-after-finish are catalog problems.
-	res, body = call(t, ts, http.MethodPost, "/v1/jobs", bootstrap, map[string]any{"kind": "warp"})
-	if res.StatusCode != 400 || !strings.Contains(string(body), "JOB_004") {
-		t.Fatalf("%d %s", res.StatusCode, body)
-	}
-	res, body = call(t, ts, http.MethodPost, "/v1/jobs/"+job.ID+"/cancel", bootstrap, nil)
-	if res.StatusCode != 409 || !strings.Contains(string(body), "JOB_002") {
-		t.Fatalf("%d %s", res.StatusCode, body)
-	}
-
-	// Cancelling a running job stops it.
-	_, body = call(t, ts, http.MethodPost, "/v1/jobs", bootstrap, map[string]any{"kind": "sleep", "payload": map[string]int{"durationMs": 60000}})
-	_ = json.Unmarshal(body, &job)
-	deadline := time.Now().Add(3 * time.Second)
-	for {
-		_, body = call(t, ts, http.MethodGet, "/v1/jobs/"+job.ID, bootstrap, nil)
-		if strings.Contains(string(body), `"status":"running"`) || time.Now().After(deadline) {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	res, body = call(t, ts, http.MethodPost, "/v1/jobs/"+job.ID+"/cancel", bootstrap, nil)
-	if res.StatusCode != 200 || !strings.Contains(string(body), `"status":"cancelled"`) {
-		t.Fatalf("%d %s", res.StatusCode, body)
-	}
-	res, body = call(t, ts, http.MethodGet, "/v1/jobs?status=cancelled", bootstrap, nil)
-	if res.StatusCode != 200 || !strings.Contains(string(body), job.ID) {
-		t.Fatalf("%d %s", res.StatusCode, body)
+	if env.Type != ws.TypeEvent || env.Topic != "hosts" || env.Event != "host.online" {
+		t.Fatalf("%+v", env)
 	}
 }
 
 func TestWebSocketNeedsEventsScope(t *testing.T) {
 	ts := newTestServer(t, nil)
-	_, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "r", "scopes": []string{"jobs:read"}})
+	_, body := call(t, ts, http.MethodPost, "/v1/api-keys", bootstrap, map[string]any{"name": "r", "scopes": []string{"keys:read"}})
 	var key struct{ Token string }
 	_ = json.Unmarshal(body, &key)
 
@@ -277,7 +243,7 @@ func TestWebSocketNeedsEventsScope(t *testing.T) {
 	defer c.CloseNow()
 	var env ws.Envelope
 	_ = wsjson.Read(ctx, c, &env)
-	_ = wsjson.Write(ctx, c, ws.Envelope{Type: ws.TypeSubscribe, ID: "s", Topics: []string{"jobs"}})
+	_ = wsjson.Write(ctx, c, ws.Envelope{Type: ws.TypeSubscribe, ID: "s", Topics: []string{"hosts"}})
 	_ = wsjson.Read(ctx, c, &env)
 	if env.Type != ws.TypeError || env.Error.Code != "RUNNER_003" {
 		t.Fatalf("%+v", env)

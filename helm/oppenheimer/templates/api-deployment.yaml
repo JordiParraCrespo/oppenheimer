@@ -32,13 +32,13 @@ spec:
             {{- toYaml .Values.api.resources | nindent 12 }}
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v1/health
               port: {{ .Values.api.port }}
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /api/ready
+              path: /api/v1/ready
               port: {{ .Values.api.port }}
             initialDelaySeconds: 5
             periodSeconds: 10

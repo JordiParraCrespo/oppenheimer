@@ -112,7 +112,7 @@ func Status(status int) *Error {
 }
 
 // The generic catalog every service shares. Bounded contexts declare their
-// own entries next to their domain (see internal/jobs/domain/errors.go).
+// own entries next to their domain (see internal/apikeys/domain/errors.go).
 var (
 	ErrValidation   = New("RUNNER_001", http.StatusBadRequest, "Validation failed")
 	ErrUnauthorized = New("RUNNER_002", http.StatusUnauthorized, "Authentication required")

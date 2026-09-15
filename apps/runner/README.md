@@ -1,24 +1,27 @@
 # @oppenheimer/runner
 
-A Go service for the parts of the platform NestJS is the wrong tool for:
-long-lived connections, process or container orchestration, anything where a
-static binary with no runtime and tight control over the network matters.
-The NestJS API stays the product backend; this service is what the API calls
-when it needs a runner, a VM or a container done.
+The host agent from `product/versions/mvp/02-runner.md`: one static Go
+binary that will own the worktrees, the tmux sessions and the PTY stream on
+a host you own. The NestJS API is the control plane; this service is the
+thing that runs on the machine.
 
-It is a **template with a working example**: the `jobs` context submits work
-to a worker pool and streams its progress over WebSocket. Replace the runners
-with real ones, or the whole context with yours, and keep the shell.
+What is here today is the **shell**, not the agent: configuration, RFC 7807
+errors, the credential context (`apikeys`) and the event stream. The first
+product context (pairing, then session attach) lands with the step-one spike
+(`product/versions/mvp/06-step-one-spike.md`); it replaces the inbound
+API-key surface with a pairing token, a host keypair and an outbound
+WebSocket to the control plane. Until then, nothing product-shaped should be
+built on the key-minting endpoints.
 
 ## What is in the box
 
 | Concern           | Where                                      | How                                                                                      |
 | ----------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | Configuration     | `internal/config` on `packages/go/config`   | Root `.env` outside production, real env vars always win, required secrets fail boot     |
-| Persistence       | `internal/*/adapters/postgres` on `packages/go/postgres` | Optional: `RUNNER_DATABASE_URL` swaps the in-memory stores for Postgres (keys, jobs); on restart, persisted queued jobs re-run and interrupted running jobs fail |
+| Persistence       | `internal/*/adapters/postgres` on `packages/go/postgres` | Optional: `RUNNER_DATABASE_URL` swaps the in-memory key store for Postgres |
 | Errors            | `packages/go/core/problem`                  | RFC 7807 `application/problem+json`, same members and `type` scheme as the NestJS API    |
 | HTTP              | `packages/go/httpx`                         | `net/http` 1.22 routing, middleware groups, error-returning handlers, JSON helpers        |
-| Authentication    | `packages/go/auth` + `internal/apikeys`     | API keys (`flr_…`, SHA-256 at rest) and HS256 service tokens; one `Principal` for both   |
+| Authentication    | `packages/go/auth` + `internal/apikeys`     | API keys (`opr_…`, SHA-256 at rest) and HS256 service tokens; one `Principal` for both   |
 | Authorization     | `internal/scopes` on `packages/go/auth/scope` | This service's `resource:read|write` catalog; `write` implies `read`                   |
 | WebSocket         | `packages/go/ws`                            | Hub with topic subscriptions, backpressure, ping keepalive, graceful going-away          |
 | Health            | `packages/go/health`                        | `/healthz`, `/readyz` with registered checkers, `/health/capabilities`                   |
@@ -49,17 +52,15 @@ curl -s -H "Authorization: Bearer $KEY" localhost:3006/v1/me
 
 # Mint a narrower key for the NestJS API
 curl -s -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"name":"api","scopes":["jobs:write","events:read"]}' localhost:3006/v1/api-keys
-
-# Submit a job and watch it over WebSocket
-curl -s -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"kind":"sleep","payload":{"durationMs":3000}}' localhost:3006/v1/jobs
+  -d '{"name":"api","scopes":["events:read"]}' localhost:3006/v1/api-keys
 ```
 
 The socket at `/v1/ws` takes the same bearer header on the upgrade. Send
-`{"type":"subscribe","id":"1","topics":["jobs"]}` and every job event arrives
-as `{"type":"event","topic":"jobs","event":"job.started","payload":{…}}`.
-Subscribe to `jobs/<id>` for one job only.
+`{"type":"subscribe","id":"1","topics":["hosts"]}` and every event a context
+publishes on that topic arrives as
+`{"type":"event","topic":"hosts","event":"host.online","payload":{…}}`. Every
+topic needs `events:read`; a context that owns topics supplies its own
+`ws.Authorizer` and the composition root chains it.
 
 ## Endpoints
 
@@ -72,9 +73,6 @@ Subscribe to `jobs/<id>` for one job only.
 | `GET`    | `/v1/api-keys[/{id}]`     | `keys:read`  | Key metadata, never the secret              |
 | `DELETE` | `/v1/api-keys/{id}`       | `keys:write` | Revoke immediately                          |
 | `POST`   | `/v1/service-tokens`      | `keys:write` | Mint a short-lived JWT for an agent         |
-| `POST`   | `/v1/jobs`                | `jobs:write` | Submit; `202` + `Location`, `429` when full |
-| `GET`    | `/v1/jobs[/{id}]`         | `jobs:read`  | List (`?status=&limit=`) and fetch          |
-| `POST`   | `/v1/jobs/{id}/cancel`    | `jobs:write` | Cancel queued or running                    |
 | `GET`    | `/v1/ws`                  | `events:read` per topic | Event stream                     |
 
 Every failure is a problem document; the codes are listed on the docs site's
@@ -85,7 +83,7 @@ error reference under "Runner service".
 - **Bootstrap key** — `RUNNER_BOOTSTRAP_API_KEY`. Holds every scope, exists
   before anything is issued. Use it once to mint real keys, then keep it in a
   vault.
-- **API keys** — `flr_<id>_<secret>`. Only the SHA-256 hash is stored; the
+- **API keys** — `opr_<id>_<secret>`. Only the SHA-256 hash is stored; the
   plaintext is shown once at creation. A key can never carry a scope its
   creator lacks.
 - **Service tokens** — HS256 JWTs, on only when `RUNNER_JWT_SECRET` is set

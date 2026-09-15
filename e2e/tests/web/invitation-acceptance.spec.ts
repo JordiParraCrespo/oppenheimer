@@ -33,7 +33,7 @@ test('a newcomer registers from the link and joins in one step', async ({ page }
   await page.getByLabel('Create password').fill(invitee.password);
   await page.getByRole('button', { name: /create account & join/i }).click();
 
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
   // The membership is real: the owner's roster lists the new member.
   const members = await owner.api.get(`/api/v1/organizations/${owner.organizationId}/members`);
@@ -70,7 +70,7 @@ test('an existing account signs in and is returned to the same link to accept', 
 
   await expect(page).toHaveURL(/\/accept-invitation/, { timeout: 30_000 });
   await page.getByRole('button', { name: 'Join workspace' }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
   const session = await page.request.get('/api/auth/get-session');
   const body = (await session.json()) as { session: { activeOrganizationId: string } };

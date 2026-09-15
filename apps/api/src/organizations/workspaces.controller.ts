@@ -15,11 +15,14 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { isOrganizationAllowed } from '@oppenheimer/shared';
 import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
+import { CurrentScope } from '../auth/decorators/current-scope.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
+import type { ScopeContext } from '../auth/scope-context';
 import {
   AddWorkspaceMemberRequest,
   CreateWorkspaceRequest,
@@ -66,8 +69,16 @@ export class WorkspacesController {
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
   @ApiOperation({ summary: "List the caller's workspaces" })
   @ApiResponse({ status: 200, type: [WorkspaceResponseDto] })
-  listMine(@Req() req: Request): Promise<WorkspaceResponseDto[]> {
-    return this.workspaces.listForCaller(req.headers);
+  async listMine(
+    @Req() req: Request,
+    @CurrentScope() scope: ScopeContext | null,
+  ): Promise<WorkspaceResponseDto[]> {
+    const workspaces = await this.workspaces.listForCaller(req.headers);
+    // Same rule as `GET /organizations`: a collection names no organization
+    // for `ScopesGuard`, so the token's restriction is applied per row.
+    return workspaces.filter((workspace) =>
+      isOrganizationAllowed(scope?.resourceScope, workspace.organizationId),
+    );
   }
 
   @Get()

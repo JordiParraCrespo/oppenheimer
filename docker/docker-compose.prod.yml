@@ -111,7 +111,7 @@ services:
     environment:
       RUNNER_ENV: production
       RUNNER_PORT: 3006
-      # Empty keeps the in-memory stores; set it to persist keys and jobs.
+      # Empty keeps the in-memory store; set it to persist keys.
       # A separate database on the same server keeps the runner's tables out
       # of the API's schema.
       RUNNER_DATABASE_URL: ${RUNNER_DATABASE_URL:-}

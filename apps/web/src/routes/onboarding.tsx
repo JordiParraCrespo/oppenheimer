@@ -68,8 +68,8 @@ function OnboardingPage() {
   const resolveError = useErrorMessage();
   const organizations = useOrganizations();
   const invitations = useMyInvitations();
-  const accept = useAcceptInvitation({ onSuccess: () => navigate({ to: '/dashboard' }) });
-  const create = useCreateOrganization({ onSuccess: () => navigate({ to: '/dashboard' }) });
+  const accept = useAcceptInvitation({ onSuccess: () => navigate({ to: '/sessions' }) });
+  const create = useCreateOrganization({ onSuccess: () => navigate({ to: '/sessions' }) });
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
 
   const {
@@ -84,7 +84,7 @@ function OnboardingPage() {
   // Somebody who already has a workspace has no business here — they arrive by
   // typing the URL, or by having accepted an invitation in another tab.
   if (organizations.data && organizations.data.length > 0) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/sessions" replace />;
   }
 
   const pending = invitations.data ?? [];

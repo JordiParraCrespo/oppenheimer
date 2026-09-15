@@ -242,18 +242,18 @@
     },
     "showPassword": "Mostrar contraseña"
   },
-  "dashboard": {
-    "title": "Panel",
-    "welcome": "Bienvenido de nuevo, {{name}}.",
-    "totalUsers": "Usuarios totales",
-    "activeSessions": "Sesiones activas",
-    "apiCalls": "Llamadas a la API",
-    "uptime": "Tiempo activo",
-    "gettingStarted": "Primeros pasos",
-    "gettingStartedDescription": "Este es un panel de ejemplo. Conecta tus datos y personalízalo.",
-    "accountStatus": "Tu rol es <role>{{role}}</role> y tu cuenta está <status>{{status}}</status>.",
-    "active": "activa",
-    "inactive": "inactiva"
+  "sessions": {
+    "title": "Sesiones",
+    "subtitle": "Cada sesión es un worktree con una terminal en una máquina tuya.",
+    "newSession": "Nueva sesión",
+    "emptyTitle": "Aún no hay sesiones",
+    "emptyDescription": "Añade una máquina en Ajustes y arranca tu primera sesión.",
+    "new": {
+      "title": "Nueva sesión",
+      "subtitle": "Elige máquina, repositorio, rama y agente.",
+      "emptyTitle": "Llega con la primera máquina",
+      "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+    }
   },
   "home": {
     "greeting": "Hola de nuevo, {{name}}",
@@ -281,7 +281,6 @@
   },
   "nav": {
     "menu": "Menú",
-    "dashboard": "Panel",
     "logOut": "Cerrar sesión",
     "apiTokens": "Tokens de API",
     "commandEmpty": "Sin resultados.",
@@ -295,7 +294,9 @@
     "users": "Usuarios",
     "roles": "Roles",
     "toggleSidebar": "Mostrar u ocultar el menú",
-    "viewProfile": "Ver perfil"
+    "viewProfile": "Ver perfil",
+    "sessions": "Sesiones",
+    "newSession": "Nueva sesión"
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -439,7 +440,7 @@
     "deny": "Denegar",
     "invalidTitle": "Este enlace ha caducado",
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
-    "backToDashboard": "Volver al panel",
+    "backToSessions": "Volver a las sesiones",
     "noRedirect": "El servidor no ha indicado a dónde continuar."
   },
   "onboarding": {
@@ -869,7 +870,8 @@
       "integrations": "Integraciones",
       "label": "Secciones de configuración",
       "notifications": "Notificaciones",
-      "security": "Seguridad"
+      "security": "Seguridad",
+      "hosts": "Máquinas"
     },
     "saved": "Guardado",
     "security": {
@@ -884,7 +886,11 @@
     },
     "subtitle": "Configuración de todo el espacio de trabajo de {{organization}}.",
     "subtitleFallback": "Configuración de todo el espacio de trabajo.",
-    "title": "Configuración"
+    "title": "Configuración",
+    "hosts": {
+      "emptyTitle": "Aún no hay máquinas",
+      "emptyDescription": "Una máquina es un ordenador tuyo. Emparejarla es pegar un comando; aparece aquí en cuanto se conecta."
+    }
   },
   "table": {
     "clearFilter": "Quitar el filtro",

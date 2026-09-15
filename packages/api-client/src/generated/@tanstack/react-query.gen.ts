@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkout, checkSlug, create, create2, create3, create4, create5, create6, createUser, current, deleteAvatar, deploymentCapabilities, findAll, findAll2, findAll3, findAll4, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getSettings, getSubscription, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, list6, listMembers, listMine, listMine2, listSessions, listUsers, me, metrics, type Options, permissions, permissions2, portal, readiness, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, revoke, revoke2, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, update, update2, update3, update4, updatePermissions, updateProfile, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckoutData, CheckoutError, CheckoutResponse, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, Create6Data, Create6Error, Create6Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAll4Data, FindAll4Error, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetSubscriptionData, GetSubscriptionResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, ListData, ListError, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, MetricsData, MetricsError, MetricsResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, PortalData, PortalError, PortalResponse, ReadinessData, ReadinessError, ReadinessResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, Revoke2Data, Revoke2Error, Revoke2Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, getFull, getProfile, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, listMembers, listMine, listMine2, listSessions, listUsers, me, type Options, permissions, permissions2, readiness, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, revoke, revoke2, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, update, update2, update3, update4, updatePermissions, updateProfile, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, ListData, ListError, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, Revoke2Data, Revoke2Error, Revoke2Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1235,61 +1235,6 @@ export const removeMemberMutation = (options?: Partial<Options<RemoveMemberData>
     return mutationOptions;
 };
 
-export const list6QueryKey = (options?: Options<List6Data>) => createQueryKey('list6', options);
-
-/**
- * List the leads the caller can reach
- */
-export const list6Options = (options?: Options<List6Data>) => queryOptions<List6Response, List6Error, List6Response, ReturnType<typeof list6QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list6({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: list6QueryKey(options)
-});
-
-/**
- * Create a lead
- *
- * The lead is filed into the caller’s active organization; the body cannot name a different one.
- */
-export const create6Mutation = (options?: Partial<Options<Create6Data>>): UseMutationOptions<Create6Response, Create6Error, Options<Create6Data>> => {
-    const mutationOptions: UseMutationOptions<Create6Response, Create6Error, Options<Create6Data>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await create6({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const get2QueryKey = (options: Options<Get2Data>) => createQueryKey('get2', options);
-
-/**
- * Get one lead
- */
-export const get2Options = (options: Options<Get2Data>) => queryOptions<Get2Response, Get2Error, Get2Response, ReturnType<typeof get2QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await get2({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: get2QueryKey(options)
-});
-
 export const listUsersQueryKey = (options?: Options<ListUsersData>) => createQueryKey('listUsers', options);
 
 /**
@@ -1613,122 +1558,4 @@ export const readinessOptions = (options?: Options<ReadinessData>) => queryOptio
         return data;
     },
     queryKey: readinessQueryKey(options)
-});
-
-/**
- * Create a Stripe Checkout session for a subscription
- */
-export const checkoutMutation = (options?: Partial<Options<CheckoutData>>): UseMutationOptions<CheckoutResponse, CheckoutError, Options<CheckoutData>> => {
-    const mutationOptions: UseMutationOptions<CheckoutResponse, CheckoutError, Options<CheckoutData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await checkout({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Open a Stripe Customer Portal session
- */
-export const portalMutation = (options?: Partial<Options<PortalData>>): UseMutationOptions<PortalResponse, PortalError, Options<PortalData>> => {
-    const mutationOptions: UseMutationOptions<PortalResponse, PortalError, Options<PortalData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await portal({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const getSubscriptionQueryKey = (options?: Options<GetSubscriptionData>) => createQueryKey('getSubscription', options);
-
-/**
- * Get the current user's subscription (null if none)
- */
-export const getSubscriptionOptions = (options?: Options<GetSubscriptionData>) => queryOptions<GetSubscriptionResponse, DefaultError, GetSubscriptionResponse, ReturnType<typeof getSubscriptionQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getSubscription({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getSubscriptionQueryKey(options)
-});
-
-export const findAll4QueryKey = (options?: Options<FindAll4Data>) => createQueryKey('findAll4', options);
-
-/**
- * List all subscriptions (admin)
- */
-export const findAll4Options = (options?: Options<FindAll4Data>) => queryOptions<unknown, FindAll4Error, unknown, ReturnType<typeof findAll4QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await findAll4({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: findAll4QueryKey(options)
-});
-
-export const findAll4InfiniteQueryKey = (options?: Options<FindAll4Data>): QueryKey<Options<FindAll4Data>> => createQueryKey('findAll4', options, true);
-
-/**
- * List all subscriptions (admin)
- */
-export const findAll4InfiniteOptions = (options?: Options<FindAll4Data>) => {
-    const opts = infiniteQueryOptions<unknown, FindAll4Error, InfiniteData<unknown>, QueryKey<Options<FindAll4Data>>, number | Pick<QueryKey<Options<FindAll4Data>>[0], 'body' | 'headers' | 'path' | 'query'>>(
-    // @ts-ignore
-    {
-        queryFn: async ({ pageParam, queryKey, signal }) => {
-            // @ts-ignore
-            const page: Pick<QueryKey<Options<FindAll4Data>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
-                query: {
-                    page: pageParam
-                }
-            };
-            const params = createInfiniteParams(queryKey, page);
-            const { data } = await findAll4({
-                ...options,
-                ...params,
-                signal,
-                throwOnError: true
-            });
-            return data;
-        },
-        queryKey: findAll4InfiniteQueryKey(options)
-    });
-    return opts as Omit<typeof opts, 'initialData'>;
-};
-
-export const metricsQueryKey = (options?: Options<MetricsData>) => createQueryKey('metrics', options);
-
-/**
- * Get aggregate revenue metrics (admin)
- */
-export const metricsOptions = (options?: Options<MetricsData>) => queryOptions<MetricsResponse, MetricsError, MetricsResponse, ReturnType<typeof metricsQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await metrics({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: metricsQueryKey(options)
 });

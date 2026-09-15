@@ -59,16 +59,17 @@ builds and tidies on its own, which is what the Docker build relies on.
 - **Errors** as the same RFC 7807 documents the API produces (from
   `packages/go/core/problem`), with the runner catalog listed on the
   [error reference](../errors.md#runner-service).
-- **Authentication** by API key (`flr_…`, SHA-256 at rest, revocable,
+- **Authentication** by API key (`opr_…`, SHA-256 at rest, revocable,
   scoped) or HS256 service token, both resolving to one `Principal`.
 - **Scopes** in the `resource:read|write` vocabulary of the
-  [permission catalog](../tooling/permissions.md): `jobs`, `keys`, `events`.
+  [permission catalog](../tooling/permissions.md): `keys`, `events`.
 - **REST** on the standard library router with request ids, panic recovery,
   structured access logs, body limits and a trusted-proxy setting.
 - **WebSocket** hub with topic subscriptions, per-connection backpressure,
   ping keepalive and a `1001 Going Away` on shutdown.
-- **Jobs** as the example context: submit, list, cancel over REST; every
-  transition pushed over the socket; a worker pool with cancellation.
+- **Credentials** (`apikeys`) as the one bounded context so far: the host
+  agent's product contexts (pairing, sessions) follow the same layout and
+  are described in `apps/runner/ARCHITECTURE.md`.
 
 ## Choosing libraries
 

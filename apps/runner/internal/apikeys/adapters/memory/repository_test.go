@@ -17,7 +17,7 @@ func TestTouchDoesNotReviveRevokedKey(t *testing.T) {
 	ctx := context.Background()
 	repo := New()
 	now := time.Now()
-	key, _, err := domain.Generate("k", []scope.Scope{scopes.JobsRead}, "b", nil, now)
+	key, _, err := domain.Generate("k", []scope.Scope{scopes.EventsRead}, "b", nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}

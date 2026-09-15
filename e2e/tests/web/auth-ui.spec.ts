@@ -28,11 +28,11 @@ test.describe('web auth UI', () => {
 
     await loginThroughUi(page, user.email, user.password);
 
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });
 
     // An authenticated visitor should not be asked to sign in again.
     await page.goto('/login');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });
   });
 
   test('a wrong password shows an error and stays on the login page', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('web auth UI', () => {
   });
 
   test('an anonymous visitor is redirected away from the dashboard', async ({ page }) => {
-    await page.goto('/dashboard');
+    await page.goto('/sessions');
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
     // The redirect remembers where the visitor was heading.
@@ -86,10 +86,10 @@ test.describe('web auth UI', () => {
   test('after sign-out the dashboard is closed again', async ({ page }) => {
     const { user } = await provisionedUser('uilogout');
     await loginThroughUi(page, user.email, user.password);
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });
 
     await page.context().clearCookies();
-    await page.goto('/dashboard');
+    await page.goto('/sessions');
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
   });
@@ -146,7 +146,7 @@ test.describe('web auth UI', () => {
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
 
     await loginThroughUi(page, user.email, NEW_PASSWORD);
-    await expect(page, 'the new password gets the user in').toHaveURL(/\/dashboard/, {
+    await expect(page, 'the new password gets the user in').toHaveURL(/\/sessions/, {
       timeout: 20_000,
     });
   });
@@ -215,7 +215,7 @@ test.describe('web auth UI', () => {
     await createOrganization(page.request);
 
     await page.goto('/onboarding');
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });
   });
 
   test('social sign-in is absent or explained when no provider is configured', async ({ page }) => {

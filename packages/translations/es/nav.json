@@ -1,6 +1,5 @@
 {
   "menu": "Menú",
-  "dashboard": "Panel",
   "logOut": "Cerrar sesión",
   "apiTokens": "Tokens de API",
   "commandEmpty": "Sin resultados.",
@@ -14,5 +13,7 @@
   "users": "Usuarios",
   "roles": "Roles",
   "toggleSidebar": "Mostrar u ocultar el menú",
-  "viewProfile": "Ver perfil"
+  "viewProfile": "Ver perfil",
+  "sessions": "Sesiones",
+  "newSession": "Nueva sesión"
 }

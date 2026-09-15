@@ -43,7 +43,8 @@
     "integrations": "Integrations",
     "label": "Settings sections",
     "notifications": "Notifications",
-    "security": "Security"
+    "security": "Security",
+    "hosts": "Hosts"
   },
   "saved": "Saved",
   "security": {
@@ -58,5 +59,9 @@
   },
   "subtitle": "Workspace-wide configuration for {{organization}}.",
   "subtitleFallback": "Workspace-wide configuration.",
-  "title": "Settings"
+  "title": "Settings",
+  "hosts": {
+    "emptyTitle": "No hosts yet",
+    "emptyDescription": "A host is a machine you own. Pairing is one pasted command; the host appears here once it connects."
+  }
 }

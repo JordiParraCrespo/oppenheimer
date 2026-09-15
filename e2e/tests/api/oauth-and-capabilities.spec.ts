@@ -30,7 +30,7 @@ test.describe('optional auth providers', () => {
     test.skip(capabilities.google_oauth === true, 'Google is configured on this deployment');
 
     const response = await api.post('/api/auth/sign-in/social', {
-      data: { provider: 'google', callbackURL: '/dashboard' },
+      data: { provider: 'google', callbackURL: '/sessions' },
       failOnStatusCode: false,
     });
 
@@ -42,7 +42,7 @@ test.describe('optional auth providers', () => {
     const api = await newContext();
 
     const response = await api.post('/api/auth/sign-in/social', {
-      data: { provider: 'myspace', callbackURL: '/dashboard' },
+      data: { provider: 'myspace', callbackURL: '/sessions' },
       failOnStatusCode: false,
     });
 

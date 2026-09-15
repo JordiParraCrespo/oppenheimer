@@ -1,0 +1,13 @@
+{
+  "title": "Sesiones",
+  "subtitle": "Cada sesión es un worktree con una terminal en una máquina tuya.",
+  "newSession": "Nueva sesión",
+  "emptyTitle": "Aún no hay sesiones",
+  "emptyDescription": "Añade una máquina en Ajustes y arranca tu primera sesión.",
+  "new": {
+    "title": "Nueva sesión",
+    "subtitle": "Elige máquina, repositorio, rama y agente.",
+    "emptyTitle": "Llega con la primera máquina",
+    "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+  }
+}

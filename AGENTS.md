@@ -6,8 +6,12 @@ Oppenheimer is a browser-based terminal and VM orchestrator: connect a host
 you own (later: a VM), get sessions on it, each a git worktree with a tmux
 terminal running Claude Code or Codex, streamed to the browser through a
 control plane. The codebase is a Turborepo + pnpm monorepo started from the
-Flama full-stack starter: 11 apps and 14 shared packages, all kept from day
-one so later slices (admin, CLI, MCP, mobile) do not need porting.
+Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
+(the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
+what `pnpm dev:mvp` starts. The other apps (admin, mobile, CLI, MCP, the
+showcases, Helm) are kept from day one so later slices need no porting, and
+are not built on until their slice arrives. The starter's reference modules
+(`leads`, `billing`) are on disk but not composed into the API.
 
 ## Product notes
 
@@ -24,8 +28,12 @@ decisions that changed along the way.
   area, each with decided points and open questions, and its own decision
   log in `product/versions/mvp/README.md`.
 - Workspaces are personal for now: one user per workspace, no team or
-  organization management exposed. Teams come later on the same users
-  table with an org membership added.
+  organization management exposed. The Better Auth `organization` row is
+  the personal workspace, created at sign-up with the account as its
+  single owner (`apps/api/src/auth/personal-workspace.ts`); no roster UI,
+  no invitations, no teams in the console. Teams come later on the same
+  tables. The one-page auth note is `product/versions/mvp/08-auth.md`;
+  `AUTHORIZATION.md` is the starter's kernel design, kept as history.
 - When a decision changes, update the note that made it and add a line to
   the "decisions that changed" list in `product/README.md`. Do not
   silently rewrite history in earlier notes.
@@ -187,7 +195,7 @@ Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see the
 The app is the same hexagon as `apps/api` in idiomatic Go: standard
 `net/http` routing, `slog`, interfaces as ports, constructor injection, one
 composition root (`internal/server`). Errors are the same RFC 7807 documents
-with their own catalog (`RUNNER_*`, `APIKEY_*`, `JOB_*`). Boundaries are
+with their own catalog (`RUNNER_*`, `APIKEY_*`). Boundaries are
 enforced by `internal/arch/arch_test.go`. Rules in `.agents/rules/go.md`;
 layer model in `apps/runner/ARCHITECTURE.md`; module list and "add a
 module" steps in `packages/go/README.md`.
@@ -308,9 +316,9 @@ pnpm changeset          # Create a changeset for versioning
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
 - Forms and Zod schemas: `.agents/rules/forms.md`
-- Sign-up creates an account, not a workspace: an org-less account is sent to
-  `/onboarding`, which creates the first organization or accepts a pending
-  invitation. Only `/register` passes the social `sign-up` intent
+- Sign-up creates the account and its personal workspace in one go. The
+  `/onboarding` screen is only the recovery path for an account that ended up
+  with no workspace. Only `/register` passes the social `sign-up` intent
 - `apps/web` must not import runtime values from the `@oppenheimer/shared` **root**:
   its CJS build is not tree-shakeable, so the whole graph lands in the bundle.
   Import a narrow subpath (`@oppenheimer/shared/schemas/auth`) or fetch from the API.

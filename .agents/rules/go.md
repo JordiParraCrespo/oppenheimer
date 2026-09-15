@@ -21,7 +21,7 @@ idioms.
   relative `replace` for every sibling it imports, transitively — `go mod
   tidy` ignores `go.work`, and the Docker build must work without it.
 - A shared module never imports an app. Anything a second service could use
-  goes to `packages/go`; anything that names jobs, keys or this service's
+  goes to `packages/go`; anything that names hosts, sessions, keys or this service's
   scopes stays in the app.
 - Each module has a `package.json` (`@oppenheimer/go-<name>`) whose scripts call
   `go` directly (the CI runners have no `make`), and declares the sibling
@@ -44,7 +44,7 @@ idioms.
   and any `packages/go` module. `internal/arch/arch_test.go` fails the build
   on anything else — add every new context to its `contexts` list.
 - `packages/go/*` is domain-agnostic. If a shared module needs to know about
-  jobs or keys, invert it: declare an interface or callback (`ws.Authorizer`,
+  sessions or keys, invert it: declare an interface or callback (`ws.Authorizer`,
   `auth.Verifier`) and let the context supply it.
 
 ## Dependency injection
@@ -93,7 +93,7 @@ idioms.
   and a full channel closes the client (`ws/conn.go`); never block a publisher
   on a slow consumer.
 - Long-lived work takes a `context.Context` and stops when it is cancelled;
-  `Cancel` on a job is a context cancellation, not a flag the runner polls.
+  stopping a session is a context cancellation, not a flag the loop polls.
 
 ## Config and environment
 

@@ -43,7 +43,7 @@ func TestPostgresKeyLifecycle(t *testing.T) {
 	repo := newRepo(t)
 	now := time.Now().UTC().Truncate(time.Microsecond)
 
-	key, _, err := domain.Generate("ci", []scope.Scope{scope.Scope("jobs:write"), scope.Scope("jobs:read")}, "bootstrap", nil, now)
+	key, _, err := domain.Generate("ci", []scope.Scope{scope.Scope("keys:write"), scope.Scope("events:read")}, "bootstrap", nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestPostgresTouchDoesNotReviveRevokedKey(t *testing.T) {
 	repo := newRepo(t)
 	now := time.Now().UTC().Truncate(time.Microsecond)
 
-	key, _, _ := domain.Generate("k", []scope.Scope{scope.Scope("jobs:read")}, "b", nil, now)
+	key, _, _ := domain.Generate("k", []scope.Scope{scope.Scope("events:read")}, "b", nil, now)
 	if err := repo.Save(ctx, key); err != nil {
 		t.Fatal(err)
 	}

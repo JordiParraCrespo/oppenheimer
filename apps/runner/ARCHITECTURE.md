@@ -23,16 +23,21 @@ internal/
   config/                     the variables this service reads → Config
   scopes/                     this service's scope catalog on auth/scope
   apikeys/                    bounded context: credentials
-  jobs/                       bounded context: the example workload
-    domain/                   aggregate, invariants, events, error catalog
-    app/                      use cases + ports (Repository, Runner, Publisher)
+    domain/                   aggregate, invariants, error catalog
+    app/                      use cases + ports (Repository, TokenIssuer)
     adapters/http             REST
-    adapters/ws               event publisher + topic authorizer
     adapters/memory           in-process Repository
-    adapters/runner           built-in job kinds
+    adapters/postgres         pgx Repository + migrations
     module.go                 wires the context's default adapters
   arch/                       import-boundary test
 ```
+
+The product contexts from `product/versions/mvp/02-runner.md` are not here
+yet and arrive in this order: `pairing` (registration token, host keypair,
+the outbound control-plane connection), then `sessions` (worktree, tmux, PTY
+stream, screen manifest), then the git credential helper. They follow the
+same layout as `apikeys`; `apikeys` itself goes once pairing replaces it as
+the way the control plane authenticates this host.
 
 ## Layers and the rule between them
 
@@ -71,8 +76,6 @@ RealIP → RequestID → Recover → Logger → SecurityHeaders → MaxBytes
    └─ Authenticate(JWT, api keys)                      (everything under /v1)
         ├─ RequireScopes(keys:read)  GET /v1/api-keys…
         ├─ RequireScopes(keys:write) POST/DELETE /v1/api-keys, POST /v1/service-tokens
-        ├─ RequireScopes(jobs:read)  GET /v1/jobs…
-        ├─ RequireScopes(jobs:write) POST /v1/jobs, POST /v1/jobs/{id}/cancel
         └─ GET /v1/ws → per-topic authorizer (events:read)
 ```
 
@@ -87,7 +90,7 @@ the correlation id. Handlers therefore never write error bodies.
 
 - `auth.JWT` (platform) — HS256 service tokens. Verifies `exp`, `iss`, `aud`,
   and the space-separated `scope` claim.
-- `apikeys/app.Service` (context) — minted keys by their `flr_` prefix and
+- `apikeys/app.Service` (context) — minted keys by their `opr_` prefix and
   the bootstrap key by constant-time hash comparison. Verifying touches
   `LastUsedAt`.
 
@@ -101,8 +104,9 @@ checks when minting).
 publish to topics. Every connection has a bounded send queue and a dedicated
 writer goroutine; a client that cannot keep up is closed rather than allowed
 to stall a publisher. The hub is domain-agnostic — a context supplies a
-`ws.Authorizer` for the topics it owns (`jobs/adapters/ws.Authorize`), and
-the composition root passes it to the upgrade handler. Shutdown closes every
+`ws.Authorizer` for the topics it owns, and the composition root chains them
+into the upgrade handler (`server.authorizeEvents` is the placeholder until
+the first context owns a topic). Shutdown closes every
 socket with `1001 Going Away` before the HTTP drain.
 
 ## Adding a bounded context
@@ -123,16 +127,12 @@ socket with `1001 Going Away` before the HTTP drain.
 
 ## Next steps this template leaves open
 
-- **Persistence**: done for Postgres — `internal/{apikeys,jobs}/adapters/postgres`
-  implement the two `Repository` ports on `pgx` behind `RUNNER_DATABASE_URL`,
+- **Persistence**: done for Postgres — `internal/apikeys/adapters/postgres`
+  implements the `Repository` port on `pgx` behind `RUNNER_DATABASE_URL`,
   with the shared pool and migrator in `packages/go/postgres`; the memory
-  adapters remain the default and the reference behaviour. On startup the
-  jobs service reconciles persisted non-terminal jobs (`Service.Recover`):
-  `queued` jobs are re-enqueued so they still run, and `running` jobs left by
-  a crashed process are failed with a reason, since their worker goroutine
-  cannot be resumed and requeuing could repeat a side effect. Embedded SQLite
+  adapter remains the default and the reference behaviour. Embedded SQLite
   (`modernc.org/sqlite`) is the same pattern if a zero-dependency store is
-  ever wanted.
+  ever wanted, which a host agent installed as the user's account will.
 - **OpenAPI**: write `api/openapi.yaml` by hand or generate it with
   `oapi-codegen`, then point `pnpm generate:api-client` at it so the NestJS
   side talks through a typed client.

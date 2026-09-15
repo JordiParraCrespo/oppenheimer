@@ -13,7 +13,7 @@ import (
 
 func TestGenerateAndMatch(t *testing.T) {
 	now := time.Now()
-	key, token, err := Generate("ci", []scope.Scope{scopes.JobsWrite}, "bootstrap", nil, now)
+	key, token, err := Generate("ci", []scope.Scope{scopes.KeysWrite}, "bootstrap", nil, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,17 +44,17 @@ func TestGenerateAndMatch(t *testing.T) {
 func TestGenerateValidation(t *testing.T) {
 	now := time.Now()
 	past := now.Add(-time.Hour)
-	if _, _, err := Generate(" ", []scope.Scope{scopes.JobsRead}, "x", nil, now); !errors.Is(err, ErrNameRequired) {
+	if _, _, err := Generate(" ", []scope.Scope{scopes.EventsRead}, "x", nil, now); !errors.Is(err, ErrNameRequired) {
 		t.Fatal(err)
 	}
 	if _, _, err := Generate("n", nil, "x", nil, now); !errors.Is(err, ErrScopesRequired) {
 		t.Fatal(err)
 	}
-	if _, _, err := Generate("n", []scope.Scope{scopes.JobsRead}, "x", &past, now); !errors.Is(err, ErrExpiryInPast) {
+	if _, _, err := Generate("n", []scope.Scope{scopes.EventsRead}, "x", &past, now); !errors.Is(err, ErrExpiryInPast) {
 		t.Fatal(err)
 	}
 	future := now.Add(time.Hour)
-	key, _, _ := Generate("n", []scope.Scope{scopes.JobsRead}, "x", &future, now)
+	key, _, _ := Generate("n", []scope.Scope{scopes.EventsRead}, "x", &future, now)
 	if key.Active(future) {
 		t.Fatal("expired key active")
 	}

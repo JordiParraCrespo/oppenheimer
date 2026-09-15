@@ -252,7 +252,7 @@ operation, its code is folded onto the catalog, and the original survives as
 
 The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route;
-`APIKEY_*` and `JOB_*` belong to their bounded contexts.
+`APIKEY_*` belongs to its bounded context.
 
 | Code                                   | Title                                        | HTTP |
 | -------------------------------------- | -------------------------------------------- | ---- |
@@ -267,10 +267,6 @@ catalog. `RUNNER_*` codes are the generic layer shared by every route;
 | `APIKEY_002` <a id="apikey_002" />     | API key already revoked                      | 409  |
 | `APIKEY_003` <a id="apikey_003" />     | Cannot grant scopes you do not hold          | 403  |
 | `APIKEY_004` <a id="apikey_004" />     | Service tokens are not enabled               | 501  |
-| `JOB_001` <a id="job_001" />           | Job not found                                | 404  |
-| `JOB_002` <a id="job_002" />           | Job is not in a state that allows this       | 409  |
-| `JOB_003` <a id="job_003" />           | Job queue is full                            | 429  |
-| `JOB_004` <a id="job_004" />           | No runner registered for this job kind       | 400  |
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

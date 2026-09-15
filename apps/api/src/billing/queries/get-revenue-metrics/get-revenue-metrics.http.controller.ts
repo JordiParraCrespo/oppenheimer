@@ -2,9 +2,9 @@ import { Controller, Get, UseGuards, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiProblemResponse } from '@oppenheimer/backend-core';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { RevenueMetricsResponseDto } from '../../dtos/revenue-metrics.response.dto';
 import { GetRevenueMetricsQuery } from './get-revenue-metrics.query';
@@ -16,7 +16,7 @@ import { GetRevenueMetricsQuery } from './get-revenue-metrics.query';
   description: "The caller's roles do not permit this",
   code: 'AUTH_002',
 })
-@UseGuards(AuthGuard, PoliciesGuard)
+@UseGuards(ApiAuthGuard, PoliciesGuard)
 @Controller('billing')
 export class GetRevenueMetricsHttpController {
   constructor(private readonly queryBus: QueryBus) {}

@@ -29,7 +29,7 @@ const (
 	sharedPrefix = "github.com/jordiparracrespo/oppenheimer/packages/go/"
 )
 
-var contexts = []string{"apikeys", "jobs"}
+var contexts = []string{"apikeys"}
 
 func TestImportBoundaries(t *testing.T) {
 	root, err := filepath.Abs("..")
@@ -132,7 +132,7 @@ func violatesInternal(from, to string) string {
 	return ""
 }
 
-// split turns `jobs/adapters/http` into ("jobs", "adapters/http") and a
+// split turns `apikeys/adapters/http` into ("apikeys", "adapters/http") and a
 // non-context package into ("", "").
 func split(pkg string) (ctx, layer string) {
 	parts := strings.SplitN(pkg, "/", 2)

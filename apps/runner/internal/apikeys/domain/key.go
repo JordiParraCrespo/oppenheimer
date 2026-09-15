@@ -19,7 +19,7 @@ import (
 
 // TokenPrefix marks a key minted by this service, so a bearer value can be
 // routed to the right verifier and recognised in a leak scan.
-const TokenPrefix = "flr"
+const TokenPrefix = "opr"
 
 // displayChars of the secret are kept in the non-secret display prefix, the
 // same convention `apps/api` uses for `oppenheimer_pat_a1b2c3`.
@@ -31,7 +31,7 @@ const secretBytes = 32
 type Key struct {
 	ID   string
 	Name string
-	// Prefix is the non-secret display form, e.g. `flr_k3x9…_a1b2c3`.
+	// Prefix is the non-secret display form, e.g. `opr_k3x9…_a1b2c3`.
 	Prefix string
 	// Hash is the hex SHA-256 of the full token. Tokens carry 256 bits of
 	// randomness, so a fast hash is the right choice; a password KDF would

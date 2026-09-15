@@ -8,6 +8,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:mvp": "turbo run dev --filter=@oppenheimer/api --filter=@oppenheimer/web --filter=@oppenheimer/runner",
     "lint": "turbo run lint",
     "lint:design": "pnpm -r run lint:design",
     "arch": "turbo run arch",

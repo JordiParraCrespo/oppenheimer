@@ -1,16 +1,18 @@
 import { cn } from '@oppenheimer/design-system-web';
-import { Cpu, Settings, ShieldCheck } from '@oppenheimer/design-system-web/icons';
+import { Cpu, Server, Settings, ShieldCheck } from '@oppenheimer/design-system-web/icons';
 import { useOrganizations } from '@oppenheimer/frontend/react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageHead } from '@/components/page-head';
 import { ApiSection } from '@/components/settings/api-section';
 import { GeneralSection } from '@/components/settings/general-section';
+import { HostsSection } from '@/components/settings/hosts-section';
 import { SecuritySection } from '@/components/settings/security-section';
 
 /** The sub-nav's sections, in the design's order. */
 const SECTIONS = [
   { key: 'general', icon: Settings },
+  { key: 'hosts', icon: Server },
   { key: 'security', icon: ShieldCheck },
   { key: 'api', icon: Cpu },
 ] as const;
@@ -97,6 +99,7 @@ function SettingsPage() {
           {section === 'general' && (
             <GeneralSection organization={organization} loading={organizations.isLoading} />
           )}
+          {section === 'hosts' && <HostsSection />}
           {section === 'security' && <SecuritySection />}
           {section === 'api' && <ApiSection />}
         </div>

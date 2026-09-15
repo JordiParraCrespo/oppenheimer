@@ -1,4 +1,4 @@
-import { LayoutDashboard, type LucideIcon, Settings } from '@oppenheimer/design-system-web/icons';
+import { type LucideIcon, Plus, Settings, Terminal } from '@oppenheimer/design-system-web/icons';
 import type { ScreenPolicy } from '@oppenheimer/shared/navigation';
 import type { Messages } from '@oppenheimer/translations/locales';
 
@@ -12,10 +12,12 @@ import type { Messages } from '@oppenheimer/translations/locales';
 export type NavPolicy = ScreenPolicy;
 
 /**
- * The workspace's destinations, in the order the sidebar lists them: Dashboard
- * first, then the working surfaces, with Settings held back at the bottom. One
- * model, read by both the sidebar and the command palette, so a page can never
- * appear in one and not the other.
+ * The workspace's destinations, in the order the sidebar lists them: the
+ * sessions list first (it is the product; the sidebar of
+ * `product/versions/mvp/05-screens.md` is this list with a state dot per
+ * session), then New session, with Settings (hosts, API tokens) held back at
+ * the bottom. One model, read by both the sidebar and the command palette, so
+ * a page can never appear in one and not the other.
  */
 interface NavEntry {
   /** Route path — also the key its label is looked up under in `nav.*`. */
@@ -25,9 +27,9 @@ interface NavEntry {
   /**
    * The permissions this row's destination needs — taken from `SCREENS` in
    * `@oppenheimer/shared/navigation`, never written out here, so a row cannot claim
-   * less than the endpoint behind it enforces. Empty means always visible: the
-   * dashboard reads only the caller's own profile, and every user manages
-   * their own API tokens under Settings.
+   * less than the endpoint behind it enforces. Empty means always visible: a
+   * workspace is personal, so its owner reaches every session and host in it,
+   * and every user manages their own API tokens under Settings.
    */
   policies: readonly NavPolicy[];
 }
@@ -36,9 +38,15 @@ interface NavEntry {
 // what TanStack Router's `Link` wants.
 export const NAV = [
   {
-    to: '/dashboard',
-    icon: LayoutDashboard,
-    labelKey: 'dashboard',
+    to: '/sessions',
+    icon: Terminal,
+    labelKey: 'sessions',
+    policies: [],
+  },
+  {
+    to: '/sessions/new',
+    icon: Plus,
+    labelKey: 'newSession',
     policies: [],
   },
 ] as const satisfies readonly NavEntry[];
