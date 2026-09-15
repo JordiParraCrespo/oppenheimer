@@ -1,0 +1,49 @@
+id: AUTH-08
+title: The control plane refuses everyone who is not a platform administrator
+theme: auth
+severity: critical
+fixture: roster
+tags: [security, rbac, admin-web]
+
+coverage:
+  primary:
+    - authz.control-plane-gate
+  secondary:
+    - authz.permission-catalog
+
+intent: >-
+  The control plane is a second app, and the split is new. "Restricted to
+  platform administrators" is a claim about four different people, and the only
+  way to check it is to sign in as each of them and look. The interesting half
+  is not that the administrator gets in; it is what the other three see, because
+  a blank shell, a spinner and a redirect loop all pass a test that only asserts
+  "not the users table".
+
+docsRefs:
+  - CLAUDE.md
+codeRefs:
+  - apps/admin-web/src/routes/_authenticated.tsx
+  - apps/api/src/users/users.controller.ts
+
+preconditions:
+  - 'The `roster` fixture, whose cast holds exactly one platform administrator.'
+
+steps:
+  - For each of the four roles, sign in on the control plane.
+  - Read the screen that results, and the API call behind it.
+  - Sign the same person in on the consumer app.
+
+expected:
+  - Only the platform administrator gets past the gate and sees the users screen.
+  - Everyone else sees a refusal that says so, with a way out - not a blank
+    shell, a spinner, or a redirect loop.
+  - >-
+    The refusal is a refusal: the endpoint behind the screen answers 403 as a
+    problem document, and the screen reads differently from a breakage.
+  - The consumer app still admits all four.
+
+artifacts:
+  - admin-auth-08-owner.png
+  - admin-auth-08-admin.png
+  - admin-auth-08-plain-member.png
+  - admin-auth-08-platform-admin.png

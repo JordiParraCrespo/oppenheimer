@@ -1,0 +1,152 @@
+{
+  "footer": {
+    "legalNavigation": "Legal information",
+    "operator": "Operated by the workspace owner."
+  },
+  "home": {
+    "cta": "Sign in to the workspace",
+    "description": "Invite teammates, shape roles and permissions, and connect the tools you rely on — all from one secure workspace.",
+    "eyebrow": "Team workspace",
+    "featuresTitle": "What the workspace gives your team",
+    "google": {
+      "body": "When you sign in with Google, we use your basic profile information to authenticate you and create or match your account.",
+      "eyebrow": "Clear Google data use",
+      "scope": "Google Sign-In requests only your name, email address and profile picture. It does not read Gmail, Google Drive or any other Google data. Optional Google integrations require a separate, explicit authorization.",
+      "title": "Google Sign-In is only for your account."
+    },
+    "privacyCta": "How we protect data",
+    "title": "One workspace for your team, with the right access for everyone.",
+    "features": {
+      "team": {
+        "title": "Team management",
+        "body": "Invite members, see who is active, and keep the roster in one place."
+      },
+      "access": {
+        "title": "Roles and permissions",
+        "body": "Give each role exactly what it needs, and change it without a deploy."
+      },
+      "api": {
+        "title": "API access",
+        "body": "Mint scoped API keys so your own tools and automations can work alongside the team."
+      }
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "privacy": "Privacy policy",
+    "signIn": "Sign in",
+    "terms": "Terms of service"
+  },
+  "privacy": {
+    "changes": {
+      "body": "We may update this policy when the service or legal requirements change. We will publish the current version here and provide additional notice when a change materially affects your rights.",
+      "title": "11. Changes to this policy"
+    },
+    "children": {
+      "body": "The service is a business tool and is not intended for children under 16.",
+      "title": "10. Children"
+    },
+    "contactLabel": "Contact the workspace operator for privacy requests.",
+    "controller": {
+      "body": "The workspace operator is responsible for the personal data described in this policy. The service is a business workspace used by authorized teams.",
+      "title": "1. Who is responsible for your data"
+    },
+    "cookies": {
+      "body": "The service uses essential cookies and browser storage to maintain your signed-in session, protect the service, remember language and theme choices, and cache application data for reliable performance. These technologies are necessary to provide the workspace. If optional analytics is introduced, we will provide any notice or choice required by law before using it.",
+      "title": "7. Cookies and local storage"
+    },
+    "data": {
+      "account": "Account and identity data, such as your name, work email, profile picture, authentication provider and organization membership.",
+      "content": "Content entered or uploaded by your organization, including notes, messages and attachments where those features are used.",
+      "integrations": "Connection details and tokens for third-party services that an authorized user chooses to connect.",
+      "intro": "The data we process depends on how you and your organization use the service. It may include:",
+      "technical": "Technical and security data, including IP address, browser information, timestamps, session records, error logs and security events.",
+      "title": "2. Data we process",
+      "workspace": "Workspace data, including team roles, permissions, settings, audit events and activity needed to provide the service."
+    },
+    "eyebrow": "Legal",
+    "google": {
+      "body": "If you choose Google Sign-In, Google provides your name, email address, profile picture and provider identifiers. We use this information only to authenticate you, protect access and create or match your profile. We do not sell this data or use it for advertising.",
+      "separateConsent": "Google Sign-In does not grant access to Gmail, Drive or any other Google service. If your organization later enables a supported Google integration, we request the relevant permissions through a separate consent screen and use that data only to provide the integration you selected.",
+      "title": "3. Google Sign-In and Google user data"
+    },
+    "lastUpdated": "Last updated: 27 August 2026.",
+    "purposes": {
+      "body": "We process data to provide and administer the service, authenticate users, support team collaboration, keep the service secure, respond to requests and comply with law. Depending on the context, our legal basis is performance of a contract, our legitimate interests in operating and securing the service, consent where required, or compliance with a legal obligation.",
+      "title": "4. Purposes and legal bases"
+    },
+    "retention": {
+      "body": "We keep account and workspace data while the relevant account or organization is active and for the limited period needed for security, recovery, dispute resolution and legal obligations. Deleted data may remain in encrypted backups until those backups expire through their normal cycle. Integration credentials are removed when the connection is deleted, subject to short-lived operational backups.",
+      "title": "6. How long we keep data"
+    },
+    "rights": {
+      "authority": "You may also lodge a complaint with the Spanish Data Protection Agency (AEPD) or your local supervisory authority.",
+      "body": "Where applicable, you may request access, correction, deletion, restriction or portability of your personal data, object to certain processing, or withdraw consent without affecting earlier lawful processing. Contact us from the email associated with your account so we can verify and answer your request.",
+      "title": "9. Your privacy rights"
+    },
+    "security": {
+      "body": "We use technical and organizational safeguards designed to protect data, including encrypted connections, access controls, isolated infrastructure, secret management, security logging and restricted administrative access. No system can guarantee absolute security, but we review and improve these measures as the service evolves.",
+      "title": "8. Security"
+    },
+    "sharing": {
+      "body": "We share data only when needed to operate the service, comply with law or follow your organization's instructions. Providers may include the hosting, storage, authentication, email and integration providers your organization enables. Some providers may process data outside the European Economic Area using applicable safeguards such as adequacy decisions or standard contractual clauses. We do not sell personal data.",
+      "title": "5. Service providers and international transfers"
+    },
+    "summary": "This policy explains what personal data the service processes, why we use it, and the choices and rights available to you.",
+    "title": "Privacy policy"
+  },
+  "terms": {
+    "acceptableUse": {
+      "body": "You may not use the service unlawfully; infringe another person's rights; send spam or harmful content; introduce malware; bypass access controls; disrupt the service; scrape it abusively; or attempt to access data, accounts or infrastructure without authorization.",
+      "title": "3. Acceptable use"
+    },
+    "accounts": {
+      "body": "You must provide accurate information, protect your credentials and use only accounts and workspaces you are authorized to access. You are responsible for activity performed through your account and must tell us promptly if you suspect unauthorized access. Organization administrators control membership, roles and workspace content.",
+      "title": "2. Accounts and access"
+    },
+    "availability": {
+      "body": "We work to keep the service secure and available, but maintenance, failures and events outside our reasonable control may interrupt access. We may change or discontinue features and will try to give reasonable notice when a material change adversely affects active customers.",
+      "title": "6. Availability and changes"
+    },
+    "changes": {
+      "body": "We may update these terms to reflect service, business or legal changes. The current version will be published here. We will provide reasonable notice before materially adverse changes apply to active customers.",
+      "title": "11. Changes to these terms"
+    },
+    "contact": {
+      "body": "Questions about these terms can be sent to the workspace operator.",
+      "title": "12. Contact"
+    },
+    "content": {
+      "body": "You and your organization retain ownership of content submitted to the service. You grant us the limited permission needed to host, process, transmit and back up that content solely to provide, secure and support the service. You are responsible for having the rights and lawful basis needed to submit and use that content.",
+      "title": "4. Your content"
+    },
+    "eyebrow": "Legal",
+    "intellectualProperty": {
+      "body": "The service, its software, design, branding and documentation belong to the workspace operator or its licensors. These terms give you a limited, non-exclusive and non-transferable right to use the service during your authorized access; they do not transfer ownership.",
+      "title": "7. Our intellectual property"
+    },
+    "lastUpdated": "Last updated: 27 August 2026.",
+    "law": {
+      "body": "Spanish law governs these terms. Disputes will be submitted to the competent courts in Spain, without affecting any mandatory rights or jurisdiction available to consumers under applicable law.",
+      "title": "10. Governing law"
+    },
+    "liability": {
+      "body": "The service is provided with reasonable care and skill. To the maximum extent permitted by law, we are not liable for indirect or unforeseeable loss, lost profits, or failures caused by third parties or events outside our reasonable control. Nothing in these terms excludes liability that cannot legally be excluded or limits mandatory consumer rights.",
+      "title": "9. Warranties and liability"
+    },
+    "service": {
+      "body": "The service provides tools for team collaboration, access management and supported integrations. Features may change as we improve the service. Your organization's separate commercial agreement, if any, also applies; where it conflicts with these public terms, the signed agreement controls.",
+      "title": "1. The service"
+    },
+    "summary": "These terms govern authorized access to and use of the service, a business workspace operated by the workspace owner.",
+    "termination": {
+      "body": "You may stop using the service at any time. We may restrict or suspend access when reasonably necessary to address a security risk, unlawful activity, material breach or non-payment under an applicable agreement. We will use proportionate measures and provide notice when circumstances allow.",
+      "title": "8. Suspension and termination"
+    },
+    "thirdParties": {
+      "body": "The service may connect to third-party products at your request. Their own terms and privacy policies apply, and their availability or conduct is outside our control. You can disconnect optional integrations from the workspace where supported.",
+      "title": "5. Third-party services"
+    },
+    "title": "Terms of service"
+  }
+}

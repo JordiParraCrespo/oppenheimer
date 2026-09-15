@@ -1,0 +1,975 @@
+{
+  "common": {
+    "appName": "Oppenheimer",
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "confirm": "Confirmar",
+    "orContinueWith": "O continúa con",
+    "google": "Google",
+    "github": "GitHub",
+    "or": "o",
+    "relative": {
+      "day": "{{count}}d",
+      "hour": "{{count}}h",
+      "minute": "{{count}}min",
+      "month": "{{count}}mes",
+      "now": "ahora",
+      "week": "{{count}}sem",
+      "year": "{{count}}a"
+    }
+  },
+  "validation": {
+    "title": "Error de validación",
+    "required": "Este campo es obligatorio",
+    "email": "Introduce una dirección de correo válida",
+    "minLength": "Debe tener al menos {{min}} caracteres",
+    "maxLength": "Debe tener como máximo {{max}} caracteres",
+    "minItems": "Selecciona al menos {{min}}",
+    "maxItems": "Selecciona como máximo {{max}}",
+    "url": "Introduce una URL válida, incluyendo https://"
+  },
+  "errors": {
+    "fallback": "Algo ha ido mal. Inténtalo de nuevo.",
+    "unreachable": "No se ha podido contactar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+    "correlationId": "Referencia: {{id}}",
+    "byCode": {
+      "VALIDATION_FAILED": "Algunos de los datos introducidos no son válidos.",
+      "AUTH_001": "Inicia sesión para continuar.",
+      "AUTH_002": "No tienes permiso para hacer eso.",
+      "USER_001": "No se ha encontrado ese usuario.",
+      "TOKEN_001": "No se ha encontrado ese token de API.",
+      "TOKEN_002": "No puedes conceder a un token más acceso del que tienes tú.",
+      "TOKEN_003": "Ese token de API no es válido o ha caducado.",
+      "TOKEN_004": "Ese token de API no puede usarse desde esta red.",
+      "TOKEN_005": "A este token le falta un permiso necesario para esa acción.",
+      "TOKEN_006": "Esa acción no puede realizarse con un token de API.",
+      "TOKEN_007": "Ese token no tiene alcance sobre esta organización.",
+      "TOKEN_008": "Un token solo puede limitarse a organizaciones a las que perteneces.",
+      "TOKEN_009": "Has alcanzado el número máximo de tokens de API activos.",
+      "ROLE_001": "No se ha encontrado ese rol.",
+      "ROLE_002": "Ya existe un rol con ese nombre.",
+      "ROLE_003": "Los roles del sistema no se pueden eliminar ni renombrar.",
+      "ROLE_004": "Este rol debe conservar el acceso completo.",
+      "BILLING_001": "La facturación no está disponible en este servidor.",
+      "BILLING_002": "Todavía no existe una cuenta de facturación para ti.",
+      "BILLING_003": "No se ha encontrado ninguna suscripción.",
+      "BILLING_004": "No se ha podido verificar la solicitud de facturación.",
+      "BILLING_005": "No se ha podido iniciar el pago. Inténtalo de nuevo.",
+      "BILLING_006": "Ya tienes una suscripción activa.",
+      "BILLING_007": "No se ha podido abrir el portal de facturación. Inténtalo de nuevo.",
+      "BILLING_008": "No se ha podido crear tu cuenta de facturación. Inténtalo de nuevo.",
+      "ORG_001": "No se ha encontrado esa organización.",
+      "ORG_002": "Esa dirección de organización ya está en uso.",
+      "ORG_003": "No eres miembro de esta organización.",
+      "ORG_004": "Tu rol en esta organización no permite eso.",
+      "ORG_005": "No se ha encontrado ese miembro.",
+      "ORG_006": "Esa persona ya es miembro de esta organización.",
+      "ORG_007": "Una organización siempre debe tener un propietario.",
+      "ORG_008": "No se ha encontrado esa invitación.",
+      "ORG_009": "Esa invitación se envió a otra cuenta.",
+      "ORG_010": "Esa persona ya ha sido invitada.",
+      "ORG_011": "Verifica primero tu dirección de correo electrónico.",
+      "ORG_012": "No se ha encontrado ese espacio de trabajo.",
+      "ORG_013": "Ya existe un espacio de trabajo con ese nombre.",
+      "ORG_014": "Esta organización ha alcanzado uno de sus límites.",
+      "ORG_015": "No se ha podido completar esa solicitud.",
+      "ORG_016": "Las organizaciones no están disponibles temporalmente. Inténtalo de nuevo.",
+      "ADMIN_001": "No se ha encontrado ese usuario.",
+      "ADMIN_002": "Ya existe un usuario con ese correo electrónico.",
+      "ADMIN_003": "Tu cuenta no puede realizar esa acción administrativa.",
+      "ADMIN_004": "No puedes hacer eso con tu propia cuenta.",
+      "ADMIN_005": "Ese rol no se puede asignar.",
+      "ADMIN_006": "Ese usuario está baneado.",
+      "ADMIN_007": "No se ha podido completar esa solicitud.",
+      "ADMIN_008": "La administración de usuarios no está disponible temporalmente. Inténtalo de nuevo.",
+      "INVALID_EMAIL_OR_PASSWORD": "Correo electrónico o contraseña incorrectos.",
+      "INVALID_EMAIL": "Esa dirección de correo electrónico no es válida.",
+      "INVALID_PASSWORD": "Esa contraseña no es correcta.",
+      "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "Ya existe una cuenta con ese correo electrónico.",
+      "USER_NOT_FOUND": "No se ha encontrado ninguna cuenta con ese correo electrónico.",
+      "USER_EMAIL_NOT_FOUND": "No se ha encontrado ninguna cuenta con ese correo electrónico.",
+      "EMAIL_NOT_VERIFIED": "Verifica tu dirección de correo electrónico antes de iniciar sesión.",
+      "PASSWORD_TOO_SHORT": "Esa contraseña es demasiado corta.",
+      "PASSWORD_TOO_LONG": "Esa contraseña es demasiado larga.",
+      "INVALID_TOKEN": "Ese enlace no es válido. Solicita uno nuevo.",
+      "TOKEN_EXPIRED": "Ese enlace ha caducado. Solicita uno nuevo.",
+      "SESSION_EXPIRED": "Tu sesión ha caducado. Inicia sesión de nuevo.",
+      "CREDENTIAL_ACCOUNT_NOT_FOUND": "Esa cuenta usa otro método de inicio de sesión.",
+      "FAILED_TO_CREATE_USER": "No se ha podido crear tu cuenta. Inténtalo de nuevo.",
+      "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
+      "ROLE_006": "Ese rol pertenece a otra organización.",
+      "AUTHZ_001": "No eres miembro de esa organización.",
+      "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
+      "GRANT_001": "No se ha encontrado esa concesión de acceso.",
+      "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
+      "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
+      "GRANT_004": "Elige una organización antes de gestionar las concesiones de acceso.",
+      "LEAD_001": "No se ha encontrado ese lead.",
+      "LEAD_002": "Elige una organización antes de crear leads.",
+      "ADMIN_009": "Esa sesión ya no existe para este usuario.",
+      "PROFILE_001": "No hemos encontrado tu perfil.",
+      "PROFILE_002": "La contraseña actual no es correcta.",
+      "PROFILE_003": "No hemos encontrado esa sesión.",
+      "PROFILE_004": "Ese tipo de archivo no sirve como foto de perfil.",
+      "PROFILE_005": "Esa imagen es demasiado grande. Elige una de menos de 2 MB.",
+      "PROFILE_006": "Esa nueva contraseña no es lo bastante segura.",
+      "PROFILE_007": "No puedes cerrar la sesión del dispositivo que estás usando ahora.",
+      "PROFILE_008": "No hemos podido contactar con el servicio de cuentas. Inténtalo de nuevo.",
+      "PROFILE_CLIENT_010": "Ese tipo de archivo no se puede usar como foto de perfil.",
+      "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB."
+    }
+  },
+  "auth": {
+    "email": "Correo electrónico",
+    "emailPlaceholder": "nombre@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Introduce tu contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "description": "Inicia sesión para seguir donde lo dejó tu equipo.",
+      "submit": "Iniciar sesión",
+      "submitting": "Iniciando sesión...",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "noAccount": "¿No tienes una cuenta?",
+      "signUp": "Regístrate",
+      "invalidCredentials": "Correo electrónico o contraseña inválidos",
+      "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
+      "failedTitle": "Error al iniciar sesión",
+      "failedMessage": "No se pudo iniciar sesión.",
+      "continueWithGithub": "Continuar con GitHub",
+      "continueWithGoogle": "Continuar con Google",
+      "keepSignedIn": "Mantener la sesión iniciada",
+      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
+    },
+    "register": {
+      "title": "Crea una cuenta",
+      "description": "Configura tu cuenta para empezar a trabajar con tu equipo.",
+      "passwordPlaceholder": "Crea una contraseña",
+      "submit": "Crear cuenta",
+      "submitting": "Creando cuenta...",
+      "hasAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Iniciar sesión",
+      "failed": "Error en el registro",
+      "successTitle": "Cuenta creada",
+      "successMessage": "Ya puedes iniciar sesión.",
+      "passwordLabel": "Crear contraseña"
+    },
+    "forgotPassword": {
+      "title": "Olvidé mi contraseña",
+      "description": "Introduce tu correo y te enviaremos un enlace para restablecerla",
+      "submit": "Enviar enlace",
+      "submitting": "Enviando...",
+      "successTitle": "Revisa tu correo",
+      "successMessage": "Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña en breve.",
+      "backToSignIn": "Volver a iniciar sesión",
+      "error": "Algo salió mal",
+      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
+      "notReceived": "¿No te ha llegado? Revisa tu carpeta de spam o <retry>prueba con otro correo</retry>.",
+      "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos."
+    },
+    "resetPassword": {
+      "title": "Restablecer contraseña",
+      "description": "Elige una nueva contraseña para tu cuenta",
+      "newPassword": "Nueva contraseña",
+      "newPasswordPlaceholder": "Introduce una nueva contraseña",
+      "submit": "Restablecer contraseña",
+      "submitting": "Restableciendo...",
+      "invalidTitle": "Enlace no válido",
+      "invalidMessage": "Este enlace no es válido o ha expirado. Solicita uno nuevo.",
+      "requestNewLink": "Solicitar un nuevo enlace",
+      "successTitle": "Contraseña actualizada",
+      "successMessage": "Ya puedes iniciar sesión.",
+      "failedTitle": "Error al restablecer",
+      "error": "No se pudo restablecer la contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "confirmPasswordPlaceholder": "Repite la contraseña",
+      "continue": "Ir al espacio de trabajo",
+      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña."
+    },
+    "session": {
+      "errorTitle": "Problema de conexión",
+      "errorMessage": "No pudimos restaurar tu sesión. Comprueba tu conexión e inténtalo de nuevo.",
+      "retry": "Reintentar",
+      "retrying": "Reintentando..."
+    },
+    "acceptInvitation": {
+      "acceptExisting": "Unirme al espacio de trabajo",
+      "createPassword": "Crear contraseña",
+      "createPasswordPlaceholder": "Elige una contraseña",
+      "description": "Termina de configurar tu cuenta para empezar a trabajar con tu equipo.",
+      "eyebrow": "Te han invitado",
+      "fullName": "Nombre completo",
+      "fullNamePlaceholder": "Tu nombre completo",
+      "invalidLink": "Este enlace de invitación está incompleto. Pide al propietario que envíe una nueva invitación.",
+      "invitedYou": "{{inviter}} te ha invitado",
+      "joining": "Uniéndome…",
+      "joiningAs": "Te unes como {{role}}",
+      "submit": "Crear cuenta y unirme",
+      "title": "Únete al espacio de trabajo"
+    },
+    "art": {
+      "body": "Invita a tu equipo, decide quién puede hacer qué y mantén el trabajo en marcha desde un único lugar.",
+      "features": {
+        "team": "Roles y permisos que encajan con cómo trabajáis",
+        "workspaces": "Crea un espacio de trabajo e invita a tu equipo",
+        "security": "Sesiones, claves de API e inicio de sesión bajo tu control"
+      },
+      "headline": "Todo lo que tu equipo necesita, en un solo espacio de trabajo."
+    },
+    "firstNamePlaceholder": "Tu nombre",
+    "hidePassword": "Ocultar contraseña",
+    "lastNamePlaceholder": "Tu apellido",
+    "oauth": {
+      "accountNotLinked": "Esa dirección ya tiene una cuenta con contraseña. Inicia sesión con tu contraseña; cuando la dirección esté verificada, este botón también funcionará.",
+      "failed": "Ese acceso no se completó. Inténtalo de nuevo o usa tu correo y contraseña.",
+      "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
+    },
+    "passwordRules": {
+      "case": "Mayúsculas y minúsculas",
+      "length": "Al menos 8 caracteres",
+      "match": "Las dos contraseñas coinciden",
+      "number": "Al menos un número"
+    },
+    "showPassword": "Mostrar contraseña"
+  },
+  "sessions": {
+    "title": "Sesiones",
+    "subtitle": "Cada sesión es un worktree con una terminal en una máquina tuya.",
+    "newSession": "Nueva sesión",
+    "emptyTitle": "Aún no hay sesiones",
+    "emptyDescription": "Añade una máquina en Ajustes y arranca tu primera sesión.",
+    "new": {
+      "title": "Nueva sesión",
+      "subtitle": "Elige máquina, repositorio, rama y agente.",
+      "emptyTitle": "Llega con la primera máquina",
+      "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+    }
+  },
+  "home": {
+    "greeting": "Hola de nuevo, {{name}}",
+    "greetingFallback": "Hola de nuevo",
+    "subtitle": "Esto es lo que está pasando con tu cuenta.",
+    "overview": "Resumen",
+    "totalUsers": "Usuarios totales",
+    "activeSessions": "Sesiones activas",
+    "apiCalls": "Llamadas a la API",
+    "uptime": "Tiempo activo",
+    "account": "Cuenta",
+    "accountDescription": "Tu perfil y estado actual.",
+    "email": "Correo electrónico",
+    "role": "Rol",
+    "status": "Estado",
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "memberSince": "Miembro desde",
+    "admin": "Administrador",
+    "accountUnavailable": "No pudimos cargar tu cuenta. Comprueba tu conexión e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "retrying": "Reintentando...",
+    "signOut": "Cerrar sesión",
+    "signingOut": "Cerrando sesión..."
+  },
+  "nav": {
+    "menu": "Menú",
+    "logOut": "Cerrar sesión",
+    "apiTokens": "Tokens de API",
+    "commandEmpty": "Sin resultados.",
+    "commandPlaceholder": "Busca páginas y acciones…",
+    "goTo": "Ir a",
+    "primaryNavigation": "Navegación principal",
+    "profile": "Perfil",
+    "search": "Buscar",
+    "settings": "Ajustes",
+    "team": "Equipo",
+    "users": "Usuarios",
+    "roles": "Roles",
+    "toggleSidebar": "Mostrar u ocultar el menú",
+    "viewProfile": "Ver perfil",
+    "sessions": "Sesiones",
+    "newSession": "Nueva sesión"
+  },
+  "control": {
+    "accessDeniedTitle": "Se necesita acceso al panel de control",
+    "accessDeniedDescription": "Este espacio está reservado a los administradores de la plataforma.",
+    "auth": {
+      "headline": "Gestiona tu producto desde un panel de control seguro.",
+      "body": "Accede con una cuenta administradora de la plataforma para gestionar todas tus aplicaciones.",
+      "noAccount": "Esta identidad no tiene una cuenta del panel de control. Pide a un administrador de la plataforma que la cree.",
+      "features": {
+        "users": "Crea y gestiona cuentas de usuario",
+        "roles": "Define roles de aplicación reutilizables",
+        "security": "Cierra sesiones y bloquea el acceso al instante"
+      }
+    },
+    "roles": {
+      "title": "Roles y permisos",
+      "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
+      "permissionCount_one": "{{count}} permiso",
+      "permissionCount_other": "{{count}} permisos"
+    },
+    "users": {
+      "title": "Usuarios",
+      "description": "Gestiona cuentas, roles de aplicación y acceso activo.",
+      "search": "Buscar usuarios…",
+      "add": "Añadir usuario",
+      "empty": "Todavía no hay usuarios",
+      "noMatches": "Ningún usuario coincide con la búsqueda",
+      "noRoles": "Sin roles",
+      "superAdmin": "Superadministrador",
+      "consumer": "Usuario",
+      "active": "Activo",
+      "banned": "Bloqueado",
+      "columns": {
+        "name": "Usuario",
+        "email": "Correo",
+        "roles": "Roles de app",
+        "access": "Acceso de plataforma",
+        "status": "Estado",
+        "joined": "Alta"
+      },
+      "actions": {
+        "roles": "Gestionar roles de app",
+        "password": "Cambiar contraseña",
+        "sessions": "Cerrar sesiones",
+        "ban": "Bloquear usuario",
+        "unban": "Desbloquear usuario",
+        "delete": "Eliminar usuario"
+      },
+      "create": {
+        "title": "Añadir usuario",
+        "description": "Crea una cuenta de consumo. Después podrás asignarle roles de aplicación.",
+        "password": "Contraseña temporal (opcional)",
+        "submit": "Crear usuario"
+      },
+      "roles": {
+        "title": "Roles de aplicación",
+        "description": "Elige los roles que {{name}} usa en las aplicaciones de consumo.",
+        "noDescription": "Sin descripción"
+      },
+      "password": {
+        "title": "Establecer una contraseña",
+        "description": "Sustituye la contraseña de acceso de {{name}}.",
+        "label": "Nueva contraseña",
+        "submit": "Cambiar contraseña"
+      },
+      "confirm": {
+        "ban": {
+          "title": "¿Bloquear este usuario?",
+          "description": "{{name}} perderá el acceso inmediatamente.",
+          "submit": "Bloquear usuario"
+        },
+        "unban": {
+          "title": "¿Desbloquear este usuario?",
+          "description": "{{name}} podrá volver a iniciar sesión.",
+          "submit": "Desbloquear usuario"
+        },
+        "sessions": {
+          "title": "¿Cerrar todas las sesiones?",
+          "description": "Se cerrará la sesión de {{name}} en todos los dispositivos.",
+          "submit": "Cerrar sesiones"
+        },
+        "delete": {
+          "title": "¿Eliminar este usuario?",
+          "description": "La cuenta de {{name}} y sus accesos se eliminarán permanentemente.",
+          "submit": "Eliminar usuario"
+        }
+      }
+    }
+  },
+  "language": {
+    "label": "Idioma",
+    "en": "English",
+    "es": "Español"
+  },
+  "apiTokens": {
+    "title": "Tokens de API",
+    "description": "Los tokens permiten que scripts, CI y agentes de IA actúen en tu nombre solo con los permisos que elijas.",
+    "create": "Crear un token",
+    "createDescription": "Un token nunca puede hacer más que tú. Lo que no tienes permitido aparece desactivado.",
+    "createButton": "Crear token",
+    "name": "Nombre",
+    "namePlaceholder": "Despliegue de CI, Claude, portátil…",
+    "permissions": "Permisos",
+    "permissionsHint": "Editar incluye Leer. Concede lo mínimo necesario.",
+    "organizations": "Organizaciones",
+    "organizationsHint": "Déjalas sin marcar para que el token siga tus membresías.",
+    "expiry": "Caduca",
+    "never": "Nunca",
+    "days": "{{count}} días",
+    "sensitive": "Sensible",
+    "levels": {
+      "none": "Sin acceso"
+    },
+    "yourTokens": "Tus tokens",
+    "yourTokensDescription": "Revocar un token tiene efecto inmediato.",
+    "empty": "Todavía no tienes tokens de API.",
+    "prefix": "Prefijo",
+    "status": "Estado",
+    "lastUsed": "Último uso",
+    "neverUsed": "Nunca",
+    "active": "Activo",
+    "expired": "Caducado",
+    "revoked": "Revocado",
+    "revoke": "Revocar",
+    "created": "Token creado",
+    "shownOnce": "Cópialo ahora: es la única vez que se muestra.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "dismiss": "Descartar",
+    "permissionsRequired": "Selecciona al menos un permiso"
+  },
+  "consent": {
+    "title": "{{client}} quiere acceder a tu cuenta",
+    "description": "Has iniciado sesión como {{email}}. Al aprobar podrá actuar en tu nombre con los permisos siguientes.",
+    "noPermissions": "Esta aplicación no ha pedido ningún permiso.",
+    "unknownScopes": "También ha pedido permisos que este despliegue no reconoce: {{scopes}}",
+    "effectiveNote": "Nunca podrá hacer más de lo que permiten tus roles, y puedes desconectarla cuando quieras.",
+    "narrowerAlternative": "¿Necesitas conceder algo más limitado?",
+    "apiTokensLink": "Crea un token de API",
+    "approve": "Aprobar",
+    "deny": "Denegar",
+    "invalidTitle": "Este enlace ha caducado",
+    "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
+    "backToSessions": "Volver a las sesiones",
+    "noRedirect": "El servidor no ha indicado a dónde continuar."
+  },
+  "onboarding": {
+    "description": "Tu cuenta está lista. Crea un espacio de trabajo para tu equipo o únete a uno al que te hayan invitado.",
+    "eyebrow": "Casi listo",
+    "invitation": {
+      "join": "Entrar",
+      "joining": "Entrando…",
+      "role": "Entrarás como {{role}}",
+      "title": "Te han invitado a un espacio de trabajo"
+    },
+    "signOut": "Cerrar sesión",
+    "title": "Crea tu espacio de trabajo",
+    "create": {
+      "name": "Nombre del espacio de trabajo",
+      "namePlaceholder": "Acme S.L.",
+      "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
+      "submit": "Crear espacio de trabajo",
+      "submitting": "Creando…"
+    }
+  },
+  "pages": {
+    "profile": {
+      "description": "Gestiona tu cuenta personal en este espacio de trabajo.",
+      "title": "Mi perfil"
+    },
+    "team": {
+      "common": {
+        "cancel": "Cancelar",
+        "error": "Algo ha fallado. Inténtalo de nuevo.",
+        "loading": "Cargando…"
+      },
+      "confirm": {
+        "cancelDescription": "El enlace de invitación dejará de funcionar.",
+        "cancelTitle": "¿Cancelar esta invitación?",
+        "deleteRoleDescription": "Los miembros asignados perderán los permisos que concede.",
+        "deleteRoleTitle": "¿Eliminar este rol?",
+        "removeDescription": "Perderá el acceso a este espacio. Su cuenta no se eliminará.",
+        "removeTitle": "¿Eliminar este miembro?"
+      },
+      "description": "Gestiona quién puede acceder al espacio de trabajo {{workspace}} y qué le permite hacer su rol.",
+      "invite": {
+        "description": "Añade compañeros por correo. Su rol puede ajustarse después de que se unan.",
+        "emails": "Direcciones de email",
+        "emailsHint": "Separa varias direcciones con comas o saltos de línea.",
+        "emailsPlaceholder": "nombre@empresa.com, otra@empresa.com",
+        "role": "Acceso a la organización",
+        "roles": {
+          "admin": "Administrador",
+          "member": "Miembro",
+          "owner": "Propietario"
+        },
+        "send": "Enviar invitación",
+        "sendMany": "Enviar {{count}} invitaciones",
+        "sending": "Enviando…",
+        "title": "Invitar miembros"
+      },
+      "memberRole": {
+        "description": "Elige el rol de aplicación de {{name}}.",
+        "noRole": "Sin rol personalizado",
+        "role": "Rol",
+        "save": "Guardar rol",
+        "title": "Editar rol del miembro"
+      },
+      "members": {
+        "cancelInvite": "Cancelar invitación",
+        "columns": {
+          "email": "Email",
+          "joined": "Alta",
+          "name": "Nombre",
+          "organizationRole": "Rol en la organización",
+          "role": "Rol",
+          "status": "Estado"
+        },
+        "editRole": "Editar rol",
+        "export": "Exportar CSV",
+        "invite": "Invitar",
+        "remove": "Eliminar miembro",
+        "search": "Buscar miembros",
+        "status": {
+          "active": "Activo",
+          "inactive": "Inactivo",
+          "invited": "Invitado"
+        },
+        "empty": "No se han encontrado miembros.",
+        "noMatches": "Ningún miembro coincide con los filtros."
+      },
+      "roleForm": {
+        "create": "Crear rol",
+        "description": "Ponle nombre al rol y elige qué puede hacer.",
+        "details": "Descripción",
+        "detailsPlaceholder": "¿Qué puede hacer este rol?",
+        "edit": "Editar",
+        "editTitle": "Editar rol",
+        "name": "Nombre del rol",
+        "namePlaceholder": "p. ej. Editor de contenido",
+        "newTitle": "Nuevo rol personalizado",
+        "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
+        "none": "Ninguno",
+        "permissions": "Permisos",
+        "save": "Guardar cambios",
+        "saving": "Guardando…",
+        "searchPermissions": "Buscar permisos",
+        "view": "Ver"
+      },
+      "roles": {
+        "columns": {
+          "description": "Descripción",
+          "members": "Miembros",
+          "role": "Rol",
+          "type": "Tipo"
+        },
+        "custom": "Personalizado",
+        "delete": "Eliminar",
+        "duplicate": "Duplicar",
+        "edit": "Editar",
+        "empty": "No se han encontrado roles.",
+        "export": "Exportar CSV",
+        "memberCount_one": "{{count}} miembro",
+        "memberCount_other": "{{count}} miembros",
+        "new": "Nuevo rol",
+        "search": "Buscar roles",
+        "system": "Sistema"
+      },
+      "stats": {
+        "active": "Cuentas activas",
+        "members": "Miembros",
+        "pending": "Invitaciones pendientes"
+      },
+      "tabs": {
+        "members": "Miembros",
+        "roles": "Roles"
+      },
+      "title": "Equipo",
+      "permissionAreas": {
+        "team": {
+          "name": "Equipo",
+          "hint": "Miembros, invitaciones y roles"
+        },
+        "organization": {
+          "name": "Organización",
+          "hint": "Nombre, logotipo y espacios de trabajo"
+        },
+        "users": {
+          "name": "Usuarios",
+          "hint": "El directorio de usuarios"
+        },
+        "api": {
+          "name": "Claves de API",
+          "hint": "Tokens de API personales"
+        },
+        "billing": {
+          "name": "Facturación",
+          "hint": "Suscripción y facturas"
+        },
+        "audit": {
+          "name": "Registro de auditoría",
+          "hint": "Quién hizo qué, y cuándo"
+        }
+      }
+    }
+  },
+  "profile": {
+    "changePhoto": "Cambiar foto",
+    "details": {
+      "cancel": "Cancelar",
+      "description": "Tu información personal. Así te ven tus compañeros en todo el espacio de trabajo.",
+      "email": "Correo electrónico",
+      "emailDescription": "Se usa para iniciar sesión y recibir avisos",
+      "emailHint": "Lo gestiona tu espacio de trabajo: escribe a un administrador para cambiarlo.",
+      "firstName": "Nombre",
+      "jobTitle": "Puesto",
+      "jobTitleDescription": "Aparece en tu ficha de perfil",
+      "lastName": "Apellidos",
+      "phone": "Teléfono",
+      "save": "Guardar cambios",
+      "title": "Perfil"
+    },
+    "joined": "Se unió en {{date}}",
+    "password": {
+      "confirm": "Confirmar contraseña",
+      "confirmPlaceholder": "Repite la nueva contraseña",
+      "current": "Contraseña actual",
+      "description": "Protege tu cuenta con una contraseña sólida y verificación en dos pasos.",
+      "mismatch": "Las dos contraseñas deben coincidir.",
+      "new": "Nueva contraseña",
+      "newDescription": "Al menos 8 caracteres",
+      "newPlaceholder": "Nueva contraseña",
+      "submit": "Actualizar contraseña",
+      "title": "Contraseña",
+      "twoFactor": "Verificación en dos pasos",
+      "twoFactorDescription": "Pedir un código de tu aplicación de autenticación al iniciar sesión.",
+      "twoFactorOn": "Activada",
+      "twoFactorUnavailable": "Aún no disponible"
+    },
+    "sections": {
+      "details": "Perfil",
+      "password": "Contraseña",
+      "sessions": "Sesiones",
+      "preferences": "Preferencias"
+    },
+    "sessions": {
+      "activeNow": "Activa ahora",
+      "credentialsNote": "Aquí solo aparecen dispositivos. Las claves de API y las apps conectadas se revocan en API y webhooks: cerrar la sesión de un dispositivo no las desactiva.",
+      "description": "Dispositivos con la sesión iniciada en tu cuenta. Cierra cualquiera que no reconozcas.",
+      "empty": "No hay ningún dispositivo con la sesión iniciada.",
+      "signOut": "Cerrar sesión",
+      "signOutAll": "Cerrar el resto de sesiones",
+      "thisDevice": "Este dispositivo",
+      "title": "Sesiones",
+      "unknownDevice": "Dispositivo no reconocido",
+      "unknownLocation": "Dirección desconocida"
+    },
+    "viewTeamCard": "Ver ficha del equipo",
+    "preferences": {
+      "title": "Preferencias",
+      "description": "Cómo se ve el espacio de trabajo y qué llega a tu bandeja.",
+      "darkTheme": "Tema oscuro",
+      "darkThemeDescription": "Cambia todo el espacio de trabajo a una paleta oscura.",
+      "language": "Idioma",
+      "density": "Densidad de las tablas",
+      "densityDescription": "Altura de fila en las tablas del espacio de trabajo",
+      "densities": {
+        "comfortable": "Cómoda",
+        "compact": "Compacta"
+      },
+      "weeklyDigest": "Resumen semanal",
+      "weeklyDigestDescription": "Resumen de los lunes con lo ocurrido en tu espacio de trabajo.",
+      "productUpdates": "Novedades del producto",
+      "productUpdatesDescription": "Correos ocasionales sobre nuevas funciones."
+    }
+  },
+  "public": {
+    "footer": {
+      "legalNavigation": "Información legal",
+      "operator": "Operado por el propietario del espacio de trabajo."
+    },
+    "home": {
+      "cta": "Entrar al espacio de trabajo",
+      "description": "Invita a compañeros, define roles y permisos y conecta las herramientas que usáis, todo desde un espacio de trabajo seguro.",
+      "eyebrow": "Espacio de trabajo para equipos",
+      "featuresTitle": "Lo que el espacio de trabajo aporta a tu equipo",
+      "google": {
+        "body": "Cuando inicias sesión con Google, usamos tu información básica de perfil para autenticarte y crear o vincular tu cuenta.",
+        "eyebrow": "Uso claro de los datos de Google",
+        "scope": "El inicio de sesión con Google solo solicita tu nombre, dirección de correo y foto de perfil. No lee Gmail, Google Drive ni ningún otro dato de Google. Las integraciones opcionales con Google requieren una autorización separada y explícita.",
+        "title": "El acceso con Google solo sirve para tu cuenta."
+      },
+      "privacyCta": "Cómo protegemos los datos",
+      "title": "Un espacio de trabajo para tu equipo, con el acceso adecuado para cada persona.",
+      "features": {
+        "team": {
+          "title": "Gestión del equipo",
+          "body": "Invita a miembros, ve quién está activo y mantén la plantilla en un solo sitio."
+        },
+        "access": {
+          "title": "Roles y permisos",
+          "body": "Da a cada rol exactamente lo que necesita y cámbialo sin desplegar nada."
+        },
+        "api": {
+          "title": "Acceso por API",
+          "body": "Crea claves de API con permisos acotados para que tus herramientas y automatizaciones trabajen junto al equipo."
+        }
+      }
+    },
+    "navigation": {
+      "home": "Inicio",
+      "privacy": "Política de privacidad",
+      "signIn": "Iniciar sesión",
+      "terms": "Términos del servicio"
+    },
+    "privacy": {
+      "changes": {
+        "body": "Podemos actualizar esta política cuando cambie el servicio o la normativa. Publicaremos aquí la versión vigente y daremos un aviso adicional cuando un cambio afecte de forma relevante a tus derechos.",
+        "title": "11. Cambios en esta política"
+      },
+      "children": {
+        "body": "El servicio es una herramienta empresarial y no está dirigido a menores de 16 años.",
+        "title": "10. Menores"
+      },
+      "contactLabel": "Contacta con el operador del espacio de trabajo para solicitudes de privacidad.",
+      "controller": {
+        "body": "El operador del espacio de trabajo es responsable de los datos personales descritos en esta política. El servicio es un espacio de trabajo empresarial usado por equipos autorizados.",
+        "title": "1. Quién es responsable de tus datos"
+      },
+      "cookies": {
+        "body": "El servicio usa cookies esenciales y almacenamiento del navegador para mantener tu sesión iniciada, proteger el servicio, recordar tus preferencias de idioma y tema y guardar en caché datos de la aplicación para un rendimiento fiable. Estas tecnologías son necesarias para ofrecer el espacio de trabajo. Si se introduce analítica opcional, daremos cualquier aviso u opción que exija la ley antes de usarla.",
+        "title": "7. Cookies y almacenamiento local"
+      },
+      "data": {
+        "account": "Datos de cuenta e identidad, como nombre, correo de trabajo, foto de perfil, proveedor de autenticación y pertenencia a organizaciones.",
+        "content": "Contenido introducido o subido por tu organización, incluidos notas, mensajes y archivos adjuntos cuando se usan esas funciones.",
+        "integrations": "Datos de conexión y tokens de servicios de terceros que un usuario autorizado decida conectar.",
+        "intro": "Los datos que tratamos dependen de cómo tú y tu organización utilicéis el servicio. Pueden incluir:",
+        "technical": "Datos técnicos y de seguridad, incluidos dirección IP, información del navegador, marcas de tiempo, sesiones, registros de errores y eventos de seguridad.",
+        "title": "2. Datos que tratamos",
+        "workspace": "Datos del espacio de trabajo, incluidos roles, permisos, ajustes, eventos de auditoría y actividad necesaria para prestar el servicio."
+      },
+      "eyebrow": "Legal",
+      "google": {
+        "body": "Si eliges iniciar sesión con Google, Google nos facilita tu nombre, dirección de correo, foto de perfil e identificadores del proveedor. Usamos esta información solo para autenticarte, proteger el acceso y crear o vincular tu perfil. No vendemos estos datos ni los usamos para publicidad.",
+        "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
+        "title": "3. Acceso con Google y datos de usuario de Google"
+      },
+      "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+      "purposes": {
+        "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
+        "title": "4. Finalidades y bases jurídicas"
+      },
+      "retention": {
+        "body": "Conservamos los datos de cuenta y del espacio mientras la cuenta u organización correspondiente siga activa y durante el periodo limitado necesario para seguridad, recuperación, resolución de disputas y obligaciones legales. Los datos eliminados pueden permanecer en copias cifradas hasta que expiren en su ciclo normal. Las credenciales de integraciones se eliminan al borrar la conexión, sin perjuicio de copias operativas de corta duración.",
+        "title": "6. Durante cuánto tiempo conservamos los datos"
+      },
+      "rights": {
+        "authority": "También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) o tu autoridad de control local.",
+        "body": "Cuando corresponda, puedes solicitar acceso, rectificación, supresión, limitación o portabilidad de tus datos personales, oponerte a determinados tratamientos o retirar tu consentimiento sin afectar al tratamiento lícito anterior. Escríbenos desde el correo asociado a tu cuenta para que podamos verificar y responder a tu solicitud.",
+        "title": "9. Tus derechos de privacidad"
+      },
+      "security": {
+        "body": "Aplicamos medidas técnicas y organizativas diseñadas para proteger los datos, como conexiones cifradas, controles de acceso, infraestructura aislada, gestión de secretos, registros de seguridad y acceso administrativo restringido. Ningún sistema garantiza una seguridad absoluta, pero revisamos y mejoramos estas medidas conforme evoluciona el servicio.",
+        "title": "8. Seguridad"
+      },
+      "sharing": {
+        "body": "Compartimos datos solo cuando es necesario para operar el servicio, cumplir la ley o seguir las instrucciones de tu organización. Los proveedores pueden incluir los de alojamiento, almacenamiento, autenticación, correo e integraciones que tu organización active. Algunos proveedores pueden tratar datos fuera del Espacio Económico Europeo con las garantías aplicables, como decisiones de adecuación o cláusulas contractuales tipo. No vendemos datos personales.",
+        "title": "5. Proveedores y transferencias internacionales"
+      },
+      "summary": "Esta política explica qué datos personales trata el servicio, por qué los usamos y las opciones y derechos que tienes.",
+      "title": "Política de privacidad"
+    },
+    "terms": {
+      "acceptableUse": {
+        "body": "No puedes usar el servicio de forma ilegal; infringir derechos de terceros; enviar spam o contenido dañino; introducir malware; eludir controles de acceso; interrumpir el servicio; extraer datos de forma abusiva; ni intentar acceder sin autorización a datos, cuentas o infraestructura.",
+        "title": "3. Uso aceptable"
+      },
+      "accounts": {
+        "body": "Debes facilitar información exacta, proteger tus credenciales y usar únicamente cuentas y espacios a los que estés autorizado. Eres responsable de la actividad realizada desde tu cuenta y debes avisarnos si sospechas un acceso no autorizado. Los administradores de la organización controlan los miembros, roles y contenido del espacio.",
+        "title": "2. Cuentas y acceso"
+      },
+      "availability": {
+        "body": "Trabajamos para mantener el servicio seguro y disponible, pero el mantenimiento, los fallos y los eventos fuera de nuestro control razonable pueden interrumpir el acceso. Podemos cambiar o retirar funciones e intentaremos avisar con antelación razonable cuando un cambio importante afecte negativamente a clientes activos.",
+        "title": "6. Disponibilidad y cambios"
+      },
+      "changes": {
+        "body": "Podemos actualizar estos términos para reflejar cambios del servicio, negocio o normativa. La versión vigente se publicará aquí. Avisaremos con antelación razonable antes de aplicar cambios sustancialmente perjudiciales a clientes activos.",
+        "title": "11. Cambios en estos términos"
+      },
+      "contact": {
+        "body": "Las preguntas sobre estos términos pueden enviarse al operador del espacio de trabajo.",
+        "title": "12. Contacto"
+      },
+      "content": {
+        "body": "Tú y tu organización conserváis la propiedad del contenido enviado al servicio. Nos concedéis el permiso limitado necesario para alojar, tratar, transmitir y respaldar ese contenido únicamente para prestar, proteger y dar soporte al servicio. Sois responsables de disponer de los derechos y la base jurídica necesarios para aportar y usar ese contenido.",
+        "title": "4. Tu contenido"
+      },
+      "eyebrow": "Legal",
+      "intellectualProperty": {
+        "body": "El servicio, su software, diseño, marca y documentación pertenecen al operador del espacio de trabajo o a sus licenciantes. Estos términos te otorgan un derecho limitado, no exclusivo e intransferible a usar el servicio durante tu acceso autorizado; no transfieren la propiedad.",
+        "title": "7. Nuestra propiedad intelectual"
+      },
+      "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+      "law": {
+        "body": "Estos términos se rigen por la ley española. Los conflictos se someterán a los tribunales competentes de España, sin afectar a los derechos o fueros imperativos disponibles para consumidores conforme a la ley aplicable.",
+        "title": "10. Ley aplicable"
+      },
+      "liability": {
+        "body": "Prestamos el servicio con diligencia y competencia razonables. En la medida máxima permitida por la ley, no respondemos de pérdidas indirectas o imprevisibles, lucro cesante ni fallos causados por terceros o hechos fuera de nuestro control razonable. Nada en estos términos excluye responsabilidades que legalmente no puedan excluirse ni limita derechos obligatorios de consumidores.",
+        "title": "9. Garantías y responsabilidad"
+      },
+      "service": {
+        "body": "El servicio ofrece herramientas de colaboración en equipo, gestión de accesos e integraciones compatibles. Las funciones pueden cambiar a medida que mejoramos el servicio. También se aplica el acuerdo comercial independiente de tu organización, si existe; en caso de conflicto con estos términos públicos, prevalece el acuerdo firmado.",
+        "title": "1. El servicio"
+      },
+      "summary": "Estos términos regulan el acceso autorizado y el uso del servicio, un espacio de trabajo empresarial operado por su propietario.",
+      "termination": {
+        "body": "Puedes dejar de usar el servicio en cualquier momento. Podemos restringir o suspender el acceso cuando sea razonablemente necesario ante un riesgo de seguridad, actividad ilegal, incumplimiento grave o impago conforme a un acuerdo aplicable. Usaremos medidas proporcionales y avisaremos cuando las circunstancias lo permitan.",
+        "title": "8. Suspensión y terminación"
+      },
+      "thirdParties": {
+        "body": "El servicio puede conectarse a productos de terceros si lo solicitas. Se aplican sus propios términos y políticas de privacidad, y su disponibilidad o actuación queda fuera de nuestro control. Puedes desconectar las integraciones opcionales desde el espacio cuando esté disponible.",
+        "title": "5. Servicios de terceros"
+      },
+      "title": "Términos del servicio"
+    }
+  },
+  "settings": {
+    "api": {
+      "cancel": "Cancelar",
+      "close": "Cerrar",
+      "create": "Crear clave",
+      "createKey": "Crear clave",
+      "createKeySubtitle": "Ponle un nombre para reconocerla luego. El secreto solo se muestra una vez.",
+      "createKeyTitle": "Crear clave de API",
+      "description": "Crea claves con permisos acotados para que tus herramientas llamen a la API en tu nombre.",
+      "expired": "Caducada",
+      "keyCreated": "Creada el {{created}} · último uso {{used}}",
+      "keyName": "Nombre de la clave",
+      "keyNameHint": "Usa una clave por sistema para poder revocarla por separado.",
+      "keyNamePlaceholder": "p. ej. web de WordPress",
+      "keyPermissions": "Permisos",
+      "keyPermissionsHint": "Una clave nunca puede hacer más que tú.",
+      "keys": "Claves de API",
+      "neverUsed": "nunca",
+      "noKeys": "Aún no hay claves de API.",
+      "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
+      "revoke": "Revocar",
+      "revoked": "Revocada",
+      "searchPermissions": "Buscar permisos",
+      "secretSubtitle": "Es la única vez que se muestra el secreto. Guárdalo en un lugar seguro.",
+      "secretTitle": "Copia tu nueva clave",
+      "title": "API y webhooks"
+    },
+    "general": {
+      "description": "Cómo se llama tu espacio de trabajo y cómo lo ve todo el equipo.",
+      "logo": "Logotipo",
+      "logoHint": "PNG o SVG cuadrado, de al menos 128×128",
+      "logoUrl": "URL del logotipo",
+      "name": "Nombre de la organización",
+      "nameHint": "Se muestra en la barra lateral y a todos los miembros del espacio de trabajo",
+      "remove": "Quitar",
+      "save": "Guardar cambios",
+      "saveSuccess": "Configuración de la organización guardada",
+      "title": "General"
+    },
+    "nav": {
+      "api": "API y webhooks",
+      "general": "General",
+      "integrations": "Integraciones",
+      "label": "Secciones de configuración",
+      "notifications": "Notificaciones",
+      "security": "Seguridad",
+      "hosts": "Máquinas"
+    },
+    "saved": "Guardado",
+    "security": {
+      "description": "Todos los dispositivos con sesión iniciada en tu cuenta, y una forma de cerrar cualquiera de ellas.",
+      "sessions": "Sesiones activas",
+      "sessionsNote": "Aquí solo aparecen dispositivos. Las claves de API y las apps conectadas se revocan en API y webhooks: cerrar la sesión de un dispositivo no las desactiva.",
+      "signOut": "Cerrar sesión",
+      "signOutOthers": "Cerrar las demás sesiones",
+      "thisDevice": "Este dispositivo",
+      "title": "Seguridad",
+      "unknownDevice": "Dispositivo desconocido"
+    },
+    "subtitle": "Configuración de todo el espacio de trabajo de {{organization}}.",
+    "subtitleFallback": "Configuración de todo el espacio de trabajo.",
+    "title": "Configuración",
+    "hosts": {
+      "emptyTitle": "Aún no hay máquinas",
+      "emptyDescription": "Una máquina es un ordenador tuyo. Emparejarla es pegar un comando; aparece aquí en cuanto se conecta."
+    }
+  },
+  "table": {
+    "clearFilter": "Quitar el filtro",
+    "clearSelection": "Quitar la selección",
+    "nextPage": "Página siguiente",
+    "page": "Página {{page}} de {{totalPages}}",
+    "previousPage": "Página anterior",
+    "range": "{{first}}–{{last}} de {{total}}",
+    "rowActions": "Acciones de la fila",
+    "selectPage": "Seleccionar todas las filas de esta página",
+    "selectRow": "Seleccionar fila",
+    "selected_one": "{{count}} seleccionado",
+    "selected_other": "{{count}} seleccionados"
+  },
+  "theme": {
+    "toggle": "Cambiar tema"
+  },
+  "toasts": {
+    "copied": "Copiado al portapapeles.",
+    "memberRemoved": "Miembro eliminado.",
+    "membersInvited": "Invitaciones enviadas.",
+    "passwordChanged": "Contraseña actualizada. Se ha cerrado la sesión en tus otros dispositivos."
+  },
+  "emails": {
+    "common": {
+      "brandName": "Oppenheimer",
+      "footer": "Recibes este correo porque tienes una cuenta en Oppenheimer.",
+      "pasteLink": "O pega este enlace en tu navegador:"
+    },
+    "passwordReset": {
+      "subject": "Restablece tu contraseña",
+      "preview": "Restablece tu contraseña de Oppenheimer; el enlace funciona una vez y caduca pronto.",
+      "heading": "Restablece tu contraseña",
+      "body": "Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Elige una nueva y podrás volver a tu espacio de trabajo.",
+      "action": "Restablecer contraseña",
+      "helper": "Este enlace solo puede usarse una vez y caduca pronto. Si ya ha caducado, solicita otro desde la pantalla de inicio de sesión.",
+      "closing": "¿No lo has solicitado? Ignora este correo; tu contraseña seguirá siendo la misma.",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+    },
+    "emailVerification": {
+      "subject": "Verifica tu correo",
+      "preview": "Verifica tu dirección de correo de Oppenheimer para terminar de configurar tu cuenta.",
+      "heading": "Verifica tu correo",
+      "body": "Confirma esta dirección para terminar de configurar tu cuenta y mantenerla segura.",
+      "action": "Verificar correo",
+      "helper": "Este enlace de verificación caduca pronto y solo sirve para esta cuenta.",
+      "closing": "¿No has creado una cuenta? Puedes ignorar este correo.",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+    },
+    "welcome": {
+      "subject": "Te damos la bienvenida a Oppenheimer",
+      "preview": "Tu cuenta de Oppenheimer está lista.",
+      "eyebrow": "Cuenta lista",
+      "heading": "Te damos la bienvenida a Oppenheimer",
+      "greeting": "Hola, {{name}}:",
+      "body": "Tu cuenta se ha creado correctamente. Nos alegra tenerte a bordo.",
+      "support": "Si tienes alguna pregunta, responde a este correo y nuestro equipo te ayudará.",
+      "signoff": "— El equipo de Oppenheimer"
+    },
+    "invitation": {
+      "subject": "Te han invitado a {{organizationName}}",
+      "preview": "{{inviterName}} te ha invitado al espacio {{organizationName}}; configura tu cuenta.",
+      "hero": "Te han invitado",
+      "heading": "Únete al espacio {{organizationName}}",
+      "body": "Acepta la invitación para empezar a trabajar con tu equipo.",
+      "inviterLine": "{{inviterName}} te ha invitado",
+      "roleLine": "Te unirás como {{role}}",
+      "roles": {
+        "owner": "Propietario",
+        "admin": "Administrador",
+        "member": "Miembro"
+      },
+      "benefitsTitle": "Qué tendrás:",
+      "benefitWorkspace": "Todo lo que tu equipo ha guardado en este espacio, en un solo lugar",
+      "benefitCollaboration": "Un lugar donde trabajar con las personas que te han invitado",
+      "benefitAccount": "Una sola cuenta para todos los espacios a los que pertenezcas",
+      "action": "Aceptar invitación",
+      "helper": "Esta invitación caduca en 2 días.",
+      "ignore": "¿No esperabas esta invitación? Puedes ignorar este correo."
+    }
+  }
+}

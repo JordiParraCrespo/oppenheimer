@@ -1,0 +1,50 @@
+id: AUTH-03
+title: An invited person joins at the role they were invited as, and lands signed in
+theme: auth
+severity: critical
+fixture: baseline
+tags: [mail, invitations, rbac]
+
+coverage:
+  primary:
+    - auth.invitation-accept-role
+  secondary:
+    - mail.invitation-delivery
+    - authz.permission-catalog
+
+intent: >-
+  An invitation carries a role, and the role is the part most likely to be
+  dropped between the invitation row, the membership it becomes, and the
+  application role derived from that. The CRM pack this one is ported from found
+  those three disagreeing, so the scenario reads all three rather than the one
+  the screen happens to show.
+
+docsRefs:
+  - .agents/rules/rbac-roles.md
+codeRefs:
+  - apps/api/src/organizations/invitations.controller.ts
+  - apps/web/src/routes/_auth/accept-invitation.tsx
+
+preconditions:
+  - 'The `baseline` fixture, so there is a workspace and an owner to invite from.'
+
+steps:
+  - As the baseline owner, invite one person as admin and one as member.
+  - Read both invitation links out of the mail sink.
+  - Open each link as a newcomer and register from it.
+  - Sign out and sign in again as each.
+
+expected:
+  - Accepting registers and joins in one step, landing signed in on the
+    dashboard rather than on onboarding.
+  - The membership role in the database is the role the invitation named.
+  - The application role each holds is what the product's own mapping produces
+    from that membership role; the report records both, whether or not they
+    agree.
+  - On a later sign-in each still holds the same role and the same workspace.
+  - A link with no invitation id shows the invalid-link state rather than a form
+    that will fail on submit.
+
+artifacts:
+  - auth-03-invitation-accepted-admin.png
+  - auth-03-invitation-accepted-member.png

@@ -1,0 +1,70 @@
+{
+  "changePhoto": "Change photo",
+  "details": {
+    "cancel": "Cancel",
+    "description": "Your personal information. This is how teammates see you across the workspace.",
+    "email": "Email",
+    "emailDescription": "Used to sign in and receive alerts",
+    "emailHint": "Managed by your workspace — contact an admin to change.",
+    "firstName": "First name",
+    "jobTitle": "Job title",
+    "jobTitleDescription": "Shown on your profile card",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "save": "Save changes",
+    "title": "Profile"
+  },
+  "joined": "Joined {{date}}",
+  "password": {
+    "confirm": "Confirm password",
+    "confirmPlaceholder": "Re-enter new password",
+    "current": "Current password",
+    "description": "Keep your account secure with a strong password and two-factor authentication.",
+    "mismatch": "Both passwords must be the same.",
+    "new": "New password",
+    "newDescription": "At least 8 characters",
+    "newPlaceholder": "New password",
+    "submit": "Update password",
+    "title": "Password",
+    "twoFactor": "Two-factor authentication",
+    "twoFactorDescription": "Require a code from your authenticator app when signing in.",
+    "twoFactorOn": "On",
+    "twoFactorUnavailable": "Not available yet"
+  },
+  "sections": {
+    "details": "Profile",
+    "password": "Password",
+    "sessions": "Sessions",
+    "preferences": "Preferences"
+  },
+  "sessions": {
+    "activeNow": "Active now",
+    "credentialsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
+    "description": "Devices currently signed in to your account. Sign out anything you don't recognise.",
+    "empty": "No devices are signed in.",
+    "signOut": "Sign out",
+    "signOutAll": "Sign out all other sessions",
+    "thisDevice": "This device",
+    "title": "Sessions",
+    "unknownDevice": "Unrecognised device",
+    "unknownLocation": "Unknown address"
+  },
+  "viewTeamCard": "View team card",
+  "preferences": {
+    "title": "Preferences",
+    "description": "How the workspace looks and what lands in your inbox.",
+    "darkTheme": "Dark theme",
+    "darkThemeDescription": "Switch the whole workspace to a dark palette.",
+    "language": "Language",
+    "density": "Table density",
+    "densityDescription": "Row height in the workspace tables",
+    "densities": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "weeklyDigest": "Weekly digest",
+    "weeklyDigestDescription": "Monday summary of what happened in your workspace.",
+    "productUpdates": "Product updates",
+    "productUpdatesDescription": "Occasional emails about new features."
+  }
+}

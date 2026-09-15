@@ -1,0 +1,58 @@
+{
+  "common": {
+    "brandName": "Oppenheimer",
+    "footer": "Recibes este correo porque tienes una cuenta en Oppenheimer.",
+    "pasteLink": "O pega este enlace en tu navegador:"
+  },
+  "passwordReset": {
+    "subject": "Restablece tu contraseña",
+    "preview": "Restablece tu contraseña de Oppenheimer; el enlace funciona una vez y caduca pronto.",
+    "heading": "Restablece tu contraseña",
+    "body": "Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Elige una nueva y podrás volver a tu espacio de trabajo.",
+    "action": "Restablecer contraseña",
+    "helper": "Este enlace solo puede usarse una vez y caduca pronto. Si ya ha caducado, solicita otro desde la pantalla de inicio de sesión.",
+    "closing": "¿No lo has solicitado? Ignora este correo; tu contraseña seguirá siendo la misma.",
+    "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+  },
+  "emailVerification": {
+    "subject": "Verifica tu correo",
+    "preview": "Verifica tu dirección de correo de Oppenheimer para terminar de configurar tu cuenta.",
+    "heading": "Verifica tu correo",
+    "body": "Confirma esta dirección para terminar de configurar tu cuenta y mantenerla segura.",
+    "action": "Verificar correo",
+    "helper": "Este enlace de verificación caduca pronto y solo sirve para esta cuenta.",
+    "closing": "¿No has creado una cuenta? Puedes ignorar este correo.",
+    "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+  },
+  "welcome": {
+    "subject": "Te damos la bienvenida a Oppenheimer",
+    "preview": "Tu cuenta de Oppenheimer está lista.",
+    "eyebrow": "Cuenta lista",
+    "heading": "Te damos la bienvenida a Oppenheimer",
+    "greeting": "Hola, {{name}}:",
+    "body": "Tu cuenta se ha creado correctamente. Nos alegra tenerte a bordo.",
+    "support": "Si tienes alguna pregunta, responde a este correo y nuestro equipo te ayudará.",
+    "signoff": "— El equipo de Oppenheimer"
+  },
+  "invitation": {
+    "subject": "Te han invitado a {{organizationName}}",
+    "preview": "{{inviterName}} te ha invitado al espacio {{organizationName}}; configura tu cuenta.",
+    "hero": "Te han invitado",
+    "heading": "Únete al espacio {{organizationName}}",
+    "body": "Acepta la invitación para empezar a trabajar con tu equipo.",
+    "inviterLine": "{{inviterName}} te ha invitado",
+    "roleLine": "Te unirás como {{role}}",
+    "roles": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro"
+    },
+    "benefitsTitle": "Qué tendrás:",
+    "benefitWorkspace": "Todo lo que tu equipo ha guardado en este espacio, en un solo lugar",
+    "benefitCollaboration": "Un lugar donde trabajar con las personas que te han invitado",
+    "benefitAccount": "Una sola cuenta para todos los espacios a los que pertenezcas",
+    "action": "Aceptar invitación",
+    "helper": "Esta invitación caduca en 2 días.",
+    "ignore": "¿No esperabas esta invitación? Puedes ignorar este correo."
+  }
+}

@@ -1,0 +1,5 @@
+# Playwright run artifacts
+test-results/
+playwright-report/
+blob-report/
+# results.json now lands in test-results/

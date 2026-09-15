@@ -1,0 +1,15 @@
+{
+  "name": "@oppenheimer/go-httpx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "net/http router with middleware groups, JSON helpers and server lifecycle",
+  "scripts": {
+    "build": "go build ./...",
+    "lint": "golangci-lint run ./...",
+    "test": "go test -count=1 ./...",
+    "clean": "go clean ./..."
+  },
+  "devDependencies": {
+    "@oppenheimer/go-core": "workspace:*"
+  }
+}

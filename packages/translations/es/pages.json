@@ -1,0 +1,141 @@
+{
+  "profile": {
+    "description": "Gestiona tu cuenta personal en este espacio de trabajo.",
+    "title": "Mi perfil"
+  },
+  "team": {
+    "common": {
+      "cancel": "Cancelar",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "loading": "Cargando…"
+    },
+    "confirm": {
+      "cancelDescription": "El enlace de invitación dejará de funcionar.",
+      "cancelTitle": "¿Cancelar esta invitación?",
+      "deleteRoleDescription": "Los miembros asignados perderán los permisos que concede.",
+      "deleteRoleTitle": "¿Eliminar este rol?",
+      "removeDescription": "Perderá el acceso a este espacio. Su cuenta no se eliminará.",
+      "removeTitle": "¿Eliminar este miembro?"
+    },
+    "description": "Gestiona quién puede acceder al espacio de trabajo {{workspace}} y qué le permite hacer su rol.",
+    "invite": {
+      "description": "Añade compañeros por correo. Su rol puede ajustarse después de que se unan.",
+      "emails": "Direcciones de email",
+      "emailsHint": "Separa varias direcciones con comas o saltos de línea.",
+      "emailsPlaceholder": "nombre@empresa.com, otra@empresa.com",
+      "role": "Acceso a la organización",
+      "roles": {
+        "admin": "Administrador",
+        "member": "Miembro",
+        "owner": "Propietario"
+      },
+      "send": "Enviar invitación",
+      "sendMany": "Enviar {{count}} invitaciones",
+      "sending": "Enviando…",
+      "title": "Invitar miembros"
+    },
+    "memberRole": {
+      "description": "Elige el rol de aplicación de {{name}}.",
+      "noRole": "Sin rol personalizado",
+      "role": "Rol",
+      "save": "Guardar rol",
+      "title": "Editar rol del miembro"
+    },
+    "members": {
+      "cancelInvite": "Cancelar invitación",
+      "columns": {
+        "email": "Email",
+        "joined": "Alta",
+        "name": "Nombre",
+        "organizationRole": "Rol en la organización",
+        "role": "Rol",
+        "status": "Estado"
+      },
+      "editRole": "Editar rol",
+      "export": "Exportar CSV",
+      "invite": "Invitar",
+      "remove": "Eliminar miembro",
+      "search": "Buscar miembros",
+      "status": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "invited": "Invitado"
+      },
+      "empty": "No se han encontrado miembros.",
+      "noMatches": "Ningún miembro coincide con los filtros."
+    },
+    "roleForm": {
+      "create": "Crear rol",
+      "description": "Ponle nombre al rol y elige qué puede hacer.",
+      "details": "Descripción",
+      "detailsPlaceholder": "¿Qué puede hacer este rol?",
+      "edit": "Editar",
+      "editTitle": "Editar rol",
+      "name": "Nombre del rol",
+      "namePlaceholder": "p. ej. Editor de contenido",
+      "newTitle": "Nuevo rol personalizado",
+      "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
+      "none": "Ninguno",
+      "permissions": "Permisos",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "searchPermissions": "Buscar permisos",
+      "view": "Ver"
+    },
+    "roles": {
+      "columns": {
+        "description": "Descripción",
+        "members": "Miembros",
+        "role": "Rol",
+        "type": "Tipo"
+      },
+      "custom": "Personalizado",
+      "delete": "Eliminar",
+      "duplicate": "Duplicar",
+      "edit": "Editar",
+      "empty": "No se han encontrado roles.",
+      "export": "Exportar CSV",
+      "memberCount_one": "{{count}} miembro",
+      "memberCount_other": "{{count}} miembros",
+      "new": "Nuevo rol",
+      "search": "Buscar roles",
+      "system": "Sistema"
+    },
+    "stats": {
+      "active": "Cuentas activas",
+      "members": "Miembros",
+      "pending": "Invitaciones pendientes"
+    },
+    "tabs": {
+      "members": "Miembros",
+      "roles": "Roles"
+    },
+    "title": "Equipo",
+    "permissionAreas": {
+      "team": {
+        "name": "Equipo",
+        "hint": "Miembros, invitaciones y roles"
+      },
+      "organization": {
+        "name": "Organización",
+        "hint": "Nombre, logotipo y espacios de trabajo"
+      },
+      "users": {
+        "name": "Usuarios",
+        "hint": "El directorio de usuarios"
+      },
+      "api": {
+        "name": "Claves de API",
+        "hint": "Tokens de API personales"
+      },
+      "billing": {
+        "name": "Facturación",
+        "hint": "Suscripción y facturas"
+      },
+      "audit": {
+        "name": "Registro de auditoría",
+        "hint": "Quién hizo qué, y cuándo"
+      }
+    }
+  }
+}

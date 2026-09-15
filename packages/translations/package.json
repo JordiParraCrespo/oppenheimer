@@ -1,0 +1,21 @@
+{
+  "name": "@oppenheimer/translations",
+  "version": "0.2.0",
+  "sideEffects": false,
+  "private": true,
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./locales": "./locales.ts",
+    "./lazy": "./lazy.ts",
+    "./en": "./en.ts",
+    "./es": "./es.ts",
+    "./en/index.json": "./en/index.json",
+    "./es/index.json": "./es/index.json",
+    "./namespaces": "./namespaces.ts"
+  },
+  "scripts": {
+    "assemble": "node scripts/assemble.mjs",
+    "lint": "node scripts/assemble.mjs && biome check ."
+  }
+}

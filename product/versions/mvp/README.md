@@ -17,6 +17,7 @@ at the bottom of this file.
 | 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, settings drawer; components and states |
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
+| 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
 
 ## Decision log
 
@@ -38,3 +39,8 @@ at the bottom of this file.
   optional. Pairing by pasted command with a one-hour single-use token,
   plus a copyable agent install prompt served by the control plane.
   Onboarding is four screens ending on the real New session screen.
+- 2026-09-15: the code starts from the Flama starter, so the control
+  plane is NestJS plus TypeORM, not Hono plus Drizzle (03). The personal
+  workspace is one `organization` row per account created at sign-up;
+  the starter's leads and billing modules are not composed. 08-auth.md
+  added as the one-page auth note for the MVP.

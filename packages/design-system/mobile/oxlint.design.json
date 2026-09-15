@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "off"
+  },
+  "settings": {
+    "shadcn": {
+      "ui": "@oppenheimer/design-system-mobile",
+      "note": "Rules and rationale: .agents/rules/frontend-ui.md"
+    }
+  },
+  "rules": {
+    "shadcn/no-restyle": ["warn", { "allow": ["layout"] }],
+    "shadcn/no-raw-colors": "warn",
+    "shadcn/no-arbitrary-values": "warn",
+    "shadcn/no-unknown-classes": "off",
+    "shadcn/no-inline-styles": "off",
+    "shadcn/require-static-classes": "off"
+  }
+}

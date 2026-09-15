@@ -1,0 +1,58 @@
+{
+  "common": {
+    "brandName": "Oppenheimer",
+    "footer": "You are receiving this email because you have an account at Oppenheimer.",
+    "pasteLink": "Or paste this into your browser:"
+  },
+  "passwordReset": {
+    "subject": "Reset your password",
+    "preview": "Reset your Oppenheimer password — the link works once and expires soon.",
+    "heading": "Reset your password",
+    "body": "We received a request to reset the password for your account. Choose a new one and you'll be back in your workspace.",
+    "action": "Reset password",
+    "helper": "This link can only be used once and expires soon. If it has, request a new one from the sign-in page.",
+    "closing": "Didn't ask for this? Ignore this email — your password stays the same.",
+    "footerNote": "This is a security email, so you always receive it."
+  },
+  "emailVerification": {
+    "subject": "Verify your email",
+    "preview": "Verify your Oppenheimer email address to finish setting up your account.",
+    "heading": "Verify your email",
+    "body": "Confirm this email address to finish setting up your account and keep it secure.",
+    "action": "Verify email",
+    "helper": "This verification link expires shortly and can only be used for this account.",
+    "closing": "Didn't create an account? You can safely ignore this email.",
+    "footerNote": "This is a security email, so you always receive it."
+  },
+  "welcome": {
+    "subject": "Welcome to Oppenheimer",
+    "preview": "Your Oppenheimer account is ready.",
+    "eyebrow": "Account ready",
+    "heading": "Welcome to Oppenheimer",
+    "greeting": "Hi {{name}},",
+    "body": "Your account has been created successfully. We're excited to have you on board.",
+    "support": "If you have any questions, reply to this email and our team will help.",
+    "signoff": "— The Oppenheimer team"
+  },
+  "invitation": {
+    "subject": "You're invited to {{organizationName}}",
+    "preview": "{{inviterName}} invited you to the {{organizationName}} workspace — set up your account.",
+    "hero": "You're invited",
+    "heading": "Join the {{organizationName}} workspace",
+    "body": "Accept the invitation to start working with your team.",
+    "inviterLine": "{{inviterName}} invited you",
+    "roleLine": "Joining as {{role}}",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "benefitsTitle": "What you get:",
+    "benefitWorkspace": "Everything your team has filed in this workspace, in one place",
+    "benefitCollaboration": "A place to work with the people who invited you",
+    "benefitAccount": "One account for every workspace you belong to",
+    "action": "Accept invite",
+    "helper": "This invite expires in 2 days.",
+    "ignore": "Not expecting this invite? You can safely ignore this email."
+  }
+}

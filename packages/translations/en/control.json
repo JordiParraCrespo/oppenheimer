@@ -1,0 +1,88 @@
+{
+  "accessDeniedTitle": "Control plane access required",
+  "accessDeniedDescription": "This workspace is reserved for platform administrators.",
+  "auth": {
+    "headline": "Run your product from one secure control plane.",
+    "body": "Sign in with a platform administrator account to manage access across your applications.",
+    "noAccount": "This identity has no control-plane account. Ask an existing platform administrator to provision it.",
+    "features": {
+      "users": "Create and manage consumer accounts",
+      "roles": "Define reusable application roles",
+      "security": "Revoke sessions and block access immediately"
+    }
+  },
+  "roles": {
+    "title": "Roles and permissions",
+    "description": "Define reusable access rules for the consumer applications.",
+    "permissionCount_one": "{{count}} permission",
+    "permissionCount_other": "{{count}} permissions"
+  },
+  "users": {
+    "title": "Users",
+    "description": "Manage consumer accounts, application roles and active access.",
+    "search": "Search users…",
+    "add": "Add user",
+    "empty": "No users yet",
+    "noMatches": "No users match this search",
+    "noRoles": "No roles",
+    "superAdmin": "Super admin",
+    "consumer": "Consumer",
+    "active": "Active",
+    "banned": "Banned",
+    "columns": {
+      "name": "User",
+      "email": "Email",
+      "roles": "App roles",
+      "access": "Platform access",
+      "status": "Status",
+      "joined": "Joined"
+    },
+    "actions": {
+      "roles": "Manage app roles",
+      "password": "Set password",
+      "sessions": "Revoke sessions",
+      "ban": "Ban user",
+      "unban": "Unban user",
+      "delete": "Delete user"
+    },
+    "create": {
+      "title": "Add a user",
+      "description": "Create a consumer account. You can assign application roles afterward.",
+      "password": "Temporary password (optional)",
+      "submit": "Create user"
+    },
+    "roles": {
+      "title": "Application roles",
+      "description": "Choose the roles {{name}} uses in consumer applications.",
+      "noDescription": "No description"
+    },
+    "password": {
+      "title": "Set a new password",
+      "description": "Replace the sign-in password for {{name}}.",
+      "label": "New password",
+      "submit": "Set password"
+    },
+    "confirm": {
+      "ban": {
+        "title": "Ban this user?",
+        "description": "{{name}} will immediately lose access.",
+        "submit": "Ban user"
+      },
+      "unban": {
+        "title": "Unban this user?",
+        "description": "{{name}} will be able to sign in again.",
+        "submit": "Unban user"
+      },
+      "sessions": {
+        "title": "Revoke all sessions?",
+        "description": "{{name}} will be signed out on every device.",
+        "submit": "Revoke sessions"
+      },
+      "delete": {
+        "title": "Delete this user?",
+        "description": "The account for {{name}} and its access will be permanently removed.",
+        "submit": "Delete user"
+      }
+    }
+  }
+}

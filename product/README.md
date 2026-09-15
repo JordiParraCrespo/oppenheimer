@@ -66,3 +66,16 @@ earlier note:
 - Sign-in was GitHub-only; it is now GitHub, Google, and email plus
   password on day one, with Connect GitHub as a separate step
   (`versions/mvp/00-scope.md`).
+- Notes 00 and 07 and `versions/mvp/03-control-plane.md` said Hono plus
+  Drizzle for the control plane. The code started from the Flama
+  starter, so the control plane is NestJS plus TypeORM on Postgres, with
+  Better Auth for identity. The modules and the data model are unchanged;
+  only the framework is (`versions/mvp/03-control-plane.md`).
+- The codebase keeps every app the starter ships (admin, mobile, CLI,
+  MCP, showcases, Helm) from day one, so later slices need no porting.
+  Only `api`, `web`, `runner`, `docs` and `e2e` are the MVP; the rest is
+  carried, not built on, until its slice arrives (`AGENTS.md`).
+- The personal workspace is a row in the starter's `organization` table
+  with the account as its single owner member, created at sign-up. No
+  roster, no invitations, no teams are exposed in the MVP
+  (`versions/mvp/08-auth.md`).

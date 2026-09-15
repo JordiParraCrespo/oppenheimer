@@ -1,0 +1,19 @@
+{
+  "menu": "Menu",
+  "logOut": "Log out",
+  "apiTokens": "API tokens",
+  "commandEmpty": "No matches.",
+  "commandPlaceholder": "Search pages and actions…",
+  "goTo": "Go to",
+  "primaryNavigation": "Main navigation",
+  "profile": "Profile",
+  "search": "Search",
+  "settings": "Settings",
+  "team": "Team",
+  "users": "Users",
+  "roles": "Roles",
+  "toggleSidebar": "Toggle sidebar",
+  "viewProfile": "View profile",
+  "sessions": "Sessions",
+  "newSession": "New session"
+}

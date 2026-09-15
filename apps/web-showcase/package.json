@@ -1,0 +1,28 @@
+{
+  "name": "@oppenheimer/web-showcase",
+  "version": "0.1.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3002",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check src/",
+    "lint:design": "oxlint -c ../../packages/design-system/web/oxlint.design.json src"
+  },
+  "dependencies": {
+    "@oppenheimer/design-system-web": "workspace:*",
+    "lucide-react": "^1.46.0",
+    "next": "^16.3.5",
+    "next-themes": "^0.4.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@oppenheimer/config": "workspace:^",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  }
+}

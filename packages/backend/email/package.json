@@ -1,0 +1,41 @@
+{
+  "name": "@oppenheimer/backend-email",
+  "version": "0.2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.28",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
+    "nodemailer": "^9.0.3",
+    "react": "19.1.0",
+    "resend": "^6.18.0"
+  },
+  "devDependencies": {
+    "@oppenheimer/config": "workspace:^",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "19.2.14",
+    "react-dom": "19.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

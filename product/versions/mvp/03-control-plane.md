@@ -2,12 +2,15 @@
 
 ## Decided
 
-- One Node process (Hono, Drizzle, Postgres) with modules: identity,
-  installations, hosts, sessions, events, relay, tokens. Split by process later; the relay first.
-- Identity from a base project with GitHub, Google, and email plus
-  password on day one and account linking built in (Better Auth or
-  equivalent). Connect GitHub is a separate step that attaches an App
-  installation to the signed-in user.
+- One Node process (NestJS, TypeORM, Postgres; the Flama starter's API)
+  with modules: identity, installations, hosts, sessions, events, relay,
+  tokens. Split by process later; the relay first. The starter's
+  reference modules (leads, billing) are not composed into it.
+- Identity is the starter's Better Auth setup: GitHub, Google, and email
+  plus password on day one with account linking built in. Connect GitHub
+  is a separate step that attaches an App installation to the signed-in
+  user. The personal workspace is the `organization` row sign-up creates
+  for the account (08-auth.md).
 - Hosted in the same Hetzner region as the host. Public HTTPS for
   browsers and for the runners' outbound WebSocket; no inbound port on
   any host. Tailscale on the control plane is optional and only an
@@ -29,7 +32,9 @@
 users, installations, repositories (cached from GitHub, refreshed by
 webhook), hosts, host_keys, sessions (host, repo, base branch, branch,
 worktree path, agent, state, name), session_events, attach_tickets,
-jobs. Accounts and runtime_vms come with later slices.
+jobs. Accounts and runtime_vms come with later slices. The starter's
+users, organization, member and role tables are the identity half of
+this; a personal workspace is one organization with one owner member.
 
 ## Open questions
 

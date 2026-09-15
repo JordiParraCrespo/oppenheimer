@@ -1,0 +1,9 @@
+{
+  "extends": "@oppenheimer/config/tsconfig.library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src"]
+}

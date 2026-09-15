@@ -1,0 +1,975 @@
+{
+  "common": {
+    "appName": "Oppenheimer",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "orContinueWith": "Or continue with",
+    "google": "Google",
+    "github": "GitHub",
+    "or": "or",
+    "relative": {
+      "day": "{{count}}d",
+      "hour": "{{count}}h",
+      "minute": "{{count}}m",
+      "month": "{{count}}mo",
+      "now": "now",
+      "week": "{{count}}w",
+      "year": "{{count}}y"
+    }
+  },
+  "validation": {
+    "title": "Validation error",
+    "required": "This field is required",
+    "email": "Enter a valid email address",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must be at most {{max}} characters",
+    "minItems": "Select at least {{min}}",
+    "maxItems": "Select at most {{max}}",
+    "url": "Enter a valid URL, including https://"
+  },
+  "errors": {
+    "fallback": "Something went wrong. Please try again.",
+    "unreachable": "Could not reach the server. Check your connection and try again.",
+    "correlationId": "Reference: {{id}}",
+    "byCode": {
+      "VALIDATION_FAILED": "Some of the details you entered are not valid.",
+      "AUTH_001": "Please sign in to continue.",
+      "AUTH_002": "You do not have permission to do that.",
+      "USER_001": "That user could not be found.",
+      "TOKEN_001": "That API token could not be found.",
+      "TOKEN_002": "You cannot grant a token more access than you have yourself.",
+      "TOKEN_003": "That API token is invalid or has expired.",
+      "TOKEN_004": "That API token cannot be used from this network.",
+      "TOKEN_005": "This token is missing a permission needed for that action.",
+      "TOKEN_006": "That action cannot be performed with an API token.",
+      "TOKEN_007": "That token is not scoped to this organization.",
+      "TOKEN_008": "A token can only be scoped to organizations you belong to.",
+      "TOKEN_009": "You have reached the maximum number of active API tokens.",
+      "ROLE_001": "That role could not be found.",
+      "ROLE_002": "A role with that name already exists.",
+      "ROLE_003": "System roles cannot be deleted or renamed.",
+      "ROLE_004": "This role must keep full access.",
+      "BILLING_001": "Billing is not available on this server.",
+      "BILLING_002": "No billing account exists for you yet.",
+      "BILLING_003": "No subscription was found.",
+      "BILLING_004": "The billing request could not be verified.",
+      "BILLING_005": "Checkout could not be started. Please try again.",
+      "BILLING_006": "You already have an active subscription.",
+      "BILLING_007": "The billing portal could not be opened. Please try again.",
+      "BILLING_008": "Your billing account could not be created. Please try again.",
+      "ORG_001": "That organization could not be found.",
+      "ORG_002": "That organization address is already taken.",
+      "ORG_003": "You are not a member of this organization.",
+      "ORG_004": "Your role in this organization does not allow that.",
+      "ORG_005": "That member could not be found.",
+      "ORG_006": "That person is already a member of this organization.",
+      "ORG_007": "An organization must always have an owner.",
+      "ORG_008": "That invitation could not be found.",
+      "ORG_009": "That invitation was sent to a different account.",
+      "ORG_010": "That person has already been invited.",
+      "ORG_011": "Please verify your email address first.",
+      "ORG_012": "That workspace could not be found.",
+      "ORG_013": "A workspace with that name already exists.",
+      "ORG_014": "This organization has reached one of its limits.",
+      "ORG_015": "That request could not be completed.",
+      "ORG_016": "Organizations are temporarily unavailable. Please try again.",
+      "ADMIN_001": "That user could not be found.",
+      "ADMIN_002": "A user with that email already exists.",
+      "ADMIN_003": "Your account cannot perform that administrative action.",
+      "ADMIN_004": "You cannot do that to your own account.",
+      "ADMIN_005": "That role cannot be assigned.",
+      "ADMIN_006": "That user is banned.",
+      "ADMIN_007": "That request could not be completed.",
+      "ADMIN_008": "User administration is temporarily unavailable. Please try again.",
+      "INVALID_EMAIL_OR_PASSWORD": "Incorrect email or password.",
+      "INVALID_EMAIL": "That email address is not valid.",
+      "INVALID_PASSWORD": "That password is not correct.",
+      "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "An account with that email already exists.",
+      "USER_NOT_FOUND": "No account was found for that email.",
+      "USER_EMAIL_NOT_FOUND": "No account was found for that email.",
+      "EMAIL_NOT_VERIFIED": "Verify your email address before signing in.",
+      "PASSWORD_TOO_SHORT": "That password is too short.",
+      "PASSWORD_TOO_LONG": "That password is too long.",
+      "INVALID_TOKEN": "That link is not valid. Request a new one.",
+      "TOKEN_EXPIRED": "That link has expired. Request a new one.",
+      "SESSION_EXPIRED": "Your session has expired. Please sign in again.",
+      "CREDENTIAL_ACCOUNT_NOT_FOUND": "That account uses a different sign-in method.",
+      "FAILED_TO_CREATE_USER": "Your account could not be created. Please try again.",
+      "ROLE_005": "You cannot give a role more access than you have yourself.",
+      "ROLE_006": "That role belongs to another organization.",
+      "AUTHZ_001": "You are not a member of that organization.",
+      "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
+      "GRANT_001": "That access grant could not be found.",
+      "GRANT_002": "You cannot grant more access than you have yourself.",
+      "GRANT_003": "That person or team is not part of this organization.",
+      "GRANT_004": "Choose an organization before managing access grants.",
+      "LEAD_001": "That lead could not be found.",
+      "LEAD_002": "Choose an organization before creating leads.",
+      "ADMIN_009": "That session no longer exists for this user.",
+      "PROFILE_001": "We could not find your profile.",
+      "PROFILE_002": "That current password is not right.",
+      "PROFILE_003": "That session could not be found.",
+      "PROFILE_004": "That file type cannot be used as a profile picture.",
+      "PROFILE_005": "That image is too large. Pick one under 2 MB.",
+      "PROFILE_006": "That new password is not strong enough.",
+      "PROFILE_007": "You cannot sign out the device you are using right now.",
+      "PROFILE_008": "We could not reach the account service. Please try again.",
+      "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
+      "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB."
+    }
+  },
+  "auth": {
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "login": {
+      "title": "Welcome back",
+      "description": "Sign in to pick up where your team left off.",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "invalidCredentials": "Invalid email or password",
+      "noSocialProviders": "Social sign-in is not configured on this deployment. Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET or GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET on the API to enable it.",
+      "failedTitle": "Login failed",
+      "failedMessage": "Could not sign in.",
+      "continueWithGithub": "Continue with GitHub",
+      "continueWithGoogle": "Continue with Google",
+      "keepSignedIn": "Keep me signed in",
+      "socialFailed": "Could not start social sign-in. Try again, or sign in with your email and password."
+    },
+    "register": {
+      "title": "Create an account",
+      "description": "Set up your account to start working with your team.",
+      "passwordPlaceholder": "Create a password",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "failed": "Registration failed",
+      "successTitle": "Account created",
+      "successMessage": "You can now sign in.",
+      "passwordLabel": "Create password"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "description": "Enter your email and we'll send you a reset link",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "successTitle": "Check your email",
+      "successMessage": "If an account exists with that email, you will receive a reset link shortly.",
+      "backToSignIn": "Back to sign in",
+      "error": "Something went wrong",
+      "legal": "Only members of this workspace can reset a password.",
+      "notReceived": "Didn't get it? Check your spam folder, or <retry>try another email</retry>.",
+      "sentMessage": "We sent a password reset link to <address>{{email}}</address>. It expires in 30 minutes."
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "description": "Choose a new password for your account",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter a new password",
+      "submit": "Reset password",
+      "submitting": "Resetting...",
+      "invalidTitle": "Invalid link",
+      "invalidMessage": "This reset link is invalid or has expired. Please request a new one.",
+      "requestNewLink": "Request a new link",
+      "successTitle": "Password updated",
+      "successMessage": "You can now sign in.",
+      "failedTitle": "Reset failed",
+      "error": "Could not reset password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter the password",
+      "continue": "Continue to workspace",
+      "legal": "Only members of this workspace can reset a password."
+    },
+    "session": {
+      "errorTitle": "Connection problem",
+      "errorMessage": "We couldn't restore your session. Check your connection and try again.",
+      "retry": "Try again",
+      "retrying": "Retrying..."
+    },
+    "acceptInvitation": {
+      "acceptExisting": "Join workspace",
+      "createPassword": "Create password",
+      "createPasswordPlaceholder": "Choose a password",
+      "description": "Finish setting up your account to start working with your team.",
+      "eyebrow": "You're invited",
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Your full name",
+      "invalidLink": "This invitation link is incomplete. Ask the workspace owner to send a new invitation.",
+      "invitedYou": "{{inviter}} invited you",
+      "joining": "Joining…",
+      "joiningAs": "Joining as {{role}}",
+      "submit": "Create account & join",
+      "title": "Join the workspace"
+    },
+    "art": {
+      "body": "Invite your team, manage who can do what, and keep the work moving from a single place.",
+      "features": {
+        "team": "Roles and permissions that match how you work",
+        "workspaces": "Create a workspace and invite your team",
+        "security": "Sessions, API keys and sign-in under your control"
+      },
+      "headline": "Everything your team needs, in one workspace."
+    },
+    "firstNamePlaceholder": "Your first name",
+    "hidePassword": "Hide password",
+    "lastNamePlaceholder": "Your last name",
+    "oauth": {
+      "accountNotLinked": "That address already has an account with a password. Sign in with your password; once the address is verified, this button works too.",
+      "failed": "That sign-in didn't complete. Try again, or use your email and password.",
+      "noAccount": "There's no account here for that sign-in yet. Create one below — the provider buttons will do it in one step."
+    },
+    "passwordRules": {
+      "case": "Upper & lowercase letters",
+      "length": "At least 8 characters",
+      "match": "Both passwords match",
+      "number": "At least one number"
+    },
+    "showPassword": "Show password"
+  },
+  "sessions": {
+    "title": "Sessions",
+    "subtitle": "Each session is a worktree with a terminal on a host you own.",
+    "newSession": "New session",
+    "emptyTitle": "No sessions yet",
+    "emptyDescription": "Add a host under Settings, then start your first session.",
+    "new": {
+      "title": "New session",
+      "subtitle": "Pick a host, a repository, a branch and an agent.",
+      "emptyTitle": "Coming with the first host",
+      "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+    }
+  },
+  "home": {
+    "greeting": "Welcome back, {{name}}",
+    "greetingFallback": "Welcome back",
+    "subtitle": "Here's what's happening with your account.",
+    "overview": "Overview",
+    "totalUsers": "Total Users",
+    "activeSessions": "Active Sessions",
+    "apiCalls": "API Calls",
+    "uptime": "Uptime",
+    "account": "Account",
+    "accountDescription": "Your profile and current status.",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "memberSince": "Member since",
+    "admin": "Admin",
+    "accountUnavailable": "We couldn't load your account. Check your connection and try again.",
+    "retry": "Try again",
+    "retrying": "Retrying...",
+    "signOut": "Sign out",
+    "signingOut": "Signing out..."
+  },
+  "nav": {
+    "menu": "Menu",
+    "logOut": "Log out",
+    "apiTokens": "API tokens",
+    "commandEmpty": "No matches.",
+    "commandPlaceholder": "Search pages and actions…",
+    "goTo": "Go to",
+    "primaryNavigation": "Main navigation",
+    "profile": "Profile",
+    "search": "Search",
+    "settings": "Settings",
+    "team": "Team",
+    "users": "Users",
+    "roles": "Roles",
+    "toggleSidebar": "Toggle sidebar",
+    "viewProfile": "View profile",
+    "sessions": "Sessions",
+    "newSession": "New session"
+  },
+  "control": {
+    "accessDeniedTitle": "Control plane access required",
+    "accessDeniedDescription": "This workspace is reserved for platform administrators.",
+    "auth": {
+      "headline": "Run your product from one secure control plane.",
+      "body": "Sign in with a platform administrator account to manage access across your applications.",
+      "noAccount": "This identity has no control-plane account. Ask an existing platform administrator to provision it.",
+      "features": {
+        "users": "Create and manage consumer accounts",
+        "roles": "Define reusable application roles",
+        "security": "Revoke sessions and block access immediately"
+      }
+    },
+    "roles": {
+      "title": "Roles and permissions",
+      "description": "Define reusable access rules for the consumer applications.",
+      "permissionCount_one": "{{count}} permission",
+      "permissionCount_other": "{{count}} permissions"
+    },
+    "users": {
+      "title": "Users",
+      "description": "Manage consumer accounts, application roles and active access.",
+      "search": "Search users…",
+      "add": "Add user",
+      "empty": "No users yet",
+      "noMatches": "No users match this search",
+      "noRoles": "No roles",
+      "superAdmin": "Super admin",
+      "consumer": "Consumer",
+      "active": "Active",
+      "banned": "Banned",
+      "columns": {
+        "name": "User",
+        "email": "Email",
+        "roles": "App roles",
+        "access": "Platform access",
+        "status": "Status",
+        "joined": "Joined"
+      },
+      "actions": {
+        "roles": "Manage app roles",
+        "password": "Set password",
+        "sessions": "Revoke sessions",
+        "ban": "Ban user",
+        "unban": "Unban user",
+        "delete": "Delete user"
+      },
+      "create": {
+        "title": "Add a user",
+        "description": "Create a consumer account. You can assign application roles afterward.",
+        "password": "Temporary password (optional)",
+        "submit": "Create user"
+      },
+      "roles": {
+        "title": "Application roles",
+        "description": "Choose the roles {{name}} uses in consumer applications.",
+        "noDescription": "No description"
+      },
+      "password": {
+        "title": "Set a new password",
+        "description": "Replace the sign-in password for {{name}}.",
+        "label": "New password",
+        "submit": "Set password"
+      },
+      "confirm": {
+        "ban": {
+          "title": "Ban this user?",
+          "description": "{{name}} will immediately lose access.",
+          "submit": "Ban user"
+        },
+        "unban": {
+          "title": "Unban this user?",
+          "description": "{{name}} will be able to sign in again.",
+          "submit": "Unban user"
+        },
+        "sessions": {
+          "title": "Revoke all sessions?",
+          "description": "{{name}} will be signed out on every device.",
+          "submit": "Revoke sessions"
+        },
+        "delete": {
+          "title": "Delete this user?",
+          "description": "The account for {{name}} and its access will be permanently removed.",
+          "submit": "Delete user"
+        }
+      }
+    }
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "es": "Español"
+  },
+  "apiTokens": {
+    "title": "API tokens",
+    "description": "Tokens let scripts, CI and AI agents act on your behalf with only the permissions you choose.",
+    "create": "Create a token",
+    "createDescription": "A token can never do more than you can. Anything you are not permitted to do is greyed out.",
+    "createButton": "Create token",
+    "name": "Name",
+    "namePlaceholder": "CI deploy, Claude, laptop…",
+    "permissions": "Permissions",
+    "permissionsHint": "Edit includes Read. Grant the least that will do the job.",
+    "organizations": "Organizations",
+    "organizationsHint": "Leave all unticked to let the token follow your memberships.",
+    "expiry": "Expires",
+    "never": "Never",
+    "days": "{{count}} days",
+    "sensitive": "Sensitive",
+    "levels": {
+      "none": "No access"
+    },
+    "yourTokens": "Your tokens",
+    "yourTokensDescription": "Revoking a token takes effect immediately.",
+    "empty": "You have no API tokens yet.",
+    "prefix": "Prefix",
+    "status": "Status",
+    "lastUsed": "Last used",
+    "neverUsed": "Never",
+    "active": "Active",
+    "expired": "Expired",
+    "revoked": "Revoked",
+    "revoke": "Revoke",
+    "created": "Token created",
+    "shownOnce": "Copy it now — this is the only time it is shown.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "dismiss": "Dismiss",
+    "permissionsRequired": "Select at least one permission"
+  },
+  "consent": {
+    "title": "{{client}} wants to access your account",
+    "description": "Signed in as {{email}}. Approving lets it act on your behalf with the permissions below.",
+    "noPermissions": "This application asked for no permissions.",
+    "unknownScopes": "It also asked for permissions this deployment does not recognise: {{scopes}}",
+    "effectiveNote": "It can never do more than your own roles allow, and you can disconnect it at any time.",
+    "narrowerAlternative": "Need to grant something narrower?",
+    "apiTokensLink": "Create an API token instead",
+    "approve": "Approve",
+    "deny": "Deny",
+    "invalidTitle": "This link has expired",
+    "invalidDescription": "Start the connection again from the application that sent you here.",
+    "backToSessions": "Back to sessions",
+    "noRedirect": "The server did not say where to send you next."
+  },
+  "onboarding": {
+    "description": "Your account is ready. Create a workspace for your team, or join one you have been invited to.",
+    "eyebrow": "Almost there",
+    "invitation": {
+      "join": "Join",
+      "joining": "Joining…",
+      "role": "Joining as {{role}}",
+      "title": "You’ve been invited to a workspace"
+    },
+    "signOut": "Sign out",
+    "title": "Create your workspace",
+    "create": {
+      "name": "Workspace name",
+      "namePlaceholder": "Acme Inc.",
+      "hint": "You can rename it later from Settings.",
+      "submit": "Create workspace",
+      "submitting": "Creating…"
+    }
+  },
+  "pages": {
+    "profile": {
+      "description": "Manage your personal account for this workspace.",
+      "title": "My profile"
+    },
+    "team": {
+      "common": {
+        "cancel": "Cancel",
+        "error": "Something went wrong. Please try again.",
+        "loading": "Loading…"
+      },
+      "confirm": {
+        "cancelDescription": "The invitation link will stop working.",
+        "cancelTitle": "Cancel this invitation?",
+        "deleteRoleDescription": "Members assigned to it will lose the permissions it grants.",
+        "deleteRoleTitle": "Delete this role?",
+        "removeDescription": "They will lose access to this workspace. Their account will not be deleted.",
+        "removeTitle": "Remove this member?"
+      },
+      "description": "Manage who can access the {{workspace}} workspace and what their role lets them do.",
+      "invite": {
+        "description": "Add teammates by email. Their role can be adjusted after they join.",
+        "emails": "Email addresses",
+        "emailsHint": "Separate multiple addresses with commas or new lines.",
+        "emailsPlaceholder": "name@company.com, another@company.com",
+        "role": "Organization access",
+        "roles": {
+          "admin": "Admin",
+          "member": "Member",
+          "owner": "Owner"
+        },
+        "send": "Send invite",
+        "sendMany": "Send {{count}} invites",
+        "sending": "Sending…",
+        "title": "Invite members"
+      },
+      "memberRole": {
+        "description": "Choose the application role for {{name}}.",
+        "noRole": "No custom role",
+        "role": "Role",
+        "save": "Save role",
+        "title": "Edit member role"
+      },
+      "members": {
+        "cancelInvite": "Cancel invitation",
+        "columns": {
+          "email": "Email",
+          "joined": "Joined",
+          "name": "Name",
+          "organizationRole": "Organization role",
+          "role": "Role",
+          "status": "Status"
+        },
+        "editRole": "Edit role",
+        "export": "Export CSV",
+        "invite": "Invite",
+        "remove": "Remove member",
+        "search": "Search members",
+        "status": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "invited": "Invited"
+        },
+        "empty": "No members found.",
+        "noMatches": "No members match your filters."
+      },
+      "roleForm": {
+        "create": "Create role",
+        "description": "Name the role and choose what it can do.",
+        "details": "Description",
+        "detailsPlaceholder": "What can this role do?",
+        "edit": "Edit",
+        "editTitle": "Edit role",
+        "name": "Role name",
+        "namePlaceholder": "e.g. Content editor",
+        "newTitle": "New custom role",
+        "noPermissionResults": "No permissions match your search.",
+        "none": "None",
+        "permissions": "Permissions",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "searchPermissions": "Search permissions",
+        "view": "View"
+      },
+      "roles": {
+        "columns": {
+          "description": "Description",
+          "members": "Members",
+          "role": "Role",
+          "type": "Type"
+        },
+        "custom": "Custom",
+        "delete": "Delete",
+        "duplicate": "Duplicate",
+        "edit": "Edit",
+        "empty": "No roles found.",
+        "export": "Export CSV",
+        "memberCount_one": "{{count}} member",
+        "memberCount_other": "{{count}} members",
+        "new": "New role",
+        "search": "Search roles",
+        "system": "System"
+      },
+      "stats": {
+        "active": "Active accounts",
+        "members": "Members",
+        "pending": "Pending invites"
+      },
+      "tabs": {
+        "members": "Members",
+        "roles": "Roles"
+      },
+      "title": "Team",
+      "permissionAreas": {
+        "team": {
+          "name": "Team",
+          "hint": "Members, invitations and roles"
+        },
+        "organization": {
+          "name": "Organization",
+          "hint": "Workspace name, mark and workspaces"
+        },
+        "users": {
+          "name": "Users",
+          "hint": "The user directory"
+        },
+        "api": {
+          "name": "API keys",
+          "hint": "Personal API tokens"
+        },
+        "billing": {
+          "name": "Billing",
+          "hint": "Subscription and invoices"
+        },
+        "audit": {
+          "name": "Audit log",
+          "hint": "Who did what, and when"
+        }
+      }
+    }
+  },
+  "profile": {
+    "changePhoto": "Change photo",
+    "details": {
+      "cancel": "Cancel",
+      "description": "Your personal information. This is how teammates see you across the workspace.",
+      "email": "Email",
+      "emailDescription": "Used to sign in and receive alerts",
+      "emailHint": "Managed by your workspace — contact an admin to change.",
+      "firstName": "First name",
+      "jobTitle": "Job title",
+      "jobTitleDescription": "Shown on your profile card",
+      "lastName": "Last name",
+      "phone": "Phone",
+      "save": "Save changes",
+      "title": "Profile"
+    },
+    "joined": "Joined {{date}}",
+    "password": {
+      "confirm": "Confirm password",
+      "confirmPlaceholder": "Re-enter new password",
+      "current": "Current password",
+      "description": "Keep your account secure with a strong password and two-factor authentication.",
+      "mismatch": "Both passwords must be the same.",
+      "new": "New password",
+      "newDescription": "At least 8 characters",
+      "newPlaceholder": "New password",
+      "submit": "Update password",
+      "title": "Password",
+      "twoFactor": "Two-factor authentication",
+      "twoFactorDescription": "Require a code from your authenticator app when signing in.",
+      "twoFactorOn": "On",
+      "twoFactorUnavailable": "Not available yet"
+    },
+    "sections": {
+      "details": "Profile",
+      "password": "Password",
+      "sessions": "Sessions",
+      "preferences": "Preferences"
+    },
+    "sessions": {
+      "activeNow": "Active now",
+      "credentialsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
+      "description": "Devices currently signed in to your account. Sign out anything you don't recognise.",
+      "empty": "No devices are signed in.",
+      "signOut": "Sign out",
+      "signOutAll": "Sign out all other sessions",
+      "thisDevice": "This device",
+      "title": "Sessions",
+      "unknownDevice": "Unrecognised device",
+      "unknownLocation": "Unknown address"
+    },
+    "viewTeamCard": "View team card",
+    "preferences": {
+      "title": "Preferences",
+      "description": "How the workspace looks and what lands in your inbox.",
+      "darkTheme": "Dark theme",
+      "darkThemeDescription": "Switch the whole workspace to a dark palette.",
+      "language": "Language",
+      "density": "Table density",
+      "densityDescription": "Row height in the workspace tables",
+      "densities": {
+        "comfortable": "Comfortable",
+        "compact": "Compact"
+      },
+      "weeklyDigest": "Weekly digest",
+      "weeklyDigestDescription": "Monday summary of what happened in your workspace.",
+      "productUpdates": "Product updates",
+      "productUpdatesDescription": "Occasional emails about new features."
+    }
+  },
+  "public": {
+    "footer": {
+      "legalNavigation": "Legal information",
+      "operator": "Operated by the workspace owner."
+    },
+    "home": {
+      "cta": "Sign in to the workspace",
+      "description": "Invite teammates, shape roles and permissions, and connect the tools you rely on — all from one secure workspace.",
+      "eyebrow": "Team workspace",
+      "featuresTitle": "What the workspace gives your team",
+      "google": {
+        "body": "When you sign in with Google, we use your basic profile information to authenticate you and create or match your account.",
+        "eyebrow": "Clear Google data use",
+        "scope": "Google Sign-In requests only your name, email address and profile picture. It does not read Gmail, Google Drive or any other Google data. Optional Google integrations require a separate, explicit authorization.",
+        "title": "Google Sign-In is only for your account."
+      },
+      "privacyCta": "How we protect data",
+      "title": "One workspace for your team, with the right access for everyone.",
+      "features": {
+        "team": {
+          "title": "Team management",
+          "body": "Invite members, see who is active, and keep the roster in one place."
+        },
+        "access": {
+          "title": "Roles and permissions",
+          "body": "Give each role exactly what it needs, and change it without a deploy."
+        },
+        "api": {
+          "title": "API access",
+          "body": "Mint scoped API keys so your own tools and automations can work alongside the team."
+        }
+      }
+    },
+    "navigation": {
+      "home": "Home",
+      "privacy": "Privacy policy",
+      "signIn": "Sign in",
+      "terms": "Terms of service"
+    },
+    "privacy": {
+      "changes": {
+        "body": "We may update this policy when the service or legal requirements change. We will publish the current version here and provide additional notice when a change materially affects your rights.",
+        "title": "11. Changes to this policy"
+      },
+      "children": {
+        "body": "The service is a business tool and is not intended for children under 16.",
+        "title": "10. Children"
+      },
+      "contactLabel": "Contact the workspace operator for privacy requests.",
+      "controller": {
+        "body": "The workspace operator is responsible for the personal data described in this policy. The service is a business workspace used by authorized teams.",
+        "title": "1. Who is responsible for your data"
+      },
+      "cookies": {
+        "body": "The service uses essential cookies and browser storage to maintain your signed-in session, protect the service, remember language and theme choices, and cache application data for reliable performance. These technologies are necessary to provide the workspace. If optional analytics is introduced, we will provide any notice or choice required by law before using it.",
+        "title": "7. Cookies and local storage"
+      },
+      "data": {
+        "account": "Account and identity data, such as your name, work email, profile picture, authentication provider and organization membership.",
+        "content": "Content entered or uploaded by your organization, including notes, messages and attachments where those features are used.",
+        "integrations": "Connection details and tokens for third-party services that an authorized user chooses to connect.",
+        "intro": "The data we process depends on how you and your organization use the service. It may include:",
+        "technical": "Technical and security data, including IP address, browser information, timestamps, session records, error logs and security events.",
+        "title": "2. Data we process",
+        "workspace": "Workspace data, including team roles, permissions, settings, audit events and activity needed to provide the service."
+      },
+      "eyebrow": "Legal",
+      "google": {
+        "body": "If you choose Google Sign-In, Google provides your name, email address, profile picture and provider identifiers. We use this information only to authenticate you, protect access and create or match your profile. We do not sell this data or use it for advertising.",
+        "separateConsent": "Google Sign-In does not grant access to Gmail, Drive or any other Google service. If your organization later enables a supported Google integration, we request the relevant permissions through a separate consent screen and use that data only to provide the integration you selected.",
+        "title": "3. Google Sign-In and Google user data"
+      },
+      "lastUpdated": "Last updated: 27 August 2026.",
+      "purposes": {
+        "body": "We process data to provide and administer the service, authenticate users, support team collaboration, keep the service secure, respond to requests and comply with law. Depending on the context, our legal basis is performance of a contract, our legitimate interests in operating and securing the service, consent where required, or compliance with a legal obligation.",
+        "title": "4. Purposes and legal bases"
+      },
+      "retention": {
+        "body": "We keep account and workspace data while the relevant account or organization is active and for the limited period needed for security, recovery, dispute resolution and legal obligations. Deleted data may remain in encrypted backups until those backups expire through their normal cycle. Integration credentials are removed when the connection is deleted, subject to short-lived operational backups.",
+        "title": "6. How long we keep data"
+      },
+      "rights": {
+        "authority": "You may also lodge a complaint with the Spanish Data Protection Agency (AEPD) or your local supervisory authority.",
+        "body": "Where applicable, you may request access, correction, deletion, restriction or portability of your personal data, object to certain processing, or withdraw consent without affecting earlier lawful processing. Contact us from the email associated with your account so we can verify and answer your request.",
+        "title": "9. Your privacy rights"
+      },
+      "security": {
+        "body": "We use technical and organizational safeguards designed to protect data, including encrypted connections, access controls, isolated infrastructure, secret management, security logging and restricted administrative access. No system can guarantee absolute security, but we review and improve these measures as the service evolves.",
+        "title": "8. Security"
+      },
+      "sharing": {
+        "body": "We share data only when needed to operate the service, comply with law or follow your organization's instructions. Providers may include the hosting, storage, authentication, email and integration providers your organization enables. Some providers may process data outside the European Economic Area using applicable safeguards such as adequacy decisions or standard contractual clauses. We do not sell personal data.",
+        "title": "5. Service providers and international transfers"
+      },
+      "summary": "This policy explains what personal data the service processes, why we use it, and the choices and rights available to you.",
+      "title": "Privacy policy"
+    },
+    "terms": {
+      "acceptableUse": {
+        "body": "You may not use the service unlawfully; infringe another person's rights; send spam or harmful content; introduce malware; bypass access controls; disrupt the service; scrape it abusively; or attempt to access data, accounts or infrastructure without authorization.",
+        "title": "3. Acceptable use"
+      },
+      "accounts": {
+        "body": "You must provide accurate information, protect your credentials and use only accounts and workspaces you are authorized to access. You are responsible for activity performed through your account and must tell us promptly if you suspect unauthorized access. Organization administrators control membership, roles and workspace content.",
+        "title": "2. Accounts and access"
+      },
+      "availability": {
+        "body": "We work to keep the service secure and available, but maintenance, failures and events outside our reasonable control may interrupt access. We may change or discontinue features and will try to give reasonable notice when a material change adversely affects active customers.",
+        "title": "6. Availability and changes"
+      },
+      "changes": {
+        "body": "We may update these terms to reflect service, business or legal changes. The current version will be published here. We will provide reasonable notice before materially adverse changes apply to active customers.",
+        "title": "11. Changes to these terms"
+      },
+      "contact": {
+        "body": "Questions about these terms can be sent to the workspace operator.",
+        "title": "12. Contact"
+      },
+      "content": {
+        "body": "You and your organization retain ownership of content submitted to the service. You grant us the limited permission needed to host, process, transmit and back up that content solely to provide, secure and support the service. You are responsible for having the rights and lawful basis needed to submit and use that content.",
+        "title": "4. Your content"
+      },
+      "eyebrow": "Legal",
+      "intellectualProperty": {
+        "body": "The service, its software, design, branding and documentation belong to the workspace operator or its licensors. These terms give you a limited, non-exclusive and non-transferable right to use the service during your authorized access; they do not transfer ownership.",
+        "title": "7. Our intellectual property"
+      },
+      "lastUpdated": "Last updated: 27 August 2026.",
+      "law": {
+        "body": "Spanish law governs these terms. Disputes will be submitted to the competent courts in Spain, without affecting any mandatory rights or jurisdiction available to consumers under applicable law.",
+        "title": "10. Governing law"
+      },
+      "liability": {
+        "body": "The service is provided with reasonable care and skill. To the maximum extent permitted by law, we are not liable for indirect or unforeseeable loss, lost profits, or failures caused by third parties or events outside our reasonable control. Nothing in these terms excludes liability that cannot legally be excluded or limits mandatory consumer rights.",
+        "title": "9. Warranties and liability"
+      },
+      "service": {
+        "body": "The service provides tools for team collaboration, access management and supported integrations. Features may change as we improve the service. Your organization's separate commercial agreement, if any, also applies; where it conflicts with these public terms, the signed agreement controls.",
+        "title": "1. The service"
+      },
+      "summary": "These terms govern authorized access to and use of the service, a business workspace operated by the workspace owner.",
+      "termination": {
+        "body": "You may stop using the service at any time. We may restrict or suspend access when reasonably necessary to address a security risk, unlawful activity, material breach or non-payment under an applicable agreement. We will use proportionate measures and provide notice when circumstances allow.",
+        "title": "8. Suspension and termination"
+      },
+      "thirdParties": {
+        "body": "The service may connect to third-party products at your request. Their own terms and privacy policies apply, and their availability or conduct is outside our control. You can disconnect optional integrations from the workspace where supported.",
+        "title": "5. Third-party services"
+      },
+      "title": "Terms of service"
+    }
+  },
+  "settings": {
+    "api": {
+      "cancel": "Cancel",
+      "close": "Close",
+      "create": "Create key",
+      "createKey": "Create key",
+      "createKeySubtitle": "Name the key so you can recognise it later. You'll only see the secret once.",
+      "createKeyTitle": "Create API key",
+      "description": "Mint scoped keys so your own tools can call the API as you.",
+      "expired": "Expired",
+      "keyCreated": "Created {{created}} · last used {{used}}",
+      "keyName": "Key name",
+      "keyNameHint": "Use one key per system so you can revoke it independently.",
+      "keyNamePlaceholder": "e.g. WordPress site",
+      "keyPermissions": "Permissions",
+      "keyPermissionsHint": "A key can never do more than you can.",
+      "keys": "API keys",
+      "neverUsed": "never",
+      "noKeys": "No API keys yet.",
+      "noPermissionResults": "No permissions match your search.",
+      "revoke": "Revoke",
+      "revoked": "Revoked",
+      "searchPermissions": "Search permissions",
+      "secretSubtitle": "This is the only time the secret is shown. Store it somewhere safe.",
+      "secretTitle": "Copy your new key",
+      "title": "API & webhooks"
+    },
+    "general": {
+      "description": "How your workspace is named and shown to everyone on the team.",
+      "logo": "Logo",
+      "logoHint": "Square PNG or SVG, at least 128×128",
+      "logoUrl": "Logo URL",
+      "name": "Organisation name",
+      "nameHint": "Shown in the sidebar and to everyone in the workspace",
+      "remove": "Remove",
+      "save": "Save changes",
+      "saveSuccess": "Organization settings saved",
+      "title": "General"
+    },
+    "nav": {
+      "api": "API & webhooks",
+      "general": "General",
+      "integrations": "Integrations",
+      "label": "Settings sections",
+      "notifications": "Notifications",
+      "security": "Security",
+      "hosts": "Hosts"
+    },
+    "saved": "Saved",
+    "security": {
+      "description": "Every device signed in to your account, and a way to end any of them.",
+      "sessions": "Active sessions",
+      "sessionsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
+      "signOut": "Sign out",
+      "signOutOthers": "Sign out all others",
+      "thisDevice": "This device",
+      "title": "Security",
+      "unknownDevice": "Unknown device"
+    },
+    "subtitle": "Workspace-wide configuration for {{organization}}.",
+    "subtitleFallback": "Workspace-wide configuration.",
+    "title": "Settings",
+    "hosts": {
+      "emptyTitle": "No hosts yet",
+      "emptyDescription": "A host is a machine you own. Pairing is one pasted command; the host appears here once it connects."
+    }
+  },
+  "table": {
+    "clearFilter": "Clear filter",
+    "clearSelection": "Clear selection",
+    "nextPage": "Next page",
+    "page": "Page {{page}} of {{totalPages}}",
+    "previousPage": "Previous page",
+    "range": "{{first}}–{{last}} of {{total}}",
+    "rowActions": "Row actions",
+    "selectPage": "Select every row on this page",
+    "selectRow": "Select row",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  },
+  "toasts": {
+    "copied": "Copied to clipboard.",
+    "memberRemoved": "Member removed.",
+    "membersInvited": "Invitations sent.",
+    "passwordChanged": "Password updated. Your other devices have been signed out."
+  },
+  "emails": {
+    "common": {
+      "brandName": "Oppenheimer",
+      "footer": "You are receiving this email because you have an account at Oppenheimer.",
+      "pasteLink": "Or paste this into your browser:"
+    },
+    "passwordReset": {
+      "subject": "Reset your password",
+      "preview": "Reset your Oppenheimer password — the link works once and expires soon.",
+      "heading": "Reset your password",
+      "body": "We received a request to reset the password for your account. Choose a new one and you'll be back in your workspace.",
+      "action": "Reset password",
+      "helper": "This link can only be used once and expires soon. If it has, request a new one from the sign-in page.",
+      "closing": "Didn't ask for this? Ignore this email — your password stays the same.",
+      "footerNote": "This is a security email, so you always receive it."
+    },
+    "emailVerification": {
+      "subject": "Verify your email",
+      "preview": "Verify your Oppenheimer email address to finish setting up your account.",
+      "heading": "Verify your email",
+      "body": "Confirm this email address to finish setting up your account and keep it secure.",
+      "action": "Verify email",
+      "helper": "This verification link expires shortly and can only be used for this account.",
+      "closing": "Didn't create an account? You can safely ignore this email.",
+      "footerNote": "This is a security email, so you always receive it."
+    },
+    "welcome": {
+      "subject": "Welcome to Oppenheimer",
+      "preview": "Your Oppenheimer account is ready.",
+      "eyebrow": "Account ready",
+      "heading": "Welcome to Oppenheimer",
+      "greeting": "Hi {{name}},",
+      "body": "Your account has been created successfully. We're excited to have you on board.",
+      "support": "If you have any questions, reply to this email and our team will help.",
+      "signoff": "— The Oppenheimer team"
+    },
+    "invitation": {
+      "subject": "You're invited to {{organizationName}}",
+      "preview": "{{inviterName}} invited you to the {{organizationName}} workspace — set up your account.",
+      "hero": "You're invited",
+      "heading": "Join the {{organizationName}} workspace",
+      "body": "Accept the invitation to start working with your team.",
+      "inviterLine": "{{inviterName}} invited you",
+      "roleLine": "Joining as {{role}}",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "benefitsTitle": "What you get:",
+      "benefitWorkspace": "Everything your team has filed in this workspace, in one place",
+      "benefitCollaboration": "A place to work with the people who invited you",
+      "benefitAccount": "One account for every workspace you belong to",
+      "action": "Accept invite",
+      "helper": "This invite expires in 2 days.",
+      "ignore": "Not expecting this invite? You can safely ignore this email."
+    }
+  }
+}

@@ -1,0 +1,46 @@
+id: AUTH-06
+title: An owner of one workspace cannot read another workspace's data
+theme: auth
+severity: critical
+fixture: empty
+tags: [security, tenancy]
+
+coverage:
+  primary:
+    - authz.tenant-isolation-read
+
+intent: >-
+  A leak of this kind is invisible from inside a single tenant: every number is
+  plausible, and the only way to see it is to hold one workspace's credential
+  while another workspace holds obviously different data. That is what this
+  scenario arranges — an owner with nothing, signed in while thousands of rows
+  sit next door.
+
+docsRefs:
+  - AUTHORIZATION.md
+  - .agents/rules/rbac-roles.md
+codeRefs:
+  - apps/api/src/organizations/members.controller.ts
+  - apps/api/src/organizations/invitations.controller.ts
+
+preconditions:
+  - 'The `empty` fixture for the reader, with `volume` applied beside it so the
+    other tenant is unmistakably larger.'
+  - >-
+    The reader is a tenant owner and not a platform administrator. A `user.role`
+    of `admin` or `superadmin` drops the organization predicate, and the
+    scenario would then be measuring the bypass rather than the product.
+
+steps:
+  - Assert the reader's platform role before measuring anything.
+  - Sign in as the empty workspace's owner and open the screens that count.
+  - Call the member and invitation endpoints behind them.
+  - Ask for a row id belonging to the other workspace.
+
+expected:
+  - Every count on screen is the empty tenant's, while the other holds thousands.
+  - The list endpoints return only the caller's workspace.
+  - A row id from the other workspace answers 403 or 404, never 200.
+
+artifacts:
+  - auth-06-tenant-isolation.png

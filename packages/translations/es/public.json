@@ -1,0 +1,152 @@
+{
+  "footer": {
+    "legalNavigation": "Información legal",
+    "operator": "Operado por el propietario del espacio de trabajo."
+  },
+  "home": {
+    "cta": "Entrar al espacio de trabajo",
+    "description": "Invita a compañeros, define roles y permisos y conecta las herramientas que usáis, todo desde un espacio de trabajo seguro.",
+    "eyebrow": "Espacio de trabajo para equipos",
+    "featuresTitle": "Lo que el espacio de trabajo aporta a tu equipo",
+    "google": {
+      "body": "Cuando inicias sesión con Google, usamos tu información básica de perfil para autenticarte y crear o vincular tu cuenta.",
+      "eyebrow": "Uso claro de los datos de Google",
+      "scope": "El inicio de sesión con Google solo solicita tu nombre, dirección de correo y foto de perfil. No lee Gmail, Google Drive ni ningún otro dato de Google. Las integraciones opcionales con Google requieren una autorización separada y explícita.",
+      "title": "El acceso con Google solo sirve para tu cuenta."
+    },
+    "privacyCta": "Cómo protegemos los datos",
+    "title": "Un espacio de trabajo para tu equipo, con el acceso adecuado para cada persona.",
+    "features": {
+      "team": {
+        "title": "Gestión del equipo",
+        "body": "Invita a miembros, ve quién está activo y mantén la plantilla en un solo sitio."
+      },
+      "access": {
+        "title": "Roles y permisos",
+        "body": "Da a cada rol exactamente lo que necesita y cámbialo sin desplegar nada."
+      },
+      "api": {
+        "title": "Acceso por API",
+        "body": "Crea claves de API con permisos acotados para que tus herramientas y automatizaciones trabajen junto al equipo."
+      }
+    }
+  },
+  "navigation": {
+    "home": "Inicio",
+    "privacy": "Política de privacidad",
+    "signIn": "Iniciar sesión",
+    "terms": "Términos del servicio"
+  },
+  "privacy": {
+    "changes": {
+      "body": "Podemos actualizar esta política cuando cambie el servicio o la normativa. Publicaremos aquí la versión vigente y daremos un aviso adicional cuando un cambio afecte de forma relevante a tus derechos.",
+      "title": "11. Cambios en esta política"
+    },
+    "children": {
+      "body": "El servicio es una herramienta empresarial y no está dirigido a menores de 16 años.",
+      "title": "10. Menores"
+    },
+    "contactLabel": "Contacta con el operador del espacio de trabajo para solicitudes de privacidad.",
+    "controller": {
+      "body": "El operador del espacio de trabajo es responsable de los datos personales descritos en esta política. El servicio es un espacio de trabajo empresarial usado por equipos autorizados.",
+      "title": "1. Quién es responsable de tus datos"
+    },
+    "cookies": {
+      "body": "El servicio usa cookies esenciales y almacenamiento del navegador para mantener tu sesión iniciada, proteger el servicio, recordar tus preferencias de idioma y tema y guardar en caché datos de la aplicación para un rendimiento fiable. Estas tecnologías son necesarias para ofrecer el espacio de trabajo. Si se introduce analítica opcional, daremos cualquier aviso u opción que exija la ley antes de usarla.",
+      "title": "7. Cookies y almacenamiento local"
+    },
+    "data": {
+      "account": "Datos de cuenta e identidad, como nombre, correo de trabajo, foto de perfil, proveedor de autenticación y pertenencia a organizaciones.",
+      "content": "Contenido introducido o subido por tu organización, incluidos notas, mensajes y archivos adjuntos cuando se usan esas funciones.",
+      "integrations": "Datos de conexión y tokens de servicios de terceros que un usuario autorizado decida conectar.",
+      "intro": "Los datos que tratamos dependen de cómo tú y tu organización utilicéis el servicio. Pueden incluir:",
+      "technical": "Datos técnicos y de seguridad, incluidos dirección IP, información del navegador, marcas de tiempo, sesiones, registros de errores y eventos de seguridad.",
+      "title": "2. Datos que tratamos",
+      "workspace": "Datos del espacio de trabajo, incluidos roles, permisos, ajustes, eventos de auditoría y actividad necesaria para prestar el servicio."
+    },
+    "eyebrow": "Legal",
+    "google": {
+      "body": "Si eliges iniciar sesión con Google, Google nos facilita tu nombre, dirección de correo, foto de perfil e identificadores del proveedor. Usamos esta información solo para autenticarte, proteger el acceso y crear o vincular tu perfil. No vendemos estos datos ni los usamos para publicidad.",
+      "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
+      "title": "3. Acceso con Google y datos de usuario de Google"
+    },
+    "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+    "purposes": {
+      "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
+      "title": "4. Finalidades y bases jurídicas"
+    },
+    "retention": {
+      "body": "Conservamos los datos de cuenta y del espacio mientras la cuenta u organización correspondiente siga activa y durante el periodo limitado necesario para seguridad, recuperación, resolución de disputas y obligaciones legales. Los datos eliminados pueden permanecer en copias cifradas hasta que expiren en su ciclo normal. Las credenciales de integraciones se eliminan al borrar la conexión, sin perjuicio de copias operativas de corta duración.",
+      "title": "6. Durante cuánto tiempo conservamos los datos"
+    },
+    "rights": {
+      "authority": "También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) o tu autoridad de control local.",
+      "body": "Cuando corresponda, puedes solicitar acceso, rectificación, supresión, limitación o portabilidad de tus datos personales, oponerte a determinados tratamientos o retirar tu consentimiento sin afectar al tratamiento lícito anterior. Escríbenos desde el correo asociado a tu cuenta para que podamos verificar y responder a tu solicitud.",
+      "title": "9. Tus derechos de privacidad"
+    },
+    "security": {
+      "body": "Aplicamos medidas técnicas y organizativas diseñadas para proteger los datos, como conexiones cifradas, controles de acceso, infraestructura aislada, gestión de secretos, registros de seguridad y acceso administrativo restringido. Ningún sistema garantiza una seguridad absoluta, pero revisamos y mejoramos estas medidas conforme evoluciona el servicio.",
+      "title": "8. Seguridad"
+    },
+    "sharing": {
+      "body": "Compartimos datos solo cuando es necesario para operar el servicio, cumplir la ley o seguir las instrucciones de tu organización. Los proveedores pueden incluir los de alojamiento, almacenamiento, autenticación, correo e integraciones que tu organización active. Algunos proveedores pueden tratar datos fuera del Espacio Económico Europeo con las garantías aplicables, como decisiones de adecuación o cláusulas contractuales tipo. No vendemos datos personales.",
+      "title": "5. Proveedores y transferencias internacionales"
+    },
+    "summary": "Esta política explica qué datos personales trata el servicio, por qué los usamos y las opciones y derechos que tienes.",
+    "title": "Política de privacidad"
+  },
+  "terms": {
+    "acceptableUse": {
+      "body": "No puedes usar el servicio de forma ilegal; infringir derechos de terceros; enviar spam o contenido dañino; introducir malware; eludir controles de acceso; interrumpir el servicio; extraer datos de forma abusiva; ni intentar acceder sin autorización a datos, cuentas o infraestructura.",
+      "title": "3. Uso aceptable"
+    },
+    "accounts": {
+      "body": "Debes facilitar información exacta, proteger tus credenciales y usar únicamente cuentas y espacios a los que estés autorizado. Eres responsable de la actividad realizada desde tu cuenta y debes avisarnos si sospechas un acceso no autorizado. Los administradores de la organización controlan los miembros, roles y contenido del espacio.",
+      "title": "2. Cuentas y acceso"
+    },
+    "availability": {
+      "body": "Trabajamos para mantener el servicio seguro y disponible, pero el mantenimiento, los fallos y los eventos fuera de nuestro control razonable pueden interrumpir el acceso. Podemos cambiar o retirar funciones e intentaremos avisar con antelación razonable cuando un cambio importante afecte negativamente a clientes activos.",
+      "title": "6. Disponibilidad y cambios"
+    },
+    "changes": {
+      "body": "Podemos actualizar estos términos para reflejar cambios del servicio, negocio o normativa. La versión vigente se publicará aquí. Avisaremos con antelación razonable antes de aplicar cambios sustancialmente perjudiciales a clientes activos.",
+      "title": "11. Cambios en estos términos"
+    },
+    "contact": {
+      "body": "Las preguntas sobre estos términos pueden enviarse al operador del espacio de trabajo.",
+      "title": "12. Contacto"
+    },
+    "content": {
+      "body": "Tú y tu organización conserváis la propiedad del contenido enviado al servicio. Nos concedéis el permiso limitado necesario para alojar, tratar, transmitir y respaldar ese contenido únicamente para prestar, proteger y dar soporte al servicio. Sois responsables de disponer de los derechos y la base jurídica necesarios para aportar y usar ese contenido.",
+      "title": "4. Tu contenido"
+    },
+    "eyebrow": "Legal",
+    "intellectualProperty": {
+      "body": "El servicio, su software, diseño, marca y documentación pertenecen al operador del espacio de trabajo o a sus licenciantes. Estos términos te otorgan un derecho limitado, no exclusivo e intransferible a usar el servicio durante tu acceso autorizado; no transfieren la propiedad.",
+      "title": "7. Nuestra propiedad intelectual"
+    },
+    "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+    "law": {
+      "body": "Estos términos se rigen por la ley española. Los conflictos se someterán a los tribunales competentes de España, sin afectar a los derechos o fueros imperativos disponibles para consumidores conforme a la ley aplicable.",
+      "title": "10. Ley aplicable"
+    },
+    "liability": {
+      "body": "Prestamos el servicio con diligencia y competencia razonables. En la medida máxima permitida por la ley, no respondemos de pérdidas indirectas o imprevisibles, lucro cesante ni fallos causados por terceros o hechos fuera de nuestro control razonable. Nada en estos términos excluye responsabilidades que legalmente no puedan excluirse ni limita derechos obligatorios de consumidores.",
+      "title": "9. Garantías y responsabilidad"
+    },
+    "service": {
+      "body": "El servicio ofrece herramientas de colaboración en equipo, gestión de accesos e integraciones compatibles. Las funciones pueden cambiar a medida que mejoramos el servicio. También se aplica el acuerdo comercial independiente de tu organización, si existe; en caso de conflicto con estos términos públicos, prevalece el acuerdo firmado.",
+      "title": "1. El servicio"
+    },
+    "summary": "Estos términos regulan el acceso autorizado y el uso del servicio, un espacio de trabajo empresarial operado por su propietario.",
+    "termination": {
+      "body": "Puedes dejar de usar el servicio en cualquier momento. Podemos restringir o suspender el acceso cuando sea razonablemente necesario ante un riesgo de seguridad, actividad ilegal, incumplimiento grave o impago conforme a un acuerdo aplicable. Usaremos medidas proporcionales y avisaremos cuando las circunstancias lo permitan.",
+      "title": "8. Suspensión y terminación"
+    },
+    "thirdParties": {
+      "body": "El servicio puede conectarse a productos de terceros si lo solicitas. Se aplican sus propios términos y políticas de privacidad, y su disponibilidad o actuación queda fuera de nuestro control. Puedes desconectar las integraciones opcionales desde el espacio cuando esté disponible.",
+      "title": "5. Servicios de terceros"
+    },
+    "title": "Términos del servicio"
+  }
+}

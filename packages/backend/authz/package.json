@@ -1,0 +1,40 @@
+{
+  "name": "@oppenheimer/backend-authz",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@casl/ability": "^6.8.1",
+    "@oppenheimer/backend-core": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28"
+  },
+  "peerDependencies": {
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "@oppenheimer/config": "workspace:^",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.28",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

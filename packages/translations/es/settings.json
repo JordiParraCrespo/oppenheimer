@@ -1,0 +1,67 @@
+{
+  "api": {
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "create": "Crear clave",
+    "createKey": "Crear clave",
+    "createKeySubtitle": "Ponle un nombre para reconocerla luego. El secreto solo se muestra una vez.",
+    "createKeyTitle": "Crear clave de API",
+    "description": "Crea claves con permisos acotados para que tus herramientas llamen a la API en tu nombre.",
+    "expired": "Caducada",
+    "keyCreated": "Creada el {{created}} · último uso {{used}}",
+    "keyName": "Nombre de la clave",
+    "keyNameHint": "Usa una clave por sistema para poder revocarla por separado.",
+    "keyNamePlaceholder": "p. ej. web de WordPress",
+    "keyPermissions": "Permisos",
+    "keyPermissionsHint": "Una clave nunca puede hacer más que tú.",
+    "keys": "Claves de API",
+    "neverUsed": "nunca",
+    "noKeys": "Aún no hay claves de API.",
+    "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
+    "revoke": "Revocar",
+    "revoked": "Revocada",
+    "searchPermissions": "Buscar permisos",
+    "secretSubtitle": "Es la única vez que se muestra el secreto. Guárdalo en un lugar seguro.",
+    "secretTitle": "Copia tu nueva clave",
+    "title": "API y webhooks"
+  },
+  "general": {
+    "description": "Cómo se llama tu espacio de trabajo y cómo lo ve todo el equipo.",
+    "logo": "Logotipo",
+    "logoHint": "PNG o SVG cuadrado, de al menos 128×128",
+    "logoUrl": "URL del logotipo",
+    "name": "Nombre de la organización",
+    "nameHint": "Se muestra en la barra lateral y a todos los miembros del espacio de trabajo",
+    "remove": "Quitar",
+    "save": "Guardar cambios",
+    "saveSuccess": "Configuración de la organización guardada",
+    "title": "General"
+  },
+  "nav": {
+    "api": "API y webhooks",
+    "general": "General",
+    "integrations": "Integraciones",
+    "label": "Secciones de configuración",
+    "notifications": "Notificaciones",
+    "security": "Seguridad",
+    "hosts": "Máquinas"
+  },
+  "saved": "Guardado",
+  "security": {
+    "description": "Todos los dispositivos con sesión iniciada en tu cuenta, y una forma de cerrar cualquiera de ellas.",
+    "sessions": "Sesiones activas",
+    "sessionsNote": "Aquí solo aparecen dispositivos. Las claves de API y las apps conectadas se revocan en API y webhooks: cerrar la sesión de un dispositivo no las desactiva.",
+    "signOut": "Cerrar sesión",
+    "signOutOthers": "Cerrar las demás sesiones",
+    "thisDevice": "Este dispositivo",
+    "title": "Seguridad",
+    "unknownDevice": "Dispositivo desconocido"
+  },
+  "subtitle": "Configuración de todo el espacio de trabajo de {{organization}}.",
+  "subtitleFallback": "Configuración de todo el espacio de trabajo.",
+  "title": "Configuración",
+  "hosts": {
+    "emptyTitle": "Aún no hay máquinas",
+    "emptyDescription": "Una máquina es un ordenador tuyo. Emparejarla es pegar un comando; aparece aquí en cuanto se conecta."
+  }
+}

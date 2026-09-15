@@ -1,0 +1,30 @@
+{
+  "name": "@oppenheimer/qa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scenario-driven QA pack: declarative scenarios, seeded fixtures and a browser-driven runner that screenshots every verdict.",
+  "scripts": {
+    "qa": "tsx src/cli.ts",
+    "suite": "tsx src/cli.ts suite",
+    "coverage": "tsx src/cli.ts coverage",
+    "lint": "biome check src/ fixtures/ specs/",
+    "typecheck": "tsc -p tsconfig.json",
+    "clean": "rimraf artifacts .turbo node_modules"
+  },
+  "dependencies": {
+    "@oppenheimer/env": "workspace:*",
+    "pg": "^8.22.0",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.5",
+    "@oppenheimer/config": "workspace:^",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.20.0",
+    "rimraf": "^6.1.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "accessDeniedTitle": "Se necesita acceso al panel de control",
+  "accessDeniedDescription": "Este espacio está reservado a los administradores de la plataforma.",
+  "auth": {
+    "headline": "Gestiona tu producto desde un panel de control seguro.",
+    "body": "Accede con una cuenta administradora de la plataforma para gestionar todas tus aplicaciones.",
+    "noAccount": "Esta identidad no tiene una cuenta del panel de control. Pide a un administrador de la plataforma que la cree.",
+    "features": {
+      "users": "Crea y gestiona cuentas de usuario",
+      "roles": "Define roles de aplicación reutilizables",
+      "security": "Cierra sesiones y bloquea el acceso al instante"
+    }
+  },
+  "roles": {
+    "title": "Roles y permisos",
+    "description": "Define reglas de acceso reutilizables para las aplicaciones de consumo.",
+    "permissionCount_one": "{{count}} permiso",
+    "permissionCount_other": "{{count}} permisos"
+  },
+  "users": {
+    "title": "Usuarios",
+    "description": "Gestiona cuentas, roles de aplicación y acceso activo.",
+    "search": "Buscar usuarios…",
+    "add": "Añadir usuario",
+    "empty": "Todavía no hay usuarios",
+    "noMatches": "Ningún usuario coincide con la búsqueda",
+    "noRoles": "Sin roles",
+    "superAdmin": "Superadministrador",
+    "consumer": "Usuario",
+    "active": "Activo",
+    "banned": "Bloqueado",
+    "columns": {
+      "name": "Usuario",
+      "email": "Correo",
+      "roles": "Roles de app",
+      "access": "Acceso de plataforma",
+      "status": "Estado",
+      "joined": "Alta"
+    },
+    "actions": {
+      "roles": "Gestionar roles de app",
+      "password": "Cambiar contraseña",
+      "sessions": "Cerrar sesiones",
+      "ban": "Bloquear usuario",
+      "unban": "Desbloquear usuario",
+      "delete": "Eliminar usuario"
+    },
+    "create": {
+      "title": "Añadir usuario",
+      "description": "Crea una cuenta de consumo. Después podrás asignarle roles de aplicación.",
+      "password": "Contraseña temporal (opcional)",
+      "submit": "Crear usuario"
+    },
+    "roles": {
+      "title": "Roles de aplicación",
+      "description": "Elige los roles que {{name}} usa en las aplicaciones de consumo.",
+      "noDescription": "Sin descripción"
+    },
+    "password": {
+      "title": "Establecer una contraseña",
+      "description": "Sustituye la contraseña de acceso de {{name}}.",
+      "label": "Nueva contraseña",
+      "submit": "Cambiar contraseña"
+    },
+    "confirm": {
+      "ban": {
+        "title": "¿Bloquear este usuario?",
+        "description": "{{name}} perderá el acceso inmediatamente.",
+        "submit": "Bloquear usuario"
+      },
+      "unban": {
+        "title": "¿Desbloquear este usuario?",
+        "description": "{{name}} podrá volver a iniciar sesión.",
+        "submit": "Desbloquear usuario"
+      },
+      "sessions": {
+        "title": "¿Cerrar todas las sesiones?",
+        "description": "Se cerrará la sesión de {{name}} en todos los dispositivos.",
+        "submit": "Cerrar sesiones"
+      },
+      "delete": {
+        "title": "¿Eliminar este usuario?",
+        "description": "La cuenta de {{name}} y sus accesos se eliminarán permanentemente.",
+        "submit": "Eliminar usuario"
+      }
+    }
+  }
+}

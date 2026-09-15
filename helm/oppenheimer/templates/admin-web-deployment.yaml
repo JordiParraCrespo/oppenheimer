@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-admin-web
+  labels:
+    app: {{ .Release.Name }}-admin-web
+spec:
+  replicas: {{ .Values.adminWeb.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-admin-web
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-admin-web
+    spec:
+      containers:
+        - name: admin-web
+          image: {{ .Values.adminWeb.image }}
+          env:
+            - name: API_UPSTREAM
+              value: {{ printf "%s-api:%v" .Release.Name .Values.api.port | quote }}
+            {{- with .Values.adminWeb.cspExtraOrigins }}
+            # Origins the nginx Content-Security-Policy admits beyond 'self'.
+            # Unset leaves the image default (the PostHog EU endpoints).
+            - name: CSP_EXTRA_ORIGINS
+              value: {{ . | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .Values.adminWeb.port }}
+          resources:
+            {{- toYaml .Values.adminWeb.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.adminWeb.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-admin-web
+spec:
+  selector:
+    app: {{ .Release.Name }}-admin-web
+  ports:
+    - port: {{ .Values.adminWeb.port }}
+      targetPort: {{ .Values.adminWeb.port }}
