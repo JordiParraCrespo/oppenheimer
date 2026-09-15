@@ -1,0 +1,22 @@
+[
+  "common",
+  "validation",
+  "errors",
+  "auth",
+  "dashboard",
+  "home",
+  "nav",
+  "control",
+  "language",
+  "apiTokens",
+  "consent",
+  "onboarding",
+  "pages",
+  "profile",
+  "public",
+  "settings",
+  "table",
+  "theme",
+  "toasts",
+  "emails"
+]

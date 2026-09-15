@@ -1,0 +1,18 @@
+{
+  "menu": "Menú",
+  "dashboard": "Panel",
+  "logOut": "Cerrar sesión",
+  "apiTokens": "Tokens de API",
+  "commandEmpty": "Sin resultados.",
+  "commandPlaceholder": "Busca páginas y acciones…",
+  "goTo": "Ir a",
+  "primaryNavigation": "Navegación principal",
+  "profile": "Perfil",
+  "search": "Buscar",
+  "settings": "Ajustes",
+  "team": "Equipo",
+  "users": "Usuarios",
+  "roles": "Roles",
+  "toggleSidebar": "Mostrar u ocultar el menú",
+  "viewProfile": "Ver perfil"
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noForEach": "warn",
+        "noStaticOnlyClass": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useConst": "error",
+        "useImportType": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn",
+        "noUnknownAtRules": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "noUnusedFunctionParameters": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    },
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/build",
+      "!**/.next",
+      "!**/.expo",
+      "!**/.turbo",
+      "!**/.docusaurus",
+      "!**/coverage",
+      "!**/playwright-report",
+      "!**/blob-report",
+      "!**/test-results",
+      "!**/qa/artifacts",
+      "!**/node-compile-cache",
+      "!**/.agents",
+      "!**/*.md",
+      "!**/*.css",
+      "!**/*.gen.ts",
+      "!**/packages/api-client/src/data-access",
+      "!**/packages/api-client/src/common",
+      "!**/packages/design-system/*/src/components",
+      "!**/apps/web-showcase",
+      "!**/apps/mobile-showcase"
+    ]
+  }
+}

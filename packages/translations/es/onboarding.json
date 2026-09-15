@@ -1,0 +1,19 @@
+{
+  "description": "Tu cuenta está lista. Crea un espacio de trabajo para tu equipo o únete a uno al que te hayan invitado.",
+  "eyebrow": "Casi listo",
+  "invitation": {
+    "join": "Entrar",
+    "joining": "Entrando…",
+    "role": "Entrarás como {{role}}",
+    "title": "Te han invitado a un espacio de trabajo"
+  },
+  "signOut": "Cerrar sesión",
+  "title": "Crea tu espacio de trabajo",
+  "create": {
+    "name": "Nombre del espacio de trabajo",
+    "namePlaceholder": "Acme S.L.",
+    "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
+    "submit": "Crear espacio de trabajo",
+    "submitting": "Creando…"
+  }
+}

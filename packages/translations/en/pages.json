@@ -1,0 +1,141 @@
+{
+  "profile": {
+    "description": "Manage your personal account for this workspace.",
+    "title": "My profile"
+  },
+  "team": {
+    "common": {
+      "cancel": "Cancel",
+      "error": "Something went wrong. Please try again.",
+      "loading": "Loading…"
+    },
+    "confirm": {
+      "cancelDescription": "The invitation link will stop working.",
+      "cancelTitle": "Cancel this invitation?",
+      "deleteRoleDescription": "Members assigned to it will lose the permissions it grants.",
+      "deleteRoleTitle": "Delete this role?",
+      "removeDescription": "They will lose access to this workspace. Their account will not be deleted.",
+      "removeTitle": "Remove this member?"
+    },
+    "description": "Manage who can access the {{workspace}} workspace and what their role lets them do.",
+    "invite": {
+      "description": "Add teammates by email. Their role can be adjusted after they join.",
+      "emails": "Email addresses",
+      "emailsHint": "Separate multiple addresses with commas or new lines.",
+      "emailsPlaceholder": "name@company.com, another@company.com",
+      "role": "Organization access",
+      "roles": {
+        "admin": "Admin",
+        "member": "Member",
+        "owner": "Owner"
+      },
+      "send": "Send invite",
+      "sendMany": "Send {{count}} invites",
+      "sending": "Sending…",
+      "title": "Invite members"
+    },
+    "memberRole": {
+      "description": "Choose the application role for {{name}}.",
+      "noRole": "No custom role",
+      "role": "Role",
+      "save": "Save role",
+      "title": "Edit member role"
+    },
+    "members": {
+      "cancelInvite": "Cancel invitation",
+      "columns": {
+        "email": "Email",
+        "joined": "Joined",
+        "name": "Name",
+        "organizationRole": "Organization role",
+        "role": "Role",
+        "status": "Status"
+      },
+      "editRole": "Edit role",
+      "export": "Export CSV",
+      "invite": "Invite",
+      "remove": "Remove member",
+      "search": "Search members",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "invited": "Invited"
+      },
+      "empty": "No members found.",
+      "noMatches": "No members match your filters."
+    },
+    "roleForm": {
+      "create": "Create role",
+      "description": "Name the role and choose what it can do.",
+      "details": "Description",
+      "detailsPlaceholder": "What can this role do?",
+      "edit": "Edit",
+      "editTitle": "Edit role",
+      "name": "Role name",
+      "namePlaceholder": "e.g. Content editor",
+      "newTitle": "New custom role",
+      "noPermissionResults": "No permissions match your search.",
+      "none": "None",
+      "permissions": "Permissions",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "searchPermissions": "Search permissions",
+      "view": "View"
+    },
+    "roles": {
+      "columns": {
+        "description": "Description",
+        "members": "Members",
+        "role": "Role",
+        "type": "Type"
+      },
+      "custom": "Custom",
+      "delete": "Delete",
+      "duplicate": "Duplicate",
+      "edit": "Edit",
+      "empty": "No roles found.",
+      "export": "Export CSV",
+      "memberCount_one": "{{count}} member",
+      "memberCount_other": "{{count}} members",
+      "new": "New role",
+      "search": "Search roles",
+      "system": "System"
+    },
+    "stats": {
+      "active": "Active accounts",
+      "members": "Members",
+      "pending": "Pending invites"
+    },
+    "tabs": {
+      "members": "Members",
+      "roles": "Roles"
+    },
+    "title": "Team",
+    "permissionAreas": {
+      "team": {
+        "name": "Team",
+        "hint": "Members, invitations and roles"
+      },
+      "organization": {
+        "name": "Organization",
+        "hint": "Workspace name, mark and workspaces"
+      },
+      "users": {
+        "name": "Users",
+        "hint": "The user directory"
+      },
+      "api": {
+        "name": "API keys",
+        "hint": "Personal API tokens"
+      },
+      "billing": {
+        "name": "Billing",
+        "hint": "Subscription and invoices"
+      },
+      "audit": {
+        "name": "Audit log",
+        "hint": "Who did what, and when"
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "name": "@oppenheimer/shared",
+  "version": "0.2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js",
+      "require": "./dist/schemas/index.js",
+      "default": "./dist/schemas/index.js"
+    },
+    "./schemas/auth": {
+      "types": "./dist/schemas/auth.schema.d.ts",
+      "import": "./dist/schemas/auth.schema.js",
+      "require": "./dist/schemas/auth.schema.js",
+      "default": "./dist/schemas/auth.schema.js"
+    },
+    "./schemas/admin": {
+      "types": "./dist/schemas/admin.schema.d.ts",
+      "import": "./dist/schemas/admin.schema.js",
+      "require": "./dist/schemas/admin.schema.js",
+      "default": "./dist/schemas/admin.schema.js"
+    },
+    "./schemas/profile": {
+      "types": "./dist/schemas/profile.schema.d.ts",
+      "import": "./dist/schemas/profile.schema.js",
+      "require": "./dist/schemas/profile.schema.js",
+      "default": "./dist/schemas/profile.schema.js"
+    },
+    "./schemas/organization": {
+      "types": "./dist/schemas/organization.schema.d.ts",
+      "import": "./dist/schemas/organization.schema.js",
+      "require": "./dist/schemas/organization.schema.js",
+      "default": "./dist/schemas/organization.schema.js"
+    },
+    "./schemas/role": {
+      "types": "./dist/schemas/role.schema.d.ts",
+      "import": "./dist/schemas/role.schema.js",
+      "require": "./dist/schemas/role.schema.js",
+      "default": "./dist/schemas/role.schema.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./permissions": {
+      "types": "./dist/permissions/index.d.ts",
+      "import": "./dist/permissions/index.js",
+      "require": "./dist/permissions/index.js",
+      "default": "./dist/permissions/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js",
+      "require": "./dist/constants/index.js",
+      "default": "./dist/constants/index.js"
+    },
+    "./navigation": {
+      "types": "./dist/navigation/index.d.ts",
+      "import": "./dist/navigation/index.js",
+      "require": "./dist/navigation/index.js",
+      "default": "./dist/navigation/index.js"
+    },
+    "./scopes": {
+      "types": "./dist/scopes/index.d.ts",
+      "import": "./dist/scopes/index.js",
+      "require": "./dist/scopes/index.js",
+      "default": "./dist/scopes/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@casl/ability": "^6.8.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@oppenheimer/config": "workspace:^",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

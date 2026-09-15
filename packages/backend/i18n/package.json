@@ -1,0 +1,32 @@
+{
+  "name": "@oppenheimer/backend-i18n",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28"
+  },
+  "devDependencies": {
+    "@oppenheimer/config": "workspace:^",
+    "@types/node": "^22.20.1",
+    "reflect-metadata": "^0.2.2",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

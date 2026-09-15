@@ -1,0 +1,39 @@
+{
+  "name": "@oppenheimer/docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "docusaurus start --port 3003",
+    "build": "docusaurus build",
+    "serve": "docusaurus serve",
+    "clean": "docusaurus clear",
+    "lint": "biome check src/ docs/"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.10.2",
+    "@docusaurus/preset-classic": "^3.10.2",
+    "@mdx-js/react": "^3.1.1",
+    "clsx": "^2.1.1",
+    "prism-react-renderer": "^2.4.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "webpack": "5.98.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "^3.10.2",
+    "@oppenheimer/config": "workspace:^",
+    "typescript": "^6.0.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+// Go workspace: every Go module in the monorepo, so `go build ./...` and
+// the editor resolve sibling packages from source. Each module also carries
+// relative `replace` directives so it stays tidy-able and buildable alone.
+go 1.24.0
+
+use (
+	./apps/runner
+	./packages/go/auth
+	./packages/go/config
+	./packages/go/core
+	./packages/go/health
+	./packages/go/httpx
+	./packages/go/postgres
+	./packages/go/ws
+)

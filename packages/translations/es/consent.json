@@ -1,0 +1,15 @@
+{
+  "title": "{{client}} quiere acceder a tu cuenta",
+  "description": "Has iniciado sesión como {{email}}. Al aprobar podrá actuar en tu nombre con los permisos siguientes.",
+  "noPermissions": "Esta aplicación no ha pedido ningún permiso.",
+  "unknownScopes": "También ha pedido permisos que este despliegue no reconoce: {{scopes}}",
+  "effectiveNote": "Nunca podrá hacer más de lo que permiten tus roles, y puedes desconectarla cuando quieras.",
+  "narrowerAlternative": "¿Necesitas conceder algo más limitado?",
+  "apiTokensLink": "Crea un token de API",
+  "approve": "Aprobar",
+  "deny": "Denegar",
+  "invalidTitle": "Este enlace ha caducado",
+  "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
+  "backToDashboard": "Volver al panel",
+  "noRedirect": "El servidor no ha indicado a dónde continuar."
+}

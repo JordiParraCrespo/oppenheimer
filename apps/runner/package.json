@@ -1,0 +1,22 @@
+{
+  "name": "@oppenheimer/runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Go service template: REST + WebSocket, API-key and service-token auth, hexagonal modules",
+  "scripts": {
+    "build": "go build -trimpath -o dist/runner ./cmd/server",
+    "dev": "go run ./cmd/server",
+    "lint": "golangci-lint run ./...",
+    "test": "go test -count=1 ./...",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@oppenheimer/go-auth": "workspace:*",
+    "@oppenheimer/go-config": "workspace:*",
+    "@oppenheimer/go-core": "workspace:*",
+    "@oppenheimer/go-health": "workspace:*",
+    "@oppenheimer/go-httpx": "workspace:*",
+    "@oppenheimer/go-postgres": "workspace:*",
+    "@oppenheimer/go-ws": "workspace:*"
+  }
+}

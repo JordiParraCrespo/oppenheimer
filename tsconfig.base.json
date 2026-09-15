@@ -1,0 +1,10 @@
+{
+  // The real base lives in `@oppenheimer/config` so that the tsconfigs in that
+  // package can reach it without a relative path that escapes the package.
+  // Vite 8's oxc transformer resolves `extends` through pnpm's symlink
+  // without realpath, so `../../tsconfig.base.json` from a linked
+  // `node_modules/@oppenheimer/config` resolved into the *consumer's* node_modules
+  // and the build failed. This file stays so the apps and packages that
+  // extend it by relative path keep working unchanged.
+  "extends": "./packages/config/tsconfig.base.json"
+}

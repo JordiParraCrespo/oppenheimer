@@ -1,0 +1,58 @@
+{
+  "name": "oppenheimer",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:design": "pnpm -r run lint:design",
+    "arch": "turbo run arch",
+    "format": "biome format --write .",
+    "check": "biome check --write --unsafe .",
+    "check:bundle": "node scripts/check-bundle-size.mjs",
+    "starter:prune": "node scripts/starter/prune.mjs",
+    "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "pnpm --filter @oppenheimer/e2e e2e",
+    "qa": "pnpm --filter @oppenheimer/qa qa",
+    "qa:suite": "pnpm --filter @oppenheimer/qa suite",
+    "qa:coverage": "pnpm --filter @oppenheimer/qa coverage",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "docker:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
+    "docker:dev:down": "docker compose -f docker/docker-compose.dev.yml down",
+    "docker:up": "docker compose -f docker/docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.dev.yml down",
+    "docker:prod": "docker compose -f docker/docker-compose.prod.yml up -d",
+    "generate:openapi": "pnpm --filter @oppenheimer/api generate:openapi",
+    "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.5",
+    "@changesets/cli": "^2.31.1",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@shadcn/lint": "0.1.0",
+    "oxlint": "1.83.0",
+    "turbo": "^2.10.7",
+    "typescript": "^6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
+      "@types/react": "19.2.14",
+      "react-native": "0.86.3",
+      "@tanstack/query-core": "5.102.8",
+      "@tanstack/react-query": "5.102.8",
+      "@nestjs/swagger": "11.4.2"
+    }
+  }
+}

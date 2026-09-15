@@ -1,0 +1,103 @@
+{
+  "name": "@oppenheimer/admin-mobile",
+  "version": "0.1.2",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "dev": "expo start --dev-client --clear --port 8083",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "build:dev": "eas build --profile development",
+    "build:preview": "eas build --profile preview",
+    "build:prod": "eas build --profile production",
+    "lint": "biome check app/ components/ lib/ app.config.ts && tsc --noEmit",
+    "lint:design": "oxlint -c ../../packages/design-system/mobile/oxlint.design.json app components lib",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf .expo node_modules",
+    "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css"
+  },
+  "dependencies": {
+    "@better-auth/expo": "^1.6.25",
+    "@expo/metro-runtime": "~57.0.15",
+    "@oppenheimer/api-client": "workspace:*",
+    "@oppenheimer/auth": "workspace:*",
+    "@oppenheimer/design-system-mobile": "workspace:*",
+    "@oppenheimer/env": "workspace:*",
+    "@oppenheimer/frontend": "workspace:*",
+    "@oppenheimer/nitro-app-info": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
+    "@oppenheimer/translations": "workspace:*",
+    "@gorhom/bottom-sheet": "github:KaikuLabs/react-native-bottom-sheet#a7ef2476b8eeb1bb6861c733571d246a29e73bac",
+    "@gorhom/portal": "github:KaikuLabs/react-native-portal#937b0b3a86a7126ec0294a5159372c0810dccf0d",
+    "@hookform/resolvers": "^5.7.1",
+    "@legendapp/list": "3.3.11",
+    "@react-navigation/native": "^7.3.18",
+    "@rn-primitives/portal": "1.4.0",
+    "@rn-primitives/slot": "1.4.0",
+    "@sentry/react-native": "~7.11.0",
+    "@tanstack/query-sync-storage-persister": "^5.102.8",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-query-persist-client": "^5.102.8",
+    "better-auth": "^1.6.25",
+    "expo": "57.0.22",
+    "expo-constants": "~57.0.18",
+    "expo-dev-client": "~57.0.19",
+    "expo-image": "~57.0.5",
+    "expo-linking": "~57.0.10",
+    "expo-localization": "~57.0.2",
+    "expo-network": "~57.0.2",
+    "expo-router": "~57.0.21",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
+    "expo-web-browser": "~57.0.3",
+    "i18next": "^26.4.2",
+    "intl-pluralrules": "2.0.1",
+    "nativewind": "^4.2.6",
+    "posthog-react-native": "^4.11.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-hook-form": "^7.84.0",
+    "react-i18next": "^17.0.14",
+    "react-native": "0.86.3",
+    "react-native-css-interop": "^0.2.6",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-mmkv": "4.3.2",
+    "react-native-nano-icons": "0.2.1",
+    "react-native-nitro-fetch": "1.7.0",
+    "react-native-nitro-modules": "0.37.1",
+    "react-native-purchases": "^10.9.1",
+    "react-native-reanimated": "4.5.3",
+    "react-native-root-siblings": "5.0.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-worklets": "0.11.3",
+    "reflect-metadata": "^0.2.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@types/react": "19.2.14",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~6.0.3",
+    "vitest": "^3.2.7"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "@oppenheimer/nitro-app-info",
+          "react-native-nitro-fetch"
+        ]
+      }
+    },
+    "install": {
+      "exclude": [
+        "react-native-reanimated",
+        "react-native-worklets"
+      ]
+    }
+  }
+}

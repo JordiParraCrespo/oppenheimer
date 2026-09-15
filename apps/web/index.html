@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Oppenheimer</title>
+    <meta name="description" content="Your team's workspace" />
+    <!-- Theme before first paint. Lives in public/theme-init.js rather than
+         inline so the app can be served under `script-src 'self'` with no
+         inline-script exception — see the note in that file. -->
+    <script src="/theme-init.js"></script>
+    <!-- Starts the session lookup in parallel with the bundle download instead
+         of after it. Same-origin file, same CSP reasoning as above. -->
+    <script src="/session-preload.js"></script>
+  </head>
+  <body class="min-h-svh antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+# The @gorhom/bottom-sheet fork depends on the @gorhom/portal fork by git
+# commit. pnpm 9+ refuses git-hosted subdependencies unless this is off.
+blockExoticSubdeps: false
+
+packages:
+  # oppenheimer:begin e2e
+  - "e2e"
+  # oppenheimer:end e2e
+  # oppenheimer:begin qa
+  - "qa"
+  # oppenheimer:end qa
+  - "apps/*"
+  - "packages/*"
+  # oppenheimer:begin runner
+  - "packages/go/*"
+  # oppenheimer:end runner
+  - "packages/backend/*"
+  - "packages/design-system/*"

@@ -1,0 +1,27 @@
+{
+  "appName": "Oppenheimer",
+  "loading": "Cargando...",
+  "error": "Algo salió mal",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "create": "Crear",
+  "search": "Buscar",
+  "back": "Volver",
+  "next": "Siguiente",
+  "confirm": "Confirmar",
+  "orContinueWith": "O continúa con",
+  "google": "Google",
+  "github": "GitHub",
+  "or": "o",
+  "relative": {
+    "day": "{{count}}d",
+    "hour": "{{count}}h",
+    "minute": "{{count}}min",
+    "month": "{{count}}mes",
+    "now": "ahora",
+    "week": "{{count}}sem",
+    "year": "{{count}}a"
+  }
+}

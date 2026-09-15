@@ -1,0 +1,10 @@
+{
+  "title": "Error de validación",
+  "required": "Este campo es obligatorio",
+  "email": "Introduce una dirección de correo válida",
+  "minLength": "Debe tener al menos {{min}} caracteres",
+  "maxLength": "Debe tener como máximo {{max}} caracteres",
+  "minItems": "Selecciona al menos {{min}}",
+  "maxItems": "Selecciona como máximo {{max}}",
+  "url": "Introduce una URL válida, incluyendo https://"
+}

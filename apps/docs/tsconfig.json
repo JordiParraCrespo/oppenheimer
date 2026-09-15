@@ -1,0 +1,10 @@
+{
+  "extends": "@oppenheimer/config/tsconfig.library.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src", "docs", "docusaurus.config.ts", "sidebars.ts"]
+}

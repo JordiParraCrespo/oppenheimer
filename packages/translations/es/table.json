@@ -1,0 +1,13 @@
+{
+  "clearFilter": "Quitar el filtro",
+  "clearSelection": "Quitar la selección",
+  "nextPage": "Página siguiente",
+  "page": "Página {{page}} de {{totalPages}}",
+  "previousPage": "Página anterior",
+  "range": "{{first}}–{{last}} de {{total}}",
+  "rowActions": "Acciones de la fila",
+  "selectPage": "Seleccionar todas las filas de esta página",
+  "selectRow": "Seleccionar fila",
+  "selected_one": "{{count}} seleccionado",
+  "selected_other": "{{count}} seleccionados"
+}

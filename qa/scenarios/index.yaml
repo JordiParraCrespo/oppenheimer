@@ -1,0 +1,96 @@
+# The canonical QA scenario pack.
+#
+# This file is the index, not the content: every scenario lives in its own
+# `scenarios/<theme>/<slug>.yaml` and is discovered by the loader, so adding a
+# case means adding a file — never editing a list in two places. What lives here
+# is the part a single scenario cannot state on its own: the environment the
+# whole pack assumes, the fixtures scenarios are allowed to ask for, and the
+# themes they are grouped under.
+version: 1
+pack: oppenheimer — authentication QA
+
+# The stack `qa env up` brings up and every scenario is written against.
+# A scenario never hardcodes a URL; it reads these.
+environment:
+  web: http://localhost:3000
+  # The control plane is a second app on a second port, not a route of the
+  # first. Scenarios that ask "who may be here" have to ask both.
+  adminWeb: http://localhost:3003
+  api: http://localhost:3001
+  apiHealth: http://localhost:3001/api/v1/health
+  # Transactional mail is not sent in QA. `EMAIL_PROVIDER=console` makes the
+  # worker log `[PASSWORD RESET] … URL: …` and `[INVITATION] … URL: …`, and the
+  # harness reads the link back out of the API log. That is the whole mail sink
+  # — no inbox service, no polling a third party.
+  mailSink: log
+  mailSinkPath: artifacts/api.log
+
+# Named database states a scenario can require. The runner applies exactly one
+# before the scenario runs, and applying is idempotent: a fixture tears its own
+# workspace down and rebuilds it, so a rerun after an interrupted attempt starts
+# from the same place as a first run.
+fixtures:
+  reset:
+    description: >-
+      No leftovers from the pack's own transient accounts — the invitees, the
+      newcomer and the password-reset member, which the auth scenarios create
+      and must be able to create again on the next run. Deliberately leaves the
+      fixture workspaces alone: they own their own data and rebuild themselves,
+      and an auth scenario emptying them would leave whichever scenario ran next
+      reading a database somebody else had cleared.
+    seeds: []
+  baseline:
+    description: >-
+      One workspace with a believable amount in it: enough colleagues for a
+      roster to page, a few teams, and invitations that were sent and never
+      answered.
+    seeds: [organization, members, teams, invitations]
+    volume: { members: 12, teams: 3, invitations: 4 }
+  volume:
+    description: >-
+      The same shapes at a size no one clicks their way to. Exists to catch what
+      only breaks at scale: an unbounded member query, an unformatted count, a
+      roster that renders two thousand rows. Also the other tenant in the
+      isolation scenario, so a leak is a number nobody could mistake.
+    seeds: [organization, members, teams, invitations]
+    volume: { members: 2000, teams: 60, invitations: 300 }
+  empty:
+    description: >-
+      A workspace that exists and has one member, and nothing else. This is what
+      a real first sign-in looks like, and it is the state most likely to render
+      a zero as if it were a measurement.
+    seeds: [organization, members]
+    volume: { members: 1, teams: 0, invitations: 0 }
+  roster:
+    description: >-
+      One holder of every kind of person the product can put someone in — the
+      owner, a workspace admin, a plain member, and one platform administrator
+      — over a workspace with enough in it that each of them has something to be
+      right or wrong about.
+
+      The platform administrator is the only one holding `user.role = 'admin'`,
+      which is what the control plane gates on. Giving anyone else that column
+      would make AUTH-08 green against a workspace nobody has.
+    seeds: [organization, members, teams, roster]
+    volume: { members: 4, teams: 2, invitations: 0 }
+
+themes:
+  - id: auth
+    title: Authentication & access
+    description: >-
+      Getting into the product and being kept out of it: the first
+      administrator, recovering a password, bringing someone else in at a chosen
+      role, what each of those does when it is given the wrong thing, and which
+      of the two apps admits whom.
+
+# What the pack refuses to call a pass, regardless of what an assertion says.
+# These are the failures worth opening an issue over.
+principles:
+  - A placeholder number is a failure. A screen with no data must say so, not
+    render a zero that reads like a measurement.
+  - An error must be legible, and a refusal must read differently from a
+    breakage. "Something went wrong" over a 403 is a failure of its own.
+  - A screenshot is the evidence. A scenario that passes without one has not
+    been verified, it has been asserted.
+  - Every scenario cleans up after itself, so the pack can be run twice in a row
+    and give the same answer both times.

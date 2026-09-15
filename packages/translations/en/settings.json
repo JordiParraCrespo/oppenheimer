@@ -1,0 +1,62 @@
+{
+  "api": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "create": "Create key",
+    "createKey": "Create key",
+    "createKeySubtitle": "Name the key so you can recognise it later. You'll only see the secret once.",
+    "createKeyTitle": "Create API key",
+    "description": "Mint scoped keys so your own tools can call the API as you.",
+    "expired": "Expired",
+    "keyCreated": "Created {{created}} · last used {{used}}",
+    "keyName": "Key name",
+    "keyNameHint": "Use one key per system so you can revoke it independently.",
+    "keyNamePlaceholder": "e.g. WordPress site",
+    "keyPermissions": "Permissions",
+    "keyPermissionsHint": "A key can never do more than you can.",
+    "keys": "API keys",
+    "neverUsed": "never",
+    "noKeys": "No API keys yet.",
+    "noPermissionResults": "No permissions match your search.",
+    "revoke": "Revoke",
+    "revoked": "Revoked",
+    "searchPermissions": "Search permissions",
+    "secretSubtitle": "This is the only time the secret is shown. Store it somewhere safe.",
+    "secretTitle": "Copy your new key",
+    "title": "API & webhooks"
+  },
+  "general": {
+    "description": "How your workspace is named and shown to everyone on the team.",
+    "logo": "Logo",
+    "logoHint": "Square PNG or SVG, at least 128×128",
+    "logoUrl": "Logo URL",
+    "name": "Organisation name",
+    "nameHint": "Shown in the sidebar and to everyone in the workspace",
+    "remove": "Remove",
+    "save": "Save changes",
+    "saveSuccess": "Organization settings saved",
+    "title": "General"
+  },
+  "nav": {
+    "api": "API & webhooks",
+    "general": "General",
+    "integrations": "Integrations",
+    "label": "Settings sections",
+    "notifications": "Notifications",
+    "security": "Security"
+  },
+  "saved": "Saved",
+  "security": {
+    "description": "Every device signed in to your account, and a way to end any of them.",
+    "sessions": "Active sessions",
+    "sessionsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
+    "signOut": "Sign out",
+    "signOutOthers": "Sign out all others",
+    "thisDevice": "This device",
+    "title": "Security",
+    "unknownDevice": "Unknown device"
+  },
+  "subtitle": "Workspace-wide configuration for {{organization}}.",
+  "subtitleFallback": "Workspace-wide configuration.",
+  "title": "Settings"
+}

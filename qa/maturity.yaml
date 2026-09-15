@@ -1,0 +1,59 @@
+# How far each theme has actually been taken.
+#
+# Separate from coverage, which only counts whether a scenario has an
+# implementation. This is the honest version: what the pack currently reaches,
+# and what it does not reach yet. A theme scoring well on coverage and badly
+# here is a theme whose scenarios are shallower than their titles suggest.
+version: 1
+
+themes:
+  auth:
+    scenarios: 8
+    depth: solid
+    covered:
+      - >-
+        Super admin identity, checked against the rule set behind the role name
+        rather than against the name, on both applications.
+      - >-
+        Password reset end to end through the emailed link, including that the
+        old password stops working, that the link cannot be replayed, and that
+        the sessions open before it are gone.
+      - >-
+        Invitation at two roles, read three ways — the invitation, the
+        membership it becomes, and the application role derived from that —
+        because those are what came apart in the pack this was ported from.
+      - >-
+        Self-service registration through to the first workspace, with the
+        screen and the database checked against each other rather than the
+        screen alone.
+      - Six negative paths across credentials, links, validation and guarded routes.
+      - >-
+        Tenant isolation: an owner of an empty workspace reading while another
+        workspace holds thousands of rows, which is the only way a leak of this
+        kind is visible from inside a single tenant.
+      - Sign-out and session revocation, measured on the session rows.
+      - >-
+        The control-plane gate for all four kinds of person, including what the
+        three refused ones actually see.
+    findings:
+      - >-
+        AUTH-04d. A password-reset link whose token was never issued renders the
+        whole reset form rather than the invalid-link state, so the reader learns
+        the link is dead only after filling it in. Every other negative path in
+        the theme states its refusal. Evidence:
+        docs/screenshots/qa-auth-pass/auth-04d-invalid-reset-token.png
+    not-yet:
+      - OAuth sign-in (Google, GitHub) — not configured in the QA environment.
+      - Email verification, which is sent but never required.
+      - Session expiry by time, and revoking one session from another device.
+      - >-
+        Rate limiting on the sign-in and reset endpoints. The e2e suite has a
+        case for it; it trips a per-IP limiter that would then refuse every
+        other scenario sharing the address, so it needs its own lane here.
+      - Invitation expiry, cancellation, and re-inviting a former member.
+      - >-
+        The mobile and admin-mobile apps. There is no browser to drive them, so
+        they need a different harness rather than another scenario.
+      - >-
+        Tenant isolation on the write paths. AUTH-06 covers the reads; the same
+        scoping governs every write, so those deserve their own case.

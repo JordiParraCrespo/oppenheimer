@@ -1,0 +1,13 @@
+{
+  "title": "Panel",
+  "welcome": "Bienvenido de nuevo, {{name}}.",
+  "totalUsers": "Usuarios totales",
+  "activeSessions": "Sesiones activas",
+  "apiCalls": "Llamadas a la API",
+  "uptime": "Tiempo activo",
+  "gettingStarted": "Primeros pasos",
+  "gettingStartedDescription": "Este es un panel de ejemplo. Conecta tus datos y personalízalo.",
+  "accountStatus": "Tu rol es <role>{{role}}</role> y tu cuenta está <status>{{status}}</status>.",
+  "active": "activa",
+  "inactive": "inactiva"
+}

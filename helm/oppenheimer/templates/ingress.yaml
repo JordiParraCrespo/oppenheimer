@@ -1,0 +1,72 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hosts.api }}
+        # oppenheimer:begin web
+        - {{ .Values.ingress.hosts.web }}
+        # oppenheimer:end web
+        # oppenheimer:begin admin-web
+        - {{ .Values.ingress.hosts.adminWeb }}
+        # oppenheimer:end admin-web
+        # oppenheimer:begin docs
+        - {{ .Values.ingress.hosts.docs }}
+        # oppenheimer:end docs
+      secretName: {{ .Release.Name }}-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.hosts.api }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-api
+                port:
+                  number: {{ .Values.api.port }}
+    # oppenheimer:begin web
+    - host: {{ .Values.ingress.hosts.web }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-web
+                port:
+                  number: {{ .Values.web.port }}
+    # oppenheimer:end web
+    # oppenheimer:begin admin-web
+    - host: {{ .Values.ingress.hosts.adminWeb }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-admin-web
+                port:
+                  number: {{ .Values.adminWeb.port }}
+    # oppenheimer:end admin-web
+    # oppenheimer:begin docs
+    - host: {{ .Values.ingress.hosts.docs }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-docs
+                port:
+                  number: 80
+    # oppenheimer:end docs
+{{- end }}

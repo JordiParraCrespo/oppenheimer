@@ -1,0 +1,13 @@
+{
+  "extends": "@oppenheimer/config/tsconfig.library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "types": ["node"],
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.spec.ts", "src/**/__tests__/**"]
+}

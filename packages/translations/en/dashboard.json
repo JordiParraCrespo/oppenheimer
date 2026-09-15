@@ -1,0 +1,13 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back, {{name}}.",
+  "totalUsers": "Total Users",
+  "activeSessions": "Active Sessions",
+  "apiCalls": "API Calls",
+  "uptime": "Uptime",
+  "gettingStarted": "Getting Started",
+  "gettingStartedDescription": "This is a placeholder dashboard. Connect your data and customize it.",
+  "accountStatus": "Your role is <role>{{role}}</role> and your account is <status>{{status}}</status>.",
+  "active": "active",
+  "inactive": "inactive"
+}

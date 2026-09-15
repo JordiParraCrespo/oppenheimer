@@ -1,0 +1,9 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/go.work"] },
+    "lint": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/go.work", "$TURBO_ROOT$/.golangci.yml"] },
+    "test": { "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/go.work"] }
+  }
+}
