@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}</style>
+</helmet>
+<div style="position:relative;min-height:100vh;background:var(--canvas);padding:36px 40px;display:flex;font-family:var(--font-sans);color:var(--fg)">
+<span class="op-wordmark" style="position:absolute;top:34px;left:44px;font-size:20px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<div style="display:flex;flex:1;gap:48px;max-width:1360px;margin:0 auto;align-items:center">
+
+<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 24px">
+<div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px">
+
+<div>
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">2 of 4</span>
+<h1 style="margin-top:10px;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Connect GitHub</h1>
+<p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.</p>
+</div>
+
+<sc-if value="{{ pending }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" onClick="{{ connect }}">Connect GitHub</button>
+<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+<a href="./AddHost.dc.html">Skip for now</a>
+<p style="margin:0;font-size:12px;color:var(--fg-subtle);line-height:1.5">You can add repositories later in Settings. The repo picker stays empty until you do.</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ connected }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:center;gap:12px;padding:16px 18px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border-radius:980px;background:var(--success);color:#fff;font-size:14px">✓</span>
+<span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<span style="font-family:var(--font-mono);font-size:13px">JordiParraCrespo</span>
+<span style="font-size:12px;color:var(--fg-muted)">12 repositories · read access</span>
+</span>
+</div>
+<a class="op-btn op-btn--primary op-btn--lg op-btn--block" href="./AddHost.dc.html" style="text-decoration:none">Continue</a>
+<a href="#" onClick="{{ manage }}" style="font-size:13px">Change which repositories</a>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center">
+<div style="position:relative;width:100%;max-width:470px;aspect-ratio:4/5;max-height:82vh;border-radius:20px;overflow:hidden;background:#1d1d1f">
+<img src="./assets/imagery/oppenheimer-portrait.png" alt="J. Robert Oppenheimer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide0 }}">
+<img src="./assets/imagery/oppenheimer-einstein.png" alt="Oppenheimer with Albert Einstein" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide1 }}">
+<img src="./assets/imagery/calutron-operators.png" alt="Calutron operators at Oak Ridge" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide2 }}">
+<img src="./assets/imagery/oppenheimer-groves.png" alt="Oppenheimer with General Leslie Groves" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide3 }}">
+<img src="./assets/imagery/los-alamos-gate.png" alt="Los Alamos Project main gate" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide4 }}">
+<div style="position:absolute;left:0;right:0;bottom:0;padding:24px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.55) 55%,transparent 100%)">
+<p style="margin:0;font-size:13px;color:#fff;letter-spacing:-0.006em">{{ caption }}</p>
+<div style="display:flex;gap:6px">
+<button type="button" aria-label="Slide 1" onClick="{{ go0 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot0 }}"></button>
+<button type="button" aria-label="Slide 2" onClick="{{ go1 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot1 }}"></button>
+<button type="button" aria-label="Slide 3" onClick="{{ go2 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot2 }}"></button>
+<button type="button" aria-label="Slide 4" onClick="{{ go3 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot3 }}"></button>
+<button type="button" aria-label="Slide 5" onClick="{{ go4 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot4 }}"></button>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;system&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;system&quot;,&quot;tsType&quot;:&quot;'system' | 'light' | 'dark'&quot;}}">
+class Component extends DCLogic {
+  state = { connected: false, slide: 0 };
+
+  applyTheme() {
+    const t = this.props.theme || 'system';
+    const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+  componentDidUpdate() { this.applyTheme(); }
+  componentDidMount() {
+    this.applyTheme();
+    this._c = setInterval(() => this.setState(s => ({ slide: (s.slide + 1) % 5 })), 5200);
+  }
+  componentWillUnmount() { clearInterval(this._c); }
+  renderVals() {
+    const ci = this.state.slide;
+    const captions = [
+      'J. Robert Oppenheimer, 1946.',
+      'With Albert Einstein at the Institute for Advanced Study, 1947.',
+      'Calutron operators at Oak Ridge, 1944.',
+      'With General Leslie Groves, Los Alamos, 1945.',
+      'The Los Alamos Project main gate, 1943.'
+    ];
+    const go = (n) => () => this.setState({ slide: n });
+    const dot = (n) => ci === n ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.35)';
+    return {
+      slide0: ci === 0 ? 1 : 0,
+      slide1: ci === 1 ? 1 : 0,
+      slide2: ci === 2 ? 1 : 0,
+      slide3: ci === 3 ? 1 : 0,
+      slide4: ci === 4 ? 1 : 0,
+      dot0: dot(0), dot1: dot(1), dot2: dot(2), dot3: dot(3), dot4: dot(4),
+      go0: go(0), go1: go(1), go2: go(2), go3: go(3), go4: go(4),
+      caption: captions[ci],
+      pending: !this.state.connected,
+      connected: this.state.connected,
+      statusRepo: this.state.connected ? '12' : '—',
+      connect: () => this.setState({ connected: true }),
+      manage: (e) => { e.preventDefault(); this.setState({ connected: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+/* ── Oppenheimer · overlays ─────────────────────────────────────────
+   DropdownMenu, Dialog, Tooltip. The only three layers permitted a shadow. */
+
+.op-menu-wrap{position:relative;display:inline-block}
+.op-menu{position:absolute;z-index:70;min-width:200px;padding:var(--space-2);background:var(--popover);border-radius:var(--radius-md);box-shadow:var(--shadow-popover);animation:op-rise var(--dur-fast) var(--ease-out)}
+.op-menu[data-side="bottom-start"]{top:calc(100% + 6px);left:0}
+.op-menu[data-side="bottom-end"]{top:calc(100% + 6px);right:0}
+.op-menu[data-side="top-start"]{bottom:calc(100% + 6px);left:0}
+.op-menu[data-side="top-end"]{bottom:calc(100% + 6px);right:0}
+.op-menu[data-side="right-start"]{top:0;left:calc(100% + 6px)}
+.op-menu__label{padding:var(--space-5) var(--space-5) var(--space-2);font-size:var(--text-micro);text-transform:uppercase;letter-spacing:var(--tracking-micro);color:var(--fg-subtle)}
+.op-menu__item{display:flex;align-items:center;gap:var(--space-5);width:100%;padding:var(--space-4) var(--space-5);border:0;background:transparent;border-radius:var(--radius-sm);color:var(--fg);font:inherit;font-size:14px;letter-spacing:-0.008em;text-align:left;cursor:pointer;transition:background-color var(--dur-instant) var(--ease-standard)}
+.op-menu__item:hover{background:var(--hover-surface)}
+.op-menu__item[data-disabled="true"]{opacity:.4;pointer-events:none}
+.op-menu__item[data-variant="danger"]{color:var(--danger)}
+.op-menu__item[data-variant="danger"]:hover{background:var(--danger-surface)}
+.op-menu__icon{display:flex;color:var(--fg-subtle);flex:none}
+.op-menu__item[data-variant="danger"] .op-menu__icon{color:inherit}
+.op-menu__label-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-menu__shortcut{color:var(--fg-subtle);font-size:var(--text-xs);letter-spacing:0}
+.op-menu__sep{height:1px;margin:var(--space-2) calc(var(--space-2) * -1);background:var(--border-subtle)}
+
+.op-scrim{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-12);overflow:auto;background:var(--overlay);backdrop-filter:blur(3px);animation:op-fade-in var(--dur-base) var(--ease-standard)}
+.op-dialog{width:100%;max-width:440px;margin:auto;background:var(--popover);border-radius:var(--radius-xl);box-shadow:var(--shadow-modal);animation:op-rise var(--dur-base) var(--ease-out);overflow:hidden}
+.op-dialog--lg{max-width:640px}
+.op-dialog__head{display:flex;align-items:flex-start;gap:var(--space-8);padding:var(--space-14) var(--space-14) 0}
+.op-dialog__title{font-size:var(--text-h3);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-h3);flex:1}
+.op-dialog__desc{padding:var(--space-4) var(--space-14) 0;font-size:14px;color:var(--fg-muted);letter-spacing:-0.008em}
+.op-dialog__body{padding:var(--space-10) var(--space-14)}
+.op-dialog__foot{display:flex;align-items:center;justify-content:flex-end;gap:var(--space-4);padding:var(--space-6) var(--space-14) var(--space-14)}
+
+.op-tip-wrap{position:relative;display:inline-flex}
+.op-tip{position:absolute;z-index:90;padding:var(--space-3) var(--space-5);background:var(--fg);color:var(--background);border-radius:var(--radius-xs);font-size:var(--text-xs);letter-spacing:var(--tracking-xs);white-space:nowrap;pointer-events:none;animation:op-fade-in var(--dur-fast) var(--ease-standard)}
+.op-tip[data-side="top"]{bottom:calc(100% + 6px);left:50%;transform:translateX(-50%)}
+.op-tip[data-side="bottom"]{top:calc(100% + 6px);left:50%;transform:translateX(-50%)}
+.op-tip[data-side="right"]{left:calc(100% + 6px);top:50%;transform:translateY(-50%)}
+.op-tip[data-side="left"]{right:calc(100% + 6px);top:50%;transform:translateY(-50%)}

@@ -1,0 +1,44 @@
+/* ── Oppenheimer · data ─────────────────────────────────────────────
+   Table, StatCard, AreaChart, BarChart, DonutChart, ProgressBar, EmptyState.
+   Metrics are set in the mono face with tabular figures — numbers must align. */
+
+.op-table-wrap{width:100%;overflow-x:auto}
+.op-table{width:100%;border-collapse:collapse;font-size:14px;letter-spacing:-0.008em}
+.op-table th{padding:var(--space-4) var(--space-6);text-align:left;font-size:var(--text-xs);font-weight:var(--weight-medium);letter-spacing:var(--tracking-xs);color:var(--fg-subtle);text-transform:none;white-space:nowrap;border-bottom:1px solid var(--border-subtle)}
+.op-table td{padding:var(--space-6);border-bottom:1px solid var(--border-subtle);color:var(--fg);vertical-align:middle}
+.op-table tbody tr:last-child td{border-bottom:0}
+.op-table tbody tr{transition:background-color var(--dur-instant) var(--ease-standard)}
+.op-table--hover tbody tr:hover{background:var(--hover-surface)}
+.op-table [data-align="right"]{text-align:right}
+.op-table [data-num="true"]{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:var(--text-sm)}
+
+.op-stat{display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-10) var(--space-12) var(--space-12)}
+.op-stat__label{display:flex;align-items:center;gap:var(--space-4);font-size:var(--text-sm);color:var(--fg-muted);letter-spacing:var(--tracking-sm)}
+.op-stat__value{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:var(--text-metric);line-height:var(--leading-metric);letter-spacing:var(--tracking-metric);color:var(--fg)}
+.op-stat__row{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-8)}
+.op-stat__delta{display:inline-flex;align-items:center;gap:3px;font-size:var(--text-xs);font-weight:var(--weight-medium)}
+.op-stat__delta[data-dir="up"]{color:var(--success)}
+.op-stat__delta[data-dir="down"]{color:var(--danger)}
+.op-stat__delta[data-dir="flat"]{color:var(--fg-subtle)}
+
+.op-chart{width:100%;display:block;overflow:visible}
+.op-chart__grid{stroke:var(--chart-grid);stroke-width:1}
+.op-chart__axis{fill:var(--chart-axis);font-size:10px;font-family:var(--font-sans);letter-spacing:0}
+.op-chart__line{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.op-chart__bar{transition:opacity var(--dur-fast) var(--ease-standard)}
+.op-chart__bar:hover{opacity:.78}
+.op-legend{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-6) var(--space-10)}
+.op-legend__item{display:inline-flex;align-items:center;gap:var(--space-4);font-size:var(--text-xs);color:var(--fg-muted);letter-spacing:var(--tracking-xs)}
+.op-legend__dot{width:8px;height:8px;border-radius:var(--radius-pill);flex:none}
+.op-donut__center{text-align:center}
+.op-donut__value{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:26px;letter-spacing:-0.02em;color:var(--fg)}
+.op-donut__caption{font-size:var(--text-xs);color:var(--fg-subtle);margin-top:2px}
+
+.op-progress{width:100%;height:6px;border-radius:var(--radius-pill);background:var(--control);overflow:hidden}
+.op-progress__fill{height:100%;border-radius:var(--radius-pill);background:var(--primary);transition:width var(--dur-slow) var(--ease-out)}
+.op-progress--sm{height:4px}
+
+.op-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-5);padding:var(--space-40) var(--space-12);text-align:center}
+.op-empty__icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--radius-pill);background:var(--control);color:var(--fg-subtle);margin-bottom:var(--space-2)}
+.op-empty__title{font-size:var(--text-h4);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-h4)}
+.op-empty__desc{font-size:14px;color:var(--fg-muted);max-width:42ch;letter-spacing:-0.008em}

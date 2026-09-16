@@ -1,0 +1,91 @@
+/* ── Oppenheimer · forms ────────────────────────────────────────────
+   Field, Input, Textarea, Select, Combobox, Checkbox, Radio, Switch.
+   Everything you type into has a 10px radius; everything you press is a pill. */
+
+.op-field{display:flex;flex-direction:column;gap:var(--space-3)}
+.op-label{font-size:var(--text-sm);font-weight:var(--weight-medium);color:var(--fg);letter-spacing:var(--tracking-sm)}
+.op-label__req{color:var(--danger);margin-left:2px}
+.op-hint{font-size:var(--text-xs);color:var(--fg-subtle);letter-spacing:var(--tracking-xs)}
+.op-error{font-size:var(--text-xs);color:var(--danger);letter-spacing:var(--tracking-xs)}
+
+.op-input{display:flex;align-items:center;gap:var(--space-4);width:100%;background:var(--field);border:1px solid var(--field-border);border-radius:var(--radius-sm);color:var(--fg);transition:var(--transition-control),box-shadow var(--dur-fast) var(--ease-standard)}
+.op-input--sm{height:var(--control-h-sm);padding:0 var(--space-5);font-size:var(--text-sm)}
+.op-input--md{height:var(--control-h-md);padding:0 var(--space-6);font-size:14px}
+.op-input--lg{height:var(--control-h-lg);padding:0 var(--space-7);font-size:var(--text-body-lg)}
+.op-input:hover{border-color:var(--border-strong)}
+.op-input:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring);outline:none}
+.op-input[data-invalid="true"]{border-color:var(--danger)}
+.op-input[data-invalid="true"]:focus-within{box-shadow:0 0 0 3px var(--danger-surface)}
+.op-input[data-disabled="true"]{opacity:.5;pointer-events:none;background:var(--control)}
+.op-input__el{flex:1;min-width:0;border:0;outline:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;padding:0}
+.op-input__el::placeholder{color:var(--field-placeholder)}
+.op-input__el:-webkit-autofill{-webkit-text-fill-color:var(--fg);transition:background-color 9999s}
+.op-input__icon{display:flex;color:var(--fg-subtle);flex:none}
+.op-input--pill{border-radius:var(--radius-pill);padding-left:var(--space-7);padding-right:var(--space-7)}
+
+.op-textarea{width:100%;min-height:88px;padding:var(--space-6);background:var(--field);border:1px solid var(--field-border);border-radius:var(--radius-sm);color:var(--fg);font:inherit;font-size:14px;resize:vertical;transition:var(--transition-control),box-shadow var(--dur-fast) var(--ease-standard)}
+.op-textarea::placeholder{color:var(--field-placeholder)}
+.op-textarea:hover{border-color:var(--border-strong)}
+.op-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring);outline:none}
+
+/* Select / Combobox trigger shares the input silhouette. */
+.op-select{position:relative;display:inline-block;width:100%}
+.op-select__trigger{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);width:100%;background:var(--field);border:1px solid var(--field-border);border-radius:var(--radius-sm);color:var(--fg);font:inherit;font-size:14px;letter-spacing:-0.008em;cursor:pointer;text-align:left;transition:var(--transition-control),box-shadow var(--dur-fast) var(--ease-standard)}
+.op-select__trigger.op-input--sm{height:var(--control-h-sm);padding:0 var(--space-5);font-size:var(--text-sm)}
+.op-select__trigger.op-input--md{height:var(--control-h-md);padding:0 var(--space-6)}
+.op-select__trigger.op-input--lg{height:var(--control-h-lg);padding:0 var(--space-7);font-size:var(--text-body-lg)}
+.op-select__trigger:hover{border-color:var(--border-strong)}
+.op-select__trigger[data-open="true"]{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+.op-select__trigger:disabled{opacity:.5;pointer-events:none}
+.op-select__value{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-select__value[data-placeholder="true"]{color:var(--field-placeholder)}
+.op-select__chev{color:var(--fg-subtle);flex:none;transition:transform var(--dur-fast) var(--ease-standard)}
+.op-select__trigger[data-open="true"] .op-select__chev{transform:rotate(180deg)}
+
+
+/* Listbox — the custom Select's popover. The system has no native <select>:
+   every dropdown is this listbox, so option rows can carry meta and
+   descriptions and the silhouette matches the rest of the controls. */
+.op-listbox{position:absolute;z-index:60;top:calc(100% + 6px);left:0;min-width:100%;max-height:264px;overflow:auto;padding:var(--space-2);background:var(--popover);border-radius:var(--radius-md);box-shadow:var(--shadow-popover);animation:op-rise var(--dur-fast) var(--ease-out)}
+.op-listbox--up{top:auto;bottom:calc(100% + 6px)}
+.op-option{display:flex;align-items:center;gap:var(--space-4);width:100%;padding:var(--space-4) var(--space-5);border:0;background:transparent;border-radius:var(--radius-sm);color:var(--fg);font:inherit;font-size:14px;letter-spacing:-0.008em;text-align:left;cursor:pointer;transition:background-color var(--dur-instant) var(--ease-standard)}
+.op-option:hover,.op-option[data-active="true"]{background:var(--hover-surface)}
+.op-option[data-selected="true"]{color:var(--primary)}
+[data-theme="dark"] .op-option[data-selected="true"]{color:var(--op-blue-400)}
+.op-option__label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-option__stack{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.op-option__stack>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-option__desc{font-size:var(--text-xs);color:var(--fg-subtle);margin-top:1px}
+.op-option__check{flex:none;opacity:0}
+.op-option[data-selected="true"] .op-option__check{opacity:1}
+.op-listbox__empty{padding:var(--space-6) var(--space-5);font-size:var(--text-sm);color:var(--fg-subtle);text-align:center}
+.op-listbox__group{padding:var(--space-5) var(--space-5) var(--space-2);font-size:var(--text-micro);text-transform:uppercase;letter-spacing:var(--tracking-micro);color:var(--fg-subtle)}
+
+/* Checkbox + Radio — native input, custom box. */
+.op-check{display:inline-flex;align-items:flex-start;gap:var(--space-5);cursor:pointer;font-size:14px;letter-spacing:-0.008em;color:var(--fg)}
+.op-check input{position:absolute;opacity:0;width:0;height:0}
+.op-check__box{display:flex;align-items:center;justify-content:center;width:17px;height:17px;margin-top:1px;flex:none;border:1px solid var(--border-strong);border-radius:5px;background:var(--field);color:#fff;transition:var(--transition-control)}
+.op-check__box svg{opacity:0;transform:scale(.7);transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.op-check:hover .op-check__box{border-color:var(--primary)}
+.op-check input:checked+.op-check__box,.op-check input:indeterminate+.op-check__box{background:var(--primary);border-color:var(--primary)}
+.op-check input:checked+.op-check__box svg,.op-check input:indeterminate+.op-check__box svg{opacity:1;transform:none}
+.op-check input:focus-visible+.op-check__box{box-shadow:0 0 0 3px var(--ring)}
+.op-check--radio .op-check__box{border-radius:var(--radius-pill)}
+.op-check__text{display:flex;flex-direction:column;gap:1px}
+.op-check__desc{font-size:var(--text-xs);color:var(--fg-subtle)}
+.op-check[data-disabled="true"]{opacity:.45;pointer-events:none}
+.op-radiogroup{display:flex;flex-direction:column;gap:var(--space-5)}
+.op-radiogroup--row{flex-direction:row;gap:var(--space-12)}
+
+/* Switch */
+.op-switch{display:inline-flex;align-items:center;gap:var(--space-5);cursor:pointer;font-size:14px;color:var(--fg)}
+.op-switch input{position:absolute;opacity:0;width:0;height:0}
+.op-switch__track{position:relative;width:40px;height:24px;flex:none;border-radius:var(--radius-pill);background:var(--control);transition:background-color var(--dur-base) var(--ease-standard)}
+.op-switch__thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:var(--radius-pill);background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:transform var(--dur-base) var(--ease-out)}
+.op-switch input:checked+.op-switch__track{background:var(--primary)}
+.op-switch input:checked+.op-switch__track .op-switch__thumb{transform:translateX(16px)}
+.op-switch input:focus-visible+.op-switch__track{box-shadow:0 0 0 3px var(--ring)}
+.op-switch[data-disabled="true"]{opacity:.45;pointer-events:none}
+.op-switch--sm .op-switch__track{width:32px;height:19px}
+.op-switch--sm .op-switch__thumb{width:15px;height:15px}
+.op-switch--sm input:checked+.op-switch__track .op-switch__thumb{transform:translateX(13px)}

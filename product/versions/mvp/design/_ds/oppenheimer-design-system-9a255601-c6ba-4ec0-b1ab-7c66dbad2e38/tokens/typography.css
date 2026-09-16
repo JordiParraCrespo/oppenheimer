@@ -1,0 +1,34 @@
+/* Oppenheimer — typography.
+   One typeface, SF Pro, doing every job — plus SF Mono for figures. There is no
+   serif and no second family; display type is the same face at weight 600 with
+   tighter tracking. Tracking follows the inverse-size rule: the larger the type,
+   the more negative the tracking. Weight never exceeds 600. */
+:root{
+  --font-display:'SF Pro Display','SF Pro Text',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --font-sans:'SF Pro Text','SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono',ui-monospace,'Menlo','Consolas',monospace;
+
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+
+  /* Display scale — SF Pro Display at weight 600, used sparingly */
+  --text-display:76px;      --leading-display:1.04;      --tracking-display:-0.028em;
+  --text-display-sm:52px;   --leading-display-sm:1.07;   --tracking-display-sm:-0.024em;
+
+  /* Heading scale — sans */
+  --text-h1:40px;  --leading-h1:1.10; --tracking-h1:-0.021em;
+  --text-h2:28px;  --leading-h2:1.15; --tracking-h2:-0.016em;
+  --text-h3:21px;  --leading-h3:1.24; --tracking-h3:-0.011em;
+  --text-h4:17px;  --leading-h4:1.35; --tracking-h4:-0.008em;
+
+  /* Body + UI scale */
+  --text-body-lg:17px; --leading-body-lg:1.47; --tracking-body-lg:-0.016em;
+  --text-body:15px;    --leading-body:1.47;    --tracking-body:-0.011em;
+  --text-sm:13px;      --leading-sm:1.38;      --tracking-sm:-0.006em;
+  --text-xs:12px;      --leading-xs:1.33;      --tracking-xs:-0.003em;
+  --text-micro:11px;   --leading-micro:1.27;   --tracking-micro:0.02em;
+
+  /* Numeric / metric display — mono, tabular */
+  --text-metric:32px;  --leading-metric:1.05;  --tracking-metric:-0.02em;
+}

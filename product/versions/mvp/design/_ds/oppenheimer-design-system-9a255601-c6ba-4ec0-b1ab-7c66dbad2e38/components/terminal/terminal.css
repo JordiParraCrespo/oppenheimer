@@ -1,0 +1,202 @@
+/* Terminal — the product's primary surface.
+
+   Oppenheimer orchestrates terminal sessions, so the console is not a widget
+   tucked into a card: it is the whole right-hand side of the app. Everything
+   here is built for long reading sessions — 13px SF Mono at 1.55, a scrollback
+   that owns its own scroll context, and a prompt row pinned to the bottom so
+   the caret never moves as output arrives. */
+
+.op-term{animation:op-fade-in var(--dur-base) var(--ease-out);display:flex;flex-direction:column;min-height:0;height:100%;background:var(--term-bg);color:var(--term-fg);font-family:var(--font-mono);font-size:13px;line-height:1.55;font-variant-numeric:tabular-nums}
+.op-term ::selection{background:var(--term-selection)}
+
+/* Tab strip — one tab per live session. Reads as browser tabs, not as our
+   Tabs component: these are windows into running processes, not view
+   switches. Retained for when the console supports several at once. */
+.op-term-tabs{display:flex;align-items:stretch;gap:1px;flex:none;height:40px;background:var(--term-bg);border-bottom:1px solid var(--term-border);padding:0 8px;overflow-x:auto;scrollbar-width:none}
+.op-term-tabs::-webkit-scrollbar{display:none}
+.op-term-tab{display:flex;align-items:center;gap:8px;flex:none;max-width:280px;padding:0 12px;border:0;border-bottom:1.5px solid transparent;background:transparent;color:var(--term-dim);font-family:var(--font-mono);font-size:12.5px;letter-spacing:-0.005em;cursor:pointer;transition:var(--transition-control);white-space:nowrap}
+.op-term-tab:hover{color:var(--term-fg)}
+.op-term-tab[data-active="true"]{color:var(--term-fg);border-bottom-color:var(--term-accent)}
+.op-term-tab__label{overflow:hidden;text-overflow:ellipsis}
+.op-term-tab__dot{width:6px;height:6px;border-radius:var(--radius-pill);flex:none;background:var(--term-dim)}
+.op-term-tab__dot[data-state="running"]{background:var(--term-success)}
+.op-term-tab__dot[data-state="waiting"]{background:var(--term-warning)}
+.op-term-tab__dot[data-state="failed"]{background:var(--term-danger)}
+.op-term-tab__close{display:flex;align-items:center;justify-content:center;width:16px;height:16px;border:0;border-radius:var(--radius-sm);background:transparent;color:inherit;opacity:.5;cursor:pointer;font-size:13px;line-height:1}
+.op-term-tab__close:hover{opacity:1;background:var(--term-selection)}
+.op-term-tabs__new{display:flex;align-items:center;justify-content:center;width:28px;flex:none;border:0;background:transparent;color:var(--term-dim);font-size:15px;cursor:pointer}
+.op-term-tabs__new:hover{color:var(--term-fg)}
+
+/* Provisioning — a session is not instant: a VM has to be built, the repo
+   cloned, the branch checked out and the harness started. That wait gets its
+   own pane rather than a placeholder inside the terminal, because until the
+   container exists there is no terminal to be inside. Steps are named so a
+   slow one is diagnosable instead of just slow; the pane hands off to the
+   live terminal when the last step lands. */
+.op-provision{flex:1;min-height:0;display:flex;background:var(--canvas);animation:op-fade-in var(--dur-base) var(--ease-out)}
+.op-provision__inner{width:100%;max-width:420px;margin:auto;padding:32px}
+.op-provision__eyebrow{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg-muted)}
+.op-provision__title{margin-top:8px;font-family:var(--font-display);font-size:26px;font-weight:var(--weight-semibold);letter-spacing:-0.018em;line-height:1.15}
+.op-provision__sub{margin-top:6px;font-size:14px;color:var(--fg-muted)}
+
+.op-steps{display:flex;flex-direction:column;margin-top:26px}
+.op-step{display:flex;gap:12px;min-height:46px}
+.op-step__rail{display:flex;flex-direction:column;align-items:center;flex:none;width:18px}
+.op-step__mark{display:flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;margin-top:1px;border-radius:var(--radius-pill);border:1.5px solid var(--border-strong);background:var(--background);color:var(--fg-subtle);font-size:10px;line-height:1}
+.op-step__line{flex:1;width:1.5px;margin:4px 0 0;background:var(--border);border-radius:1px}
+.op-step:last-child .op-step__line{display:none}
+.op-step__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding-bottom:16px}
+.op-step__label{font-size:14px;letter-spacing:-0.008em;color:var(--fg-muted);transition:color var(--dur-base) var(--ease-standard)}
+.op-step__meta{font-family:var(--font-mono);font-size:11.5px;color:var(--fg-muted)}
+
+.op-step[data-state="running"] .op-step__mark{border-color:var(--primary);border-top-color:transparent;color:transparent;animation:op-spin .8s linear infinite}
+.op-step[data-state="running"] .op-step__label{color:var(--fg);font-weight:var(--weight-medium)}
+.op-step[data-state="done"] .op-step__mark{border-color:var(--success);background:var(--success);color:#fff}
+.op-step[data-state="done"] .op-step__label{color:var(--fg)}
+.op-step[data-state="done"] .op-step__line{background:var(--success)}
+
+.op-provision__foot{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:12.5px;color:var(--fg-muted)}
+.op-provision__elapsed{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* Scrollback */
+.op-term__scroll{flex:1;min-height:0;overflow-y:auto;padding:16px 20px;overscroll-behavior:contain}
+.op-term__line{white-space:pre-wrap;word-break:break-word}
+.op-term__line[data-tone="dim"]{color:var(--term-dim)}
+.op-term__line[data-tone="accent"]{color:var(--term-accent)}
+.op-term__line[data-tone="success"]{color:var(--term-success)}
+.op-term__line[data-tone="warning"]{color:var(--term-warning)}
+.op-term__line[data-tone="danger"]{color:var(--term-danger)}
+.op-term__line[data-tone="strong"]{color:var(--term-fg);font-weight:500}
+.op-term__cmd{color:var(--term-fg)}
+.op-term__cmd::before{content:"$ ";color:var(--term-accent)}
+.op-term__spacer{height:.775em}
+
+/* Agent turn marker — the bullet that opens a model's reply in the reference. */
+.op-term__turn{display:flex;gap:10px;margin:10px 0}
+.op-term__turn::before{content:"";flex:none;width:6px;height:6px;margin-top:.5em;border-radius:var(--radius-pill);background:var(--term-fg)}
+.op-term__turnbody{flex:1;min-width:0}
+
+/* Prompt row — pinned, always the last thing in the column. */
+.op-term__prompt{flex:none;display:flex;align-items:center;gap:8px;padding:10px 20px;border-top:1px solid var(--term-border)}
+.op-term__chev{color:var(--term-accent);flex:none}
+.op-term__input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--term-fg);font:inherit;caret-color:var(--term-caret)}
+.op-term__input::placeholder{color:var(--term-dim)}
+
+/* Status strip — the thin instrumentation band along the bottom. */
+.op-term__status{flex:none;display:flex;align-items:center;gap:18px;padding:0 20px;height:28px;border-top:1px solid var(--term-border);color:var(--term-dim);font-size:11.5px;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+.op-term__status::-webkit-scrollbar{display:none}
+.op-term__statusitem{display:flex;align-items:center;gap:6px;flex:none}
+
+/* Sidebar list header — a title, a count, and one filter affordance. The
+   facets (repository, agent, host, sort) live inside the menu rather than as
+   a row of controls: at this width, three visible selects would crowd out the
+   list they filter. */
+.op-listhead{display:flex;align-items:center;gap:8px;padding:2px 12px 6px}
+.op-listhead__title{flex:1;min-width:0;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg-muted)}
+.op-listhead__count{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted)}
+.op-iconbtn-sm{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg-subtle);cursor:pointer;transition:var(--transition-control)}
+.op-iconbtn-sm:hover{background:var(--hover-surface);color:var(--fg)}
+.op-iconbtn-sm[data-open="true"],.op-iconbtn-sm[data-dirty="true"]{background:var(--active-surface);color:var(--fg)}
+.op-filterwrap{position:relative;flex:none}
+.op-filtermenu{right:0;left:auto;top:calc(100% + 6px);min-width:230px}
+/* The facet's current value. It is the thing the menu exists to report, so
+   it takes full --fg; the label beside it is what it is distinguished from,
+   and alignment already separates them. */
+.op-menu__value{color:var(--fg);font-size:13px}
+
+/* Active-filter summary — what the menu is currently hiding, stated plainly
+   so a filtered list never looks like an empty one. */
+.op-filterchips{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 8px}
+.op-filterchip{display:flex;align-items:center;gap:5px;height:22px;padding:0 4px 0 8px;border-radius:var(--radius-sm);background:var(--control);color:var(--fg);font-size:11.5px}
+.op-filterchip__x{display:flex;align-items:center;justify-content:center;width:15px;height:15px;border:0;border-radius:3px;background:transparent;color:inherit;font-size:12px;line-height:1;cursor:pointer}
+.op-filterchip__x:hover{background:var(--hover-surface);color:var(--fg)}
+.op-emptylist{padding:14px 12px;font-size:12.5px;color:var(--fg-subtle);line-height:1.5}
+
+/* New-session composer — creating a session is a page, not a modal: the
+   initial prompt is the real work, so it gets the weight of the layout and
+   the scope choices sit above it as compact chips, the way you'd read the
+   sentence. "Run X on host H, repo R, branch B, with agent A." */
+.op-newsession{flex:1;min-height:0;overflow-y:auto;background:var(--canvas);display:flex}
+.op-newsession__inner{width:100%;max-width:720px;margin:auto;padding:48px 32px;display:flex;flex-direction:column;gap:18px}
+.op-newsession__title{font-family:var(--font-display);font-size:32px;font-weight:var(--weight-semibold);letter-spacing:-0.021em;line-height:1.1}
+.op-newsession__sub{margin-top:6px;font-size:15px;color:var(--fg-muted)}
+
+/* Scope chips — one per decision, all on one line. A chip states its current
+   value rather than labelling an empty field, so the row reads as a sentence
+   instead of a form. */
+.op-chiprow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.op-chipselect{position:relative}
+.op-chipselect__trigger{display:flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--control);color:var(--fg);font-family:var(--font-sans);font-size:13.5px;letter-spacing:-0.008em;white-space:nowrap;cursor:pointer;transition:var(--transition-control)}
+.op-chipselect__trigger:hover{background:var(--control-hover);border-color:var(--border)}
+.op-chipselect__trigger[data-open="true"]{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+.op-chipselect__icon{flex:none;color:var(--fg-subtle)}
+.op-chipselect__chev{flex:none;color:var(--fg-subtle);font-size:10px}
+
+/* Prompt box — the one place on the page with real presence. */
+.op-composer{display:flex;flex-direction:column;background:var(--field);border:1px solid var(--field-border);border-radius:var(--radius-lg);transition:var(--transition-control)}
+.op-composer:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+.op-composer__input{width:100%;min-height:112px;padding:16px 18px;border:0;background:transparent;color:var(--fg);font-family:var(--font-sans);font-size:16px;line-height:1.5;letter-spacing:-0.011em;resize:none;outline:none}
+.op-composer__input::placeholder{color:var(--field-placeholder)}
+.op-composer__foot{display:flex;align-items:center;gap:6px;padding:0 10px 10px}
+.op-composer__tool{display:flex;align-items:center;justify-content:center;gap:6px;height:30px;min-width:30px;padding:0 8px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg-subtle);font-family:var(--font-sans);font-size:13px;cursor:pointer;transition:var(--transition-control)}
+.op-composer__tool:hover{background:var(--hover-surface);color:var(--fg)}
+.op-composer__tool[data-recording="true"]{background:color-mix(in oklch,var(--danger) 14%,transparent);color:var(--danger)}
+.op-composer__spacer{flex:1}
+.op-composer__send{display:flex;align-items:center;justify-content:center;width:32px;height:32px;flex:none;border:0;border-radius:var(--radius-pill);background:var(--primary);color:var(--primary-fg);cursor:pointer;transition:var(--transition-control)}
+.op-composer__send:hover{background:var(--primary-hover)}
+
+/* Attachments — listed under the prompt, removable, never silently dropped. */
+.op-attachrow{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
+.op-attach{display:flex;align-items:center;gap:6px;max-width:220px;height:26px;padding:0 4px 0 9px;border-radius:var(--radius-sm);background:var(--control);color:var(--fg-muted);font-size:12px}
+.op-attach__name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-attach__x{display:flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;border:0;border-radius:var(--radius-sm);background:transparent;color:inherit;font-size:13px;line-height:1;cursor:pointer}
+.op-attach__x:hover{background:var(--hover-surface);color:var(--fg)}
+
+/* Model + effort — one control, because they are one decision. Which model
+   and how hard it thinks are always chosen together, and splitting them into
+   a chip and a tab strip made the foot read as two competing toolbars. The
+   button states both; the menu holds the models, an effort level, and the
+   long tail of open-weights runtimes behind "More models". */
+.op-modelwrap{position:relative;flex:none}
+.op-modelbtn{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);font-family:var(--font-sans);font-size:13px;letter-spacing:-0.006em;white-space:nowrap;cursor:pointer;transition:var(--transition-control)}
+.op-modelbtn:hover,.op-modelbtn[data-open="true"]{background:var(--hover-surface)}
+.op-modelbtn__effort{color:var(--fg-muted)}
+.op-modelmenu{right:0;left:auto;bottom:calc(100% + 6px);top:auto;min-width:290px;max-height:340px;overflow-y:auto}
+.op-modelmenu .op-menu__item{align-items:flex-start;padding-top:7px;padding-bottom:7px}
+.op-modelopt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;text-align:left}
+.op-modelopt__name{font-size:14px;letter-spacing:-0.008em}
+.op-modelopt__desc{font-size:12.5px;color:var(--fg-muted);white-space:normal}
+.op-menu__tick{flex:none;color:var(--primary);font-size:13px}
+
+/* Account menu — anchored to the sidebar footer, so it opens upward. The
+   e-mail heading is not a menu item: it answers "which account is this?"
+   before you act, which is the question a profile menu exists to settle. */
+.op-accountwrap{position:relative}
+.op-accountmenu{left:0;right:auto;bottom:calc(100% + 6px);top:auto;min-width:250px}
+.op-accountmenu__id{padding:8px 10px 6px;font-size:12.5px;color:var(--fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-accountmenu .op-menu__icon{width:16px}
+
+/* Session row — the sidebar entry for one orchestrated session. Denser than a
+   nav item because it carries repo, branch and agent state as well as a name. */
+/* Session row — one line. There will be hundreds of these, so the row is a
+   glyph and a name; everything else (repo, branch, host, agent) moved into
+   the filter, which is the thing you actually use to find one. 30px is the
+   floor: tighter and the pointer target gets unreliable in a long list. Age
+   appears on hover and on the active row, so date sort stays legible without
+   the list carrying a column of timestamps. */
+/* The list itself — rows sit 1px apart. At this density the gap is a hairline
+   of separation, not spacing; anything more and the list stops reading as one
+   column. */
+.op-sessionlist{display:flex;flex-direction:column;gap:1px}
+
+.op-session{display:flex;align-items:center;gap:9px;width:100%;text-align:left;height:30px;padding:0 10px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--fg);font-family:var(--font-sans);cursor:pointer;transition:var(--transition-control)}
+.op-session:hover{background:var(--hover-surface)}
+.op-session[data-active="true"]{background:var(--active-surface)}
+.op-session__glyph{flex:none;display:flex;color:var(--fg-subtle)}
+.op-session[data-state="running"] .op-session__glyph{color:var(--success)}
+.op-session[data-state="waiting"] .op-session__glyph{color:var(--warning)}
+.op-session[data-state="failed"] .op-session__glyph{color:var(--danger)}
+.op-session__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;letter-spacing:-0.009em}
+.op-session[data-active="true"] .op-session__name{font-weight:var(--weight-medium)}
+.op-session__age{flex:none;font-family:var(--font-mono);font-size:11px;color:var(--fg);opacity:0;transition:opacity var(--dur-fast) var(--ease-standard)}
+.op-session:hover .op-session__age,.op-session[data-active="true"] .op-session__age{opacity:1}

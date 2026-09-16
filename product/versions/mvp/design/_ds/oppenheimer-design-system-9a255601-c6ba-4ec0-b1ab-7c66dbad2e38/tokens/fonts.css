@@ -1,0 +1,72 @@
+/* Oppenheimer — webfonts.
+
+   UI sans: SF Pro, supplied as variable TTFs. These are the real thing, so the
+   named family resolves everywhere rather than only on Apple hardware. The
+   fallback stack behind it stays in place for the first paint.
+   Display: the same SF Pro family at weight 600 with tighter tracking — the
+   system has no second typeface, and no serif. Scale and tracking do the work.
+   Mono: SF Mono, OTFs from github.com/supercomputra/SF-Mono-Font (400/500/600
+   + roman italic) — metrics, latency, cost, run IDs.
+   Every family ships as a local file. There are no remote font requests. */
+
+@font-face{
+  font-family:'SF Pro Text';
+  src:url("../assets/fonts/SF-Pro.ttf") format("truetype-variations"),
+      url("../assets/fonts/SF-Pro.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Pro Text';
+  src:url("../assets/fonts/SF-Pro-Italic.ttf") format("truetype-variations"),
+      url("../assets/fonts/SF-Pro-Italic.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:italic;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Pro Display';
+  src:url("../assets/fonts/SF-Pro.ttf") format("truetype-variations"),
+      url("../assets/fonts/SF-Pro.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Pro Display';
+  src:url("../assets/fonts/SF-Pro-Italic.ttf") format("truetype-variations"),
+      url("../assets/fonts/SF-Pro-Italic.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:italic;
+  font-display:swap;
+}
+
+@font-face{
+  font-family:'SF Mono';
+  src:url("../assets/fonts/SFMono-Regular.otf") format("opentype");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Mono';
+  src:url("../assets/fonts/SFMono-RegularItalic.otf") format("opentype");
+  font-weight:400;
+  font-style:italic;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Mono';
+  src:url("../assets/fonts/SFMono-Medium.otf") format("opentype");
+  font-weight:500;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:'SF Mono';
+  src:url("../assets/fonts/SFMono-Semibold.otf") format("opentype");
+  font-weight:600;
+  font-style:normal;
+  font-display:swap;
+}
