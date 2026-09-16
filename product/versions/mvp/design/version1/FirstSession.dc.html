@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-scrim-in{from{opacity:0}to{opacity:1}}
+@keyframes op-modal-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){[data-anim]{animation-duration:0s!important}}
+</style>
+</helmet>
+<div style="position:relative;display:flex;height:100vh;background:var(--background);font-family:var(--font-sans);color:var(--fg);overflow:hidden">
+
+<sc-if value="{{ welcomeOpen }}" hint-placeholder-val="{{ true }}">
+<div data-anim style="position:absolute;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--overlay);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:op-scrim-in 220ms cubic-bezier(.4,0,.2,1)">
+<div data-anim role="dialog" aria-modal="true" aria-labelledby="welcome-title" style="position:relative;width:100%;max-width:440px;display:flex;flex-direction:column;gap:20px;padding:32px;background:var(--card);border-radius:28px;box-shadow:var(--shadow-modal);animation:op-modal-in 220ms cubic-bezier(.16,1,.3,1)">
+
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ dismissWelcome }}" style="position:absolute;top:16px;right:16px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<h2 id="welcome-title" style="margin:0;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em">You're set up</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Three things worth knowing before your first session.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Sessions run on <span style="color:var(--fg)">your own hosts</span>, in a git worktree per session. Nothing executes in our cloud unless you pick a cloud VM.</p>
+</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Every step is <span style="color:var(--fg)">visible and interruptible</span> — read the output live, send an instruction mid-run, stop it at any point.</p>
+</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Scope comes first: <span style="color:var(--fg)">host, repository, branch, agent</span>. Change any of them per session from the chips below.</p>
+</div>
+</div>
+
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button" onClick="{{ dismissWelcome }}">Start your first session</button>
+
+</div>
+</div>
+</sc-if>
+
+
+<nav class="op-sidebar">
+<div class="op-sidebar__head">
+<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+</div>
+<div style="padding:0 12px 10px">
+<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button>
+</div>
+<div class="op-listhead">
+<span class="op-listhead__title">Sessions</span>
+<span class="op-listhead__count">0</span>
+</div>
+<div class="op-sidebar__scroll">
+<p style="margin:0;padding:14px 16px;font-size:12px;color:var(--sidebar-muted);line-height:1.5">No sessions yet. The one you start appears here with its live state.</p>
+</div>
+<div class="op-sidebar__foot">
+<button class="op-navitem" type="button"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta">⌄</span></button>
+</div>
+</nav>
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<div class="op-newsession">
+<div class="op-newsession__inner">
+
+<div>
+<h1 class="op-newsession__title">New session</h1>
+<p class="op-newsession__sub">Set the scope, then describe the work.</p>
+</div>
+
+<div class="op-chiprow">
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" onClick="{{ openHost }}" data-open="{{ hostOpen }}">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg><span>mac-studio</span><span class="op-chipselect__chev">⌄</span>
+</button>
+<sc-if value="{{ hostOpen }}">
+<div class="op-listbox" role="listbox">
+<button class="op-option" type="button" role="option" data-selected="{{ true }}" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>mac-studio</span><span class="op-option__desc">macOS 15 · echo 38 ms</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>Add a host…</span><span class="op-option__desc">Install the runner on another machine</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</div>
+</sc-if>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" onClick="{{ openRepo }}" data-open="{{ repoOpen }}">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>xrp-mobile</span><span class="op-chipselect__chev">⌄</span>
+</button>
+<sc-if value="{{ repoOpen }}">
+<div class="op-listbox" role="listbox">
+<button class="op-option" type="button" role="option" data-selected="{{ true }}" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>xrp-mobile</span><span class="op-option__desc">JordiParraCrespo</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>orchestrator</span><span class="op-option__desc">JordiParraCrespo</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>ledger-svc</span><span class="op-option__desc">JordiParraCrespo</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</div>
+</sc-if>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" onClick="{{ openBranch }}" data-open="{{ branchOpen }}">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>main</span><span class="op-chipselect__chev">⌄</span>
+</button>
+<sc-if value="{{ branchOpen }}">
+<div class="op-listbox" role="listbox">
+<button class="op-option" type="button" role="option" data-selected="{{ true }}" onClick="{{ closeAll }}"><span class="op-option__stack"><span>main</span></span><span class="op-option__check">✓</span></button>
+<button class="op-option" type="button" role="option" onClick="{{ closeAll }}"><span class="op-option__stack"><span>release/1.4</span></span><span class="op-option__check">✓</span></button>
+</div>
+</sc-if>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" onClick="{{ openAgent }}" data-open="{{ agentOpen }}">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>Claude Code</span><span class="op-chipselect__chev">⌄</span>
+</button>
+<sc-if value="{{ agentOpen }}">
+<div class="op-listbox" role="listbox">
+<button class="op-option" type="button" role="option" data-selected="{{ true }}" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>Claude Code</span><span class="op-option__desc">Runs <span style="font-family:var(--font-mono);font-size:11.5px">claude</span> on the host</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option" onClick="{{ closeAll }}">
+<span class="op-option__stack"><span>Plain shell</span><span class="op-option__desc">No agent, just a terminal</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div class="op-composer">
+<textarea class="op-composer__input" id="task" placeholder="Name or first task"></textarea>
+<div class="op-composer__foot">
+<div class="op-composer__spacer"></div>
+<a class="op-btn op-btn--primary op-btn--sm" href="./SessionsConsole.dc.html" style="text-decoration:none">Start session</a>
+</div>
+</div>
+
+<p style="margin:0;font-size:12px;color:var(--fg-subtle);line-height:1.5">A worktree is created at <span style="font-family:var(--font-mono);font-size:11.5px">~/oppenheimer-ai/workspaces/xrp-mobile/</span> and <span style="font-family:var(--font-mono);font-size:11.5px">claude</span> starts in it.</p>
+
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;system&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;system&quot;,&quot;tsType&quot;:&quot;'system' | 'light' | 'dark'&quot;}}">
+class Component extends DCLogic {
+  state = { open: null, welcome: true };
+
+  applyTheme() {
+    const t = this.props.theme || 'system';
+    const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+  componentDidUpdate() { this.applyTheme(); }
+  componentDidMount() { this.applyTheme(); }
+  renderVals() {
+    const o = this.state.open;
+    const toggle = (k) => () => this.setState(s => ({ open: s.open === k ? null : k }));
+    return {
+      hostOpen: o === 'host', repoOpen: o === 'repo',
+      branchOpen: o === 'branch', agentOpen: o === 'agent',
+      openHost: toggle('host'), openRepo: toggle('repo'),
+      openBranch: toggle('branch'), openAgent: toggle('agent'),
+      closeAll: () => this.setState({ open: null }),
+      welcomeOpen: this.state.welcome,
+      dismissWelcome: () => this.setState({ welcome: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

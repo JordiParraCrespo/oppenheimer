@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+</style>
+</helmet>
+<div style="position:relative;min-height:100vh;background:var(--canvas);padding:36px 40px;display:flex;font-family:var(--font-sans);color:var(--fg)">
+<span class="op-wordmark" style="position:absolute;top:34px;left:44px;font-size:20px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<div style="display:flex;flex:1;gap:40px;max-width:1400px;margin:0 auto;align-items:center">
+
+<div style="flex:1.35 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:48px 8px">
+<div style="width:100%;max-width:620px;display:flex;flex-direction:column;gap:20px">
+
+<div>
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">3 of 4</span>
+<h1 style="margin-top:10px;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Add your first host</h1>
+<p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+
+<div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px">
+<span style="font-size:13px;font-weight:500">Install command</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ copyCmd }}">{{ copyCmdLabel }}</button>
+</div>
+<pre style="margin:0;padding:0 16px 16px;font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;word-break:break-all">curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c</pre>
+</div>
+
+<div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 10px">
+<span style="font-size:13px;font-weight:500">Prompt for an AI agent</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ copyPrompt }}">{{ copyPromptLabel }}</button>
+</div>
+<div style="position:relative;max-height:96px;overflow:hidden">
+<pre style="margin:0;padding:0 16px;font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;word-break:break-word">Install the oppenheimer runner on this machine.
+Run: curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
+Then confirm the service is running with: oppenheimer-runner status
+Report the hostname and OS version back to me.</pre>
+<div style="position:absolute;left:0;right:0;bottom:0;height:44px;background:linear-gradient(to top,var(--card),transparent)"></div>
+</div>
+<p style="margin:0;padding:10px 16px 14px;font-size:12px;color:var(--fg-subtle);line-height:1.5">Paste into Claude Code or Codex already running on that machine.</p>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ countdown }} · single use</span>
+<a href="#" onClick="{{ regenerate }}" style="font-size:12px">Generate new token</a>
+</div>
+
+<div style="height:1px;background:var(--border-subtle)"></div>
+
+<div style="min-height:112px;display:flex;flex-direction:column;justify-content:center">
+<sc-if value="{{ waiting }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ simulate }}" style="display:flex;align-items:center;gap:10px;padding:0;border:0;background:none;color:var(--fg-muted);font:inherit;font-size:14px;text-align:left;cursor:pointer">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+Waiting for the host to connect…
+</button>
+</sc-if>
+
+<sc-if value="{{ registered }}">
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px 18px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">{{ hostName }}</span>
+<span style="font-size:12px;color:var(--fg-muted)">{{ hostMeta }}</span>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>git</span>
+<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>tmux</span>
+<span class="op-chip" data-selected="false" style="gap:6px"><span style="color:var(--success)">✓</span>claude</span>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div style="display:flex;gap:12px;align-items:center">
+<a class="op-btn op-btn--primary op-btn--lg" href="./FirstSession.dc.html" style="text-decoration:none;pointer-events:{{ continuePointer }};opacity:{{ continueOpacity }}">Continue</a>
+<a href="./ConnectGitHub.dc.html" style="font-size:13px">Back</a>
+</div>
+
+</div>
+</div>
+
+<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center">
+<div style="position:relative;width:100%;max-width:470px;aspect-ratio:4/5;max-height:82vh;border-radius:20px;overflow:hidden;background:#1d1d1f">
+<img src="./assets/imagery/oppenheimer-portrait.png" alt="J. Robert Oppenheimer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide0 }}">
+<img src="./assets/imagery/oppenheimer-einstein.png" alt="Oppenheimer with Albert Einstein" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide1 }}">
+<img src="./assets/imagery/calutron-operators.png" alt="Calutron operators at Oak Ridge" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide2 }}">
+<img src="./assets/imagery/oppenheimer-groves.png" alt="Oppenheimer with General Leslie Groves" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide3 }}">
+<img src="./assets/imagery/los-alamos-gate.png" alt="Los Alamos Project main gate" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide4 }}">
+<div style="position:absolute;left:0;right:0;bottom:0;padding:24px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.55) 55%,transparent 100%)">
+<p style="margin:0;font-size:13px;color:#fff;letter-spacing:-0.006em">{{ caption }}</p>
+<div style="display:flex;gap:6px">
+<button type="button" aria-label="Slide 1" onClick="{{ go0 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot0 }}"></button>
+<button type="button" aria-label="Slide 2" onClick="{{ go1 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot1 }}"></button>
+<button type="button" aria-label="Slide 3" onClick="{{ go2 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot2 }}"></button>
+<button type="button" aria-label="Slide 4" onClick="{{ go3 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot3 }}"></button>
+<button type="button" aria-label="Slide 5" onClick="{{ go4 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot4 }}"></button>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;system&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;system&quot;,&quot;tsType&quot;:&quot;'system' | 'light' | 'dark'&quot;}}">
+class Component extends DCLogic {
+  state = { registered: false, secs: 3581, copied: null, slide: 0 };
+
+
+  applyTheme() {
+    const t = this.props.theme || 'system';
+    const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+  componentDidUpdate() { this.applyTheme(); }
+  componentDidMount() {
+    this.applyTheme();
+    this._tick = setInterval(() => this.setState(s => ({ secs: Math.max(0, s.secs - 1) })), 1000);
+    this._c = setInterval(() => this.setState(s => ({ slide: (s.slide + 1) % 5 })), 5200);
+    this._reg = setTimeout(() => this.setState({ registered: true }), 6500);
+  }
+  componentWillUnmount() { clearInterval(this._tick); clearInterval(this._c); clearTimeout(this._reg); clearTimeout(this._copy); }
+
+  copy(which) {
+    return () => {
+      this.setState({ copied: which });
+      clearTimeout(this._copy);
+      this._copy = setTimeout(() => this.setState({ copied: null }), 1600);
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const m = Math.floor(s.secs / 60), sec = s.secs % 60;
+    const ci = this.state.slide;
+    const captions = [
+      'J. Robert Oppenheimer, 1946.',
+      'With Albert Einstein at the Institute for Advanced Study, 1947.',
+      'Calutron operators at Oak Ridge, 1944.',
+      'With General Leslie Groves, Los Alamos, 1945.',
+      'The Los Alamos Project main gate, 1943.'
+    ];
+    const go = (n) => () => this.setState({ slide: n });
+    const dot = (n) => ci === n ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.35)';
+    return {
+      slide0: ci === 0 ? 1 : 0,
+      slide1: ci === 1 ? 1 : 0,
+      slide2: ci === 2 ? 1 : 0,
+      slide3: ci === 3 ? 1 : 0,
+      slide4: ci === 4 ? 1 : 0,
+      dot0: dot(0), dot1: dot(1), dot2: dot(2), dot3: dot(3), dot4: dot(4),
+      go0: go(0), go1: go(1), go2: go(2), go3: go(3), go4: go(4),
+      caption: captions[ci],
+      countdown: m + ':' + String(sec).padStart(2, '0'),
+      waiting: !s.registered,
+      registered: s.registered,
+      hostName: 'mac-studio',
+      hostMeta: 'macOS 15',
+      statusHost: s.registered ? 'mac-studio' : '—',
+      statusLink: s.registered ? 'echo 38 ms' : 'waiting',
+      continuePointer: s.registered ? 'auto' : 'none',
+      continueOpacity: s.registered ? 1 : 0.4,
+      copyCmdLabel: s.copied === 'cmd' ? 'Copied' : 'Copy',
+      copyPromptLabel: s.copied === 'prompt' ? 'Copied' : 'Copy',
+      copyCmd: this.copy('cmd'),
+      copyPrompt: this.copy('prompt'),
+      simulate: () => this.setState({ registered: true }),
+      recheck: (e) => { e.preventDefault(); },
+      regenerate: (e) => { e.preventDefault(); this.setState({ secs: 3600 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

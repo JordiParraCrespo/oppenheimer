@@ -1,0 +1,11 @@
+/* Oppenheimer — radii. Four curves, no others.
+   Pill for anything you press, 10px for anything you type into,
+   18/28px for anything that holds content. */
+:root{
+  --radius-xs:6px;     /* only: swatches, tag dots, inline code */
+  --radius-sm:10px;    /* inputs, menu items, small controls */
+  --radius-md:14px;    /* popovers, menus, nested panels */
+  --radius-lg:18px;    /* cards */
+  --radius-xl:28px;    /* hero surfaces, large media, modals */
+  --radius-pill:980px; /* every button, chip, badge, avatar, tab */
+}

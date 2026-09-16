@@ -1,0 +1,41 @@
+/* ── Oppenheimer · navigation ───────────────────────────────────────
+   Sidebar (+ parts), Tabs, ThemeToggle. */
+
+.op-sidebar{display:flex;flex-direction:column;width:var(--sidebar-w);flex:none;height:100%;background:var(--sidebar);border-right:1px solid var(--sidebar-border);color:var(--sidebar-fg);transition:width var(--dur-base) var(--ease-standard)}
+.op-sidebar[data-collapsed="true"]{width:var(--sidebar-w-collapsed)}
+.op-sidebar__head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);height:var(--topbar-h);padding:0 var(--space-6) 0 var(--space-8);flex:none}
+.op-sidebar__scroll{flex:1;min-height:0;overflow-y:auto;padding:var(--space-4) var(--space-6) var(--space-10)}
+.op-sidebar__foot{flex:none;padding:var(--space-5) var(--space-6);border-top:1px solid var(--sidebar-border)}
+
+.op-sidebar__section{margin-top:var(--space-10)}
+.op-sidebar__section:first-child{margin-top:0}
+.op-sidebar__sectionhead{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);height:26px;padding:0 var(--space-5)}
+.op-sidebar__sectiontitle{font-size:var(--text-micro);text-transform:uppercase;letter-spacing:var(--tracking-micro);color:var(--sidebar-muted);font-weight:var(--weight-medium);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.op-navitem{display:flex;align-items:center;gap:var(--space-5);width:100%;height:32px;padding:0 var(--space-5);border:0;background:transparent;border-radius:var(--radius-sm);color:var(--sidebar-fg);font:inherit;font-size:14px;letter-spacing:-0.008em;text-align:left;cursor:pointer;text-decoration:none;transition:background-color var(--dur-instant) var(--ease-standard),color var(--dur-instant) var(--ease-standard)}
+.op-navitem:hover{background:var(--sidebar-item-hover);text-decoration:none}
+.op-navitem[data-active="true"]{background:var(--sidebar-item-active);font-weight:var(--weight-medium)}
+.op-navitem__icon{display:flex;color:var(--sidebar-muted);flex:none}
+.op-navitem[data-active="true"] .op-navitem__icon{color:var(--fg)}
+.op-navitem__label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.op-navitem__meta{color:var(--sidebar-muted);font-size:var(--text-xs);flex:none}
+.op-navitem--muted{color:var(--sidebar-muted)}
+.op-navitem__dot{width:7px;height:7px;border-radius:var(--radius-pill);flex:none;margin:0 3px}
+
+/* Tabs — pill segment bar, Apple's nav treatment. */
+.op-tabs{display:inline-flex;align-items:center;gap:2px;padding:2px;background:var(--control);border-radius:var(--radius-pill)}
+.op-tab{display:inline-flex;align-items:center;gap:var(--space-3);height:28px;padding:0 var(--space-7);border:0;background:transparent;border-radius:var(--radius-pill);color:var(--fg-muted);font:inherit;font-size:var(--text-sm);font-weight:var(--weight-medium);letter-spacing:var(--tracking-sm);cursor:pointer;white-space:nowrap;transition:var(--transition-control)}
+.op-tab:hover{color:var(--fg)}
+.op-tab[data-active="true"]{background:var(--background);color:var(--fg)}
+[data-theme="dark"] .op-tab[data-active="true"]{background:var(--op-gray-700)}
+
+/* Underline tabs — for page-level section switching. */
+.op-tabs--line{display:flex;gap:var(--space-12);padding:0;background:transparent;border-radius:0;border-bottom:1px solid var(--border-subtle)}
+.op-tabs--line .op-tab{height:36px;padding:0;border-radius:0;border-bottom:2px solid transparent;margin-bottom:-1px}
+.op-tabs--line .op-tab[data-active="true"]{background:transparent;border-bottom-color:var(--fg)}
+
+/* Theme toggle — two-slot segmented pill. */
+.op-themetoggle{display:inline-flex;align-items:center;gap:2px;padding:2px;background:var(--control);border-radius:var(--radius-pill)}
+.op-themetoggle button{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:0;border-radius:var(--radius-pill);background:transparent;color:var(--fg-muted);cursor:pointer;transition:var(--transition-control)}
+.op-themetoggle button[data-active="true"]{background:var(--background);color:var(--fg)}
+[data-theme="dark"] .op-themetoggle button[data-active="true"]{background:var(--op-gray-700)}

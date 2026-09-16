@@ -70,6 +70,7 @@
       "!**/packages/api-client/src/data-access",
       "!**/packages/api-client/src/common",
       "!**/packages/design-system/*/src/components",
+      "!**/product/versions/mvp/design",
       "!**/apps/web-showcase",
       "!**/apps/mobile-showcase"
     ]

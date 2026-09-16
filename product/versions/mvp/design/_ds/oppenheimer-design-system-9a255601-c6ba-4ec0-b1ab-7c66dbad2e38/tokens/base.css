@@ -1,0 +1,18 @@
+/* Oppenheimer — minimal base layer. Tokens do the work; this only sets
+   the document voice and a few unavoidable element defaults. */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--fg);font-family:var(--font-sans);font-size:var(--text-body);line-height:var(--leading-body);letter-spacing:var(--tracking-body);font-weight:var(--weight-regular);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,h2,h3,h4,h5,h6{margin:0;font-weight:var(--weight-semibold);color:var(--fg)}
+p{margin:0}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+code,kbd,samp,pre{font-family:var(--font-mono);font-size:.92em}
+::selection{background:var(--selected-surface)}
+@keyframes op-spin{to{transform:rotate(360deg)}}
+@keyframes op-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes op-rise{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+[data-theme]{color-scheme:light}
+[data-theme="dark"]{color-scheme:dark}

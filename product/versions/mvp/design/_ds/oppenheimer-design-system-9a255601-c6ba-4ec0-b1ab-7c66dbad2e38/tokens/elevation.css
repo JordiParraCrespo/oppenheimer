@@ -1,0 +1,16 @@
+/* Oppenheimer — elevation.
+   Surfaces do NOT cast shadows. Depth comes from tonal contrast and radius.
+   The two exceptions are transient layers that must detach from the page:
+   popovers/menus and modals. Both are soft and ambient, never directional. */
+:root{
+  --shadow-none:none;
+  --shadow-popover:0 0 0 1px rgba(0,0,0,.05),0 12px 32px -8px rgba(16,16,16,.16);
+  --shadow-modal:0 0 0 1px rgba(0,0,0,.05),0 32px 80px -16px rgba(16,16,16,.26);
+  --glass:rgba(255,255,255,.72);
+  --glass-blur:blur(20px) saturate(1.6); /* @kind other */
+}
+[data-theme="dark"]{
+  --shadow-popover:0 0 0 1px rgba(255,255,255,.08),0 12px 32px -8px rgba(0,0,0,.7);
+  --shadow-modal:0 0 0 1px rgba(255,255,255,.08),0 32px 80px -16px rgba(0,0,0,.8);
+  --glass:rgba(66,66,69,.72);
+}

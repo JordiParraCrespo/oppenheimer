@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+html,body{margin:0;padding:0}
+body{background:var(--canvas)}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--canvas);color:var(--fg);font-family:var(--font-sans);font-size:15px;letter-spacing:-0.011em">
+
+<header style="position:sticky;top:0;z-index:20;background:var(--canvas);border-bottom:1px solid var(--border-subtle)">
+<div style="max-width:1120px;margin:0 auto;padding:0 28px;height:56px;display:flex;align-items:center;gap:16px">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Wordmark" size="18" product="Components" hint-size="auto,22px"></x-import>
+<div style="flex:1"></div>
+<a href="./SignIn.dc.html" style="font-size:13px;color:var(--fg-muted)">Sign in</a>
+<a href="./SessionsConsole.dc.html" style="font-size:13px;color:var(--fg-muted)">Console</a>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ThemeToggle" theme="{{ theme }}" onChange="{{ setTheme }}" hint-size="auto,28px"></x-import>
+</div>
+</header>
+
+<div style="max-width:1120px;margin:0 auto;padding:44px 28px 96px;display:flex;flex-direction:column;gap:40px">
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Inventory</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.08">Every component, one page.</h1>
+<p style="margin:0;max-width:64ch;font-size:17px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Every component version1 actually ships, rendered live. Nothing here is aspirational — if a screen doesn't use it, it isn't on this page.</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+<a href="#core" class="op-chip">Core</a>
+<a href="#forms" class="op-chip">Forms</a>
+<a href="#navigation" class="op-chip">Navigation</a>
+<a href="#overlays" class="op-chip">Overlays</a>
+<a href="#terminal" class="op-chip">Terminal</a>
+<a href="#session" class="op-chip">Session</a>
+</div>
+</div>
+
+<section id="core" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 01</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Core</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The primitives every screen is built from.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Button</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">variant · size · shape · iconLeft · iconRight · loading · block</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">One primary per view — the blue is rationed. Heights 28 / 34 / 42 share the control ramp with Input and Select.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="primary" hint-size="auto,34px">New session</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" hint-size="auto,34px">Re-queue</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="outline" icon-left="git-branch" hint-size="auto,34px">Branch</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="ghost" icon-left="refresh" hint-size="auto,34px">Refresh</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="danger" hint-size="auto,34px">Stop run</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="link" icon-right="arrow-up-right" hint-size="auto,34px">Open trace</x-import>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" size="sm" hint-size="auto,28px">Small</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" size="md" hint-size="auto,34px">Medium</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" size="lg" hint-size="auto,42px">Large</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" shape="square" hint-size="auto,34px">Square</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="primary" loading="{{ true }}" hint-size="auto,34px">Queueing</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" disabled="{{ true }}" hint-size="auto,34px">Disabled</x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">IconButton</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">icon · label · size · variant · shape</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Label is required — it becomes the accessible name and the tooltip title.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="ellipsis" label="More" hint-size="34px,34px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="pause" label="Pause run" variant="outline" hint-size="34px,34px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="play" label="Resume run" variant="solid" hint-size="34px,34px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="filter" label="Filter" variant="outline" shape="square" hint-size="34px,34px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="copy" label="Copy run id" size="sm" hint-size="28px,28px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.IconButton" icon="settings" label="Settings" size="lg" variant="outline" hint-size="42px,42px"></x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Chip</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">selected · variant · dotColor · icon · onRemove</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Filter toggles and agent identity. The first chip here is live — click it.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Chip" selected="{{ chipOn }}" onClick="{{ toggleChip }}" hint-size="auto,28px">Running only</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Chip" icon="cpu" hint-size="auto,28px">gpu-pool-2</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Chip" dot-color="var(--chart-2)" hint-size="auto,28px">planner-v4</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Chip" variant="solid" onRemove="{{ noop }}" hint-size="auto,28px">repo: orchestrator</x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Card · CardHeader · CardBody · CardFooter</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">flat · padded · title · description · action</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">18px radius, hairline border, no shadow. Depth is tonal: a card is simply a lighter surface than the canvas.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Card" hint-size="100%,180px">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.CardHeader" title="Nightly reconciliation" description="Triggered 02:00 UTC · 14 steps" action="{{ cardAction }}" hint-size="100%,60px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.CardBody" hint-size="100%,60px">
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Completed in 4m 12s. No steps required approval.</p>
+</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.CardFooter" hint-size="100%,56px">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" size="sm" hint-size="auto,28px">Open trace</x-import>
+</x-import>
+</x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Card" padded="{{ true }}" hint-size="100%,180px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Padded</span>
+<p style="margin:8px 0 0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">A card without Header/Body parts takes 24px padding directly. Use <code style="font-family:var(--font-mono);font-size:12px">flat</code> when it already sits on a tinted surface.</p>
+</x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Avatar · Wordmark</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">name · size · accent · product</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Initials come from the first two words of <code style="font-family:var(--font-mono);font-size:12px">name</code>. The accent avatar marks the signed-in operator in the sidebar.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Avatar" name="Dana Iqbal" size="sm" hint-size="24px,24px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Avatar" name="Dana Iqbal" hint-size="32px,32px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Avatar" name="Dana Iqbal" size="lg" accent="{{ true }}" hint-size="40px,40px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Wordmark" size="22" hint-size="auto,26px"></x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Icon</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">name · size · strokeWidth · spin</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The complete glyph set — Lucide, 2px stroke, inheriting currentColor. Never hand-draw one, never colour one.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:2px;border:1px solid var(--border-subtle);border-radius:18px;padding:10px;background:var(--card)">{{ iconGrid }}</div>
+</div>
+</section>
+
+<section id="forms" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 02</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Forms</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The four input shapes the product actually uses. Type into a 10px radius; every field shows focus.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Field · Input</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-field · op-label · op-input · op-input--lg</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">As on the sign-in screen: the label sits above, the field is a 10px-radius shell around a borderless input. Large is the auth size; medium everywhere in the app.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:720px">
+<div class="op-field">
+<label class="op-label" for="f-email">Work email</label>
+<div class="op-input op-input--lg"><input class="op-input__el" id="f-email" type="email" placeholder="you@company.com"></div>
+</div>
+<div class="op-field">
+<label class="op-label" for="f-name">Session name</label>
+<div class="op-input op-input--md"><input class="op-input__el" id="f-name" type="text" placeholder="ledger-reconcile"></div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Textarea</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-composer · op-composer__input</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The instruction field from the session composer: a 14px-radius pane with no inner border, sized to hold three or four lines before it scrolls.</p>
+</div>
+<div style="max-width:640px">
+<div class="op-composer">
+<textarea class="op-composer__input" id="f-task" placeholder="Describe a task or ask a question"></textarea>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Chip select</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-chipselect · op-listbox · op-option · data-open · data-selected</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">How every scope choice is made in the console — a pill trigger that opens a listbox. Options carry a second muted line when the value alone is not enough.</p>
+</div>
+<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;min-height:200px">
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" data-open="{{ true }}">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>xrp-mobile</span><span class="op-chipselect__chev">⌄</span>
+</button>
+<div class="op-listbox" role="listbox">
+<button class="op-option" type="button" role="option" data-selected="{{ true }}">
+<span class="op-option__stack"><span>xrp-mobile</span><span class="op-option__desc">JordiParraCrespo · main</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option">
+<span class="op-option__stack"><span>orchestrator</span><span class="op-option__desc">versio · main</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<button class="op-option" type="button" role="option">
+<span class="op-option__stack"><span>ledger-svc</span><span class="op-option__desc">versio · release</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</div>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>main</span><span class="op-chipselect__chev">⌄</span>
+</button>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Menu</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-menu · op-menu__item · __label-text · __value · __shortcut · __sep · data-variant</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">One menu shape covers the filter, the model picker and the account row. Rows that lead somewhere carry their current value and a › ; nested panes come back with a ‹ .</p>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+<div class="op-menu" role="menu" style="position:static;width:240px">
+<button class="op-menu__item" type="button"><span class="op-menu__label-text">Repository</span><span class="op-menu__value">All</span><span class="op-menu__shortcut">›</span></button>
+<button class="op-menu__item" type="button"><span class="op-menu__label-text">Agent</span><span class="op-menu__value">Claude Code</span><span class="op-menu__shortcut">›</span></button>
+<button class="op-menu__item" type="button"><span class="op-menu__label-text">Host</span><span class="op-menu__value">optimus</span><span class="op-menu__shortcut">›</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button"><span class="op-menu__label-text">Sort by</span><span class="op-menu__value">Recent</span><span class="op-menu__shortcut">›</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" data-variant="danger"><span class="op-menu__label-text">Log out</span></button>
+</div>
+<div class="op-menu" role="menu" style="position:static;width:280px">
+<div class="op-menu__label">Claude Code</div>
+<button class="op-menu__item" type="button">
+<span class="op-modelopt"><span class="op-modelopt__name">Claude Sonnet 4.6</span><span class="op-modelopt__desc">Balanced. The default for most work.</span></span>
+<span class="op-menu__tick">✓</span>
+</button>
+<button class="op-menu__item" type="button">
+<span class="op-modelopt"><span class="op-modelopt__name">Claude Opus 4.2</span><span class="op-modelopt__desc">Long-horizon runs, higher cost.</span></span>
+<span class="op-menu__tick"></span>
+</button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button"><span class="op-menu__label-text">Effort</span><span class="op-menu__value">Medium</span><span class="op-menu__shortcut">›</span></button>
+</div>
+</div>
+</div>
+</section>
+
+<section id="navigation" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 03</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Navigation</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The sidebar rail and the theme switch.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Sidebar</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">head · list head · scroll · session row · foot</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The console rail as it stands: wordmark, New session, the session list with its count and facet filter, and the account row. 264px, on its own surface tier, and it collapses to nothing when a terminal pane is expanded.</p>
+</div>
+<div style="height:420px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;background:var(--background)">
+<nav class="op-sidebar">
+<div class="op-sidebar__head">
+<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+</div>
+<div style="padding:0 12px 10px">
+<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button>
+</div>
+<div class="op-listhead">
+<span class="op-listhead__title">Sessions</span>
+<span class="op-listhead__count">4</span>
+<div class="op-filterwrap">
+<button class="op-iconbtn-sm" type="button" aria-label="Filter sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg></button>
+</div>
+</div>
+<div class="op-sidebar__scroll">
+<div class="op-sessionlist">
+<button class="op-session" type="button" data-active="{{ true }}" data-state="running">
+<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">ledger-reconcile</span><span class="op-session__age">2m</span>
+</button>
+<button class="op-session" type="button" data-state="waiting">
+<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">deploy-canary</span><span class="op-session__age">6m</span>
+</button>
+<button class="op-session" type="button" data-state="failed">
+<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">index-rebuild</span><span class="op-session__age">1h</span>
+</button>
+<button class="op-session" type="button" data-state="idle">
+<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">archive-sweep</span><span class="op-session__age">1d</span>
+</button>
+</div>
+</div>
+<div class="op-sidebar__foot" style="border-top:0">
+<button class="op-navitem" type="button"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta" style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+</div>
+</nav>
+<div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:24px">
+<span style="font-size:13px;color:var(--fg-subtle)">Main column scrolls alone.</span>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">ThemeToggle</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">theme · onChange · target</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Writes <code style="font-family:var(--font-mono);font-size:12px">data-theme</code> onto the target. Theme switching moves colour aliases only — no component holds a conditional colour.</p>
+</div>
+<div style="display:flex;gap:12px;align-items:center">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.ThemeToggle" theme="{{ theme }}" onChange="{{ setTheme }}" hint-size="auto,28px"></x-import>
+<span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">{{ theme }}</span>
+</div>
+</div>
+</section>
+
+<section id="overlays" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 04</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Overlays</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The only layers allowed to cast a shadow.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Welcome modal</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">28px radius · scrim + 3px blur · close · three facts · one action</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Shown once, after onboarding. No hero image — the system ships none — so it earns its place on type and three facts a new operator actually needs. One primary; × dismisses to the same place.</p>
+</div>
+<div style="max-width:440px;display:flex;flex-direction:column;gap:20px;padding:32px;background:var(--card);border:1px solid var(--border-subtle);border-radius:28px;position:relative">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" style="position:absolute;top:16px;right:16px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+<div style="display:flex;flex-direction:column;gap:8px">
+<h4 style="margin:0;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em">You're set up</h4>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Three things worth knowing before your first session.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Sessions run on <span style="color:var(--fg)">your own hosts</span>, in a git worktree per session.</p>
+</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Every step is <span style="color:var(--fg)">visible and interruptible</span>.</p>
+</div>
+<div style="display:flex;gap:12px;align-items:flex-start">
+<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg></span>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Scope comes first: <span style="color:var(--fg)">host, repository, branch, agent</span>.</p>
+</div>
+</div>
+<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button">Start your first session</button>
+</div>
+</div>
+</section>
+
+<section id="terminal" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 05</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Terminal</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The primary surface, not a widget. Carries its own <code style="font-family:var(--font-mono);font-size:12px">--term-*</code> ramp so 13px mono stays legible on both themes.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">SessionItem</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">name · state · age · active</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">One 30px line, because there are hundreds. State colours the branch glyph: running green, waiting amber, failed red, idle grey.</p>
+</div>
+<div style="max-width:320px;background:var(--sidebar);border:1px solid var(--border-subtle);border-radius:14px;padding:6px;display:flex;flex-direction:column">
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.SessionItem" name="ledger-reconcile" state="running" age="2m" active="{{ true }}" hint-size="100%,30px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.SessionItem" name="deploy-canary" state="waiting" age="6m" hint-size="100%,30px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.SessionItem" name="index-rebuild" state="failed" age="1h" hint-size="100%,30px"></x-import>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.SessionItem" name="archive-sweep" state="idle" age="1d" hint-size="100%,30px"></x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Terminal pane</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">titlebar · name · state dot · host · expand · close</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The console frames each session rather than running it full-bleed — a frame implies there can be a second one. The bar carries what the scrollback can't: which host, which branch, still running. Neither control stops the run: expand zooms the pane over the sidebar, close detaches the view.</p>
+</div>
+<div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;height:260px;background:var(--card)">
+<div style="display:flex;align-items:center;gap:10px;flex:none;height:44px;padding:0 8px 0 14px;border-bottom:1px solid var(--border-subtle)">
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span>
+<span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ledger-reconcile</span>
+<span style="display:flex;align-items:center;gap:6px;flex:none;font-size:12px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span>optimus · orchestrator · main</span>
+<span style="flex:1"></span>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close pane"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+</div>
+<div class="op-term" style="flex:1;min-height:0">
+<div class="op-term__scroll">
+<div class="op-term__line op-term__cmd">op run ledger-reconcile</div>
+<div class="op-term__line" data-tone="dim">step 3/14  tool: diff.compute             812ms</div>
+<div class="op-term__line" data-tone="success">3 discrepancies found in 41,208 rows</div>
+</div>
+<div class="op-term__status">
+<span class="op-term__statusitem">context 62%</span>
+<span class="op-term__statusitem">echo 38 ms</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="session" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 06</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Session</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">The two surfaces that stand between an instruction and a live terminal.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Stepper</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">state: done · running · pending · label · meta · mark</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Boot trace for a provisioning session. One step is running at a time; its meta line names the work, and done steps take a tick. The elapsed clock sits under the rail so a slow step is obvious.</p>
+</div>
+<div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--background)">
+<div class="op-provision">
+<div class="op-provision__inner">
+<div class="op-provision__eyebrow">optimus</div>
+<h1 class="op-provision__title">Starting your session</h1>
+<p class="op-provision__sub">JordiParraCrespo/xrp-mobile · main</p>
+<div class="op-steps">
+<div class="op-step" data-state="running">
+<span class="op-step__rail"><span class="op-step__mark"></span><span class="op-step__line"></span></span>
+<span class="op-step__body"><span class="op-step__label">Cloud container</span><span class="op-step__meta">allocating 8 vCPU…</span></span>
+</div>
+<div class="op-step" data-state="pending">
+<span class="op-step__rail"><span class="op-step__mark"></span><span class="op-step__line"></span></span>
+<span class="op-step__body"><span class="op-step__label">Clone xrp-mobile</span><span class="op-step__meta"></span></span>
+</div>
+<div class="op-step" data-state="pending">
+<span class="op-step__rail"><span class="op-step__mark"></span><span class="op-step__line"></span></span>
+<span class="op-step__body"><span class="op-step__label">Check out main</span><span class="op-step__meta"></span></span>
+</div>
+<div class="op-step" data-state="pending">
+<span class="op-step__rail"><span class="op-step__mark"></span><span class="op-step__line"></span></span>
+<span class="op-step__body"><span class="op-step__label">Start Claude Code</span><span class="op-step__meta"></span></span>
+</div>
+</div>
+<div class="op-provision__foot">
+<span class="op-provision__elapsed">1.4s</span>
+<span>Working…</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Composer</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">chip select · textarea · attach · model + effort · dictate · send</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Scope first, then the instruction. Every chip is a listbox trigger; the model button carries the effort setting as a second, muted token.</p>
+</div>
+<div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--background)">
+<div class="op-newsession">
+<div class="op-newsession__inner">
+<div>
+<h1 class="op-newsession__title">New session</h1>
+<p class="op-newsession__sub">Set the scope, then describe the work.</p>
+</div>
+
+<div class="op-chiprow">
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg><span>optimus</span><span class="op-chipselect__chev">⌄</span>
+</button>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>xrp-mobile</span><span class="op-chipselect__chev">⌄</span>
+</button>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>main</span><span class="op-chipselect__chev">⌄</span>
+</button>
+</div>
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button">
+<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>Claude Code</span><span class="op-chipselect__chev">⌄</span>
+</button>
+</div>
+</div>
+
+<div class="op-composer">
+<textarea class="op-composer__input" id="spec-prompt" placeholder="Describe a task or ask a question"></textarea>
+<div class="op-composer__foot">
+<button class="op-composer__tool" type="button" aria-label="Attach files" title="Attach files">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+</button>
+<div class="op-composer__spacer"></div>
+<div class="op-modelwrap">
+<button class="op-modelbtn" type="button">
+<span>Claude Sonnet 4.6</span><span class="op-modelbtn__effort">Medium</span>
+</button>
+</div>
+<button class="op-composer__tool" type="button" aria-label="Dictate" title="Dictate">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>
+</button>
+<button class="op-composer__send" type="button" aria-label="Start session">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+</button>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<footer style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline">
+<span style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">Oppenheimer design system</span>
+<span style="font-size:12px;color:var(--fg-subtle)">·</span>
+<a href="./SessionsConsole.dc.html" style="font-size:12px">See them in the console</a>
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    theme: 'light', chipOn: true, approvalOn: true, streamOn: true,
+    modelValue: 'sonnet', repoValue: 'orchestrator', concurrency: 'balanced',
+    segValue: 'trace', lineValue: 'sessions', dialogOpen: false,
+    termActive: 's1', termValue: '', dsReady: false
+  };
+
+  componentDidMount() {
+    if (!this.ds()) {
+      this._t = setInterval(() => {
+        if (this.ds()) { clearInterval(this._t); this.setState({ dsReady: true }); }
+      }, 80);
+    }
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  ds() { return window.OppenheimerDesignSystem_9a2556 || null; }
+
+  btn(label, opts) {
+    return React.createElement('button', Object.assign({ type: 'button', className: 'op-btn ' + (opts && opts.cls || 'op-btn--secondary') + ' op-btn--sm' }, opts && opts.on ? { onClick: opts.on } : null), label);
+  }
+
+  renderVals() {
+    const ds = this.ds();
+    const S = this.state;
+    const set = (k) => (v) => this.setState({ [k]: v });
+
+    const iconGrid = ds ? ds.ICON_NAMES.map((n) => React.createElement(
+      'div',
+      { key: n, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '10px 4px', borderRadius: 6, color: 'var(--fg)' }, title: n },
+      React.createElement(ds.Icon, { name: n, size: 16 }),
+      React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--fg-subtle)', lineHeight: 1.2, textAlign: 'center', wordBreak: 'break-word' } }, n)
+    )) : null;
+
+    return {
+      theme: S.theme,
+      setTheme: (t) => this.setState({ theme: t }),
+      noop: () => {},
+      iconGrid,
+
+      chipOn: S.chipOn,
+      toggleChip: () => this.setState((s) => ({ chipOn: !s.chipOn })),
+      cardAction: this.btn('Re-queue'),
+
+      unusedTabs: [
+        { value: 'trace', label: 'Trace', icon: 'layers' },
+        { value: 'output', label: 'Output', icon: 'terminal' },
+        { value: 'cost', label: 'Cost', icon: 'activity' }
+      ],
+      segValue: S.segValue, setSeg: set('segValue'),
+      lineTabs: [
+        { value: 'sessions', label: 'Sessions' },
+        { value: 'pipelines', label: 'Pipelines' },
+        { value: 'agents', label: 'Agents' },
+        { value: 'tools', label: 'Tools' }
+      ],
+      lineValue: S.lineValue, setLine: set('lineValue'),
+
+      menuTrigger: this.btn('Actions'),
+      menuItems: [
+        { type: 'label', label: 'Run' },
+        { label: 'Open trace', icon: 'layers', shortcut: '⌘⏎' },
+        { label: 'Re-queue', icon: 'refresh' },
+        { label: 'Copy run id', icon: 'copy', shortcut: '⌘C' },
+        { type: 'separator' },
+        { label: 'Export transcript', icon: 'download', disabled: true },
+        { label: 'Stop run', icon: 'x', variant: 'danger' }
+      ],
+
+      dialogOpen: S.dialogOpen,
+      openDialog: () => this.setState({ dialogOpen: true }),
+      closeDialog: () => this.setState({ dialogOpen: false }),
+      dialogFooter: React.createElement(
+        React.Fragment, null,
+        this.btn('Keep running', { on: () => this.setState({ dialogOpen: false }) }),
+        this.btn('Stop run', { cls: 'op-btn--danger', on: () => this.setState({ dialogOpen: false }) })
+      ),
+
+      emptyAction: this.btn('New pipeline', { cls: 'op-btn--primary' }),
+
+      termTabs: [
+        { id: 's1', label: 'ledger-reconcile', state: 'running' },
+        { id: 's2', label: 'deploy-canary', state: 'waiting' },
+        { id: 's3', label: 'index-rebuild', state: 'failed' }
+      ],
+      termActive: S.termActive, setTermActive: set('termActive'),
+      termValue: S.termValue,
+      setTermValue: (e) => this.setState({ termValue: e.target.value }),
+      termLines: [
+        { kind: 'cmd', text: 'op run ledger-reconcile --window 2026-09-10' },
+        'resolving workspace versio/orchestrator',
+        { text: 'agent planner-v4 attached · 200k context', tone: 'dim' },
+        { kind: 'spacer' },
+        { kind: 'turn', text: 'Pulling yesterday\'s ledger and the warehouse snapshot.' },
+        { text: 'step 1/14  tool: warehouse.query          204ms', tone: 'dim' },
+        { text: 'step 2/14  tool: ledger.fetch             311ms', tone: 'dim' },
+        { text: 'step 3/14  tool: diff.compute             812ms', tone: 'dim' },
+        { text: '3 discrepancies found in 41,208 rows', tone: 'strong' },
+        { kind: 'spacer' },
+        { kind: 'turn', text: 'Two of the three are rounding. The third needs a write — requesting approval.' },
+        { text: 'approval required: ledger.write (row 20,441)', tone: 'warning' },
+        { kind: 'cmd', text: 'op approve --step 4' },
+        { text: 'approved by dana@versio · step 4 resumed', tone: 'success' },
+        { text: 'step 4/14  tool: ledger.write             148ms', tone: 'dim' },
+        { kind: 'spacer' },
+        { text: 'running step 5/14 · opening PR against orchestrator', tone: 'accent' }
+      ],
+      termStatus: ['context 62%', 'mem 1.4GB', 'hosts 3', 'p95 812ms']
+    };
+  }
+}
+</script>
+</body>
+</html>

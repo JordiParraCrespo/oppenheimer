@@ -1,0 +1,42 @@
+/* Oppenheimer — spacing. 4px base unit, comfortable density.
+   Product UI lives on 4–24. 40+ is page and section rhythm only. */
+:root{
+  --space-0:0px;
+  --space-1:2px;
+  --space-2:4px;
+  --space-3:6px;
+  --space-4:8px;
+  --space-5:10px;
+  --space-6:12px;
+  --space-7:14px;
+  --space-8:16px;
+  --space-10:20px;
+  --space-12:24px;
+  --space-14:28px;
+  --space-16:32px;
+  --space-20:40px;
+  --space-24:48px;
+  --space-30:60px;
+  --space-40:80px;
+  --space-52:104px;
+  --space-72:144px;
+
+  /* Layout */
+  --page-max:1440px;
+  --content-max:1040px;
+  --section-gap:80px;
+  --card-padding:24px;
+  --control-gap:8px;
+
+  /* Control geometry — the shared height ramp for every interactive element. */
+  --control-h-sm:28px;
+  --control-h-md:34px;
+  --control-h-lg:42px;
+  --control-pad-sm:12px;
+  --control-pad-md:16px;
+  --control-pad-lg:22px;
+
+  --sidebar-w:264px;
+  --sidebar-w-collapsed:60px;
+  --topbar-h:56px;
+}

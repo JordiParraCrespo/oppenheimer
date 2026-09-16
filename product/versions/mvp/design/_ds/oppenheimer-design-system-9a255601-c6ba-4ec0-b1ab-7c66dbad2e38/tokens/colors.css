@@ -1,0 +1,199 @@
+/* Oppenheimer — color system.
+   Layer 1: raw palette (never reference directly in product code).
+   Layer 2: semantic aliases, themed for light (:root) and dark ([data-theme="dark"]).
+   Chromatic color is rationed: ONE blue for actions, ONE blue for links.
+   Everything else is achromatic. Status hues are status only — never decoration. */
+:root{
+  /* ── Palette · neutrals ─────────────────────────────── */
+  --op-white:#ffffff;
+  --op-gray-50:#f5f5f7;
+  --op-gray-100:#ebebed;
+  --op-gray-200:#e2e2e5;
+  --op-gray-300:#d2d2d7;
+  --op-gray-400:#a1a1a6;
+  --op-gray-500:#86868b;
+  --op-gray-600:#6e6e73;
+  --op-gray-700:#424245;
+  --op-gray-800:#333336;
+  --op-gray-850:#232325;
+  --op-gray-900:#1d1d1f;
+  --op-gray-950:#131314;
+  --op-black:#000000;
+
+  /* ── Palette · chromatics ───────────────────────────── */
+  --op-blue-400:#2997ff;
+  --op-blue-500:#0071e3;
+  --op-blue-600:#0066cc;
+  --op-green-500:#03aa49;
+  --op-green-400:#30d158;
+  --op-amber-500:#ed6300;
+  --op-amber-400:#ff9f0a;
+  --op-red-500:#e8272c;
+  --op-red-400:#ff453a;
+  /* Deep variants — the 500s are calibrated as accents on white cards and fall
+     under 4.5:1 as small text on the light canvas. These exist for terminal
+     output and other small semantic text, never for fills. */
+  --op-green-700:#0b7a37;
+  --op-amber-700:#a04700;
+  --op-red-700:#c11a1f;
+  --op-violet-500:#8668ff;
+  --op-teal-500:#00a1b3;
+
+  /* ── Semantic · light theme ─────────────────────────── */
+  --canvas:var(--op-gray-50);
+  --background:var(--op-white);
+  --card:var(--op-white);
+  --popover:var(--op-white);
+  --overlay:rgba(0,0,0,.32);
+
+  --fg:var(--op-gray-900);
+  --fg-muted:var(--op-gray-600);
+  --fg-subtle:var(--op-gray-500);
+  --fg-inverted:var(--op-white);
+
+  --border:var(--op-gray-300);
+  --border-subtle:var(--op-gray-200);
+  --border-strong:var(--op-gray-400);
+
+  --control:var(--op-gray-200);
+  --control-hover:#d8d8dc;
+  --control-active:#cfcfd4;
+  --control-fg:var(--op-gray-800);
+
+  --field:var(--op-white);
+  --field-border:var(--op-gray-300);
+  --field-placeholder:var(--op-gray-500);
+
+  --hover-surface:rgba(0,0,0,.04);
+  --active-surface:rgba(0,0,0,.07);
+  --selected-surface:rgba(0,113,227,.10);
+
+  --primary:var(--op-blue-500);
+  --primary-hover:#0a7ced;
+  --primary-active:#0063c7;
+  --primary-fg:var(--op-white);
+  --link:var(--op-blue-600);
+  --ring:rgba(0,113,227,.45);
+
+  --success:var(--op-green-500);
+  --warning:var(--op-amber-500);
+  --danger:var(--op-red-500);
+  --info:var(--op-blue-600);
+  --success-surface:rgba(3,170,73,.12);
+  --warning-surface:rgba(237,99,0,.12);
+  --danger-surface:rgba(232,39,44,.11);
+  --info-surface:rgba(0,113,227,.11);
+
+  /* Sidebar is its own surface tier so kits can shift it independently. */
+  --sidebar:var(--op-gray-50);
+  --sidebar-fg:var(--op-gray-900);
+  --sidebar-muted:var(--op-gray-600);
+  --sidebar-border:var(--op-gray-200);
+  --sidebar-item-hover:rgba(0,0,0,.05);
+  --sidebar-item-active:var(--op-white);
+
+  /* Data-viz series. Ordered — always consume in sequence. */
+  --chart-1:var(--op-blue-500);
+  --chart-2:var(--op-teal-500);
+  --chart-3:var(--op-violet-500);
+  --chart-4:var(--op-green-500);
+  --chart-5:var(--op-amber-500);
+  --chart-grid:var(--op-gray-200);
+  --chart-axis:var(--op-gray-500);
+
+  /* Third-party brand glyphs ship as black SVGs; flip them on dark. */
+  --brand-glyph-filter:none; /* @kind other */
+
+  /* Terminal — the product's primary surface. It is a real console, so it keeps
+     its own ramp rather than borrowing the UI's: output must stay legible at
+     13px mono over long sessions, and the ANSI-ish accents have to survive on
+     both themes. In light mode the terminal is paper, not a dark rectangle
+     pasted into a light app. */
+  /* The terminal shares the page canvas — the console is the surface, not a
+     panel sitting on one, so a separate shade would read as a widget. */
+  --term-bg:var(--canvas);
+  --term-fg:var(--op-gray-900);
+  /* One step darker than the UI's subtle grey: at 11–13px on the light paper
+     terminal, gray-500 lands at 3.3:1 and the whole status band goes faint. */
+  --term-dim:var(--op-gray-600);
+  --term-border:var(--border-subtle);
+  --term-accent:var(--op-blue-600);
+  --term-success:var(--op-green-700);
+  --term-warning:var(--op-amber-700);
+  --term-danger:var(--op-red-700);
+  --term-caret:var(--op-blue-600);
+  --term-selection:rgba(0,113,227,.16); /* @kind color */
+}
+
+[data-theme="dark"]{
+  --canvas:var(--op-black);
+  --background:var(--op-black);
+  --card:var(--op-gray-900);
+  --popover:var(--op-gray-850);
+  --overlay:rgba(0,0,0,.62);
+
+  --fg:var(--op-gray-50);
+  --fg-muted:#a6a6ab;
+  --fg-subtle:var(--op-gray-500);
+  --fg-inverted:var(--op-gray-900);
+
+  --border:#39393d;
+  --border-subtle:#2a2a2d;
+  --border-strong:#4c4c51;
+
+  --control:var(--op-gray-800);
+  --control-hover:#3d3d41;
+  --control-active:#47474b;
+  --control-fg:var(--op-gray-50);
+
+  --field:#1a1a1c;
+  --field-border:#3a3a3e;
+  --field-placeholder:var(--op-gray-500);
+
+  --hover-surface:rgba(255,255,255,.06);
+  --active-surface:rgba(255,255,255,.10);
+  --selected-surface:rgba(41,151,255,.16);
+
+  --primary:var(--op-blue-500);
+  --primary-hover:#1a83ea;
+  --primary-active:#0063c7;
+  --primary-fg:var(--op-white);
+  --link:var(--op-blue-400);
+  --ring:rgba(41,151,255,.55);
+
+  --success:var(--op-green-400);
+  --warning:var(--op-amber-400);
+  --danger:var(--op-red-400);
+  --info:var(--op-blue-400);
+  --success-surface:rgba(48,209,88,.14);
+  --warning-surface:rgba(255,159,10,.14);
+  --danger-surface:rgba(255,69,58,.14);
+  --info-surface:rgba(41,151,255,.14);
+
+  --sidebar:#0c0c0d;
+  --sidebar-fg:var(--op-gray-50);
+  --sidebar-muted:#8f8f95;
+  --sidebar-border:#232325;
+  --sidebar-item-hover:rgba(255,255,255,.06);
+  --sidebar-item-active:rgba(255,255,255,.10);
+
+  --chart-1:var(--op-blue-400);
+  --chart-2:#39d6e6;
+  --chart-3:#a68cff;
+  --chart-4:var(--op-green-400);
+  --chart-5:var(--op-amber-400);
+  --chart-grid:#2a2a2d;
+  --chart-axis:var(--op-gray-500);
+  --brand-glyph-filter:invert(1); /* @kind other */
+
+  --term-bg:var(--canvas);
+  --term-fg:var(--op-gray-100);
+  --term-dim:var(--op-gray-500);
+  --term-border:#26262a;
+  --term-accent:var(--op-blue-400);
+  --term-success:var(--op-green-400);
+  --term-warning:var(--op-amber-400);
+  --term-danger:var(--op-red-400);
+  --term-caret:var(--op-blue-400);
+  --term-selection:rgba(41,151,255,.24); /* @kind color */
+}

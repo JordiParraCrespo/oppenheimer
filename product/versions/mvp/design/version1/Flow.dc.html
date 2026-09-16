@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<script src="./ds-base.js"></script>
+<style>a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);padding:48px;font-family:var(--font-sans);color:var(--fg);display:flex;flex-direction:column;gap:44px">
+
+<div style="display:flex;flex-direction:column;gap:8px;max-width:70ch">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">version 1</span>
+<h1 style="margin:0;font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:-0.022em">First-run flow</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted);line-height:1.5">Nine screens, live. Each frame is the real file — click its name to open it. States inside the onboarding screens are live: GitHub flips to connected, the host registers after a few seconds, the token counts down.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<h2 style="margin:0;font-size:17px;font-weight:600">Authentication</h2>
+<span style="font-size:13px;color:var(--fg-subtle)">Step 1 · same screen signs in and creates</span>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./SignIn.dc.html" style="font-size:13px;font-family:var(--font-mono)">SignIn</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./SignIn.dc.html" title="Sign in" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./CreateAccount.dc.html" style="font-size:13px;font-family:var(--font-mono)">CreateAccount</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./CreateAccount.dc.html" title="Create account" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./ForgotPassword.dc.html" style="font-size:13px;font-family:var(--font-mono)">ForgotPassword</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./ForgotPassword.dc.html" title="Forgot password" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./CheckEmail.dc.html" style="font-size:13px;font-family:var(--font-mono)">CheckEmail</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./CheckEmail.dc.html" title="Check your email" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./SetPassword.dc.html" style="font-size:13px;font-family:var(--font-mono)">SetPassword</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./SetPassword.dc.html" title="Set a new password" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<h2 style="margin:0;font-size:17px;font-weight:600">Onboarding</h2>
+<span style="font-size:13px;color:var(--fg-subtle)">Steps 2–4 · left column, live terminal beside it</span>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./ConnectGitHub.dc.html" style="font-size:13px;font-family:var(--font-mono)">ConnectGitHub</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./ConnectGitHub.dc.html" title="Connect GitHub" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./AddHost.dc.html" style="font-size:13px;font-family:var(--font-mono)">AddHost</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./AddHost.dc.html" title="Add your first host" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./FirstSession.dc.html" style="font-size:13px;font-family:var(--font-mono)">FirstSession</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./FirstSession.dc.html" title="New session" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./SessionsConsole.dc.html" style="font-size:13px;font-family:var(--font-mono)">SessionsConsole</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./SessionsConsole.dc.html" title="Sessions console" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<h2 style="margin:0;font-size:17px;font-weight:600">Inventory</h2>
+<span style="font-size:13px;color:var(--fg-subtle)">Every component these screens are built from</span>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:8px">
+<a href="./Components.dc.html" style="font-size:13px;font-family:var(--font-mono)">Components</a>
+<div style="width:452px;height:283px;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--card)"><iframe src="./Components.dc.html" title="Components" style="width:1440px;height:900px;border:0;transform:scale(0.3139);transform-origin:top left"></iframe></div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
