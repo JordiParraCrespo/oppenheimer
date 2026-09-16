@@ -6,6 +6,7 @@ import {
   cn,
   FieldGroup,
   Input,
+  PasswordInput,
 } from '@oppenheimer/design-system-web';
 import { useAuthState, useOppenheimerApp } from '@oppenheimer/frontend/react';
 import { type AcceptInvitationDto, acceptInvitationSchema } from '@oppenheimer/shared/schemas/auth';
@@ -23,7 +24,6 @@ import {
   authControlClass,
   authInputClass,
 } from '@/components/auth/auth-primitives';
-import { PasswordInput } from '@/components/auth/password-input';
 import {
   checkPassword,
   meetsRequirements,

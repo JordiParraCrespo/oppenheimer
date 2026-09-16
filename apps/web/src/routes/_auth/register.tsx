@@ -1,20 +1,19 @@
-import { Button, FieldGroup, Input } from '@oppenheimer/design-system-web';
+import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
 import { useRegister } from '@oppenheimer/frontend/react';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared/schemas/auth';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
+  AuthDivider,
   AuthField,
   AuthFooterNote,
   AuthFormError,
+  AuthLink,
   AuthSubtitle,
   AuthTitle,
-  authControlClass,
-  authInputClass,
 } from '@/components/auth/auth-primitives';
 import { OAuthCallbackNotice } from '@/components/auth/oauth-callback-notice';
-import { PasswordInput } from '@/components/auth/password-input';
 import {
   checkPassword,
   meetsRequirements,
@@ -62,18 +61,10 @@ function RegisterPage() {
     // The social banner is about the round-trip that sent them here, not about
     // the form they are submitting now.
     if (oauthError) {
-      navigate({
-        to: '/register',
-        search: (prev) => ({ ...prev, error: undefined }),
-        replace: true,
-      });
+      navigate({ to: '/register', search: (prev) => ({ ...prev, error: undefined }), replace: true });
     }
 
-    mutate(values, {
-      onSuccess: () => {
-        navigate({ to: '/login' });
-      },
-    });
+    mutate(values, { onSuccess: () => navigate({ to: '/login' }) });
   });
 
   return (
@@ -83,33 +74,42 @@ function RegisterPage() {
 
       <OAuthCallbackNotice code={oauthError} className="mb-4" />
 
+      {/* The one place a provider identity may become an account: these pass
+          `sign-up`, which is what lifts the API's refusal. */}
+      <SocialLoginButtons disabled={isPending} intent="sign-up" />
+
+      <AuthDivider label={t('common.or')} />
+
       <form onSubmit={onSubmit} noValidate>
-        <FieldGroup className="gap-4">
+        <FieldGroup>
           {error && (
             <AuthFormError>{resolveError(error, t('auth.register.failed')).message}</AuthFormError>
           )}
 
+          {/* The artboard asks for an email and a password only; the account
+              schema still requires a name, so it stays as one compact row
+              until that decision is made. */}
           <div className="grid grid-cols-2 gap-3">
             <AuthField label={t('auth.firstName')} htmlFor="firstName" error={errors.firstName}>
               <Input
                 {...register('firstName')}
                 id="firstName"
+                size="lg"
                 autoComplete="given-name"
                 placeholder={t('auth.firstNamePlaceholder')}
                 aria-invalid={Boolean(errors.firstName)}
                 disabled={isPending}
-                className={authInputClass}
               />
             </AuthField>
             <AuthField label={t('auth.lastName')} htmlFor="lastName" error={errors.lastName}>
               <Input
                 {...register('lastName')}
                 id="lastName"
+                size="lg"
                 autoComplete="family-name"
                 placeholder={t('auth.lastNamePlaceholder')}
                 aria-invalid={Boolean(errors.lastName)}
                 disabled={isPending}
-                className={authInputClass}
               />
             </AuthField>
           </div>
@@ -119,48 +119,38 @@ function RegisterPage() {
               {...register('email')}
               id="email"
               type="email"
+              size="lg"
               autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               aria-invalid={Boolean(errors.email)}
               disabled={isPending}
-              className={authInputClass}
             />
           </AuthField>
 
-          <AuthField
-            label={t('auth.register.passwordLabel')}
-            htmlFor="password"
-            error={errors.password}
-          >
+          <AuthField label={t('auth.password')} htmlFor="password" error={errors.password}>
             <PasswordInput
               {...register('password')}
               id="password"
+              size="lg"
               autoComplete="new-password"
               placeholder={t('auth.register.passwordPlaceholder')}
               aria-invalid={Boolean(errors.password)}
               disabled={isPending}
+              showLabel={t('auth.showPassword')}
+              hideLabel={t('auth.hidePassword')}
             />
           </AuthField>
 
-          <PasswordRequirements results={results} rules={RULES} className="-mt-1.5 mb-1.5" />
+          <PasswordRequirements results={results} rules={RULES} />
 
-          <Button type="submit" disabled={isPending || !satisfied} className={authControlClass}>
+          <Button type="submit" size="lg" block disabled={isPending || !satisfied}>
             {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
           </Button>
         </FieldGroup>
       </form>
 
-      {/* The one place a provider identity may become an account: these pass
-          `sign-up`, which is what lifts the API's refusal. Without them the
-          person the login screen sent here has no way to finish with the
-          provider they started with. */}
-      <SocialLoginButtons disabled={isPending} intent="sign-up" />
-
       <AuthFooterNote>
-        {t('auth.register.hasAccount')}{' '}
-        <Link to="/login" className="text-accent-blue transition-opacity hover:opacity-80">
-          {t('auth.register.signIn')}
-        </Link>
+        {t('auth.register.hasAccount')} <AuthLink to="/login">{t('auth.register.signIn')}</AuthLink>
       </AuthFooterNote>
     </>
   );

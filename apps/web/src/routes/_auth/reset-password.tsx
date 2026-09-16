@@ -1,5 +1,4 @@
-import { Button, FieldGroup } from '@oppenheimer/design-system-web';
-import { Mail, ShieldAlert, ShieldCheck } from '@oppenheimer/design-system-web/icons';
+import { Button, FieldGroup, PasswordInput } from '@oppenheimer/design-system-web';
 import { useResetPassword } from '@oppenheimer/frontend/react';
 import { resetPasswordSchema } from '@oppenheimer/shared/schemas/auth';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -10,15 +9,12 @@ import { z } from 'zod';
 import { useAuthLegalNote } from '@/components/auth/auth-legal-note';
 import {
   AuthBackLink,
-  AuthEmailChip,
   AuthField,
   AuthFormError,
-  AuthIconCircle,
+  AuthNote,
   AuthSubtitle,
   AuthTitle,
-  authControlClass,
 } from '@/components/auth/auth-primitives';
-import { PasswordInput } from '@/components/auth/password-input';
 import {
   checkPassword,
   meetsRequirements,
@@ -31,8 +27,7 @@ import { useZodResolver } from '@/lib/use-zod-resolver';
 /**
  * The token rides in the URL, so only the two password fields are user input.
  * Whether they match is not a schema rule: the live checklist below already
- * reports it and gates the submit button, and a `refine()` would need a
- * message string, which the shared schemas deliberately never carry.
+ * reports it and gates the submit button.
  */
 const newPasswordSchema = resetPasswordSchema
   .pick({ password: true })
@@ -87,12 +82,9 @@ function ResetPasswordPage() {
   if (!token || linkError) {
     return (
       <>
-        <AuthIconCircle>
-          <ShieldAlert />
-        </AuthIconCircle>
         <AuthTitle>{t('auth.resetPassword.invalidTitle')}</AuthTitle>
         <AuthSubtitle>{t('auth.resetPassword.invalidMessage')}</AuthSubtitle>
-        <Button render={<Link to="/forgot-password" />} className={authControlClass}>
+        <Button size="lg" block render={<Link to="/forgot-password" />}>
           {t('auth.resetPassword.requestNewLink')}
         </Button>
         <AuthBackLink />
@@ -103,12 +95,9 @@ function ResetPasswordPage() {
   if (done) {
     return (
       <>
-        <AuthIconCircle>
-          <ShieldCheck />
-        </AuthIconCircle>
         <AuthTitle>{t('auth.resetPassword.successTitle')}</AuthTitle>
         <AuthSubtitle>{t('auth.resetPassword.successMessage')}</AuthSubtitle>
-        <Button render={<Link to="/login" />} className={authControlClass}>
+        <Button size="lg" block render={<Link to="/login" />}>
           {t('auth.resetPassword.continue')}
         </Button>
       </>
@@ -118,17 +107,14 @@ function ResetPasswordPage() {
   return (
     <>
       <AuthTitle>{t('auth.resetPassword.title')}</AuthTitle>
-      <AuthSubtitle>{t('auth.resetPassword.description')}</AuthSubtitle>
-
-      {email && (
-        <AuthEmailChip>
-          <Mail />
-          {email}
-        </AuthEmailChip>
-      )}
+      <AuthSubtitle>
+        {email
+          ? t('auth.resetPassword.descriptionFor', { email })
+          : t('auth.resetPassword.description')}
+      </AuthSubtitle>
 
       <form onSubmit={onSubmit} noValidate>
-        <FieldGroup className="gap-4">
+        <FieldGroup>
           {error && (
             <AuthFormError>
               {resolveError(error, t('auth.resetPassword.error')).message}
@@ -143,10 +129,13 @@ function ResetPasswordPage() {
             <PasswordInput
               {...register('password')}
               id="password"
+              size="lg"
               autoComplete="new-password"
               placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
               aria-invalid={Boolean(errors.password)}
               disabled={isPending}
+              showLabel={t('auth.showPassword')}
+              hideLabel={t('auth.hidePassword')}
             />
           </AuthField>
 
@@ -158,20 +147,25 @@ function ResetPasswordPage() {
             <PasswordInput
               {...register('confirmPassword')}
               id="confirmPassword"
+              size="lg"
               autoComplete="new-password"
               placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
               aria-invalid={Boolean(errors.confirmPassword)}
               disabled={isPending}
+              showLabel={t('auth.showPassword')}
+              hideLabel={t('auth.hidePassword')}
             />
           </AuthField>
 
-          <PasswordRequirements results={results} rules={RULES} className="-mt-1.5 mb-1.5" />
+          <PasswordRequirements results={results} rules={RULES} />
 
-          <Button type="submit" disabled={isPending || !satisfied} className={authControlClass}>
+          <Button type="submit" size="lg" block disabled={isPending || !satisfied}>
             {isPending ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
           </Button>
         </FieldGroup>
       </form>
+
+      <AuthNote>{t('auth.resetPassword.note')}</AuthNote>
     </>
   );
 }

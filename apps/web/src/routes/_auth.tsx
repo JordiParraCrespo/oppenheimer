@@ -1,10 +1,10 @@
-import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AuthArtPanel } from '@/components/auth/auth-art-panel';
+import { Trans } from 'react-i18next';
 import { AuthLegalNoteProvider } from '@/components/auth/auth-legal-note';
+import { AuthPanel } from '@/components/auth/auth-panel';
+import { AuthLink } from '@/components/auth/auth-primitives';
 import { BrandLogo } from '@/components/auth/brand-logo';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { sanitizeRedirect } from '@/lib/sanitize-redirect';
 
 export const Route = createFileRoute('/_auth')({
@@ -33,41 +33,42 @@ export const Route = createFileRoute('/_auth')({
 });
 
 /**
- * The auth split: form on the left, aurora panel on the right. Below 900px the
- * panel drops away entirely and the form takes the full width — it carries no
- * information, only atmosphere.
+ * The auth split from the MVP artboards: the wordmark top-left, a 340px form
+ * column centred in the left half, the photograph carousel in a 28px frame
+ * on the right. Below 900px the panel drops away and the form takes the
+ * width; it carries no information, only atmosphere.
+ *
+ * These screens follow the OS theme: there is no toggle here. Appearance is
+ * chosen from the account menu once signed in.
  */
 function AuthLayout() {
-  const { t } = useTranslation();
   const [legalNote, setLegalNote] = useState<string | null>(null);
 
   return (
-    <div className="grid h-svh w-full bg-background min-[900px]:grid-cols-2">
-      <div className="relative flex flex-col overflow-y-auto px-6 py-10 min-[900px]:px-14">
-        {/* The design puts one control in this corner and nothing else: the
-            theme pill, at 40px from the top and the panel's own 56px gutter. */}
-        <ThemeToggle className="absolute top-8 right-6 z-10 min-[900px]:top-10 min-[900px]:right-14" />
-
+    <div className="grid min-h-svh w-full bg-canvas min-[900px]:grid-cols-2">
+      <div className="relative flex flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
         <BrandLogo />
 
-        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-6">
+        <div className="mx-auto flex w-full max-w-[340px] flex-1 flex-col justify-center py-10">
           <AuthLegalNoteProvider value={setLegalNote}>
             <Outlet />
           </AuthLegalNoteProvider>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-400">
-          {legalNote && <p className="basis-full">{legalNote}</p>}
-          <Link to="/privacy" className="hover:text-ink-700">
-            {t('public.navigation.privacy')}
-          </Link>
-          <Link to="/terms" className="hover:text-ink-700">
-            {t('public.navigation.terms')}
-          </Link>
+          <p className="mt-5 text-xs text-pretty text-fg-subtle">
+            {legalNote ?? (
+              <Trans
+                i18nKey="auth.legal"
+                components={{
+                  terms: <AuthLink to="/terms" />,
+                  privacy: <AuthLink to="/privacy" />,
+                }}
+              />
+            )}
+          </p>
         </div>
       </div>
 
-      <AuthArtPanel className="hidden min-[900px]:flex" />
+      <AuthPanel className="hidden p-6 min-[900px]:block min-[900px]:py-10 min-[900px]:pr-10" />
     </div>
   );
 }
