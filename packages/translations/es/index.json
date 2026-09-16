@@ -24,7 +24,8 @@
       "now": "ahora",
       "week": "{{count}}sem",
       "year": "{{count}}a"
-    }
+    },
+    "product": "Consola"
   },
   "validation": {
     "title": "Error de validación",
@@ -135,13 +136,13 @@
     "firstName": "Nombre",
     "lastName": "Apellido",
     "login": {
-      "title": "Bienvenido de nuevo",
-      "description": "Inicia sesión para seguir donde lo dejó tu equipo.",
+      "title": "Simple pero potente",
+      "description": "Inicia sesión en tu consola.",
       "submit": "Iniciar sesión",
       "submitting": "Iniciando sesión...",
-      "forgotPassword": "¿Olvidaste tu contraseña?",
-      "noAccount": "¿No tienes una cuenta?",
-      "signUp": "Regístrate",
+      "forgotPassword": "¿Olvidaste la contraseña?",
+      "noAccount": "¿Sin cuenta?",
+      "signUp": "Crea una",
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
       "failedTitle": "Error al iniciar sesión",
@@ -152,8 +153,8 @@
       "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
     },
     "register": {
-      "title": "Crea una cuenta",
-      "description": "Configura tu cuenta para empezar a trabajar con tu equipo.",
+      "title": "Crea tu cuenta",
+      "description": "Sesiones en tus propios hosts, desde el navegador.",
       "passwordPlaceholder": "Crea una contraseña",
       "submit": "Crear cuenta",
       "submitting": "Creando cuenta...",
@@ -162,11 +163,11 @@
       "failed": "Error en el registro",
       "successTitle": "Cuenta creada",
       "successMessage": "Ya puedes iniciar sesión.",
-      "passwordLabel": "Crear contraseña"
+      "passwordHint": "Al menos 8 caracteres, con un número."
     },
     "forgotPassword": {
-      "title": "Olvidé mi contraseña",
-      "description": "Introduce tu correo y te enviaremos un enlace para restablecerla",
+      "title": "Restablece tu contraseña",
+      "description": "Introduce tu correo de trabajo y te enviaremos un enlace para crear una nueva.",
       "submit": "Enviar enlace",
       "submitting": "Enviando...",
       "successTitle": "Revisa tu correo",
@@ -175,14 +176,17 @@
       "error": "Algo salió mal",
       "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
       "notReceived": "¿No te ha llegado? Revisa tu carpeta de spam o <retry>prueba con otro correo</retry>.",
-      "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos."
+      "sentMessage": "Hemos enviado un enlace para restablecer tu contraseña a <address>{{email}}</address>. Caduca en 30 minutos.",
+      "emailLabel": "Correo de trabajo",
+      "resend": "Reenviar enlace",
+      "differentAddress": "Usar otra dirección"
     },
     "resetPassword": {
-      "title": "Restablecer contraseña",
-      "description": "Elige una nueva contraseña para tu cuenta",
+      "title": "Crea una nueva contraseña",
+      "description": "Elige una nueva contraseña para tu cuenta.",
       "newPassword": "Nueva contraseña",
       "newPasswordPlaceholder": "Introduce una nueva contraseña",
-      "submit": "Restablecer contraseña",
+      "submit": "Guardar e iniciar sesión",
       "submitting": "Restableciendo...",
       "invalidTitle": "Enlace no válido",
       "invalidMessage": "Este enlace no es válido o ha expirado. Solicita uno nuevo.",
@@ -194,7 +198,9 @@
       "confirmPassword": "Confirmar contraseña",
       "confirmPasswordPlaceholder": "Repite la contraseña",
       "continue": "Ir al espacio de trabajo",
-      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña."
+      "legal": "Solo los miembros de este espacio de trabajo pueden restablecer una contraseña.",
+      "descriptionFor": "Elige una nueva contraseña para {{email}}.",
+      "note": "Al guardar se cerrará la sesión en el resto de dispositivos."
     },
     "session": {
       "errorTitle": "Problema de conexión",
@@ -218,13 +224,28 @@
       "title": "Únete al espacio de trabajo"
     },
     "art": {
-      "body": "Invita a tu equipo, decide quién puede hacer qué y mantén el trabajo en marcha desde un único lugar.",
-      "features": {
-        "team": "Roles y permisos que encajan con cómo trabajáis",
-        "workspaces": "Crea un espacio de trabajo e invita a tu equipo",
-        "security": "Sesiones, claves de API e inicio de sesión bajo tu control"
-      },
-      "headline": "Todo lo que tu equipo necesita, en un solo espacio de trabajo."
+      "slides": {
+        "portrait": {
+          "alt": "J. Robert Oppenheimer, retrato",
+          "caption": "Los Álamos, 1944"
+        },
+        "einstein": {
+          "alt": "Oppenheimer y Einstein conversando",
+          "caption": "Princeton, 1947"
+        },
+        "calutron": {
+          "alt": "Operadoras de calutrón en sus paneles de control",
+          "caption": "Oak Ridge, 1944"
+        },
+        "groves": {
+          "alt": "Oppenheimer y el general Groves en el sitio de Trinity",
+          "caption": "Trinity, 1945"
+        },
+        "gate": {
+          "alt": "La puerta principal del laboratorio de Los Álamos",
+          "caption": "Los Álamos, 1943"
+        }
+      }
     },
     "firstNamePlaceholder": "Tu nombre",
     "hidePassword": "Ocultar contraseña",
@@ -240,7 +261,8 @@
       "match": "Las dos contraseñas coinciden",
       "number": "Al menos un número"
     },
-    "showPassword": "Mostrar contraseña"
+    "showPassword": "Mostrar contraseña",
+    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
   },
   "sessions": {
     "title": "Sesiones",

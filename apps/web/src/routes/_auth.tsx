@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Trans } from 'react-i18next';
 import { AuthLegalNoteProvider } from '@/components/auth/auth-legal-note';
@@ -49,7 +49,7 @@ function AuthLayout() {
       <div className="relative flex flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
         <BrandLogo />
 
-        <div className="mx-auto flex w-full max-w-[340px] flex-1 flex-col justify-center py-10">
+        <div className="mx-auto flex w-full max-w-85 flex-1 flex-col justify-center py-10">
           <AuthLegalNoteProvider value={setLegalNote}>
             <Outlet />
           </AuthLegalNoteProvider>

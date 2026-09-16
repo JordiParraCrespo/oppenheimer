@@ -19,16 +19,26 @@ type BrandGlyphName = 'github' | 'google';
 function BrandGlyph({
   name,
   size = 18,
+  flip = name === 'github',
   className,
   ...props
-}: Omit<React.ComponentProps<'svg'>, 'name'> & { name: BrandGlyphName; size?: number }) {
+}: Omit<React.ComponentProps<'svg'>, 'name'> & {
+  name: BrandGlyphName;
+  size?: number;
+  /**
+   * Invert the mark on dark through `--brand-glyph-filter`, the monochrome
+   * brand's own rule. On by default for GitHub; pass `false` when the mark
+   * sits on a coloured fill and takes `currentColor` instead.
+   */
+  flip?: boolean;
+}) {
   const shared = {
     'data-slot': 'brand-glyph',
     'data-brand': name,
     width: size,
     height: size,
     role: 'img' as const,
-    className: cn('block shrink-0', className),
+    className: cn('block shrink-0', flip && '[filter:var(--brand-glyph-filter)]', className),
     ...props,
   };
   if (name === 'google') {

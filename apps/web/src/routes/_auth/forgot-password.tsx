@@ -1,5 +1,4 @@
 import { Button, FieldGroup, Input } from '@oppenheimer/design-system-web';
-import { useForgotPassword } from '@oppenheimer/frontend/react';
 import { type ForgotPasswordDto, forgotPasswordSchema } from '@oppenheimer/shared/schemas/auth';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -10,25 +9,23 @@ import {
   AuthBackLink,
   AuthField,
   AuthFooterNote,
-  AuthFormError,
   AuthSubtitle,
   AuthTitle,
 } from '@/components/auth/auth-primitives';
-import { useErrorMessage } from '@/lib/use-error-message';
+import { scaffoldSubmit } from '@/components/auth/scaffold-submit';
 import { useZodResolver } from '@/lib/use-zod-resolver';
 
 export const Route = createFileRoute('/_auth/forgot-password')({
   component: ForgotPasswordPage,
 });
 
+/**
+ * Two artboards, one route: the request form, then "Check your email" once
+ * an address has been submitted. Held locally so "use a different address"
+ * walks the screen back.
+ */
 function ForgotPasswordPage() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
-  const { mutate, isPending, error } = useForgotPassword();
-
-  // Held locally rather than read off the mutation so "use a different
-  // address" can walk the screen back to the request state without the
-  // success flag dragging it forward again.
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   useAuthLegalNote(t('auth.forgotPassword.legal'));
@@ -42,9 +39,10 @@ function ForgotPasswordPage() {
     defaultValues: { email: '' },
   });
 
-  const onSubmit = handleSubmit(({ email }) =>
-    mutate(email, { onSuccess: () => setSentTo(email) }),
-  );
+  const onSubmit = handleSubmit(({ email }) => {
+    scaffoldSubmit('Send reset link', { email });
+    setSentTo(email);
+  });
 
   if (sentTo) {
     return (
@@ -62,10 +60,9 @@ function ForgotPasswordPage() {
           variant="secondary"
           size="lg"
           block
-          disabled={isPending}
-          onClick={() => mutate(sentTo)}
+          onClick={() => scaffoldSubmit('Resend link', { email: sentTo })}
         >
-          {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.resend')}
+          {t('auth.forgotPassword.resend')}
         </Button>
 
         <AuthFooterNote>
@@ -89,13 +86,11 @@ function ForgotPasswordPage() {
 
       <form onSubmit={onSubmit} noValidate>
         <FieldGroup>
-          {error && (
-            <AuthFormError>
-              {resolveError(error, t('auth.forgotPassword.error')).message}
-            </AuthFormError>
-          )}
-
-          <AuthField label={t('auth.forgotPassword.emailLabel')} htmlFor="email" error={errors.email}>
+          <AuthField
+            label={t('auth.forgotPassword.emailLabel')}
+            htmlFor="email"
+            error={errors.email}
+          >
             <Input
               {...register('email')}
               id="email"
@@ -104,12 +99,11 @@ function ForgotPasswordPage() {
               autoComplete="email"
               placeholder={t('auth.emailPlaceholder')}
               aria-invalid={Boolean(errors.email)}
-              disabled={isPending}
             />
           </AuthField>
 
-          <Button type="submit" size="lg" block disabled={isPending}>
-            {isPending ? t('auth.forgotPassword.submitting') : t('auth.forgotPassword.submit')}
+          <Button type="submit" size="lg" block>
+            {t('auth.forgotPassword.submit')}
           </Button>
         </FieldGroup>
       </form>

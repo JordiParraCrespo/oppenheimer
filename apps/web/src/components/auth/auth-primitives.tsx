@@ -7,8 +7,8 @@ import {
   FieldError,
   FieldLabel,
   FieldRow,
-  Link as TextLink,
   Separator,
+  Link as TextLink,
 } from '@oppenheimer/design-system-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -40,9 +40,7 @@ export function AuthTitle({ children, className }: React.ComponentProps<'h1'>) {
 }
 
 export function AuthSubtitle({ children, className }: React.ComponentProps<'p'>) {
-  return (
-    <p className={cn('mb-7 text-base text-pretty text-fg-muted', className)}>{children}</p>
-  );
+  return <p className={cn('mb-7 text-base text-pretty text-fg-muted', className)}>{children}</p>;
 }
 
 /** The muted line under a form's primary action ("Signing in ends any other sessions…"). */
@@ -71,14 +69,12 @@ export function AuthLink({
 }: {
   to: string;
   search?: Record<string, unknown>;
-  children: React.ReactNode;
+  /** Optional so `Trans` can pass the element and fill it from the catalog. */
+  children?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <TextLink
-      className={className}
-      render={<Link to={to} search={search as never} />}
-    >
+    <TextLink className={className} render={<Link to={to} search={search as never} />}>
       {children}
     </TextLink>
   );
