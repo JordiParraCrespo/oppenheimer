@@ -1,14 +1,26 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
+import { cva, type VariantProps } from 'class-variance-authority';
+import type * as React from 'react';
 
-import { cn } from "../lib/utils";
+import { cn } from '../lib/utils';
 
-function Empty({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * Empty — an empty state names the next action: a muted description and one
+ * button, optionally under a title and a 44px icon disc. `compact` is the
+ * sidebar form ("No sessions yet. The one you start appears here with its live
+ * state."): left-aligned, 12.5px, no disc.
+ */
+function Empty({
+  className,
+  compact,
+  ...props
+}: React.ComponentProps<'div'> & { compact?: boolean }) {
   return (
     <div
       data-slot="empty"
+      data-compact={compact || undefined}
       className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-0 rounded-lg border-dashed p-6 text-center text-balance md:p-8",
+        'group/empty flex min-w-0 flex-1 flex-col items-center justify-center gap-2.5 px-6 py-20 text-center text-balance',
+        compact && 'items-start gap-1.5 px-3 py-3.5 text-left text-pretty',
         className,
       )}
       {...props}
@@ -16,36 +28,37 @@ function Empty({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
+function EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="empty-header"
-      className={cn("flex max-w-sm flex-col items-center gap-0 text-center", className)}
+      className={cn(
+        'flex max-w-[42ch] flex-col items-center gap-1 text-center group-data-compact/empty:items-start group-data-compact/empty:text-left',
+        className,
+      )}
       {...props}
     />
   );
 }
 
 const emptyMediaVariants = cva(
-  "mb-5 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  'mb-1 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: "bg-transparent",
-        icon: "flex size-13 items-center justify-center rounded-full border border-border-subtle bg-surface-sunken text-ink-400 [&_svg:not([class*='size-'])]:size-6",
+        default: 'bg-transparent',
+        icon: 'size-11 rounded-pill bg-control text-fg-subtle [&_svg:not([class*=size-])]:size-5',
       },
     },
-    defaultVariants: {
-      variant: "default",
-    },
+    defaultVariants: { variant: 'default' },
   },
 );
 
 function EmptyMedia({
   className,
-  variant = "default",
+  variant = 'default',
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
+}: React.ComponentProps<'div'> & VariantProps<typeof emptyMediaVariants>) {
   return (
     <div
       data-slot="empty-media"
@@ -56,34 +69,31 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
+function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="empty-title"
-      className={cn("text-base font-medium text-ink-900", className)}
+      className={cn('text-h4 font-semibold text-fg', className)}
       {...props}
     />
   );
 }
 
-function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
+function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
       data-slot="empty-description"
-      className={cn("mt-1.5 text-sm text-pretty text-ink-400", className)}
+      className={cn('text-operate text-fg-muted [[data-compact]_&]:text-[12.5px] [[data-compact]_&]:leading-normal [[data-compact]_&]:text-fg-subtle', className)}
       {...props}
     />
   );
 }
 
-function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
+function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="empty-content"
-      className={cn(
-        "mt-5 flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance",
-        className,
-      )}
+      className={cn('mt-2 flex w-full min-w-0 flex-col items-center gap-3', className)}
       {...props}
     />
   );

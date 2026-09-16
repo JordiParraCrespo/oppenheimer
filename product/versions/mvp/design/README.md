@@ -49,7 +49,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 
 - This tree is a design export, not application code. It is excluded from Biome
   in the root `biome.json`; nothing in the build graph reads it.
-- The design system is not yet the one in `packages/design-system/web`. Porting
-  the tokens and components is its own piece of work.
+- The tokens and the MVP component inventory are ported to
+  `packages/design-system/web` (`src/styles/globals.css` and the components
+  listed in `apps/web-showcase/src/lib/toc.ts`), using this folder's version-1
+  dark ramp rather than the system's true black. The artboards here remain the
+  design record; the showcase is the rendered one.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

@@ -1,107 +1,149 @@
-"use client";
+'use client';
 
-import { ArrowUpIcon, SquareIcon } from "lucide-react";
-import * as React from "react";
+import { ArrowUpIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from "../lib/utils";
+import { cn } from '../lib/utils';
+import { IconButton } from './icon-button';
 
 /**
- * Composer — the assistant's input: a card-radius well holding an
- * auto-growing textarea over a toolbar row, with the blue circular send button
- * pinned right. Enter submits; Shift+Enter inserts a newline.
+ * Composer — the prompt box, the one place on New session with real presence:
+ * an 18px-radius field holding a growing textarea, then a foot row with the
+ * tools. Focus takes the blue border and ring. Enter submits, Shift+Enter
+ * inserts a newline; while `busy` the send button becomes a stop button in the
+ * same corner.
  *
- * While `busy`, the send button becomes a stop button — the same corner, so a
- * reader who wants to interrupt does not have to find a new control, and the
- * field stays live so the next question can be typed while this one finishes.
+ * Foot row, left to right: attach, `tools` (the model picker on the console),
+ * a spacer, mic, and the round primary send. Attachments list under the
+ * textarea as removable chips; they are never silently dropped.
  *
- * Controlled — own the value and handle `onSubmit`.
+ * Controlled — own `value`, handle `onSubmit`.
  */
+type ComposerAttachment = { id: string; name: string };
+
 function Composer({
   value,
   onValueChange,
   onSubmit,
   onStop,
   busy = false,
-  placeholder = "Ask anything…",
-  sendLabel = "Send",
-  stopLabel = "Stop",
-  toolbar,
+  disabled = false,
+  placeholder = 'Describe a task or ask a question',
+  attachments,
+  onRemoveAttachment,
+  onAttach,
+  onRecord,
+  recording = false,
+  tools,
+  minRows = 3,
   className,
   ...props
-}: Omit<React.ComponentProps<"div">, "onSubmit"> & {
+}: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
   value: string;
   onValueChange: (value: string) => void;
-  onSubmit?: () => void;
-  /** Called by the stop button. Only reachable while `busy`. */
+  onSubmit: (value: string) => void;
   onStop?: () => void;
-  /** A turn is in flight. */
   busy?: boolean;
+  disabled?: boolean;
   placeholder?: string;
-  /** Accessible names for the one button that changes meaning — pass translated copy. */
-  sendLabel?: string;
-  stopLabel?: string;
-  toolbar?: React.ReactNode;
+  attachments?: ComposerAttachment[];
+  onRemoveAttachment?: (id: string) => void;
+  /** Present: shows the attach button. */
+  onAttach?: () => void;
+  /** Present: shows the mic button. */
+  onRecord?: () => void;
+  recording?: boolean;
+  /** Extra controls in the foot row, e.g. the model picker. */
+  tools?: React.ReactNode;
+  minRows?: number;
 }) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const canSend = value.trim().length > 0 && !disabled;
 
-  // Grow with the content, capped so the thread above stays visible.
-  React.useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    // Floored at one comfortable line so the field never shrinks below its
-    // resting height, capped so a long draft cannot swallow the thread above.
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, 22), 120)}px`;
-  }, [value]);
+  function submit() {
+    if (busy) return onStop?.();
+    if (canSend) onSubmit(value);
+  }
 
-  const canSend = value.trim().length > 0;
+  function onKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      submit();
+    }
+  }
 
   return (
     <div
       data-slot="composer"
       className={cn(
-        "rounded-2xl border border-border-default bg-card px-3 pt-3 pb-2.5 transition-[border-color,box-shadow]",
-        // The whole well takes the focus ring, not the bare textarea inside it
-        // — the field carries no border of its own, so a ring on the control
-        // would draw a rectangle floating in the middle of a card.
-        "focus-within:border-accent-blue focus-within:ring-3 focus-within:ring-focus-ring",
+        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring has-disabled:opacity-50',
         className,
       )}
       {...props}
     >
       <textarea
-        ref={textareaRef}
-        rows={1}
+        data-slot="composer-input"
         value={value}
-        placeholder={placeholder}
         onChange={(event) => onValueChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            if (canSend) onSubmit?.();
-          }
-        }}
-        className="max-h-30 w-full resize-none bg-transparent text-base leading-[1.45] text-ink-900 outline-none placeholder:text-ink-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        rows={minRows}
+        className="field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] pt-4 pb-2 text-lg leading-normal text-fg outline-none placeholder:text-field-placeholder"
       />
-      <div className="mt-2 flex items-center gap-2">
-        {toolbar}
+      {attachments && attachments.length > 0 ? (
+        <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
+          {attachments.map((file) => (
+            <span
+              key={file.id}
+              className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.5 text-xs text-fg-muted"
+            >
+              <span className="truncate">{file.name}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                onClick={() => onRemoveAttachment?.(file.id)}
+                className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
+              >
+                <XIcon className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
+      <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
+        {onAttach ? (
+          <IconButton aria-label="Attach a file" size="sm" shape="square" onClick={onAttach}>
+            <PaperclipIcon />
+          </IconButton>
+        ) : null}
+        {tools}
         <span className="flex-1" />
-        <button
-          type="button"
+        {onRecord ? (
+          <IconButton
+            aria-label={recording ? 'Stop recording' : 'Dictate'}
+            aria-pressed={recording}
+            size="sm"
+            shape="square"
+            onClick={onRecord}
+            className={cn(recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger')}
+          >
+            <MicIcon />
+          </IconButton>
+        ) : null}
+        <IconButton
+          aria-label={busy ? 'Stop' : 'Send'}
+          variant="primary"
+          size="sm"
+          onClick={submit}
           disabled={!busy && !canSend}
-          onClick={() => (busy ? onStop?.() : onSubmit?.())}
-          aria-label={busy ? stopLabel : sendLabel}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-blue text-white transition-[opacity,transform] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-ink-400 disabled:hover:opacity-100"
+          className="size-8"
         >
-          {busy ? (
-            <SquareIcon className="size-3 fill-current" />
-          ) : (
-            <ArrowUpIcon className="size-4" />
-          )}
-        </button>
+          {busy ? <SquareIcon className="size-3.5 fill-current" /> : <ArrowUpIcon strokeWidth={2.5} />}
+        </IconButton>
       </div>
     </div>
   );
 }
 
 export { Composer };
+export type { ComposerAttachment };

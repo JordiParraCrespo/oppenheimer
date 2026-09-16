@@ -43,6 +43,9 @@ export {
   AvatarImage,
 } from './components/avatar';
 export { Badge, badgeVariants } from './components/badge';
+export type { BrandGlyphName } from './components/brand-glyph';
+/* ── MVP design system (product/versions/mvp/design) ───────────────────── */
+export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
 export {
   Breadcrumb,
@@ -60,6 +63,7 @@ export {
   BubbleGroup,
   BubbleReactions,
 } from './components/bubble';
+export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
 export {
   Card,
@@ -82,6 +86,16 @@ export {
 export { ChatBubble, ChatMark, ChatTyping } from './components/chat-bubble';
 export { ChatMarkdown } from './components/chat-markdown';
 export { Checkbox } from './components/checkbox';
+export type { ChipProps } from './components/chip';
+export { Chip, chipVariants, FilterChip } from './components/chip';
+export {
+  ChipSelect,
+  ChipSelectAction,
+  ChipSelectGroup,
+  ChipSelectGroupLabel,
+  ChipSelectOption,
+} from './components/chip-select';
+export { CodeBlock } from './components/code-block';
 export {
   Collapsible,
   CollapsibleContent,
@@ -101,6 +115,7 @@ export {
   CommandSeparator,
   CommandShortcut,
 } from './components/command';
+export type { ComposerAttachment } from './components/composer';
 export { Composer } from './components/composer';
 export { DeltaText } from './components/delta-text';
 export {
@@ -135,6 +150,7 @@ export {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
@@ -146,6 +162,7 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropdownMenuValue,
 } from './components/dropdown-menu';
 export {
   Empty,
@@ -159,19 +176,25 @@ export { EmptyState } from './components/empty-state';
 export { FeatureRow } from './components/feature-row';
 export {
   Field,
+  FieldAction,
   FieldContent,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
   FieldLegend,
+  FieldRow,
   FieldSeparator,
   FieldSet,
   FieldTitle,
 } from './components/field';
 export type { FilterMenuOption } from './components/filter-menu';
 export { FilterMenu } from './components/filter-menu';
+export type { IconButtonProps } from './components/icon-button';
 export { IconButton, iconButtonVariants } from './components/icon-button';
+export type { CarouselSlide } from './components/image-carousel';
+export { ImageCarousel } from './components/image-carousel';
+export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export {
   InputGroup,
@@ -184,6 +207,7 @@ export {
 export { Kbd } from './components/kbd';
 export { Kpi, KpiCard } from './components/kpi';
 export { Label } from './components/label';
+export { Link } from './components/link';
 export type {
   MailboxOption,
   MailboxPickerLabels,
@@ -239,6 +263,7 @@ export {
   PaginationNext,
   PaginationPrevious,
 } from './components/pagination';
+export { PasswordInput } from './components/password-input';
 export {
   Popover,
   PopoverContent,
@@ -291,6 +316,7 @@ export {
 } from './components/select';
 export { SelectMenu } from './components/select-menu';
 export { Separator } from './components/separator';
+export { SessionItem, SessionList } from './components/session-item';
 export {
   Sheet,
   SheetClose,
@@ -308,6 +334,7 @@ export {
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupContent,
+  SidebarGroupCount,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,
@@ -336,6 +363,9 @@ export type {
   StageBreakdownTone,
 } from './components/stage-breakdown';
 export { StageBreakdown } from './components/stage-breakdown';
+export type { StatusState } from './components/status-dot';
+export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
+export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { Switch } from './components/switch';
 export {
@@ -357,6 +387,17 @@ export {
   tabsListVariants,
 } from './components/tabs';
 export { Tag, tagVariants } from './components/tag';
+export type { TerminalTone } from './components/terminal';
+export {
+  Terminal,
+  TerminalLine,
+  TerminalPrompt,
+  TerminalScrollback,
+  TerminalSpacer,
+  TerminalStatusBar,
+  TerminalStatusItem,
+  TerminalTurn,
+} from './components/terminal';
 export { Textarea } from './components/textarea';
 export { Toggle, toggleVariants } from './components/toggle';
 export { ToggleGroup, ToggleGroupItem } from './components/toggle-group';
@@ -377,5 +418,6 @@ export {
   TooltipProvider,
   TooltipTrigger,
 } from './components/tooltip';
+export { Wordmark } from './components/wordmark';
 export { useIsMobile } from './hooks/use-mobile';
 export { cn } from './lib/utils';

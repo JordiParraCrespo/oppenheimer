@@ -1,57 +1,62 @@
 # design-system — Agent Instructions
 
 Shared design system. This directory is a **container of two publishable
-packages** plus shared tokens:
+packages**:
 
-- [`web/`](./web) → `@oppenheimer/design-system-web` — shadcn + Tailwind (used by `apps/web`, `apps/web-showcase`)
+- [`web/`](./web) → `@oppenheimer/design-system-web` — Base UI + Tailwind v4 (used by `apps/web`, `apps/web-showcase`)
 - [`mobile/`](./mobile) → `@oppenheimer/design-system-mobile` — React Native + NativeWind (used by `apps/mobile`, `apps/mobile-showcase`)
 
 > Read the root [`CLAUDE.md`](../../CLAUDE.md) first. There is no package.json
 > at this level — work inside `web/` or `mobile/`.
 
-## The brand
+## The system
 
-Oppenheimer: a **monochrome-first, flat** productivity aesthetic. The rules that
-decide most design questions here:
+The source is the Claude Design export in `product/versions/mvp/design/`:
+`_ds/…/tokens/*.css` for the tokens and `readme.md` for the rationale, and
+the `version1/` artboards for what the screens actually do. Its one sentence:
+**the product is the work, and the design system is the silence around it.**
 
-- **Three inks carry the whole hierarchy** — `#292929` primary, `#5D5D5D`
-  secondary, `#9E9E9E` tertiary — over white cards and a warm off-white canvas
-  (`#F6F5F3`). Hierarchy comes from ink and weight, never from size alone.
-- **Colour is a status signal, never decoration.** Blue `#2F80F6` (counts,
-  toggles-on), cyan `#12B5CE` (live), pink `#EF3A6B` ("New"), purple `#7A5CFF`
-  (avatars), plus the tinted active/paused/ended/draft pills. A coloured button
-  or a coloured heading is a bug.
-- **No elevation.** Cards, tiles and controls carry _no_ shadow — a hairline
-  border and a surface-colour step do the work. Only genuinely floating layers
-  (dialogs, menus, popovers) get depth, and only softly. `--shadow-sm`/`-md` are
-  deliberately `none`.
-- **Type is SF Pro at 400/500 only**, tracked -0.15px, in four sizes:
-  12 (labels/badges), 13 (nav/meta), 14 (body/buttons/rows), 24 (headings).
-  There is no bold — `font-bold` maps to 500.
-- **Three radii plus the pill**: 8px controls, 12px tiles, 16px cards, and a
-  pill for every CTA, chip, toggle and count badge.
-- **Copy is sentence case and verb-first** ("Connect device", "New task"). No
-  emoji, no Title Case buttons.
+- **Colour is rationed.** One blue for actions (`--primary`), one for links
+  (`--link`). Status hues (green, amber, red) appear only as run state, never
+  as decoration and never as a CTA. Everything else is achromatic. One primary
+  button per view.
+- **Two layers of colour.** The raw palette (`--op-gray-500`, `--op-blue-500`)
+  is never referenced in product code. Semantic aliases (`--fg-muted`,
+  `--card`, `--border-subtle`) re-point under `.dark` / `[data-theme="dark"]`,
+  so a theme switch moves aliases only and no component holds a conditional
+  colour. Dark is the version-1 artboards' lifted ramp (`#121213` canvas), not
+  the export's true black.
+- **One typeface.** SF Pro does every job; Display is the same family at 600
+  with tighter tracking from 21px up. Weight never exceeds 600. Every number a
+  human compares is SF Mono, tabular (`figures` utility).
+- **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
+- **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
+  press a pill, read inside an 18.
+- **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
+  glass carry one.
+- **Motion** is 80 / 140 / 220 / 400ms, eased, never bouncy; a 4px rise plus
+  fade for anything that appears. All durations go to 0 under reduced motion.
+- **Copy** is sentence case, verb-first, no emoji. It navigates, it is a
+  `Link`; it acts, it is a `Button`.
 
 ## Conventions
 
-- **Design tokens are the shared source of truth.**
-  [`web/src/styles/globals.css`](./web/src/styles/globals.css) is the canonical
-  definition: brand primitives (`--ink-*`, `--surface-*`, `--accent-*`,
-  `--status-*`, `--data-*`) first, then the shadcn semantic names aliased onto
-  them, then the Tailwind mapping in `@theme inline`. Change the brand there;
-  components should inherit it without edits.
-- `apps/mobile/global.css` and `apps/mobile-showcase/global.css` mirror those
-  tokens in the bare-HSL form NativeWind needs. They differ on purpose in two
-  ways: hairlines are flattened to solid values (React Native cannot composite
-  an rgba border), and every token is a literal triple rather than a `var()`
-  alias (NativeWind resolves these at build time). **Keep all three in sync.**
-- Prefer a **token** over a hardcoded value, and a **brand primitive**
-  (`text-ink-400`, `bg-surface-sunken`) over a raw hex.
-- The **shadcn component API is mirrored in the mobile package** — a component's
-  props/variants should match across web and mobile so consumers get a
-  consistent API on both platforms.
-- Preview components in the matching showcase app (`apps/web-showcase` /
-  `apps/mobile-showcase`) when adding or changing them. The web showcase's
-  **Foundations** page (`/foundations`) is the reference surface; check changes
-  in **both** light and dark — the sidebar carries the theme switch.
+- **Tokens are the source of truth**: [`web/src/styles/globals.css`](./web/src/styles/globals.css).
+  Palette, semantic aliases, type ladder, space, radii, elevation, motion,
+  then the shadcn semantic names aliased onto them, then the Tailwind mapping
+  in `@theme inline`. Change the system there; components inherit it.
+- Prefer a semantic utility (`text-fg-muted`, `bg-canvas`, `border-border-subtle`,
+  `rounded-pill`, `duration-fast`) over a raw value. Never a `dark:` colour
+  override: the aliases already invert.
+- The previous starter brand's names (`--ink-*`, `--surface-*`, `--status-*`)
+  are kept as **legacy aliases** so the unported components in `apps/web`
+  still render. Author nothing new against them; they go when the last
+  component is ported.
+- The MVP component inventory (what the nine screens need, and nothing more)
+  is the showcase's table of contents: `apps/web-showcase/src/lib/toc.ts`.
+  Components in `web/src/components/` not on that list are legacy from the
+  starter and not part of the system.
+- Preview every change in `apps/web-showcase`, in **both** themes; the top
+  bar carries the switch.
+- `apps/mobile/global.css` and `apps/mobile-showcase/global.css` still carry
+  the previous brand. Porting the mobile tokens is its own slice.

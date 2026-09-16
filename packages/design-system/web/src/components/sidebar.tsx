@@ -16,9 +16,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = '15.25rem'; // 244px — the brand's sidebar width
+const SIDEBAR_WIDTH = '16.5rem'; // 264px — the system's rail width
+
 const SIDEBAR_WIDTH_MOBILE = '18rem';
-const SIDEBAR_WIDTH_ICON = '3rem';
+const SIDEBAR_WIDTH_ICON = '3.75rem'; // 60px collapsed
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
 type SidebarContextProps = {
@@ -204,7 +205,7 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-base ease-standard',
           'group-data-[collapsible=offcanvas]:w-0',
           'group-data-[side=right]:rotate-180',
           variant === 'floating' || variant === 'inset'
@@ -216,11 +217,11 @@ function Sidebar({
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex',
+          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-base ease-standard data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex',
           // Adjust the padding for floating and inset variants.
           variant === 'floating' || variant === 'inset'
             ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l',
+            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=left]:border-sidebar-border group-data-[side=right]:border-l group-data-[side=right]:border-sidebar-border',
           className,
         )}
         {...props}
@@ -228,7 +229,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="flex size-full flex-col bg-sidebar text-sidebar-foreground group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
           {children}
         </div>
@@ -246,7 +247,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon-sm"
-      className={cn(className)}
+      className={cn('text-fg-muted', className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
@@ -324,7 +325,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
-      className={cn('mt-auto flex flex-col gap-2 px-3 pt-2 pb-3.5', className)}
+      className={cn('mt-auto flex flex-col gap-2 border-t border-sidebar-border px-3 py-2.5', className)}
       {...props}
     />
   );
@@ -376,7 +377,7 @@ function SidebarGroupLabel({
     props: mergeProps<'div'>(
       {
         className: cn(
-          'flex h-8 shrink-0 items-center rounded-md px-2.5 text-sm font-normal text-ink-400 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0',
+          'flex h-[26px] shrink-0 items-center gap-2 px-2.5 text-micro font-medium tracking-wide uppercase text-sidebar-muted outline-hidden transition-[margin,opacity] duration-base ease-standard group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0 *:[[data-slot=sidebar-group-count]]:ml-auto',
           className,
         ),
       },
@@ -390,6 +391,17 @@ function SidebarGroupLabel({
   });
 }
 
+/** The mono count beside a group label ("SESSIONS 9"). */
+function SidebarGroupCount({ className, ...props }: React.ComponentProps<'span'>) {
+  return (
+    <span
+      data-slot="sidebar-group-count"
+      className={cn('figures text-[11px] normal-case tracking-normal text-sidebar-muted', className)}
+      {...props}
+    />
+  );
+}
+
 function SidebarGroupAction({
   className,
   render,
@@ -400,7 +412,7 @@ function SidebarGroupAction({
     props: mergeProps<'button'>(
       {
         className: cn(
-          'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground md:after:hidden [&>svg]:size-4 [&>svg]:shrink-0',
+          'absolute top-px right-3 flex size-6 items-center justify-center rounded-sm p-0 text-fg-subtle outline-hidden transition-colors duration-fast group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 hover:bg-hover-surface hover:text-fg aria-expanded:bg-active-surface aria-expanded:text-fg data-dirty:bg-active-surface data-dirty:text-fg md:after:hidden [&>svg]:size-3.5 [&>svg]:shrink-0',
           className,
         ),
       },
@@ -448,17 +460,16 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button group/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md px-2.5 py-2 text-left text-base text-ink-600 ring-sidebar-ring outline-hidden transition-[width,height,padding,background-color] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-surface-hover hover:text-ink-900 disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 data-open:bg-surface-hover data-open:text-ink-900 data-active:bg-surface-sunken data-active:font-medium data-active:text-ink-900 [&_svg]:size-3.5 [&_svg]:shrink-0 [&>span:last-child]:truncate',
+  'peer/menu-button group/menu-button flex w-full items-center gap-2.5 overflow-hidden rounded-sm px-2.5 text-left text-operate text-sidebar-foreground outline-hidden transition-[width,height,padding,background-color,color] duration-instant group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-item-hover disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 data-open:bg-sidebar-item-hover data-active:bg-sidebar-item-active data-active:font-medium [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-sidebar-muted data-active:[&_svg]:text-fg [&>span:last-child]:truncate focus-visible:outline-2 focus-visible:outline-ring',
   {
     variants: {
       variant: {
         default: '',
-        outline:
-          'bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]',
+        outline: 'border border-sidebar-border bg-background hover:bg-sidebar-item-hover',
       },
       size: {
-        default: 'h-9',
-        sm: 'h-8 text-sm',
+        default: 'h-8',
+        sm: 'h-[30px] text-sm',
         lg: 'h-12 px-2 group-data-[collapsible=icon]:p-0!',
       },
     },
@@ -664,6 +675,7 @@ export {
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupContent,
+  SidebarGroupCount,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,

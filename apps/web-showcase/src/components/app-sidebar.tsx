@@ -1,6 +1,5 @@
 "use client";
 
-import { BrandMark } from "@oppenheimer/design-system-web/brand-mark";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@oppenheimer/design-system-web/sidebar";
+import { Wordmark } from "@oppenheimer/design-system-web/wordmark";
 import * as React from "react";
 import { TOC, TOC_COUNT } from "@/lib/toc";
 
@@ -26,18 +26,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 px-2 py-2">
-          <span className="flex size-6 shrink-0 items-center justify-center">
-            <BrandMark size={20} />
-          </span>
-          <span className="min-w-0 leading-tight">
-            <span className="block truncate text-base font-medium text-ink-900">
-              Design system
-            </span>
-            <span className="block truncate text-xs text-ink-400">
-              {TOC_COUNT} components
-            </span>
-          </span>
+        <div className="flex h-10 items-center justify-between gap-2.5 px-2">
+          <Wordmark product="Design" />
+          <span className="figures text-[11px] text-sidebar-muted">{TOC_COUNT}</span>
         </div>
       </SidebarHeader>
 

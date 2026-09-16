@@ -83,7 +83,19 @@
     "./mailbox-tag": "./src/components/mailbox-tag.tsx",
     "./message-list": "./src/components/message-list.tsx",
     "./message-reader": "./src/components/message-reader.tsx",
-    "./reply-box": "./src/components/reply-box.tsx"
+    "./reply-box": "./src/components/reply-box.tsx",
+    "./brand-glyph": "./src/components/brand-glyph.tsx",
+    "./chip": "./src/components/chip.tsx",
+    "./chip-select": "./src/components/chip-select.tsx",
+    "./code-block": "./src/components/code-block.tsx",
+    "./image-carousel": "./src/components/image-carousel.tsx",
+    "./link": "./src/components/link.tsx",
+    "./password-input": "./src/components/password-input.tsx",
+    "./session-item": "./src/components/session-item.tsx",
+    "./status-dot": "./src/components/status-dot.tsx",
+    "./terminal": "./src/components/terminal.tsx",
+    "./wordmark": "./src/components/wordmark.tsx",
+    "./assets/*": "./src/assets/*"
   },
   "scripts": {
     "build": "tsup",
