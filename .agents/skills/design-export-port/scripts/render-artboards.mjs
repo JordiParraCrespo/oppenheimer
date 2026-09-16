@@ -1,110 +1,107 @@
 #!/usr/bin/env node
 /**
- * Render a Claude Design export's artboards to PNG, light and dark.
+ * Screenshot a design export's artboards, light and dark.
  *
- * The .dc.html pages need their runtime: React and Babel from unpkg, and an
- * HTTP origin (the runtime fetches the page itself, which `file://` forbids).
- * This script serves the design folder, vendors the CDN scripts once (curl
- * goes through the session's proxy; the browser may not trust it), routes
- * the page's requests to the vendored copies, and screenshots every artboard.
+ *   node render-artboards.mjs --design <export root> --version <artboards dir> \
+ *     --out /tmp/shots [--only A,B] [--click Page:selector]... [--dismiss selector] [--escape] [--full]
  *
- *   node render-artboards.mjs --design product/versions/mvp/design \
- *     --version version1 --out /tmp/shots [--only SignIn,AddHost] [--full]
+ * --dismiss clicks a selector (a modal's close button) on every page where
+ * it exists, before the per-page clicks; --escape presses Escape instead.
+ * A click that times out is recorded as an error, but the capture is still
+ * written so the state can be seen.
  *
- * Interactions: pass --click "Name:selector" to click something before the
- * shot (repeatable), e.g. --click "FirstSession:.op-chipselect__trigger".
- * --escape closes an on-load modal first.
- *
- * Needs Playwright (the e2e package or a global install) and Chromium.
+ * The pages need their runtime and an HTTP origin: the export folder is
+ * served, any CDN scripts the pages reference are fetched once into
+ * `<out>/.vendor` (keyed by full URL, so two versions of one file cannot
+ * collide) and served from there. A page that throws, or that renders
+ * nothing, fails the run.
  */
-import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
+import { applyTheme, args, launch, shootAll, startServer } from './lib/browser.mjs';
 
-const args = Object.fromEntries(
-  process.argv
-    .slice(2)
-    .map((a, i, all) => (a.startsWith('--') ? [a.slice(2), all[i + 1]?.startsWith('--') || all[i + 1] === undefined ? true : all[i + 1]] : null))
-    .filter(Boolean),
-);
-const design = resolve(args.design ?? 'product/versions/mvp/design');
-const version = args.version ?? 'version1';
-const out = resolve(args.out ?? '/tmp/shots');
-const only = typeof args.only === 'string' ? args.only.split(',') : null;
-const clicks = [].concat(args.click ?? []).filter((c) => typeof c === 'string');
-const port = Number(args.port ?? 8765);
-mkdirSync(out, { recursive: true });
-
-async function loadPlaywright() {
-  const candidates = [process.env.PLAYWRIGHT_MODULE, '/opt/node22/lib/node_modules/playwright/index.mjs', 'playwright', '@playwright/test'].filter(Boolean);
-  for (const c of candidates) {
-    try {
-      return import(createRequire(import.meta.url).resolve(c));
-    } catch {}
-    try {
-      if (existsSync(c)) return import(c);
-    } catch {}
-  }
-  throw new Error('Playwright not found. pnpm add -D playwright, or set PLAYWRIGHT_MODULE to an install.');
-}
-
-// Vendor the CDN scripts the runtime loads.
-const support = readFileSync(join(design, version, 'support.js'), 'utf8');
-const urls = [...new Set(support.match(/https:\/\/unpkg\.com\/[^"'\s)]+\.js/g) ?? [])];
+const a = args({
+  design: {},
+  version: { default: 'version1' },
+  out: { default: '/tmp/shots' },
+  only: {},
+  click: { multiple: true },
+  escape: { type: 'boolean', default: false },
+  dismiss: {},
+  full: { type: 'boolean', default: false },
+  port: { default: '8765' },
+  settle: { default: '2500' },
+});
+if (!a.design) throw new Error('--design <export root> is required');
+const design = resolve(a.design);
+const pagesDir = join(design, a.version);
+const out = resolve(a.out);
 const vendor = join(out, '.vendor');
 mkdirSync(vendor, { recursive: true });
+
+const names = readdirSync(pagesDir)
+  .filter((f) => f.endsWith('.html'))
+  .map((f) => f.replace(/\.dc\.html$|\.html$/, ''))
+  .filter((n) => !a.only || a.only.split(',').includes(n));
+if (names.length === 0) throw new Error(`no artboards in ${pagesDir}`);
+
+// Vendor every CDN script the pages or their support files reference.
+const urls = new Set();
+for (const f of readdirSync(pagesDir)) {
+  if (!/\.(html|js)$/.test(f)) continue;
+  for (const m of readFileSync(join(pagesDir, f), 'utf8').matchAll(/https:\/\/(?:unpkg\.com|cdn\.jsdelivr\.net|esm\.sh)\/[^"'\s)]+/g)) urls.add(m[0]);
+}
+const vendored = new Map();
 for (const url of urls) {
-  const file = join(vendor, url.split('/').pop());
-  if (existsSync(file)) continue;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`failed to fetch ${url}: ${res.status}`);
-  writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  const file = join(vendor, `${createHash('sha1').update(url).digest('hex')}.js`);
+  if (!existsSync(file)) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`failed to fetch ${url}: ${res.status}`);
+    writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  }
+  vendored.set(url, file);
 }
 
-// Serve the design folder.
-const server = spawn('python3', ['-m', 'http.server', String(port)], { cwd: design, stdio: 'ignore' });
-await new Promise((r) => setTimeout(r, 800));
+const clicks = (a.click ?? []).map((c) => {
+  const i = c.indexOf(':');
+  return { page: c.slice(0, i), selector: c.slice(i + 1) };
+});
 
-const pw = await loadPlaywright();
-const chromium = pw.chromium ?? pw.default?.chromium;
-if (!chromium) throw new Error('Playwright loaded but exposes no chromium export.');
-// A workspace Playwright newer than the preinstalled browsers wants its own
-// download; point it at the shared binary instead (PLAYWRIGHT_CHROMIUM=/path/to/chrome).
-const browser = await chromium.launch(
-  process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
-);
-const pages = readdirSync(join(design, version))
-  .filter((f) => f.endsWith('.dc.html'))
-  .map((f) => f.replace('.dc.html', ''))
-  .filter((n) => !only || only.includes(n));
-
+const origin = `http://localhost:${a.port}`;
+const server = await startServer('python3', ['-m', 'http.server', a.port], { cwd: design, url: `${origin}/${a.version}/` });
+const browser = await launch();
+let failures = [];
 try {
-  for (const name of pages) {
-    for (const theme of ['light', 'dark']) {
-      const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true });
-      const errors = [];
-      page.on('pageerror', (e) => errors.push(e.message));
-      await page.route('https://unpkg.com/**', (route) =>
-        route.fulfill({ body: readFileSync(join(vendor, route.request().url().split('/').pop())), contentType: 'application/javascript' }),
-      );
-      await page.goto(`http://localhost:${port}/${version}/${name}.dc.html`);
-      await page.waitForTimeout(4000);
-      await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
-      if (args.escape) await page.keyboard.press('Escape');
-      for (const c of clicks) {
-        const [target, selector] = c.split(':');
-        if (target !== name) continue;
-        const el = page.locator(selector).first();
-        if (await el.count()) await el.click();
-      }
-      await page.waitForTimeout(600);
-      await page.screenshot({ path: join(out, `${name}-${theme}.png`), fullPage: Boolean(args.full) });
-      console.log(`${name} ${theme}${errors.length ? `  errors: ${errors.join(' | ')}` : ''}`);
-      await page.close();
+  failures = await shootAll(browser, names, async (page, { name, theme, errors }) => {
+    await page.route('https://**', (route) => {
+      const file = vendored.get(route.request().url());
+      return file ? route.fulfill({ body: readFileSync(file), contentType: 'application/javascript' }) : route.continue();
+    });
+    const file = existsSync(join(pagesDir, `${name}.dc.html`)) ? `${name}.dc.html` : `${name}.html`;
+    await page.goto(`${origin}/${a.version}/${file}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(Number(a.settle));
+    await applyTheme(page, theme);
+    if (a.escape) await page.keyboard.press('Escape');
+    if (a.dismiss) {
+      const el = page.locator(a.dismiss).first();
+      if (await el.count()) await el.click({ timeout: 5000 }).catch((e) => errors.push(`--dismiss: ${e.message.split('\n')[0]}`));
     }
-  }
+    for (const c of clicks) {
+      if (c.page !== name) continue;
+      const el = page.locator(c.selector).first();
+      if ((await el.count()) === 0) errors.push(`--click ${c.page}:${c.selector} matched nothing`);
+      else await el.click({ timeout: 5000 }).catch((e) => errors.push(`--click ${c.page}:${c.selector}: ${e.message.split('\n')[0]}`));
+    }
+    await page.waitForTimeout(400);
+    if ((await page.evaluate(() => document.body.innerText.trim().length)) === 0) errors.push('page rendered no text (runtime failed?)');
+    await page.screenshot({ path: join(out, `${name}-${theme}.png`), fullPage: a.full });
+  });
 } finally {
   await browser.close();
-  server.kill();
+  server.stop();
+}
+if (failures.length) {
+  console.error(`${failures.length} capture(s) had errors`);
+  process.exit(1);
 }

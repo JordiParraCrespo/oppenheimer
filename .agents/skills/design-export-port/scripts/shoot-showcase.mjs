@@ -1,72 +1,52 @@
 #!/usr/bin/env node
 /**
- * Screenshot the built showcase in light and dark: the top, then each
- * section id given with --sections. Prints page errors so a broken demo is
- * caught before the PR.
+ * Start the built showcase and screenshot the top and named sections,
+ * light and dark. Fails if the server never answers or a page logs errors.
  *
- *   pnpm --filter @<scope>/web-showcase build
- *   node shoot-showcase.mjs --app apps/web-showcase --out /tmp/shots \
- *     --sections colors,type,buttons,fields,chipselect,dropdown,sidebar,terminal
+ *   pnpm --filter <scope>/web-showcase build
+ *   node shoot-showcase.mjs --out /tmp/shots --sections colors,type,buttons [--app apps/web-showcase] [--port 3002]
  */
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
+import { REPO_ROOT, applyTheme, args, launch, shootAll, startServer } from './lib/browser.mjs';
 
-const args = Object.fromEntries(
-  process.argv.slice(2).map((a, i, all) => (a.startsWith('--') ? [a.slice(2), all[i + 1]] : null)).filter(Boolean),
-);
-const app = resolve(args.app ?? 'apps/web-showcase');
-const out = resolve(args.out ?? '/tmp/shots');
-const port = Number(args.port ?? 3002);
-const sections = (args.sections ?? 'colors,type,buttons').split(',');
+const a = args({
+  app: { default: 'apps/web-showcase' },
+  out: { default: '/tmp/shots' },
+  sections: { default: '' },
+  port: { default: '3002' },
+});
+const out = resolve(a.out);
 mkdirSync(out, { recursive: true });
+const sections = a.sections.split(',').filter(Boolean);
+const origin = `http://localhost:${a.port}`;
 
-async async function loadPlaywright() {
-  for (const c of [process.env.PLAYWRIGHT_MODULE, '/opt/node22/lib/node_modules/playwright/index.mjs', 'playwright', '@playwright/test'].filter(Boolean)) {
-    try {
-      return await import(createRequire(import.meta.url).resolve(c));
-    } catch {}
-    if (existsSync(c)) return import(c);
-  }
-  throw new Error('Playwright not found.');
-}
-
-const server = spawn('npx', ['next', 'start', '--port', String(port)], { cwd: app, stdio: 'ignore' });
-for (let i = 0; i < 30; i++) {
-  try {
-    if ((await fetch(`http://localhost:${port}/`)).ok) break;
-  } catch {}
-  await new Promise((r) => setTimeout(r, 500));
-}
-
-const pw = await loadPlaywright();
-const chromium = pw.chromium ?? pw.default?.chromium;
-if (!chromium) throw new Error('Playwright loaded but exposes no chromium export.');
-// A workspace Playwright newer than the preinstalled browsers wants its own
-// download; point it at the shared binary instead (PLAYWRIGHT_CHROMIUM=/path/to/chrome).
-const browser = await chromium.launch(
-  process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
-);
+// Resolve Next from the app itself so no package manager needs to be on PATH.
+const appDir = resolve(REPO_ROOT, a.app);
+const nextBin = createRequire(join(appDir, 'package.json')).resolve('next/dist/bin/next');
+const server = await startServer('node', [nextBin, 'start', '--port', a.port], { cwd: appDir, url: `${origin}/` });
+const browser = await launch();
+let failures = [];
 try {
-  for (const theme of ['light', 'dark']) {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    const errors = [];
-    page.on('pageerror', (e) => errors.push(e.message));
-    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-    await page.goto(`http://localhost:${port}/`);
-    if (theme === 'dark') await page.evaluate(() => document.documentElement.classList.add('dark'));
-    await page.waitForTimeout(1200);
+  failures = await shootAll(browser, ['showcase'], async (page, { theme }) => {
+    await page.goto(`${origin}/`, { waitUntil: 'networkidle' });
+    await applyTheme(page, theme);
+    await page.waitForTimeout(800);
     await page.screenshot({ path: join(out, `showcase-${theme}-top.png`) });
     for (const id of sections) {
-      await page.evaluate((id) => document.getElementById(id)?.scrollIntoView({ block: 'start' }), id);
+      const found = await page.evaluate((id) => {
+        const el = document.getElementById(id);
+        el?.scrollIntoView({ block: 'start' });
+        return Boolean(el);
+      }, id);
+      if (!found) throw new Error(`no section with id "${id}"`);
       await page.waitForTimeout(400);
       await page.screenshot({ path: join(out, `showcase-${theme}-${id}.png`) });
     }
-    console.log(theme, 'errors:', errors.length ? errors : 'none');
-    await page.close();
-  }
+  });
 } finally {
   await browser.close();
-  server.kill();
+  server.stop();
 }
+if (failures.length) process.exit(1);
