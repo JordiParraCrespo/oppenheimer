@@ -315,6 +315,9 @@ pnpm changeset          # Create a changeset for versioning
 - Frontend business logic goes in `packages/frontend`, not in app components
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
+- Porting a Claude Design export (tokens, fonts, the components its screens
+  need, the showcase) is the `/design-export-port` skill; the MVP one lives
+  in `product/versions/mvp/design/`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
