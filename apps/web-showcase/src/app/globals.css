@@ -4,13 +4,5 @@
 @source "../../../../packages/design-system/web/src/**/*.{ts,tsx}";
 
 /* Dark mode is class-driven. `[data-theme='dark']` is accepted too so markup
-   copied from the brand's reference pages themes correctly. */
+   copied from the design export's pages themes correctly. */
 @custom-variant dark (&:where(.dark, .dark *, [data-theme='dark'], [data-theme='dark'] *));
-
-/* The inventory's monospace label: token names, sizes, usage snippets.
-   Letter-spacing is reset to 0 — the brand's -0.15px is for the sans only. */
-@utility mono {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 12px;
-  letter-spacing: 0;
-}

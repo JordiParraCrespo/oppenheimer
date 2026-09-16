@@ -1,106 +1,114 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Legacy Tailwind v3-style preset. The apps run Tailwind v4 and read the theme
+ * from `src/styles/globals.css` (`@theme inline`); this file only mirrors the
+ * same tokens for a consumer still on a JS config.
+ */
 const config: Config = {
-  darkMode: 'class',
+  darkMode: ['class', '[data-theme="dark"]'],
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
+        canvas: 'var(--canvas)',
         background: 'var(--background)',
-        foreground: 'var(--foreground)',
-        card: {
-          DEFAULT: 'var(--card)',
-          foreground: 'var(--card-foreground)',
+        foreground: 'var(--fg)',
+        fg: {
+          DEFAULT: 'var(--fg)',
+          muted: 'var(--fg-muted)',
+          subtle: 'var(--fg-subtle)',
+          inverted: 'var(--fg-inverted)',
         },
-        popover: {
-          DEFAULT: 'var(--popover)',
-          foreground: 'var(--popover-foreground)',
-        },
+        card: { DEFAULT: 'var(--card)', foreground: 'var(--fg)' },
+        popover: { DEFAULT: 'var(--popover)', foreground: 'var(--fg)' },
         primary: {
           DEFAULT: 'var(--primary)',
-          foreground: 'var(--primary-foreground)',
+          hover: 'var(--primary-hover)',
+          active: 'var(--primary-active)',
+          foreground: 'var(--primary-fg)',
         },
-        secondary: {
-          DEFAULT: 'var(--secondary)',
-          foreground: 'var(--secondary-foreground)',
+        link: 'var(--link)',
+        control: {
+          DEFAULT: 'var(--control)',
+          hover: 'var(--control-hover)',
+          active: 'var(--control-active)',
+          fg: 'var(--control-fg)',
         },
-        muted: {
-          DEFAULT: 'var(--muted)',
-          foreground: 'var(--muted-foreground)',
+        field: {
+          DEFAULT: 'var(--field)',
+          border: 'var(--field-border)',
+          placeholder: 'var(--field-placeholder)',
         },
-        accent: {
-          DEFAULT: 'var(--accent)',
-          foreground: 'var(--accent-foreground)',
+        border: {
+          DEFAULT: 'var(--border)',
+          subtle: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
         },
-        destructive: {
-          DEFAULT: 'var(--destructive)',
-          foreground: 'var(--destructive-foreground)',
-        },
-        border: 'var(--border)',
-        input: 'var(--input)',
         ring: 'var(--ring)',
-        chart: {
-          '1': 'var(--chart-1)',
-          '2': 'var(--chart-2)',
-          '3': 'var(--chart-3)',
-          '4': 'var(--chart-4)',
-          '5': 'var(--chart-5)',
-        },
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--info)',
         sidebar: {
           DEFAULT: 'var(--sidebar)',
-          foreground: 'var(--sidebar-foreground)',
-          primary: 'var(--sidebar-primary)',
-          'primary-foreground': 'var(--sidebar-primary-foreground)',
-          accent: 'var(--sidebar-accent)',
-          'accent-foreground': 'var(--sidebar-accent-foreground)',
+          foreground: 'var(--sidebar-fg)',
+          muted: 'var(--sidebar-muted)',
           border: 'var(--sidebar-border)',
-          ring: 'var(--sidebar-ring)',
         },
-        // Brand primitives — see src/styles/globals.css for the full set.
-        ink: {
-          900: 'var(--ink-900)',
-          600: 'var(--ink-600)',
-          400: 'var(--ink-400)',
-        },
-        surface: {
-          canvas: 'var(--surface-canvas)',
-          card: 'var(--surface-card)',
-          sunken: 'var(--surface-sunken)',
-          hover: 'var(--surface-hover)',
-          inverse: 'var(--surface-inverse)',
+        term: {
+          bg: 'var(--term-bg)',
+          fg: 'var(--term-fg)',
+          dim: 'var(--term-dim)',
+          border: 'var(--term-border)',
+          accent: 'var(--term-accent)',
+          success: 'var(--term-success)',
+          warning: 'var(--term-warning)',
+          danger: 'var(--term-danger)',
         },
       },
       fontFamily: {
-        sans: 'var(--font-brand)',
+        sans: 'var(--font-sans)',
+        display: 'var(--font-display)',
+        mono: 'var(--font-mono)',
       },
       fontSize: {
-        xs: ['12px', { lineHeight: '1.35' }],
-        sm: ['13px', { lineHeight: '1.4' }],
-        base: ['14px', { lineHeight: '1.5' }],
-        lg: ['16px', { lineHeight: '1.45' }],
-        xl: ['20px', { lineHeight: '1.3' }],
-        '2xl': ['24px', { lineHeight: '1.25' }],
-      },
-      letterSpacing: {
-        normal: 'var(--tracking-brand)',
+        micro: ['11px', { lineHeight: '1.27', letterSpacing: '0.02em' }],
+        xs: ['12px', { lineHeight: '1.33', letterSpacing: '-0.003em' }],
+        sm: ['13px', { lineHeight: '1.38', letterSpacing: '-0.006em' }],
+        operate: ['14px', { lineHeight: '1.4', letterSpacing: '-0.008em' }],
+        base: ['15px', { lineHeight: '1.47', letterSpacing: '-0.011em' }],
+        lg: ['17px', { lineHeight: '1.47', letterSpacing: '-0.016em' }],
+        xl: ['21px', { lineHeight: '1.24', letterSpacing: '-0.011em' }],
+        '2xl': ['28px', { lineHeight: '1.15', letterSpacing: '-0.016em' }],
+        '3xl': ['40px', { lineHeight: '1.1', letterSpacing: '-0.021em' }],
+        '4xl': ['52px', { lineHeight: '1.07', letterSpacing: '-0.024em' }],
+        '5xl': ['76px', { lineHeight: '1.04', letterSpacing: '-0.028em' }],
       },
       borderRadius: {
-        sm: '6px',
-        md: 'var(--radius-nav)', // 8px  — nav rows, inputs, small controls
-        lg: '10px',
-        xl: 'var(--radius-tile)', // 12px — app / brand icon tiles
-        '2xl': 'var(--radius-card)', // 16px — cards, panels, sheets
-        full: 'var(--radius-pill)',
+        xs: '6px',
+        sm: '10px',
+        md: '14px',
+        lg: '18px',
+        xl: '28px',
+        pill: '980px',
+        full: '980px',
       },
-      // The system is flat: only genuinely floating layers get depth.
       boxShadow: {
         none: 'none',
-        xs: 'none',
         sm: 'none',
         DEFAULT: 'none',
         md: 'none',
-        lg: '0 10px 32px rgba(20, 20, 22, 0.14)',
-        xl: '0 24px 60px rgba(20, 20, 22, 0.24)',
+        popover: 'var(--shadow-popover)',
+        modal: 'var(--shadow-modal)',
+        lg: 'var(--shadow-popover)',
+        xl: 'var(--shadow-modal)',
+      },
+      transitionDuration: {
+        instant: '80ms',
+        fast: '140ms',
+        base: '220ms',
+        slow: '400ms',
       },
     },
   },

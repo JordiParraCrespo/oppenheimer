@@ -1,56 +1,89 @@
-import { Input as InputPrimitive } from "@base-ui/react/input";
-import { cva, type VariantProps } from "class-variance-authority";
-import type * as React from "react";
+import { Input as InputPrimitive } from '@base-ui/react/input';
+import { cva, type VariantProps } from 'class-variance-authority';
+import type * as React from 'react';
 
-import { cn } from "../lib/utils";
+import { cn } from '../lib/utils';
 
 /**
- * The text field sits on the same three-step control ladder as Button and
- * IconButton — 28 / 36 / 44 (h-7 / h-9 / h-11) — so a field and a button
- * placed on one toolbar row line up without either being overridden at the
- * call site.
+ * Input — anything you type into has a 10px radius. Sizes follow the shared
+ * control ramp (28 / 34 / 42; `lg` is the auth forms). Focus is the blue border
+ * plus a 3px `--ring` halo; invalid swaps both for red.
  *
- * `default` (36px) is the default, which is what `Button`, `SearchInput`,
- * `InputGroup` and the `DataTable` header bar all render at. `lg` is for a
- * surface built around one prominent field, not for ordinary form rows: it
- * used to be the default, and it put every dialog field two rungs above the
- * buttons beside them.
- *
- * Height is declared rather than derived from padding: when it fell out of
- * padding plus line-height, every control drifted the moment either changed.
+ * The field is a flex shell around the native input so `leading` and
+ * `trailing` slots (a search glyph, the password reveal) sit inside the border
+ * without the text running under them. Every input prop, including `ref`, goes
+ * to the inner `<input>`, so it drops into React Hook Form as-is; `className`
+ * styles the shell.
  */
 const inputVariants = cva(
-  "w-full min-w-0 rounded-md border border-border-default bg-card text-base transition-[color,box-shadow,background-color,border-color] outline-none file:inline-flex file:border-0 file:bg-transparent file:font-medium file:text-foreground placeholder:text-ink-400 hover:border-border-strong disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 aria-invalid:border-destructive",
+  'group/input flex w-full min-w-0 items-center gap-2 rounded-sm border border-field-border bg-field text-fg transition-[border-color,box-shadow,background-color] duration-fast ease-standard hover:border-border-strong has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring has-aria-invalid:border-danger has-aria-invalid:has-focus-visible:ring-danger-surface has-disabled:pointer-events-none has-disabled:bg-control has-disabled:opacity-50 [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
   {
     variants: {
       size: {
-        sm: "h-7 px-2.5 text-sm file:h-5 file:text-sm",
-        default: "h-9 px-3 file:h-7 file:text-sm",
-        lg: "h-11 px-4 file:h-8 file:text-sm",
+        sm: 'h-(--control-h-sm) px-2.5 text-sm',
+        md: 'h-(--control-h-md) px-3 text-operate',
+        lg: 'h-(--control-h-lg) px-3.5 text-lg',
+        // Legacy alias.
+        default: 'h-(--control-h-md) px-3 text-operate',
+      },
+      pill: {
+        true: 'rounded-pill px-3.5',
       },
     },
     defaultVariants: {
-      size: "default",
+      size: 'md',
     },
   },
 );
 
+type InputProps = Omit<React.ComponentProps<'input'>, 'size'> &
+  VariantProps<typeof inputVariants> & {
+    /** A glyph before the text, in the subtle colour. */
+    leading?: React.ReactNode;
+    /** A glyph or small control after the text. */
+    trailing?: React.ReactNode;
+    /** Class for the inner input rather than the shell. */
+    inputClassName?: string;
+  };
+
 function Input({
   className,
+  inputClassName,
+  size = 'md',
+  pill,
+  leading,
+  trailing,
   type,
-  size,
   ...props
-}: Omit<React.ComponentProps<"input">, "size"> &
-  VariantProps<typeof inputVariants>) {
+}: InputProps) {
   return (
-    <InputPrimitive
-      type={type}
+    <div
       data-slot="input"
-      data-size={size ?? "default"}
-      className={cn(inputVariants({ size }), className)}
-      {...props}
-    />
+      data-size={size}
+      className={cn(inputVariants({ size, pill }), className)}
+    >
+      {leading ? (
+        <span data-slot="input-leading" className="flex shrink-0 text-fg-subtle">
+          {leading}
+        </span>
+      ) : null}
+      <InputPrimitive
+        type={type}
+        data-slot="input-control"
+        className={cn(
+          'min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-inherit tracking-inherit outline-none placeholder:text-field-placeholder file:inline-flex file:border-0 file:bg-transparent file:font-medium file:text-fg disabled:cursor-not-allowed autofill:shadow-[inset_0_0_0_1000px_var(--field)] autofill:[-webkit-text-fill-color:var(--fg)]',
+          inputClassName,
+        )}
+        {...props}
+      />
+      {trailing ? (
+        <span data-slot="input-trailing" className="-mr-1 flex shrink-0 items-center text-fg-subtle">
+          {trailing}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
 export { Input, inputVariants };
+export type { InputProps };

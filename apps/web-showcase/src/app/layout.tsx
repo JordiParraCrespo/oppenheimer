@@ -8,8 +8,8 @@ import { TopBar } from "@/components/top-bar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Oppenheimer Showcase",
-  description: "Design system component showcase",
+  title: "Oppenheimer design system",
+  description: "The MVP design system: foundations and the components the screens are built from",
 };
 
 /** Applies the stored theme before first paint so reloads don't flash. */

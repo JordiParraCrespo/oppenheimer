@@ -1,34 +1,41 @@
 # @oppenheimer/web-showcase — Agent Instructions
 
-Next.js showcase/gallery for the **web** design system.
+Next.js showcase for the **web** design system: the foundations and every
+component the MVP screens are built from, in both themes.
 
-> Read the root [`CLAUDE.md`](../../CLAUDE.md) first for repo-wide conventions.
-
-## Purpose
-
-A living catalog that renders the components and blocks exported by
-`@oppenheimer/design-system-web` so they can be browsed and visually reviewed. This
-is a demo surface — it does not hold product business logic.
-
-## Stack
-
-- **Next.js** (App Router) — `src/app/`
-- **Tailwind CSS** + shadcn components from `@oppenheimer/design-system-web`
+> Read the root [`CLAUDE.md`](../../CLAUDE.md) and
+> [`packages/design-system/AGENTS.md`](../../packages/design-system/AGENTS.md) first.
 
 ## Layout
 
 ```
 src/app/
-├── layout.tsx
-├── page.tsx
-├── components/       # component gallery page
-└── blocks/           # composed-block gallery page
-src/components/       # showcase chrome (sidebar, etc.)
+├── layout.tsx        # sidebar + top bar shell, pre-paint theme script
+├── page.tsx          # the inventory, one <Spec> per entry, in TOC order
+└── globals.css       # tailwind + the package styles + the dark variant
+src/components/
+├── foundations.tsx   # colours, type ladder, space, radii, elevation, motion, icons
+├── demos.tsx         # interactive demos (menus, dialog, chip select, composer, sidebar, terminal, carousel)
+├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
+├── app-sidebar.tsx   # the TOC with scroll-spy
+└── top-bar.tsx       # search palette and theme toggle
+src/lib/toc.ts        # the inventory; drives the sidebar and the page order
+public/imagery/       # copies of the package's carousel photographs
 ```
+
+## Conventions
+
+- Adding a component to the system means a `<Spec id>` on the page **and** a
+  row in `toc.ts`; the scroll-spy matches on the id.
+- Show every state the screens use, in both themes where colour matters
+  (`ThemePair` renders the same markup light and dark side by side).
+- The page is a client component: demos hold state and pass handlers.
+- Biome does not lint this app (excluded in the root `biome.json`); the
+  design-system lint does: `pnpm lint:design`.
 
 ## Commands
 
 ```bash
-pnpm --filter @oppenheimer/web-showcase dev
+pnpm --filter @oppenheimer/web-showcase dev    # port 3002
 pnpm --filter @oppenheimer/web-showcase build
 ```
