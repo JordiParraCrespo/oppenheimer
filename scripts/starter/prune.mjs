@@ -59,7 +59,14 @@ const SCAN_SKIP = [
  * rewrite after a prune — a script cannot fix a `└──` in a directory tree, and
  * wrapping every sentence in markers would make the docs unreadable.
  */
-const CHECK_SKIP = [/\.md$/, /^\.changeset\//, /\.spec\.ts$/, /\.test\.ts$/];
+const CHECK_SKIP = [
+  /\.md$/,
+  /^\.changeset\//,
+  /\.spec\.ts$/,
+  /\.test\.ts$/,
+  // The design exports are a design record, not code the starter prunes.
+  /^product\/versions\/[^/]+\/design\//,
+];
 const COMMENT_LINE_RE = /^\s*(?:#|\/\/|\/\*|\*|<!--|--|;)/;
 
 // ---------------------------------------------------------------------------
