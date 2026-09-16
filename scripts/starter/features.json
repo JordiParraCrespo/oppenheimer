@@ -37,6 +37,7 @@
       "identifiers": ["apps/web-showcase", "@oppenheimer/web-showcase"],
       "paths": [
         "apps/web-showcase",
+        ".agents/skills/design-export-port",
         ".agents/skills/next-best-practices",
         ".agents/skills/next-cache-components",
         ".agents/skills/next-upgrade",
