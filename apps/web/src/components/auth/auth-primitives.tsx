@@ -33,7 +33,7 @@ export function AuthEyebrow({ children }: { children: React.ReactNode }) {
 
 export function AuthTitle({ children, className }: React.ComponentProps<'h1'>) {
   return (
-    <h1 className={cn('mb-2 font-display text-3xl font-semibold text-pretty text-fg', className)}>
+    <h1 className={cn('mb-2 font-display text-2xl font-semibold text-pretty text-fg', className)}>
       {children}
     </h1>
   );

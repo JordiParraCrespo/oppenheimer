@@ -68,7 +68,7 @@ function AuthLayout() {
         </div>
       </div>
 
-      <AuthPanel className="hidden p-6 min-[900px]:block min-[900px]:py-10 min-[900px]:pr-10" />
+      <AuthPanel className="hidden p-6 min-[900px]:flex min-[900px]:py-10 min-[900px]:pr-10" />
     </div>
   );
 }
