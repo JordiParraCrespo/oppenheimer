@@ -315,6 +315,11 @@ pnpm changeset          # Create a changeset for versioning
 - Frontend business logic goes in `packages/frontend`, not in app components
 - UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
+- Porting a design export onto the design system is the
+  `/design-export-port` skill (`.agents/skills/design-export-port/`): the
+  export's values go onto the token vocabulary in `globals.css` and the
+  component rules in `packages/design-system/AGENTS.md`; fonts are system
+  stacks. The MVP export is `product/versions/mvp/design/`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The
   `/onboarding` screen is only the recovery path for an account that ended up
