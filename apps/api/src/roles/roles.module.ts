@@ -2,6 +2,7 @@ import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/user.module';
+import { AssignDefaultRoleService } from './commands/assign-default-role/assign-default-role.service';
 import { AssignUserRolesHttpController } from './commands/assign-user-roles/assign-user-roles.http.controller';
 import { AssignUserRolesService } from './commands/assign-user-roles/assign-user-roles.service';
 import { CreateRoleHttpController } from './commands/create-role/create-role.http.controller';
@@ -40,6 +41,7 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
+  AssignDefaultRoleService,
   CreateRoleService,
   UpdateRoleService,
   UpdateRolePermissionsService,

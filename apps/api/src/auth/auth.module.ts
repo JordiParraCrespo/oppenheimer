@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
@@ -7,6 +8,7 @@ import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
 import { UsersModule } from '../users/user.module';
 import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
+import { AuthCommandBusBridge } from './auth-command-bus';
 import { Account } from './entities/account.entity';
 import { OAuthAccessTokenOrmEntity } from './entities/oauth-access-token.entity';
 import { OAuthApplicationOrmEntity } from './entities/oauth-application.entity';
@@ -29,6 +31,9 @@ import { DelegatedSessionService } from './services/delegated-session.service';
  * - {@link PoliciesGuard} — CASL check against the caller's roles.
  * - {@link ScopesGuard} — registered globally in `AppModule`; narrows scoped
  *   credentials to the permissions and organizations they were granted.
+ * - {@link AuthCommandBusBridge} — lets the Better Auth sign-up hooks dispatch
+ *   the app's own use cases (the default role, the personal workspace) instead
+ *   of writing their tables behind the domain's back.
  *
  * The Better Auth HTTP handler itself is wired up via
  * `AuthModule.forRoot({ auth })` from `@thallesp/nestjs-better-auth` in
@@ -45,6 +50,7 @@ import { DelegatedSessionService } from './services/delegated-session.service';
 @Global()
 @Module({
   imports: [
+    CqrsModule,
     UsersModule,
     TypeOrmModule.forFeature([
       Session,
@@ -62,6 +68,9 @@ import { DelegatedSessionService } from './services/delegated-session.service';
   ],
   providers: [
     ApiTokenRevokedDomainEventHandler,
+    // Hands the running app's CommandBus to the Better Auth hooks, which are
+    // configured at module scope and cannot inject it. See `auth-command-bus.ts`.
+    AuthCommandBusBridge,
     PoliciesGuard,
     ApiAuthGuard,
     ScopesGuard,

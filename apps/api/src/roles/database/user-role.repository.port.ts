@@ -15,4 +15,14 @@ export interface UserRoleRepositoryPort {
   findRolesForUser(userId: string, organizationId?: string | null): Promise<RoleEntity[]>;
   /** Replace the user's role assignments **within one scope**. */
   setRolesForUser(userId: string, roleIds: string[], organizationId?: string | null): Promise<void>;
+
+  /**
+   * Grant one role, leaving every other assignment the user holds alone.
+   *
+   * Additive on purpose, and distinct from `setRolesForUser`: the caller is
+   * sign-up handing a new account its default role, which must not be able to
+   * revoke anything. Granting a role the user already holds in that scope is a
+   * no-op, so the operation is safe to repeat.
+   */
+  assignRoleToUser(userId: string, roleId: string, organizationId?: string | null): Promise<void>;
 }

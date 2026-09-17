@@ -1,23 +1,32 @@
 import '@oppenheimer/env/load';
-import { OutboxMessageSchema } from '@oppenheimer/backend-ddd';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
-import { DataSource, type EntityManager, IsNull } from 'typeorm';
+import { DataSource, IsNull } from 'typeorm';
 import { ApiTokenOrmEntity } from '../api-tokens/database/api-token.orm-entity';
 import { auth, closeAuthConnections } from '../auth/auth';
+import { registerAuthCommandDispatch } from '../auth/auth-command-bus';
 import { Account } from '../auth/entities/account.entity';
 import { OAuthAccessTokenOrmEntity } from '../auth/entities/oauth-access-token.entity';
 import { OAuthApplicationOrmEntity } from '../auth/entities/oauth-application.entity';
 import { OAuthConsentOrmEntity } from '../auth/entities/oauth-consent.entity';
 import { Session } from '../auth/entities/session.entity';
 import { Verification } from '../auth/entities/verification.entity';
-import { provisionPersonalWorkspace, type Queryable } from '../auth/personal-workspace';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
+import { ProvisionPersonalWorkspaceService } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.service';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
+import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
+import { PersonalWorkspaceMapper } from '../organizations/personal-workspace.mapper';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
+import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
+import { AssignDefaultRoleService } from '../roles/commands/assign-default-role/assign-default-role.service';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
+import { RoleRepository } from '../roles/database/role.repository';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
+import { UserRoleRepository } from '../roles/database/user-role.repository';
+import { RoleMapper } from '../roles/roles.mapper';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 const dataSource = new DataSource({
@@ -128,6 +137,48 @@ async function seed() {
   const roleRepo = dataSource.getRepository(RoleOrmEntity);
   const userRoleRepo = dataSource.getRepository(UserRoleOrmEntity);
 
+  // The use cases sign-up owes a new account, hand-wired.
+  //
+  // The seed runs as a standalone script with its own DataSource rather than
+  // inside the injector, and booting the whole application to seed three rows
+  // would drag in Redis, the queues and the outbox relay. The handlers and
+  // their adapters are plain classes, so constructing them here costs one
+  // expression each and keeps there being exactly one implementation of "the
+  // default role" and "a personal workspace".
+  const roleRepository = new RoleRepository(
+    roleRepo,
+    dataSource,
+    new RoleMapper(),
+    new OutboxService(dataSource),
+  );
+  const assignDefaultRole = new AssignDefaultRoleService(
+    roleRepository,
+    new UserRoleRepository(userRoleRepo, roleRepo, new RoleMapper()),
+  );
+  const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceService(
+    new PersonalWorkspaceRepository(
+      dataSource.getRepository(MemberOrmEntity),
+      new PersonalWorkspaceMapper(),
+      new OutboxService(dataSource),
+    ),
+    roleRepository,
+  );
+
+  // Seeding creates its accounts through `auth.api.signUpEmail`, which fires
+  // the same sign-up hook a real registration does — and that hook dispatches
+  // through `auth-command-bus.ts`, which only the running API fills in. Point
+  // it at the handlers above so a seeded account is provisioned exactly as a
+  // registered one is, instead of the hook logging that nothing is listening.
+  registerAuthCommandDispatch(async (command) => {
+    if (command instanceof AssignDefaultRoleCommand) {
+      return (await assignDefaultRole.execute(command)) as never;
+    }
+    if (command instanceof ProvisionPersonalWorkspaceCommand) {
+      return (await provisionPersonalWorkspace.execute(command)) as never;
+    }
+    throw new Error(`The seed has no handler for ${command.constructor.name}`);
+  });
+
   for (const seedUser of seedUsers) {
     const existing = await userRepo.findOneBy({ email: seedUser.email });
     if (existing) continue;
@@ -171,15 +222,20 @@ async function seed() {
     console.log(`Created ${seedUser.role} user: ${seedUser.email}`);
   }
 
-  // Every account gets the personal workspace sign-up would have given it:
-  // one organization, one owner member, no team. Sign-up already did this
-  // for the users created above; the call is what makes the invariant
-  // explicit, and what repairs a database seeded before it existed.
+  // Every account gets the personal workspace sign-up would have given it: one
+  // organization, one owner member, no team. The hook above already did this
+  // for the accounts just created; running it again is what makes the
+  // invariant explicit, and what repairs a database seeded before it existed.
+  // The handler is idempotent, so an account that has one is left alone.
   for (const seedUser of seedUsers) {
     const user = await userRepo.findOneBy({ email: seedUser.email });
     if (!user) continue;
-    const created = await dataSource.transaction((manager) =>
-      provisionPersonalWorkspace(queryable(manager), user),
+    const created = await provisionPersonalWorkspace.execute(
+      new ProvisionPersonalWorkspaceCommand({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      }),
     );
     if (created) console.log(`Created personal workspace for ${seedUser.email}`);
   }
@@ -189,15 +245,6 @@ async function seed() {
   // Close what importing `auth` opened, or this script hangs here with its work
   // already done.
   await closeAuthConnections();
-}
-
-/** TypeORM's `query` returns bare rows; the provisioning wants pg's shape. */
-function queryable(manager: EntityManager): Queryable {
-  return {
-    async query<T>(sql: string, params?: unknown[]) {
-      return { rows: (await manager.query(sql, params)) as T[] };
-    },
-  };
 }
 
 seed().catch((err) => {

@@ -61,6 +61,23 @@ CQRS/domain slices. Use `betterAuthHeaders` from `src/auth/better-auth.util.ts`,
 and normalize every `auth.api` result through a mapper (see above). See
 `.agents/rules/rbac-roles.md` for the full RBAC + org/admin guide.
 
+**A rule the app owns is a slice, even inside a façade module.** The personal
+workspace is the worked example: sign-up gives every account one organization
+it owns, with the org-scoped `owner` role that opens it — Better Auth has no
+such concept, so it is an aggregate, a repository port and a command handler
+(`organizations/commands/provision-personal-workspace/`), not another
+`auth.api` call. The test is whose rule it is, not which module it lands in.
+
+**Better Auth hooks reach the app through the command bus.** `auth/auth.ts` is
+configured at module scope — it has to be, because the handler is mounted on
+the HTTP adapter before Nest builds its injector — so its `databaseHooks`
+cannot inject anything. They dispatch commands through `dispatchFromAuthHook`
+(`src/auth/auth-command-bus.ts`), which `AuthCommandBusBridge` fills in on
+module init. Never write SQL in a hook: that is how the product's own rules
+ended up as `INSERT` statements no domain object knew about. Dispatches from a
+hook are best-effort and logged — Better Auth does not await `after` hooks, so
+a throw there would be an unhandled rejection rather than a failed request.
+
 **Wrap every `auth.api.*` call in the module's own invoker** —
 `invokeOrganizationApi` (`organizations/organization-error.mapper.ts`) or
 `invokeAdminApi` (`admin/admin-error.mapper.ts`), both built with

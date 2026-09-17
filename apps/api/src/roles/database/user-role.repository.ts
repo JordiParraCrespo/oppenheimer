@@ -59,6 +59,24 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     return records.map((record) => this.mapper.toDomain(record));
   }
 
+  async assignRoleToUser(
+    userId: string,
+    roleId: string,
+    organizationId: string | null = null,
+  ): Promise<void> {
+    // `ON CONFLICT DO NOTHING` against the migration's two partial unique
+    // indexes (one per scope), so a repeat grant is silent rather than a
+    // constraint violation the caller has to tell apart from a real failure.
+    await this.userRoleRepository
+      .createQueryBuilder()
+      .insert()
+      .into(UserRoleOrmEntity)
+      .values({ userId, roleId, organizationId })
+      .orIgnore()
+      .execute();
+    if (organizationId) await bumpRoleVersion(this.userRoleRepository.manager, organizationId);
+  }
+
   async setRolesForUser(
     userId: string,
     roleIds: string[],

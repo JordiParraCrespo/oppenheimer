@@ -224,6 +224,7 @@ API's compatibility promise.
 | `ORG_014` <a id="org_014" /> | A limit on this organization has been reached             | 409  |
 | `ORG_015` <a id="org_015" /> | The organization service rejected this request            | 400  |
 | `ORG_016` <a id="org_016" /> | The organization service failed to handle this request    | 502  |
+| `ORG_017` <a id="org_017" /> | The system role that opens a workspace is not installed   | 500  |
 
 `ORG_015` and `ORG_016` are the fallbacks for an upstream code this version does
 not recognise — a client should treat them as "retry or report", and the

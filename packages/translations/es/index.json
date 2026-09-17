@@ -83,6 +83,7 @@
       "ORG_014": "Esta organización ha alcanzado uno de sus límites.",
       "ORG_015": "No se ha podido completar esa solicitud.",
       "ORG_016": "Las organizaciones no están disponibles temporalmente. Inténtalo de nuevo.",
+      "ORG_017": "Este servidor no ha terminado de configurarse. Contacta con soporte.",
       "ADMIN_001": "No se ha encontrado ese usuario.",
       "ADMIN_002": "Ya existe un usuario con ese correo electrónico.",
       "ADMIN_003": "Tu cuenta no puede realizar esa acción administrativa.",

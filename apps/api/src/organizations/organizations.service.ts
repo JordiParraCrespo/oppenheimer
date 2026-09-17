@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,6 +20,7 @@ import type { UserRoleRepositoryPort } from '../roles/database/user-role.reposit
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles/roles.di-tokens';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
+import { OrganizationSlug } from './domain/value-objects/organization-slug.value-object';
 import type {
   FullOrganizationResponseDto,
   MemberResponseDto,
@@ -81,13 +81,13 @@ export class OrganizationsService {
     return betterAuthHeaders(headers);
   }
 
+  /**
+   * The slug rule lives on the value object, not here: a workspace someone
+   * creates by hand and the personal one sign-up provisions have to agree about
+   * what a slug is, and they used to hold two copies of the rule.
+   */
   private slugify(base: string): string {
-    const cleaned = base
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 32);
-    return `${cleaned || 'org'}-${randomUUID().slice(0, 8)}`;
+    return OrganizationSlug.derive(base).value;
   }
 
   // --- Organizations ---

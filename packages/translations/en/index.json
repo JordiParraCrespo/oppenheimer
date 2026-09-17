@@ -83,6 +83,7 @@
       "ORG_014": "This organization has reached one of its limits.",
       "ORG_015": "That request could not be completed.",
       "ORG_016": "Organizations are temporarily unavailable. Please try again.",
+      "ORG_017": "This server is not finished setting up. Please contact support.",
       "ADMIN_001": "That user could not be found.",
       "ADMIN_002": "A user with that email already exists.",
       "ADMIN_003": "Your account cannot perform that administrative action.",

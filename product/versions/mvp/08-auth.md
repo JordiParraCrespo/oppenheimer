@@ -12,7 +12,7 @@ history) to work on the MVP.
 - **A personal workspace per account.** Sign-up creates one
   `organization` row with the account as its single `owner` member and
   the org-scoped `owner` application role that opens it
-  (`apps/api/src/auth/personal-workspace.ts`). One user per workspace.
+  (`apps/api/src/organizations/commands/provision-personal-workspace/`). One user per workspace.
   No roster UI, no invitations, no teams in the MVP; the routes the
   starter ships for them stay unexposed in the console and come back
   with the teams slice on the same tables.

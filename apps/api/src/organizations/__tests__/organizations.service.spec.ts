@@ -152,11 +152,15 @@ describe('OrganizationsService', () => {
       expect(slug).toMatch(/^my-great-org-[0-9a-f]{8}$/);
     });
 
-    it('falls back to "org" when the name has no alphanumerics', async () => {
+    // "workspace", not the "org" this used to say: the slug rule is now one
+    // value object shared with the personal workspace sign-up provisions
+    // (`OrganizationSlug.derive`), and the two used to disagree about the
+    // fallback. "workspace" is what the console calls these.
+    it('falls back to "workspace" when the name has no alphanumerics', async () => {
       api.createOrganization.mockResolvedValue(orgRecord);
       await service.create(headers, { name: '***' });
       const slug: string = api.createOrganization.mock.calls[0][0].body.slug;
-      expect(slug).toMatch(/^org-[0-9a-f]{8}$/);
+      expect(slug).toMatch(/^workspace-[0-9a-f]{8}$/);
     });
 
     it('maps the created organization', async () => {

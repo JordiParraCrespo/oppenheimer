@@ -30,7 +30,7 @@ decisions that changed along the way.
 - Workspaces are personal for now: one user per workspace, no team or
   organization management exposed. The Better Auth `organization` row is
   the personal workspace, created at sign-up with the account as its
-  single owner (`apps/api/src/auth/personal-workspace.ts`); no roster UI,
+  single owner (`apps/api/src/organizations/commands/provision-personal-workspace/`); no roster UI,
   no invitations, no teams in the console. Teams come later on the same
   tables. The one-page auth note is `product/versions/mvp/08-auth.md`;
   `AUTHORIZATION.md` is the starter's kernel design, kept as history.
