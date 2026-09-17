@@ -42,3 +42,5 @@ pnpm --filter @oppenheimer/auth build
 pnpm --filter @oppenheimer/auth test
 pnpm --filter @oppenheimer/auth lint
 ```
+
+See [`.agents/rules/api-config.md`](../../.agents/rules/api-config.md) for how the API mounts this configuration and [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md) for where the apps wrap the client.

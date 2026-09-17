@@ -1,0 +1,866 @@
+/* =============================================================================
+   Oppenheimer design system — foundations
+   =============================================================================
+   Ported from the Claude Design export in `product/versions/mvp/design/_ds/`
+   (tokens/*.css) with the version-1 artboards' ramp applied on top
+   (`product/versions/mvp/design/version1/ds-base.js`).
+
+   The system in one sentence: the product is the work, and the design system
+   is the silence around it. Achromatic by default, colour rationed to one
+   blue for actions and one for links, status hues only as run state, one
+   typeface with size and tracking carrying the hierarchy, no shadow on any
+   surface, six radii and no others.
+
+   Two layers of colour:
+     · Layer 1 — the raw palette (`--op-*`). Never referenced in product code.
+     · Layer 2 — semantic aliases (`--fg-muted`, `--card`, `--border-subtle`)
+       that re-point under the dark theme. Theme switching moves aliases only;
+       no component contains a conditional colour.
+   Then the shadcn semantic names aliased onto layer 2, so the component
+   library inherits the brand without knowing about it, and the Tailwind
+   mapping in `@theme inline`.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* =====================================================================
+       Layer 1 — palette. Never reference these in product code.
+       ================================================================== */
+    --op-white: #ffffff;
+    --op-gray-50: #f5f5f7;
+    --op-gray-100: #ebebed;
+    --op-gray-200: #e2e2e5;
+    --op-gray-300: #d2d2d7;
+    --op-gray-400: #a1a1a6;
+    --op-gray-500: #86868b;
+    --op-gray-600: #6e6e73;
+    --op-gray-700: #424245;
+    --op-gray-800: #333336;
+    --op-gray-850: #232325;
+    --op-gray-900: #1d1d1f;
+    --op-gray-950: #131314;
+    --op-black: #000000;
+
+    --op-blue-400: #2997ff;
+    --op-blue-500: #0071e3;
+    --op-blue-600: #0066cc;
+    --op-green-400: #30d158;
+    --op-green-500: #03aa49;
+    --op-green-700: #0b7a37;
+    --op-amber-400: #ff9f0a;
+    --op-amber-500: #ed6300;
+    --op-amber-700: #a04700;
+    --op-red-400: #ff453a;
+    --op-red-500: #e8272c;
+    --op-red-700: #c11a1f;
+    --op-violet-500: #8668ff;
+    --op-teal-500: #00a1b3;
+
+    /* =====================================================================
+       Layer 2 — semantic aliases, light theme
+       ================================================================== */
+
+    /* ---- Surfaces ---------------------------------------------------- */
+    --canvas: var(--op-gray-50); /* the page; light mode is never white */
+    --background: var(--canvas);
+    --card: var(--op-white); /* the only lit surface on the canvas */
+    --popover: var(--op-white);
+    --overlay: rgba(0, 0, 0, 0.32); /* the modal scrim */
+
+    /* ---- Text -------------------------------------------------------- */
+    --fg: var(--op-gray-900);
+    --fg-muted: var(--op-gray-600);
+    --fg-subtle: var(--op-gray-500);
+    --fg-inverted: var(--op-white);
+
+    /* ---- Hairlines --------------------------------------------------- */
+    --border: var(--op-gray-300); /* interactive outlines */
+    --border-subtle: var(--op-gray-200); /* inside components */
+    --border-strong: var(--op-gray-400);
+
+    /* ---- Controls — the neutral pill --------------------------------- */
+    --control: var(--op-gray-200);
+    --control-hover: #d8d8dc;
+    --control-active: #cfcfd4;
+    --control-fg: var(--op-gray-800);
+
+    /* ---- Fields — anything you type into ----------------------------- */
+    --field: var(--op-white);
+    --field-border: var(--op-gray-300);
+    --field-placeholder: var(--op-gray-500);
+
+    /* ---- Interaction washes ------------------------------------------ */
+    --hover-surface: rgba(0, 0, 0, 0.04);
+    --active-surface: rgba(0, 0, 0, 0.07);
+    --selected-surface: rgba(0, 113, 227, 0.1);
+
+    /* ---- The two blues ----------------------------------------------- */
+    --primary: var(--op-blue-500); /* one blue for actions */
+    --primary-hover: #0a7ced;
+    --primary-active: #0063c7;
+    --primary-fg: var(--op-white);
+    --link: var(--op-blue-600); /* one blue for links */
+    --ring: rgba(0, 113, 227, 0.45);
+
+    /* ---- Status — run state only, never decoration ------------------- */
+    --success: var(--op-green-500);
+    --warning: var(--op-amber-500);
+    --danger: var(--op-red-500);
+    --info: var(--op-blue-600);
+    --success-surface: rgba(3, 170, 73, 0.12);
+    --warning-surface: rgba(237, 99, 0, 0.12);
+    --danger-surface: rgba(232, 39, 44, 0.11);
+    --info-surface: rgba(0, 113, 227, 0.11);
+
+    /* ---- Sidebar — its own surface tier ------------------------------ */
+    --sidebar: #fafafb;
+    --sidebar-fg: var(--op-gray-900);
+    --sidebar-muted: var(--op-gray-600);
+    --sidebar-border: #e6e6ea;
+    --sidebar-item-hover: rgba(0, 0, 0, 0.05);
+    --sidebar-item-active: var(--op-white);
+
+    /* ---- Data series — ordered, always consumed in sequence ---------- */
+    --chart-1: var(--op-blue-500);
+    --chart-2: var(--op-teal-500);
+    --chart-3: var(--op-violet-500);
+    --chart-4: var(--op-green-500);
+    --chart-5: var(--op-amber-500);
+    --chart-grid: var(--op-gray-200);
+    --chart-axis: var(--op-gray-500);
+
+    /* Third-party brand glyphs ship as black SVGs; flipped on dark. */
+    --brand-glyph-filter: none;
+
+    /* ---- Terminal — the product's primary surface ---------------------
+       A real console, so it keeps its own ramp rather than borrowing the
+       UI's: output has to stay legible at 13px mono over long sessions. In
+       light mode the terminal is paper, not a dark rectangle in a light app.
+       The deep 700s exist because the 500s fall under 4.5:1 as small text. */
+    --term-bg: var(--op-white);
+    --term-fg: var(--op-gray-900);
+    --term-dim: var(--op-gray-600);
+    --term-border: #e6e6ea;
+    --term-accent: var(--op-blue-600);
+    --term-success: var(--op-green-700);
+    --term-warning: var(--op-amber-700);
+    --term-danger: var(--op-red-700);
+    --term-caret: var(--op-blue-600);
+    --term-selection: rgba(0, 113, 227, 0.16);
+
+    /* ---- Elevation ----------------------------------------------------
+       Surfaces never cast shadows; depth is tonal. Only three transient
+       layers detach from the page, all soft and ambient, never directional. */
+    --shadow-popover: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 12px 32px -8px rgba(16, 16, 16, 0.16);
+    --shadow-modal: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 32px 80px -16px rgba(16, 16, 16, 0.26);
+    --glass: rgba(255, 255, 255, 0.72);
+    --glass-blur: blur(20px) saturate(1.6);
+
+    /* =====================================================================
+       Typography — the system stack, doing every job; the system mono for
+       figures. No face is vendored: on Apple platforms the stack resolves to
+       SF Pro and SF Mono, which is what the design was drawn in, and elsewhere
+       to the platform's own UI face.
+       ================================================================== */
+    --font-sans:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: var(--font-sans);
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600; /* the ceiling; 700 reads as panic */
+
+    /* Tracking follows the inverse-size rule: the larger, the tighter. */
+    --text-display: 76px;    --leading-display: 1.04;    --tracking-display: -0.028em;
+    --text-display-sm: 52px; --leading-display-sm: 1.07; --tracking-display-sm: -0.024em;
+    --text-h1: 40px; --leading-h1: 1.1;  --tracking-h1: -0.021em;
+    --text-h2: 28px; --leading-h2: 1.15; --tracking-h2: -0.016em;
+    --text-h3: 21px; --leading-h3: 1.24; --tracking-h3: -0.011em;
+    --text-h4: 17px; --leading-h4: 1.35; --tracking-h4: -0.008em;
+    --text-body-lg: 17px; --leading-body-lg: 1.47; --tracking-body-lg: -0.016em;
+    --text-body: 15px;    --leading-body: 1.47;    --tracking-body: -0.011em;
+    --text-sm: 13px;      --leading-sm: 1.38;      --tracking-sm: -0.006em;
+    --text-xs: 12px;      --leading-xs: 1.33;      --tracking-xs: -0.003em;
+    --text-micro: 11px;   --leading-micro: 1.27;   --tracking-micro: 0.02em;
+    --text-metric: 32px;  --leading-metric: 1.05;  --tracking-metric: -0.02em;
+
+    /* =====================================================================
+       Space — 4px base. Product UI lives on 4–24; 40+ is page rhythm.
+       ================================================================== */
+    --space-1: 2px;
+    --space-2: 4px;
+    --space-3: 6px;
+    --space-4: 8px;
+    --space-5: 10px;
+    --space-6: 12px;
+    --space-7: 14px;
+    --space-8: 16px;
+    --space-10: 20px;
+    --space-12: 24px;
+    --space-14: 28px;
+    --space-16: 32px;
+    --space-20: 40px;
+    --space-24: 48px;
+    --space-30: 60px;
+    --space-40: 80px;
+    --space-52: 104px;
+    --space-72: 144px;
+
+    --page-max: 1440px;
+    --content-max: 1040px;
+    --section-gap: 80px;
+    --card-padding: 24px;
+    --control-gap: 8px;
+
+    /* One height ramp for every interactive element, so a Button, an Input
+       and a Select sit on a row without adjustment. */
+    --control-h-sm: 28px;
+    --control-h-md: 34px;
+    --control-h-lg: 42px;
+    --control-pad-sm: 12px;
+    --control-pad-md: 16px;
+    --control-pad-lg: 22px;
+
+    --sidebar-w: 264px;
+    --sidebar-w-collapsed: 60px;
+    --topbar-h: 56px;
+
+    /* =====================================================================
+       Radii — six, and no others: type into a 10, press a pill, read in an 18
+       ================================================================== */
+    --radius-xs: 6px; /* swatches, tag dots, inline code */
+    --radius-sm: 10px; /* inputs, menu items, small controls */
+    --radius-md: 14px; /* popovers, menus, nested panels */
+    --radius-lg: 18px; /* cards */
+    --radius-xl: 28px; /* modals, hero surfaces, large media */
+    --radius-pill: 980px; /* every button, chip, badge, avatar, tab */
+    --radius: var(--radius-sm);
+
+    /* =====================================================================
+       Motion — short, eased, never bouncy. Nothing springs.
+       ================================================================== */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --dur-instant: 80ms; /* hover, press */
+    --dur-fast: 140ms; /* menus, tooltips */
+    --dur-base: 220ms; /* dialogs, sidebar collapse, theme change */
+    --dur-slow: 400ms; /* progress and chart fills */
+    --transition-control:
+      background-color var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
+
+    /* =====================================================================
+       shadcn semantic aliases — the component library reads these
+       ================================================================== */
+    --foreground: var(--fg);
+    --card-foreground: var(--fg);
+    --popover-foreground: var(--fg);
+    --primary-foreground: var(--primary-fg);
+    --secondary: var(--control);
+    --secondary-foreground: var(--control-fg);
+    --muted: var(--op-gray-100);
+    --muted-foreground: var(--fg-muted);
+    --accent: var(--hover-surface);
+    --accent-foreground: var(--fg);
+    --destructive: var(--danger);
+    --destructive-foreground: var(--op-white);
+    --input: var(--field-border);
+
+    --sidebar-foreground: var(--sidebar-fg);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-fg);
+    --sidebar-accent: var(--sidebar-item-active);
+    --sidebar-accent-foreground: var(--sidebar-fg);
+    --sidebar-ring: var(--ring);
+
+    /* =====================================================================
+       Legacy names — the previous system's vocabulary, aliased onto this
+       one so the not-yet-ported components keep rendering. Author nothing
+       new against these; they go when the last component is ported.
+       ================================================================== */
+    --ink-900: var(--fg);
+    --ink-700: var(--op-gray-700);
+    --ink-600: var(--fg-muted);
+    --ink-500: var(--fg-subtle);
+    --ink-400: var(--fg-subtle);
+    --surface-canvas: var(--canvas);
+    --surface-card: var(--card);
+    --surface-sunken: var(--op-gray-100);
+    --surface-hover: var(--hover-surface);
+    --surface-inverse: var(--op-gray-900);
+    --app-bg: var(--canvas);
+    --chrome-bg: var(--sidebar);
+    --border-default: var(--border);
+    --accent-blue: var(--primary);
+    --accent-cyan: var(--op-teal-500);
+    --accent-pink: var(--danger);
+    --accent-purple: var(--op-violet-500);
+    --data-up: var(--success);
+    --data-down: var(--danger);
+    --data-line: var(--chart-1);
+    --data-line-compare: var(--chart-2);
+    --data-grid: var(--chart-grid);
+    --data-track: var(--op-gray-200);
+    --status-active: var(--success);
+    --status-active-bg: var(--success-surface);
+    --status-paused: var(--warning);
+    --status-paused-bg: var(--warning-surface);
+    --status-ended: var(--danger);
+    --status-ended-bg: var(--danger-surface);
+    --status-draft: var(--info);
+    --status-draft-bg: var(--info-surface);
+    --on-inverse: var(--fg-inverted);
+    --on-inverse-muted: rgba(255, 255, 255, 0.62);
+    --track-off: var(--op-gray-300);
+    --focus-ring: var(--ring);
+    --scrim: var(--overlay);
+    --dot-ground: var(--hover-surface);
+    --theme-toggle-knob: var(--card);
+    --theme-toggle-icon: var(--fg);
+    --theme-toggle-icon-idle: var(--fg-subtle);
+    --surface-email: var(--op-white);
+    --email-ink: var(--op-gray-900);
+    --email-ink-muted: var(--op-gray-600);
+    --email-rule: rgba(0, 0, 0, 0.12);
+    --email-link: var(--op-blue-600);
+    --elevation-menu: var(--shadow-popover);
+    --elevation-popover: var(--shadow-popover);
+    --elevation-panel: var(--shadow-popover);
+    --elevation-modal: var(--shadow-modal);
+    --font-brand: var(--font-sans);
+    --font-brand-display: var(--font-display);
+    --tracking-brand: var(--tracking-body);
+    --text-12: var(--text-xs);
+    --text-13: var(--text-sm);
+    --text-14: 14px;
+    --text-24: 24px;
+    --radius-nav: var(--radius-sm);
+    --radius-tile: var(--radius-md);
+    --radius-card: var(--radius-lg);
+
+    color-scheme: light;
+  }
+
+  /* ---------------------------------------------------------------------
+     Dark theme. `.dark` is the Tailwind convention; `[data-theme='dark']`
+     is what the design export's pages set, so markup from either survives.
+
+     The export's dark canvas is true black. The version-1 artboards lift the
+     whole ramp off zero: black read as a void behind a terminal that is also
+     black, so canvas, sidebar and terminal now sit within a few percent of
+     each other. Depth stays tonal, just quieter. This is that ramp.
+     ------------------------------------------------------------------ */
+  .dark,
+  [data-theme="dark"] {
+    --canvas: #121213;
+    --background: var(--canvas);
+    --card: #1a1a1c;
+    --popover: #202023;
+    --overlay: rgba(0, 0, 0, 0.62);
+
+    --fg: var(--op-gray-50);
+    --fg-muted: #a6a6ab;
+    --fg-subtle: var(--op-gray-500);
+    --fg-inverted: var(--op-gray-900);
+
+    --border: #333338;
+    --border-subtle: #262629;
+    --border-strong: #45454b;
+
+    --control: #2a2a2e;
+    --control-hover: #343439;
+    --control-active: #3d3d43;
+    --control-fg: var(--op-gray-50);
+
+    --field: #1e1e21;
+    --field-border: #35353a;
+    --field-placeholder: var(--op-gray-500);
+
+    --hover-surface: rgba(255, 255, 255, 0.06);
+    --active-surface: rgba(255, 255, 255, 0.1);
+    --selected-surface: rgba(41, 151, 255, 0.16);
+
+    --primary: var(--op-blue-500);
+    --primary-hover: #1a83ea;
+    --primary-active: #0063c7;
+    --primary-fg: var(--op-white);
+    --link: var(--op-blue-400);
+    --ring: rgba(41, 151, 255, 0.55);
+
+    --success: var(--op-green-400);
+    --warning: var(--op-amber-400);
+    --danger: var(--op-red-400);
+    --info: var(--op-blue-400);
+    --success-surface: rgba(48, 209, 88, 0.14);
+    --warning-surface: rgba(255, 159, 10, 0.14);
+    --danger-surface: rgba(255, 69, 58, 0.14);
+    --info-surface: rgba(41, 151, 255, 0.14);
+
+    --sidebar: #161618;
+    --sidebar-fg: var(--op-gray-50);
+    --sidebar-muted: #8f8f95;
+    --sidebar-border: #232326;
+    --sidebar-item-hover: rgba(255, 255, 255, 0.06);
+    --sidebar-item-active: rgba(255, 255, 255, 0.1);
+
+    --chart-1: var(--op-blue-400);
+    --chart-2: #39d6e6;
+    --chart-3: #a68cff;
+    --chart-4: var(--op-green-400);
+    --chart-5: var(--op-amber-400);
+    --chart-grid: #2a2a2d;
+    --chart-axis: var(--op-gray-500);
+    --brand-glyph-filter: invert(1);
+
+    --term-bg: #1a1a1c;
+    --term-fg: var(--op-gray-100);
+    --term-dim: var(--op-gray-500);
+    --term-border: #262629;
+    --term-accent: var(--op-blue-400);
+    --term-success: var(--op-green-400);
+    --term-warning: var(--op-amber-400);
+    --term-danger: var(--op-red-400);
+    --term-caret: var(--op-blue-400);
+    --term-selection: rgba(41, 151, 255, 0.24);
+
+    --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px -8px rgba(0, 0, 0, 0.7);
+    --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 80px -16px rgba(0, 0, 0, 0.8);
+    --glass: rgba(66, 66, 69, 0.72);
+
+    --muted: #232326;
+    --destructive-foreground: var(--op-white);
+
+    /* Legacy names that are not pure aliases restate here. */
+    --ink-700: var(--op-gray-300);
+    --surface-sunken: #232326;
+    --surface-inverse: var(--op-gray-50);
+    --data-track: #2c2c30;
+    --on-inverse-muted: rgba(0, 0, 0, 0.55);
+    --track-off: #3d3d43;
+    --email-rule: rgba(0, 0, 0, 0.12);
+
+    color-scheme: dark;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --dur-instant: 0ms;
+      --dur-fast: 0ms;
+      --dur-base: 0ms;
+      --dur-slow: 0ms;
+    }
+  }
+}
+
+/* =============================================================================
+   Theme mapping — tokens become Tailwind utilities.
+   Imported by every app alongside `@import "tailwindcss"`.
+   ========================================================================== */
+@theme inline {
+  /* ---- Fonts ---------------------------------------------------------- */
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+
+  /* ---- Type ladder — each size carries its leading and tracking --------
+     76/52 display · 40/28/21/17 headings · 17 lead, 15 read, 14 operate,
+     13 support, 12 annotate, 11 eyebrow. `text-base` is the 15px read size;
+     the export's names are exposed too (text-body, text-h2, text-micro…). */
+  --text-micro: var(--text-micro);
+  --text-micro--line-height: var(--leading-micro);
+  --text-micro--letter-spacing: var(--tracking-micro);
+  --text-xs: var(--text-xs);
+  --text-xs--line-height: var(--leading-xs);
+  --text-xs--letter-spacing: var(--tracking-xs);
+  --text-sm: var(--text-sm);
+  --text-sm--line-height: var(--leading-sm);
+  --text-sm--letter-spacing: var(--tracking-sm);
+  --text-operate: 14px;
+  --text-operate--line-height: 1.4;
+  --text-operate--letter-spacing: -0.008em;
+  --text-base: var(--text-body);
+  --text-base--line-height: var(--leading-body);
+  --text-base--letter-spacing: var(--tracking-body);
+  --text-body: var(--text-body);
+  --text-body--line-height: var(--leading-body);
+  --text-body--letter-spacing: var(--tracking-body);
+  --text-lg: var(--text-body-lg);
+  --text-lg--line-height: var(--leading-body-lg);
+  --text-lg--letter-spacing: var(--tracking-body-lg);
+  --text-h4: var(--text-h4);
+  --text-h4--line-height: var(--leading-h4);
+  --text-h4--letter-spacing: var(--tracking-h4);
+  --text-xl: var(--text-h3);
+  --text-xl--line-height: var(--leading-h3);
+  --text-xl--letter-spacing: var(--tracking-h3);
+  --text-h3: var(--text-h3);
+  --text-h3--line-height: var(--leading-h3);
+  --text-h3--letter-spacing: var(--tracking-h3);
+  --text-2xl: var(--text-h2);
+  --text-2xl--line-height: var(--leading-h2);
+  --text-2xl--letter-spacing: var(--tracking-h2);
+  --text-h2: var(--text-h2);
+  --text-h2--line-height: var(--leading-h2);
+  --text-h2--letter-spacing: var(--tracking-h2);
+  --text-3xl: var(--text-h1);
+  --text-3xl--line-height: var(--leading-h1);
+  --text-3xl--letter-spacing: var(--tracking-h1);
+  --text-h1: var(--text-h1);
+  --text-h1--line-height: var(--leading-h1);
+  --text-h1--letter-spacing: var(--tracking-h1);
+  --text-4xl: var(--text-display-sm);
+  --text-4xl--line-height: var(--leading-display-sm);
+  --text-4xl--letter-spacing: var(--tracking-display-sm);
+  --text-display-sm: var(--text-display-sm);
+  --text-display-sm--line-height: var(--leading-display-sm);
+  --text-display-sm--letter-spacing: var(--tracking-display-sm);
+  --text-5xl: var(--text-display);
+  --text-5xl--line-height: var(--leading-display);
+  --text-5xl--letter-spacing: var(--tracking-display);
+  --text-display: var(--text-display);
+  --text-display--line-height: var(--leading-display);
+  --text-display--letter-spacing: var(--tracking-display);
+  --text-metric: var(--text-metric);
+  --text-metric--line-height: var(--leading-metric);
+  --text-metric--letter-spacing: var(--tracking-metric);
+
+  /* ---- Weights — 600 is the ceiling; `font-bold` maps to it ------------- */
+  --font-weight-normal: var(--weight-regular);
+  --font-weight-medium: var(--weight-medium);
+  --font-weight-semibold: var(--weight-semibold);
+  --font-weight-bold: var(--weight-semibold);
+
+  /* ---- Tracking ------------------------------------------------------- */
+  --tracking-normal: var(--tracking-body);
+  --tracking-tight: var(--tracking-h2);
+  --tracking-tighter: var(--tracking-display-sm);
+  --tracking-wide: var(--tracking-micro);
+
+  /* ---- Radii — the six, and nothing in between -------------------------- */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-xl);
+  --radius-3xl: var(--radius-xl);
+  --radius-4xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  /* ---- Elevation — surfaces are flat; only floating layers detach -------- */
+  --shadow-2xs: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
+  --shadow-menu: var(--shadow-popover);
+  --shadow-panel: var(--shadow-popover);
+  --shadow-lg: var(--shadow-popover);
+  --shadow-xl: var(--shadow-modal);
+  --shadow-2xl: var(--shadow-modal);
+
+  /* ---- Motion --------------------------------------------------------- */
+  --ease-standard: var(--ease-standard);
+  --ease-out: var(--ease-out);
+  --ease-in: var(--ease-in);
+  --duration-instant: var(--dur-instant);
+  --duration-fast: var(--dur-fast);
+  --duration-base: var(--dur-base);
+  --duration-slow: var(--dur-slow);
+
+  /* ---- Semantic colours as utilities (bg-canvas, text-fg-muted, …) ------ */
+  --color-canvas: var(--canvas);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-inverted: var(--fg-inverted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-control: var(--control);
+  --color-control-hover: var(--control-hover);
+  --color-control-active: var(--control-active);
+  --color-control-fg: var(--control-fg);
+  --color-field: var(--field);
+  --color-field-border: var(--field-border);
+  --color-field-placeholder: var(--field-placeholder);
+  --color-hover-surface: var(--hover-surface);
+  --color-active-surface: var(--active-surface);
+  --color-selected-surface: var(--selected-surface);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-link: var(--link);
+  --color-overlay: var(--overlay);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-success-surface: var(--success-surface);
+  --color-warning-surface: var(--warning-surface);
+  --color-danger-surface: var(--danger-surface);
+  --color-info-surface: var(--info-surface);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-item-hover: var(--sidebar-item-hover);
+  --color-sidebar-item-active: var(--sidebar-item-active);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-term-bg: var(--term-bg);
+  --color-term-fg: var(--term-fg);
+  --color-term-dim: var(--term-dim);
+  --color-term-border: var(--term-border);
+  --color-term-accent: var(--term-accent);
+  --color-term-success: var(--term-success);
+  --color-term-warning: var(--term-warning);
+  --color-term-danger: var(--term-danger);
+  --color-term-caret: var(--term-caret);
+  --color-term-selection: var(--term-selection);
+  --color-glass: var(--glass);
+
+  /* ---- shadcn semantic colours ---------------------------------------- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ---- Legacy utilities (text-ink-900, bg-surface-sunken, …) ------------
+     Kept so the unported components compile; see the note in @layer base. */
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-surface-canvas: var(--surface-canvas);
+  --color-surface-card: var(--surface-card);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-email: var(--surface-email);
+  --color-email-ink: var(--email-ink);
+  --color-email-ink-muted: var(--email-ink-muted);
+  --color-email-rule: var(--email-rule);
+  --color-email-link: var(--email-link);
+  --color-border-default: var(--border-default);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-purple: var(--accent-purple);
+  --color-data-up: var(--data-up);
+  --color-data-down: var(--data-down);
+  --color-data-line: var(--data-line);
+  --color-data-line-compare: var(--data-line-compare);
+  --color-data-track: var(--data-track);
+  --color-status-active: var(--status-active);
+  --color-status-active-bg: var(--status-active-bg);
+  --color-status-paused: var(--status-paused);
+  --color-status-paused-bg: var(--status-paused-bg);
+  --color-status-ended: var(--status-ended);
+  --color-status-ended-bg: var(--status-ended-bg);
+  --color-status-draft: var(--status-draft);
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-on-inverse: var(--on-inverse);
+  --color-on-inverse-muted: var(--on-inverse-muted);
+  --color-track-off: var(--track-off);
+  --color-dot-ground: var(--dot-ground);
+  --color-focus-ring: var(--focus-ring);
+  --color-scrim: var(--scrim);
+  --color-theme-toggle-knob: var(--theme-toggle-knob);
+  --color-theme-toggle-icon: var(--theme-toggle-icon);
+  --color-theme-toggle-icon-idle: var(--theme-toggle-icon-idle);
+}
+
+/* =============================================================================
+   Baseline — tokens do the work; this only sets the document voice
+   ========================================================================== */
+@layer base {
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  /* Focus is always visible: a 2px offset outline everywhere, and fields
+     add their own 3px halo. Never `outline: none` without a replacement. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Tailwind's preflight gives buttons the default cursor. Restore the cue
+     for every enabled native or ARIA button. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  html {
+    background-color: var(--canvas);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-body);
+    font-weight: var(--weight-regular);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headings are the same face at 600 with tighter tracking; the size sets
+     the tracking, so a heading with no size class inherits the body's. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: var(--weight-semibold);
+    color: var(--fg);
+  }
+
+  a {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  /* Every number a human compares is mono and tabular. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--selected-surface);
+  }
+}
+
+@keyframes op-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes op-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
+   an edge. */
+@keyframes op-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Tabular, mono figures — metrics, latency, cost, run IDs, quota counts. */
+@utility figures {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* The 11px uppercase eyebrow — section labels in the sidebar, card group
+   labels — and the one place uppercase is allowed. */
+@utility eyebrow {
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  letter-spacing: var(--tracking-micro);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+/* Glass — the one translucent surface, for a control floating over media or
+   the rail floating over an expanded terminal. Never decorative. */
+@utility glass {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* Kept for the assistant rail of the previous system; no new use. */
+@utility dotted-ground {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    var(--dot-ground) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+}
+
+/* A quiet 8px scrollbar for panes that scroll inside a card. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: var(--radius-pill);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

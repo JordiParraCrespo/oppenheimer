@@ -23,7 +23,7 @@
     "@nestjs/common": "^11.1.28"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "@types/node": "^22.20.1",
     "reflect-metadata": "^0.2.2",
     "typescript": "^6.0.3",

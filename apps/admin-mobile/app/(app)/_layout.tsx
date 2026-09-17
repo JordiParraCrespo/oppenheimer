@@ -2,7 +2,7 @@ import { Button } from '@oppenheimer/design-system-mobile/button';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Shield, Users } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { useLogout, useProfile } from '@oppenheimer/frontend/react';
+import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { Redirect, Tabs, useRouter } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useTranslation } from 'react-i18next';

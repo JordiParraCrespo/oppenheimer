@@ -2,7 +2,7 @@ const { hairlineWidth } = require("nativewind/theme");
 
 /**
  * Oppenheimer brand theme for NativeWind. Mirrors
- * `packages/design-system/web/tailwind.config.ts` so a component's classes mean
+ * `packages/frontend/design-system/web/tailwind.config.ts` so a component's classes mean
  * the same thing on both platforms. Tokens live in `./global.css`.
  *
  * Colours are declared with `<alpha-value>` so opacity modifiers
@@ -19,7 +19,7 @@ module.exports = {
     "./app/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
     "./registry/**/*.{ts,tsx}",
-    "../../packages/design-system/mobile/src/**/*.{ts,tsx}",
+    "../../packages/frontend/design-system/mobile/src/**/*.{ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {

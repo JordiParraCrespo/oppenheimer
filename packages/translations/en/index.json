@@ -208,21 +208,6 @@
       "retry": "Try again",
       "retrying": "Retrying..."
     },
-    "acceptInvitation": {
-      "acceptExisting": "Join workspace",
-      "createPassword": "Create password",
-      "createPasswordPlaceholder": "Choose a password",
-      "description": "Finish setting up your account to start working with your team.",
-      "eyebrow": "You're invited",
-      "fullName": "Full name",
-      "fullNamePlaceholder": "Your full name",
-      "invalidLink": "This invitation link is incomplete. Ask the workspace owner to send a new invitation.",
-      "invitedYou": "{{inviter}} invited you",
-      "joining": "Joining…",
-      "joiningAs": "Joining as {{role}}",
-      "submit": "Create account & join",
-      "title": "Join the workspace"
-    },
     "art": {
       "slides": {
         "portrait": {
@@ -468,12 +453,6 @@
   "onboarding": {
     "description": "Your account is ready. Create a workspace for your team, or join one you have been invited to.",
     "eyebrow": "Almost there",
-    "invitation": {
-      "join": "Join",
-      "joining": "Joining…",
-      "role": "Joining as {{role}}",
-      "title": "You’ve been invited to a workspace"
-    },
     "signOut": "Sign out",
     "title": "Create your workspace",
     "create": {

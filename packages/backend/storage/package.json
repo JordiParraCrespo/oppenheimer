@@ -26,7 +26,7 @@
     "@nestjs/core": "^11.1.28"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typescript": "^6.0.3",

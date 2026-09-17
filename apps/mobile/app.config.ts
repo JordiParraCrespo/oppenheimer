@@ -16,7 +16,7 @@ const plugins: ExpoConfig['plugins'] = [
   [
     'react-native-nano-icons',
     {
-      iconSets: [{ inputDir: '../../packages/design-system/mobile/assets/icons/ui' }],
+      iconSets: [{ inputDir: '../../packages/frontend/design-system/mobile/assets/icons/ui' }],
     },
   ],
 ];
@@ -40,6 +40,10 @@ const config: ExpoConfig = {
   scheme: process.env.EXPO_PUBLIC_MOBILE_SCHEME ?? process.env.MOBILE_SCHEME ?? 'oppenheimer',
   platforms: ['ios', 'android'],
   userInterfaceStyle: 'automatic',
+  // The React Compiler memoises components and hooks at build time, so the
+  // screens never reach for `useMemo`, `useCallback` or `memo` by hand.
+  // `babel-plugin-react-compiler` is the devDependency Expo's preset picks up.
+  experiments: { reactCompiler: true },
   ios: {
     bundleIdentifier: 'com.oppenheimer.app',
     supportsTablet: true,

@@ -1,63 +1,45 @@
 # @oppenheimer/admin-mobile — Agent Instructions
 
-Super-admin Expo app for platform users and application roles. Keep consumer
-features in `apps/mobile`; this app is the native platform control plane.
-
-> Read the root [`CLAUDE.md`](../../CLAUDE.md) first for repo-wide conventions.
+> Read the root [`CLAUDE.md`](../../CLAUDE.md) first, then [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+> The native control plane: users and roles. Consumer features stay in `apps/mobile`.
 
 ## Stack
 
-- **Expo** + **expo-router** (file-based routes in `app/`)
-- **NativeWind** (Tailwind for React Native) — see `tailwind.config.js`,
-  `global.css`, `nativewind-env.d.ts`
-- UI primitives from `@oppenheimer/design-system-mobile`
-- **i18next** for i18n (translations from `@oppenheimer/translations`)
-- **React Hook Form** + `zodResolver` for forms (`Controller` per field — the
-  DOM-ref `register()` path does not work in React Native)
-- **expo-secure-store** for secure token storage
-- **TanStack Query** for server state, persisted to `AsyncStorage` (policy from
-  `@oppenheimer/frontend/react`, wired in `lib/query.ts`)
-
-## Layout
-
-```
-app/                  # expo-router screens/routes
-components/            # app-local components
-lib/                  # helpers
-types/
-app.config.ts         # Expo config
-metro.config.js       # Metro bundler (monorepo-aware)
-```
+- Expo + expo-router (`app/`); **expo-dev-client only**, not Expo Go
+- NativeWind + `@oppenheimer/design-system-mobile`; glue from `@oppenheimer/frontend-mobile`
+- `expo-secure-store` for secrets (prefix `oppenheimer-admin`, not `apps/mobile`'s
+  `oppenheimer`); **MMKV** for preferences and the persisted query cache
+- React Hook Form + `useZodResolver`, one `Controller` per field — React Native
+  has no DOM refs, so `register()` does not work
+- `index.ts` imports `@oppenheimer/frontend-mobile/polyfills` **first**: nitro-fetch
+  replaces global `fetch` before anything captures it
 
 ## Where code goes
 
-- **Business logic lives in `@oppenheimer/frontend`**, not in screens. That package
-  is shared with web; mobile injects platform-specific implementations (secure
-  storage, etc.) via its InversifyJS DI container.
-- Reusable UI comes from `@oppenheimer/design-system-mobile`.
+- A screen → `features/<module>/screens/`, mounted by a route under 120 lines.
+- A form → `features/<module>/forms/` (props in, `onSubmit` out; no fetching).
+- A sheet → `features/<module>/dialogs/`, one per file, owns its mutation.
+- A helper two screens use → `@oppenheimer/frontend-mobile`, not a second copy and not
+  `lib/` (only `oppenheimer.ts`, `auth-client.ts`, `query.ts`).
+- Logic — entities, repositories, query hooks → `@oppenheimer/frontend-admin` or
+  `@oppenheimer/frontend-core`. Never `@oppenheimer/frontend-consumer`.
 
-## Forms
-
-React Hook Form, validated by a Zod schema from `@oppenheimer/shared`. Full
-convention in [`.agents/rules/forms.md`](../../.agents/rules/forms.md); the
-short version:
-
-- `useForm({ resolver: useZodResolver(schema) })` — always via
-  `lib/use-zod-resolver.ts`, never `zodResolver` directly, or the messages come
-  out untranslated.
-- Every field goes through `Controller`: React Native has no DOM refs, so
-  `register()` does not work. Wire `value`, `onChangeText` **and** `onBlur` —
-  dropping `onBlur` leaves `touched` stale and silently disables blur-mode
-  validation.
-- Wrap each control in `components/form-field.tsx`, which mirrors the web
-  `Field` (label + control + inline error). Validation failures belong inline,
-  not in an `Alert`.
-
-## Commands
+## Before pushing
 
 ```bash
-pnpm --filter @oppenheimer/admin-mobile dev       # start Expo dev server
-pnpm --filter @oppenheimer/admin-mobile ios
-pnpm --filter @oppenheimer/admin-mobile android
-pnpm --filter @oppenheimer/admin-mobile build:dev # EAS build (dev profile)
+pnpm --filter @oppenheimer/admin-mobile lint && pnpm --filter @oppenheimer/admin-mobile test
+pnpm --filter @oppenheimer/admin-mobile arch && pnpm check:structure
 ```
+
+## Patterns agents get wrong
+
+- Adding a registration screen. `lib/auth-client.ts` throws from `signUp` and
+  passes `requestSignUp: false`: accounts are provisioned by an administrator.
+- Reaching for `useEffect` in a screen. Biome allows it only in `hooks/`; the
+  one exception is `app/_layout.tsx`, whose single commented effect loads the
+  config manager and the purchases SDK once per launch.
+- Naming a feature after the page. Only kernel modules and `admin-users` /
+  `roles` are allowed here; this app has no allowlist entry.
+
+Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
+forms are [`.agents/rules/forms.md`](../../.agents/rules/forms.md).

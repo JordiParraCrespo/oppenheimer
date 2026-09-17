@@ -208,21 +208,6 @@
       "retry": "Reintentar",
       "retrying": "Reintentando..."
     },
-    "acceptInvitation": {
-      "acceptExisting": "Unirme al espacio de trabajo",
-      "createPassword": "Crear contraseña",
-      "createPasswordPlaceholder": "Elige una contraseña",
-      "description": "Termina de configurar tu cuenta para empezar a trabajar con tu equipo.",
-      "eyebrow": "Te han invitado",
-      "fullName": "Nombre completo",
-      "fullNamePlaceholder": "Tu nombre completo",
-      "invalidLink": "Este enlace de invitación está incompleto. Pide al propietario que envíe una nueva invitación.",
-      "invitedYou": "{{inviter}} te ha invitado",
-      "joining": "Uniéndome…",
-      "joiningAs": "Te unes como {{role}}",
-      "submit": "Crear cuenta y unirme",
-      "title": "Únete al espacio de trabajo"
-    },
     "art": {
       "slides": {
         "portrait": {
@@ -468,12 +453,6 @@
   "onboarding": {
     "description": "Tu cuenta está lista. Crea un espacio de trabajo para tu equipo o únete a uno al que te hayan invitado.",
     "eyebrow": "Casi listo",
-    "invitation": {
-      "join": "Entrar",
-      "joining": "Entrando…",
-      "role": "Entrarás como {{role}}",
-      "title": "Te han invitado a un espacio de trabajo"
-    },
     "signOut": "Cerrar sesión",
     "title": "Crea tu espacio de trabajo",
     "create": {

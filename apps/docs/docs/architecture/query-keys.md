@@ -12,7 +12,7 @@ patterns from TkDodo (a TanStack Query maintainer).
 
 This guide explains the rules and shows how to write a compliant **query key
 factory**. The reference implementations live in
-`packages/frontend/src/react/users.queries.ts` and `auth.queries.ts`.
+`packages/frontend/core/src/react/users.queries.ts` and `auth.queries.ts`.
 
 ## The rules
 
@@ -153,17 +153,23 @@ to storage — `localStorage` on web, `AsyncStorage` on mobile — via TanStack'
 A reload or a cold start renders from the restored cache and refetches in the
 background instead of showing spinners.
 
-The policy is shared by both apps from `@oppenheimer/frontend/react` so it can only
-drift in one place:
+The policy is shared by both apps from `@oppenheimer/frontend-core/react` so it can
+only drift in one place:
 
 ```typescript
-import { createQueryPersistOptions, defaultQueryClientOptions } from '@oppenheimer/frontend/react';
+import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
+import { createQueryPersistOptions, defaultQueryClientOptions } from '@oppenheimer/frontend-core/react';
 
 const queryClient = new QueryClient({ defaultOptions: defaultQueryClientOptions(60_000) });
 
 <PersistQueryClientProvider
   client={queryClient}
-  persistOptions={{ persister, ...createQueryPersistOptions(appVersion) }}
+  persistOptions={{
+    persister,
+    ...createQueryPersistOptions(appVersion, {
+      nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+    }),
+  }}
 >
 ```
 
@@ -181,15 +187,20 @@ What that policy encodes:
   - `auth` is never persisted. The session query is `staleTime: Infinity`, so a
     restored entry would look fresh forever and `restoreSession()` would never
     run — the app would render as signed in with no session behind it.
-  - `apiTokens` is never persisted. Token prefixes, scopes and the permission
-    catalog are credential metadata, and neither `localStorage` nor
+  - `apiTokens` is never persisted — the consumer product names it in
+    `CONSUMER_NON_PERSISTED_FEATURES`. Token prefixes, scopes and the
+    permission catalog are credential metadata, and neither `localStorage` nor
     `AsyncStorage` is encrypted at rest. Tokens themselves live in
     `expo-secure-store` on mobile and never touch the query cache.
   - Only **successful** queries are written; restoring an error or a pending
     fetch would replay a failure the user has already moved past.
 
 Adding a feature whose data shouldn't outlive the session? Add its namespace to
-the non-persisted set in `packages/frontend/src/react/persistence.ts`.
+`KERNEL_NON_PERSISTED_FEATURES` in
+`packages/frontend/core/src/react/persistence.ts` when both products need it,
+or to the product's own list — `CONSUMER_NON_PERSISTED_FEATURES` in
+`packages/frontend/consumer/src/react/persistence.ts`, which the app passes
+through `nonPersistedFeatures`.
 
 ## Whose cache is it?
 

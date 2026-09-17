@@ -21,7 +21,7 @@ const config: ExpoConfig = {
     [
       'react-native-nano-icons',
       {
-        iconSets: [{ inputDir: '../../packages/design-system/mobile/assets/icons/ui' }],
+        iconSets: [{ inputDir: '../../packages/frontend/design-system/mobile/assets/icons/ui' }],
       },
     ],
   ],

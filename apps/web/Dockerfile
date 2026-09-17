@@ -7,10 +7,12 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/shared/package.json ./packages/shared/
-COPY packages/config/package.json ./packages/config/
-COPY packages/design-system/web/package.json ./packages/design-system/web/
-COPY packages/frontend/package.json ./packages/frontend/
-COPY packages/api-client/package.json ./packages/api-client/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
+COPY packages/frontend/design-system/web/package.json ./packages/frontend/design-system/web/
+COPY packages/frontend/core/package.json ./packages/frontend/core/
+COPY packages/frontend/consumer/package.json ./packages/frontend/consumer/
+COPY packages/frontend/api-client/package.json ./packages/frontend/api-client/
+COPY packages/frontend/web/package.json ./packages/frontend/web/
 COPY packages/translations/package.json ./packages/translations/
 RUN pnpm install --frozen-lockfile --filter @oppenheimer/web...
 

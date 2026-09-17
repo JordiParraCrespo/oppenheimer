@@ -1,4 +1,7 @@
-import { createQueryPersistOptions, defaultQueryClientOptions } from '@oppenheimer/frontend/react';
+import {
+  createQueryPersistOptions,
+  defaultQueryClientOptions,
+} from '@oppenheimer/frontend-core/react';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import {

@@ -53,7 +53,7 @@ NestJS infrastructure.
 
 ## Shared config dependency
 
-All backend packages depend on `@oppenheimer/config` for TypeScript config. Reference it via workspace protocol: `"@oppenheimer/config": "workspace:*"`.
+All backend packages depend on `@oppenheimer/tsconfig` for TypeScript config. Reference it via workspace protocol: `"@oppenheimer/tsconfig": "workspace:*"`.
 
 ## Deliberate exception: `@oppenheimer/auth` ships TypeScript sources
 

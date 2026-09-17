@@ -99,21 +99,28 @@ export class PublishArticleHttpController {
   ability to `request.ability`.
 - No `@CheckPolicies` ⇒ any authenticated user passes (e.g. `GET /users/me`).
 
-### An endpoint a screen is named after is also the sidebar's rule
+### An endpoint a client gates a destination on declares its rules once
 
-The endpoints that back a gated row in the web sidebar — members, roles, API
-tokens, admin, billing — are gated on the same `@CheckPolicies` the endpoint
-carries. That pairing is declared once, in `SCREENS`
-(`packages/shared/src/navigation/screens.ts`), and asserted by
-`apps/api/src/auth/__tests__/screen-policies.spec.ts`. Change the policy on one
-of those handlers and that test fails until `SCREENS` says the same thing —
-which is the point: a policy added to a controller would otherwise leave the
-sidebar offering a link that could only answer 403, and nothing in the build
-would notice. `GET /users/me/permissions` serves the caller's effective rules
-so the client can apply the same catalog.
+Some endpoints are the thing a client hides a link behind — members, roles, API
+tokens, admin, billing. Their `@CheckPolicies` is declared once, in
+`ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`),
+and asserted by `apps/api/src/auth/__tests__/endpoint-policies.spec.ts`: it
+checks the handler exists, that it is mounted at the path the catalog names,
+and that its `@CheckPolicies` is exactly the rule list there. Change the policy
+on one of those handlers and the test fails until the catalog says the same
+thing — which is the point: a policy added to a controller would otherwise
+leave a client offering a link that could only answer 403, and nothing in the
+build would notice. `GET /users/me/permissions` serves the caller's effective
+rules so the client can apply the same catalog.
 
-If a screen's data moves to a different handler, move its entry in `HANDLERS`
-there too. The test is only as honest as the handler it is pointed at.
+The catalog is keyed by **endpoint**, and holds no client's route paths: a URL
+belongs to the app that mounts it, and the web, control-plane and mobile apps
+reach these handlers under different names. A nav row that gates on one of
+these reads `ENDPOINT_POLICIES[<endpoint>]` where the row is declared.
+
+If an endpoint's data moves to a different handler, move its entry in
+`HANDLERS` there too. The test is only as honest as the handler it is pointed
+at.
 
 ### Resource scoping (own-resource checks)
 

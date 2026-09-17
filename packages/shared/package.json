@@ -65,12 +65,6 @@
       "require": "./dist/constants/index.js",
       "default": "./dist/constants/index.js"
     },
-    "./navigation": {
-      "types": "./dist/navigation/index.d.ts",
-      "import": "./dist/navigation/index.js",
-      "require": "./dist/navigation/index.js",
-      "default": "./dist/navigation/index.js"
-    },
     "./scopes": {
       "types": "./dist/scopes/index.d.ts",
       "import": "./dist/scopes/index.js",
@@ -91,7 +85,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "typescript": "^6.0.3",
     "vitest": "^5.0.0"
   }

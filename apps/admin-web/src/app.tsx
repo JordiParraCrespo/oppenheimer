@@ -5,11 +5,11 @@ import {
   Button,
   Toaster,
 } from '@oppenheimer/design-system-web';
-import { useAuthState, useSessionRestore } from '@oppenheimer/frontend/react';
+import { useAuthState, useSessionRestore } from '@oppenheimer/frontend-core/react';
+import { useTheme } from '@oppenheimer/frontend-web';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/components/theme-provider';
+import { app } from '@/lib/oppenheimer';
 import { routeTree } from './routeTree.gen';
 
 export interface RouterContext {
@@ -40,6 +40,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// Guarded routes read `context.auth` in `beforeLoad`, which only re-runs when
+// the router is invalidated. The auth store is the thing that changes, so it
+// tells the router directly — one subscription at module scope, instead of a
+// component watching the flag and invalidating from an effect a render late.
+//
+// Two details keep this honest. The context is handed to the router *before*
+// the invalidation, or the guards would re-run against the previous flag
+// (`RouterProvider` re-applies the same context on its next render). And an
+// unmounted router is left alone: session restore flips the flag before the
+// provider exists, and invalidating then would run the guards with the
+// initial `false` and record a redirect to /login before the app has drawn.
+app.auth.store.subscribe((state, previous) => {
+  if (state.isAuthenticated === previous.isAuthenticated) return;
+  router.update({ context: { auth: { isAuthenticated: state.isAuthenticated } } });
+  if (router.state.matches.length > 0) router.invalidate();
+});
+
 /**
  * The single `Toaster` mount for the app. Sonner renders every `toast()` into
  * *every* mounted `<Toaster>`, so a second one anywhere in the tree shows each
@@ -64,16 +81,16 @@ function AppRoutes() {
   // Rehydrate a persisted session (tokens in localStorage) before the router's
   // route guards run, so a returning/refreshing authenticated user isn't bounced
   // to /login. Mirrors the mobile root AuthGate, which gates on the same query.
-  const { isLoading, isError, isFetching, refetch } = useSessionRestore();
+  // `isPending`, not `isLoading`: under `PersistQueryClientProvider` a query
+  // sits idle while the persisted cache is restored, and `isLoading` (pending
+  // *and* fetching) is false for that window. Gating on it mounted the router
+  // before the session was known, so every signed-in cold load bounced to
+  // /login and back. `isPending` holds until the answer is in.
+  const { isPending, isError, isFetching, refetch } = useSessionRestore();
 
-  const context = useMemo(() => ({ auth: { isAuthenticated } }), [isAuthenticated]);
+  const context = { auth: { isAuthenticated } };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-invalidate the router whenever auth state flips so guarded routes re-run
-  useEffect(() => {
-    router.invalidate();
-  }, [isAuthenticated]);
-
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background">
         <div

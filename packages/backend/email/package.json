@@ -29,7 +29,7 @@
     "resend": "^6.18.0"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "19.2.14",
     "react-dom": "19.1.0",

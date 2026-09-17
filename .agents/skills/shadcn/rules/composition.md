@@ -68,7 +68,7 @@ This applies to all group-based components:
 ## Empty states use EmptyState component
 
 `EmptyState` from `@oppenheimer/design-system-web` is the house empty state (read
-`packages/design-system/web/src/components/empty-state.tsx` for its props).
+`packages/frontend/design-system/web/src/components/empty-state.tsx` for its props).
 Don't build custom markup, and don't reach for the lower-level `Empty` parts
 when `EmptyState` fits.
 

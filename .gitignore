@@ -15,8 +15,8 @@ apps/admin-mobile/ios/
 apps/admin-mobile/android/
 apps/mobile-showcase/ios/
 apps/mobile-showcase/android/
-packages/nitro-app-info/android/.cxx/
-packages/design-system/mobile/assets/icons/nanoicons/
+packages/frontend/nitro-app-info/android/.cxx/
+packages/frontend/design-system/mobile/assets/icons/nanoicons/
 # oppenheimer:end mobile|admin-mobile|mobile-showcase
 .docusaurus/
 *.tsbuildinfo

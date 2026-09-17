@@ -8,20 +8,20 @@ description: Port a design export (a design system as tokens plus screen artboar
 A design export is two things: a **design system** (tokens, a readme with
 the rationale, usually per-component CSS) and **artboards** (screens that
 run on that system, often with a small override layer). The job is to make
-`packages/design-system/web` and `apps/web-showcase` say what the export
+`packages/frontend/design-system/web` and `apps/web-showcase` say what the export
 says, on this repo's conventions.
 
 This skill is the invariant workflow. It does not know which brand, face,
 palette or component names the export carries; the repo's own documents do
 the deciding on vocabulary, and the export decides values:
 
-- `packages/design-system/AGENTS.md` — the token vocabulary and the rules
+- `packages/frontend/design-system/AGENTS.md` — the token vocabulary and the rules
   the package already documents. Port **onto** it; do not replace it
   without a decision recorded in the plan.
 - `.agents/rules/frontend-ui.md` — which component to reach for (the
   picker table, colour vocabulary, where files live). Do not add a
   parallel rule.
-- `packages/design-system/web/src/styles/globals.css` — the token file.
+- `packages/frontend/design-system/web/src/styles/globals.css` — the token file.
 
 The export is the spec, but the artboards are the truth: where they
 override the system, the artboards win, because they are what the user
@@ -174,7 +174,7 @@ answers.
 
 ## 8. Docs, in the same PR
 
-`packages/design-system/AGENTS.md` (rules and vocabulary as now agreed),
+`packages/frontend/design-system/AGENTS.md` (rules and vocabulary as now agreed),
 the package README (what is inside), `apps/web-showcase/CLAUDE.md`, the
 export's own README (where it went, which overrides won), and the root
 agent notes if a stated rule changed.

@@ -2,7 +2,7 @@
 "@oppenheimer/backend-core": minor
 "@oppenheimer/backend-ddd": minor
 "@oppenheimer/shared": minor
-"@oppenheimer/frontend": minor
+"@oppenheimer/frontend-core": minor
 "@oppenheimer/api-client": minor
 "@oppenheimer/api": minor
 "@oppenheimer/cli": minor
@@ -31,7 +31,7 @@ the ad-hoc `{ statusCode, code, message }` body.
 
 The `ProblemDetails` wire type lives in `@oppenheimer/shared`, replacing the unused
 `ApiErrorResponse`. The CLI and MCP clients
-read problem documents (still understanding the old body shape), `@oppenheimer/frontend`
+read problem documents (still understanding the old body shape), `@oppenheimer/frontend-core`
 exposes `toAppError` and the `@MapApiError` method decorator so screens can show
 the server's `detail` and per-field errors, and `ApiProblemResponse` puts the
 schema in the OpenAPI document and the generated client.

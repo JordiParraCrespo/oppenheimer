@@ -20,9 +20,11 @@ The **`web` project does not run in CI yet, and does not pass.** On `main` it is
 ran it:
 
 - six `team.spec.ts` specs, and the profile spec that opens the team page, drive
-  a `/team` route that `apps/web` no longer has (there is no `components/team/`
-  either, though the root `CLAUDE.md` still refers to one). The surface moved
-  when the consumer and control-plane apps were split; the specs did not
+  a `/team` route that `apps/web` no longer has. Organization surfaces now live
+  in `apps/web/src/features/organizations/` — the onboarding and
+  accept-invitation screens, and the general pane of `/settings` — while roles
+  and users moved to the control plane (`apps/admin-web`, over
+  `@oppenheimer/frontend-admin`). The specs did not follow
 - `nav-permissions.spec.ts` asserts a nav catalog that has the same problem
 - the rest — an avatar upload, a password change signing other devices out, a
   wrong-password error, the language switch — are individually stale or broken

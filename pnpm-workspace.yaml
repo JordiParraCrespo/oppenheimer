@@ -15,4 +15,5 @@ packages:
   - "packages/go/*"
   # oppenheimer:end runner
   - "packages/backend/*"
-  - "packages/design-system/*"
+  - "packages/frontend/*"
+  - "packages/frontend/design-system/*"
