@@ -23,5 +23,6 @@
     "now": "ahora",
     "week": "{{count}}sem",
     "year": "{{count}}a"
-  }
+  },
+  "product": "Consola"
 }
