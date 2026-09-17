@@ -3,72 +3,56 @@ import {
   AlertDescription,
   cn,
   Field,
+  FieldAction,
   FieldError,
   FieldLabel,
+  FieldRow,
   Separator,
+  Link as TextLink,
 } from '@oppenheimer/design-system-web';
-import { ArrowLeft } from '@oppenheimer/design-system-web/icons';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
  * The shared vocabulary of the auth screens, expressed once so every page
- * inherits the same type ramp and rhythm: 24px/500 title, 14px ink-600
- * subtitle, 13px labels, 40px controls, pill CTAs.
+ * inherits the same rhythm from the MVP artboards: a display heading over a
+ * muted lead, 13px labels, the 42px control size (`size="lg"`), links in link
+ * blue.
  */
 
 /**
- * The 40px control the auth forms use — between the design system's 36 and 44.
- *
- * These screens pin their own height rather than inheriting the `Input` /
- * `SelectTrigger` default, which is `default` (36px) so a dashboard field sits
- * level with the buttons and table bars around it. Auth has no such
- * neighbours — it is one column of fields — and stays at 40. The class lands
- * on the control's `className`, so tailwind-merge drops the variant's height:
- * the size prop is deliberately never passed on these screens.
+ * Legacy: the previous system pinned auth controls at 40px through these
+ * classes. Controls now take `size="lg"`; the names stay so the screens not
+ * yet rebuilt on the artboards (onboarding, the control plane) keep compiling.
  */
-export const authControlClass = 'h-10 w-full';
-
-/**
- * Inputs on these screens are 40px with 13px gutters and, unlike the rest of
- * the product, do show focus: a blue hairline and a soft ring. Sign-in is the
- * one place a keyboard user has nothing else to orient by.
- */
-export const authInputClass = cn(
-  authControlClass,
-  'rounded-md px-[13px] text-base',
-  'focus:border-accent-blue focus:ring-3 focus:ring-accent-blue/35',
-);
+export const authControlClass = 'w-full';
+export const authInputClass = 'w-full';
 
 export function AuthEyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="mb-2.5 text-sm font-medium text-accent-blue">{children}</p>;
+  return <p className="eyebrow figures mb-3">{children}</p>;
 }
 
-/**
- * `font-sans` overrides the design system's display cut for headings: these
- * screens are set entirely in the text cut, whose wider letterforms are what
- * decide where a title wraps.
- */
 export function AuthTitle({ children, className }: React.ComponentProps<'h1'>) {
   return (
-    <h1 className={cn('mb-1.5 font-sans text-2xl font-medium text-pretty text-ink-900', className)}>
+    <h1 className={cn('mb-2 font-display text-2xl font-semibold text-pretty text-fg', className)}>
       {children}
     </h1>
   );
 }
 
 export function AuthSubtitle({ children, className }: React.ComponentProps<'p'>) {
-  return (
-    <p className={cn('mb-8 text-base leading-normal text-pretty text-ink-600', className)}>
-      {children}
-    </p>
-  );
+  return <p className={cn('mb-7 text-base text-pretty text-fg-muted', className)}>{children}</p>;
+}
+
+/** The muted line under a form's primary action ("Saving signs you out of every other device."). */
+export function AuthNote({ children, className }: React.ComponentProps<'p'>) {
+  return <p className={cn('mt-4 text-xs text-pretty text-fg-subtle', className)}>{children}</p>;
 }
 
 /** The 52px disc that heads a terminal state (mail sent, password updated). */
 export function AuthIconCircle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-5 flex size-13 items-center justify-center rounded-full border border-border-subtle bg-surface-sunken [&>svg]:size-6 [&>svg]:text-ink-900">
+    <div className="mb-5 flex size-13 items-center justify-center rounded-full border border-border-subtle bg-surface-sunken [&>svg]:size-6 [&>svg]:text-fg">
       {children}
     </div>
   );
@@ -77,56 +61,58 @@ export function AuthIconCircle({ children }: { children: React.ReactNode }) {
 /** A pill naming the address a flow is scoped to. */
 export function AuthEmailChip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-7 inline-flex self-start items-center gap-2 rounded-full border border-border-subtle bg-surface-sunken px-3 py-2 text-sm text-ink-900 [&>svg]:size-[15px] [&>svg]:text-ink-600 [&>svg]:opacity-55">
+    <div className="mb-7 inline-flex items-center gap-2 self-start rounded-pill border border-border-subtle bg-surface-sunken px-3 py-2 text-sm text-fg [&>svg]:size-[15px] [&>svg]:text-fg-muted">
       {children}
     </div>
   );
 }
 
-/** The quiet inset note under a "check your email" heading. */
-export function AuthNote({ children }: { children: React.ReactNode }) {
+/** Hairline · OR · hairline, between the social buttons and the email form. */
+export function AuthDivider({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
+  return <Separator className="my-5">{label ?? t('common.or')}</Separator>;
+}
+
+/** A line of secondary navigation under the form ("No account? Create one"). */
+export function AuthFooterNote({ children, className }: React.ComponentProps<'p'>) {
+  return <p className={cn('mt-5 text-sm text-fg-muted', className)}>{children}</p>;
+}
+
+/** A router link in the auth screens' voice: the link blue, underline on hover. */
+export function AuthLink({
+  to,
+  search,
+  children,
+  className,
+}: {
+  to: string;
+  search?: Record<string, unknown>;
+  /** Optional so `Trans` can pass the element and fill it from the catalog. */
+  children?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <p className="mb-6 rounded-md border border-border-subtle bg-surface-sunken px-3.5 py-3 text-sm leading-normal text-ink-600">
+    <TextLink className={className} render={<Link to={to} search={search as never} />}>
       {children}
-    </p>
+    </TextLink>
   );
 }
 
-/** Hairline · label · hairline, as used between the CTA and social sign-in. */
-export function AuthDivider({ label }: { label: string }) {
-  return (
-    <div className="my-[22px] flex items-center gap-3.5 text-xs text-ink-400">
-      <Separator className="flex-1 bg-border-subtle" />
-      {label}
-      <Separator className="flex-1 bg-border-subtle" />
-    </div>
-  );
-}
-
+/** A standalone link on its own line ("Back to sign in"). */
 export function AuthBackLink({ children }: { children?: React.ReactNode }) {
   const { t } = useTranslation();
 
   return (
-    <Link
-      to="/login"
-      className="mt-7 inline-flex self-start items-center gap-1.5 text-sm text-ink-600 transition-colors hover:text-ink-900"
-    >
-      <ArrowLeft className="size-3.5 opacity-55" />
-      {children ?? t('auth.forgotPassword.backToSignIn')}
-    </Link>
+    <p className="mt-5 text-sm">
+      <AuthLink to="/login">{children ?? t('auth.forgotPassword.backToSignIn')}</AuthLink>
+    </p>
   );
-}
-
-/** The centred "Already have an account? Sign in" line at the foot of a form. */
-export function AuthFooterNote({ children }: { children: React.ReactNode }) {
-  return <p className="mt-7 text-center text-sm text-ink-600">{children}</p>;
 }
 
 /**
  * Failed submissions surface here, above the first field. The design system's
- * `Alert` carries the destructive treatment and the `role="alert"` — this
- * wrapper only exists so the auth screens name the slot in their own
- * vocabulary.
+ * `Alert` carries the destructive treatment and the `role="alert"`.
  */
 export function AuthFormError({ children }: { children: React.ReactNode }) {
   return (
@@ -137,30 +123,43 @@ export function AuthFormError({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Label + control + error, at the auth screens' 7px label gap. Wraps the
- * design system's `Field` so validation state and `data-invalid` behave
- * exactly as they do in the rest of the product.
+ * Label, an optional action beside it ("Forgot password?"), the control, then
+ * a hint or the error. Wraps the design system's `Field` so validation state
+ * and `data-invalid` behave as they do in the rest of the product.
  */
 export function AuthField({
   label,
   htmlFor,
+  action,
+  hint,
   error,
   className,
   children,
 }: {
   label: React.ReactNode;
   htmlFor: string;
+  action?: React.ReactNode;
+  hint?: React.ReactNode;
   error?: { message?: string };
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Field className={cn('gap-[7px]', className)} data-invalid={Boolean(error)}>
-      <FieldLabel htmlFor={htmlFor} className="leading-[15px]">
-        {label}
-      </FieldLabel>
+    <Field className={className} data-invalid={Boolean(error)}>
+      {action ? (
+        <FieldRow>
+          <FieldLabel htmlFor={htmlFor}>{label}</FieldLabel>
+          <FieldAction>{action}</FieldAction>
+        </FieldRow>
+      ) : (
+        <FieldLabel htmlFor={htmlFor}>{label}</FieldLabel>
+      )}
       {children}
-      <FieldError errors={[error]} />
+      {error ? (
+        <FieldError errors={[error]} />
+      ) : hint ? (
+        <p className="text-xs text-fg-subtle">{hint}</p>
+      ) : null}
     </Field>
   );
 }

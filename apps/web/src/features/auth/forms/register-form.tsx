@@ -1,20 +1,14 @@
-import { Button, FieldGroup, Input } from '@oppenheimer/design-system-web';
-import {
-  AuthField,
-  AuthFormError,
-  authControlClass,
-  authInputClass,
-  PasswordInput,
-  type PasswordRule,
-  useZodResolver,
-} from '@oppenheimer/frontend-web';
+import { Button, FieldGroup, Input, PasswordInput } from '@oppenheimer/design-system-web';
+import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { PasswordChecklist } from '@/features/auth/components/password-checklist';
 
-const RULES: readonly PasswordRule[] = ['length', 'case', 'number'];
-
+/**
+ * The artboard asks for an email and a password. The account also carries a
+ * name — the API builds the personal workspace's name from it — so the two
+ * name fields stay, in one row above the address.
+ */
 export function RegisterForm({
   isPending,
   error,
@@ -30,7 +24,6 @@ export function RegisterForm({
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<RegisterDto>({
     resolver: useZodResolver(registerSchema),
@@ -39,7 +32,7 @@ export function RegisterForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <FieldGroup className="gap-4">
+      <FieldGroup>
         {error && <AuthFormError>{error}</AuthFormError>}
 
         <div className="grid grid-cols-2 gap-3">
@@ -47,22 +40,22 @@ export function RegisterForm({
             <Input
               {...register('firstName')}
               id="firstName"
+              size="lg"
               autoComplete="given-name"
               placeholder={t('auth.firstNamePlaceholder')}
               aria-invalid={Boolean(errors.firstName)}
               disabled={isPending}
-              className={authInputClass}
             />
           </AuthField>
           <AuthField label={t('auth.lastName')} htmlFor="lastName" error={errors.lastName}>
             <Input
               {...register('lastName')}
               id="lastName"
+              size="lg"
               autoComplete="family-name"
               placeholder={t('auth.lastNamePlaceholder')}
               aria-invalid={Boolean(errors.lastName)}
               disabled={isPending}
-              className={authInputClass}
             />
           </AuthField>
         </div>
@@ -72,41 +65,36 @@ export function RegisterForm({
             {...register('email')}
             id="email"
             type="email"
+            size="lg"
             autoComplete="email"
             placeholder={t('auth.emailPlaceholder')}
             aria-invalid={Boolean(errors.email)}
             disabled={isPending}
-            className={authInputClass}
           />
         </AuthField>
 
         <AuthField
-          label={t('auth.register.passwordLabel')}
+          label={t('auth.password')}
           htmlFor="password"
           error={errors.password}
+          hint={t('auth.register.passwordHint')}
         >
           <PasswordInput
             {...register('password')}
             id="password"
+            size="lg"
             autoComplete="new-password"
             placeholder={t('auth.register.passwordPlaceholder')}
             aria-invalid={Boolean(errors.password)}
             disabled={isPending}
+            showLabel={t('auth.showPassword')}
+            hideLabel={t('auth.hidePassword')}
           />
         </AuthField>
 
-        <PasswordChecklist
-          control={control}
-          name="password"
-          rules={RULES}
-          className="-mt-1.5 mb-1.5"
-        >
-          {(satisfied) => (
-            <Button type="submit" disabled={isPending || !satisfied} className={authControlClass}>
-              {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
-            </Button>
-          )}
-        </PasswordChecklist>
+        <Button type="submit" size="lg" block disabled={isPending}>
+          {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
+        </Button>
       </FieldGroup>
     </form>
   );

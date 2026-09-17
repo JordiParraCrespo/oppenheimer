@@ -1,11 +1,10 @@
-import { Button, FieldGroup } from '@oppenheimer/design-system-web';
+import { Button, FieldGroup, PasswordInput } from '@oppenheimer/design-system-web';
 import {
   AuthField,
   AuthFormError,
   authControlClass,
   checkPassword,
   meetsRequirements,
-  PasswordInput,
   PasswordRequirements,
   type PasswordRule,
   useErrorMessage,

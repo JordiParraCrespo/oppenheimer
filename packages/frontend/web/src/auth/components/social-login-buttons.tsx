@@ -1,16 +1,15 @@
-import { Alert, AlertDescription, Button, cn } from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription, BrandGlyph, Button } from '@oppenheimer/design-system-web';
 import { Info } from '@oppenheimer/design-system-web/icons';
 import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
 import { useDeploymentCapabilities, useSocialLogin } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 import { useErrorMessage } from '../../forms';
-import { AuthDivider, authControlClass } from './auth-primitives';
-import { GithubIcon, GoogleIcon } from './provider-icons';
 
 /**
- * Social sign-in section of the login screen, driven by the deployment's
- * capability set (`GET /health/capabilities`) so only providers that are
- * actually configured render a button.
+ * The social sign-in row at the top of the sign-in and create-account
+ * screens, driven by the deployment's capability set
+ * (`GET /health/capabilities`) so only providers that are actually configured
+ * render a button.
  *
  * Failure semantics matter here: until the capability read *succeeds* we
  * assume every provider is available, because an unreachable API is not a
@@ -46,56 +45,52 @@ export function SocialLoginButtons({
 
   if (!google && !github) {
     // A notice, not a failure — nobody signing in did anything wrong — so it is
-    // the plain `Alert`, not the destructive one. It was a centred grey
-    // paragraph, which is the shape this screen is not allowed to invent.
+    // the plain `Alert`, not the destructive one.
     return (
-      <Alert icon={Info} className="mt-4">
+      <Alert icon={Info}>
         <AlertDescription>{t('auth.login.noSocialProviders')}</AlertDescription>
       </Alert>
     );
   }
 
-  const providerButton = cn(authControlClass, 'gap-2.5');
-
   return (
-    <>
-      <AuthDivider label={t('common.or')} />
+    <div className="flex flex-col gap-2.5">
       {/* Starting the round-trip can fail before the redirect ever happens —
           the API unreachable, the provider rejected server-side. It used to
           fail silently: the button simply stopped spinning. */}
       {social.error && (
-        <Alert variant="destructive" className="mb-2.5">
+        <Alert variant="destructive">
           <AlertDescription>
             {resolveError(social.error, t('auth.login.socialFailed')).message}
           </AlertDescription>
         </Alert>
       )}
-      <div className="flex flex-col gap-2.5">
-        {google && (
-          <Button
-            variant="outline"
-            type="button"
-            disabled={disabled || social.isPending}
-            onClick={() => social.mutate({ provider: 'google', intent })}
-            className={providerButton}
-          >
-            <GoogleIcon />
-            {t('auth.login.continueWithGoogle')}
-          </Button>
-        )}
-        {github && (
-          <Button
-            variant="outline"
-            type="button"
-            disabled={disabled || social.isPending}
-            onClick={() => social.mutate({ provider: 'github', intent })}
-            className={providerButton}
-          >
-            <GithubIcon />
-            {t('auth.login.continueWithGithub')}
-          </Button>
-        )}
-      </div>
-    </>
+      {google && (
+        <Button
+          variant="social"
+          size="lg"
+          block
+          type="button"
+          disabled={disabled || social.isPending}
+          onClick={() => social.mutate({ provider: 'google', intent })}
+        >
+          <BrandGlyph name="google" />
+          {t('auth.login.continueWithGoogle')}
+        </Button>
+      )}
+      {github && (
+        <Button
+          variant="social"
+          size="lg"
+          block
+          type="button"
+          disabled={disabled || social.isPending}
+          onClick={() => social.mutate({ provider: 'github', intent })}
+        >
+          <BrandGlyph name="github" />
+          {t('auth.login.continueWithGithub')}
+        </Button>
+      )}
+    </div>
   );
 }

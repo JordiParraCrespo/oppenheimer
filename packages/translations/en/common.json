@@ -23,5 +23,6 @@
     "now": "now",
     "week": "{{count}}w",
     "year": "{{count}}y"
-  }
+  },
+  "product": "Console"
 }

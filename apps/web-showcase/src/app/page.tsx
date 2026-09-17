@@ -219,7 +219,7 @@ export default function Page() {
         </Swatch>
         <Swatch label="primary with glyph">
           <Button size="lg">
-            <BrandGlyph name="github" className="text-white" /> Connect GitHub
+            <BrandGlyph name="github" flip={false} className="text-white" /> Connect GitHub
           </Button>
         </Swatch>
         <div className="flex w-full max-w-[340px] flex-col gap-2.5">
@@ -227,7 +227,7 @@ export default function Page() {
             <BrandGlyph name="google" /> Continue with Google
           </Button>
           <Button variant="social" size="lg" block>
-            <BrandGlyph name="github" className="[filter:var(--brand-glyph-filter)]" /> Continue with GitHub
+            <BrandGlyph name="github" /> Continue with GitHub
           </Button>
           <Button size="lg" block>
             Sign in

@@ -138,7 +138,7 @@ test.describe('web auth UI', () => {
 
     await page.fill('#password', NEW_PASSWORD);
     await page.fill('#confirmPassword', NEW_PASSWORD);
-    await page.getByRole('button', { name: 'Reset password' }).click();
+    await page.getByRole('button', { name: 'Save and sign in' }).click();
     await expect(page.getByRole('heading', { name: /password updated/i })).toBeVisible({
       timeout: 20_000,
     });
@@ -162,7 +162,7 @@ test.describe('web auth UI', () => {
     await page.goto(`/reset-password?token=${token}`);
     await page.fill('#password', NEW_PASSWORD);
     await page.fill('#confirmPassword', NEW_PASSWORD);
-    await page.getByRole('button', { name: 'Reset password' }).click();
+    await page.getByRole('button', { name: 'Save and sign in' }).click();
     await expect(page.getByRole('heading', { name: /password updated/i })).toBeVisible({
       timeout: 20_000,
     });
@@ -187,7 +187,7 @@ test.describe('web auth UI', () => {
     await page.goto('/reset-password?token=this-token-was-never-issued');
     await page.fill('#password', NEW_PASSWORD);
     await page.fill('#confirmPassword', NEW_PASSWORD);
-    await page.getByRole('button', { name: 'Reset password' }).click();
+    await page.getByRole('button', { name: 'Save and sign in' }).click();
 
     // The form must stay put and say something, rather than silently "succeed".
     await expect(page).toHaveURL(/\/reset-password/, { timeout: 20_000 });

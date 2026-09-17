@@ -6,10 +6,10 @@ export const Route = createFileRoute('/_auth')({
   component: ControlPlaneAuthLayout,
 });
 
-/** The control plane's auth split: its own label and copy, no public-page links. */
+/** The control plane's auth column: its own product suffix, no photograph panel. */
 function ControlPlaneAuthLayout() {
   return (
-    <AuthLayout brandLabel="Oppenheimer Control" copy="control">
+    <AuthLayout product="Control">
       <Outlet />
     </AuthLayout>
   );

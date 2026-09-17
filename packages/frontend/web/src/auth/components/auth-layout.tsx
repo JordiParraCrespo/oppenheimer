@@ -1,32 +1,38 @@
-import { Link, useMatches } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { NavTo } from '../../shell';
-import { ThemeToggle } from '../../theme';
+import { Trans, useTranslation } from 'react-i18next';
 import '../lib/legal-note';
-import { AuthArtPanel } from './auth-art-panel';
+import { AuthLink } from './auth-primitives';
 import { BrandLogo } from './brand-logo';
 
 export interface AuthLayoutProps {
-  /** The wordmark's label; defaults to the product name. */
-  brandLabel?: string;
-  /** Footer links (privacy, terms). None for a control plane with no public pages. */
-  links?: readonly { to: NavTo; label: string }[];
-  /** Which product's copy the art panel shows. */
-  copy?: 'consumer' | 'control';
+  /** The wordmark's product suffix; defaults to `common.product`. */
+  product?: string;
+  /**
+   * What fills the right half above 900px: the consumer app's photograph
+   * carousel, or nothing for a control plane that has no atmosphere to sell.
+   */
+  panel?: ReactNode;
   children: ReactNode;
 }
 
 /**
- * The auth split: form on the left, aurora panel on the right. Below 900px the
- * panel drops away entirely and the form takes the full width — it carries no
- * information, only atmosphere. An app's `_auth` route mounts this around its
- * `Outlet`, after `redirectSignedIn` has decided who may be here.
+ * The auth split from the MVP artboards: the wordmark top-left, a 340px form
+ * column centred in the left half, the panel on the right. Below 900px the
+ * panel drops away and the form takes the width; it carries no information,
+ * only atmosphere. An app's `_auth` route mounts this around its `Outlet`,
+ * after `redirectSignedIn` has decided who may be here.
+ *
+ * These screens follow the OS theme: there is no toggle here. Appearance is
+ * chosen from the account menu once signed in.
+ *
+ * The legal one-liner under the form is the page's when it declares
+ * `staticData.legalNoteKey`, the terms-and-privacy line otherwise.
  */
-export function AuthLayout({ brandLabel, links = [], copy, children }: AuthLayoutProps) {
+export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();
   // The innermost match that declares a note wins, so a page overrides its
-  // layout and a page without one shows nothing.
+  // layout and a page without one shows the default line.
   const legalNoteKey = useMatches({
     select: (matches) => {
       for (let i = matches.length - 1; i >= 0; i -= 1) {
@@ -38,31 +44,36 @@ export function AuthLayout({ brandLabel, links = [], copy, children }: AuthLayou
   });
 
   return (
-    <div className="grid h-svh w-full bg-background min-[900px]:grid-cols-2">
-      <div className="relative flex flex-col overflow-y-auto px-6 py-10 min-[900px]:px-14">
-        {/* The design puts one control in this corner and nothing else: the
-            theme pill, at 40px from the top and the panel's own 56px gutter. */}
-        <ThemeToggle className="absolute top-8 right-6 z-10 min-[900px]:top-10 min-[900px]:right-14" />
+    <div
+      className={
+        panel
+          ? 'grid min-h-svh w-full bg-canvas min-[900px]:grid-cols-2'
+          : 'flex min-h-svh w-full bg-canvas'
+      }
+    >
+      <div className="relative flex w-full flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
+        <BrandLogo product={product} />
 
-        <BrandLogo label={brandLabel} />
-
-        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-6">
+        <div className="mx-auto flex w-full max-w-85 flex-1 flex-col justify-center py-10">
           {children}
-        </div>
 
-        {(legalNoteKey || links.length > 0) && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-ink-400">
-            {legalNoteKey && <p className="basis-full">{t(legalNoteKey)}</p>}
-            {links.map((link) => (
-              <Link key={link.to} to={link.to} className="hover:text-ink-700">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
+          <p className="mt-5 text-xs text-pretty text-fg-subtle">
+            {legalNoteKey ? (
+              t(legalNoteKey)
+            ) : (
+              <Trans
+                i18nKey="auth.legal"
+                components={{
+                  terms: <AuthLink to="/terms" />,
+                  privacy: <AuthLink to="/privacy" />,
+                }}
+              />
+            )}
+          </p>
+        </div>
       </div>
 
-      <AuthArtPanel className="hidden min-[900px]:flex" copy={copy} />
+      {panel}
     </div>
   );
 }

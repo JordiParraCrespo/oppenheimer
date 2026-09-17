@@ -1,31 +1,24 @@
-import { Button, FieldGroup } from '@oppenheimer/design-system-web';
-import {
-  AuthField,
-  AuthFormError,
-  authControlClass,
-  PasswordInput,
-  type PasswordRule,
-  useZodResolver,
-} from '@oppenheimer/frontend-web';
+import { Button, FieldGroup, PasswordInput } from '@oppenheimer/design-system-web';
+import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
 import { resetPasswordSchema } from '@oppenheimer/shared/schemas/auth';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PasswordChecklist } from '@/features/auth/components/password-checklist';
 
 /**
  * The token rides in the URL, so only the two password fields are user input.
- * Whether they match is not a schema rule: the live checklist below already
- * reports it and gates the submit button, and a `refine()` would need a
- * message string, which the shared schemas deliberately never carry.
+ * Whether they match is checked here, not in the shared schema, which
+ * deliberately carries no messages.
  */
 const newPasswordSchema = resetPasswordSchema
   .pick({ password: true })
-  .extend({ confirmPassword: z.string().min(8) });
+  .extend({ confirmPassword: z.string().min(8) })
+  .refine((values) => values.password === values.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  });
 
 export type NewPasswordValues = z.infer<typeof newPasswordSchema>;
-
-const RULES: readonly PasswordRule[] = ['length', 'case', 'number', 'match'];
 
 export function ResetPasswordForm({
   isPending,
@@ -42,7 +35,6 @@ export function ResetPasswordForm({
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors },
   } = useForm<NewPasswordValues>({
     resolver: useZodResolver(newPasswordSchema),
@@ -51,7 +43,7 @@ export function ResetPasswordForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <FieldGroup className="gap-4">
+      <FieldGroup>
         {error && <AuthFormError>{error}</AuthFormError>}
 
         <AuthField
@@ -62,10 +54,13 @@ export function ResetPasswordForm({
           <PasswordInput
             {...register('password')}
             id="password"
+            size="lg"
             autoComplete="new-password"
             placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
             aria-invalid={Boolean(errors.password)}
             disabled={isPending}
+            showLabel={t('auth.showPassword')}
+            hideLabel={t('auth.hidePassword')}
           />
         </AuthField>
 
@@ -77,26 +72,19 @@ export function ResetPasswordForm({
           <PasswordInput
             {...register('confirmPassword')}
             id="confirmPassword"
+            size="lg"
             autoComplete="new-password"
             placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
             aria-invalid={Boolean(errors.confirmPassword)}
             disabled={isPending}
+            showLabel={t('auth.showPassword')}
+            hideLabel={t('auth.hidePassword')}
           />
         </AuthField>
 
-        <PasswordChecklist
-          control={control}
-          name="password"
-          confirmName="confirmPassword"
-          rules={RULES}
-          className="-mt-1.5 mb-1.5"
-        >
-          {(satisfied) => (
-            <Button type="submit" disabled={isPending || !satisfied} className={authControlClass}>
-              {isPending ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
-            </Button>
-          )}
-        </PasswordChecklist>
+        <Button type="submit" size="lg" block disabled={isPending}>
+          {isPending ? t('auth.resetPassword.submitting') : t('auth.resetPassword.submit')}
+        </Button>
       </FieldGroup>
     </form>
   );

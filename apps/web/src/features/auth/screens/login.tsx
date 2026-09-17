@@ -1,5 +1,8 @@
 import { useLogin } from '@oppenheimer/frontend-core/react';
 import {
+  AuthDivider,
+  AuthFooterNote,
+  AuthLink,
   AuthSubtitle,
   AuthTitle,
   OAuthCallbackNotice,
@@ -7,7 +10,7 @@ import {
   useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import type { LoginDto } from '@oppenheimer/shared/schemas/auth';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LoginForm } from '@/features/auth/forms/login-form';
 
@@ -17,7 +20,7 @@ export function LoginScreen({
   oauthError,
 }: {
   redirectTo?: string;
-  /** Prefills the form for an invitee who already has an account. */
+  /** Prefills the form for an address the reader arrived with. */
   email?: string;
   /** Better Auth's `?error=<code>` from a failed social round-trip. */
   oauthError?: string;
@@ -56,22 +59,23 @@ export function LoginScreen({
 
       <OAuthCallbackNotice code={oauthError} className="mb-4" />
 
+      <SocialLoginButtons disabled={isPending} />
+
+      <AuthDivider />
+
       <LoginForm
         defaultEmail={email}
         isPending={isPending}
         error={error ? resolveError(error, t('auth.login.invalidCredentials')).message : undefined}
         forgotPasswordLink={
-          <Link
-            to="/forgot-password"
-            className="text-sm text-accent-blue transition-opacity hover:opacity-80"
-          >
-            {t('auth.login.forgotPassword')}
-          </Link>
+          <AuthLink to="/forgot-password">{t('auth.login.forgotPassword')}</AuthLink>
         }
         onSubmit={onSubmit}
       />
 
-      <SocialLoginButtons disabled={isPending} />
+      <AuthFooterNote>
+        {t('auth.login.noAccount')} <AuthLink to="/register">{t('auth.login.signUp')}</AuthLink>
+      </AuthFooterNote>
     </>
   );
 }

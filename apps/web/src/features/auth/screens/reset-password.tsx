@@ -1,13 +1,12 @@
 import { Button } from '@oppenheimer/design-system-web';
-import { Mail, ShieldAlert, ShieldCheck } from '@oppenheimer/design-system-web/icons';
+import { ShieldAlert, ShieldCheck } from '@oppenheimer/design-system-web/icons';
 import { useResetPassword } from '@oppenheimer/frontend-core/react';
 import {
   AuthBackLink,
-  AuthEmailChip,
   AuthIconCircle,
+  AuthNote,
   AuthSubtitle,
   AuthTitle,
-  authControlClass,
   useErrorMessage,
 } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -37,7 +36,7 @@ export function ResetPasswordScreen({
         </AuthIconCircle>
         <AuthTitle>{t('auth.resetPassword.invalidTitle')}</AuthTitle>
         <AuthSubtitle>{t('auth.resetPassword.invalidMessage')}</AuthSubtitle>
-        <Button render={<Link to="/forgot-password" />} className={authControlClass}>
+        <Button size="lg" block render={<Link to="/forgot-password" />}>
           {t('auth.resetPassword.requestNewLink')}
         </Button>
         <AuthBackLink />
@@ -53,7 +52,7 @@ export function ResetPasswordScreen({
         </AuthIconCircle>
         <AuthTitle>{t('auth.resetPassword.successTitle')}</AuthTitle>
         <AuthSubtitle>{t('auth.resetPassword.successMessage')}</AuthSubtitle>
-        <Button render={<Link to="/login" />} className={authControlClass}>
+        <Button size="lg" block render={<Link to="/login" />}>
           {t('auth.resetPassword.continue')}
         </Button>
       </>
@@ -63,14 +62,11 @@ export function ResetPasswordScreen({
   return (
     <>
       <AuthTitle>{t('auth.resetPassword.title')}</AuthTitle>
-      <AuthSubtitle>{t('auth.resetPassword.description')}</AuthSubtitle>
-
-      {email && (
-        <AuthEmailChip>
-          <Mail />
-          {email}
-        </AuthEmailChip>
-      )}
+      <AuthSubtitle>
+        {email
+          ? t('auth.resetPassword.descriptionFor', { email })
+          : t('auth.resetPassword.description')}
+      </AuthSubtitle>
 
       <ResetPasswordForm
         isPending={isPending}
@@ -79,6 +75,8 @@ export function ResetPasswordScreen({
           mutate({ token, password: values.password }, { onSuccess: () => setDone(true) })
         }
       />
+
+      <AuthNote>{t('auth.resetPassword.note')}</AuthNote>
     </>
   );
 }

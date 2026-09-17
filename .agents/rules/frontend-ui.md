@@ -111,10 +111,14 @@ the `_authenticated` layout.
 
 ## One colour vocabulary: the brand primitives
 
-In the apps, use `text-ink-900/600/400`, `bg-surface-*`, `border-border-*`,
-`--accent-*`, `--status-*`. Not shadcn's aliases (`text-muted-foreground`,
-`bg-muted`, `text-foreground`), not a raw hex, not a stock Tailwind colour
-(`text-amber-600`), and no `dark:` colour overrides: the tokens already invert.
+In the apps, use the semantic tokens from `globals.css`: `text-fg`,
+`text-fg-muted`, `text-fg-subtle`, `text-link`, `bg-canvas`, `bg-surface-*`,
+`bg-control-*`, `border-border` / `border-border-subtle`, `--accent-*`,
+`--status-*`. The older `text-ink-*` and `bg-surface-*` aliases still resolve
+for the screens not yet ported; new code takes the semantic names. Not
+shadcn's aliases (`text-muted-foreground`, `bg-muted`, `text-foreground`), not
+a raw hex, not a stock Tailwind colour (`text-amber-600`), and no `dark:`
+colour overrides: the tokens already invert.
 A colour genuinely outside the palette becomes a named token in
 `packages/frontend/design-system/web/src/styles/globals.css` with a comment saying why.
 
