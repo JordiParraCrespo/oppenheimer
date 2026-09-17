@@ -14,7 +14,8 @@ src/
 ├── schemas/       # Zod schemas — single source of truth for DTOs
 ├── types/         # shared TS types
 ├── constants/     # shared constants
-├── permissions/   # CASL ability helpers
+├── permissions/   # CASL ability helpers + the endpoint policy catalog
+├── scopes/        # the credential scope catalog
 └── index.ts
 ```
 
@@ -26,11 +27,30 @@ src/
   below.
 - **CASL helpers**: `defineAbilitiesFromPermissions` (DB-driven, the source of
   truth) and the legacy `defineAbilitiesFor` fallback.
+- **`ENDPOINT_POLICIES`** (`permissions/endpoint-policies.ts`): what each
+  guarded endpoint demands, keyed by the path Nest mounts it at. One
+  declaration of a rule the API enforces and a client gates a destination on;
+  `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` pins the controllers
+  to it.
 - **Types**: `Role` (free-form role-name `string`), `PermissionDefinition`,
   `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`,
   `PaginatedResponse<T>`.
 - **Constants**: `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`,
   `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`.
+
+## What does not live here
+
+A client's own vocabulary, even when it is derived from a contract that does.
+Route paths are the clearest case: a URL belongs to the app that mounts it, and
+`apps/web`, `apps/admin-web` and `apps/mobile` reach the same endpoints under
+different names. A nav row that gates on a permission names its endpoint where
+the row is declared and reads `ENDPOINT_POLICIES[<endpoint>]`; there is no
+shared route list, and the API takes no dependency on a frontend package to
+check itself against the catalog.
+
+The test is whether both tiers would need the thing if the other were replaced
+wholesale. A DTO shape, a role name, an endpoint's rules: yes. A screen, a
+sidebar row, a URL: no.
 
 ## Schemas carry no message strings
 

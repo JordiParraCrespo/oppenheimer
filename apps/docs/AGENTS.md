@@ -28,3 +28,5 @@ pnpm --filter @oppenheimer/docs dev     # local dev server
 pnpm --filter @oppenheimer/docs build   # static build
 pnpm --filter @oppenheimer/docs serve   # serve the build
 ```
+
+A new API error code needs a row in `docs/errors.md`; the convention is [`.agents/rules/nestjs-architecture.md`](../../.agents/rules/nestjs-architecture.md).

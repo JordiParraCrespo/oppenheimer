@@ -14,7 +14,7 @@ CTAs, and colour reserved for status. Type is the SF Pro stack at 400/500 with
 the brand allows — 8px controls, 12px tiles, 16px cards — plus the pill.
 
 Most of this lands in the **token layer**, so components inherit the brand
-without knowing about it. `packages/design-system/web/src/styles/globals.css`
+without knowing about it. `packages/frontend/design-system/web/src/styles/globals.css`
 is now the single source of truth: it declares the brand primitives
 (`--ink-*`, `--surface-*`, `--accent-*`, `--status-*`, `--data-*`), aliases the
 shadcn semantic names onto them, and maps everything into Tailwind through

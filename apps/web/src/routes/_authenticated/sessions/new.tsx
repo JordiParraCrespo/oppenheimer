@@ -1,34 +1,6 @@
-import { EmptyState } from '@oppenheimer/design-system-web';
-import { Plus } from '@oppenheimer/design-system-web/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import { PageHead } from '@/components/page-head';
+import { NewSessionScreen } from '@/features/sessions/screens/new-session';
 
-/**
- * New session: the four chips of `product/versions/mvp/00-scope.md` (host,
- * repo, branch, agent) and a Start button. The form arrives with the
- * sessions API; the route exists now so the nav, the command palette and the
- * onboarding flow already point at the real destination.
- */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
-  component: NewSessionPage,
+  component: NewSessionScreen,
 });
-
-function NewSessionPage() {
-  const { t } = useTranslation();
-
-  return (
-    <>
-      <PageHead title={t('sessions.new.title')} sub={t('sessions.new.subtitle')} />
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <Plus />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.new.emptyTitle')}</EmptyState.Title>
-          <EmptyState.Description>{t('sessions.new.emptyDescription')}</EmptyState.Description>
-        </EmptyState.Header>
-      </EmptyState>
-    </>
-  );
-}

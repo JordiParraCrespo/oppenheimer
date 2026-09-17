@@ -7,7 +7,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/auth/package.json ./packages/auth/
 COPY packages/shared/package.json ./packages/shared/
-COPY packages/config/package.json ./packages/config/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/env/package.json ./packages/env/
 COPY packages/translations/package.json ./packages/translations/
 COPY packages/backend/authz/package.json ./packages/backend/authz/

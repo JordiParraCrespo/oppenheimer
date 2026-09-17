@@ -1,0 +1,31 @@
+{
+  "name": "@oppenheimer/api-client",
+  "version": "0.2.0",
+  "sideEffects": false,
+  "private": true,
+  "//": "The generated SDK uses platform fetch through @hey-api/client-fetch. Do not add axios or another HTTP library.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./models": "./src/common/index.ts",
+    "./services": "./src/data-access/api/openapi/services/index.ts"
+  },
+  "scripts": {
+    "generate": "openapi-ts && node scripts/openapi-postprocess.mjs",
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1"
+  },
+  "devDependencies": {
+    "@oppenheimer/tsconfig": "workspace:^",
+    "@hey-api/client-fetch": "^0.13.1",
+    "@hey-api/openapi-ts": "^0.99.0",
+    "@tanstack/react-query": "^5.102.8",
+    "typescript": "^6.0.3"
+  }
+}

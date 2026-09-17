@@ -1,10 +1,9 @@
+import { i18nReady, ThemeProvider } from '@oppenheimer/frontend-web';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-import { ThemeProvider } from '@/components/theme-provider';
 import { OppenheimerAppProvider } from '@/providers/oppenheimer-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { App } from './app';
-import { i18nReady } from './lib/i18n';
 import './styles/globals.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);

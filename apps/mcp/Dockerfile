@@ -6,7 +6,7 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/mcp/package.json ./apps/mcp/
 COPY packages/shared/package.json ./packages/shared/
-COPY packages/config/package.json ./packages/config/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/env/package.json ./packages/env/
 RUN pnpm install --frozen-lockfile --filter @oppenheimer/mcp...
 

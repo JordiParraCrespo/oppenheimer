@@ -4,7 +4,7 @@ Next.js showcase for the **web** design system: the foundations and every
 component the MVP screens are built from, in both themes.
 
 > Read the root [`CLAUDE.md`](../../CLAUDE.md) and
-> [`packages/design-system/AGENTS.md`](../../packages/design-system/AGENTS.md) first.
+> [`packages/frontend/design-system/AGENTS.md`](../../packages/frontend/design-system/AGENTS.md) first.
 
 ## Layout
 
@@ -39,3 +39,5 @@ public/imagery/       # copies of the package's carousel photographs
 pnpm --filter @oppenheimer/web-showcase dev    # port 3002
 pnpm --filter @oppenheimer/web-showcase build
 ```
+
+See [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md) for the design-system rules this gallery demonstrates.

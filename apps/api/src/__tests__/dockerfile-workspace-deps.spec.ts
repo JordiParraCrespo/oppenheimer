@@ -24,7 +24,13 @@ interface PackageManifest {
 
 /** Every workspace package, keyed by name, with its path relative to the root. */
 function workspacePackages(): Map<string, { path: string; manifest: PackageManifest }> {
-  const roots = ['packages', 'packages/backend', 'packages/design-system', 'apps'];
+  const roots = [
+    'packages',
+    'packages/backend',
+    'packages/frontend/design-system',
+    'packages/frontend',
+    'apps',
+  ];
   const found = new Map<string, { path: string; manifest: PackageManifest }>();
 
   for (const root of roots) {

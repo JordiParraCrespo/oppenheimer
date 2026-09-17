@@ -18,7 +18,7 @@ See [customization.md](../customization.md) for theming, CSS variables, and addi
 
 ## Brand colour tokens
 
-Colours are the brand primitives from `packages/design-system/web/src/styles/globals.css`:
+Colours are the brand primitives from `packages/frontend/design-system/web/src/styles/globals.css`:
 `text-ink-900/600/400`, `bg-surface-*`, `border-border-*`, `--accent-*`,
 `--status-*`. Not raw Tailwind colours, and not shadcn's semantic aliases
 (`text-muted-foreground`, `bg-muted`, `text-foreground`) even though they

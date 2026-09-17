@@ -1,5 +1,5 @@
 {
-  "extends": "@oppenheimer/config/tsconfig.library.json",
+  "extends": "@oppenheimer/tsconfig/tsconfig.library.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,

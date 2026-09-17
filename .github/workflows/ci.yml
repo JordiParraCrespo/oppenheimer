@@ -75,6 +75,13 @@ jobs:
       - name: Architecture boundaries
         if: needs.changes.outputs.packages != '[]'
         run: pnpm turbo run arch ${{ needs.changes.outputs.filters }}
+      # oppenheimer:begin web|admin-web|mobile|admin-mobile
+      # The frontend layout contract: feature names, kind directories, the
+      # route line cap, no copies of what a kit ships, and the docs every
+      # package carries. Import rules are dependency-cruiser's, above.
+      - name: Frontend structure
+        run: pnpm check:structure
+      # oppenheimer:end web|admin-web|mobile|admin-mobile
       # oppenheimer:begin starter
       # The starter's feature manifest must keep describing the repo: every
       # optional app referenced only inside its own paths or a marker block.

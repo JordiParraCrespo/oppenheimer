@@ -42,8 +42,8 @@ Event names live in one catalog so a rename is a compile error rather than a
 silently split funnel:
 
 ```ts
-import { ANALYTICS_EVENTS } from '@oppenheimer/frontend';
-import { useCaptureEvent } from '@oppenheimer/frontend/react';
+import { ANALYTICS_EVENTS } from '@oppenheimer/frontend-core';
+import { useCaptureEvent } from '@oppenheimer/frontend-core/react';
 
 function UpgradeButton() {
   const { mutate: capture } = useCaptureEvent();
@@ -74,7 +74,7 @@ For events whose trigger is a render rather than an interaction — an upsell
 appeared, an empty state was reached — use `useCaptureOnMount`:
 
 ```ts
-import { useCaptureOnMount } from '@oppenheimer/frontend/react';
+import { useCaptureOnMount } from '@oppenheimer/frontend-core/react';
 
 function UpsellBanner() {
   useCaptureOnMount(ANALYTICS_EVENTS.USER_SIGNED_UP, { source: 'dashboard' });
@@ -87,7 +87,7 @@ each render is the normal case and must not re-fire it, so the properties are
 read at capture time without themselves triggering one. If the event name
 changes, the new event is captured.
 
-Add new events to `packages/frontend/src/modules/analytics/analytics.events.ts`.
+Add new events to `packages/frontend/core/src/modules/analytics/analytics.events.ts`.
 Property values are constrained to JSON-serializable types, so passing a `Date`
 or a class instance is a type error rather than a `{}` in the dashboard.
 
@@ -124,7 +124,7 @@ than relaxing the sanitizer.
 ## Feature flags
 
 ```ts
-import { useFeatureFlag } from '@oppenheimer/frontend/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 
 function Checkout() {
   const useNewFlow = useFeatureFlag('new-checkout');
@@ -149,7 +149,7 @@ query directly when you need the loading state — to hold rendering back until
 flags arrive rather than flashing the control branch:
 
 ```ts
-import { useFeatureFlags } from "@oppenheimer/frontend/react";
+import { useFeatureFlags } from "@oppenheimer/frontend-core/react";
 
 const { data: flags, isPending } = useFeatureFlags();
 ```

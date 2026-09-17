@@ -1,4 +1,8 @@
-import { createQueryPersistOptions, defaultQueryClientOptions } from '@oppenheimer/frontend/react';
+import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
+import {
+  createQueryPersistOptions,
+  defaultQueryClientOptions,
+} from '@oppenheimer/frontend-core/react';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import {
@@ -34,7 +38,9 @@ const persistOptions = {
   }),
   // The app version, injected by Vite: a release that changes a response shape
   // starts from a clean cache instead of hydrating entries it can't read.
-  ...createQueryPersistOptions(__APP_VERSION__),
+  ...createQueryPersistOptions(__APP_VERSION__, {
+    nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
+  }),
 };
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {

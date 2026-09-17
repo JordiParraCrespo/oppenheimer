@@ -1,0 +1,59 @@
+{
+  "name": "@oppenheimer/frontend-consumer",
+  "version": "0.2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check src/",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "arch": "depcruise src --config .dependency-cruiser.cjs"
+  },
+  "dependencies": {
+    "@oppenheimer/api-client": "workspace:*",
+    "@oppenheimer/frontend-core": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
+    "@tanstack/query-core": "^5.102.8",
+    "inversify": "^8.2.3",
+    "reflect-metadata": "^0.2.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@oppenheimer/tsconfig": "workspace:^",
+    "@tanstack/react-query": "^5.102.8",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "19.2.14",
+    "dependency-cruiser": "^18.1.0",
+    "jsdom": "^30.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  }
+}

@@ -1,4 +1,4 @@
-import { OppenheimerProvider } from '@oppenheimer/frontend/react';
+import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import type { ReactNode } from 'react';
 import { app } from '@/lib/oppenheimer';
 

@@ -1,11 +1,7 @@
-import { SidebarInset, SidebarProvider } from '@oppenheimer/design-system-web';
-import { useOrganizations } from '@oppenheimer/frontend/react';
+import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
+import { AppShell } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect } from '@tanstack/react-router';
-import { useState } from 'react';
-import { AppSidebar } from '@/components/app-shell/app-sidebar';
-import { CommandPalette } from '@/components/app-shell/command-palette';
-import { TopBar } from '@/components/app-shell/top-bar';
-import { useApplyUserSettings } from '@/lib/use-apply-user-settings';
+import { NAV, USER_MENU_LINKS } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -45,31 +41,18 @@ function AuthenticatedShell() {
 
   if (settledEmpty) return <Navigate to="/onboarding" replace />;
 
-  return <AuthenticatedLayout />;
-}
-
-/**
- * The workspace shell: sidebar, chrome bar, and a scrolling content column
- * capped at 1080px so a page's measure stays readable on a wide display.
- */
-function AuthenticatedLayout() {
-  const [commandOpen, setCommandOpen] = useState(false);
-  // The saved theme and language become this device's defaults — once, and
-  // only where the device has not chosen for itself.
-  useApplyUserSettings();
+  // The shell names the first organization the caller belongs to. Keeping it
+  // on the same list query as General Settings means a saved name or logo is
+  // reflected here immediately from the query cache.
+  const organization = organizations.data?.[0];
 
   return (
-    <SidebarProvider className="h-svh min-h-0">
-      <AppSidebar />
-      <SidebarInset className="flex min-h-0 min-w-0 flex-col">
-        <TopBar onSearch={() => setCommandOpen(true)} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-12 pt-11 pb-16">
-          <div className="mx-auto max-w-[1080px]">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarInset>
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-    </SidebarProvider>
+    <AppShell
+      nav={NAV}
+      userMenuLinks={USER_MENU_LINKS}
+      workspace={organization ? { name: organization.name, logo: organization.logo } : undefined}
+    >
+      <Outlet />
+    </AppShell>
   );
 }

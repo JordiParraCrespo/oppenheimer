@@ -16,11 +16,15 @@ Full-stack monorepo boilerplate for bootstrapping applications fast.
 - **apps/admin-mobile** — Native control plane for users and roles
 - **apps/docs** — This documentation site (Docusaurus)
 - **packages/shared** — Zod schemas, types, CASL permissions
-- **packages/frontend** — Clean architecture with InversifyJS DI
-- **packages/design-system** — Shared tokens, web and mobile components
-- **packages/api-client** — Auto-generated typed API client
+- **packages/frontend/core** — The kernel every app loads: session, users, user settings, capabilities, analytics, InversifyJS DI
+- **packages/frontend/consumer** — The consumer product's domain: organizations, profile, api-tokens
+- **packages/frontend/admin** — The control plane's domain: admin-users, roles
+- **packages/frontend/web** — What both Vite apps share below their routes
+- **packages/frontend/mobile** — What both Expo apps share below their routes
+- **packages/frontend/design-system** — Shared tokens, web and mobile components
+- **packages/frontend/api-client** — Auto-generated typed API client
 - **packages/translations** — Shared i18n files
-- **packages/config** — Shared TypeScript and tooling configs
+- **packages/tsconfig** — Shared TypeScript and tooling configs
 
 ### Backend packages
 

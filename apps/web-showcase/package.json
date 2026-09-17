@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check src/",
-    "lint:design": "oxlint -c ../../packages/design-system/web/oxlint.design.json src"
+    "lint:design": "oxlint -c ../../packages/frontend/design-system/web/oxlint.design.json src"
   },
   "dependencies": {
     "@oppenheimer/design-system-web": "workspace:*",
@@ -18,7 +18,7 @@
     "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/react": "19.2.14",
     "@types/react-dom": "^19.2.3",

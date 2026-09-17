@@ -55,15 +55,19 @@ place. Nothing in the MVP builds on them.
 | `packages/shared`                 | Zod schemas, types, CASL permissions, scope catalog                |
 | `packages/auth`                   | Shared Better Auth config — user fields, plugins, client helpers   |
 | `packages/env`                    | Root `.env` loader shared by the Node apps                         |
-| `packages/frontend`               | Clean architecture, InversifyJS DI, Zustand stores                 |
+| `packages/frontend/core`          | Kernel every app loads: session, users, user settings, capabilities, analytics, InversifyJS DI |
+| `packages/frontend/consumer`      | Consumer product domain: organizations, profile, api-tokens        |
+| `packages/frontend/admin`         | Control-plane domain: admin-users, roles                           |
+| `packages/frontend/web`           | What both Vite apps share below their routes, by concern           |
+| `packages/frontend/mobile`        | What both Expo apps share below their routes                       |
 | `packages/backend/*`              | Cross-cutting NestJS toolkit: errors/filters (`core`), DDD building blocks (`ddd`), authorization kernel (`authz`), Redis cache (`cache`), queues (`queue`), file storage (`storage`), email (`email`), i18n (`i18n`) |
 | `packages/go/*`                   | Cross-cutting Go toolkit for `apps/runner`: `core`, `config`, `httpx`, `auth`, `health`, `ws`, `postgres` |
-| `packages/design-system/web`      | shadcn/ui + Base UI + Tailwind v4 components                       |
-| `packages/design-system/mobile`   | NativeWind + rn-primitives React Native components                 |
-| `packages/api-client`             | Auto-generated typed client from Swagger                           |
+| `packages/frontend/design-system/web`      | shadcn/ui + Base UI + Tailwind v4 components                       |
+| `packages/frontend/design-system/mobile`   | NativeWind + rn-primitives React Native components                 |
+| `packages/frontend/api-client`    | Auto-generated typed client from Swagger                           |
 | `packages/translations`           | Shared i18n (en/es)                                                |
-| `packages/config`                 | Shared TypeScript configs                                          |
-| `packages/nitro-app-info`         | Nitro native module (Swift/Kotlin) exposing native app info to the mobile apps |
+| `packages/tsconfig`               | Shared TypeScript configs                                          |
+| `packages/frontend/nitro-app-info`         | Nitro native module (Swift/Kotlin) exposing native app info to the mobile apps |
 
 ## Quick start
 
@@ -139,7 +143,7 @@ pnpm test:integration     # Run integration tests
 pnpm test:e2e             # Run the Playwright e2e suite
 pnpm qa:suite             # Run the QA scenario pack
 pnpm lint                 # Lint all code
-pnpm arch                 # Check architecture boundaries (apps/api, via dependency-cruiser)
+pnpm arch                 # Check architecture boundaries (apps/api and the frontend, via dependency-cruiser)
 pnpm check                # Biome check + fix
 pnpm docker:dev           # Start dev infrastructure
 pnpm docker:dev:down      # Stop dev infrastructure

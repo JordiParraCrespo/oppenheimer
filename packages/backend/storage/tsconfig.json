@@ -1,5 +1,5 @@
 {
-  "extends": "@oppenheimer/config/tsconfig.nestjs.json",
+  "extends": "@oppenheimer/tsconfig/tsconfig.nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",

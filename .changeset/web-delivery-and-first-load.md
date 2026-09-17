@@ -3,7 +3,7 @@
 "@oppenheimer/admin-web": minor
 "@oppenheimer/translations": minor
 "@oppenheimer/auth": minor
-"@oppenheimer/config": minor
+"@oppenheimer/tsconfig": minor
 "@oppenheimer/design-system-web": patch
 "@oppenheimer/api-client": patch
 ---
@@ -40,7 +40,7 @@ On the critical path itself:
   hovering a link fetches the route it points at, instead of every navigation
   starting a request.
 - **Dependencies are chunked per library** via a shared
-  `@oppenheimer/config/vite-chunks.mjs`, so a release invalidates app code (42KB) and
+  `@oppenheimer/tsconfig/vite-chunks.mjs`, so a release invalidates app code (42KB) and
   leaves the vendor chunks cached (263KB). Splitting costs ~48KB gzipped on a
   cold first load, which is the trade the `immutable` caching above pays for —
   the number is recorded in that file.

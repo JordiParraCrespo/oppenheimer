@@ -52,22 +52,28 @@ importers:
         version: 57.0.15(@expo/log-box@57.0.4)(expo@57.0.22)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
       '@oppenheimer/api-client':
         specifier: workspace:*
-        version: link:../../packages/api-client
+        version: link:../../packages/frontend/api-client
       '@oppenheimer/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       '@oppenheimer/design-system-mobile':
         specifier: workspace:*
-        version: link:../../packages/design-system/mobile
+        version: link:../../packages/frontend/design-system/mobile
       '@oppenheimer/env':
         specifier: workspace:*
         version: link:../../packages/env
-      '@oppenheimer/frontend':
+      '@oppenheimer/frontend-admin':
         specifier: workspace:*
-        version: link:../../packages/frontend
+        version: link:../../packages/frontend/admin
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../../packages/frontend/core
+      '@oppenheimer/frontend-mobile':
+        specifier: workspace:*
+        version: link:../../packages/frontend/mobile
       '@oppenheimer/nitro-app-info':
         specifier: workspace:*
-        version: link:../../packages/nitro-app-info
+        version: link:../../packages/frontend/nitro-app-info
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -222,9 +228,18 @@ importers:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../packages/tsconfig
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
+      babel-plugin-react-compiler:
+        specifier: 1.0.0
+        version: 1.0.0
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.21.0)(yaml@2.9.1)
@@ -239,16 +254,22 @@ importers:
     dependencies:
       '@oppenheimer/api-client':
         specifier: workspace:*
-        version: link:../../packages/api-client
+        version: link:../../packages/frontend/api-client
       '@oppenheimer/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       '@oppenheimer/design-system-web':
         specifier: workspace:*
-        version: link:../../packages/design-system/web
-      '@oppenheimer/frontend':
+        version: link:../../packages/frontend/design-system/web
+      '@oppenheimer/frontend-admin':
         specifier: workspace:*
-        version: link:../../packages/frontend
+        version: link:../../packages/frontend/admin
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../../packages/frontend/core
+      '@oppenheimer/frontend-web':
+        specifier: workspace:*
+        version: link:../../packages/frontend/web
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -301,9 +322,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
@@ -321,10 +342,16 @@ importers:
         version: 19.3.0(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: ^6.1.1
-        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(oxc-transform-react@0.145.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@2.2.0)
+      oxc-transform-react:
+        specifier: 0.145.0
+        version: 0.145.0
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -467,9 +494,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@nestjs/cli':
         specifier: ^11.0.24
         version: 11.0.24(@swc/core@1.15.24(@swc/helpers@0.5.23))(@types/node@26.5.1)(esbuild@0.28.1)(prettier@3.9.6)
@@ -522,9 +549,9 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1
@@ -565,9 +592,9 @@ importers:
       '@docusaurus/module-type-aliases':
         specifier: ^3.10.2
         version: 3.10.2(postcss@8.5.28)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -593,9 +620,9 @@ importers:
         specifier: ^4.2.0
         version: 4.6.5
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@modelcontextprotocol/client':
         specifier: ^2.0.0
         version: 2.0.0
@@ -622,22 +649,28 @@ importers:
         version: 57.0.15(@expo/log-box@57.0.4)(expo@57.0.22)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
       '@oppenheimer/api-client':
         specifier: workspace:*
-        version: link:../../packages/api-client
+        version: link:../../packages/frontend/api-client
       '@oppenheimer/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       '@oppenheimer/design-system-mobile':
         specifier: workspace:*
-        version: link:../../packages/design-system/mobile
+        version: link:../../packages/frontend/design-system/mobile
       '@oppenheimer/env':
         specifier: workspace:*
         version: link:../../packages/env
-      '@oppenheimer/frontend':
+      '@oppenheimer/frontend-consumer':
         specifier: workspace:*
-        version: link:../../packages/frontend
+        version: link:../../packages/frontend/consumer
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../../packages/frontend/core
+      '@oppenheimer/frontend-mobile':
+        specifier: workspace:*
+        version: link:../../packages/frontend/mobile
       '@oppenheimer/nitro-app-info':
         specifier: workspace:*
-        version: link:../../packages/nitro-app-info
+        version: link:../../packages/frontend/nitro-app-info
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -792,9 +825,18 @@ importers:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../packages/tsconfig
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
+      babel-plugin-react-compiler:
+        specifier: 1.0.0
+        version: 1.0.0
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.21.0)(yaml@2.9.1)
@@ -812,7 +854,7 @@ importers:
         version: 57.0.15(@expo/log-box@57.0.4)(expo@57.0.22)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
       '@oppenheimer/design-system-mobile':
         specifier: workspace:*
-        version: link:../../packages/design-system/mobile
+        version: link:../../packages/frontend/design-system/mobile
       '@gorhom/bottom-sheet':
         specifier: github:KaikuLabs/react-native-bottom-sheet#a7ef2476b8eeb1bb6861c733571d246a29e73bac
         version: https://codeload.github.com/KaikuLabs/react-native-bottom-sheet/tar.gz/a7ef2476b8eeb1bb6861c733571d246a29e73bac(@types/react@19.2.14)(react-native-gesture-handler@2.32.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native-reanimated@4.5.3(react-native-worklets@0.11.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
@@ -1011,16 +1053,22 @@ importers:
     dependencies:
       '@oppenheimer/api-client':
         specifier: workspace:*
-        version: link:../../packages/api-client
+        version: link:../../packages/frontend/api-client
       '@oppenheimer/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       '@oppenheimer/design-system-web':
         specifier: workspace:*
-        version: link:../../packages/design-system/web
-      '@oppenheimer/frontend':
+        version: link:../../packages/frontend/design-system/web
+      '@oppenheimer/frontend-consumer':
         specifier: workspace:*
-        version: link:../../packages/frontend
+        version: link:../../packages/frontend/consumer
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../../packages/frontend/core
+      '@oppenheimer/frontend-web':
+        specifier: workspace:*
+        version: link:../../packages/frontend/web
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1073,9 +1121,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
@@ -1093,10 +1141,16 @@ importers:
         version: 19.3.0(@types/react@19.2.14)
       '@vitejs/plugin-react':
         specifier: ^6.1.1
-        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(oxc-transform-react@0.145.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@2.2.0)
+      oxc-transform-react:
+        specifier: 0.145.0
+        version: 0.145.0
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -1117,7 +1171,7 @@ importers:
     dependencies:
       '@oppenheimer/design-system-web':
         specifier: workspace:*
-        version: link:../../packages/design-system/web
+        version: link:../../packages/frontend/design-system/web
       lucide-react:
         specifier: ^1.46.0
         version: 1.46.0(react@19.2.3)
@@ -1134,9 +1188,9 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../packages/config
+        version: link:../../packages/tsconfig
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3
@@ -1178,25 +1232,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/api-client:
-    dependencies:
-      '@hey-api/client-fetch':
-        specifier: ^0.13.1
-        version: 0.13.1(@hey-api/openapi-ts@0.99.0(typescript@6.0.3))
-    devDependencies:
-      '@oppenheimer/config':
-        specifier: workspace:^
-        version: link:../config
-      '@hey-api/openapi-ts':
-        specifier: ^0.99.0
-        version: 0.99.0(typescript@6.0.3)
-      '@tanstack/react-query':
-        specifier: 5.102.8
-        version: 5.102.8(react@19.2.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-
   packages/auth:
     dependencies:
       '@oppenheimer/shared':
@@ -1206,9 +1241,9 @@ importers:
         specifier: ^1.6.25
         version: 1.6.25(@opentelemetry/api@1.9.1)(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@26.5.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)))
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../config
+        version: link:../tsconfig
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1234,9 +1269,9 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1268,9 +1303,9 @@ importers:
         specifier: ^5.11.1
         version: 5.11.1
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1317,9 +1352,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -1348,9 +1383,9 @@ importers:
         specifier: ^0.3.31
         version: 0.3.31(ioredis@5.11.1)(pg@8.22.0)(ts-node@10.9.2(@swc/core@1.15.24(@swc/helpers@0.5.23))(@types/node@22.20.1)(typescript@6.0.3))
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1
@@ -1385,9 +1420,9 @@ importers:
         specifier: ^6.18.0
         version: 6.18.0(@react-email/render@2.1.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       '@types/nodemailer':
         specifier: ^8.0.1
         version: 8.0.1
@@ -1416,9 +1451,9 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1
@@ -1456,9 +1491,9 @@ importers:
         specifier: ^5.81.2
         version: 5.81.2
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -1493,9 +1528,9 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../../config
+        version: link:../../tsconfig
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -1509,9 +1544,213 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
 
-  packages/config: {}
+  packages/env:
+    dependencies:
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^22.20.1
+        version: 22.20.1
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
 
-  packages/design-system/mobile:
+  packages/frontend/admin:
+    dependencies:
+      '@oppenheimer/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../core
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tanstack/query-core':
+        specifier: 5.102.8
+        version: 5.102.8
+      inversify:
+        specifier: ^8.2.3
+        version: 8.2.3(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@tanstack/react-query':
+        specifier: 5.102.8
+        version: 5.102.8(react@19.2.3)
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
+      jsdom:
+        specifier: ^30.0.1
+        version: 30.0.1(@noble/hashes@2.2.0)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+
+  packages/frontend/api-client:
+    dependencies:
+      '@hey-api/client-fetch':
+        specifier: ^0.13.1
+        version: 0.13.1(@hey-api/openapi-ts@0.99.0(typescript@6.0.3))
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@hey-api/openapi-ts':
+        specifier: ^0.99.0
+        version: 0.99.0(typescript@6.0.3)
+      '@tanstack/react-query':
+        specifier: 5.102.8
+        version: 5.102.8(react@19.2.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/frontend/consumer:
+    dependencies:
+      '@oppenheimer/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../core
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tanstack/query-core':
+        specifier: 5.102.8
+        version: 5.102.8
+      inversify:
+        specifier: ^8.2.3
+        version: 8.2.3(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@tanstack/react-query':
+        specifier: 5.102.8
+        version: 5.102.8(react@19.2.3)
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
+      jsdom:
+        specifier: ^30.0.1
+        version: 30.0.1(@noble/hashes@2.2.0)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+
+  packages/frontend/core:
+    dependencies:
+      '@oppenheimer/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tanstack/query-core':
+        specifier: 5.102.8
+        version: 5.102.8
+      better-auth:
+        specifier: ^1.6.25
+        version: 1.6.25(@opentelemetry/api@1.9.1)(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@26.5.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)))
+      inversify:
+        specifier: ^8.2.3
+        version: 8.2.3(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+      zustand:
+        specifier: ^5.0.14
+        version: 5.0.14(@types/react@19.2.14)(immer@11.1.18)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@tanstack/react-query':
+        specifier: 5.102.8
+        version: 5.102.8(react@19.2.3)
+      '@testing-library/react':
+        specifier: ^16.3.3
+        version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
+      jsdom:
+        specifier: ^30.0.1
+        version: 30.0.1(@noble/hashes@2.2.0)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+
+  packages/frontend/design-system/mobile:
     dependencies:
       '@gorhom/bottom-sheet':
         specifier: '*'
@@ -1659,7 +1898,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/design-system/web:
+  packages/frontend/design-system/web:
     dependencies:
       '@base-ui/react':
         specifier: ^1.8.0
@@ -1726,79 +1965,190 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/env:
+  packages/frontend/mobile:
     dependencies:
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-    devDependencies:
-      '@oppenheimer/config':
-        specifier: workspace:^
-        version: link:../config
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.1
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^5.0.0
-        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
-
-  packages/frontend:
-    dependencies:
-      '@oppenheimer/api-client':
+      '@oppenheimer/design-system-mobile':
         specifier: workspace:*
-        version: link:../api-client
-      '@oppenheimer/shared':
+        version: link:../design-system/mobile
+      '@oppenheimer/frontend-core':
         specifier: workspace:*
-        version: link:../shared
-      '@tanstack/query-core':
-        specifier: 5.102.8
-        version: 5.102.8
-      better-auth:
-        specifier: ^1.6.25
-        version: 1.6.25(@opentelemetry/api@1.9.1)(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@26.5.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)))
-      inversify:
-        specifier: ^8.2.3
-        version: 8.2.3(reflect-metadata@0.2.2)
-      reflect-metadata:
-        specifier: ^0.2.2
-        version: 0.2.2
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        version: link:../core
+      '@oppenheimer/translations':
+        specifier: workspace:*
+        version: link:../../translations
+      '@hookform/resolvers':
+        specifier: ^5.7.1
+        version: 5.9.1(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(class-transformer@0.5.1)(joi@17.13.4)(react-hook-form@7.88.0(react@19.2.3))(zod@3.25.76)
+      intl-pluralrules:
+        specifier: 2.0.1
+        version: 2.0.1
+      posthog-react-native:
+        specifier: ^4.11.2
+        version: 4.60.0(@react-native-async-storage/async-storage@2.2.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3)))(@react-navigation/native@7.3.18(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(expo-file-system@57.0.7(expo@57.0.22)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3)))(expo-localization@57.0.2(expo@57.0.22)(react@19.2.3))(react-native-safe-area-context@5.7.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native-svg@15.15.4(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))
+      react-native-nitro-fetch:
+        specifier: 1.7.0
+        version: 1.7.0(react-native-nitro-modules@0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native-worklets@0.11.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      react-native-purchases:
+        specifier: ^10.9.1
+        version: 10.9.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.14)(immer@11.1.18)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../config
+        version: link:../../tsconfig
+      '@react-navigation/native':
+        specifier: ^7.3.18
+        version: 7.3.18(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      '@sentry/react-native':
+        specifier: ~7.11.0
+        version: 7.11.0(expo@57.0.22)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      '@tanstack/query-sync-storage-persister':
+        specifier: ^5.102.8
+        version: 5.102.8
       '@tanstack/react-query':
         specifier: 5.102.8
         version: 5.102.8(react@19.2.3)
+      '@types/react':
+        specifier: 19.2.14
+        version: 19.2.14
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
+      expo-constants:
+        specifier: ~57.0.18
+        version: 57.0.18(expo@57.0.22)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))
+      expo-localization:
+        specifier: ~57.0.2
+        version: 57.0.2(expo@57.0.22)(react@19.2.3)
+      expo-router:
+        specifier: ~57.0.21
+        version: 57.0.21(zknhgbjjy7msctitsahz5lriu4)
+      expo-secure-store:
+        specifier: ~57.0.4
+        version: 57.0.4(expo@57.0.22)
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@6.0.3)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-hook-form:
+        specifier: ^7.84.0
+        version: 7.88.0(react@19.2.3)
+      react-i18next:
+        specifier: ^17.0.14
+        version: 17.0.14(i18next@26.4.2(typescript@6.0.3))(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
+      react-native:
+        specifier: 0.86.3
+        version: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3)
+      react-native-mmkv:
+        specifier: 4.3.2
+        version: 4.3.2(react-native-nitro-modules@0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.1(@babel/core@7.29.7))(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.5.1)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.2.0))(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
+  packages/frontend/nitro-app-info:
+    devDependencies:
+      nitrogen:
+        specifier: 0.37.1
+        version: 0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      react-native-nitro-modules:
+        specifier: 0.37.1
+        version: 0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/frontend/web:
+    dependencies:
+      '@oppenheimer/design-system-web':
+        specifier: workspace:*
+        version: link:../design-system/web
+      '@oppenheimer/frontend-core':
+        specifier: workspace:*
+        version: link:../core
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@oppenheimer/translations':
+        specifier: workspace:*
+        version: link:../../translations
+      '@hookform/resolvers':
+        specifier: ^5.9.1
+        version: 5.9.1(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(class-transformer@0.5.1)(joi@17.13.4)(react-hook-form@7.88.0(react@19.2.3))(zod@3.25.76)
+      i18next-browser-languagedetector:
+        specifier: ^8.2.1
+        version: 8.2.1
+      posthog-js:
+        specifier: ^1.432.0
+        version: 1.432.0(@types/react@19.2.14)(react@19.2.3)
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@tanstack/react-query':
+        specifier: 5.102.8
+        version: 5.102.8(react@19.2.3)
+      '@tanstack/react-router':
+        specifier: ^1.170.36
+        version: 1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@testing-library/react':
         specifier: ^16.3.3
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.3.0(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^6.1.1
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(oxc-transform-react@0.145.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+      dependency-cruiser:
+        specifier: ^18.1.0
+        version: 18.1.0
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@7.0.2)
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@2.2.0)
+      nuqs:
+        specifier: ^2.10.1
+        version: 2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@26.5.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3)
       react:
         specifier: 19.2.3
         version: 19.2.3
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      react-hook-form:
+        specifier: ^7.88.0
+        version: 7.88.0(react@19.2.3)
+      react-i18next:
+        specifier: ^17.0.14
+        version: 17.0.14(i18next@26.4.2(typescript@7.0.2))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@7.0.2)
       typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.0
+        version: 8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: ^5.0.0
         version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/go/auth:
     devDependencies:
@@ -1842,18 +2192,6 @@ importers:
         specifier: workspace:*
         version: link:../httpx
 
-  packages/nitro-app-info:
-    devDependencies:
-      nitrogen:
-        specifier: 0.37.1
-        version: 0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
-      react-native-nitro-modules:
-        specifier: 0.37.1
-        version: 0.37.1(react-native@0.86.3(@babel/core@7.29.7)(@types/react@19.2.14)(react@19.2.3))(react@19.2.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/shared:
     dependencies:
       '@casl/ability':
@@ -1863,9 +2201,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../config
+        version: link:../tsconfig
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -1874,6 +2212,8 @@ importers:
         version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
 
   packages/translations: {}
+
+  packages/tsconfig: {}
 
   qa:
     dependencies:
@@ -1890,9 +2230,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.5.5
         version: 2.5.5
-      '@oppenheimer/config':
+      '@oppenheimer/tsconfig':
         specifier: workspace:^
-        version: link:../packages/config
+        version: link:../packages/tsconfig
       '@playwright/test':
         specifier: ^1.57.0
         version: 1.62.1
@@ -5499,6 +5839,120 @@ packages:
 
   '@oxc-project/types@0.149.0':
     resolution: {integrity: sha512-Efcc+iF0j3Bf67YjEqIqWXbX5XddXoK/Mw4K1/JuXwRCZ8N16VR7iT23nlCc9XrveFVh/E5Rqs2StT0V8v9LdA==}
+
+  '@oxc-transform-react/binding-android-arm-eabi@0.145.0':
+    resolution: {integrity: sha512-KuK3zAp10yFyeAxIXlZn2ycsFpaKLxUmj5BVRS1io4XfwnKTozb/goZakgKD5JEiHOVOtEKt1r7pTrmW/pFxxA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm]
+    os: [android]
+
+  '@oxc-transform-react/binding-android-arm64@0.145.0':
+    resolution: {integrity: sha512-eDUKx6MAgRAF67JPScjLF6h8lL2qmlvFrXGSG8mYFIVJb++NMyDygiIo8TAKdWQNguoBElUZw/SK2EPRaKsryQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [android]
+
+  '@oxc-transform-react/binding-darwin-arm64@0.145.0':
+    resolution: {integrity: sha512-msCgwbVLswJ08JaUOjfPddieVJwE4IT1Y23A1DDyKVyzZp2ormo9a4ffDEu9nmmovdEj8VqAyFgggsgzIkBVrA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@oxc-transform-react/binding-darwin-x64@0.145.0':
+    resolution: {integrity: sha512-R0PtsoOCsARulmWhLG1fFInT+98TRl/H6w6ifi8XOLvpdsksD1rxsw4Ol84lHbdHCcMNjfJTckZzQIZBMiXkLg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [darwin]
+
+  '@oxc-transform-react/binding-freebsd-x64@0.145.0':
+    resolution: {integrity: sha512-/MJ7+IvxfutSGqn6hIXU92wGNk5FlkqbTHM+kEl7ytLLOSAyivYhF2gxdYMmXTwOG56k2XviMcE0D/TBjdyoRA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@oxc-transform-react/binding-linux-arm-gnueabihf@0.145.0':
+    resolution: {integrity: sha512-ssHZ0W2wSjQwaBQdkg8u+A7dTdw2vkGSK0hRfCoDCkRkETu+19Q8Tae7NNxlYHcP1iUQYhEj8Qfgpq+S/MdrYA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-arm-musleabihf@0.145.0':
+    resolution: {integrity: sha512-adJy4lQVcoIW6CUzQYbDgbHZMDSLoizwCinG2Dex29jdACKwIgXQQrIAHAgfveaZleKIB/rf3usGoRcOGyfz7Q==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-arm64-gnu@0.145.0':
+    resolution: {integrity: sha512-7KRa0CC1FaSKx5sy+bDtqGvXF+RiVoMmSe8OmTKm9kRZkNVdmsmpnsQhgravehTohlWDveo5aoGMwcFtffGDmw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-arm64-musl@0.145.0':
+    resolution: {integrity: sha512-fGhZkDnk2RoMp6THas9HFGorF0A1wwPPA/2Lu9IUO1ip5MJqS/JG7/conmiz0DBG0PWBtnKl2Y8sA/VBiD/oQw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-ppc64-gnu@0.145.0':
+    resolution: {integrity: sha512-VBaUTjRZYRypD2tL7cmbM2Fn6fvTnacLQ1GdsU1Y6A3fkqA/z+wc5Vy1QnnuFe9sIwb9xCvSS2tJVlucR39FYw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-riscv64-gnu@0.145.0':
+    resolution: {integrity: sha512-s2cimMVAmWe9dtjyWdGsYtevi9C7gJoOXwrCZD0BX7hgyGmuBO3iWQjx4W48hdXlWS176NoxuFIHAN72N86upA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-riscv64-musl@0.145.0':
+    resolution: {integrity: sha512-hFPrsL2nKL4aa8vFmheR53PcrxQgym8bnaSD1pMX9IoyQq+/ksAuw1CDJSV9c5xhxxZdw/KTPVer7M/6OQvfoA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-s390x-gnu@0.145.0':
+    resolution: {integrity: sha512-YLKhySqqu0JAtT0z8GuaFF7Hht3IvQLZShTH0DxeV28NwSthva+qJ7GN09ALT1bqRVvMjNGycgPHaGSWBUIt7A==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [s390x]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-x64-gnu@0.145.0':
+    resolution: {integrity: sha512-WqgJ+0M9mwQ1cRfSgk4vzYudD2imLSBhUZ2QFes06vUjigts5Dw4NajWKc2JibPHYsoiUA9Zj39zWwC5AxXEGQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-linux-x64-musl@0.145.0':
+    resolution: {integrity: sha512-eIre/TjGt07IVKoWUrUOkPxN7UKeWxbiGvCywoGLDRe1/2K50MrA2vQahZ8AlW5CLmajOr9ePKrkRzLg1fa0cQ==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [linux]
+
+  '@oxc-transform-react/binding-openharmony-arm64@0.145.0':
+    resolution: {integrity: sha512-zhWiyJ+9XD4cuhSZIT6aozuXDHcZHNdoVe88xVmx2XN00anjZ6VAGj31rhD8ndha/F8NllcQEr8Q61Dr2MHv5Q==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [openharmony]
+
+  '@oxc-transform-react/binding-win32-arm64-msvc@0.145.0':
+    resolution: {integrity: sha512-Q0oiZfrfYyhmpqH2K0dylDTooIadecGsoiQks7G0AbuszCu2I7zYyJo4ArFc3d5Hj49Jjc5dDAE5WP/Sg2p8hw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [arm64]
+    os: [win32]
+
+  '@oxc-transform-react/binding-win32-ia32-msvc@0.145.0':
+    resolution: {integrity: sha512-ERpriVJY5S8hXd3BJi4UtzsIVsEQnntmpqTgRqh0XCaflLRLTQnPWpkO8rgtI7xye5MRhfhA+qsxKg2olJs4qA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [ia32]
+    os: [win32]
+
+  '@oxc-transform-react/binding-win32-x64-msvc@0.145.0':
+    resolution: {integrity: sha512-sa781BGPLDw8+7ATrgUpLr0f4t0Q14O+zk3fOuQbUpjW5jERc9a3k1xIYKX1JkTG/sszoFhi8LzyCoMC49tkWA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    cpu: [x64]
+    os: [win32]
 
   '@oxlint/binding-android-arm-eabi@1.83.0':
     resolution: {integrity: sha512-0yGY24EwsLk5YDe6F+VkmZyRHSwJDALa3nIrPpq7FXmp2lV2d0TzvBCGeZk+wgiULRGr5blhyr4QMp5KCXJUqA==}
@@ -12639,6 +13093,10 @@ packages:
 
   oxc-parser@0.148.0:
     resolution: {integrity: sha512-syxUKHeUll89RIABQADcI7sikYrwyssvA6gj4phSSIPezKVM8yMaLAiLLSc7fmzVvrwybfFGFbW5zme9sX87rg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+
+  oxc-transform-react@0.145.0:
+    resolution: {integrity: sha512-y8cfjow11WKvDekonySPVvRUvNuIvqNT0LZ0Aey6j5dsNUD6k4hy6Mae/SLmng5egmb1GdJS11GduJ+IoEAXEw==}
     engines: {node: ^20.19.0 || >=22.12.0}
 
   oxide.ts@1.1.0:
@@ -20759,6 +21217,63 @@ snapshots:
 
   '@oxc-project/types@0.149.0': {}
 
+  '@oxc-transform-react/binding-android-arm-eabi@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-android-arm64@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-darwin-arm64@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-darwin-x64@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-freebsd-x64@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-arm-gnueabihf@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-arm-musleabihf@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-arm64-gnu@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-arm64-musl@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-ppc64-gnu@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-riscv64-gnu@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-riscv64-musl@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-s390x-gnu@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-x64-gnu@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-linux-x64-musl@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-openharmony-arm64@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-win32-arm64-msvc@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-win32-ia32-msvc@0.145.0':
+    optional: true
+
+  '@oxc-transform-react/binding-win32-x64-msvc@0.145.0':
+    optional: true
+
   '@oxlint/binding-android-arm-eabi@1.83.0':
     optional: true
 
@@ -23485,12 +24000,13 @@ snapshots:
 
   '@ungap/structured-clone@1.3.3': {}
 
-  '@vitejs/plugin-react@6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))':
+  '@vitejs/plugin-react@6.1.1(babel-plugin-react-compiler@1.0.0)(oxc-transform-react@0.145.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1)
     optionalDependencies:
       babel-plugin-react-compiler: 1.0.0
+      oxc-transform-react: 0.145.0
 
   '@vitest/expect@3.2.7':
     dependencies:
@@ -28737,6 +29253,28 @@ snapshots:
       '@oxc-parser/binding-win32-ia32-msvc': 0.148.0
       '@oxc-parser/binding-win32-x64-msvc': 0.148.0
     optional: true
+
+  oxc-transform-react@0.145.0:
+    optionalDependencies:
+      '@oxc-transform-react/binding-android-arm-eabi': 0.145.0
+      '@oxc-transform-react/binding-android-arm64': 0.145.0
+      '@oxc-transform-react/binding-darwin-arm64': 0.145.0
+      '@oxc-transform-react/binding-darwin-x64': 0.145.0
+      '@oxc-transform-react/binding-freebsd-x64': 0.145.0
+      '@oxc-transform-react/binding-linux-arm-gnueabihf': 0.145.0
+      '@oxc-transform-react/binding-linux-arm-musleabihf': 0.145.0
+      '@oxc-transform-react/binding-linux-arm64-gnu': 0.145.0
+      '@oxc-transform-react/binding-linux-arm64-musl': 0.145.0
+      '@oxc-transform-react/binding-linux-ppc64-gnu': 0.145.0
+      '@oxc-transform-react/binding-linux-riscv64-gnu': 0.145.0
+      '@oxc-transform-react/binding-linux-riscv64-musl': 0.145.0
+      '@oxc-transform-react/binding-linux-s390x-gnu': 0.145.0
+      '@oxc-transform-react/binding-linux-x64-gnu': 0.145.0
+      '@oxc-transform-react/binding-linux-x64-musl': 0.145.0
+      '@oxc-transform-react/binding-openharmony-arm64': 0.145.0
+      '@oxc-transform-react/binding-win32-arm64-msvc': 0.145.0
+      '@oxc-transform-react/binding-win32-ia32-msvc': 0.145.0
+      '@oxc-transform-react/binding-win32-x64-msvc': 0.145.0
 
   oxide.ts@1.1.0: {}
 

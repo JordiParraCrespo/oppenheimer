@@ -4,7 +4,7 @@ import {
   toAuthSession,
   unwrap,
 } from '@oppenheimer/auth/client';
-import type { IAuthClient } from '@oppenheimer/frontend';
+import type { IAuthClient } from '@oppenheimer/frontend-core';
 import { createAuthClient } from 'better-auth/react';
 
 /**

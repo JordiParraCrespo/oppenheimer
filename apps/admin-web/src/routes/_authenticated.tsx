@@ -3,18 +3,13 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  SidebarInset,
-  SidebarProvider,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { useLogout, useProfile } from '@oppenheimer/frontend/react';
+import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
+import { AppShell, BrandGlyph } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppSidebar } from '@/components/app-shell/app-sidebar';
-import { CommandPalette } from '@/components/app-shell/command-palette';
-import { TopBar } from '@/components/app-shell/top-bar';
-import { useApplyUserSettings } from '@/lib/use-apply-user-settings';
+import { NAV } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -65,21 +60,9 @@ function AccessDenied() {
 }
 
 function AuthenticatedLayout() {
-  const [commandOpen, setCommandOpen] = useState(false);
-  useApplyUserSettings();
-
   return (
-    <SidebarProvider className="h-svh min-h-0">
-      <AppSidebar />
-      <SidebarInset className="flex min-h-0 min-w-0 flex-col">
-        <TopBar onSearch={() => setCommandOpen(true)} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pt-8 pb-16 md:px-12 md:pt-11">
-          <div className="mx-auto max-w-[1080px]">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarInset>
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
-    </SidebarProvider>
+    <AppShell nav={NAV} workspace={{ name: 'Oppenheimer Control', icon: <BrandGlyph /> }}>
+      <Outlet />
+    </AppShell>
   );
 }

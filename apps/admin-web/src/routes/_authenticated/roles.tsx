@@ -1,19 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import { PageHead } from '@/components/page-head';
-import { RolesTab } from '@/components/role-management/roles-tab';
+import { RolesScreen } from '@/features/roles/screens/roles';
 
 export const Route = createFileRoute('/_authenticated/roles')({
-  component: RolesPage,
+  component: RolesScreen,
 });
-
-function RolesPage() {
-  const { t } = useTranslation();
-
-  return (
-    <>
-      <PageHead title={t('control.roles.title')} sub={t('control.roles.description')} />
-      <RolesTab />
-    </>
-  );
-}

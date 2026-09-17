@@ -15,6 +15,7 @@
     "format": "biome format --write .",
     "check": "biome check --write --unsafe .",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "check:structure": "node scripts/check-frontend-structure.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
     "test": "turbo run test",

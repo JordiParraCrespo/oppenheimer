@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { vendorChunks } from '@oppenheimer/config/vite-chunks.mjs';
+import { vendorChunks } from '@oppenheimer/tsconfig/vite-chunks.mjs';
 import tailwindcss from '@tailwindcss/vite';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
@@ -21,7 +21,13 @@ export default defineConfig({
       generatedRouteTree: './src/routeTree.gen.ts',
       autoCodeSplitting: true,
     }),
-    react(),
+    react({
+      // The React Compiler memoises components and hooks at build time, so
+      // nothing here needs `useMemo`, `useCallback` or `memo` by hand. React 19
+      // ships the runtime it needs; `babel-plugin-react-compiler` is the
+      // plugin's peer and the only addition.
+      compiler: true,
+    }),
     tailwindcss(),
   ],
   resolve: {
@@ -38,7 +44,6 @@ export default defineConfig({
       '@oppenheimer/shared/schemas/organization',
       '@oppenheimer/shared/schemas/profile',
       '@oppenheimer/shared/schemas/role',
-      '@oppenheimer/shared/navigation',
       '@oppenheimer/shared/permissions',
     ],
   },
@@ -46,7 +51,7 @@ export default defineConfig({
     rollupOptions: {
       // One chunk per library instead of one chunk for all of them, so a
       // release invalidates app code and leaves the dependencies cached. See
-      // the note in `@oppenheimer/config/vite-chunks.mjs`.
+      // the note in `@oppenheimer/tsconfig/vite-chunks.mjs`.
       output: { manualChunks: vendorChunks },
     },
     commonjsOptions: {

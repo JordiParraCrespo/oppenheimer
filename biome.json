@@ -27,7 +27,8 @@
       "correctness": {
         "noUnusedVariables": "error",
         "noUnusedImports": "error",
-        "noUnusedFunctionParameters": "error"
+        "noUnusedFunctionParameters": "error",
+        "noNestedComponentDefinitions": "error"
       }
     }
   },
@@ -67,12 +68,77 @@
       "!**/*.md",
       "!**/*.css",
       "!**/*.gen.ts",
-      "!**/packages/api-client/src/data-access",
-      "!**/packages/api-client/src/common",
-      "!**/packages/design-system/*/src/components",
+      "!**/packages/frontend/api-client/src/data-access",
+      "!**/packages/frontend/api-client/src/common",
+      "!**/packages/frontend/design-system/*/src/components",
       "!**/product/versions/mvp/design",
       "!**/apps/web-showcase",
       "!**/apps/mobile-showcase"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "apps/*/src/**",
+        "apps/*/app/**",
+        "apps/*/features/**",
+        "apps/*/lib/**",
+        "packages/frontend/*/src/**",
+        "!**/hooks/**",
+        "!packages/frontend/*/src/react/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react": {
+                    "importNames": ["useMemo", "useCallback", "memo"],
+                    "message": "The React Compiler memoises components at build time. Remove the manual memo; a hook that must hand a library a stable identity lives in a hooks/ file, where this is allowed."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "apps/*/src/**",
+        "apps/*/app/**",
+        "apps/*/features/**",
+        "apps/*/lib/**",
+        "packages/frontend/*/src/**",
+        "!**/hooks/**",
+        "!apps/*/app/**/_layout.tsx",
+        "!packages/frontend/*/src/react/**"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react": {
+                    "importNames": [
+                      "useEffect",
+                      "useLayoutEffect",
+                      "useMemo",
+                      "useCallback",
+                      "memo"
+                    ],
+                    "message": "An effect synchronises with something outside React and lives in a hooks/ file (features/<module>/hooks/ or a kit concern's hooks/), with a comment naming that system. Deriving state, resetting on a prop change, chaining updates or fetching are never effects. Manual memo is the compiler's job. See .agents/rules/frontend-architecture.md."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

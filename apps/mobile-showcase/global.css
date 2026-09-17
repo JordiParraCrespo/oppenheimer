@@ -14,7 +14,7 @@
        NativeWind resolves these at build time and nested vars do not survive.
 
    Keep in sync with `apps/mobile/global.css` and the source of truth,
-   `packages/design-system/web/src/styles/globals.css`.
+   `packages/frontend/design-system/web/src/styles/globals.css`.
    ========================================================================== */
 
 @layer base {

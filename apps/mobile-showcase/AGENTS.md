@@ -32,3 +32,5 @@ pnpm --filter @oppenheimer/mobile-showcase dev
 pnpm --filter @oppenheimer/mobile-showcase ios
 pnpm --filter @oppenheimer/mobile-showcase android
 ```
+
+See [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md) and [`.agents/rules/forms.md`](../../.agents/rules/forms.md).

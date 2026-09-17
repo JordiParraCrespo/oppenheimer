@@ -1,8 +1,10 @@
 ---
 paths:
   - "apps/web/**/*"
+  - "apps/admin-web/**/*"
   - "apps/web-showcase/**/*"
-  - "packages/design-system/web/**/*"
+  - "packages/frontend/design-system/web/**/*"
+  - "packages/frontend/web/**/*"
 ---
 
 # Frontend UI Rules
@@ -13,7 +15,7 @@ The linter is the check; this file is the list.
 ## Reach for the design system before writing markup
 
 Before styling a `div`, check whether `@oppenheimer/design-system-web` already ships
-it. Read `packages/design-system/web/src/index.ts` in full; its exports are
+it. Read `packages/frontend/design-system/web/src/index.ts` in full; its exports are
 multi-line, so a grep for `export` misses most of them.
 
 | Need                                  | Use                           | Not                                                   |
@@ -32,12 +34,12 @@ Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
 and a whole second table was built beside `DataTable`.
 
-`DataTable` lives in `apps/web/src/components/`, so that row is the product
-app's only; `apps/web-showcase` builds on the `Table` primitives. In `apps/web`
-every table goes through `DataTable`, and a direct `Table` import needs a
-comment saying why. Everything placed in the table's header bar takes
-`TABLE_HEADER_CONTROL_SIZE` from `components/data-table.tsx`; a heading or
-description goes above the table (`GroupHeading`), never inside the bar.
+`DataTable` ships in `@oppenheimer/frontend-web`, so that row is the apps' only;
+`apps/web-showcase` builds on the `Table` primitives. In the apps every table
+goes through `DataTable`, and a direct `Table` import needs a comment saying
+why. Everything placed in the table's header bar takes
+`TABLE_HEADER_CONTROL_SIZE` from the kit; a heading or description goes above
+the table (`GroupHeading`), never inside the bar.
 
 ## A picker over a list the workspace grows is an autocomplete
 
@@ -66,7 +68,7 @@ card scroll instead; the two breakpoints are complements, leave them so.
 
 ## A table's query lives in the URL
 
-Search, filters, sort and page go through `lib/use-table-query.ts` (nuqs).
+Search, filters, sort and page go through the kit's `useTableQuery` (nuqs).
 Never `useState` for any of the four. The hook resets to page one when the
 list narrows and debounces the URL write.
 
@@ -82,16 +84,25 @@ list narrows and debounces the URL write.
 - Two tables on one route each take a `prefix`, or they fight over `?q=`.
 - A route with `validateSearch` must carry unknown keys through, or it deletes
   what the table wrote on the next navigation. `/settings` is the example.
-- A list the server hands over whole is sliced with `lib/paginate-rows.ts`.
+- A list the server hands over whole is sliced with the kit's `paginateRows`.
 
-## A nav row's permissions come from the shared screen catalog
+## A gated nav row's permissions are the endpoint's own
 
-`NAV` in `apps/web/src/components/app-shell/nav.ts` takes each row's
-`policies` from `SCREENS` in `@oppenheimer/shared/navigation`. Never write a policy
-list in the nav file, and never add a row for a screen absent from the catalog:
-`apps/api/src/auth/__tests__/screen-policies.spec.ts` asserts the endpoint
-carries exactly the rules `SCREENS` names. Why: a row declared `policies: []`
-while its endpoint demanded `read Member`, so members got a link to a 403.
+A row in an app's `lib/nav.ts` that needs a permission takes its `policies`
+from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint
+the screen reads — `policies: ENDPOINT_POLICIES['/tokens']`. Never a literal
+`[{ action, subject }]`: that is a second copy of a rule the server already
+owns, and `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` holds the
+controller to the catalog entry, not to your copy. Why: a row declared
+`policies: []` while its endpoint demanded `read Member`, so members got a link
+to a 403.
+
+The route string lives in the app that mounts it. `apps/web` and
+`apps/admin-web` have different URLs over the same endpoints, and `apps/mobile`
+different again, so there is no shared route list to look one up in — the nav
+row names the endpoint directly. Today both `apps/web` rows are ungated
+(`policies: []`) and `apps/admin-web` sits behind one `canAccessControlPlane`
+gate, so the first gated row is still to be written.
 
 A screen the product picks for the reader (the dashboard `/` redirects to)
 checks its own policies through `useLandingRoute` and answers `null` rather
@@ -105,16 +116,16 @@ In the apps, use `text-ink-900/600/400`, `bg-surface-*`, `border-border-*`,
 `bg-muted`, `text-foreground`), not a raw hex, not a stock Tailwind colour
 (`text-amber-600`), and no `dark:` colour overrides: the tokens already invert.
 A colour genuinely outside the palette becomes a named token in
-`packages/design-system/web/src/styles/globals.css` with a comment saying why.
+`packages/frontend/design-system/web/src/styles/globals.css` with a comment saying why.
 
-Primitives in `packages/design-system/web` are the exception on `dark:`. A
+Primitives in `packages/frontend/design-system/web` are the exception on `dark:`. A
 variant that is not a colour swap (`avatar.tsx` switches blend modes,
 `chart.tsx` selects the dark chart theme) belongs there and nowhere else.
 
 ## The design-system linter enforces the two rules above
 
 `pnpm lint:design` runs `@shadcn/lint` through oxlint; each app points at the
-config its design system ships (`packages/design-system/{web,mobile}/oxlint.design.json`).
+config its design system ships (`packages/frontend/design-system/{web,mobile}/oxlint.design.json`).
 Biome owns correctness; oxlint's own categories are off.
 
 - `no-raw-colors` / `no-unknown-classes`: a class the theme does not declare.
@@ -136,32 +147,25 @@ back to `warn` to land a change. Known false positive before promoting
 
 ## Every component export belongs in the barrel
 
-`packages/design-system/web/src/index.ts` re-exports everything a file in
+`packages/frontend/design-system/web/src/index.ts` re-exports everything a file in
 `src/components/` exports; `pnpm --filter @oppenheimer/design-system-web test` fails
 otherwise. `apps/web` imports components from the root only, so a missing
 barrel entry is a component that does not exist: `Breadcrumb` shipped, styled
 and building, and a detail page hand-rolled one. Something internal is not
 exported from its own module either.
 
-## The second time you write a helper, move it to `lib/`
+## Where code goes
 
-Anything that is not a component and is used by more than one screen goes in
-`apps/web/src/lib/`. Check there first: `download-csv`, `format-date`,
-`use-locale`, `use-copy`, `use-error-message`, `use-zod-resolver`.
+Placement is [`frontend-architecture.md`](./frontend-architecture.md): a
+feature per module with kind directories, the platform kit for what both apps
+share, the design system for primitives. This file is about what the markup
+looks like once it is in the right place.
 
-- **Dates.** Format through `lib/format-date.ts` with the locale from
+- **Dates.** Format through the kit's `dateFormatter` with the locale from
   `useLocale()`. Never `toLocaleDateString()` without a locale, never
   `i18n.language` or a bare `i18n.resolvedLanguage`.
 - **`Intl` formatters** are expensive and pure; `dateFormatter()` caches them.
   Never construct one in render.
-
-## A route file composes; it does not contain
-
-A file under `src/routes/` holds its `Route`, its page component and the
-queries that feed them. Dialogs, cells, tabs and helpers live in
-`src/components/<feature>/`; `components/team/` is the reference shape. Layout
-vocabulary shared by more than one feature goes at the top of `components/`
-(`components/section-ui.tsx`).
 
 ## Never ship a placeholder number
 

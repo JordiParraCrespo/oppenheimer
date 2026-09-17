@@ -1,7 +1,7 @@
-import { OppenheimerApp } from '@oppenheimer/frontend';
-import { createWebAnalyticsClient } from './analytics';
+import { consumerModules } from '@oppenheimer/frontend-consumer';
+import { OppenheimerApp } from '@oppenheimer/frontend-core';
+import { createWebAnalyticsClient, LocalStorageService } from '@oppenheimer/frontend-web';
 import { webAuthClient } from './auth-client';
-import { LocalStorageService } from './storage';
 
 // Same-origin by default: the Vite dev server proxies `/api` to the API so the
 // session cookie is sent with every request. Set VITE_API_URL only when the
@@ -13,4 +13,6 @@ export const app = OppenheimerApp.create({
   storage: new LocalStorageService(),
   authClient: webAuthClient,
   analytics: createWebAnalyticsClient(),
+  // Loading the consumer product's modules is what makes this app that product.
+  modules: consumerModules,
 });

@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "off"
+  },
+  "settings": {
+    "shadcn": {
+      "ui": "@oppenheimer/design-system-web",
+      "ignoreImports": ["^@oppenheimer/design-system-web/icons(/|$)"],
+      "note": "Rules and rationale: .agents/rules/frontend-ui.md"
+    }
+  },
+  "rules": {
+    "shadcn/no-restyle": ["warn", { "allow": ["layout"] }],
+    "shadcn/no-raw-colors": "warn",
+    "shadcn/no-unknown-classes": "warn",
+    "shadcn/no-arbitrary-values": "warn",
+    "shadcn/no-inline-styles": "warn",
+    "shadcn/require-static-classes": "off"
+  }
+}

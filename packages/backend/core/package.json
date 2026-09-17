@@ -31,7 +31,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@oppenheimer/config": "workspace:^",
+    "@oppenheimer/tsconfig": "workspace:^",
     "@types/express": "^5.0.6",
     "@types/node": "^22.20.1",
     "reflect-metadata": "^0.2.2",

@@ -11,7 +11,7 @@ const manifest = {
     mobile: { paths: [] },
   },
   shared: {
-    'packages/design-system/web': { neededBy: ['web', 'admin-web'] },
+    'packages/frontend/design-system/web': { neededBy: ['web', 'admin-web'] },
     'packages/frontend': { neededBy: ['web', 'mobile'] },
   },
 };
@@ -32,8 +32,8 @@ test('resolveRemoval drops a shared path only when every dependant is gone', () 
   assert.deepEqual(resolveRemoval(manifest, ['web']).shared, []);
   assert.deepEqual(resolveRemoval(manifest, ['web', 'mobile']).shared, ['packages/frontend']);
   assert.deepEqual(resolveRemoval(manifest, ['web', 'admin-web', 'mobile']).shared.sort(), [
-    'packages/design-system/web',
     'packages/frontend',
+    'packages/frontend/design-system/web',
   ]);
 });
 

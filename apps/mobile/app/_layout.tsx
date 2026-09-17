@@ -1,38 +1,40 @@
 import '../global.css';
-import '../lib/i18n';
+import '@oppenheimer/frontend-mobile/i18n';
 import 'react-native-gesture-handler';
 import 'reflect-metadata';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false });
 
-import { Button } from '@oppenheimer/design-system-mobile/button';
 import { MobileRoot } from '@oppenheimer/design-system-mobile/mobile-root';
-import { Text } from '@oppenheimer/design-system-mobile/text';
-import { OppenheimerProvider, useAuthState, useSessionRestore } from '@oppenheimer/frontend/react';
+import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
+import {
+  AppErrorFallback,
+  ConfigManagerContext,
+  configManager,
+  ErrorBoundary,
+  initPurchases,
+  NAV_THEME,
+  ScreenErrorFallback,
+  ScreenViewTracker,
+} from '@oppenheimer/frontend-mobile';
 import { ThemeProvider } from '@react-navigation/native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme, vars } from 'nativewind';
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
-import { ErrorBoundary } from '../components/error-boundary';
-import { AppErrorFallback, ScreenErrorFallback } from '../components/error-fallback';
-import { ScreenViewTracker } from '../lib/analytics';
-import { configManager } from '../lib/config/config-manager';
-import { ConfigManagerContext } from '../lib/config/use-config';
+import { View } from 'react-native';
+import { AuthGate } from '../features/auth/screens/auth-gate';
 import { app } from '../lib/oppenheimer';
-import { initPurchases } from '../lib/purchases';
 import { persistOptions, queryClient } from '../lib/query';
-import { NAV_THEME } from '../lib/theme';
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
   const theme = colorScheme === 'dark' ? darkVars : lightVars;
   const isDark = colorScheme === 'dark';
 
+  // Synchronises with systems outside React: the remote config manager and
+  // the RevenueCat purchases SDK, both initialised once per app launch.
   useEffect(() => {
     void configManager.load();
     void initPurchases();
@@ -61,51 +63,6 @@ export default function RootLayout() {
         </ConfigManagerContext.Provider>
       </MobileRoot>
     </ErrorBoundary>
-  );
-}
-
-function AuthGate() {
-  const { t } = useTranslation();
-  const { isAuthenticated } = useAuthState();
-  const { isLoading, isError, isFetching, refetch } = useSessionRestore();
-
-  return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Protected guard={!isAuthenticated}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-        <Stack.Protected guard={isAuthenticated}>
-          <Stack.Screen name="(app)" />
-        </Stack.Protected>
-      </Stack>
-
-      {isError ? (
-        // Restoring the session failed (network/server error). Surface it with
-        // a retry instead of treating the user as unauthenticated.
-        <View
-          className="absolute inset-0 z-50 items-center justify-center gap-4 bg-background p-6"
-          role="alert"
-        >
-          <Text className="text-lg font-semibold text-foreground">
-            {t('auth.session.errorTitle')}
-          </Text>
-          <Text className="text-center text-sm text-muted-foreground">
-            {t('auth.session.errorMessage')}
-          </Text>
-          <Button onPress={() => refetch()} disabled={isFetching} className="mt-2">
-            <Text>{isFetching ? t('auth.session.retrying') : t('auth.session.retry')}</Text>
-          </Button>
-        </View>
-      ) : null}
-
-      {isLoading ? (
-        <View className="absolute inset-0 z-50 items-center justify-center bg-background">
-          <ActivityIndicator size="large" />
-        </View>
-      ) : null}
-    </>
   );
 }
 

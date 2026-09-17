@@ -60,7 +60,6 @@ oppenheimer/
 │   ├── web/              # Consumer Vite + TanStack Router SPA
 │   └── web-showcase/     # Next.js app showcasing the web design system
 ├── packages/
-│   ├── api-client/       # Auto-generated typed client from Swagger
 │   ├── auth/             # Shared Better Auth config + client helpers (@oppenheimer/auth)
 │   ├── backend/
 │   │   ├── authz/        # Authorization kernel: grants, policies (@oppenheimer/backend-authz)
@@ -72,11 +71,18 @@ oppenheimer/
 │   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
 │   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
 │   ├── config/           # Shared TypeScript configs
-│   ├── design-system/
-│   │   ├── web/          # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
-│   │   └── mobile/       # NativeWind + rn-primitives (@oppenheimer/design-system-mobile)
 │   ├── env/              # Root .env loader (@oppenheimer/env)
-│   ├── frontend/         # Clean architecture, InversifyJS DI, Zustand stores
+│   ├── frontend/         # The React tier: logic split by product, glue split by platform
+│   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
+│   │   ├── consumer/     # The consumer product's domain: organizations, profile, api-tokens (@oppenheimer/frontend-consumer)
+│   │   ├── admin/        # The control plane's domain: admin-users, roles (@oppenheimer/frontend-admin)
+│   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
+│   │   ├── web/          # What both Vite apps share: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
+│   │   ├── mobile/       # What both Expo apps share: config, storage, analytics… (@oppenheimer/frontend-mobile)
+│   │   ├── design-system/
+│   │   │   ├── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
+│   │   │   └── mobile/   # NativeWind + rn-primitives (@oppenheimer/design-system-mobile)
+│   │   └── nitro-app-info/ # Nitro native module exposing app info to the Expo apps (@oppenheimer/nitro-app-info)
 │   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
@@ -86,7 +92,9 @@ oppenheimer/
 ```
 
 Each app and package has its own `README.md` covering its purpose, exports, and
-usage.
+usage, and an `AGENTS.md` with the rules an agent needs there. Every `CLAUDE.md`
+in the repo is a symlink to the `AGENTS.md` beside it: edit the `AGENTS.md`,
+never the link.
 
 <!-- oppenheimer:begin starter -->
 Every app above except `api` is optional. `scripts/starter/features.json`
@@ -136,8 +144,11 @@ skeleton. Boundaries are enforced by `apps/api/.dependency-cruiser.cjs`
 (`pnpm arch`, run in CI and by a Claude Code Stop hook).
 
 Detailed rules live in `.agents/rules/`, each scoped by a `paths` glob so it
-loads only for the code it governs. Two are frontend:
+loads only for the code it governs. Three are frontend:
 
+- `frontend-architecture.md` — the placement grid (kernel, product package,
+  platform kit, feature), the kind directories and what each may import, the
+  render rules, and the checks that hold them
 - `forms.md` — React Hook Form and Zod validation across `apps/web`,
   `apps/mobile` and the shared schemas
 - `frontend-ui.md` — reaching for the design system before writing markup, the
@@ -210,15 +221,33 @@ module" steps in `packages/go/README.md`.
 - Constants: `AUTH` (token expiry, salt rounds), `PAGINATION`, `ROLES`,
   `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`
 
-### Frontend (packages/frontend)
+### Frontend (packages/frontend, the four apps)
 
-- Clean architecture: domain → presentation → data-access
-- InversifyJS for dependency injection
-- Zustand vanilla stores (shared between web and mobile)
-- TanStack Query for server state
-- Platform-specific implementations injected via DI container
-- `validation/` bridges Zod issue codes to translated messages for both apps'
-  forms (`createZodErrorMap`)
+The frontend is split twice, and the two splits answer different questions:
+
+- **By product** for logic. `core` is the kernel every app loads (session,
+  users, user settings, capabilities, analytics, the InversifyJS container,
+  config, validation). `consumer` and `admin` are the two products' domains
+  (entities, repositories, services, TanStack Query hooks); an app loads
+  exactly one, through `OppenheimerApp.create({ modules })`. The products never
+  import each other — where they meet, the meeting point is a kernel contract.
+- **By platform** for UI and glue. `web` and `mobile` hold what both apps of
+  a platform share below their routes, organised by concern (`shell`, `auth`,
+  `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, …),
+  each concern with the same kind directories a feature has. A kit imports the
+  kernel only; a component that needs a product hook is a feature.
+- **In the app**: routes compose, features contain. `features/<module>/`
+  is named after a module of `core` or of the app's product package and holds
+  only `screens/ sections/ dialogs/ forms/ components/ hooks/ lib/ __tests__/`.
+  Features never import each other; `forms/` and `components/` never fetch;
+  a route file stays under 120 lines.
+
+The placement rules, the render rules (state at the lowest reader, effects
+only in `hooks/`, the React Compiler on, no manual memo) and what enforces
+them are `.agents/rules/frontend-architecture.md`. The layer model and the
+cookbooks are `packages/frontend/ARCHITECTURE.md` and each app's
+`ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
+`pnpm check:structure` and Biome hold it.
 
 ### Web (apps/web)
 
@@ -250,7 +279,7 @@ module" steps in `packages/go/README.md`.
 React Hook Form over a Zod schema from `@oppenheimer/shared`, resolver wired through
 the app's `useZodResolver`. The convention is `.agents/rules/forms.md`.
 
-### Design system (packages/design-system)
+### Design system (packages/frontend/design-system)
 
 Two independently versioned packages with a mirrored component API:
 `@oppenheimer/design-system-web` (Base UI + Tailwind v4, tokens in
@@ -261,7 +290,7 @@ and `apps/mobile-showcase`. Usage rules are `.agents/rules/frontend-ui.md`.
 ## Dependency flow
 
 ```
-packages/config           → used by all apps and packages (tsconfig extends)
+packages/tsconfig         → used by all apps and packages (tsconfig extends)
 packages/env              → used by api, mcp, mobile (root .env loader)
 packages/shared           → used by api, frontend, api-client, backend/core (wire types)
 packages/auth             → used by api, web, mobile (shared Better Auth config)
@@ -273,10 +302,14 @@ packages/backend/cache    → used by api
 packages/backend/storage  → used by api
 packages/backend/queue    → used by api
 packages/translations        → used by web, mobile, api (email copy via backend/i18n)
-packages/design-system/web    → used by web, web-showcase
-packages/design-system/mobile → used by mobile, mobile-showcase
-packages/api-client           → used by frontend
-packages/frontend             → used by web, mobile
+packages/frontend/design-system/web    → used by web, admin-web, web-showcase, frontend/web
+packages/frontend/design-system/mobile → used by mobile, admin-mobile, mobile-showcase, frontend/mobile
+packages/frontend/api-client  → used by frontend/core, frontend/consumer, frontend/admin
+packages/frontend/core        → used by every frontend package and app
+packages/frontend/consumer    → used by web, mobile
+packages/frontend/admin       → used by admin-web, admin-mobile
+packages/frontend/web         → used by web, admin-web
+packages/frontend/mobile      → used by mobile, admin-mobile
 packages/go/core              → used by every other packages/go module and runner
 packages/go/{config,httpx,auth,health,ws,postgres} → used by runner (auth ← ws, httpx ← health, auth)
 ```
@@ -289,6 +322,8 @@ pnpm build              # Build everything
 pnpm test               # Unit tests
 pnpm test:integration   # Integration tests (needs Docker)
 pnpm check              # Biome lint + format
+pnpm arch               # Architecture boundaries (dependency-cruiser), API and frontend
+pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm docker:dev         # Start Postgres + Redis
 pnpm generate:api-client # Regenerate typed API client (no database needed)
 pnpm changeset          # Create a changeset for versioning
@@ -312,13 +347,16 @@ pnpm changeset          # Create a changeset for versioning
 - New MCP tools go in `apps/mcp/src/tools/`, declaring the same scope the endpoint requires
 - Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
 - New translations go in `packages/translations/{locale}/index.json`
-- Frontend business logic goes in `packages/frontend`, not in app components
-- UI in `apps/web`, `apps/web-showcase` and the web design system:
+- Where frontend code goes — kernel, product package, platform kit, or a
+  feature's kind directory — is `.agents/rules/frontend-architecture.md`;
+  `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
+- UI in the web apps, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
 - Porting a design export onto the design system is the
   `/design-export-port` skill (`.agents/skills/design-export-port/`): the
   export's values go onto the token vocabulary in `globals.css` and the
-  component rules in `packages/design-system/AGENTS.md`; fonts are system
+  component rules in `packages/frontend/design-system/AGENTS.md` and
+  `.agents/rules/frontend-ui.md`; it does not replace them. Fonts are system
   stacks. The MVP export is `product/versions/mvp/design/`
 - Forms and Zod schemas: `.agents/rules/forms.md`
 - Sign-up creates the account and its personal workspace in one go. The

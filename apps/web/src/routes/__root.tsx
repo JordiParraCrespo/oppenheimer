@@ -1,7 +1,7 @@
+import { PageViewTracker } from '@oppenheimer/frontend-web';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import type { RouterContext } from '@/app';
-import { PageViewTracker } from '@/lib/analytics';
 
 /**
  * `NuqsAdapter` is what lets `useQueryStates` read and write the URL, and it
