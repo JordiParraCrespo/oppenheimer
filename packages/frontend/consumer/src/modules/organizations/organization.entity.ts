@@ -1,38 +1,16 @@
-/** An organization as the UI needs it. */
+/**
+ * The caller's personal workspace as the UI needs it. The Better Auth
+ * `organization` row is that workspace, created at sign-up with the account as
+ * its single owner (`product/versions/mvp/08-auth.md`); the console renames it
+ * and shows its mark, nothing more. Teams come later on the same table.
+ */
 export class OrganizationEntity {
   constructor(
     public readonly id: string,
     public readonly name: string,
     public readonly slug: string,
-    /** Square mark shown in the sidebar and on exported reports. */
+    /** Square mark shown in the sidebar. */
     public readonly logo: string | null,
-    public readonly createdAt: Date,
-  ) {}
-}
-
-export class OrganizationMemberEntity {
-  constructor(
-    public readonly id: string,
-    public readonly organizationId: string,
-    public readonly userId: string,
-    public readonly organizationRole: string,
-    public readonly joinedAt: Date,
-    public readonly name: string,
-    public readonly email: string,
-    public readonly image: string | null,
-    public readonly isActive: boolean,
-    public readonly emailVerified: boolean,
-  ) {}
-}
-
-export class OrganizationInvitationEntity {
-  constructor(
-    public readonly id: string,
-    public readonly organizationId: string,
-    public readonly email: string,
-    public readonly organizationRole: string,
-    public readonly status: string,
-    public readonly expiresAt: Date,
     public readonly createdAt: Date,
   ) {}
 }

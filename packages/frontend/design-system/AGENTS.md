@@ -26,9 +26,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   so a theme switch moves aliases only and no component holds a conditional
   colour. Dark is the version-1 artboards' lifted ramp (`#121213` canvas), not
   the export's true black.
-- **One typeface.** SF Pro does every job; Display is the same family at 600
-  with tighter tracking from 21px up. Weight never exceeds 600. Every number a
-  human compares is SF Mono, tabular (`figures` utility).
+- **One typeface.** The system stack (SF Pro on Apple platforms) does every
+  job; Display is the same family at 600 with tighter tracking from 21px up.
+  Weight never exceeds 600. Every number a human compares is the system mono
+  (SF Mono on Apple platforms), tabular (`figures` utility). Nothing is
+  vendored: the fonts are the reader's own.
 - **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
 - **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
   press a pill, read inside an 18.

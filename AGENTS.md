@@ -70,11 +70,11 @@ oppenheimer/
 │   │   ├── i18n/         # Server-side translation + Intl formatting (@oppenheimer/backend-i18n)
 │   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
 │   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
-│   ├── config/           # Shared TypeScript configs
+│   ├── tsconfig/         # Shared TypeScript configs + build helpers (@oppenheimer/tsconfig)
 │   ├── env/              # Root .env loader (@oppenheimer/env)
 │   ├── frontend/         # The React tier: logic split by product, glue split by platform
 │   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
-│   │   ├── consumer/     # The consumer product's domain: organizations, profile, api-tokens (@oppenheimer/frontend-consumer)
+│   │   ├── consumer/     # The console's domain: sessions, hosts, plus the account chrome (@oppenheimer/frontend-consumer)
 │   │   ├── admin/        # The control plane's domain: admin-users, roles (@oppenheimer/frontend-admin)
 │   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
 │   │   ├── web/          # What both Vite apps share: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
@@ -227,7 +227,9 @@ The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
-  config, validation). `consumer` and `admin` are the two products' domains
+  config, validation). `consumer` (`sessions`, `hosts`, and the account chrome:
+  `organizations` as the personal workspace, `profile`, `api-tokens`) and
+  `admin` (`admin-users`, `roles`) are the two products' domains
   (entities, repositories, services, TanStack Query hooks); an app loads
   exactly one, through `OppenheimerApp.create({ modules })`. The products never
   import each other — where they meet, the meeting point is a kernel contract.

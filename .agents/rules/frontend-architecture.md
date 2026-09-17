@@ -39,7 +39,7 @@ hook goes down to a product package, the component sideways to the kit.
 
 `features/<module>/` takes its name from a module of `packages/frontend/core`
 or of the app's product package, or from the app's short allowlist
-(`sessions`, `hosts`, `public` in `apps/web`). Never after a screen: `settings/` held
+(`public` in `apps/web`: pages that render no entity). Never after a screen: `settings/` held
 `api-tokens` and `organizations`, `team/` held `roles`, `chat/` was
 `conversations`, and every one of those cost an agent a search. If the module
 does not exist, add it to the product package first; the domain leads.

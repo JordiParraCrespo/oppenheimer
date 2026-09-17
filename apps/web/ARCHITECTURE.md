@@ -26,7 +26,7 @@ they disagree, fix the code or update both together. The tier-wide model is
       │                       ▼
       │                @oppenheimer/design-system-web   Base UI + Tailwind v4
       │
-      ├──────────────► @oppenheimer/frontend-consumer   api-tokens, organizations, profile
+      ├──────────────► @oppenheimer/frontend-consumer   sessions, hosts; organizations, profile, api-tokens
       │                       │
       └──────────────► @oppenheimer/frontend-core       auth, users, user-settings,
                               │                   capabilities, analytics, OppenheimerApp
@@ -47,7 +47,7 @@ loads `@oppenheimer/frontend-consumer` and would fail `pnpm arch` for touching
 | Kind | What goes there | Fetch? | Router? | Example in this app |
 | --- | --- | --- | --- | --- |
 | `screens/` | the page body a route mounts | yes | yes | `profile/screens/profile.tsx` |
-| `sections/` | a pane, a card group, a table | yes | yes | `api-tokens/sections/token-table.tsx` |
+| `sections/` | a pane, a card group, a table | yes | yes | `hosts/sections/hosts.tsx` |
 | `dialogs/` | one dialog per file, owning its mutation | yes | yes | `api-tokens/dialogs/create-api-token.tsx` |
 | `forms/` | React Hook Form over a shared Zod schema; props in, `onSubmit` out | no | no | `auth/forms/login-form.tsx` |
 | `components/` | entity UI: a row, a badge, a hero, a checklist | no | no | `api-tokens/components/api-token-row.tsx` |
@@ -122,10 +122,10 @@ by the endpoint it reads), add the translation keys, and
 add a spec in `e2e/tests/web/`.
 
 Module names this app may use: the kernel's `analytics`, `auth`,
-`capabilities`, `user-settings`, `users`; the consumer product's `api-tokens`,
-`organizations`, `profile`; and the app's allowlist, `sessions`, `hosts` and `public`.
-Anything else has to become a module of `@oppenheimer/frontend-consumer` first — the
-domain leads.
+`capabilities`, `user-settings`, `users`; the console's `api-tokens`,
+`organizations`, `profile`, `sessions`, `hosts`; and the app's allowlist, `public`
+(the marketing pages render no entity). Anything else has to become a module of
+`@oppenheimer/frontend-consumer` first — the domain leads.
 
 ## What the checkers enforce
 

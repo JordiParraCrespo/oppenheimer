@@ -25,9 +25,9 @@ which is what `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` (renamed
 from `screen-policies.spec.ts`) pins the controllers to.
 
 The route half is deleted rather than rehoused. Those five paths are not routes
-any app mounts: `apps/web` serves `/dashboard`, `/settings` and
-`/settings/api-tokens`, `apps/admin-web` serves `/users` and `/roles`, and
-neither read the catalog — both nav files write their rows out by hand. A list
+any app mounts: `apps/web` serves `/sessions`, `/sessions/new` and `/settings`,
+`apps/admin-web` serves `/users` and `/roles`, and neither read the catalog —
+both nav files write their rows out by hand. A list
 of one product's leftover URLs does not earn a home in the platform kit both
 Vite apps compile. The rule that survives is smaller and is now what the docs
 say: a gated nav row takes `policies: ENDPOINT_POLICIES['/tokens']` where the

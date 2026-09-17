@@ -17,6 +17,8 @@ module.exports = {
   darkMode: 'class',
   content: [
     './app/**/*.{ts,tsx}',
+    './features/**/*.{ts,tsx}',
+    '../../packages/frontend/mobile/src/**/*.{ts,tsx}',
     '../../packages/frontend/design-system/mobile/src/**/*.{ts,tsx}',
   ],
   presets: [require('nativewind/preset')],

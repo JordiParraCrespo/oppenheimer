@@ -1,7 +1,7 @@
 ---
 "@oppenheimer/api": minor
 "@oppenheimer/api-client": minor
-"@oppenheimer/frontend": minor
+"@oppenheimer/frontend-consumer": minor
 ---
 
 Describe scope and permission-catalog responses properly in OpenAPI, so the
@@ -22,7 +22,7 @@ client lost the type and every consumer had to cast it back:
   the whole paginated list with it. It now returns `PaginatedUsersResponseDto`
   (with `PaginationMetaDto`).
 
-The wire format is unchanged — only its description. `@oppenheimer/frontend`'s
+The wire format is unchanged — only its description. `@oppenheimer/frontend-consumer`'s
 repositories drop the casts this forced (including a `dto as never` that was
 disabling type checking on the create-token request body) and read the generated
 DTOs directly. `UsersRepository.findAll` / `UsersService.findAll` widen their

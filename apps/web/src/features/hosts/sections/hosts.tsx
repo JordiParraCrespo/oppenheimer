@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 /**
  * Hosts: the machines you own that run sessions. Add host is one pasted
  * command carrying a one-hour registration token, and the host appears here
- * once its runner dials in (`product/versions/mvp/00-scope.md`). The list and
- * the pairing command arrive with the hosts API; this is the section they
- * land in.
+ * once its runner dials in (`product/versions/mvp/00-scope.md`). `useHosts`
+ * and `usePairHost` in `@oppenheimer/frontend-consumer` are where the list and
+ * the pairing command will come from; until the hosts API lands this is the
+ * empty state, and it does not ask for a list that cannot be served.
  */
 export function HostsSection() {
   const { t } = useTranslation();

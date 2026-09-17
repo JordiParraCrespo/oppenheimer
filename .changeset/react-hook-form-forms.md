@@ -1,5 +1,7 @@
 ---
-"@oppenheimer/frontend": minor
+"@oppenheimer/frontend-core": minor
+"@oppenheimer/frontend-web": minor
+"@oppenheimer/frontend-mobile": minor
 "@oppenheimer/shared": minor
 "@oppenheimer/translations": minor
 ---
@@ -13,7 +15,8 @@ screens held one `useState` per field and reported the first Zod failure in an
 `Alert`. Both now surface per-field errors inline, next to the input that caused
 them, and no longer submit until the whole form parses.
 
-`@oppenheimer/frontend` gains a `/validation` entrypoint exporting `createZodErrorMap`.
+`@oppenheimer/frontend-core` gains a `/validation` entrypoint exporting
+`createZodErrorMap`, and each platform kit a `useZodResolver` over it.
 The shared schemas carry English messages because the API validates against the
 same objects, so the map re-derives the message from the Zod issue code and
 resolves it against a `validation.*` translation key. Each app passes its own

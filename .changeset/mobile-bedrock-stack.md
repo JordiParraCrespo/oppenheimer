@@ -3,7 +3,8 @@
 "@oppenheimer/admin-mobile": minor
 "@oppenheimer/mobile-showcase": minor
 "@oppenheimer/design-system-mobile": minor
-"@oppenheimer/frontend": minor
+"@oppenheimer/frontend-core": minor
+"@oppenheimer/frontend-mobile": minor
 "@oppenheimer/api-client": minor
 "@oppenheimer/translations": minor
 ---

@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next';
 /**
  * New session: the four chips of `product/versions/mvp/00-scope.md` (host,
  * repo, branch, agent) and a Start button. The form arrives with the
- * sessions API; the screen exists now so the nav, the command palette and the
- * onboarding flow already point at the real destination.
+ * sessions API (`useCreateSession` and `useHosts` in
+ * `@oppenheimer/frontend-consumer` already take its input); the screen exists
+ * now so the nav, the command palette and the onboarding flow point at the
+ * real destination.
  */
 export function NewSessionScreen() {
   const { t } = useTranslation();

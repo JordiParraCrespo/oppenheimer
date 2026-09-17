@@ -16,7 +16,6 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as AuthAcceptInvitationRouteImport } from './routes/_auth/accept-invitation'
 import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
@@ -26,7 +25,6 @@ import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedSettingsApiTokensRouteImport } from './routes/_authenticated/settings/api-tokens'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,11 +58,6 @@ const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthAcceptInvitationRoute = AuthAcceptInvitationRouteImport.update({
-  id: '/accept-invitation',
-  path: '/accept-invitation',
-  getParentRoute: () => AuthRoute,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/forgot-password',
@@ -114,12 +107,6 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsApiTokensRoute =
-  AuthenticatedSettingsApiTokensRouteImport.update({
-    id: '/settings/api-tokens',
-    path: '/settings/api-tokens',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -127,7 +114,6 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/accept-invitation': typeof AuthAcceptInvitationRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
@@ -135,7 +121,6 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/api-tokens': typeof AuthenticatedSettingsApiTokensRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
@@ -145,7 +130,6 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/accept-invitation': typeof AuthAcceptInvitationRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
@@ -153,7 +137,6 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/api-tokens': typeof AuthenticatedSettingsApiTokensRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
 }
@@ -166,7 +149,6 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/_auth/accept-invitation': typeof AuthAcceptInvitationRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
@@ -174,7 +156,6 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/_authenticated/settings/api-tokens': typeof AuthenticatedSettingsApiTokensRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
@@ -186,7 +167,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy'
     | '/terms'
-    | '/accept-invitation'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -194,7 +174,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/oauth/consent'
     | '/sessions/new'
-    | '/settings/api-tokens'
     | '/sessions/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -204,7 +183,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy'
     | '/terms'
-    | '/accept-invitation'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -212,7 +190,6 @@ export interface FileRouteTypes {
     | '/profile'
     | '/oauth/consent'
     | '/sessions/new'
-    | '/settings/api-tokens'
     | '/sessions'
     | '/settings'
   id:
@@ -224,7 +201,6 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy'
     | '/terms'
-    | '/_auth/accept-invitation'
     | '/_auth/forgot-password'
     | '/_auth/login'
     | '/_auth/register'
@@ -232,7 +208,6 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/oauth/consent'
     | '/_authenticated/sessions/new'
-    | '/_authenticated/settings/api-tokens'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
@@ -299,13 +274,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/accept-invitation': {
-      id: '/_auth/accept-invitation'
-      path: '/accept-invitation'
-      fullPath: '/accept-invitation'
-      preLoaderRoute: typeof AuthAcceptInvitationRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/forgot-password': {
       id: '/_auth/forgot-password'
       path: '/forgot-password'
@@ -369,18 +337,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/api-tokens': {
-      id: '/_authenticated/settings/api-tokens'
-      path: '/settings/api-tokens'
-      fullPath: '/settings/api-tokens'
-      preLoaderRoute: typeof AuthenticatedSettingsApiTokensRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
   }
 }
 
 interface AuthRouteChildren {
-  AuthAcceptInvitationRoute: typeof AuthAcceptInvitationRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -388,7 +348,6 @@ interface AuthRouteChildren {
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthAcceptInvitationRoute: AuthAcceptInvitationRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
@@ -400,7 +359,6 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 interface AuthenticatedRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
-  AuthenticatedSettingsApiTokensRoute: typeof AuthenticatedSettingsApiTokensRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
@@ -408,7 +366,6 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
-  AuthenticatedSettingsApiTokensRoute: AuthenticatedSettingsApiTokensRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }

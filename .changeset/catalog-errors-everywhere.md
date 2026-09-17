@@ -1,7 +1,7 @@
 ---
 "@oppenheimer/backend-core": minor
 "@oppenheimer/translations": minor
-"@oppenheimer/frontend": minor
+"@oppenheimer/frontend-core": minor
 "@oppenheimer/api-client": patch
 ---
 
@@ -25,7 +25,7 @@ phrase ("Conflict"). The auth guards had the same gap.
   principal as 401 rather than 403.
 - **`@oppenheimer/translations`** — new `errors` namespace with a message per code in
   both locales, so clients stop rendering the server's English `detail`.
-- **`@oppenheimer/frontend`** — new `createErrorMessageResolver` translating a failure
+- **`@oppenheimer/frontend-core`** — new `createErrorMessageResolver` translating a failure
   from its problem `code`; the organizations repository no longer swallows a
   failed read into an empty list.
 - **`@oppenheimer/api-client`** — regenerated; the documented failures now reach the

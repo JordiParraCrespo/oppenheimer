@@ -7,8 +7,10 @@ import { useTranslation } from 'react-i18next';
 /**
  * The sessions list: the home screen of the product, and the sidebar of
  * `product/versions/mvp/05-screens.md` once sessions exist (name plus a
- * state dot from the runner's screen manifest). Until the sessions API lands
- * with the step-one spike it is the empty state that points at New session.
+ * state dot from the runner's screen manifest). `useSessions` in
+ * `@oppenheimer/frontend-consumer` is where the list will come from; until the
+ * sessions API lands with the step-one spike this is the empty state that
+ * points at New session, and it does not ask for a list that cannot be served.
  */
 export function SessionsScreen() {
   const { t } = useTranslation();

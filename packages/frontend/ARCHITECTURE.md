@@ -16,9 +16,10 @@ described here. When they disagree, fix the code or update both together.
 belongs to a product or to both. `core` is the kernel every app loads:
 session (`auth`), `users`, `user-settings`, `capabilities`, `analytics`, the
 InversifyJS container (`OppenheimerApp`, `TOKENS`), `config/` and `validation/`.
-`consumer` (`api-tokens`, `organizations`, `profile`) and `admin`
-(`admin-users`, `roles`) are the two products. An app loads exactly one, and
-the products never import each other.
+`consumer` is the console's product — `sessions` and `hosts` — plus the
+account chrome it keeps (`organizations` as the personal workspace, `profile`,
+`api-tokens`); `admin` (`admin-users`, `roles`) is the control plane's. An app
+loads exactly one, and the products never import each other.
 
 **By platform, for UI and glue.** A component, a hook over a browser API, an
 i18n bootstrap belong to web or to mobile. `web` is what both Vite apps share
@@ -114,7 +115,7 @@ then whatever `modules` the app passes. `OppenheimerProvider` puts the app in
 context; `useOppenheimerApp()` reads it. The kernel only knows kernel services, so a
 product resolves its own through a wrapper over the same container:
 `ConsumerApp.for(app)` behind `useConsumerApp()`, `AdminApp.for(app)` behind
-`useAdminApp()`. A product query hook reads `useConsumerApp().organizations`
+`useAdminApp()`. A product query hook reads `useConsumerApp().sessions`
 the way a kernel hook reads `useOppenheimerApp().auth`.
 
 The query cache follows the same shape. The kernel ships the persistence
@@ -137,14 +138,15 @@ The products never import each other, so what they share is a kernel export,
 not an import:
 
 - `MEMBER_LISTS_KEY` (`core/src/react/query-keys.ts`) is the prefix of every
-  organization member list. The consumer product lists members under it
-  (`organizationsKeys.membersAll()`); the admin product invalidates it in
+  organization member list. The admin product invalidates it in
   `useAssignUserRoles`, because a member list filtered by role is stale the
-  moment a role changes hands.
+  moment a role changes hands; the consumer product lists no members today
+  (workspaces are personal), and when the teams slice does, it lists them
+  under this key.
 - `KERNEL_NON_PERSISTED_FEATURES` names the features whose queries never
   reach storage whatever the product (`auth`, `userSettings`);
-  `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`apiTokens`,
-  `profile`), and the app passes it through `nonPersistedFeatures`.
+  `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`sessions`, `hosts`,
+  `apiTokens`, `profile`), and the app passes it through `nonPersistedFeatures`.
 - `user-settings` is a kernel module, not a consumer one, because both
   products apply the saved theme and locale on mount
   (`useApplyUserSettings` in the web kit reads `useUserSettings`).
@@ -170,7 +172,7 @@ Nothing moves before its second consumer appears; nothing is written twice.
 
 ## Add a module to a product package
 
-`organizations` in `packages/frontend/consumer` is the reference. For a module
+`sessions` in `packages/frontend/consumer` is the reference. For a module
 `things` in the consumer package:
 
 1. `src/modules/things/thing.entity.ts` — plain classes with readonly fields,

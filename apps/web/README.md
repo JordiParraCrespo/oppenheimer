@@ -56,9 +56,9 @@ public/
   `@oppenheimer/frontend-web` (`packages/frontend/web`).
 - Primitives are in `@oppenheimer/design-system-web`.
 - Domain logic is in `@oppenheimer/frontend-core` (session, users, user settings,
-  capabilities, analytics) and `@oppenheimer/frontend-consumer` (api-tokens,
-  organizations, profile). This app loads the consumer product and never the
-  admin one.
+  capabilities, analytics) and `@oppenheimer/frontend-consumer` (sessions,
+  hosts, and the account chrome: organizations, profile, api-tokens). This app
+  loads the consumer product and never the admin one.
 
 ## More
 

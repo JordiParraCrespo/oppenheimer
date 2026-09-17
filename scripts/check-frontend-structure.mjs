@@ -53,7 +53,7 @@ const APPS = [
     routes: 'src/routes',
     features: 'src/features',
     product: 'consumer',
-    allow: ['sessions', 'hosts', 'public'],
+    allow: ['public'],
     kit: 'web',
   },
   // oppenheimer:end web

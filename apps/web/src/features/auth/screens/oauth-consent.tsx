@@ -121,7 +121,8 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
           <p className="text-sm text-ink-600">
             {t('consent.narrowerAlternative')}{' '}
             <Link
-              to="/settings/api-tokens"
+              to="/settings"
+              search={{ section: 'api' }}
               className="underline underline-offset-4 hover:text-ink-900"
             >
               {t('consent.apiTokensLink')}

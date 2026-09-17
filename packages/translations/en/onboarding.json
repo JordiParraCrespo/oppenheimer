@@ -1,12 +1,6 @@
 {
   "description": "Your account is ready. Create a workspace for your team, or join one you have been invited to.",
   "eyebrow": "Almost there",
-  "invitation": {
-    "join": "Join",
-    "joining": "Joining…",
-    "role": "Joining as {{role}}",
-    "title": "You’ve been invited to a workspace"
-  },
   "signOut": "Sign out",
   "title": "Create your workspace",
   "create": {

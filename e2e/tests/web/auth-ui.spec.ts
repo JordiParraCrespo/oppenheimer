@@ -61,7 +61,7 @@ test.describe('web auth UI', () => {
     expect(apiCalled, 'client-side validation short-circuits the request').toBe(false);
   });
 
-  test('an anonymous visitor is redirected away from the dashboard', async ({ page }) => {
+  test('an anonymous visitor is redirected away from the sessions list', async ({ page }) => {
     await page.goto('/sessions');
 
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
@@ -83,7 +83,7 @@ test.describe('web auth UI', () => {
     await expect(page).toHaveURL(/\/settings\?section=security/, { timeout: 20_000 });
   });
 
-  test('after sign-out the dashboard is closed again', async ({ page }) => {
+  test('after sign-out the sessions list is closed again', async ({ page }) => {
     const { user } = await provisionedUser('uilogout');
     await loginThroughUi(page, user.email, user.password);
     await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });

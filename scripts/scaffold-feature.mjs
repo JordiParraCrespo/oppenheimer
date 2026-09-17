@@ -22,7 +22,7 @@ const APPS = {
     dir: 'apps/web',
     features: 'src/features',
     product: 'consumer',
-    allow: ['sessions', 'hosts', 'public'],
+    allow: ['public'],
     platform: 'web',
   },
   // oppenheimer:end web

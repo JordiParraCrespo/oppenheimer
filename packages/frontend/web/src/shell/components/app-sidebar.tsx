@@ -70,8 +70,8 @@ export function AppSidebar() {
             <SidebarMenu className="gap-px">
               {entries.map((entry) => {
                 const Icon = entry.icon;
-                // `/settings/api-tokens` should still light up Settings, so
-                // match on the prefix rather than the exact path.
+                // `/sessions/new` should still light up Sessions, so match on
+                // the prefix rather than the exact path.
                 const active = pathname === entry.to || pathname.startsWith(`${entry.to}/`);
 
                 return (

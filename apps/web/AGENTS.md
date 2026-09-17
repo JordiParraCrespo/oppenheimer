@@ -50,7 +50,9 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 ## Patterns agents get wrong
 
 - Naming a feature after the page (`settings`, `team`) instead of the module it
-  renders. `/settings` composes `api-tokens`, `organizations` and `profile`.
+  renders. `/settings` is the `hosts` screen (the product pane), handed the
+  account panes — workspace name from `organizations`, sessions from
+  `profile`, keys from `api-tokens` — by the route.
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `src/features/auth/components/password-checklist.tsx`.
 - Hand-rolling a table or an error callout while `DataTable` and `Alert` sit

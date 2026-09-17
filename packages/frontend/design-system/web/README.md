@@ -30,8 +30,9 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   elevation, motion, the shadcn names aliased onto them, and the Tailwind
   `@theme` mapping. Utilities: `figures` (tabular mono), `eyebrow` (the 11px
   uppercase label), `glass`, `scrollbar-thin`.
-- `src/styles/fonts/` — SF Pro Text and Display at 400/500/600 and SF Mono at
-  400/500/600, subset to Latin as woff2.
+- No vendored faces: `--font-sans` / `--font-display` / `--font-mono` are the
+  system stacks (SF Pro and SF Mono on Apple platforms, the platform's UI face
+  elsewhere)
 - `src/assets/imagery/` — the auth carousel photographs.
 - `src/components/` — the MVP inventory:
   - core: `Wordmark`, `BrandGlyph`, `Button`, `IconButton`, `Link`, `Chip`,

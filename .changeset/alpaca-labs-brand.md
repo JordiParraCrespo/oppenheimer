@@ -9,7 +9,7 @@ mobile.
 The system is now **monochrome-first and flat**: three neutral inks
 (`#292929` / `#5D5D5D` / `#9E9E9E`) over white and warm off-white surfaces,
 hairline borders carrying the structure instead of elevation, near-black pill
-CTAs, and colour reserved for status. Type is the SF Pro stack at 400/500 with
+CTAs, and colour reserved for status. Type is the system stack (SF Pro on Apple platforms, nothing vendored) at 400/500 with
 -0.15px tracking across four sizes (12/13/14/24). Radii collapse to the three
 the brand allows — 8px controls, 12px tiles, 16px cards — plus the pill.
 

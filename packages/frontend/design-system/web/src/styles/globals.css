@@ -21,84 +21,6 @@
    mapping in `@theme inline`.
    ========================================================================== */
 
-/* -----------------------------------------------------------------------------
-   Webfonts — self-hosted, no remote requests
-   -----------------------------------------------------------------------------
-   SF Pro is Apple's variable font. The export ships the 6MB TTF; here it is
-   instanced to the three weights the system uses (400 / 500 / 600 — weight
-   never exceeds 600) at its two optical sizes: Text (opsz 17) carries
-   everything a user operates, Display (opsz 28) the headings from 21px up.
-   SF Mono (github.com/supercomputra/SF-Mono-Font) sets every number a human
-   compares. All faces subset to Latin plus the punctuation and keyboard
-   glyphs the UI renders, then compressed to woff2: ~30KB a face.
-
-   Licence: SF Pro is distributed under the Apple Font License, which permits
-   use in user interfaces. Check it covers your distribution before shipping.
-   -------------------------------------------------------------------------- */
-@font-face {
-  font-family: "SF Pro Text";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Text-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Pro Text";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Text-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Pro Text";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Text-Semibold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Pro Display";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Display-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Pro Display";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Display-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Pro Display";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/SF-Pro-Display-Semibold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Mono";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/SF-Mono-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Mono";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("./fonts/SF-Mono-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "SF Mono";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/SF-Mono-Semibold.woff2") format("woff2");
-}
-
 @layer base {
   :root {
     /* =====================================================================
@@ -235,15 +157,15 @@
     --glass-blur: blur(20px) saturate(1.6);
 
     /* =====================================================================
-       Typography — one typeface, SF Pro, doing every job; SF Mono for figures
+       Typography — the system stack, doing every job; the system mono for
+       figures. No face is vendored: on Apple platforms the stack resolves to
+       SF Pro and SF Mono, which is what the design was drawn in, and elsewhere
+       to the platform's own UI face.
        ================================================================== */
     --font-sans:
-      "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
-      "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-display:
-      "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
-      "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: var(--font-sans);
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
     --weight-regular: 400;
     --weight-medium: 500;
