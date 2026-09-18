@@ -17,8 +17,8 @@ counterparties whose contract the API serves.
 | The noun | Where it lives | New? |
 |---|---|---|
 | **Organizations** (name, url, members) | the Better Auth `organization` + `member` tables, unchanged | no |
-| **Hosts** | `hosts/` → `host`, `host_key`, `host_pairing_token` | yes |
-| **Sessions** | `sessions/` → `work_session`, `work_session_event`, `attach_ticket` | yes |
+| **Hosts** | `hosts/` → `host` (keys inline), `host_pairing_token` | yes |
+| **Sessions** | `sessions/` → `work_session`, `work_session_event` | yes |
 | **Repositories** | `github/` → `github_repository` | yes |
 | **GitHub allowed repositories** | *the same table* — the installation is the allowlist | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus per-host availability on `host.capabilities` | no table |
@@ -50,9 +50,11 @@ and the CASL condition are generated from one declaration (F24).
 a connecting process is one of them, what each machine can run, and
 whether it is reachable now. Pairing lives here because a registration
 token is host identity *before the host exists*.
-Aggregates: `HostEntity` (the host and its keys — rotation is a host
-invariant, a host must never be left with zero active keys) and
-`HostPairingTokenEntity` (its own lifecycle, burned atomically).
+Aggregates: `HostEntity` (the host, its current key and the previous one
+still inside its rotation window — a host must never be left with zero
+valid keys, which is why the pair lives on the aggregate rather than in
+a child table) and `HostPairingTokenEntity` (its own lifecycle, minted
+before any host exists, burned atomically).
 It does **not** own the socket (that is `relay/`), the sessions on it,
 or the agent catalog.
 
@@ -74,8 +76,9 @@ are `Installation` and `Repository`, the scope resource is
 that implies, and who may open a terminal on it. `WorkSessionEntity`
 holds its event log inside the aggregate, because the state invariant is
 `state = fold(events)` and an event appended outside the aggregate could
-desynchronise it. `AttachTicketEntity` is separate: seconds-lived,
-burned in one statement, and its redemption path must not load a session.
+desynchronise it. An attach ticket is deliberately *not* an aggregate:
+it lives seconds, is redeemed once, and its redemption path must not
+load a session — so it is a Redis key, not a row (see the schema below).
 
 **`relay/`** owns which host is attached to which API process right now,
 and how bytes reach it. It has no table and no aggregate, the same shape
@@ -126,12 +129,17 @@ that it is genuinely derived.
 
 ### Credentials are rows only when they must be revocable
 
-- **Pairing tokens and attach tickets are rows.** F5 demands revocation
-  and a source IP; F1 demands single use. Both are then one atomic
-  statement — `UPDATE … WHERE tokenHash = $1 AND redeemedAt IS NULL AND
+- **The pairing token is a row**, because F5 demands revocation, an
+  expiry and a source IP — three things you can only act on if they
+  persist. Burning it is one atomic statement:
+  `UPDATE … WHERE tokenHash = $1 AND redeemedAt IS NULL AND
   expiresAt > now() RETURNING …`. Zero rows is the only failure, and it
   does not distinguish used, expired and forged, on purpose. Only the
   SHA-256 is stored.
+- **The attach ticket is not**, because nothing about it is revocable:
+  it expires in thirty seconds, which is faster than anyone could revoke
+  it. A Redis key with a TTL says the same thing with no row to sweep.
+  The rule is revocability, not "it is a credential".
 - **Installation access tokens are not rows at all.** They are minted on
   demand from the App key in the secret store and cached in Redis until
   shortly before expiry. F20 and F23 become structural facts rather than
@@ -212,22 +220,66 @@ the `Repository` subject, which the authz kernel already supports. The
 cheaper seam, a per-workspace hide/favourite over a large "All
 repositories" installation, is a nullable `hiddenAt` column, not a table.
 
-### Nine new tables
+### The schema follows Better Auth's own shape
+
+The starter's identity tables are the reference for how a table earns
+its place here, because they are the tables this codebase already reads
+every request. Four rules, read off `apps/api/src/auth/database/`:
+
+1. **Rows are flat.** Situational state is a nullable column, never a
+   satellite table. `session` carries `delegated`,
+   `delegatedCredentialId`, `impersonatedBy`, `activeOrganizationId` and
+   `activeTeamId` on one row rather than in four side tables.
+2. **Credentials sit inline with the thing they authenticate.**
+   `account` holds `password`, `accessToken`, `refreshToken`, `idToken`
+   and four expiries on the same row as the provider link.
+3. **A short-lived token gets its own table, shared across kinds.**
+   `verification` is `identifier` + `value` + `expiresAt`, and serves
+   email verification, password reset and magic links alike.
+4. **A table earns its place by independent lifetime**, not by being a
+   different noun. `account` outlives any `session`; `verification`
+   exists before the thing it verifies.
+
+Applied honestly, those rules delete three tables from an earlier draft
+of this note: a `host_key` table (rule 2), an `attach_ticket` table
+(rule 4 — it cannot outlive the thirty seconds it is valid for), and a
+`github_webhook_delivery` table (the handler is a full resync, so it is
+already idempotent and de-duplication is an optimisation).
+
+Uniform across all six: `id` uuid primary key minted with `randomUUID()`,
+`@CreateDateColumn`/`@UpdateDateColumn`, snake_case name (the convention
+every app-owned table already follows — `api_token`, `user_role`,
+`access_grant`, `user_settings`), and an `organizationId` for the tenant
+scope, exactly as `lead` does.
+
+### Six new tables
 
 **`hosts/`**
 
 - `host` — `id`, `organizationId`, `pairedByUserId`, `name`, `hostname`,
   `os`, `arch`, `runnerVersion`, `capabilities` jsonb (git/tmux/disk and
-  the detected agents), `lastSeenAt`, `connectionEpoch` bigint,
-  `connectedReplicaId`, `unpairedAt`, timestamps.
-  Index `(organizationId)`.
-- `host_key` — `id`, `hostId`, `algorithm`, `publicKey`, `fingerprint`,
-  `activatedAt`, `revokedAt`. Rotation (F8) keeps the previous key valid
-  for a grace window. Index `(hostId) WHERE revokedAt IS NULL`.
+  the detected agents), `publicKey` text, `publicKeyFingerprint`,
+  `previousPublicKey` text null, `previousPublicKeyExpiresAt` null,
+  `lastSeenAt`, `connectionEpoch` bigint, `connectedReplicaId`,
+  `unpairedAt`, timestamps. Index `(organizationId)`; unique
+  `(publicKeyFingerprint)`.
+
+  **The key is a column, not a table**, per rule 2 and the `account`
+  precedent. Rotation (F8) needs the old key to keep working for a grace
+  window, which is *two* keys, never N — so it is a second column pair,
+  not a one-to-many. This also takes a join off the hottest path in the
+  system: every runner boot verifies an assertion against this row.
+
 - `host_pairing_token` — `id`, `organizationId`, `createdByUserId`,
   `prefix`, `tokenHash` unique, `createdFromIp` inet, `redeemedFromIp`
   inet, `expiresAt`, `revokedAt`, `redeemedAt`, `redeemedHostId`. F5's
   "source IP shown" is two columns, not one.
+
+  **This one stays a table**, and Better Auth is the reason: it is
+  `verification`. A token that exists *before its subject does* cannot
+  be a column on that subject, and most rows never become a host — they
+  expire, get revoked, or are superseded by a second Add-host click.
+  Independent lifetime is exactly rule 4.
 
 **`github/`**
 
@@ -244,8 +296,11 @@ repositories" installation, is a nullable `hiddenAt` column, not a table.
   join, which is why `organizationId` is copied down. A repository never
   moves workspace (you disconnect and reconnect instead), so the copy is
   an invariant, not a sync.
-- `github_webhook_delivery` — `deliveryId` PK, `event`, `receivedAt`.
-  Deduplication has to survive a Redis flush, so it is a table.
+No `github_webhook_delivery` table. Every delivery triggers a **full
+resync** of that installation's repository set, which is idempotent by
+construction and immune to `added`/`removed` arriving out of order. So
+de-duplication only saves a redundant GitHub call, never correctness —
+a Redis key with a 24-hour TTL is the right weight for that.
 
 **`sessions/`**
 
@@ -263,9 +318,27 @@ repositories" installation, is a nullable `hiddenAt` column, not a table.
   `recordedAt`. Unique `(sessionId, seq)` and unique
   `(sessionId, idempotencyKey)`. Every read is by session, so no other
   index is needed.
-- `attach_ticket` — `id`, `sessionId`, `userId`, `window` smallint,
-  `tokenHash` unique, `expiresAt` (seconds), `consumedAt`,
-  `consumedFromIp`, `createdAt`.
+No `attach_ticket` table. A ticket lives about thirty seconds and is
+used once, so it fails rule 4 outright — it cannot have an independent
+lifetime, and a table for it is a high-churn row plus a sweeper to
+delete what Redis would have expired by itself. It becomes a Redis key,
+`attach:<random>` → `{sessionId, window, userId}`, with the TTL doing
+the expiry.
+
+**This costs one new primitive, and that is the honest trade.**
+`CacheService` today is `get`/`set`/`del`/`reset`
+(`packages/backend/cache/src/cache.service.ts`), and `get`-then-`del` is
+a race two relay connections could both win. Single use needs an atomic
+read-and-delete, so the abstraction gains `take<T>(key)` over Redis's
+`GETDEL`. That is a few lines and a genuinely reusable primitive — any
+single-use token wants it — but it is a change to a shared package, not
+free. If that is unwanted, the fallback is the table, where
+`UPDATE … WHERE consumedAt IS NULL RETURNING` is atomic with no new
+tooling. The table is the safer choice; Redis is the better-engineered
+one.
+
+Either way the durable record is an `attach.opened` entry in the session
+log, which is a better audit trail than a thirty-second row.
 
 `worktreePath` is **stored, not computed**: the layout rule in
 [`11-workspace-layout.md`](../../11-workspace-layout.md), including the

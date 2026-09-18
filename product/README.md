@@ -82,8 +82,11 @@ earlier note:
 - The control-plane modules and data model *have* now changed, where the
   line above said only the framework had. `versions/mvp/09-api-modules-and-data-model.md`
   replaces note 03's seven modules and its first-cut table list with
-  four modules — `hosts`, `github`, `sessions`, `relay` — and nine
-  tables. `installations` and `repositories` merge into one aggregate;
+  four modules — `hosts`, `github`, `sessions`, `relay` — and six
+  tables, held to the shape of the starter's own Better Auth schema —
+  flat rows, credentials inline with their subject, a table only where
+  the lifetime is independent. `installations` and `repositories` merge
+  into one aggregate;
   `tokens` becomes a port rather than a module because an installation
   token is never stored; `events` is a table inside `sessions`; `jobs`
   disappears because the outbox already is one. Models and coding agents

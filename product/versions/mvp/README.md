@@ -18,7 +18,7 @@ at the bottom of this file.
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
-| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the four API modules, their aggregates, the nine new tables, the endpoint surface, and where agents and models live |
+| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the four API modules, their aggregates, the six new tables, the endpoint surface, and where agents and models live |
 
 ## Decision log
 
@@ -70,3 +70,10 @@ at the bottom of this file.
   noun**, because the App installation is a boundary GitHub enforces.
   `SessionState` gains `blocked`, the one wire change; `done` and
   `unknown` from the screen manifest are still unmapped (09 open Q8).
+  The schema is held to the shape of the starter's own Better Auth
+  tables — flat rows, credentials inline with their subject, a table
+  only where the lifetime is genuinely independent. That deletes three
+  tables an earlier draft had: host keys become a column pair on `host`,
+  the attach ticket becomes a Redis key with a TTL, and webhook
+  de-duplication becomes a cache key because the handler is a full
+  resync and therefore already idempotent.
