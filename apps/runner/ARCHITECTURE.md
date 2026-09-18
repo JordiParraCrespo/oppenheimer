@@ -86,6 +86,14 @@ on a different `net.Listener`.
 parses imports only, and fails with the offending file and rule. It is the
 Go equivalent of `apps/api/.dependency-cruiser.cjs` and runs under `pnpm test`.
 
+`internal/arch/catalog_test.go` holds the other public contract: it walks the
+same files for `problem.New("CODE"` and fails when a code is registered twice
+or has no row in `apps/docs/docs/errors.md`. cosmos-sdk keeps a registry that
+complains when a `(codespace, code)` pair is reused; our catalog is
+package-level values with nothing to hook into, so the source is what gets
+walked — same guarantee, and it fails before the push rather than in
+somebody's client.
+
 ## Conventions that replace NestJS machinery
 
 | NestJS                              | Here                                                                  |

@@ -71,7 +71,8 @@ idioms.
 - Catalog entries are package-level `problem.New("<CTX>_00n", status, title)`
   values in `<ctx>/domain/errors.go`. `title` is stable; per-request text goes
   through `WithDetail`. Every code gets a row under "Runner service" in
-  `apps/docs/docs/errors.md`.
+  `apps/docs/docs/errors.md` — `internal/arch/catalog_test.go` fails the build
+  when a code is reused or undocumented, so neither is a review-time catch.
 - Domain methods return sentinel `errors.New` values or typed errors; the
   **use case** maps them to problems. The domain never imports HTTP.
 - Wrap with `%w`, compare with `errors.Is`/`errors.As`. `golangci-lint`'s
