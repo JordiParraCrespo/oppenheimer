@@ -27,6 +27,14 @@
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude).
   Accounts arrive with the accounts slice.
+- A host row also carries what the update story needs to be operable on
+  a fleet of one: the running **version**, the **channel**, whether it
+  is **pinned** (and to what), and the **last update outcome** —
+  including a rollback, which is the one a person must not have to find
+  in a log. A host that has silently stopped updating is the failure
+  nobody notices, so pinned and failed are states the row shows rather
+  than states you infer from a version that stopped moving. Actions:
+  Update now, change channel, pin/unpin (09 §5).
 - Web framework open: Vite SPA recommended, Next.js as a client app
   acceptable. Decide at step 3.
 

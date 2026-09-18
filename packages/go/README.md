@@ -15,16 +15,17 @@ directives so it stays buildable and tidy-able on its own.
 | `auth`       | `@oppenheimer/go-auth`   | Bearer middleware, `Principal`, scope grammar and guard, HS256 service tokens    |
 | `ws`         | `@oppenheimer/go-ws`     | WebSocket hub: topics, backpressure, keepalive, graceful going-away              |
 | `postgres`   | `@oppenheimer/go-postgres` | Pooled `pgx` connection, forward-only SQL migrator (advisory-locked), readiness checker |
+| `selfupdate` | `@oppenheimer/go-selfupdate` | Signed release manifests, digest-checked downloads, atomic versioned binary swaps |
 
-Dependency flow: `core` ← `httpx` ← `health`, `auth` ← `ws`; `config` and
-`postgres` stand alone. A module never imports an app.
+Dependency flow: `core` ← `httpx` ← `health`, `auth` ← `ws`; `config`,
+`postgres` and `selfupdate` stand alone. A module never imports an app.
 
 ## How Turborepo sees them
 
 Every module has a `package.json` naming it `@oppenheimer/go-<module>` with
 `build`, `lint` and `test` scripts that call `go` directly, and declares the
 modules it imports as `workspace:*` devDependencies. That declaration is
-what gives Turborepo the graph: `apps/runner` lists all six, so
+what gives Turborepo the graph: `apps/runner` lists all of them, so
 `turbo run build --filter=@oppenheimer/runner` builds them first, `--affected`
 re-runs dependents when a module changes, and a change in `core`
 invalidates the cache of everything above it while `config` stays cached.

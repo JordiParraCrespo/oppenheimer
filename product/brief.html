@@ -98,6 +98,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#sleep">Sleep and pricing</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
+  <li><a href="#herdr">herdr lessons</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -175,10 +176,10 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     <g>
       <rect x="20" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
       <text x="130" y="284" text-anchor="middle" font-weight="500">Linux server</text>
-      <text x="130" y="303" text-anchor="middle" fill="var(--muted)">runner · node-pty · tmux · docker</text>
+      <text x="130" y="303" text-anchor="middle" fill="var(--muted)">runner · tmux · docker</text>
       <rect x="270" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
       <text x="380" y="284" text-anchor="middle" font-weight="500">Mac Studio</text>
-      <text x="380" y="303" text-anchor="middle" fill="var(--muted)">runner · node-pty · tmux · worktrees</text>
+      <text x="380" y="303" text-anchor="middle" fill="var(--muted)">runner · tmux · worktrees</text>
       <rect x="520" y="262" width="220" height="56" rx="3" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
       <text x="630" y="284" text-anchor="middle" font-weight="500">Cloud VM</text>
       <text x="630" y="303" text-anchor="middle" fill="var(--muted)">runner · persistent home volume</text>
@@ -203,7 +204,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 <thead><tr><th>Layer</th><th>MVP</th><th>Later</th></tr></thead>
 <tbody>
 <tr><td>Terminal</td><td>xterm.js WebGL, binary WS, reattach, splits</td><td>serialized scrollback, search, clickable paths</td></tr>
-<tr><td>Runner</td><td>node-pty + tmux, outbound WS, ring buffer</td><td>own PTY ownership, prebuilt binaries per platform</td></tr>
+<tr><td>Runner</td><td>one static Go binary: tmux-backed PTYs, outbound WS, ring buffer, signed self-update</td><td>hypervisor and guest modes, egress proxy</td></tr>
 <tr><td>Workspace</td><td>git worktree per session on a direct-mode target</td><td>Firecracker VM per task with Docker inside</td></tr>
 <tr><td>Agents</td><td>none built in: whatever you type</td><td>status hooks, "new session with prompt", Agent SDK for unattended runs</td></tr>
 <tr><td>Board</td><td>sessions per project and target with live status</td><td>delegation via a small MCP server</td></tr>
@@ -719,6 +720,16 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     </ul>
   </div>
 </div>
+
+<h2 id="herdr">Lessons from herdr</h2>
+<p>herdr is the closest thing to this product that exists: a Rust terminal workspace manager for coding agents, with a background server, panes marked working, blocked or idle, and machines reachable over SSH. Its source was read in full after our runner was built (note 13). The decomposition matches ours; the one difference that matters is where the process boundary falls.</p>
+<div class="rule">
+  <span class="k">boundary</span><span>herdr owns the PTYs in its own server process, so a restart restores the layout but <em>the agent processes do not survive</em>. We put tmux between the runner and the processes, so an update or a rollback leaves them running. The cost is terminal fidelity: they own the emulator, so they get splits, mouse and image protocols.</span>
+  <span class="k">manifests</span><span>Their agent detection is versioned data, one file per agent, with rules carrying a priority, a screen region and negative guards — and the terminal title as the most reliable region. We took the shape, wrote our own rules, and fixed a real bug doing it: a spinner frame is still on screen under a question that has just appeared.</span>
+  <span class="k">hooks</span><span>Where an agent exposes lifecycle hooks, those are authoritative and screen reading is the fallback. That answers our own open question about manifests.</span>
+  <span class="k">updates</span><span>Their release manifest is the same shape as ours with an optional digest and no signature. Ours requires both, and refuses to update at all when no key is compiled in.</span>
+</div>
+<div class="verdict"><p><strong>The architecture holds.</strong> What we take is not structure but craft: manifests as versioned data, hooks over scraping, and the terminal title as a first-class signal.</p></div>
 
 <h2 id="phases">Phases</h2>
 <div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, Codex and the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>

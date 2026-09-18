@@ -19,8 +19,22 @@ feature lands.
 - [ ] F23 no vendor credential ever stored by the platform
 - [ ] F24 every object owned by the user; queries scoped
 - [ ] F25 unguessable session ids plus ticket authorization
+- [ ] F26 runner releases signed with an offline key, verified against a
+      public key compiled into the binary, before a staged binary is ever
+      executed; the control plane offers versions and never supplies code
+      (09 §5). Note 04's F26 covers rootfs images too; that half stays
+      deferred with the VM slice, and this row is the runner half of the
+      same finding
+- [ ] F26a first install is trust-on-first-use — a script fetched over
+      HTTPS, checked against the digest shown on the Add host screen. No
+      compiled-in key exists yet at that point, so F26 begins at the
+      first self-update, not at install. The mitigation is the digest on
+      screen, the token's one-hour single use, and keeping the script
+      host separate from the control plane (03)
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
-retention. Also deferred: F26 signed updates and Tailscale mode for the
-control plane itself.
+retention. Also deferred: Tailscale mode for the control plane itself.
+F26 was deferred and is now in the list above: self-update landed in the
+MVP with 09, and an unsigned update path would be the widest hole
+in it.

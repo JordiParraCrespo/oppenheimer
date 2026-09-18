@@ -1,0 +1,12 @@
+{
+  "name": "@oppenheimer/go-selfupdate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Signed release manifests, verified downloads and atomic binary swaps for self-updating Go binaries",
+  "scripts": {
+    "build": "go build ./...",
+    "lint": "golangci-lint run ./...",
+    "test": "go test -count=1 ./...",
+    "clean": "go clean ./..."
+  }
+}

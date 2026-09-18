@@ -86,7 +86,7 @@
     },
     "runner": {
       "title": "Go runner service",
-      "summary": "apps/runner + packages/go/* — Go service template (REST + WS, API keys) the API delegates long-lived work to",
+      "summary": "apps/runner + packages/go/* — the Go host agent (pairing, launchd/systemd install, signed self-update) and the REST + WS service it grew from",
       "identifiers": [
         "apps/runner",
         "@oppenheimer/runner",
@@ -100,9 +100,11 @@
       "paths": [
         "apps/runner",
         "packages/go",
+        "scripts/runner",
         "go.work",
         ".golangci.yml",
         ".agents/rules/go.md",
+        ".github/workflows/release-runner.yml",
         "apps/docs/docs/architecture/go-services.md",
         "helm/oppenheimer/templates/runner-deployment.yaml"
       ],

@@ -1,11 +1,18 @@
 package httpx
 
 import (
+	"context"
 	"errors"
+	"io"
+	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
@@ -115,5 +122,45 @@ func TestForwardedFor(t *testing.T) {
 	}
 	if got := forwardedFor("1.1.1.1", 3); got != "1.1.1.1" {
 		t.Fatalf("short chain should clamp, got %q", got)
+	}
+}
+
+func TestServeAcceptsAProvidedListener(t *testing.T) {
+	// A host agent opens no TCP port: it serves a 0600 Unix socket that only
+	// its own user can reach.
+	socket := filepath.Join(t.TempDir(), "runner.sock")
+	listener, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(socket, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- Serve(ctx, slog.New(slog.NewTextHandler(io.Discard, nil)),
+			ServerOptions{Listener: listener, ShutdownTimeout: time.Second},
+			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) }))
+	}()
+
+	client := &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", socket)
+		},
+	}}
+	resp, err := client.Get("http://runner/")
+	if err != nil {
+		t.Fatalf("get over the socket: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if string(body) != "ok" {
+		t.Fatalf("body = %q", body)
+	}
+
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("serve: %v", err)
 	}
 }
