@@ -43,10 +43,7 @@
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
 
-  - **`@oppenheimer/web`** / **`@oppenheimer/frontend`** / **`@oppenheimer/translations`**: a
-    token-creation screen with a per-resource permission picker (levels you cannot
-    grant are disabled) and an OAuth consent screen, backed by new `api-tokens`
-    and `organizations` modules with TanStack Query hooks.
+  - copy for the token-creation and OAuth consent screens.
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no
@@ -62,9 +59,6 @@
   handling, and both the web and mobile `AuthGate`s only branched on `isLoading` —
   so a single network blip bounced a logged-in user to `/login`.
 
-  - **`@oppenheimer/frontend`**: `useSessionRestore` now retries transient failures
-    (`retry: 2` with exponential backoff). A genuinely unauthenticated user still
-    resolves successfully, so retries only fire on real errors.
   - **web/mobile auth clients**: `getSession()` now throws on transport/server
     errors instead of returning `null`, letting the query distinguish a failed
     lookup from an unauthenticated session.
