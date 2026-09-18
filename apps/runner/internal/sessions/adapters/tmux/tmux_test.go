@@ -24,10 +24,15 @@ func server(t *testing.T) *tmux.Server {
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux is not installed")
 	}
-	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
-	if out, err := exec.Command("tmux", "-L", socket, "start-server").CombinedOutput(); err != nil {
+	// Probe on a socket of its own: `-f` is read when a server starts, so
+	// starting one here would leave the test talking to a server that never
+	// read the config the runner passes.
+	probe := "opp-probe-" + strings.ReplaceAll(t.Name(), "/", "-")
+	if out, err := exec.Command("tmux", "-L", probe, "start-server").CombinedOutput(); err != nil {
 		t.Skipf("tmux cannot start a server here (%s): %v", strings.TrimSpace(string(out)), err)
 	}
+	_ = exec.Command("tmux", "-L", probe, "kill-server").Run() //nolint:errcheck // best effort
+	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
 	t.Cleanup(func() {
 		_ = exec.Command("tmux", "-L", socket, "kill-server").Run() //nolint:errcheck // best effort
 	})

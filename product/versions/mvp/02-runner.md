@@ -18,12 +18,20 @@ Installing it and keeping it current are their own document:
   open. Everything the browser asks for arrives on that link; nothing
   reaches the host from outside (00 §"No ports on the host, ever").
 - **The only local listener is a Unix socket**, `~/.oppenheimer/run/runner.sock`,
-  mode 0600, owned by the user. It serves the git credential helper and
-  the CLI subcommands (`status`, `update`, `sessions`). It is the same
-  `httpx` router and the same `problem` documents the template already
-  has, bound to a `net.Listener` on a socket instead of a TCP port; a
-  loopback TCP port exists only under `RUNNER_LOCAL_HTTP` for
-  development.
+  mode 0600, owned by the user. It answers the git credential helper and
+  the read-only queries `status` uses.
+- It is **its own small router**, not the template's API bound to a
+  socket. `httpx` and `problem` are reused for the middleware and the
+  error documents; `apikeys`, the scope guards, the bearer middleware
+  and `/v1/ws` are not mounted on it and must never be. A host agent
+  that exposes nothing should not carry a copy of the control plane's
+  inbound surface, and the way to keep that true is to keep the route
+  list short enough to read: health, host facts, sessions, updates, and
+  the credential lookup.
+- There are no scopes on that socket. It is 0600 and the caller is the
+  same uid; a bearer model taped onto filesystem permissions would be
+  ceremony. If a local client ever needs to be told apart from another,
+  that is when to add one.
 - **One runner per host.** A `flock` on `~/.oppenheimer/run/runner.lock`
   makes a second start fail loudly instead of fighting over the tmux
   server and the worktrees.
@@ -58,10 +66,9 @@ The research brief's `hypervisor`, `guest` and `proxy` subcommands
 ### 3. Package map
 
 The layout is `apps/runner`'s hexagon
-([ARCHITECTURE.md](../../../apps/runner/ARCHITECTURE.md)), one bounded
-context per area, contexts never importing each other — where two must
-meet, the consumer declares a port and `internal/server` supplies the
-other context's service as the implementation.
+([ARCHITECTURE.md](../../../apps/runner/ARCHITECTURE.md)). The runner has
+three I/O surfaces — one outbound link, one 0600 Unix socket, one sibling
+tmux server — and the contexts follow the aggregates, not the surfaces.
 
 ```
 apps/runner/
@@ -69,81 +76,60 @@ cmd/runner/main.go          signals, flags, subcommand dispatch — no wiring
 internal/
   cli/                      composition root of the subcommands (the host agent)
   server/                   composition root of `serve`, the template's HTTP service
-  host/                     platform, tools, disk: the preflight and the heartbeat's facts
-  pairing/                  registration token, host keypair, host identity, boot JWT
+  pairing/                  identity: registration token, host keypair, boot JWT
+  sessions/                 the aggregate: worktree + tmux session + windows
+    adapters/tmux git manifest state
+  host/                     the inventory a preflight and a heartbeat report
   service/                  the launchd agent and the systemd user unit
-  link/                     the outbound WebSocket: dial, auth, multiplex, heartbeat,
-                            reconnect ladder with epoch, command dispatch, event queue
-  sessions/                 the aggregate and its use cases
-    domain/                 Session, Window, state machine, invariants
-    app/                    create, attach, input, resize, close, restart, adopt
-                            ports: Terminals, Worktrees, Buffers, Classifier, Publisher
-    adapters/tmux           the tmux server on the `oppenheimer` socket + PTY attach
-    adapters/git            mirror, worktree add/remove, push on close
-    adapters/manifest       screen classification and login-URL detection
-  credentials/              per-session GitHub token cache + the credential-helper socket
-  updates/                  channel, check, safe window, staging, rollback, reporting
+  updates/                  channel, safe window, staging, health gate, rollback
   config/ scopes/           as today
 packages/go/
-  selfupdate/               download, verify signature and digest, atomic swap, prune
-                            (domain-agnostic; the policy stays in internal/updates)
+  selfupdate/               verify a signed manifest, swap a binary atomically
 ```
 
-`apikeys` is the template's placeholder for "how does someone authenticate
-to this service"; it goes once `pairing` lands, since the host's identity
-is its keypair and the local socket's callers are local.
+**The link is a port, not a context.** The outbound socket, its reconnect
+ladder and its epoch belong behind a `Link` interface that `sessions` and
+`pairing` use; the transport adapter is wired by the composition root and
+the message vocabulary is 01's. A context called `link` that owned command
+dispatch and an event queue would be a second place where session
+lifecycle lives.
 
-Two composition roots, because the binary has two jobs: `server` builds the
-HTTP service `serve` runs, `cli` builds the host agent. `cmd/runner` only
-dispatches.
+`host` is a context because it has a rule — the order in which a host's
+blocking conditions are reported, root before platform before tools
+before disk — and an error catalog the installer, the CLI and the console
+all render. It is a small one, and it should stay small: everything else
+about a host is heartbeat payload.
 
-New error catalogs follow the existing rule, one per context:
-`HOST_00n`, `PAIR_00n`, `SVC_00n`, `SESS_00n`, `TMUX_00n`, `GIT_00n`,
-`CRED_00n`, `UPD_00n`,
-each with a row under "Runner service" in `apps/docs/docs/errors.md` when
-the code lands. Local-socket routes carry scopes from
-`internal/scopes`: `sessions:read|write`, `credentials:read`,
-`host:read`, `updates:write`.
+`apikeys` is the template's inbound credential surface. It goes when the
+link lands: what dies with it is the TCP listener, the `opr_` keys and
+HS256 as the host's identity.
+
+One error catalog per context, in `<ctx>/domain/errors.go`, and adapters
+map their failures onto it: `TMUX_*` and `GIT_*` are how the tmux and git
+adapters fail, and they live in `sessions`. `RUNNER_*` is the generic
+layer every route shares, from `packages/go/core/problem`. Codes are
+unique and documented, and `internal/arch/catalog_test.go` fails the
+build when either stops being true.
 
 ### 4. The link to the control plane
 
-- **One WebSocket per host, sessions multiplexed** (01 open
-  question 3). A phone with four sessions open is four streams on one
-  socket, not four sockets through the relay.
-- **Framing.** Text frames are JSON control messages. Binary frames are
-  a 4-byte big-endian stream id followed by raw PTY bytes, one frame per
-  PTY read — the header is the minimum multiplexing needs and keeps
-  01's "no JSON wrapping, no base64" for the bytes themselves.
-- **Authentication.** Registration once (09 §3); afterwards every
-  dial carries `Authorization: Bearer <host JWT>`, EdDSA-signed by the
-  host key, five-minute expiry, with `aud` the control plane and a `jti`
-  the control plane may replay-check. The runner pins the control
-  plane's key fingerprint from `config.json` and refuses to speak to
-  anything else (F6). Job payloads carrying secrets are encrypted to the
-  host's public key (F7).
-- **Hello.** The first message after the upgrade carries runner version,
-  protocol range, host facts, and a **snapshot of every session the
-  runner holds**. The control plane reconciles against its own state
-  rather than replaying a queue: events are its source of truth, and a
-  snapshot on reconnect is cheaper and less wrong than a durable outbox
-  on a laptop that may be off for a week.
-- **Heartbeat every 15 s** (01 open question 4) carrying per-session
-  state, host load, free disk on the workspaces filesystem, the versions
-  of `git`, `tmux` and `claude`, and the update channel. The reply may
-  carry hints: `update_available`, `update_required`, `blocked` with a
-  retry-after (note 12).
-- **Reconnect ladder** 0.5 s, 1, 2, 5, 10, 30 with jitter, and an
-  **epoch counter** bumped on every successful connect; frames and
-  callbacks from an older epoch are dropped, so a slow dial that lands
-  late cannot clobber a newer link (note 12).
-- **Flow control.** The browser acks consumed bytes, the control plane
-  relays the credit, and the runner pauses that stream's PTY reads when
-  its window (256 KB) is exhausted. A runaway build stalls its own
-  stream, never the link.
-- **Commands** are `session.create | attach | input | resize |
-  window.open | window.close | close | restart`, `host.preflight`,
-  `host.update`, `credentials.revoke`. Every one is idempotent by
-  session id and command id, because a reconnect may redeliver.
+The wire is [01](01-protocol.md): frame layout and the attachment id,
+hello, heartbeat, the hint vocabulary, the command list, flow control,
+the reconnect ladder, and which three calls are ordinary HTTPS instead.
+What belongs here is what the runner does with it:
+
+- It dials out and keeps one link open. Registration and release
+  manifests are HTTPS and do not need it, which is what lets a runner
+  the control plane refuses on protocol grounds still fetch the version
+  that fixes it (09 §5).
+- On connect it sends the snapshot of what it is holding, and lets the
+  control plane reconcile. The runner keeps no durable outbox: a laptop
+  that was shut for a week has nothing worth replaying, and a snapshot
+  is both cheaper and less wrong.
+- It pauses a PTY when an attachment's window is exhausted, so one
+  runaway build stalls its own pane.
+- It survives the link being down indefinitely. Sessions keep running;
+  tmux does not care.
 
 ### 5. Sessions
 
@@ -275,31 +261,41 @@ write, not an error after (note 12).
 
 ### 11. State on disk
 
+One tree, named here and pointed at from 09:
+
 ```
 ~/.oppenheimer/
-  config.json    0600  control plane URL, host id, key fingerprint, channel, pin
-  host.key       0600  the ed25519 private key (F8; rotation supported)
-  state.json     0600  session id → worktree, branch, repo, agent: the adoption map
-  state/update.json 0600  what the last update did, and how often it has booted
-  bin/                 runner-<version> binaries and the `current` symlink (09 §5)
-  run/                 runner.sock, runner.lock
-  log/                 runner.log, rotated at 10 MB × 3
+  config.json          0600  control plane URL, host id, key fingerprint, channel, pin
+  host.key             0600  the ed25519 private key (F8; rotation supported)
+  state/sessions.json  0600  session id → worktree, branch, repo, agent
+  state/update.json    0600  what the last update did, and how often it has booted
+  manifests/                 agent manifests newer than the bundled ones (§9)
+  bin/                       runner-<version> binaries and the `current` symlink (09 §5)
+  run/                       runner.sock, runner.lock
+  log/                       runner.log, rotated at 10 MB × 3
 ~/oppenheimer-ai/workspaces/<repo>/main and /worktrees/<slug>   the user's code
 ```
 
-`state.json` is written atomically and is a cache: the control plane is
-the source of truth and tmux is the live registry. It exists so a runner
-that boots before the link comes up still knows which tmux session is
-which. Logs never contain PTY bytes or tokens. Nothing else is
-persisted; SQLite is the upgrade path if durable offline event buffering
-ever earns its place.
+**The boot path trusts tmux.** It is the only one of the three that
+cannot be stale: a tmux session either exists on our socket or it does
+not. `state/sessions.json` is a cache that says which of those sessions
+is which, and the control plane is the source of truth for what *should*
+exist — which is a different question, and one the runner cannot ask
+while the link is down.
+
+So the runner never kills a session on boot. It adopts what tmux still
+holds, marks the rest stopped, and **reports** a tmux session with our
+prefix that no record claims rather than reaping it after a grace
+period. Ending someone's session is a decision the control plane makes
+with its own state in hand, not a side effect of a laptop booting
+offline. Logs never contain PTY bytes or tokens.
 
 ### 12. Failure modes
 
 | Situation | What the runner does |
 |---|---|
 | Link down | Sessions keep running in tmux. Reconnect ladder, new epoch, snapshot on hello |
-| Control plane says the runner is too old | Auto-update now, outside the safe window (09 §6) |
+| Control plane says the runner is too old | Update within the urgent delay, ignoring the safe window (09 §5) |
 | Runner killed or updated | tmux untouched; adopt on boot, rehydrate buffers, resume streams |
 | Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0 |
 | `tmux` missing | Sessions refuse to start with `TMUX_001`; the UI shows the fix |

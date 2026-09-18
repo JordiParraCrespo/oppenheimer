@@ -80,13 +80,11 @@ earlier note:
   with the account as its single owner member, created at sign-up. No
   roster, no invitations, no teams are exposed in the MVP
   (`versions/mvp/08-auth.md`).
-- The MVP's out-list deferred signed auto-update. It is now in the MVP:
-  a host that can only be updated by the user pasting the install command
-  again does not survive the first ten hosts, and the protocol needs the
-  update-required hint regardless. The runner self-updates from artifacts
-  signed with an offline key whose public half is compiled into the
-  binary, so the control plane offers versions and never supplies code
-  (`versions/mvp/09-runner-install-and-update.md`, security finding F26).
+- Signed self-update moved from `versions/mvp/00-scope.md`'s out-list
+  into the MVP. What changed is *when*, not what: F26 always said signed
+  updates the control plane cannot forge. Design in
+  `versions/mvp/09-runner-install-and-update.md`; F26 is now on the 07
+  checklist.
 - Note 03 cited herdr from its website. Note 13 reads its source: the
   architecture matches ours, but herdr owns the PTYs, so its agents do not
   survive a restart. Our tmux layer is what buys that, at the cost of

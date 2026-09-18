@@ -66,7 +66,14 @@ rather than producing a second one.
    download — there is no "continue anyway" flag.
 5. **Place** it at `~/.oppenheimer/bin/runner-<version>`, point the
    `current` symlink at it, and drop a shim at
-   `~/.local/bin/oppenheimer-runner`. On macOS strip the quarantine
+   `~/.local/bin/oppenheimer-runner`.
+
+   One artifact, three paths, and they are not three names: the command
+   a person types is **`oppenheimer-runner`** (the shim on `PATH`); the
+   file inside the release archive and the layout is `runner`, because
+   the layout is already `~/.oppenheimer/bin`; the service unit executes
+   `current`, never a version. These notes write `runner <subcommand>`
+   for brevity and mean the shim. On macOS strip the quarantine
    attribute (`xattr -d com.apple.quarantine`) until the binary is
    signed; a plain binary and a launchd user agent need no notarization,
    only a `.app` would.
@@ -140,14 +147,14 @@ putting the user's credentials on it.
   (`scripts/runner/sign-release.sh`). A build made without a key refuses
   every update rather than trusting one: the alternative to "no key" is
   "no updates", never "unsigned updates".
-- **The manifest.** The control plane serves
-  `GET /v1/runner/releases?channel=…&os=…&arch=…` with the version, the
-  artifact URL, its digest, the signature, and `min_supported`. The
-  control plane may choose *which* version a host is offered — a
-  percentage rollout, an allowlist, a stop — but it cannot invent one:
-  the runner installs only what the offline key signed, from the release
-  host pinned in `config.json`. A compromised control plane can withhold
-  updates, not deliver code.
+- **The manifest.** The release host serves `<base>/<channel>.json` and
+  its detached signature; the base is pinned in `config.json` at
+  registration. The runner installs only what the offline key signed,
+  and only an artifact whose URL is on that host. Which version a host
+  is offered — a percentage rollout, an allowlist, a stop — and the
+  route that serves it are the control plane's, and they are specified
+  in [03](03-control-plane.md) §"Runner-facing surfaces". A compromised
+  control plane can withhold updates; it cannot deliver code.
 - **Channels and pinning.** `stable` by default, `beta` opt-in per host
   in Settings, and `runner update --pin <version>` freezes a host
   entirely; the console shows pinned hosts as pinned, because a host
@@ -171,24 +178,50 @@ putting the user's credentials on it.
      the rename is atomic.
   2. Verify digest and signature. Any mismatch aborts and the staging
      directory is emptied.
-  3. `chmod 0755`, strip quarantine on macOS, then run
-     `runner-<version> selfcheck`: the **new binary** proves it can
-     parse the config and speak a protocol range the control plane
-     accepts. A wrong-arch, truncated or incompatible binary dies here,
-     while the old one is still the service.
+  3. `chmod 0700`, strip quarantine on macOS, then run
+     `runner-<version> selfcheck`.
   4. `rename()` into place, then repoint `current` by creating a temp
      symlink and renaming it over the old one.
-  5. Record `{from, to, at, attempts}` in `~/.oppenheimer/state/update.json`.
-  6. Restart through the service manager — `launchctl kickstart -k` or
-     `systemctl --user restart` — and if that fails, exit so `KeepAlive`
-     or `Restart=always` brings the new binary up.
-- **The health gate and rollback.** The new process must reach online —
-  link authenticated, sessions adopted — within 60 s and stay up for
-  five minutes; then it marks the update record good. A process that
-  boots and finds a *pending* record with two attempts already spent
-  repoints `current` at the previous version, restarts, and reports
-  `update_failed` with the last lines of its log. The previous two
-  versions stay on disk for exactly this; older ones are pruned.
+  5. Record the update, then restart through the service manager —
+     `launchctl kickstart -k` or `systemctl --user restart` — and if
+     that fails, exit so `KeepAlive` or `Restart=always` brings the new
+     binary up.
+
+- **What `selfcheck` is.** The staged binary proves it runs *on this
+  machine*: it resolves its layout, parses the identity, and reports its
+  version, target and platform. It does **not** dial the control plane,
+  and it must not: a second process taking the flock, the socket or the
+  host JWT while the daemon is live is a worse failure than the one it
+  would catch. A protocol mismatch is caught at hello by the runner that
+  actually dials, and the escape hatch for that is the release fetch
+  being plain HTTPS (01).
+
+- **The state machine.** Four states, one transition table, because a
+  paragraph is where special cases come from:
+
+  | State | Means | Leaves it when |
+  |---|---|---|
+  | `staging` | downloading and verifying; nothing on disk is live | verification fails (→ gone, staging emptied) or the binary is promoted (→ `pending`) |
+  | `pending(n)` | `current` points at the new version; `n` boots have started and none has reached the gate | the new process stays up for the health gate (→ `healthy`), or `n` reaches 2 (→ `rolled_back`) |
+  | `healthy` | the update is done | never; the record is closed and the old binaries are pruned to the running one and its predecessor |
+  | `rolled_back` | `current` points at the previous version again | never; the outcome is reported and the release is not retried until a newer one appears |
+
+  `n` increments **once per boot of the new binary**, in the running
+  process, before anything else — not at download, not at selfcheck, not
+  at restart. So a binary that crashes on start gets exactly two
+  attempts however fast `KeepAlive` respawns it.
+
+- **What rollback may touch.** `current`, and the update record. Not
+  `config.json`, not `host.key`, not the session map: a new version that
+  came up far enough to rewrite the identity and then died is a bug to
+  report, not state to revert, and reverting it would risk losing a key
+  rotation the control plane already knows about.
+
+- **One clock.** An urgent or required update applies within
+  `UrgentDelay` (15 minutes) — there is no "immediately". Everything
+  else waits for a quiet moment, capped at 24 hours. 02 §12 says the
+  same thing in one line and points here.
+
 - **Manual control.** `runner update [--check] [--version x.y.z]
   [--pin|--unpin]` from the host, and an Update now button in the
   console that sends `host.update` over the link. Both go through the
@@ -220,7 +253,8 @@ putting the user's credentials on it.
 | Attack | Why it fails |
 |---|---|
 | Control plane compromised, pushes a malicious runner | It cannot sign the manifest; the offline key is not in CI, let alone in the control plane |
-| Release host compromised, serves a different binary | Digest and signature are checked after download, from a key compiled into the running binary |
+| Release host compromised, serves a different binary **to an installed runner** | Digest and signature are checked after download, against a key compiled into the running binary |
+| Release host compromised **during a first install** | Not prevented. `install.sh` is fetched over HTTPS and trusted on first use; a host that serves both the script and the manifest can replace both. The mitigations are the digest shown on the Add host screen, the token's single hour, and keeping the script host, the artifact host and the control plane separate (03). F26 begins at the first self-update — see F26a in 07 |
 | Registration token stolen | One hour, one use, one host added to that workspace; the source IP is shown and it can be revoked |
 | Host key stolen | It only authenticates a dial; rotation is a subcommand, revocation is a click, and the console shows the last dial |
 | Someone tricks the user into `sudo`-ing the installer | It refuses to run as root before it does anything else |

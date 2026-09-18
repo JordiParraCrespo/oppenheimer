@@ -160,3 +160,27 @@ func TestCredentialHelperIgnoresStoreAndErase(t *testing.T) {
 		}
 	}
 }
+
+func TestSelfCheckRunsWhileTheDaemonHoldsTheLock(t *testing.T) {
+	t.Setenv(cli.EnvHome, filepath.Join(t.TempDir(), ".oppenheimer"))
+	app, err := cli.New("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A staged binary runs `selfcheck` while the live daemon is running.
+	// If it took the lock — or the socket, or the host key — the check
+	// would be a worse failure than the one it exists to catch.
+	release, err := cli.Lock(app.Paths.Lock())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+
+	report, err := app.SelfCheck(context.Background())
+	if err != nil {
+		t.Fatalf("selfcheck must not need the lock: %v", err)
+	}
+	if !strings.Contains(string(report), "\"version\"") {
+		t.Fatalf("report = %s", report)
+	}
+}

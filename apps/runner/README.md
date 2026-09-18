@@ -21,6 +21,12 @@ from a browser, and the git credential helper answers "I have none" because
 the token it would hand git is minted by the control plane over that link.
 Both are the next slice, in the order `apps/runner/ARCHITECTURE.md` lists.
 
+`runner serve` and the `apikeys` context are the template this grew from:
+an inbound API-key surface on a TCP port, which is what the container
+image runs and what the API talks to today. **Nothing product-shaped
+should be built on the key-minting endpoints** — pairing replaces them as
+the way this host proves who it is, and they go when the link lands.
+
 ## Subcommands
 
 | Command | What it does |

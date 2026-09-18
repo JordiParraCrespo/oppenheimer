@@ -13,9 +13,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | # | Document | Covers |
 |---|----------|--------|
 | 00 | [Scope](00-scope.md) | The exact feature list, in and out, and the demo scene it must satisfy |
-| 01 | [Protocol](01-protocol.md) | Messages between browser, control plane, and runner; PTY frames; tickets; events |
+| 01 | [Protocol](01-protocol.md) | **The wire**: the two sockets and their two shapes, frame layout and the attachment id, hello, heartbeat, hints, the command list, and which calls are HTTPS instead |
 | 02 | [Runner](02-runner.md) | The Go binary: process shape, subcommands, package map, the link, sessions, tmux, streaming, credentials, screen manifests, state, failure modes |
-| 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, sleep scheduler |
+| 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, and the runner-facing surfaces: register, host JWTs, the link's server half, release rollout |
 | 04 | [Guest image](04-guest-image.md) | Deferred with the VM slice; kept for later |
 | 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, settings drawer; components and states |
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
@@ -75,3 +75,18 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   public half is compiled into the binary, a manifest the control plane
   serves but cannot forge, a safe window, selfcheck before the swap, a
   health gate and automatic rollback.
+- 2026-09-18: review pass on the design, and the notes moved to match it.
+  01 now owns the wire — 02 §4 had grown a second copy of it — and names
+  the **attachment** (one PTY on one window for one browser connection)
+  as what the 4-byte stream id identifies; the two sockets have two
+  shapes on purpose. Registration, uninstall and the release manifest are
+  ordinary HTTPS, which is what lets a runner the control plane refuses
+  on protocol grounds still fetch the version that fixes it. 03 takes the
+  control-plane half 09 had been specifying from outside, and 05 takes
+  the host row (version, channel, pin, last outcome). 09's swap is a
+  four-state transition table rather than a paragraph, and says what
+  `selfcheck` is allowed to do — not dial the control plane, not take the
+  lock. F26 keeps its rootfs-image half (deferred with the VM slice) and
+  gains F26a: first install is trust-on-first-use, so F26 begins at the
+  first self-update, not at install. The link is a **port**, not a
+  bounded context.

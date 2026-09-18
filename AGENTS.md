@@ -41,14 +41,11 @@ decisions that changed along the way.
   silently rewrite history in earlier notes.
 - The one-page brief `product/brief.html` is regenerated from the notes;
   keep it in sync when a note changes.
-- The Go runner (`apps/runner`) is the host agent from the notes: it will
-  own worktrees, tmux, PTY streaming, the git credential helper and its
-  own signed updates. The NestJS API is the control plane. The runner is
-  designed in full in `product/versions/mvp/02-runner.md` (process shape,
-  subcommands, package map, the link, sessions, failure modes) and
-  `product/versions/mvp/09-runner-install-and-update.md` (install, pairing,
-  the user service, releases, self-update, rollback); the context roadmap
-  those notes imply is in `apps/runner/ARCHITECTURE.md`.
+- The Go runner (`apps/runner`) is the host agent: worktrees, tmux, PTY
+  streaming, the git credential helper and its own signed updates. The
+  NestJS API is the control plane. Designed in
+  `product/versions/mvp/02-runner.md` and `…/09-runner-install-and-update.md`;
+  the wire between them is `…/01-protocol.md`.
 
 ## Monorepo structure
 

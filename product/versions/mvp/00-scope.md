@@ -56,14 +56,12 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   pushes the branch and removes the worktree.
 - **Hosted control plane** in the same Hetzner region as your hosts,
   public HTTPS for the browser, outbound WebSocket from runners.
-- **The runner keeps itself current.** Releases are signed with an
-  offline key whose public half is compiled into the binary; the control
-  plane offers a version and can stage a rollout, but can never hand a
-  host code to run. The runner applies an update when no session is
-  working and no client is attached, verifies the staged binary before
-  it becomes the service, and rolls back automatically if the new one
-  does not come up. Sessions live in tmux, so an update costs a
-  reconnect and nothing else (09 §5).
+- **The runner keeps itself current**, and three things hold whatever
+  the policy around them turns out to be: an update is a signed
+  artifact, the control plane can offer a version but never mint code,
+  and sessions survive the swap because they live in tmux. When it
+  applies — channels, the quiet window and what overrides it — is 09 §5,
+  and that is the only place those clocks are written.
 
 ## Out, for later slices
 
