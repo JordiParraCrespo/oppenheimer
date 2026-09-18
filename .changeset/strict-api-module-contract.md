@@ -1,6 +1,5 @@
 ---
 "@oppenheimer/api": minor
-"@oppenheimer/translations": patch
 ---
 
 Make the API's Domain-Driven Hexagon layout a contract a machine enforces,
@@ -153,8 +152,3 @@ because the two other paths that raise it are in `organizations`, and
 `database/seed.ts` is exempt from `no-cross-module-internals` for the reason it
 is already exempt from the Better Auth rule: it is a composition root of its
 own, with no command bus.
-
-`ROLE_007` (`SYSTEM_ROLE_MISSING`) had a catalog entry and a docs row but no
-`errors.byCode` message in either locale, so a missing system role reached a
-client as the generic fallback. The new error-catalog fixture found it.
-

@@ -1,6 +1,5 @@
 ---
 "@oppenheimer/design-system-web": minor
-"@oppenheimer/design-system-mobile": minor
 ---
 
 Rebrand the design system onto the Alpaca Labs visual language, on both web and
@@ -37,12 +36,6 @@ brand's anatomy — 244px wide, 8px nav rows that fill with `--surface-sunken`
 when active, and blue count pills in the trailing slot. A new `BrandMark`
 component ships the geometric eight-arm asterisk.
 
-The mobile package mirrors all of it in the bare-HSL form NativeWind needs, with
-hairlines flattened to solid values because React Native cannot composite an
-rgba border token. Mobile colours are now declared with `<alpha-value>`, so
-opacity modifiers like `bg-primary/90` resolve — previously Tailwind dropped
-them silently.
-
 `CommandDialog` gains the `<Command>` wrapper it was missing. Without it the
 children (`CommandInput`, `CommandList`, …) read cmdk's context before any
 provider exists and throw on mount, so the component could not be used at all —
@@ -61,14 +54,6 @@ serving them yourself.
 
 `Label` drops to 13px regular in secondary ink — the brand's field label,
 rather than shadcn's 14px medium.
-
-SF Pro is now **self-hosted**. It was on the system stack, which falls back to
-something else entirely off Apple platforms, so the type never matched the
-brand. Shipped as four woff2 faces (Text and Display, 400/500 — there is no
-bold in this system), subset to Latin plus the punctuation and symbols the UI
-renders: 197KB in total, against 8.9MB of source OTF. Note the licence — SF Pro
-is Apple's, under a licence that permits interface use; confirm it covers your
-distribution before shipping to a customer.
 
 The showcase was then verified **against the brand's own exported design-system
 page**, section by section, on rendered geometry rather than by eye: 40 of its
