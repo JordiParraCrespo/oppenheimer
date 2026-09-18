@@ -12,7 +12,7 @@ product, not the pack.
 Every capture here is a **laptop screen** — 1440×900 at 2× scale, written out at
 2880×1800. Where a screen does not fit a laptop, the run report says how much sat
 below the fold rather than cropping it silently; see "The screenshots are a
-laptop" in [`qa/README.md`](../../qa/README.md).
+laptop" in [`qa/README.md`](../../../qa/README.md).
 
 `run-report.md` is `qa/artifacts/report.md` with one edit, made by
 `qa publish`: the captures live in a `screenshots/` subdirectory there and flat

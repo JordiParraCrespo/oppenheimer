@@ -3,7 +3,7 @@
 Typed API client **auto-generated** from the API's OpenAPI/Swagger spec.
 Consumed by `@oppenheimer/frontend`.
 
-> Read the root [`CLAUDE.md`](../../CLAUDE.md) first.
+> Read the root [`CLAUDE.md`](../../../CLAUDE.md) first.
 
 ## Important: generated code
 
