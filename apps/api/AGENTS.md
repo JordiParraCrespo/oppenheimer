@@ -68,15 +68,28 @@ such concept, so it is an aggregate, a repository port and a command handler
 (`organizations/commands/provision-personal-workspace/`), not another
 `auth.api` call. The test is whose rule it is, not which module it lands in.
 
-**Better Auth hooks reach the app through the command bus.** `auth/auth.ts` is
-configured at module scope — it has to be, because the handler is mounted on
-the HTTP adapter before Nest builds its injector — so its `databaseHooks`
-cannot inject anything. They dispatch commands through `dispatchFromAuthHook`
-(`src/auth/auth-command-bus.ts`), which `AuthCommandBusBridge` fills in on
-module init. Never write SQL in a hook: that is how the product's own rules
-ended up as `INSERT` statements no domain object knew about. Dispatches from a
-hook are best-effort and logged — Better Auth does not await `after` hooks, so
-a throw there would be an unhandled rejection rather than a failed request.
+**A Better Auth hook may read. It may not write a product rule.** `auth/auth.ts`
+is configured at module scope — it has to be, because the handler is mounted on
+the HTTP adapter before Nest builds its injector — so its `databaseHooks` can
+inject nothing, and anything they do reach for is reached for directly.
+
+A read is allowed to stay a query on Better Auth's own pool. `session.create.before`
+is the standing example: it picks the organization a returning user lands in,
+it has to answer before the session row is written, and getting it wrong costs
+a redirect. Keep such a query in one labelled block that says what it decides.
+
+A **write that encodes a product rule** — what an account is owed, what it may
+do, what it belongs to — never goes in a hook. That is how the personal
+workspace ended up as `INSERT` statements no domain object knew about. The hook
+raises one command (`CompleteSignUpCommand`) through `dispatchFromAuthHook`
+(`src/auth/auth-command-bus.ts`), and a handler that *can* inject decides what
+that means. The hook names no module: a new side effect is a change to
+`CompleteSignUpService`, not another import here.
+
+Dispatches from a hook are best-effort and logged — Better Auth does not await
+`after` hooks, so a throw there would be an unhandled rejection rather than a
+failed request. Outside the API (the seed) there is no command bus, and the
+script owes itself those side effects by calling the handlers directly.
 
 **Wrap every `auth.api.*` call in the module's own invoker** —
 `invokeOrganizationApi` (`organizations/organization-error.mapper.ts`) or

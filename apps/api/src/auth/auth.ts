@@ -11,9 +11,8 @@ import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { orUndefined } from '../config/env';
-import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
-import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { dispatchFromAuthHook } from './auth-command-bus';
+import { CompleteSignUpCommand } from './commands/complete-sign-up/complete-sign-up.command';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue';
 import { buildInvitationUrl } from './invitation-url';
 
@@ -282,29 +281,19 @@ export const auth = betterAuth({
             userId: user.id,
             name: user.name,
           });
-          // What sign-up owes a new account, as two use cases rather than two
-          // SQL statements. Better Auth is configured outside the injector, so
-          // the hook reaches them through `dispatchFromAuthHook` — see
-          // `auth-command-bus.ts` for why that seam exists and why both calls
-          // are best-effort.
-          //
-          // The default `user` role first: it is what the account's
-          // permissions are read from, and the workspace is of no use without
-          // it. Then the personal workspace itself — one organization with the
-          // account as its single owner, plus the org-scoped `owner` role that
-          // opens it, written in one transaction so a half-provisioned
-          // workspace cannot exist.
-          await dispatchFromAuthHook(new AssignDefaultRoleCommand({ userId: user.id }), {
-            description: 'assign the default role to a new account',
-            email: user.email,
-          });
+          // Sign-up finished; the application decides what that owes. This
+          // file says only that, and names no module that fulfils it — the
+          // orchestration is `CompleteSignUpService`, which can inject a
+          // command bus where this hook cannot inject anything. See
+          // `auth-command-bus.ts` for why that seam exists and why the
+          // dispatch is best-effort.
           await dispatchFromAuthHook(
-            new ProvisionPersonalWorkspaceCommand({
+            new CompleteSignUpCommand({
               userId: user.id,
               email: user.email,
               name: user.name,
             }),
-            { description: 'provision the personal workspace', email: user.email },
+            { description: 'complete sign-up for a new account', email: user.email },
           );
         },
       },

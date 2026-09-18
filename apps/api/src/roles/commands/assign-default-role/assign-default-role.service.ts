@@ -1,10 +1,9 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { AppError } from '@oppenheimer/backend-core';
 import { ROLES } from '@oppenheimer/shared';
 import type { RoleRepositoryPort } from '../../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../../database/user-role.repository.port';
-import { RoleErrors } from '../../domain/role.errors';
+import { missingSystemRole } from '../../missing-system-role';
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../../roles.di-tokens';
 import { AssignDefaultRoleCommand } from './assign-default-role.command';
 
@@ -30,12 +29,9 @@ export class AssignDefaultRoleService implements ICommandHandler<AssignDefaultRo
     // Global scope: the default role applies wherever the account goes, unlike
     // the org-scoped `owner` its personal workspace grants.
     const role = await this.roles.findOneByName(ROLES.USER, null);
-    if (role.isNone()) {
-      throw new AppError(RoleErrors.NOT_FOUND, {
-        detail: `The default system role "${ROLES.USER}" is missing. Run the migrations.`,
-        extensions: { userId: command.userId },
-      });
-    }
+    // Not `NOT_FOUND`: nobody asked for this role by name, so a 404 would
+    // describe a caller mistake that did not happen. See `missingSystemRole`.
+    if (role.isNone()) throw missingSystemRole(ROLES.USER, command.userId);
 
     await this.userRoles.assignRoleToUser(command.userId, role.unwrap().id, null);
   }

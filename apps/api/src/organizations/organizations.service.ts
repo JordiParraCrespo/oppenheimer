@@ -17,6 +17,7 @@ import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import type { RoleRepositoryPort } from '../roles/database/role.repository.port';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import type { UserRoleRepositoryPort } from '../roles/database/user-role.repository.port';
+import { missingSystemRole } from '../roles/missing-system-role';
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles/roles.di-tokens';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
@@ -473,7 +474,11 @@ export class OrganizationsService {
   ): Promise<void> {
     const roleName = applicationRoleFor(organizationRole);
     const role = await this.roles.findOneByName(roleName, null);
-    if (role.isNone()) throw new Error(`Required system role "${roleName}" is missing`);
+    // The same catalog entry the sign-up path raises. Two writers reaching for
+    // the same missing role used to answer two different shapes — a bare
+    // `Error` here (a 500 with no code) and a problem document there — which is
+    // the slug duplication again, in the failure path.
+    if (role.isNone()) throw missingSystemRole(roleName);
     await this.userRoles.setRolesForUser(userId, [role.unwrap().id], organizationId);
   }
 

@@ -1,3 +1,4 @@
+import type { EntityManager } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 
 /**
@@ -23,6 +24,16 @@ export interface UserRoleRepositoryPort {
    * sign-up handing a new account its default role, which must not be able to
    * revoke anything. Granting a role the user already holds in that scope is a
    * no-op, so the operation is safe to repeat.
+   *
+   * `manager` enlists the grant in a transaction the caller already owns, which
+   * is what lets the personal workspace write its organization, its membership
+   * and this grant as one unit without a second writer against `user_role`.
+   * Omitted, the grant runs in its own transaction as any other write does.
    */
-  assignRoleToUser(userId: string, roleId: string, organizationId?: string | null): Promise<void>;
+  assignRoleToUser(
+    userId: string,
+    roleId: string,
+    organizationId?: string | null,
+    manager?: EntityManager,
+  ): Promise<void>;
 }

@@ -2,6 +2,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoleRepositoryPort } from '../../../../roles/database/role.repository.port';
+import { RoleErrors } from '../../../../roles/domain/role.errors';
 import type { PersonalWorkspaceRepositoryPort } from '../../../database/personal-workspace.repository.port';
 import type { PersonalWorkspaceEntity } from '../../../domain/personal-workspace.entity';
 import { ProvisionPersonalWorkspaceCommand } from '../provision-personal-workspace.command';
@@ -18,31 +19,34 @@ describe('ProvisionPersonalWorkspaceService', () => {
   let workspaces: PersonalWorkspaceRepositoryPort;
   let roles: Pick<RoleRepositoryPort, 'findOneByName'>;
 
+  /** The aggregate handed to the repository by the last call. */
+  const written = () => vi.mocked(workspaces.provision).mock.calls[0][0] as PersonalWorkspaceEntity;
+
   beforeEach(() => {
-    workspaces = {
-      belongsToAnyOrganization: vi.fn().mockResolvedValue(false),
-      insert: vi.fn().mockResolvedValue(undefined),
-    };
-    roles = {
-      findOneByName: vi.fn().mockResolvedValue(Some({ id: 'owner-role-uuid' })),
-    };
+    workspaces = { provision: vi.fn().mockResolvedValue(true) };
+    roles = { findOneByName: vi.fn().mockResolvedValue(Some({ id: 'owner-role-uuid' })) };
     service = new ProvisionPersonalWorkspaceService(
       workspaces,
       roles as unknown as RoleRepositoryPort,
     );
   });
 
-  it('writes the organization, the owner membership and the role grant as one aggregate', async () => {
+  it('hands the repository every row the workspace is made of', async () => {
     const organizationId = await service.execute(command);
 
-    expect(workspaces.insert).toHaveBeenCalledTimes(1);
-    const written = vi.mocked(workspaces.insert).mock.calls[0][0] as PersonalWorkspaceEntity;
-    expect(written.id).toBe(organizationId);
-    expect(written.ownerId).toBe('user-uuid');
-    expect(written.name).toBe('Ada Lovelace');
-    expect(written.ownerRoleId).toBe('owner-role-uuid');
-    // The event the outbox stages inside the same transaction as the write.
-    expect(written.domainEvents).toHaveLength(1);
+    const workspace = written();
+    expect(workspace.id).toBe(organizationId);
+    // The organization.
+    expect(workspace.name).toBe('Ada Lovelace');
+    expect(workspace.slug.value).toMatch(/^ada-lovelace-[0-9a-f]{8}$/);
+    // The membership, with an identity of its own.
+    expect(workspace.ownerId).toBe('user-uuid');
+    expect(workspace.membershipId).toBeTruthy();
+    expect(workspace.membershipId).not.toBe(workspace.id);
+    // The grant without which the owner cannot open it.
+    expect(workspace.ownerRoleId).toBe('owner-role-uuid');
+    // Staged on the outbox by the repository, inside the same transaction.
+    expect(workspace.domainEvents).toHaveLength(1);
   });
 
   it('grants the global `owner` system role, not one scoped to a tenant', async () => {
@@ -51,13 +55,23 @@ describe('ProvisionPersonalWorkspaceService', () => {
     expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
   });
 
-  it('leaves an account that already belongs to an organization alone', async () => {
-    vi.mocked(workspaces.belongsToAnyOrganization).mockResolvedValue(true);
+  it('answers null when the repository declined to write', async () => {
+    vi.mocked(workspaces.provision).mockResolvedValue(false);
 
-    // `null`, not a throw: "already had one" is a success for every caller, and
-    // both the sign-up hook and the seed provision the same account.
+    // "Already had one" is a success for every caller: sign-up and the seed
+    // both provision the same account, and the seed is the repair path.
     await expect(service.execute(command)).resolves.toBeNull();
-    expect(workspaces.insert).not.toHaveBeenCalled();
+  });
+
+  it('leaves the decision not to write to the repository, which sees the transaction', async () => {
+    vi.mocked(workspaces.provision).mockResolvedValue(false);
+
+    await service.execute(command);
+
+    // The handler does not pre-check membership: a check here could only be
+    // stale by the time the write ran, so it always offers the aggregate and
+    // the repository decides inside the transaction that would write it.
+    expect(workspaces.provision).toHaveBeenCalledTimes(1);
   });
 
   it('refuses to create a workspace nobody could open', async () => {
@@ -66,7 +80,9 @@ describe('ProvisionPersonalWorkspaceService', () => {
     // The migration installs the `owner` role, so its absence means the
     // database is behind the code — better to write nothing than an
     // organization its owner is refused from.
-    await expect(service.execute(command)).rejects.toBeInstanceOf(AppError);
-    expect(workspaces.insert).not.toHaveBeenCalled();
+    const error = await service.execute(command).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AppError);
+    expect((error as AppError).code).toBe(RoleErrors.SYSTEM_ROLE_MISSING.code);
+    expect(workspaces.provision).not.toHaveBeenCalled();
   });
 });

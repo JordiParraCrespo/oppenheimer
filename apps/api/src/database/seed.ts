@@ -1,10 +1,9 @@
 import '@oppenheimer/env/load';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import type { Role } from '@oppenheimer/shared';
-import { DataSource, IsNull } from 'typeorm';
+import { ROLES, type Role } from '@oppenheimer/shared';
+import { DataSource } from 'typeorm';
 import { ApiTokenOrmEntity } from '../api-tokens/database/api-token.orm-entity';
 import { auth, closeAuthConnections } from '../auth/auth';
-import { registerAuthCommandDispatch } from '../auth/auth-command-bus';
 import { Account } from '../auth/entities/account.entity';
 import { OAuthAccessTokenOrmEntity } from '../auth/entities/oauth-access-token.entity';
 import { OAuthApplicationOrmEntity } from '../auth/entities/oauth-application.entity';
@@ -18,7 +17,6 @@ import { InvitationOrmEntity } from '../organizations/database/invitation.orm-en
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
-import { PersonalWorkspaceMapper } from '../organizations/personal-workspace.mapper';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleService } from '../roles/commands/assign-default-role/assign-default-role.service';
@@ -145,39 +143,25 @@ async function seed() {
   // their adapters are plain classes, so constructing them here costs one
   // expression each and keeps there being exactly one implementation of "the
   // default role" and "a personal workspace".
+  //
+  // The sign-up hook fires while seeding too, but finds no command bus outside
+  // the API and does nothing — so this script owes itself these side effects,
+  // and calls the handlers directly rather than installing a second bus for
+  // the hook to reach. That is also what repairs a database seeded before the
+  // personal workspace existed: both handlers are idempotent.
+  const roleMapper = new RoleMapper();
   const roleRepository = new RoleRepository(
     roleRepo,
     dataSource,
-    new RoleMapper(),
+    roleMapper,
     new OutboxService(dataSource),
   );
-  const assignDefaultRole = new AssignDefaultRoleService(
-    roleRepository,
-    new UserRoleRepository(userRoleRepo, roleRepo, new RoleMapper()),
-  );
+  const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
+  const assignDefaultRole = new AssignDefaultRoleService(roleRepository, userRoleRepository);
   const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceService(
-    new PersonalWorkspaceRepository(
-      dataSource.getRepository(MemberOrmEntity),
-      new PersonalWorkspaceMapper(),
-      new OutboxService(dataSource),
-    ),
+    new PersonalWorkspaceRepository(dataSource, new OutboxService(dataSource), userRoleRepository),
     roleRepository,
   );
-
-  // Seeding creates its accounts through `auth.api.signUpEmail`, which fires
-  // the same sign-up hook a real registration does — and that hook dispatches
-  // through `auth-command-bus.ts`, which only the running API fills in. Point
-  // it at the handlers above so a seeded account is provisioned exactly as a
-  // registered one is, instead of the hook logging that nothing is listening.
-  registerAuthCommandDispatch(async (command) => {
-    if (command instanceof AssignDefaultRoleCommand) {
-      return (await assignDefaultRole.execute(command)) as never;
-    }
-    if (command instanceof ProvisionPersonalWorkspaceCommand) {
-      return (await provisionPersonalWorkspace.execute(command)) as never;
-    }
-    throw new Error(`The seed has no handler for ${command.constructor.name}`);
-  });
 
   for (const seedUser of seedUsers) {
     const existing = await userRepo.findOneBy({ email: seedUser.email });
@@ -198,38 +182,26 @@ async function seed() {
     // Elevate the role and mark the email verified (not settable on sign-up).
     await userRepo.update({ email: seedUser.email }, { role: seedUser.role, emailVerified: true });
 
-    // Assign the matching role through the RBAC join (roles are seeded by the
-    // migration). If the role table isn't migrated yet, the AbilityFactory's
-    // legacy fallback still grants the right permissions.
+    // Elevate this account to its seed role. Only the elevation is written
+    // here: the default `user` grant every account gets belongs to
+    // `AssignDefaultRoleService`, which the loop below runs for all of them.
     const user = await userRepo.findOneBy({ email: seedUser.email });
     const role = await roleRepo.findOneBy({ name: seedUser.role });
-    if (user && role) {
-      // Not `upsert`: the join's uniqueness is enforced by two *partial*
-      // indexes (global assignments where `organizationId IS NULL`, scoped ones
-      // where it is not), and Postgres cannot infer a partial index from a bare
-      // `ON CONFLICT (userId, roleId)`. The seed only ever writes the global
-      // assignment, so check for it and insert.
-      const assigned = await userRoleRepo.findOneBy({
-        userId: user.id,
-        roleId: role.id,
-        organizationId: IsNull(),
-      });
-      if (!assigned) {
-        await userRoleRepo.insert({ userId: user.id, roleId: role.id });
-      }
+    if (user && role && seedUser.role !== ROLES.USER) {
+      await userRoleRepository.assignRoleToUser(user.id, role.id, null);
     }
 
     console.log(`Created ${seedUser.role} user: ${seedUser.email}`);
   }
 
-  // Every account gets the personal workspace sign-up would have given it: one
-  // organization, one owner member, no team. The hook above already did this
-  // for the accounts just created; running it again is what makes the
-  // invariant explicit, and what repairs a database seeded before it existed.
-  // The handler is idempotent, so an account that has one is left alone.
+  // What sign-up owes every account: the default `user` role, and the personal
+  // workspace — one organization, one owner member, no team. Run for all seed
+  // accounts, not only the ones just created, so a database seeded before
+  // either existed is repaired. Both handlers are idempotent.
   for (const seedUser of seedUsers) {
     const user = await userRepo.findOneBy({ email: seedUser.email });
     if (!user) continue;
+    await assignDefaultRole.execute(new AssignDefaultRoleCommand({ userId: user.id }));
     const created = await provisionPersonalWorkspace.execute(
       new ProvisionPersonalWorkspaceCommand({
         userId: user.id,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, type Repository } from 'typeorm';
+import { type EntityManager, In, IsNull, type Repository } from 'typeorm';
 import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
 import { RoleOrmEntity } from './role.orm-entity';
@@ -63,18 +63,19 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
     userId: string,
     roleId: string,
     organizationId: string | null = null,
+    manager: EntityManager = this.userRoleRepository.manager,
   ): Promise<void> {
     // `ON CONFLICT DO NOTHING` against the migration's two partial unique
     // indexes (one per scope), so a repeat grant is silent rather than a
     // constraint violation the caller has to tell apart from a real failure.
-    await this.userRoleRepository
+    await manager
       .createQueryBuilder()
       .insert()
       .into(UserRoleOrmEntity)
       .values({ userId, roleId, organizationId })
       .orIgnore()
       .execute();
-    if (organizationId) await bumpRoleVersion(this.userRoleRepository.manager, organizationId);
+    if (organizationId) await bumpRoleVersion(manager, organizationId);
   }
 
   async setRolesForUser(

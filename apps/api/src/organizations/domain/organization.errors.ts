@@ -94,15 +94,4 @@ export const OrganizationErrors = {
     message: 'The organization service failed to handle this request',
     httpStatus: 502,
   },
-  /**
-   * Raised when provisioning a personal workspace finds no system `owner` role
-   * to grant. The migration installs it, so this means the database is behind
-   * the code — a deployment fault, not anything the caller did, which is why it
-   * is a 500 rather than a 4xx the client could act on.
-   */
-  OWNER_ROLE_MISSING: {
-    code: 'ORG_017',
-    message: 'The system role that opens a workspace is not installed',
-    httpStatus: 500,
-  },
 } as const satisfies Record<string, ErrorDefinition>;

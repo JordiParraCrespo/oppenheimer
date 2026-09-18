@@ -3,7 +3,6 @@ import {
   type AggregateID,
   AggregateRoot,
   ArgumentNotProvidedException,
-  type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
 import { PersonalWorkspaceProvisionedDomainEvent } from './events/personal-workspace-provisioned.domain-event';
 import { OrganizationSlug } from './value-objects/organization-slug.value-object';
@@ -79,11 +78,6 @@ export class PersonalWorkspaceEntity extends AggregateRoot<PersonalWorkspaceProp
     );
 
     return workspace;
-  }
-
-  /** Rebuild from persistence. Used by the mapper, not by callers. */
-  static reconstitute(create: CreateEntityProps<PersonalWorkspaceProps>): PersonalWorkspaceEntity {
-    return new PersonalWorkspaceEntity(create);
   }
 
   get name(): string {

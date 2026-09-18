@@ -14,14 +14,15 @@ import type { PersonalWorkspaceEntity } from '../domain/personal-workspace.entit
  */
 export interface PersonalWorkspaceRepositoryPort {
   /**
-   * Whether the account already belongs to an organization.
+   * Write the organization, the owner membership and the role grant as one,
+   * unless the account already belongs to an organization. Answers whether it
+   * wrote.
    *
-   * What makes provisioning idempotent: sign-up and the seed both run it, and
-   * an account invited into someone else's workspace must not collect a second
-   * one it never asked for.
+   * The "already belongs" test is part of this operation rather than a check a
+   * caller makes first, because a check outside the transaction is not a rule:
+   * two provisions racing for the same account would both pass it and both
+   * write. Unlikely at sign-up, and certain the first time the seed runs
+   * against a live API.
    */
-  belongsToAnyOrganization(userId: string): Promise<boolean>;
-
-  /** Write the organization, the owner membership and the role grant as one. */
-  insert(workspace: PersonalWorkspaceEntity): Promise<void>;
+  provision(workspace: PersonalWorkspaceEntity): Promise<boolean>;
 }

@@ -16,7 +16,6 @@ import { MembersController } from './members.controller';
 import { OrganizationsController } from './organizations.controller';
 import { PERSONAL_WORKSPACE_REPOSITORY } from './organizations.di-tokens';
 import { OrganizationsService } from './organizations.service';
-import { PersonalWorkspaceMapper } from './personal-workspace.mapper';
 import { WorkspacesController } from './workspaces.controller';
 import { WorkspacesService } from './workspaces.service';
 
@@ -35,8 +34,6 @@ import { WorkspacesService } from './workspaces.service';
  * through `auth/auth-command-bus.ts`.
  */
 const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceService];
-
-const mappers: Provider[] = [PersonalWorkspaceMapper];
 
 const repositories: Provider[] = [
   { provide: PERSONAL_WORKSPACE_REPOSITORY, useClass: PersonalWorkspaceRepository },
@@ -71,9 +68,7 @@ const repositories: Provider[] = [
     InvitationsService,
     WorkspacesService,
     ...commandHandlers,
-    ...mappers,
     ...repositories,
   ],
-  exports: [PERSONAL_WORKSPACE_REPOSITORY, PersonalWorkspaceMapper],
 })
 export class OrganizationsModule {}
