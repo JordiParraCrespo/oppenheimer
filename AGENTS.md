@@ -27,12 +27,14 @@ decisions that changed along the way.
 - In-depth MVP design lives in `product/versions/mvp/`, one document per
   area, each with decided points and open questions, and its own decision
   log in `product/versions/mvp/README.md`.
-- Workspaces are personal for now: one user per workspace, no team or
-  organization management exposed. The Better Auth `organization` row is
+- Workspaces are personal for now: one user per workspace, no team
+  management exposed. The Better Auth `organization` row is
   the personal workspace, created at sign-up with the account as its
-  single owner (`apps/api/src/auth/personal-workspace.ts`); no roster UI,
-  no invitations, no teams in the console. Teams come later on the same
-  tables. The one-page auth note is `product/versions/mvp/08-auth.md`;
+  single owner (`apps/api/src/organizations/commands/provision-personal-workspace/`); no roster UI,
+  no invitations, no teams in the console. The one organization the
+  console can create is the caller's own, on `/onboarding`, which exists
+  because the sign-up hook is best-effort — an account with no workspace
+  cannot open any product screen. Teams come later on the same tables. The one-page auth note is `product/versions/mvp/08-auth.md`;
   `AUTHORIZATION.md` is the starter's kernel design, kept as history.
 - When a decision changes, update the note that made it and add a line to
   the "decisions that changed" list in `product/README.md`. Do not

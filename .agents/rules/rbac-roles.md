@@ -200,16 +200,26 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   from `user_role` (assign via `PUT /v1/users/:userId/roles`); `user.role` is a
   single system-role name for admin-plugin gating.
 - **Organizations / members / invitations** — the `organization` plugin owns the
-  `organization`, `member`, `invitation` tables. **Sign-up provisions nothing**:
-  a new account belongs to no organization until it creates one or an
-  invitation puts it in one, and the session's `activeOrganizationId` /
-  `activeTeamId` stay null until then (the web app sends such an account to
-  onboarding, where it creates its first workspace). The default `user` role
-  can *read* the organizations it belongs to and *create* one. Both paths that
-  create a membership write the org-scoped application role — the tenant
-  `owner` system role for a Better Auth owner/admin, `user` for a member
-  in the same breath — `InvitationsService.accept` for a workspace someone
-  joins, `OrganizationsService.create` for one the caller makes (which also
+  `organization`, `member`, `invitation` tables. **Sign-up provisions the
+  personal workspace**: one organization with the account as its single
+  `owner` member, so the session's `activeOrganizationId` is set from the
+  first sign-in (`product/versions/mvp/08-auth.md`). It is the app's own rule
+  rather than Better Auth's, so it is a real vertical slice —
+  `organizations/commands/provision-personal-workspace/`, dispatched from the
+  Better Auth sign-up hook through `auth/auth-command-bus.ts`. It is
+  best-effort and idempotent: an account it did not land for still exists and
+  is sent to `/onboarding`, the console's one organization-creating screen,
+  which makes the caller the owner of their own workspace and nothing else
+  (no roster, no invitation, no second workspace); the seed re-runs the same
+  handler. The check is on membership, not ownership — see
+  `product/versions/mvp/08-auth.md`, which records what that will mean once
+  invitations exist. The default `user` role can *read* the organizations it belongs
+  to and *create* one. Every path that creates a membership writes the
+  org-scoped application role — the tenant `owner` system role for a Better
+  Auth owner/admin, `user` for a member in the same breath —
+  `ProvisionPersonalWorkspaceService` for the workspace sign-up gives,
+  `InvitationsService.accept` for a workspace someone joins, and
+  `OrganizationsService.create` for one the caller makes (which also
   provisions the "General" workspace) — so "you are a member" and "you may work
   here" are never set separately. `owner` grants organization resources only
   (Organization/Member/Invitation/Workspace/Role, conditioned on
@@ -219,10 +229,12 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   action + subject (`DELETE /users/:id`, the admin façade) would open to
   whoever created a workspace. `RoleGrantPolicy.assertCanModify` is the
   row-level half for roles — a global role never matches the owner's
-  conditioned `manage Role`, so tenants cannot edit the platform's roles. Provisioning behind the account's back is
-  what made a self-service sign-up the owner of an organization it had no
-  permission to read. Invitation emails go through the BullMQ email queue
-  (`EmailService.sendInvitation`).
+  conditioned `manage Role`, so tenants cannot edit the platform's roles. That
+  pairing is the point: provisioning a membership *without* the role is what
+  once made a self-service sign-up the owner of an organization it had no
+  permission to read, which is why the personal workspace writes the
+  organization, the membership and the grant in one transaction. Invitation
+  emails go through the BullMQ email queue (`EmailService.sendInvitation`).
 - **First-class REST façade** — `apps/api/src/organizations/` and
   `apps/api/src/admin/` expose the plugin operations as typed, Swagger-documented,
   CASL-guarded endpoints (`/v1/organizations`, `/v1/organizations/:id/members`,

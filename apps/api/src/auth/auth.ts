@@ -11,9 +11,10 @@ import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { orUndefined } from '../config/env';
+import { dispatchFromAuthHook } from './auth-command-bus';
+import { CompleteSignUpCommand } from './commands/complete-sign-up/complete-sign-up.command';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue';
 import { buildInvitationUrl } from './invitation-url';
-import { provisionPersonalWorkspace } from './personal-workspace';
 
 /**
  * Access-control roles for the admin plugin. Every name listed in `adminRoles`
@@ -280,41 +281,20 @@ export const auth = betterAuth({
             userId: user.id,
             name: user.name,
           });
-          // Assign the default `user` role in the RBAC join so new sign-ups get
-          // their permissions from the same source as everyone else. Best-effort:
-          // the AbilityFactory falls back to the legacy `user.role` column if the
-          // join row is missing.
-          try {
-            await pool.query(
-              `INSERT INTO "user_role" ("userId", "roleId")
-                 SELECT $1, r."id" FROM "role" r WHERE r."name" = 'user'
-                 ON CONFLICT DO NOTHING`,
-              [user.id],
-            );
-          } catch {
-            // Roles table not migrated yet, or transient error — ignore.
-          }
-          // Sign-up creates the personal workspace: the organization row the
-          // account lives in, with the account as its single owner and the
-          // org-scoped `owner` role that opens it (the same pair
-          // `OrganizationsService.create` writes). One transaction, so a
-          // half-provisioned workspace cannot exist. Best-effort like the
-          // role assignment above: if it fails, the account still exists and
-          // the web app's onboarding screen offers to create the workspace.
-          const client = await pool.connect();
-          try {
-            await client.query('BEGIN');
-            await provisionPersonalWorkspace(client, user);
-            await client.query('COMMIT');
-          } catch (error) {
-            await client.query('ROLLBACK').catch(() => undefined);
-            new Logger('BetterAuth').error(
-              `Could not provision the personal workspace for ${user.email}`,
-              error instanceof Error ? error.stack : String(error),
-            );
-          } finally {
-            client.release();
-          }
+          // Sign-up finished; the application decides what that owes. This
+          // file says only that, and names no module that fulfils it — the
+          // orchestration is `CompleteSignUpService`, which can inject a
+          // command bus where this hook cannot inject anything. See
+          // `auth-command-bus.ts` for why that seam exists and why the
+          // dispatch is best-effort.
+          await dispatchFromAuthHook(
+            new CompleteSignUpCommand({
+              userId: user.id,
+              email: user.email,
+              name: user.name,
+            }),
+            { description: 'complete sign-up for a new account', email: user.email },
+          );
         },
       },
     },

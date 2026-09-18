@@ -138,6 +138,7 @@ one code so the endpoint cannot be used as a probing oracle.
 | `ROLE_004` <a id="role_004" /> | A system role that grants full access ("manage all") cannot have it removed | 403  |
 | `ROLE_005` <a id="role_005" /> | A role cannot be granted permissions its author does not hold               | 403  |
 | `ROLE_006` <a id="role_006" /> | A role belonging to another organization cannot be modified                 | 403  |
+| `ROLE_007` <a id="role_007" /> | A system role this deployment needs is not installed                        | 500  |
 
 ## Authorization
 
