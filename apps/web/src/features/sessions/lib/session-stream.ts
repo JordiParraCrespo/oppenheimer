@@ -1,0 +1,162 @@
+/**
+ * The contract between the console and whatever is feeding a terminal.
+ *
+ * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
+ * WebSocket frames, control messages as JSON on the same socket, the browser
+ * acking consumed bytes. This interface is that shape with the socket left
+ * out, so the screen can be built, reviewed and demonstrated before the runner
+ * exists — and so swapping the fake for the real transport touches one file.
+ *
+ * Nothing above this knows which implementation it holds.
+ */
+
+export type StreamStatus = 'connecting' | 'live' | 'closed';
+
+export interface SessionStream {
+  /** PTY output. The returned function unsubscribes. */
+  onData(listener: (chunk: string) => void): () => void;
+  /** Connection state, for the status line. The returned function unsubscribes. */
+  onStatus(listener: (status: StreamStatus) => void): () => void;
+  /** Keystrokes, already encoded by the terminal. */
+  send(data: string): void;
+  /** The grid changed shape; the PTY needs to know. */
+  resize(cols: number, rows: number): void;
+  dispose(): void;
+}
+
+const ESC = '[';
+const RESET = `${ESC}0m`;
+const DIM = `${ESC}90m`;
+const BOLD = `${ESC}1m`;
+const BLUE = `${ESC}34m`;
+const GREEN = `${ESC}32m`;
+const YELLOW = `${ESC}33m`;
+const RED = `${ESC}31m`;
+const CYAN = `${ESC}36m`;
+
+/**
+ * A recorded session, replayed. Every escape sequence here is one a real
+ * agent emits, so the colours exercise the ANSI mapping in `terminal-theme.ts`
+ * rather than a private vocabulary that would pass while the real thing fails.
+ */
+const TRANSCRIPT: ReadonlyArray<{ after: number; text: string }> = [
+  { after: 0, text: `${DIM}[tmux] attached to session sess_7fc2 — window 0${RESET}\r\n` },
+  {
+    after: 120,
+    text: `${DIM}worktree /Users/jordi/code/oppenheimer-feat-terminal${RESET}\r\n\r\n`,
+  },
+  { after: 240, text: `${BLUE}$ ${RESET}claude\r\n` },
+  { after: 520, text: `${DIM}Claude Code — oppenheimer — feat/terminal-surface${RESET}\r\n\r\n` },
+  {
+    after: 760,
+    text: `${BOLD}●${RESET} I've mounted xterm.js on the session route. The theme bridge reads the\r\n  ${CYAN}--term-*${RESET} ramp off the document and re-applies it whenever the app\r\n  switches theme, so the grid follows instead of freezing at mount.\r\n\r\n`,
+  },
+  { after: 1400, text: `${BLUE}$ ${RESET}pnpm check:structure\r\n` },
+  {
+    after: 1750,
+    text: `${GREEN}✓${RESET} frontend layout contract — 151 files, 0 violations\r\n\r\n`,
+  },
+  { after: 2000, text: `${BLUE}$ ${RESET}pnpm arch\r\n` },
+  { after: 2380, text: `${GREEN}✓${RESET} apps/web — no boundary violations\r\n\r\n` },
+  { after: 2600, text: `${BLUE}$ ${RESET}pnpm check:bundle\r\n` },
+  {
+    after: 3000,
+    text: `${YELLOW}⚠${RESET}  session route chunk +214 KB (xterm + webgl addon)\r\n${GREEN}✓${RESET} critical path 371 KB / 385 KB — route chunks excluded\r\n\r\n`,
+  },
+  { after: 3400, text: `${BLUE}$ ${RESET}pnpm test --filter @oppenheimer/web\r\n` },
+  { after: 3900, text: `${RED}✗${RESET} use-terminal.spec.ts — expected 24 rows, received 0\r\n` },
+  {
+    after: 3960,
+    text: `${DIM}   the container has no height until the shell lays it out${RESET}\r\n\r\n`,
+  },
+  {
+    after: 4400,
+    text: `${BOLD}●${RESET} That's the fit addon measuring a collapsed box. The pane needs a\r\n  definite height before the first fit, not after it. Fixing.\r\n\r\n`,
+  },
+  { after: 5200, text: `${BLUE}$ ${RESET}` },
+];
+
+/**
+ * Replays `TRANSCRIPT`, then behaves like a shell: echoes what you type,
+ * handles Backspace, and answers Enter with a fresh prompt.
+ *
+ * The echo is the point. `product/versions/mvp/06-step-one-spike.md` judges the
+ * real thing by keystroke echo latency — a key is not drawn because the browser
+ * drew it, it is drawn because the host sent it back. Building against a fake
+ * that echoes locally keeps that loop honest.
+ */
+export function createFakeSessionStream(): SessionStream {
+  const dataListeners = new Set<(chunk: string) => void>();
+  const statusListeners = new Set<(status: StreamStatus) => void>();
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  let status: StreamStatus = 'connecting';
+  let disposed = false;
+  let line = '';
+
+  const emit = (chunk: string) => {
+    for (const listener of dataListeners) listener(chunk);
+  };
+
+  const setStatus = (next: StreamStatus) => {
+    status = next;
+    for (const listener of statusListeners) listener(next);
+  };
+
+  timers.push(
+    setTimeout(() => {
+      if (!disposed) setStatus('live');
+    }, 80),
+  );
+
+  for (const step of TRANSCRIPT) {
+    timers.push(
+      setTimeout(() => {
+        if (!disposed) emit(step.text);
+      }, step.after),
+    );
+  }
+
+  return {
+    onData(listener) {
+      dataListeners.add(listener);
+      return () => dataListeners.delete(listener);
+    },
+    onStatus(listener) {
+      listener(status);
+      statusListeners.add(listener);
+      return () => statusListeners.delete(listener);
+    },
+    send(data) {
+      if (disposed) return;
+      if (data === '\r') {
+        line = '';
+        emit(`\r\n${BLUE}$ ${RESET}`);
+        return;
+      }
+      if (data === '') {
+        if (line.length === 0) return;
+        line = line.slice(0, -1);
+        emit('\b \b');
+        return;
+      }
+      // Control characters other than the two handled above are swallowed:
+      // the real PTY decides what Ctrl-C does, and guessing here would teach
+      // the screen a behaviour the host does not have.
+      if (data < ' ') return;
+      line += data;
+      emit(data);
+    },
+    resize() {
+      // The real stream sends a resize control message here. A replay has no
+      // reflow to do, and pretending otherwise would hide that the message is
+      // still unwritten.
+    },
+    dispose() {
+      disposed = true;
+      for (const timer of timers) clearTimeout(timer);
+      dataListeners.clear();
+      setStatus('closed');
+      statusListeners.clear();
+    },
+  };
+}
