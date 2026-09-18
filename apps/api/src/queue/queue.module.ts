@@ -2,8 +2,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { ProfileModule } from '../profile/profile.module';
-import { EmailProcessor } from './email.processor';
 import { EmailJobMapper } from './email-job.mapper';
+import { EmailProcessor } from './infrastructure/email.processor';
 
 @Module({
   imports: [

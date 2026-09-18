@@ -13,6 +13,9 @@ import { useTableQuery } from './use-table-query';
  *  - the URL is user input, so a hand-edited `?page=-3` or `?filter=bogus`
  *    must not reach a query.
  *
+ * The third rule this used to hold — one request per search rather than one per
+ * character — moved to `DataTableSearch`, which is where the keystrokes are.
+ *
  * Driven through nuqs' own testing adapter rather than a stub, so the parsers,
  * the prefixing and the defaults are the real ones.
  */
@@ -50,12 +53,12 @@ describe('useTableQuery', () => {
       expect(result.current.page).toBe(3);
     });
 
-    it('starts searchQuery equal to search so a followed link asks once, now', () => {
+    it("reads a followed link's search straight out of the URL", () => {
       // Waiting out the debounce here would show every reader an unfiltered
       // table for 300ms before the one they were linked to.
       const { result } = setup('?q=acme');
 
-      expect(result.current.searchQuery).toBe('acme');
+      expect(result.current.search).toBe('acme');
     });
   });
 
@@ -309,41 +312,22 @@ describe('useTableQuery', () => {
     });
   });
 
-  describe('the search debounce', () => {
-    it('updates `search` on the keystroke so the input never lags', () => {
-      const { result } = setup();
-
-      act(() => result.current.setSearch('a'));
-
-      expect(result.current.search).toBe('a');
-    });
-
-    it('holds `searchQuery` back until typing settles', () => {
-      // One request per search rather than one per character.
+  describe('the search', () => {
+    it('takes a settled value straight through', () => {
+      // The debounce lives in `DataTableSearch` now, so what arrives here has
+      // already settled: holding it again would only delay the request, and a
+      // late write would land after the reader had typed on.
       const { result } = setup();
 
       act(() => result.current.setSearch('acme'));
-      expect(result.current.searchQuery).toBe('');
 
-      act(() => vi.advanceTimersByTime(300));
-      expect(result.current.searchQuery).toBe('acme');
+      expect(result.current.search).toBe('acme');
     });
 
-    it('collapses a burst of keystrokes into one settled value', () => {
-      const { result } = setup();
+    it('answers a followed link without waiting', () => {
+      const { result } = setup('?q=acme');
 
-      act(() => result.current.setSearch('a'));
-      act(() => vi.advanceTimersByTime(100));
-      act(() => result.current.setSearch('ac'));
-      act(() => vi.advanceTimersByTime(100));
-      act(() => result.current.setSearch('acme'));
-
-      // Still nothing 100ms after the last keystroke — the timer restarted.
-      act(() => vi.advanceTimersByTime(100));
-      expect(result.current.searchQuery).toBe('');
-
-      act(() => vi.advanceTimersByTime(200));
-      expect(result.current.searchQuery).toBe('acme');
+      expect(result.current.search).toBe('acme');
     });
   });
 });

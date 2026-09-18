@@ -55,7 +55,7 @@ no sub-directory inside a kind.
 | `sections/` | a pane, a card group, a list | yes | yes | — none yet in this app |
 | `dialogs/` | one sheet or modal per file, owning its mutation | yes | yes | `admin-users/dialogs/assign-roles.tsx` |
 | `forms/` | React Hook Form over a shared Zod schema; props in, `onSubmit` out | no | no | `roles/forms/role-form.tsx` |
-| `components/` | entity UI: a row, a header, a pill | no | no | `auth/components/auth-header.tsx` |
+| `components/` | entity UI: a row, a header, a pill | no | no | — none yet in this app |
 | `hooks/` | `use-*.ts` over queries and UI state; the only home of an effect | yes | yes | — none yet in this app |
 | `lib/` | types, mappers, constants; no JSX | no | no | `auth/lib/reset-password.ts` |
 | `__tests__/` | Vitest specs | — | — | — |
@@ -92,11 +92,14 @@ error boundaries, the `AuthGate`.
 ## Render rules
 
 - **State lives in the lowest component that reads it.** The users screen owns
-  which dialog is open; `assign-roles.tsx` owns its own mutation;
-  `auth-header.tsx` owns nothing but its props.
+  which dialog is open; `assign-roles.tsx` owns its own mutation; `LoginForm`
+  owns the field state and the keep-signed-in toggle, while `LoginScreen` above
+  it owns only the failure it shows.
 - **Subscribe at the leaf.** A `useWatch` takes `control` and runs in the
   component that shows the value, never in the screen above it; the reference
-  implementation is `apps/web/src/features/auth/components/password-checklist.tsx`.
+  implementation is `PasswordChecklist` in `@oppenheimer/frontend-mobile/auth`, which
+  watches the password field so a keystroke re-renders the checklist and the
+  button it gates, not the form.
 - **An effect synchronises with something outside React, and says what.** Biome
   forbids `useEffect` outside `hooks/` — with one deliberate exception, the
   root layout. `app/_layout.tsx` keeps a single effect, commented as such,

@@ -4,10 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from './api-tokens.di-tokens';
 import { ApiTokenMapper } from './api-tokens.mapper';
+import { CreateApiTokenCommandHandler } from './commands/create-api-token/create-api-token.command-handler';
 import { CreateApiTokenHttpController } from './commands/create-api-token/create-api-token.http.controller';
-import { CreateApiTokenService } from './commands/create-api-token/create-api-token.service';
+import { RevokeApiTokenCommandHandler } from './commands/revoke-api-token/revoke-api-token.command-handler';
 import { RevokeApiTokenHttpController } from './commands/revoke-api-token/revoke-api-token.http.controller';
-import { RevokeApiTokenService } from './commands/revoke-api-token/revoke-api-token.service';
 import { ApiTokenOrmEntity } from './database/api-token.orm-entity';
 import { ApiTokenRepository } from './database/api-token.repository';
 import { OrganizationMembershipRepository } from './database/organization-membership.repository';
@@ -28,7 +28,7 @@ const httpControllers = [
   RevokeApiTokenHttpController,
 ];
 
-const commandHandlers: Provider[] = [CreateApiTokenService, RevokeApiTokenService];
+const commandHandlers: Provider[] = [CreateApiTokenCommandHandler, RevokeApiTokenCommandHandler];
 
 const queryHandlers: Provider[] = [
   FindApiTokensQueryHandler,

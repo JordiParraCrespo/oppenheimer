@@ -1,5 +1,5 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
-import type { ScopeContext, ScopedRequest } from '../scope-context';
+import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
 
 /**
  * Injects the request's {@link ScopeContext}, or `null` when the caller is a

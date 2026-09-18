@@ -12,8 +12,8 @@ import {
   DialogTitle,
 } from '@oppenheimer/design-system-web';
 import { TriangleAlert } from '@oppenheimer/design-system-web/icons';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
-import { useErrorMessage } from '../../forms';
 
 /**
  * The workspace's "are you sure?" — a hero-plated dialog whose confirm button

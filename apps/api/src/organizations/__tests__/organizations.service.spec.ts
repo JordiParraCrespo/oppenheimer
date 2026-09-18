@@ -2,7 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { APIError } from 'better-auth/api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../auth/auth', () => ({
+vi.mock('../../auth/infrastructure/better-auth.config', () => ({
   auth: {
     api: {
       createOrganization: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('../../auth/auth', () => ({
   },
 }));
 
-import { auth } from '../../auth/auth';
+import { auth } from '../../auth/infrastructure/better-auth.config';
 import { OrganizationsService } from '../organizations.service';
 
 const api = auth.api as unknown as Record<string, ReturnType<typeof vi.fn>>;

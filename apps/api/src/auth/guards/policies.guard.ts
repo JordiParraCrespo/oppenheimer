@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { AuthzErrors } from '../../authz/domain/authz.errors';
-import { AbilityFactory } from '../../roles/services/ability.factory';
+import { AbilityFactory } from '../../roles/application/ability.factory';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policies.decorator';
 import { AuthErrors } from '../domain/auth.errors';
 

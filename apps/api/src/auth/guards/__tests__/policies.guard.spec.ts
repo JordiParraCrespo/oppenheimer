@@ -4,7 +4,7 @@ import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AbilityFactory } from '../../../roles/services/ability.factory';
+import type { AbilityFactory } from '../../../roles/application/ability.factory';
 import { CHECK_POLICIES_KEY } from '../../decorators/check-policies.decorator';
 import { AuthErrors } from '../../domain/auth.errors';
 import { PoliciesGuard } from '../policies.guard';

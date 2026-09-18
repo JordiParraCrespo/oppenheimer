@@ -6,6 +6,7 @@ import ApprovalScreen from './approval';
 import AspectRatioScreen from './aspect-ratio';
 import AvatarScreen from './avatar';
 import BadgeScreen from './badge';
+import BrandMarkScreen from './brand-mark';
 import ButtonScreen from './button';
 import CardScreen from './card';
 import ChatMarkdownScreen from './chat-markdown';
@@ -49,6 +50,7 @@ export const REGISTRY: Record<string, React.ComponentType> = {
   'aspect-ratio': AspectRatioScreen,
   avatar: AvatarScreen,
   badge: BadgeScreen,
+  'brand-mark': BrandMarkScreen,
   button: ButtonScreen,
   card: CardScreen,
   'chat-markdown': ChatMarkdownScreen,

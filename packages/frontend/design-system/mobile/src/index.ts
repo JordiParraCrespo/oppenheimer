@@ -43,6 +43,7 @@ export {
   BottomSheetModalProvider,
   BottomSheetScrollView,
 } from './components/ui/bottom-sheet-modal';
+export { BrandMark } from './components/ui/brand-mark';
 export type { ButtonProps } from './components/ui/button';
 export {
   Button,

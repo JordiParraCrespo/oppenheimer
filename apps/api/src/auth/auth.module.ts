@@ -7,20 +7,22 @@ import { OrganizationOrmEntity } from '../organizations/database/organization.or
 import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
 import { UsersModule } from '../users/user.module';
+import { CredentialScopeResolver } from './application/credential-scope.resolver';
 import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
-import { AuthCommandBusBridge } from './auth-command-bus';
-import { CompleteSignUpService } from './commands/complete-sign-up/complete-sign-up.service';
-import { Account } from './entities/account.entity';
-import { OAuthAccessTokenOrmEntity } from './entities/oauth-access-token.entity';
-import { OAuthApplicationOrmEntity } from './entities/oauth-application.entity';
-import { OAuthConsentOrmEntity } from './entities/oauth-consent.entity';
-import { Session } from './entities/session.entity';
-import { Verification } from './entities/verification.entity';
+import { CREDENTIAL_SCOPE, CREDENTIAL_VERIFIER, DELEGATED_SESSION } from './auth.di-tokens';
+import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
+import { Account } from './database/account.orm-entity';
+import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
+import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
+import { OAuthConsentOrmEntity } from './database/oauth-consent.orm-entity';
+import { Session } from './database/session.orm-entity';
+import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
 import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
-import { CredentialScopeResolver } from './services/credential-scope.resolver';
-import { DelegatedSessionService } from './services/delegated-session.service';
+import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
+import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-auth-credential-verifier.adapter';
+import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
 /**
  * Registers the Better Auth tables with TypeORM (so the schema is created /
@@ -70,22 +72,27 @@ import { DelegatedSessionService } from './services/delegated-session.service';
   providers: [
     ApiTokenRevokedDomainEventHandler,
     // Hands the running app's CommandBus to the Better Auth hooks, which are
-    // configured at module scope and cannot inject it. See `auth-command-bus.ts`.
+    // configured at module scope and cannot inject it. See `auth-command-bus.util.ts`.
     AuthCommandBusBridge,
     // The one handler that knows what sign-up owes a new account.
-    CompleteSignUpService,
+    CompleteSignUpCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
     ScopesGuard,
-    CredentialScopeResolver,
-    DelegatedSessionService,
+    // The adapters are bound to the tokens their ports are named by. This is
+    // the only place that decides Better Auth answers these questions.
+    { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
+    { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
+    { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
   ],
+  // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
+  // is published as tokens, so nothing downstream names a concrete class.
   exports: [
     PoliciesGuard,
     ApiAuthGuard,
     ScopesGuard,
-    CredentialScopeResolver,
-    DelegatedSessionService,
+    CREDENTIAL_SCOPE,
+    DELEGATED_SESSION,
     TypeOrmModule,
   ],
 })

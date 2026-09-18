@@ -1,8 +1,8 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Injectable } from '@nestjs/common';
 import type { CreateWorkspaceDto, UpdateWorkspaceDto } from '@oppenheimer/shared';
-import { auth } from '../auth/auth';
-import { betterAuthHeaders } from '../auth/better-auth.util';
+import { auth } from '../auth/infrastructure/better-auth.config';
+import { betterAuthHeaders } from '../auth/infrastructure/better-auth.util';
 import type {
   WorkspaceMemberResponseDto,
   WorkspaceResponseDto,

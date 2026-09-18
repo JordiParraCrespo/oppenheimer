@@ -4,25 +4,40 @@ import {
   Button,
   DialogBody,
   DialogFooter,
-  EmptyState,
   Field,
   FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
   Input,
-  SearchInput,
 } from '@oppenheimer/design-system-web';
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { PermissionPicker } from '@/features/api-tokens/components/permission-picker';
+import { PermissionCatalog } from '@/features/api-tokens/components/permission-catalog';
+import { PermissionField } from '@/features/api-tokens/components/permission-field';
+import {
+  hasAnyScope,
+  type ScopeSelection,
+  scopesFromSelection,
+} from '@/features/api-tokens/lib/scope-selection';
 
 export interface CreateApiTokenFormValues {
   name: string;
   scopes: Scope[];
 }
+
+/**
+ * What the fields hold. Permissions are per resource here and flattened to the
+ * `Scope[]` the API takes on submit — see `lib/scope-selection.ts` for why.
+ */
+type TokenFormFields = {
+  name: string;
+  permissions: ScopeSelection;
+};
+
+const EMPTY_TOKEN_FORM: TokenFormFields = { name: '', permissions: {} };
 
 /**
  * The body of the "Create API key" dialog: a name and the permissions the key
@@ -48,27 +63,44 @@ export function CreateApiTokenForm({
   onSubmit: (values: CreateApiTokenFormValues) => void;
 }) {
   const { t } = useTranslation();
-  const [permissionSearch, setPermissionSearch] = useState('');
 
   const {
     control,
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
-  } = useForm<CreateApiTokenFormValues>({ defaultValues: { name: '', scopes: [] } });
+  } = useForm<TokenFormFields>({ defaultValues: EMPTY_TOKEN_FORM });
 
-  const normalizedPermissionSearch = permissionSearch.trim().toLocaleLowerCase();
-  const visiblePermissionGroups = groups.filter((group) =>
-    [group.label, group.description, group.levels.read.description, group.levels.write.description]
-      .join(' ')
-      .toLocaleLowerCase()
-      .includes(normalizedPermissionSearch),
-  );
+  const [permissionsMessage, setPermissionsMessage] = useState<string>();
+
+  /**
+   * The cross-row rule: a key with no scopes can call nothing.
+   *
+   * Held here rather than on the field because React Hook Form validation
+   * descends past `permissions` to the rows registered under it: neither a rule
+   * nor a `setError` on the parent path survives. It runs from both arms of
+   * `handleSubmit`, so an empty form reports this *and* the missing name in one
+   * pass. `PermissionField` stops showing it the moment a row is granted.
+   */
+  const permissionsGranted = () => {
+    if (hasAnyScope(getValues('permissions'))) {
+      setPermissionsMessage(undefined);
+      return true;
+    }
+    setPermissionsMessage(t('apiTokens.permissionsRequired'));
+    return false;
+  };
+
+  const submit = handleSubmit((values) => {
+    if (!permissionsGranted()) return;
+    onSubmit({ name: values.name, scopes: scopesFromSelection(groups, values.permissions) });
+  }, permissionsGranted);
 
   return (
     <form
       id="create-api-key"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={submit}
       noValidate
       className="flex min-h-0 flex-auto flex-col gap-5"
     >
@@ -94,56 +126,25 @@ export function CreateApiTokenForm({
             <FieldError errors={[errors.name]} />
           </Field>
 
-          <Controller
+          <PermissionField
             control={control}
-            name="scopes"
-            rules={{
-              validate: (value) => value.length > 0 || t('validation.required'),
-            }}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel>{t('settings.api.keyPermissions')}</FieldLabel>
-                {loadingCatalog ? (
-                  <p className="text-sm text-ink-600">{t('common.loading')}</p>
-                ) : (
-                  <>
-                    <SearchInput
-                      value={permissionSearch}
-                      onChange={(event) => setPermissionSearch(event.target.value)}
-                      placeholder={t('settings.api.searchPermissions')}
-                      aria-label={t('settings.api.searchPermissions')}
-                      hint={null}
-                      containerClassName="w-full"
-                      disabled={isPending}
-                    />
-                    {visiblePermissionGroups.length > 0 ? (
-                      // No scroll cap of its own: the dialog body already
-                      // scrolls, and a picker that scrolled inside it gave
-                      // the card two scrollbars and a wheel that stopped at
-                      // the picker's edge.
-                      <PermissionPicker
-                        groups={visiblePermissionGroups}
-                        grantable={grantable}
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={isPending}
-                      />
-                    ) : (
-                      <EmptyState className="border border-border-subtle py-6">
-                        <EmptyState.Header>
-                          <EmptyState.Title>
-                            {t('settings.api.noPermissionResults')}
-                          </EmptyState.Title>
-                        </EmptyState.Header>
-                      </EmptyState>
-                    )}
-                  </>
-                )}
-                <FieldDescription>{t('settings.api.keyPermissionsHint')}</FieldDescription>
-                <FieldError errors={[fieldState.error]} />
-              </Field>
+            name="permissions"
+            label={t('settings.api.keyPermissions')}
+            hint={t('settings.api.keyPermissionsHint')}
+            message={permissionsMessage}
+          >
+            {loadingCatalog ? (
+              <p className="text-sm text-ink-600">{t('common.loading')}</p>
+            ) : (
+              <PermissionCatalog
+                groups={groups}
+                grantable={grantable}
+                control={control}
+                name="permissions"
+                disabled={isPending}
+              />
             )}
-          />
+          </PermissionField>
         </FieldGroup>
       </DialogBody>
       <DialogFooter className="border-t border-border-subtle pt-5">

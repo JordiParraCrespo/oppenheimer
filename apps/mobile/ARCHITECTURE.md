@@ -91,7 +91,9 @@ vars, the error boundaries, the `AuthGate`.
   nothing but its props.
 - **Subscribe at the leaf.** A `useWatch` takes `control` and runs in the
   component that shows the value, never in the screen above it; the reference
-  implementation is `apps/web/src/features/auth/components/password-checklist.tsx`.
+  implementation is `PasswordChecklist` in `@oppenheimer/frontend-mobile/auth`, which
+  watches the password field so a keystroke re-renders the checklist and the
+  button it gates, not the form.
 - **An effect synchronises with something outside React, and says what.** Biome
   forbids `useEffect` outside `hooks/` — with one deliberate exception, the
   root layout. `app/_layout.tsx` keeps a single effect, commented as such,

@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "files": [
+    "depcruise/*.cjs",
     "tsconfig.*.json",
-    "vite-chunks.mjs",
     "vite-chunks.d.mts",
-    "depcruise/*.cjs"
+    "vite-chunks.mjs",
+    "vitest-frontend.mjs"
   ]
 }

@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Oppenheimer",
+    "controlAppName": "Oppenheimer Control",
     "loading": "Loading...",
     "error": "Something went wrong",
     "save": "Save",
@@ -107,7 +108,7 @@
       "FAILED_TO_CREATE_USER": "Your account could not be created. Please try again.",
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
-      "ROLE_007": "This server is not finished setting up. Please contact support.",
+      "ROLE_007": "This deployment is missing a system role it needs. Run the database migrations.",
       "AUTHZ_001": "You are not a member of that organization.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
       "GRANT_001": "That access grant could not be found.",
@@ -551,7 +552,6 @@
       "roles": {
         "columns": {
           "description": "Description",
-          "members": "Members",
           "role": "Role",
           "type": "Type"
         },
@@ -561,8 +561,6 @@
         "edit": "Edit",
         "empty": "No roles found.",
         "export": "Export CSV",
-        "memberCount_one": "{{count}} member",
-        "memberCount_other": "{{count}} members",
         "new": "New role",
         "search": "Search roles",
         "system": "System"

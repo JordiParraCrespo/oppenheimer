@@ -19,9 +19,9 @@ import { CheckPolicies, NoPolicy } from '../auth/decorators/check-policies.decor
 import { CurrentScope } from '../auth/decorators/current-scope.decorator';
 import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
-import type { ScopeContext } from '../auth/scope-context';
 import {
   CheckSlugRequest,
   CreateOrganizationRequest,

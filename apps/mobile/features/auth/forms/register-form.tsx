@@ -1,18 +1,31 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { Input } from '@oppenheimer/design-system-mobile/input';
 import { Text } from '@oppenheimer/design-system-mobile/text';
-import { FormField, useZodResolver } from '@oppenheimer/frontend-mobile';
+import {
+  AuthFormError,
+  authControlClass,
+  authInputClass,
+  FormField,
+  PasswordChecklist,
+  PasswordInput,
+  type PasswordRule,
+  useZodResolver,
+} from '@oppenheimer/frontend-mobile';
 import { type RegisterDto, registerSchema } from '@oppenheimer/shared';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+const RULES: readonly PasswordRule[] = ['length', 'case', 'number'];
+
 interface RegisterFormProps {
   onSubmit: (values: RegisterDto) => void;
   isPending: boolean;
+  /** The resolved failure message, if the last attempt failed. */
+  error?: string;
 }
 
-export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
+export function RegisterForm({ onSubmit, isPending, error }: RegisterFormProps) {
   const { t } = useTranslation();
 
   const { control, handleSubmit } = useForm<RegisterDto>({
@@ -24,6 +37,8 @@ export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
 
   return (
     <View className="gap-4">
+      {error ? <AuthFormError>{error}</AuthFormError> : null}
+
       <View className="flex-row gap-3">
         <View className="flex-1">
           <Controller
@@ -36,11 +51,13 @@ export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
                 error={fieldState.error?.message}
               >
                 <Input
-                  placeholder="John"
+                  className={authInputClass}
+                  placeholder={t('auth.firstNamePlaceholder')}
                   aria-labelledby="firstName"
                   value={field.value}
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
+                  editable={!isPending}
                   autoComplete="given-name"
                   textContentType="givenName"
                 />
@@ -59,11 +76,13 @@ export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
                 error={fieldState.error?.message}
               >
                 <Input
-                  placeholder="Doe"
+                  className={authInputClass}
+                  placeholder={t('auth.lastNamePlaceholder')}
                   aria-labelledby="lastName"
                   value={field.value}
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
+                  editable={!isPending}
                   autoComplete="family-name"
                   textContentType="familyName"
                 />
@@ -78,11 +97,13 @@ export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
         render={({ field, fieldState }) => (
           <FormField label={t('auth.email')} nativeID="reg-email" error={fieldState.error?.message}>
             <Input
+              className={authInputClass}
               placeholder={t('auth.emailPlaceholder')}
               aria-labelledby="reg-email"
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
+              editable={!isPending}
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
@@ -96,26 +117,31 @@ export function RegisterForm({ onSubmit, isPending }: RegisterFormProps) {
         name="password"
         render={({ field, fieldState }) => (
           <FormField
-            label={t('auth.password')}
+            label={t('auth.register.passwordLabel')}
             nativeID="reg-password"
             error={fieldState.error?.message}
           >
-            <Input
+            <PasswordInput
               placeholder={t('auth.register.passwordPlaceholder')}
               aria-labelledby="reg-password"
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
-              secureTextEntry
+              editable={!isPending}
               autoComplete="new-password"
               textContentType="newPassword"
             />
           </FormField>
         )}
       />
-      <Button onPress={submit} disabled={isPending} className="mt-2">
-        <Text>{isPending ? t('auth.register.submitting') : t('auth.register.submit')}</Text>
-      </Button>
+
+      <PasswordChecklist control={control} name="password" rules={RULES} className="mb-1.5">
+        {(satisfied) => (
+          <Button onPress={submit} disabled={isPending || !satisfied} className={authControlClass}>
+            <Text>{isPending ? t('auth.register.submitting') : t('auth.register.submit')}</Text>
+          </Button>
+        )}
+      </PasswordChecklist>
     </View>
   );
 }

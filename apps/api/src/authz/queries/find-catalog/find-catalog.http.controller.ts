@@ -5,8 +5,8 @@ import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import type { ScopedRequest } from '../../../auth/scope-context';
 import { AuthzCatalogResponseDto } from '../../dtos/authz-catalog.response.dto';
 import { FindAuthzCatalogQuery } from './find-catalog.query';
 

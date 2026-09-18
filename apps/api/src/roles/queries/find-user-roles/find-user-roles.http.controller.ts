@@ -4,9 +4,12 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import {
+  activeOrganizationIdOf,
+  type ScopedRequest,
+} from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
-import { activeOrganizationIdOf, type ScopedRequest } from '../../../auth/scope-context';
 import type { RoleEntity } from '../../domain/role.entity';
 import { RoleResponseDto } from '../../dtos/role.response.dto';
 import { RoleMapper } from '../../roles.mapper';

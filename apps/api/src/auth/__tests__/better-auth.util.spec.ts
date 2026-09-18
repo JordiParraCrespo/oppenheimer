@@ -8,7 +8,7 @@ import {
   betterAuthInvoker,
   unwrap,
   unwrapArray,
-} from '../better-auth.util';
+} from '../infrastructure/better-auth.util';
 
 describe('asRecord', () => {
   it('returns the object itself when given a plain object', () => {

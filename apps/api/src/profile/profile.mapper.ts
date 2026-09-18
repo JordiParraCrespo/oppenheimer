@@ -72,7 +72,7 @@ export class ProfileMapper
   /**
    * `avatarUrl` is passed in rather than read off the user: what is persisted
    * is a storage key, and turning it into a loadable URL needs the storage
-   * back-end (and, on S3, a signature). Resolving it stays in `AvatarStorage`
+   * back-end (and, on S3, a signature). Resolving it stays in `AvatarStorageAdapter`
    * so this mapper remains pure.
    */
   toProfileResponse(user: UserEntity, avatarUrl: string | null): ProfileResponseDto {

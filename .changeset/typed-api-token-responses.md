@@ -1,6 +1,7 @@
 ---
 "@oppenheimer/api": minor
 "@oppenheimer/api-client": minor
+"@oppenheimer/frontend-core": minor
 "@oppenheimer/frontend-consumer": minor
 ---
 
@@ -23,11 +24,12 @@ client lost the type and every consumer had to cast it back:
   (with `PaginationMetaDto`).
 
 The wire format is unchanged — only its description. `@oppenheimer/frontend-consumer`'s
-repositories drop the casts this forced (including a `dto as never` that was
-disabling type checking on the create-token request body) and read the generated
-DTOs directly. `UsersRepository.findAll` / `UsersService.findAll` widen their
-`role` filter from `'admin' | 'user'` to `Role`, matching the database-backed
-roles the API actually accepts.
+api-tokens repository drops the casts this forced (including a `dto as never`
+that was disabling type checking on the create-token request body) and reads
+the generated DTOs directly. In `@oppenheimer/frontend-core`,
+`UsersRepository.findAll` / `UsersService.findAll` widen their `role` filter
+from `'admin' | 'user'` to `Role`, matching the database-backed roles the API
+actually accepts.
 
 The root `generate:openapi` script ran `nest build` from the repo root, where
 there is no Nest workspace, so `pnpm generate:api-client` always failed; it now

@@ -54,7 +54,11 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   account panes — workspace name from `organizations`, sessions from
   `profile`, keys from `api-tokens` — by the route.
 - Putting `useWatch` or a query in the page and threading the value down.
-  Subscribe at the leaf — `src/features/auth/components/password-checklist.tsx`.
+  Subscribe at the leaf — `src/features/auth/components/password-checklist.tsx`
+  for a form value, `src/features/api-tokens/` for a query: the route composes,
+  each section and dialog asks for what it renders, and the permission picker's
+  rows each take their own field. `pnpm check:structure` fails a query a screen
+  holds for one sibling, and a prop that is only forwarded.
 - Hand-rolling a table or an error callout while `DataTable` and `Alert` sit
   exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
 

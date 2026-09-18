@@ -4,9 +4,9 @@ import en from '@oppenheimer/translations/en/index.json';
 import es from '@oppenheimer/translations/es/index.json';
 import type { Job } from 'bullmq';
 import { describe, expect, it, vi } from 'vitest';
-import type { LocaleResolver } from '../../profile/services/locale.resolver';
-import { EmailProcessor } from '../email.processor';
+import type { LocaleResolver } from '../../profile/application/locale.resolver';
 import { EmailJobMapper } from '../email-job.mapper';
+import { EmailProcessor } from '../infrastructure/email.processor';
 
 function setup() {
   const email = {

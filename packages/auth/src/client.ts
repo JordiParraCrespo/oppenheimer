@@ -4,7 +4,7 @@ import { userAdditionalFields } from './user-fields';
 
 /**
  * The client plugins every Oppenheimer Better Auth client shares, mirroring the
- * server's plugin set in `apps/api/src/auth/auth.ts`. Platform-specific
+ * server's plugin set in `apps/api/src/auth/infrastructure/better-auth.config.ts`. Platform-specific
  * plugins (the Expo client on mobile) are prepended by each app.
  *
  * A factory rather than a shared array so each platform gets fresh plugin

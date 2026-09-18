@@ -70,11 +70,17 @@ card scroll instead; the two breakpoints are complements, leave them so.
 
 Search, filters, sort and page go through the kit's `useTableQuery` (nuqs).
 Never `useState` for any of the four. The hook resets to page one when the
-list narrows and debounces the URL write.
+list narrows. It does not debounce: the field below it owns the only delay,
+and the bullet after this one is why.
 
-- **Search is the server's job, and debounced.** Pass the debounced
-  `searchQuery` to the request and the immediate `search` to the input. No
-  screen filters rows in the browser to answer a search box.
+- **Search is the server's job, and debounced — by the field.** `useTableQuery`
+  exposes one `search`: the settled value, which seeds the field and which the
+  request reads. `DataTableSearch` owns the half-typed word and calls `onChange`
+  once per burst, so a keystroke never reaches the rows. Never hand the table a
+  live value, and never add a second debounce anywhere on the way out — the
+  field syncs an incoming `search` back down, so a delayed write lands after the
+  reader has typed on and snaps the caret string back. No screen filters rows in
+  the browser to answer a search box.
 - **A search matches everything the row shows.** Widen the endpoint rather
   than narrow the table.
 - **A facet is the server's job too.** Send ids in the request (`?roleIds=`);

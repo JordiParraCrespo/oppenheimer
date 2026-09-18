@@ -7,12 +7,12 @@ import {
   SUBSCRIPTION_REPOSITORY,
 } from './billing.di-tokens';
 import { BillingCustomerMapper } from './billing-customer.mapper';
+import { CreateCheckoutCommandHandler } from './commands/create-checkout/create-checkout.command-handler';
 import { CreateCheckoutHttpController } from './commands/create-checkout/create-checkout.http.controller';
-import { CreateCheckoutService } from './commands/create-checkout/create-checkout.service';
+import { CreatePortalCommandHandler } from './commands/create-portal/create-portal.command-handler';
 import { CreatePortalHttpController } from './commands/create-portal/create-portal.http.controller';
-import { CreatePortalService } from './commands/create-portal/create-portal.service';
+import { HandleStripeWebhookCommandHandler } from './commands/handle-stripe-webhook/handle-stripe-webhook.command-handler';
 import { HandleStripeWebhookHttpController } from './commands/handle-stripe-webhook/handle-stripe-webhook.http.controller';
-import { HandleStripeWebhookService } from './commands/handle-stripe-webhook/handle-stripe-webhook.service';
 import { BillingCustomerOrmEntity } from './database/billing-customer.orm-entity';
 import { BillingCustomerRepository } from './database/billing-customer.repository';
 import { SubscriptionOrmEntity } from './database/subscription.orm-entity';
@@ -37,9 +37,9 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
-  CreateCheckoutService,
-  CreatePortalService,
-  HandleStripeWebhookService,
+  CreateCheckoutCommandHandler,
+  CreatePortalCommandHandler,
+  HandleStripeWebhookCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [

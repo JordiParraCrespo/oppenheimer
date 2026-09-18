@@ -6,6 +6,7 @@ export const COMPONENTS = [
   { slug: 'aspect-ratio', name: 'Aspect Ratio' },
   { slug: 'avatar', name: 'Avatar' },
   { slug: 'badge', name: 'Badge' },
+  { slug: 'brand-mark', name: 'Brand mark' },
   { slug: 'button', name: 'Button' },
   { slug: 'card', name: 'Card' },
   { slug: 'chat-markdown', name: 'Chat Markdown' },
