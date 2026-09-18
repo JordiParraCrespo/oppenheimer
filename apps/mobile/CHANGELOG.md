@@ -12,6 +12,6 @@
 - Updated dependencies [68348a6]
 - Updated dependencies [719859f]
   - @oppenheimer/shared@0.2.0
-  - @oppenheimer/frontend@0.2.0
+  - @oppenheimer/frontend-core@0.2.0
   - @oppenheimer/api-client@0.2.0
   - @oppenheimer/translations@0.2.0

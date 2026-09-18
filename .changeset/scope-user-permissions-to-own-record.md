@@ -1,7 +1,7 @@
 ---
-"@oppenheimer/api": major
-"@oppenheimer/shared": major
-"@oppenheimer/api-client": major
+"@oppenheimer/api": minor
+"@oppenheimer/shared": minor
+"@oppenheimer/api-client": minor
 ---
 
 Enforce conditional User permissions against the loaded record before reading

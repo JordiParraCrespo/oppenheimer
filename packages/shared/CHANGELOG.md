@@ -77,7 +77,7 @@
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
 
-  - **`@oppenheimer/web`** / **`@oppenheimer/frontend`** / **`@oppenheimer/translations`**: a
+  - **`@oppenheimer/web`** / **`@oppenheimer/frontend-consumer`** / **`@oppenheimer/translations`**: a
     token-creation screen with a per-resource permission picker (levels you cannot
     grant are disabled) and an OAuth consent screen, backed by new `api-tokens`
     and `organizations` modules with TanStack Query hooks.
