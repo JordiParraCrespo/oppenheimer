@@ -208,8 +208,12 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   `organizations/commands/provision-personal-workspace/`, dispatched from the
   Better Auth sign-up hook through `auth/auth-command-bus.ts`. It is
   best-effort and idempotent: an account it did not land for still exists and
-  is sent to onboarding, where it creates the workspace by hand, and the seed
-  re-runs it. The default `user` role can *read* the organizations it belongs
+  is sent to `/onboarding`, the console's one organization-creating screen,
+  which makes the caller the owner of their own workspace and nothing else
+  (no roster, no invitation, no second workspace); the seed re-runs the same
+  handler. The check is on membership, not ownership — see
+  `product/versions/mvp/08-auth.md`, which records what that will mean once
+  invitations exist. The default `user` role can *read* the organizations it belongs
   to and *create* one. Every path that creates a membership writes the
   org-scoped application role — the tenant `owner` system role for a Better
   Auth owner/admin, `user` for a member in the same breath —

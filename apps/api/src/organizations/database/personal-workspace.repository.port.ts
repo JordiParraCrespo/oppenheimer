@@ -23,6 +23,13 @@ export interface PersonalWorkspaceRepositoryPort {
    * two provisions racing for the same account would both pass it and both
    * write. Unlikely at sign-up, and certain the first time the seed runs
    * against a live API.
+   *
+   * The test is **membership**, not ownership, and that is a decision rather
+   * than an accident: an account that already belongs somewhere is left alone.
+   * In the MVP the two are the same rule, because nothing but sign-up can
+   * place an account in an organization. They come apart the day an invitation
+   * can, and `product/versions/mvp/08-auth.md` records that the teams slice
+   * decides then whether an invitee also gets a workspace of their own.
    */
   provision(workspace: PersonalWorkspaceEntity): Promise<boolean>;
 }

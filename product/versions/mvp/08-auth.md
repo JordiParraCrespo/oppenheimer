@@ -16,6 +16,20 @@ history) to work on the MVP.
   No roster UI, no invitations, no teams in the MVP; the routes the
   starter ships for them stay unexposed in the console and come back
   with the teams slice on the same tables.
+- **The console creates exactly one organization: your own.** Sign-up's
+  hook is best-effort, so `/onboarding` is the recovery path for an
+  account that ended up with no workspace — it creates one and makes the
+  caller its owner. It is not organization management: there is no
+  roster, no invitation, no second workspace, and an account that
+  already has one is sent back to `/sessions`. An account with none
+  cannot reach the product shell at all, so creating it is the only way
+  forward from that screen besides signing out.
+- **Provisioning is gated on membership, not on ownership.** An account
+  that already belongs to *any* organization is left alone. With no
+  invitations in the MVP that is the same rule as "already has a
+  personal workspace"; the two come apart the day an invitation can
+  place an account somewhere before it owns anything, and the teams
+  slice decides then whether an invitee also gets one of their own.
 - **Hosts belong to the workspace that paired them.** A host row carries
   the workspace id; the pairing token is minted by a signed-in user and
   the runner's keypair is bound to that host row. A host answers only to

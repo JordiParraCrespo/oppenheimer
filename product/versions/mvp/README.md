@@ -44,3 +44,13 @@ at the bottom of this file.
   workspace is one `organization` row per account created at sign-up;
   the starter's leads and billing modules are not composed. 08-auth.md
   added as the one-page auth note for the MVP.
+- 2026-09-18: the notes and the code disagreed about whether the console
+  creates organizations, and the notes were the stale half. `/onboarding`
+  is the console's one organization-creating screen and stays: it is the
+  recovery path for an account whose best-effort sign-up hook did not
+  provision a workspace, it creates only the caller's own, and an account
+  with none cannot open any product screen until it does. "No roster, no
+  invitations, no teams" is unchanged. Recorded in 08-auth.md, root
+  `AGENTS.md` and `.agents/rules/rbac-roles.md`. 08-auth.md also now
+  records that provisioning is gated on *membership* rather than
+  ownership, which the MVP cannot tell apart and the teams slice will.
