@@ -233,8 +233,8 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		if len(rest) != 1 {
 			return cli.ExitUsage, errors.New("usage: runner sessions attach <id> [--window N]")
 		}
-		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
-			return app.AttachSession(ctx, rest[0], *window)
+		return withApp(ctx, func(_ context.Context, app *cli.App) error {
+			return app.AttachSession(rest[0], *window)
 		})
 	case "window":
 		if len(args) != 1 {

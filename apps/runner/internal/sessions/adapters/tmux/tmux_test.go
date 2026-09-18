@@ -13,21 +13,28 @@ import (
 )
 
 // server returns a tmux server on a socket unique to this test, and kills it
-// afterwards. It skips when tmux is not installed, so the suite still runs on
-// a machine that has not got it — CI installs it.
+// afterwards.
+//
+// It skips unless tmux can actually start a server. Checking PATH is not
+// enough: a container without a usable pty layer has the binary and cannot
+// fork a server, and that is the environment's problem rather than this
+// package's. A CI runner with tmux installed runs every test here.
 func server(t *testing.T) *tmux.Server {
 	t.Helper()
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux is not installed")
 	}
 	socket := "opp-test-" + strings.ReplaceAll(t.Name(), "/", "-")
-	s, err := tmux.New(tmux.Options{Socket: socket, ConfigPath: t.TempDir() + "/tmux.conf"})
-	if err != nil {
-		t.Fatal(err)
+	if out, err := exec.Command("tmux", "-L", socket, "start-server").CombinedOutput(); err != nil {
+		t.Skipf("tmux cannot start a server here (%s): %v", strings.TrimSpace(string(out)), err)
 	}
 	t.Cleanup(func() {
 		_ = exec.Command("tmux", "-L", socket, "kill-server").Run() //nolint:errcheck // best effort
 	})
+	s, err := tmux.New(tmux.Options{Socket: socket, ConfigPath: t.TempDir() + "/tmux.conf"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	return s
 }
 

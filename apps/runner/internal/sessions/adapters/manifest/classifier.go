@@ -1,11 +1,22 @@
 // Package manifest reads a captured screen and says what the session is
-// doing. It is the "screen manifest" of the design notes: a small set of
-// rules per agent over the last lines of the pane, plus the one link the
-// console is allowed to turn into a button.
+// doing. It is the "screen manifest" of the design notes.
 //
-// It is deliberately conservative. `unknown` is a legitimate answer and the
-// sidebar shows it as such; guessing `idle` for a long unattended run would
-// be worse than admitting we cannot tell.
+// The engine is a rule table rather than a chain of ifs, and the shape is
+// taken from herdr, which has been doing this against a dozen agents for
+// longer than we have: every rule declares the region it reads, a priority,
+// the patterns that make it match, and the patterns that must *not* be on the
+// screen for it to count. The highest-priority match wins, so adding a rule
+// cannot silently reorder the others — the failure mode of a chain of ifs.
+//
+// Two deliberate limits. `unknown` is a legitimate answer: guessing `idle`
+// during a long unattended run would be worse than admitting we cannot tell.
+// And only vendor login hosts become buttons, compared by exact host, because
+// the agent's output is untrusted and a clickable link is an action (F3).
+//
+// The rules live in Go for now. They want to be versioned data the control
+// plane can ship without a runner release — an agent's next release can
+// change its spinner — which is what herdr does with per-agent TOML. The
+// table below is deliberately shaped so that move is mechanical.
 package manifest
 
 import (
@@ -19,15 +30,104 @@ import (
 
 var _ app.Classifier = (*Classifier)(nil)
 
-// tailLines is how much of the pane the rules look at. The state is always in
-// the last few lines; reading the whole scrollback would match old output.
-const tailLines = 12
+// region is the part of the pane a rule reads. The state is always near the
+// bottom; reading the whole scrollback matches output that has scrolled away.
+type region int
+
+const (
+	// tail12 is the last twelve non-empty lines: where an agent draws its
+	// status, its question, or its prompt.
+	tail12 region = iota
+	// tail5 is the last five, for rules that would misfire on anything a
+	// person could have typed further up.
+	tail5
+)
+
+// Priorities. A login prompt and a question both mean nothing happens until a
+// person acts, so they outrank "working"; "working" outranks the idle prompt,
+// because an agent that is mid-turn also has a prompt box on screen.
+const (
+	priorityLogin   = 1200
+	priorityBlocked = 1000
+	priorityWorking = 970
+	priorityDone    = 900
+	priorityIdle    = 800
+)
+
+// rule is one signal on the screen.
+type rule struct {
+	// id names the rule in a test failure, and will be the key when these
+	// become data.
+	id       string
+	state    domain.State
+	priority int
+	region   region
+	// any matches when at least one pattern hits.
+	any []*regexp.Regexp
+	// not blocks the rule when any of these (lowercased) strings is on the
+	// screen. This is what stops "⠹ Working…" from being reported while the
+	// agent is in fact waiting for an answer under it.
+	not []string
+	// agents limits the rule to some agents; empty means every agent.
+	agents []domain.Agent
+}
+
+var rules = []rule{
+	{
+		id: "question", state: domain.StateBlocked, priority: priorityBlocked, region: tail12,
+		any: patterns(
+			`(?i)\bdo you want to (proceed|continue|allow)\b`,
+			`(?i)[(\[]?\b(y/n|yes/no)\b[)\]]?`,
+			`(?i)^\s*\d\.\s+(yes|no)\b`,
+			`(?i)\bpress enter to (continue|confirm)\b`,
+			`(?i)\bwaiting for (your )?(input|approval|confirmation)\b`,
+			`(?i)\bpaste (the )?code\b`,
+			`(?i)\b(permission|approval) (needed|required)\b`,
+		),
+	},
+	{
+		id: "spinner", state: domain.StateWorking, priority: priorityWorking, region: tail12,
+		any: patterns(
+			`(?i)\b(thinking|working|running|building|searching|editing|analyzing|analysing)\b\s*[.…]`,
+			`(?i)esc to interrupt`,
+			`(?i)\((\d+s|\d+m\s?\d*s?)\s*·`,
+			`[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]`, // a braille spinner is still a spinner
+		),
+		// A spinner frame can still be on screen under a question that has
+		// just appeared. The question is what matters.
+		not: []string{
+			"do you want to proceed", "do you want to continue", "do you want to allow",
+			"waiting for permission", "permission required", "approval required",
+			"esc to cancel", "(y/n)",
+		},
+	},
+	{
+		id: "turn finished", state: domain.StateDone, priority: priorityDone, region: tail12,
+		any: patterns(
+			`(?i)\bdone\b.*\((\d+)\s*(files?|changes?|edits?)\)`,
+			`(?i)^\s*✓\s`,
+			`(?i)\bcompleted\b`,
+		),
+		not: []string{"esc to interrupt"},
+	},
+	{
+		id: "agent prompt", state: domain.StateIdle, priority: priorityIdle, region: tail5,
+		any: patterns(
+			`(?m)^\s*(>|❯|›)\s*$`,
+			`(?i)\btry "`,
+			`(?i)\bwhat would you like\b`,
+		),
+		not: []string{"esc to interrupt"},
+	},
+	{
+		id: "shell prompt", state: domain.StateIdle, priority: priorityIdle, region: tail5,
+		any:    patterns(`(?m)[$#%❯]\s*$`),
+		agents: []domain.Agent{domain.AgentShell},
+	},
+}
 
 // loginTargets is the allowlist of vendor logins whose URL becomes a button.
-// Anything else stays plain text, however much it looks like a link: the
-// agent's output is untrusted, and a clickable link is an action (F3).
-//
-// The host is compared for equality, never by substring. `claude.ai` and
+// The host is compared for equality, never by substring: `claude.ai` and
 // `claude.ai.attacker.test` differ by a suffix, and a Contains check would
 // hand a person a button to the second one.
 var loginTargets = []struct {
@@ -46,74 +146,67 @@ var loginTargets = []struct {
 
 var urlPattern = regexp.MustCompile(`https://[^\s"'<>)]+`)
 
-// Rules that say the agent is waiting for the person.
-var blockedPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)\bdo you want to (proceed|continue|allow)\b`),
-	regexp.MustCompile(`(?i)[(\[]?\b(y/n|yes/no)\b[)\]]?`),
-	regexp.MustCompile(`(?i)^\s*\d\.\s+(yes|no)\b`),
-	regexp.MustCompile(`(?i)\bpress enter to (continue|confirm)\b`),
-	regexp.MustCompile(`(?i)\bwaiting for (your )?(input|approval|confirmation)\b`),
-	regexp.MustCompile(`(?i)\bpaste (the )?code\b`),
-	regexp.MustCompile(`(?i)\b(permission|approval) (needed|required)\b`),
-}
-
-// Rules that say the agent is working.
-var workingPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)\b(thinking|working|running|building|searching|editing|analyzing|analysing)\b\s*[.…]`),
-	regexp.MustCompile(`(?i)esc to interrupt`),
-	regexp.MustCompile(`(?i)\((\d+s|\d+m\s?\d*s?)\s*·`),
-	regexp.MustCompile(`[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]`), // a braille spinner is still a spinner
-}
-
-// Rules that say a turn finished.
-var donePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?i)\bdone\b.*\((\d+)\s*(files?|changes?|edits?)\)`),
-	regexp.MustCompile(`(?i)^\s*✓\s`),
-	regexp.MustCompile(`(?i)\bcompleted\b`),
-}
-
-// promptPatterns say the agent is up and waiting for a task, which is idle.
-var promptPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?m)^\s*(>|❯|›)\s*$`),
-	regexp.MustCompile(`(?i)\btry "`),
-	regexp.MustCompile(`(?i)\bwhat would you like\b`),
-}
-
-// shellPrompt recognises a plain shell waiting at the end of the pane.
-var shellPrompt = regexp.MustCompile(`(?m)[$#%❯]\s*$`)
-
-// Classifier applies the rules.
+// Classifier applies the rule table.
 type Classifier struct{}
 
 // New builds the classifier.
 func New() *Classifier { return &Classifier{} }
 
 // Classify returns the state and, when the screen shows one, a vendor login
-// URL. The order is the order of urgency: a login prompt and a question both
-// mean nothing happens until a person acts, so they win over "working".
+// URL. A login prompt outranks every rule: nothing happens until a person
+// opens it.
 func (c *Classifier) Classify(screen string, agent domain.Agent) (domain.State, string) {
-	tail := lastLines(screen, tailLines)
-	if strings.TrimSpace(tail) == "" {
+	tails := map[region]string{
+		tail12: lastLines(screen, 12),
+		tail5:  lastLines(screen, 5),
+	}
+	if strings.TrimSpace(tails[tail12]) == "" {
 		return domain.StateUnknown, ""
 	}
-	loginURL := LoginURL(tail)
+	if url := LoginURL(tails[tail12]); url != "" {
+		return domain.StateBlocked, url
+	}
 
-	switch {
-	case loginURL != "":
-		return domain.StateBlocked, loginURL
-	case matchesAny(tail, blockedPatterns):
-		return domain.StateBlocked, ""
-	case matchesAny(tail, workingPatterns):
-		return domain.StateWorking, ""
-	case matchesAny(tail, donePatterns):
-		return domain.StateDone, ""
-	case matchesAny(tail, promptPatterns):
-		return domain.StateIdle, ""
-	case agent == domain.AgentShell && shellPrompt.MatchString(tail):
-		return domain.StateIdle, ""
-	default:
+	best := rule{priority: -1}
+	for _, r := range rules {
+		if !r.appliesTo(agent) || r.priority <= best.priority {
+			continue
+		}
+		if r.matches(tails[r.region]) {
+			best = r
+		}
+	}
+	if best.priority < 0 {
 		return domain.StateUnknown, ""
 	}
+	return best.state, ""
+}
+
+func (r rule) appliesTo(agent domain.Agent) bool {
+	if len(r.agents) == 0 {
+		return true
+	}
+	for _, a := range r.agents {
+		if a == agent {
+			return true
+		}
+	}
+	return false
+}
+
+func (r rule) matches(text string) bool {
+	lower := strings.ToLower(text)
+	for _, blocker := range r.not {
+		if strings.Contains(lower, blocker) {
+			return false
+		}
+	}
+	for _, pattern := range r.any {
+		if pattern.MatchString(text) {
+			return true
+		}
+	}
+	return false
 }
 
 // LoginURL returns the first URL on an allowlisted vendor login host, or "".
@@ -140,13 +233,12 @@ func LoginURL(screen string) string {
 	return ""
 }
 
-func matchesAny(text string, patterns []*regexp.Regexp) bool {
-	for _, pattern := range patterns {
-		if pattern.MatchString(text) {
-			return true
-		}
+func patterns(exprs ...string) []*regexp.Regexp {
+	out := make([]*regexp.Regexp, 0, len(exprs))
+	for _, expr := range exprs {
+		out = append(out, regexp.MustCompile(expr))
 	}
-	return false
+	return out
 }
 
 func lastLines(text string, n int) string {

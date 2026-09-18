@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -40,6 +41,13 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	if err != nil {
 		return err
 	}
+	// The loops below are part of this process's lifecycle: shutdown waits
+	// for them, so a stopping runner never leaves a `capture-pane` or a
+	// half-finished update behind it.
+	ctx, stopLoops := context.WithCancel(ctx)
+	defer stopLoops()
+	var loops sync.WaitGroup
+
 	logger = logger.With(slog.String("host", identity.HostID))
 	logger.Info("runner starting",
 		slog.String("version", a.Version),
@@ -58,7 +66,11 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 				slog.String("from", state.From), slog.String("to", state.To),
 				slog.Int("attempt", state.Attempts))
 		}
-		go a.updateLoop(ctx, logger)
+		loops.Add(1)
+		go func() {
+			defer loops.Done()
+			a.updateLoop(ctx, logger)
+		}()
 	}
 
 	// Sessions live in tmux, which outlived this process being replaced.
@@ -73,7 +85,11 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		// ending it is a decision, not a side effect of booting.
 		logger.Warn("tmux sessions this runner does not recognise", slog.Any("sessions", orphans))
 	}
-	go a.sessionLoop(ctx, logger)
+	loops.Add(1)
+	go func() {
+		defer loops.Done()
+		a.sessionLoop(ctx, logger)
+	}()
 
 	if facts, err := a.Host.Collect(ctx); err == nil {
 		if err := facts.Validate(); err != nil {
@@ -89,12 +105,17 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	}
 	logger.Info("local socket ready", slog.String("socket", a.Paths.Socket()))
 
-	return httpx.Serve(ctx, logger, httpx.ServerOptions{
+	err = httpx.Serve(ctx, logger, httpx.ServerOptions{
 		Listener:          listener,
 		ShutdownTimeout:   opts.ShutdownTimeout,
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}, a.localRouter(opts.ErrorTypeBaseURL, logger))
+
+	stopLoops()
+	loops.Wait()
+	logger.Info("runner stopped")
+	return err
 }
 
 // listen opens the Unix socket 0600. A stale socket from a killed runner is

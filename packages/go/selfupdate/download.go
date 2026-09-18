@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -68,7 +69,7 @@ func Fetch(ctx context.Context, client *http.Client, a Artifact, dest string) er
 		err = ErrSize
 	case a.Size > 0 && n != a.Size:
 		err = fmt.Errorf("%w: got %d bytes, manifest says %d", ErrSize, n, a.Size)
-	case !equalDigest(digest.Sum(nil), want):
+	case subtle.ConstantTimeCompare(digest.Sum(nil), want) != 1:
 		err = fmt.Errorf("%w: got %s, manifest says %s", ErrDigest, hex.EncodeToString(digest.Sum(nil)), a.SHA256)
 	}
 	if err != nil {
@@ -137,15 +138,4 @@ func Digest(path string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func equalDigest(got, want []byte) bool {
-	if len(got) != len(want) {
-		return false
-	}
-	var diff byte
-	for i := range got {
-		diff |= got[i] ^ want[i]
-	}
-	return diff == 0
 }

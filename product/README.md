@@ -19,6 +19,7 @@ for the detail and sources.
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo, `main/` plus one worktree per session, as in Orca; three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
+| 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -86,3 +87,11 @@ earlier note:
   signed with an offline key whose public half is compiled into the
   binary, so the control plane offers versions and never supplies code
   (`versions/mvp/09-runner-install-and-update.md`, security finding F26).
+- Note 03 cited herdr from its website. Note 13 reads its source: the
+  architecture matches ours, but herdr owns the PTYs, so its agents do not
+  survive a restart. Our tmux layer is what buys that, at the cost of
+  terminal fidelity — recorded as a trade, not a win.
+- Note 02's open question about screen manifests is answered by note 13:
+  lifecycle hooks are authoritative where an agent has them, screen reading
+  is the fallback, and rules carry a priority and negative guards rather than
+  being a chain of ifs (`versions/mvp/02-runner.md` §9).

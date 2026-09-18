@@ -234,6 +234,13 @@ the runner, so a runner restart or upgrade loses nothing.
   client is attached, every 10 s when none is — and maps the screen to
   working, blocked, done, idle or unknown (note 03 §1), plus the login
   URL. Claude Code's manifest first, Codex's next.
+- **Rules carry a priority, a region and negative guards**, and the
+  highest-priority match wins; a chain of ifs reports "working" for a
+  session that is actually blocked, because the spinner frame is still
+  on screen under the question (note 13 §1). Where an agent has
+  lifecycle hooks, the hooks are authoritative and the screen is the
+  fallback. The rules want to be versioned data the control plane
+  ships, so an agent's next release does not need a runner release.
 - Idle is terminal silence **and** a manifest state that is not working,
   so a long unattended run is never called idle.
 - State changes go to the control plane as events; the control plane
@@ -304,10 +311,12 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 
 1. ~~tmux topology~~: decided above, one server per host on its own
    socket, one tmux session per oppenheimer session, windows as tabs.
-2. Screen manifests: regexes over the last N lines, or a small state
-   machine fed by Codex's own hooks where available? Codex supports
-   lifecycle hooks with trusted hashes (note 06), which is more reliable
-   than screen scraping.
+2. ~~Screen manifests: regexes or hooks?~~ Decided in §9 from note 13:
+   hooks are authoritative where an agent has them, screen rules are the
+   fallback, and the rules carry priorities and `not` guards. What is
+   still open is *when* the rules become control-plane-shipped data
+   rather than a Go table, and whether the terminal title (OSC) becomes
+   a region we read — herdr's most reliable signal.
 3. ~~Idle detection input~~: decided in §9, silence **and** manifest
    state.
 4. ~~macOS install~~: decided in 09 §2 — a user launchd agent and a

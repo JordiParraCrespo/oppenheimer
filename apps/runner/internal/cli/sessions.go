@@ -86,7 +86,7 @@ func (a *App) ListSessions(ctx context.Context, out io.Writer) error {
 // AttachSession hands this terminal to tmux. The runner's own PTY streaming
 // is for the browser; from a shell on the host, the right answer is to become
 // `tmux attach` rather than to proxy bytes through a second process.
-func (a *App) AttachSession(ctx context.Context, id string, window int) error {
+func (a *App) AttachSession(id string, window int) error {
 	session, err := a.Sessions.Get(id)
 	if err != nil {
 		return err

@@ -156,6 +156,15 @@ func (s Session) NextWindow() int {
 	return next
 }
 
+// Clone returns a session that shares nothing with this one. Copying the
+// struct alone would hand the caller the same Windows backing array, and a
+// caller that appended or edited a window would be editing the service's own
+// state from outside it.
+func (s Session) Clone() Session {
+	s.Windows = append([]Window(nil), s.Windows...)
+	return s
+}
+
 // WithState returns a copy in a new state, stamped.
 func (s Session) WithState(state State, now time.Time) Session {
 	s.State, s.Updated = state, now

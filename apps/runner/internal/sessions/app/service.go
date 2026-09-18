@@ -27,7 +27,11 @@ type Options struct {
 
 // Service is the session lifecycle.
 type Service struct {
-	mu         sync.Mutex
+	mu sync.Mutex
+	// save serialises writes to the store: two goroutines that both took a
+	// snapshot could otherwise write them in the opposite order and leave
+	// the older one on disk.
+	save       sync.Mutex
 	sessions   map[string]domain.Session
 	terminals  Terminals
 	worktrees  Worktrees
@@ -64,7 +68,7 @@ func New(opts Options) (*Service, error) {
 			return nil, domain.ErrNotFound.WithDetail("read the session map: %v", err).WithCause(err)
 		}
 		for _, session := range loaded {
-			s.sessions[session.ID] = session
+			s.sessions[session.ID] = session.Clone()
 		}
 	}
 	return s, nil
@@ -154,7 +158,7 @@ func (s *Service) List() []domain.Session {
 	defer s.mu.Unlock()
 	out := make([]domain.Session, 0, len(s.sessions))
 	for _, session := range s.sessions {
-		out = append(out, session)
+		out = append(out, session.Clone())
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Created.After(out[j].Created) })
 	return out
@@ -168,7 +172,7 @@ func (s *Service) Get(id string) (domain.Session, error) {
 	if !ok {
 		return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 	}
-	return session, nil
+	return session.Clone(), nil
 }
 
 // OpenWindow adds a tab: a plain shell in the same worktree.
@@ -422,16 +426,26 @@ func (s *Service) transition(session domain.Session, state domain.State, loginUR
 // failing a live session for: the map is a cache, and the control plane and
 // tmux both still know the truth.
 func (s *Service) put(session domain.Session) {
+	if s.store == nil {
+		s.mu.Lock()
+		s.sessions[session.ID] = session.Clone()
+		s.mu.Unlock()
+		return
+	}
+	// The save lock is taken first and held across both the snapshot and the
+	// write, so snapshots reach the disk in the order they were taken.
+	s.save.Lock()
+	defer s.save.Unlock()
+
 	s.mu.Lock()
-	s.sessions[session.ID] = session
+	s.sessions[session.ID] = session.Clone()
 	snapshot := make([]domain.Session, 0, len(s.sessions))
 	for _, item := range s.sessions {
-		snapshot = append(snapshot, item)
+		snapshot = append(snapshot, item.Clone())
 	}
 	s.mu.Unlock()
-	if s.store != nil {
-		_ = s.store.Save(snapshot)
-	}
+
+	_ = s.store.Save(snapshot)
 }
 
 func nameOr(name, fallback string) string {

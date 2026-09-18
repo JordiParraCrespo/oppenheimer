@@ -120,3 +120,34 @@ func repeat(s string, n int) string {
 	}
 	return out
 }
+
+func TestAQuestionUnderASpinnerWins(t *testing.T) {
+	// Claude leaves the spinner frame on screen while it asks. Reporting
+	// "working" here is how a person misses that an agent is stuck, which is
+	// the single failure this whole feature exists to prevent.
+	screen := "⠹ Editing src/main.go… (18s · esc to interrupt)\n\nDo you want to proceed?\n  1. Yes\n  2. No\n"
+
+	if state, _ := classify(t, screen); state != domain.StateBlocked {
+		t.Fatalf("state = %q, want blocked", state)
+	}
+}
+
+func TestAPromptBoxUnderAWorkingAgentDoesNotReadAsIdle(t *testing.T) {
+	screen := "⠹ Thinking… (4s · esc to interrupt)\n\n> \n"
+
+	if state, _ := classify(t, screen); state != domain.StateWorking {
+		t.Fatalf("state = %q, want working", state)
+	}
+}
+
+func TestAShellPromptIsOnlyIdleForAShellSession(t *testing.T) {
+	screen := "jordi@mac ~/work $ "
+
+	if state, _ := manifest.New().Classify(screen, domain.AgentShell); state != domain.StateIdle {
+		t.Fatalf("shell: state = %q, want idle", state)
+	}
+	// The same characters under an agent mean nothing; `unknown` is honest.
+	if state, _ := manifest.New().Classify(screen, domain.AgentClaude); state != domain.StateUnknown {
+		t.Fatalf("claude: state = %q, want unknown", state)
+	}
+}
