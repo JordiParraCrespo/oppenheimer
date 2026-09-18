@@ -1,10 +1,17 @@
 # 11 — Workspace layout: one place per repo, main plus worktrees
 
+**§1 is superseded by
+[`versions/mvp/09-api-modules-and-data-model.md`](versions/mvp/09-api-modules-and-data-model.md)**,
+which adds a project level above the repository, moves worktrees under
+the session that owns them, and makes every directory name a database
+constraint rather than a convention. The layout below is kept as the
+record of what was decided first and why. §2 onward still stands.
+
 Decision from discussion: no free-form filesystem freedom. Every repo
 lives in one fixed place with one main checkout and one worktree per
 session, exactly like Orca's worktree model, so the UX is the same.
 
-## 1. The layout
+## 1. The layout — superseded, kept for the record
 
 ```
 ~/oppenheimer-ai/
@@ -34,6 +41,52 @@ session, exactly like Orca's worktree model, so the UX is the same.
 
 Repo name is the GitHub repository name; if two installations expose
 the same name, the second gets `<owner>--<repo>`.
+
+### What note 09 changes, and why
+
+```
+~/oppenheimer-ai/projects/<project-slug>/
+  repos/<owner>--<repo>.git/          bare store, always owner-prefixed
+  sessions/<session-slug>/
+    .oppenheimer                      provenance: only what carries this is ours to delete
+    <repo>/                           a checkout — worktree, or a clone when one is not possible
+    <other-repo>/                     a session may check out several
+  agents/  docs/                      later
+```
+
+1. **A project level above the repository.** A project is the body of
+   work a person thinks in; the repository is the first thing inside
+   it, and agents and documents follow. Without this level, adding them
+   later means moving every clone on every host.
+2. **`projects/`, not `workspaces/`.** "Workspace" already means the
+   `organization` row in the API. Two meanings for one word is a bug
+   generator.
+3. **Worktrees move under the session.** A session may check out
+   several repositories, and they sit side by side in one directory the
+   agent works in — which a per-repository `worktrees/` folder cannot
+   express.
+4. **No `main/`, and the store is bare.** `main/` existed only to make
+   room for `worktrees/` beside it. Measured on this repo, `.git` is
+   41 MB against a 67 MB working tree, so a bare store saves the larger
+   half per repository per project and makes "never edited" structural.
+   `git clone --bare` sets no fetch refspec, so the runner must add
+   `+refs/heads/*:refs/remotes/origin/*`.
+5. **Always owner-prefixed in `repos/`.** The conditional rule above
+   ("the second gets `<owner>--<repo>`") is order-dependent, so it needs
+   a record of who got there first. Prefixing always is derived from
+   `fullName`, which GitHub guarantees unique, so no row is needed.
+6. **Ownership is proven by metadata, never by path.** A person can run
+   `git worktree add` by hand inside `~/oppenheimer-ai/`. Only the
+   `.oppenheimer` marker makes a directory ours to remove.
+
+**One correction to the claim above.** "Ten sessions on one repo cost
+one clone plus ten working trees" is right, but the related line in §2
+— *"one dependency install"* — is not a property of worktrees: each
+working tree needs its own `node_modules`. With pnpm's
+content-addressable store the disk cost is largely hard links, but the
+install still runs per checkout. It is true at the VM level in §2's own
+context; it should not be read as a property of worktrees, or session
+startup time will be estimated wrong.
 
 ## 2. What this changes: Keep sessions share a workspace VM
 

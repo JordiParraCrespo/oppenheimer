@@ -17,7 +17,7 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo, `main/` plus one worktree per session, as in Orca; three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/09`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
@@ -82,8 +82,9 @@ earlier note:
 - The control-plane modules and data model *have* now changed, where the
   line above said only the framework had. `versions/mvp/09-api-modules-and-data-model.md`
   replaces note 03's seven modules and its first-cut table list with
-  four modules — `hosts`, `github`, `sessions`, `relay` — and six
-  tables, held to the shape of the starter's own Better Auth schema —
+  five modules — `hosts`, `github`, `projects`, `sessions`, `relay` —
+  and eight tables, held to the shape of the starter's own Better Auth
+  schema —
   flat rows, credentials inline with their subject, a table only where
   the lifetime is independent. `installations` and `repositories` merge
   into one aggregate;
@@ -93,3 +94,11 @@ earlier note:
   get no table at all, and "GitHub allowed repositories" turns out to be
   the same noun as "repositories" — the App installation is a boundary
   GitHub already enforces.
+- Note 11 said one worktree per session under
+  `workspaces/<repo>/main`. `versions/mvp/09-api-modules-and-data-model.md`
+  supersedes its §1: a **project** level sits above the repository, a
+  session may check out **several** repositories, and those checkouts
+  live under the session rather than under the repo. The store is a
+  bare clone, always owner-prefixed, and every directory name is a
+  database constraint instead of a convention. Note 11 §2 onward still
+  stands.

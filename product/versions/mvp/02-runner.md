@@ -27,9 +27,13 @@
   which is also how the login URL is detected. The tmux server outlives
   the runner, so a runner restart or upgrade loses nothing: on boot the
   runner lists sessions, re-adopts those the control plane knows, and
-  kills orphans after a grace period. A host reboot shows every session
-  as stopped with a Restart button that recreates window 0 in the same
-  worktree.
+  kills orphans after a grace period. **"Orphan" means a tmux session
+  the control plane does not know *and* whose directory carries our
+  `.oppenheimer` provenance marker.** Path shape is never authority: a
+  person can run `git worktree add` by hand under `~/oppenheimer-ai/`,
+  and deleting that is data loss (note 09, the rules learned from
+  Orca). A host reboot shows every session as stopped with a Restart
+  button that recreates window 0 in the same worktree.
 - **Pairing** is the GitHub Actions runner pattern. Settings shows one
   install command carrying a one-hour, single-use registration token.
   The command downloads the binary for that OS and arch, verifies its
@@ -54,10 +58,17 @@
   checksums without a web deploy.
 - Screen manifests classify each pane as working, blocked, done, idle,
   or unknown (note 03 §1). Codex manifest first.
-- Workspaces: on session create, ensure
-  `~/oppenheimer-ai/workspaces/<repo>/main` exists and is fetched, then
-  `git worktree add worktrees/<slug>` from it at the chosen branch. On
-  close, push the branch and `git worktree remove`.
+- Workspaces: on session create, ensure the project's bare store
+  `~/oppenheimer-ai/projects/<project>/repos/<owner>--<repo>.git` exists
+  and is fetched, write the `.oppenheimer` marker into
+  `sessions/<slug>/` **before** any setup runs, then `git worktree add`
+  each checkout into `sessions/<slug>/<dir>` at its chosen branch. A
+  session may have several checkouts; the agent is launched in the one
+  the control plane names as its working directory. When a worktree is
+  not possible, clone instead and report which mode was used, because
+  cleanup differs. On close, push each branch, then `git worktree
+  remove` (or remove the directory for a clone) and prune. The full
+  layout and its reasons are note 09; it supersedes note 11 §1.
 - Git credentials: a `credential-helper` subcommand that git in the
   session's shell calls; it asks the runner over a Unix socket for the
   current one-hour token for that session's repository. Nothing on

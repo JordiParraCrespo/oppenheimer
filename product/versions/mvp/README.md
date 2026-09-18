@@ -18,7 +18,7 @@ at the bottom of this file.
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
-| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the four API modules, their aggregates, the six new tables, the endpoint surface, and where agents and models live |
+| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the eight new tables, the on-disk layout, the endpoint surface, and where agents and models live |
 
 ## Decision log
 
@@ -77,3 +77,25 @@ at the bottom of this file.
   the attach ticket becomes a Redis key with a TTL, and webhook
   de-duplication becomes a cache key because the handler is a full
   resync and therefore already idempotent.
+- 2026-09-18: **a project level, and a session that holds several
+  checkouts.** A project is the body of work; a session is one piece of
+  work inside it; a checkout is one repository on its own branch, and a
+  session has one or more. So `work_session` loses `repositoryId`,
+  `baseBranch` and `branch` to a new `session_checkout` table, and gains
+  `projectId` and `cwdCheckoutId` — *where the agent is launched*, the
+  one fact that matters, encoded directly instead of as a flag on a
+  checkout row. Eight tables, five modules (`projects/` joins). The
+  layout becomes
+  `projects/<slug>/repos/<owner>--<repo>.git` (bare, always
+  owner-prefixed) plus `projects/<slug>/sessions/<slug>/<checkout>`,
+  superseding note 11 §1; `projects/` rather than `workspaces/` because
+  the latter already means the `organization` row. A checkout records
+  whether it is a `worktree` or a `clone`, because cleanup differs.
+  Four rules come from reading Orca's source: identity is never a path,
+  ownership is proven by a `.oppenheimer` marker and never by where a
+  directory sits, ownership and visibility are different axes, and a
+  session slug is never reused because agent CLIs key conversation
+  state by working directory — which means `work_session` rows are
+  never hard-deleted. The pairing token gains `intendedName` so a host
+  can be named before it exists, as Orca's Add-remote-server dialog
+  does.
