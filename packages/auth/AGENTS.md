@@ -32,8 +32,8 @@ Consequences:
 - Server-only options (database, hooks, emails, admin roles, OAuth) →
   `apps/api/src/auth/infrastructure/better-auth.config.ts`.
 - Platform glue (Expo plugin, SecureStore, cookies) → the apps.
-- The `IAuthClient` contract → `@oppenheimer/frontend` (this package must not depend
-  on it; `AuthSession` here mirrors it structurally).
+- The `IAuthClient` contract → `@oppenheimer/frontend-core` (this package must not
+  depend on it; `AuthSession` here mirrors it structurally).
 
 ## Commands
 

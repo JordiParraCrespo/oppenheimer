@@ -1,7 +1,8 @@
 # @oppenheimer/translations — Agent Instructions
 
-Shared i18n resources used by `apps/web` (react-i18next) and `apps/mobile`
-(i18next).
+Shared i18n resources used by `apps/web` and `apps/admin-web` (react-i18next),
+`apps/mobile` and `apps/admin-mobile` (i18next), and `apps/api` (email copy in
+the recipient's locale).
 
 > Read the root [`CLAUDE.md`](../../CLAUDE.md) first.
 

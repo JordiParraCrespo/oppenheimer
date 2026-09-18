@@ -15,7 +15,7 @@ to the API.
 `hub.go`
 
 - `Hub`, `NewHub(logger, Options)`, `DefaultOptions()` — the registry of
-  connections and subscriptions; `Publish(topic, payload)` fans out,
+  connections and subscriptions; `Publish(topic, event, payload)` fans out,
   `Shutdown(ctx)` closes every connection with a going-away frame.
 
 `handler.go`
@@ -30,16 +30,17 @@ to the API.
 
 ## How to use it
 
-From the composition root and a module (`apps/runner/internal/server/server.go`,
-`apps/runner/internal/jobs/module.go`):
+From the composition root (`apps/runner/internal/server/server.go`):
 
 ```go
 hub := ws.NewHub(logger.With(slog.String("module", "ws")), ws.DefaultOptions())
-api.Handle("GET /v1/ws", ws.Handler(hub, problems, logger, jobsModule.Authorize()))
+api.Handle("GET /v1/ws", ws.Handler(hub, problems, logger, authorizeEvents))
 ```
 
-The module's `Authorize()` checks the principal's scopes against the topic;
-its use cases call `hub.Publish` when a job changes.
+`authorizeEvents` checks the principal's scopes against the topic — every topic
+currently needs `events:read`, until a product context (sessions, hosts) owns
+topics of its own and supplies its own `ws.Authorizer`. A use case then calls
+`hub.Publish` when something changes.
 
 ## How to run it
 

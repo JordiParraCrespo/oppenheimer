@@ -1,7 +1,8 @@
 # @oppenheimer/api-client — Agent Instructions
 
 Typed API client **auto-generated** from the API's OpenAPI/Swagger spec.
-Consumed by `@oppenheimer/frontend`.
+Consumed by `@oppenheimer/frontend-core`, `@oppenheimer/frontend-consumer` and
+`@oppenheimer/frontend-admin`.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first.
 

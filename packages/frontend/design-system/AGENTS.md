@@ -3,8 +3,8 @@
 Shared design system. This directory is a **container of two publishable
 packages**:
 
-- [`web/`](./web) → `@oppenheimer/design-system-web` — Base UI + Tailwind v4 (used by `apps/web`, `apps/web-showcase`)
-- [`mobile/`](./mobile) → `@oppenheimer/design-system-mobile` — React Native + NativeWind (used by `apps/mobile`, `apps/mobile-showcase`)
+- [`web/`](./web) → `@oppenheimer/design-system-web` — Base UI + Tailwind v4 (used by `apps/web`, `apps/admin-web`, `apps/web-showcase`, `packages/frontend/web`)
+- [`mobile/`](./mobile) → `@oppenheimer/design-system-mobile` — React Native + NativeWind (used by `apps/mobile`, `apps/admin-mobile`, `apps/mobile-showcase`, `packages/frontend/mobile`)
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first. There is no package.json
 > at this level — work inside `web/` or `mobile/`.

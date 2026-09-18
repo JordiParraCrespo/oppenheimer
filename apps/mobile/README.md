@@ -41,7 +41,7 @@ index.ts               # the nitro-fetch polyfill first, then expo-router/entry
 app/                   # expo-router routes: a default export that mounts a screen
 ├── _layout.tsx        # providers, theme vars, error boundaries, AuthGate
 ├── (auth)/            # login, register, forgot-password, reset-password
-└── (app)/             # the tab layout and its screens
+└── (app)/             # the signed-in stack and its screens
 features/              # <module>/{screens,sections,dialogs,forms,components,hooks,lib,__tests__}
 lib/                   # configuration only: oppenheimer.ts, auth-client.ts, query.ts
 app.config.ts          # Expo config — the source of truth for native

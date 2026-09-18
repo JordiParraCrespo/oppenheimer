@@ -12,8 +12,9 @@ pnpm generate:api-client   # from the repo root
 
 This runs `@hey-api/openapi-ts` against `apps/api/openapi.json` (config in
 `openapi-ts.config.ts`). Output lands in `src/generated/` (SDK, types, TanStack
-Query `queryOptions` / `queryKeys`). Screens still go through `@oppenheimer/frontend`
-wrappers so persist policy and entity mapping stay in one place.
+Query `queryOptions` / `queryKeys`). Screens still go through
+`@oppenheimer/frontend-core`, `-consumer` and `-admin` wrappers so persist policy
+and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators. The
 legacy class client under `src/data-access/` remains until call sites finish
@@ -27,14 +28,15 @@ moving to the SDK.
 | `@oppenheimer/api-client/models`   | Generated request/response models          |
 | `@oppenheimer/api-client/services` | Generated per-tag service classes (`*Api`) |
 
-## No runtime dependencies — by design
+## One runtime dependency — by design
 
-`package.json` intentionally declares **no `dependencies`** field, only
-`devDependencies`. The generated client is self-contained (it uses the platform
-`fetch`); the consuming app supplies configuration. Please keep it that way —
-don't add an HTTP library here. This is not an oversight; see the `"//"` note in
-`package.json`.
+`package.json` declares exactly one `dependencies` entry:
+`@hey-api/client-fetch`, the platform-`fetch`-based client the generated SDK is
+built on. Please keep it that way — don't add a second HTTP library (e.g.
+axios) here. This is deliberate; see the `"//"` note in `package.json`.
 
 ## Consumed by
 
-`packages/frontend` (which wires the client into its data-access layer).
+`@oppenheimer/frontend-core`, `@oppenheimer/frontend-consumer` and
+`@oppenheimer/frontend-admin` (each wires the client into its own data-access
+layer).

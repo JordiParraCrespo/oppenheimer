@@ -4,8 +4,9 @@
 
 ## Where things go
 
-- The loader is `src/load.ts` (`loadEnv`) and its side-effect entry
-  `@oppenheimer/env/load`; `src/index.ts` re-exports. There is nothing else to add
+- The loader is `src/index.ts` (`loadEnv`, `findWorkspaceRoot`); `src/load.ts`
+  is the side-effect-only entry (`@oppenheimer/env/load`) that just calls
+  `loadEnv()`. There is nothing else to add
   here: a new variable goes in the root `.env.example` with a note, and is read
   by the app that needs it.
 - Its spec is `src/index.spec.ts`: the root walk, the `.env.local` override

@@ -17,7 +17,7 @@
 ```bash
 pnpm --filter @oppenheimer/go-core lint    # golangci-lint run ./...
 pnpm --filter @oppenheimer/go-core test    # go test -count=1 ./...
-pnpm --filter @oppenheimer/runner arch   # the runner's boundary test still passes
+pnpm --filter @oppenheimer/runner test   # the runner's boundary test still passes
 ```
 
 ## Patterns agents get wrong

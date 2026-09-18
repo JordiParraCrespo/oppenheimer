@@ -1,7 +1,8 @@
 # @oppenheimer/design-system-web — Agent Instructions
 
 Web UI component library: shadcn/ui components + Tailwind, built with tsup.
-Consumed by `apps/web` and `apps/web-showcase`.
+Consumed by `apps/web`, `apps/admin-web`, `apps/web-showcase` and
+`packages/frontend/web`.
 
 > Read the root [`CLAUDE.md`](../../../../CLAUDE.md) and the design-system overview
 > in [`../AGENTS.md`](../AGENTS.md) first.

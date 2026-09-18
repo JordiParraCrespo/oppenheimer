@@ -1,13 +1,15 @@
 # @oppenheimer/frontend-consumer
 
-The consumer product's domain, on top of the kernel. It holds what
-`apps/web` and `apps/mobile` need and the control plane does not:
-organizations (workspaces, members, invitations), the signed-in person's
-profile and sessions, and API tokens. Each module is an entity, an error
-catalog, a repository over `@oppenheimer/api-client`, a service and an InversifyJS
-`ContainerModule`; `src/react/` turns those services into TanStack Query
-hooks. Like the kernel it is platform-free — the same code runs in the Vite
-app and the Expo app — and it never imports `@oppenheimer/frontend-admin`.
+The consumer product's domain, on top of the kernel. `sessions` (a worktree
+with a terminal on a host) and `hosts` (the machines the user owns) are the
+product; `organizations` (the personal workspace only — no roster, no
+members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
+and `api-tokens` are the account chrome it keeps. Each module is an entity, an
+error catalog, a repository over `@oppenheimer/api-client`, a service and an
+InversifyJS `ContainerModule`; `src/react/` turns those services into
+TanStack Query hooks. Like the kernel it is platform-free — the same code
+runs in the Vite app and the Expo app — and it never imports
+`@oppenheimer/frontend-admin`.
 
 An app becomes the consumer product by loading `consumerModules` into
 `OppenheimerApp.create({ modules })`.
@@ -17,13 +19,17 @@ An app becomes the consumer product by loading `consumerModules` into
 `@oppenheimer/frontend-consumer` (`src/index.ts`):
 
 - **di** — `ConsumerApp`, `consumerModules`, `TOKENS` (the kernel's `TOKENS`
-  spread, plus `OrganizationsRepository`, `OrganizationsService`,
+  spread, plus `HostsRepository`, `HostsService`, `SessionsRepository`,
+  `SessionsService`, `OrganizationsRepository`, `OrganizationsService`,
   `ProfileRepository`, `ProfileService`, `ApiTokensRepository`,
   `ApiTokensService`).
-- **modules/organizations** — `OrganizationEntity`,
-  `OrganizationMemberEntity`, `OrganizationInvitationEntity`,
-  `OrganizationsService`, `OrganizationsRepository`, `OrganizationsModule`,
-  `OrganizationsErrors`, `MemberFilters`.
+- **modules/hosts** — `HostEntity`, `HostPairing`, `HostState`,
+  `HostsService`, `HostsRepository`, `HostsModule`, `HostsErrors`.
+- **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
+  `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
+  `SessionsModule`, `SessionsErrors`.
+- **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
+  `OrganizationsRepository`, `OrganizationsModule`, `OrganizationsErrors`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
   `ProfileService`, `ProfileRepository`, `ProfileModule`, `ProfileErrors`.
 - **modules/api-tokens** — `ApiTokenEntity`, `CreatedApiToken`,
@@ -33,12 +39,11 @@ An app becomes the consumer product by loading `consumerModules` into
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 
 - `useConsumerApp` — the product's services off the kernel container.
-- Organizations: `useOrganizations`, `useCreateOrganization`,
-  `useUpdateOrganization`, `useOrganizationMembers`,
-  `useRemoveOrganizationMember`, `useUpdateOrganizationMemberRole`,
-  `useInviteMembers`, `useOrganizationInvitations`,
-  `useCancelOrganizationInvitation`, `useMyInvitations`,
-  `useAcceptInvitation`, `organizationsKeys`.
+- Hosts: `useHosts`, `usePairHost`, `useRemoveHost`, `hostsKeys`.
+- Sessions: `useSessions`, `useSession`, `useCreateSession`,
+  `useStopSession`, `sessionsKeys`.
+- Organizations (personal workspace only): `useOrganizations`,
+  `useCreateOrganization`, `useUpdateOrganization`, `organizationsKeys`.
 - Profile: `useMyProfile`, `useUpdateMyProfile`, `useChangeOwnPassword`,
   `useUploadAvatar`, `useDeleteAvatar`, `useProfileSessions`,
   `useRevokeProfileSession`, `useRevokeOtherProfileSessions`, `profileKeys`.

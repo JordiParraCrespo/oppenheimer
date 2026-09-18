@@ -40,8 +40,8 @@ const { root, loaded, applied } = loadEnv();
 
 - `apps/api` — every entrypoint (`main.ts`, TypeORM CLI `data-source.ts`,
   `database/seed.ts`, `generate-openapi.ts`) and `auth/infrastructure/better-auth.config.ts` load it first.
-- `apps/mobile` — `app.config.ts` calls it so Expo/Metro inline
-  `EXPO_PUBLIC_*` values from the root `.env`.
+- `apps/mobile`, `apps/admin-mobile` — each app's `app.config.ts` calls it so
+  Expo/Metro inline `EXPO_PUBLIC_*` values from the root `.env`.
 - `apps/mcp` — both entrypoints load it (a no-op when the server is installed
   outside the repo).
 - `apps/web` does **not** need it: `vite.config.ts` points `envDir` at the
