@@ -100,7 +100,7 @@ A **write that encodes a product rule** — what an account is owed, what it may
 do, what it belongs to — never goes in a hook. That is how the personal
 workspace ended up as `INSERT` statements no domain object knew about. The hook
 raises one command (`CompleteSignUpCommand`) through `dispatchFromAuthHook`
-(`src/auth/infrastructure/auth-command-bus.adapter.ts`), and a handler that *can* inject decides what
+(`src/auth/infrastructure/auth-command-bus.util.ts`), and a handler that *can* inject decides what
 that means. The hook names no module: a new side effect is a change to
 `CompleteSignUpCommandHandler`, not another import here.
 

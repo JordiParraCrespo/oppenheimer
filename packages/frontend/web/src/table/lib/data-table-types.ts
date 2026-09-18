@@ -23,15 +23,6 @@ import type { ReactNode } from 'react';
  */
 export const TABLE_HEADER_CONTROL_SIZE = 'default';
 
-/**
- * How long the search field holds a keystroke before it becomes a query.
- *
- * The field owns this, not the hook above it: what a reader types is the
- * field's state until it settles, so a burst of keystrokes costs one render of
- * one input rather than one render of every row. See `DataTableSearch`.
- */
-export const TABLE_SEARCH_DEBOUNCE_MS = 300;
-
 export interface DataTableColumn<TRow> {
   key: string;
   label: ReactNode;

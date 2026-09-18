@@ -1,7 +1,7 @@
 import type { PermissionGroup, Scope } from '@oppenheimer/shared';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * The permission picker's render budget, measured through the form that ships.
@@ -104,10 +104,11 @@ const { CreateApiTokenForm } = await import('@/features/api-tokens/forms/create-
  * the key. Asking the same instance keeps the assertions about *which* message
  * appears instead of about what it happens to say today.
  */
-const { i18n, i18nReady } = await import('@oppenheimer/frontend-web');
+const { i18n, i18nReady, SEARCH_DEBOUNCE_MS } = await import('@oppenheimer/frontend-web');
 await i18nReady;
 const PERMISSIONS_REQUIRED = i18n.t('apiTokens.permissionsRequired');
 const FIELD_REQUIRED = i18n.t('validation.required');
+const SEARCH_LABEL = i18n.t('settings.api.searchPermissions');
 
 function renderForm(onSubmit = vi.fn()) {
   const { container } = render(
@@ -127,11 +128,19 @@ function renderForm(onSubmit = vi.fn()) {
   // `<form>` has no implicit ARIA role without an accessible name, so it is
   // reached through the container rather than by role.
   const form = container.querySelector('form') as HTMLFormElement;
+  const search = screen.getByLabelText(SEARCH_LABEL);
 
-  return { picks, onSubmit, form };
+  return { picks, onSubmit, form, search };
 }
 
+beforeEach(() => {
+  // The search field's debounce is the thing under test in the burst case, so
+  // the clock has to be ours rather than a real 300ms wait.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+});
+
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   toggles.rendered = 0;
 });
@@ -176,5 +185,58 @@ describe('PermissionPicker render budget', () => {
     // A granted row takes the message away on the click, with nothing cleared.
     fireEvent.click(picks('write')[0]);
     expect(screen.queryByText(PERMISSIONS_REQUIRED)).toBeNull();
+  });
+});
+
+describe('PermissionSearch render budget', () => {
+  it('types without redrawing a single row', () => {
+    const { search } = renderForm();
+    toggles.rendered = 0;
+
+    for (const value of ['t', 'to', 'tok', 'toke']) {
+      fireEvent.change(search, { target: { value } });
+    }
+
+    // The half-typed word is the field's. Four characters, no rows — this is
+    // the budget the table's search field exists to hold, and the dialog used
+    // to break it with live state in the component that mapped the groups.
+    expect(toggles.rendered).toBe(0);
+  });
+
+  it('redraws only the groups a settled query leaves', () => {
+    const { search } = renderForm();
+
+    // `Group 0` matches one of the eleven labels; the rest are filtered out.
+    fireEvent.change(search, { target: { value: 'Group 0' } });
+    toggles.rendered = 0;
+    act(() => {
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+    });
+
+    // One burst costs one render of what survives the filter, not of the
+    // catalog. Filtering has to redraw the rows it keeps; what it must not do
+    // is redraw the ones it dropped, or do it per keystroke.
+    expect(toggles.rendered).toBe(TOGGLES_PER_ROW);
+    expect(screen.getAllByText('What this group covers.')).toHaveLength(1);
+  });
+
+  it('keeps a level granted while the query hides its row', () => {
+    const { picks, search } = renderForm();
+
+    fireEvent.click(picks('write')[0]);
+    fireEvent.change(search, { target: { value: 'Group 7' } });
+    act(() => {
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+    });
+    fireEvent.change(search, { target: { value: '' } });
+    act(() => {
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+    });
+
+    // A filtered-out row unmounts, and React Hook Form keeps its value because
+    // `shouldUnregister` is off. If that ever flips, a reader who searches
+    // after granting silently loses the grant, and `hasAnyScope` would refuse
+    // a form that looks full.
+    expect(screen.getAllByText('Change it.')).toHaveLength(1);
   });
 });

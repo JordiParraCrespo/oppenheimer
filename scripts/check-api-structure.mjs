@@ -360,6 +360,8 @@ function checkLayer(dir, label, spec) {
     if (!subSpec) {
       const allowed = Object.keys(spec.dirs);
       fail(
+        subLabel,
+        'layer-dir-not-admitted',
         `${subLabel}: ${label.split('/').pop()}/ nests ${allowed.length ? allowed.join(', ') : 'nothing'} and nothing else`,
       );
       continue;

@@ -4,7 +4,6 @@ import {
   Button,
   DialogBody,
   DialogFooter,
-  EmptyState,
   Field,
   FieldDescription,
   FieldError,
@@ -16,9 +15,8 @@ import type { PermissionGroup, Scope } from '@oppenheimer/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { PermissionCatalog } from '@/features/api-tokens/components/permission-catalog';
 import { PermissionField } from '@/features/api-tokens/components/permission-field';
-import { PermissionPicker } from '@/features/api-tokens/components/permission-picker';
-import { PermissionSearch } from '@/features/api-tokens/components/permission-search';
 import {
   hasAnyScope,
   type ScopeSelection,
@@ -65,7 +63,6 @@ export function CreateApiTokenForm({
   onSubmit: (values: CreateApiTokenFormValues) => void;
 }) {
   const { t } = useTranslation();
-  const [permissionSearch, setPermissionSearch] = useState('');
 
   const {
     control,
@@ -76,14 +73,6 @@ export function CreateApiTokenForm({
   } = useForm<TokenFormFields>({ defaultValues: EMPTY_TOKEN_FORM });
 
   const [permissionsMessage, setPermissionsMessage] = useState<string>();
-
-  const normalizedPermissionSearch = permissionSearch.trim().toLocaleLowerCase();
-  const visiblePermissionGroups = groups.filter((group) =>
-    [group.label, group.description, group.levels.read.description, group.levels.write.description]
-      .join(' ')
-      .toLocaleLowerCase()
-      .includes(normalizedPermissionSearch),
-  );
 
   /**
    * The cross-row rule: a key with no scopes can call nothing.
@@ -147,31 +136,13 @@ export function CreateApiTokenForm({
             {loadingCatalog ? (
               <p className="text-sm text-ink-600">{t('common.loading')}</p>
             ) : (
-              <>
-                <PermissionSearch
-                  onChange={setPermissionSearch}
-                  placeholder={t('settings.api.searchPermissions')}
-                  disabled={isPending}
-                />
-                {visiblePermissionGroups.length > 0 ? (
-                  // No scroll cap of its own: the dialog body already scrolls,
-                  // and a picker that scrolled inside it gave the card two
-                  // scrollbars and a wheel that stopped at the picker's edge.
-                  <PermissionPicker
-                    groups={visiblePermissionGroups}
-                    grantable={grantable}
-                    control={control}
-                    name="permissions"
-                    disabled={isPending}
-                  />
-                ) : (
-                  <EmptyState className="border border-border-subtle py-6">
-                    <EmptyState.Header>
-                      <EmptyState.Title>{t('settings.api.noPermissionResults')}</EmptyState.Title>
-                    </EmptyState.Header>
-                  </EmptyState>
-                )}
-              </>
+              <PermissionCatalog
+                groups={groups}
+                grantable={grantable}
+                control={control}
+                name="permissions"
+                disabled={isPending}
+              />
             )}
           </PermissionField>
         </FieldGroup>

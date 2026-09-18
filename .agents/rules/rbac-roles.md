@@ -206,7 +206,7 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   first sign-in (`product/versions/mvp/08-auth.md`). It is the app's own rule
   rather than Better Auth's, so it is a real vertical slice —
   `organizations/commands/provision-personal-workspace/`, dispatched from the
-  Better Auth sign-up hook through `auth/infrastructure/auth-command-bus.adapter.ts`. It is
+  Better Auth sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`. It is
   best-effort and idempotent: an account it did not land for still exists and
   is sent to `/onboarding`, the console's one organization-creating screen,
   which makes the caller the owner of their own workspace and nothing else

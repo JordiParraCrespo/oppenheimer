@@ -20,7 +20,7 @@ import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
 import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
-import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.adapter';
+import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
 import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-auth-credential-verifier.adapter';
 import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
@@ -72,7 +72,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
   providers: [
     ApiTokenRevokedDomainEventHandler,
     // Hands the running app's CommandBus to the Better Auth hooks, which are
-    // configured at module scope and cannot inject it. See `auth-command-bus.adapter.ts`.
+    // configured at module scope and cannot inject it. See `auth-command-bus.util.ts`.
     AuthCommandBusBridge,
     // The one handler that knows what sign-up owes a new account.
     CompleteSignUpCommandHandler,

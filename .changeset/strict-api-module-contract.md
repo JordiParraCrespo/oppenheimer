@@ -1,5 +1,6 @@
 ---
 "@oppenheimer/api": minor
+"@oppenheimer/translations": patch
 ---
 
 Make the API's Domain-Driven Hexagon layout a contract a machine enforces,
@@ -135,3 +136,25 @@ still described `auth/auth.ts`, `users/services/`, a three-layer mapper and an
 event bus with no outbox — was rewritten against it. CI runs `pnpm check:api-structure` in the
 lint job and the Claude Code Stop hook runs it whenever a task touches
 `apps/api/src`.
+
+**This console's own slices follow.** The contract arrived with the starter and
+reported the three the console had added: sign-up's
+`CompleteSignUpCommandHandler`, the personal workspace's
+`ProvisionPersonalWorkspaceCommandHandler` and the default grant's
+`AssignDefaultRoleCommandHandler` were `*.service.ts` where the contract says
+`*.command-handler.ts`. Two loose files moved to the layer they belong to:
+`auth-command-bus.ts` is `auth/infrastructure/auth-command-bus.util.ts` — the
+wiring Better Auth's module-scope hooks need, and a `.util.ts` rather than an
+`.adapter.ts` because it is a process-wide binding with no port behind it — and
+`missing-system-role.ts` is `roles/application/missing-system-role.factory.ts`,
+in `application/` because it builds an `AppError` and the domain layer may not
+reach for `@oppenheimer/backend-core`. It is published cross-module surface,
+because the two other paths that raise it are in `organizations`, and
+`database/seed.ts` is exempt from `no-cross-module-internals` for the reason it
+is already exempt from the Better Auth rule: it is a composition root of its
+own, with no command bus.
+
+`ROLE_007` (`SYSTEM_ROLE_MISSING`) had a catalog entry and a docs row but no
+`errors.byCode` message in either locale, so a missing system role reached a
+client as the generic fallback. The new error-catalog fixture found it.
+

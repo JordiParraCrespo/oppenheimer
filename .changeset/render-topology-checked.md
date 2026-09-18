@@ -23,3 +23,14 @@ switched off, where this kind of regression is visible at all; the two projects
 are shared from `@oppenheimer/tsconfig/vitest-frontend.mjs` so a package cannot set up
 half of them. `pnpm check:structure` gained one check — a query subscribed to
 only so a single sibling can render it.
+
+**And one search field, not two.** The draft, the debounce and the
+ignore-your-own-echo rule move out of `DataTableSearch` into `useSearchDraft` in
+the `forms` concern, with `useDebouncedCallback` beside it (it was in `table/`,
+and neither is table-specific). `DataTableSearch` is now the table's markup and
+sizing over that hook. `value` is for a field whose settled value lives outside
+it — the URL, here; a field with nothing feeding one back down omits it and has
+no echo to ignore. This exists because the next search field written without it
+came with its own debounce constant and no echo rule, which is how the last
+stray debounce survived a refactor.
+

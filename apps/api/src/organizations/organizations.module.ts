@@ -31,7 +31,7 @@ import { WorkspacesService } from './workspaces.service';
  * org-scoped role that opens it — so it is a proper vertical slice: an
  * aggregate, a repository port and a command handler
  * (`commands/provision-personal-workspace/`), dispatched by the sign-up hook
- * through `auth/infrastructure/auth-command-bus.adapter.ts`.
+ * through `auth/infrastructure/auth-command-bus.util.ts`.
  */
 const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceCommandHandler];
 

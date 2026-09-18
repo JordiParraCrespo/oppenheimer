@@ -85,7 +85,7 @@ they are the ones that decay first:
    `types/`, `interfaces/` and every other bucket named after nothing.
 2. **A use case is a directory, and every file in it carries its name.**
    `commands/update-user/` holds `update-user.command.ts` and
-   `update-user.service.ts`, not `command.ts` and `handler.ts`. A message and
+   `update-user.command-handler.ts`, not `command.ts` and `handler.ts`. A message and
    its handler come as a pair. A slice with only a controller is one that
    dispatches another slice's message — legitimate, and the only way to have a
    controller without a handler beside it.
@@ -219,7 +219,7 @@ export class UpdateUserCommand extends CommandBase {
 }
 
 @CommandHandler(UpdateUserCommand)
-export class UpdateUserService implements ICommandHandler<
+export class UpdateUserCommandHandler implements ICommandHandler<
   UpdateUserCommand,
   AggregateID
 > {

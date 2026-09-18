@@ -12,7 +12,7 @@ import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { orUndefined } from '../../config/env';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
-import { dispatchFromAuthHook } from './auth-command-bus.adapter';
+import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 
@@ -285,7 +285,7 @@ export const auth = betterAuth({
           // file says only that, and names no module that fulfils it — the
           // orchestration is `CompleteSignUpCommandHandler`, which can inject a
           // command bus where this hook cannot inject anything. See
-          // `auth-command-bus.adapter.ts` for why that seam exists and why the
+          // `auth-command-bus.util.ts` for why that seam exists and why the
           // dispatch is best-effort.
           await dispatchFromAuthHook(
             new CompleteSignUpCommand({

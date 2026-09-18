@@ -118,15 +118,18 @@ name the jobs and split *those*.
   a screen subscribes to only so that one sibling below it can render the
   result belongs to that sibling.
 
-  In the starter this rule came from, a full-page api-tokens screen held
-  `usePermissionCatalog()` and `useApiTokens()` for a card and a table, and
-  passed the create card three props it forwarded straight to the form and read
-  none of. Every settle of the token list — a create, a revoke, a window
-  refocus — went through the create form and the permission picker beside it.
-  Two siblings genuinely sharing one result is a different thing and passes:
-  `profile.tsx` fetches the profile once for its hero and its details pane, and
-  says so in a comment. `pnpm check:structure` flags the single-consumer case,
-  and flags a prop a component only forwards.
+  API keys are the worked example. `ApiKeysSection` subscribes to the token
+  list because it renders the rows; `CreateApiTokenDialog` subscribes to the
+  permission catalog because it renders the picker; `CreateApiTokenForm` takes
+  neither and is handed what it needs. The shape this replaced had one screen
+  holding both queries for a card and a table below it, and passing the card
+  three props it forwarded straight to the form and read none of — so every
+  settle of the token list, a create, a revoke, a window refocus, went through
+  the create form and the picker beside it. Two siblings genuinely sharing one
+  result is a different thing and passes: `profile.tsx` fetches the profile
+  once for its hero and its details pane, and says so in a comment.
+  `pnpm check:structure` flags the single-consumer case, and flags a prop a
+  component only forwards.
 
 - **A live input value is never a prop of a component that renders a list.**
   What a reader is typing is the field's state until it settles. Hand the list
@@ -183,8 +186,12 @@ name the jobs and split *those*.
   `*-render.spec.tsx` and it runs in the `render-budget` vitest project, which
   does not enable the compiler. `data-table-render.spec.tsx` asserts that a
   keystroke renders no rows; `permission-picker-render.spec.tsx` that one click
-  renders one row. Write the harness so the value feeds back the way the real
-  caller feeds it, or the test passes on the shape it was meant to forbid.
+  renders one row *and* that a keystroke in the catalog's search renders none.
+  Budget every clock the component has, not the one you just fixed: the search
+  field was added to that dialog with the query one component too high, and it
+  was the missing burst assertion that let it through. Write the harness so the
+  value feeds back the way the real caller feeds it, or the test passes on the
+  shape it was meant to forbid.
 - **Contexts split by change rate.** A provider that holds a value and its
   setters exposes them so a toggle does not re-render the tree.
 

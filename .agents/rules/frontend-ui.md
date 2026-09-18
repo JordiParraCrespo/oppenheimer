@@ -70,7 +70,8 @@ card scroll instead; the two breakpoints are complements, leave them so.
 
 Search, filters, sort and page go through the kit's `useTableQuery` (nuqs).
 Never `useState` for any of the four. The hook resets to page one when the
-list narrows and debounces the URL write.
+list narrows. It does not debounce: the field below it owns the only delay,
+and the bullet after this one is why.
 
 - **Search is the server's job, and debounced — by the field.** `useTableQuery`
   exposes one `search`: the settled value, which seeds the field and which the
