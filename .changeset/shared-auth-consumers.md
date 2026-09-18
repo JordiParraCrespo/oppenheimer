@@ -4,5 +4,4 @@
 "@oppenheimer/mobile": patch
 ---
 
-Take the Better Auth configuration from `@oppenheimer/auth` instead of keeping
-a local copy.
+Take the Better Auth configuration from `@oppenheimer/auth` instead of a local copy.

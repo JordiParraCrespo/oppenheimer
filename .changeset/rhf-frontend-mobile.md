@@ -2,5 +2,4 @@
 "@oppenheimer/frontend-mobile": minor
 ---
 
-Ship the `useZodResolver` hook, which wires `createZodErrorMap` into React Hook
-Form.
+Ship `useZodResolver`, which wires `createZodErrorMap` into React Hook Form.

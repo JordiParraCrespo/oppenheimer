@@ -3,6 +3,4 @@
 "@oppenheimer/admin-mobile": minor
 ---
 
-Give the Expo apps the same sign-in screens as the web apps: the shared auth
-frame with matching theme tokens, inline translated failures, and terminal
-success states.
+Sign in with the same screens as the web apps.
