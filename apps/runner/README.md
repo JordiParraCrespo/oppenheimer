@@ -8,13 +8,53 @@ thing that runs on the machine.
 How it is installed on that machine and how it updates itself afterwards are
 `product/versions/mvp/09-runner-install-and-update.md`.
 
-What is here today is the **shell**, not the agent: configuration, RFC 7807
-errors, the credential context (`apikeys`) and the event stream. The first
-product context (pairing, then session attach) lands with the step-one spike
-(`product/versions/mvp/06-step-one-spike.md`); it replaces the inbound
-API-key surface with a pairing token, a host keypair and an outbound
-WebSocket to the control plane. Until then, nothing product-shaped should be
-built on the key-minting endpoints.
+**What works today**: a macOS, Debian or Ubuntu machine pairs with a
+workspace, installs itself as a user service, reports its own health, and
+keeps itself on the current signed release — including rolling back a version
+that will not stay up. **What does not exist yet**: the outbound WebSocket to
+the control plane and the session contexts (worktrees, tmux, PTY streaming,
+the git credential helper). `runner run` therefore holds the local socket and
+the update loop, and has no link to talk over; that is the next slice, in the
+order `apps/runner/ARCHITECTURE.md` lists.
+
+## Subcommands
+
+| Command | What it does |
+| ------- | ------------ |
+| `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
+| `runner register --token … --url …` | redeems a one-hour registration token: generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint |
+| `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
+| `runner uninstall [--keep-identity]` | stops the service, revokes the host, erases the identity. Never touches `~/oppenheimer-ai` |
+| `runner status` | platform, pairing, service, tools, disk. Exits non-zero when the host is not ready |
+| `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
+| `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
+| `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
+
+Exit codes are a contract, the same one `apps/cli` publishes: 0 ok, 1 failure,
+2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable.
+
+## On a host
+
+```
+~/.oppenheimer/
+  config.json   0600  host id, control plane, pinned fingerprint, channel
+  host.key      0600  the Ed25519 key every dial is signed with
+  bin/                runner-<version> binaries and the `current` symlink
+  state/              update.json: what the last update did
+  log/ run/           logs, the Unix socket, the single-instance lock
+~/oppenheimer-ai/workspaces/   the user's code — never touched by an uninstall
+```
+
+## Releasing
+
+```bash
+scripts/runner/sign-release.sh --keygen release.key       # once, offline
+RELEASE_PUBLIC_KEYS=<public key> scripts/runner/release.sh 1.2.3
+scripts/runner/sign-release.sh dist/runner/stable.json release.key
+```
+
+The private key never touches CI. Every binary carries the public half, so a
+runner verifies a manifest without asking anyone what to trust.
 
 ## What is in the box
 

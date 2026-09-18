@@ -43,6 +43,7 @@ user-facing diagnostics are the same artifact and the same version.
 | Subcommand | Role |
 |---|---|
 | `run` | the daemon: link, sessions, tmux, worktrees, credential socket. What the service unit starts |
+| `serve` | the control-plane-facing HTTP service on a TCP port, which is what the container image runs. The host agent is `run`, which opens no port |
 | `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json` |
 | `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key |
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
@@ -64,9 +65,13 @@ other context's service as the implementation.
 
 ```
 apps/runner/
-cmd/runner/main.go          signals, config, logger, subcommand dispatch → server.New
+cmd/runner/main.go          signals, flags, subcommand dispatch — no wiring
 internal/
+  cli/                      composition root of the subcommands (the host agent)
+  server/                   composition root of `serve`, the template's HTTP service
+  host/                     platform, tools, disk: the preflight and the heartbeat's facts
   pairing/                  registration token, host keypair, host identity, boot JWT
+  service/                  the launchd agent and the systemd user unit
   link/                     the outbound WebSocket: dial, auth, multiplex, heartbeat,
                             reconnect ladder with epoch, command dispatch, event queue
   sessions/                 the aggregate and its use cases
@@ -77,9 +82,8 @@ internal/
     adapters/git            mirror, worktree add/remove, push on close
     adapters/manifest       screen classification and login-URL detection
   credentials/              per-session GitHub token cache + the credential-helper socket
-  host/                     preflight facts, disk pressure, agent versions
   updates/                  channel, check, safe window, staging, rollback, reporting
-  config/ scopes/ server/   as today
+  config/ scopes/           as today
 packages/go/
   selfupdate/               download, verify signature and digest, atomic swap, prune
                             (domain-agnostic; the policy stays in internal/updates)
@@ -89,8 +93,13 @@ packages/go/
 to this service"; it goes once `pairing` lands, since the host's identity
 is its keypair and the local socket's callers are local.
 
+Two composition roots, because the binary has two jobs: `server` builds the
+HTTP service `serve` runs, `cli` builds the host agent. `cmd/runner` only
+dispatches.
+
 New error catalogs follow the existing rule, one per context:
-`PAIR_00n`, `SESS_00n`, `TMUX_00n`, `GIT_00n`, `CRED_00n`, `UPD_00n`,
+`HOST_00n`, `PAIR_00n`, `SVC_00n`, `SESS_00n`, `TMUX_00n`, `GIT_00n`,
+`CRED_00n`, `UPD_00n`,
 each with a row under "Runner service" in `apps/docs/docs/errors.md` when
 the code lands. Local-socket routes carry scopes from
 `internal/scopes`: `sessions:read|write`, `credentials:read`,
@@ -248,6 +257,7 @@ write, not an error after (note 12).
   config.json    0600  control plane URL, host id, key fingerprint, channel, pin
   host.key       0600  the ed25519 private key (F8; rotation supported)
   state.json     0600  session id → worktree, branch, repo, agent: the adoption map
+  state/update.json 0600  what the last update did, and how often it has booted
   bin/                 runner-<version> binaries and the `current` symlink (09 §5)
   run/                 runner.sock, runner.lock
   log/                 runner.log, rotated at 10 MB × 3

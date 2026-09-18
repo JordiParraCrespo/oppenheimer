@@ -1045,6 +1045,9 @@ importers:
       '@oppenheimer/go-postgres':
         specifier: workspace:*
         version: link:../../packages/go/postgres
+      '@oppenheimer/go-selfupdate':
+        specifier: workspace:*
+        version: link:../../packages/go/selfupdate
       '@oppenheimer/go-ws':
         specifier: workspace:*
         version: link:../../packages/go/ws
@@ -2179,6 +2182,8 @@ importers:
         version: link:../core
 
   packages/go/postgres: {}
+
+  packages/go/selfupdate: {}
 
   packages/go/ws:
     devDependencies:

@@ -55,9 +55,12 @@ rather than producing a second one.
    the user who will own the sessions.
 2. **Detect** os and arch (darwin and linux × arm64 and amd64) and stop
    on anything else with the list of what is supported.
-3. **Fetch the signed release manifest** for the host's channel, verify
-   its signature against the public key baked into the script, and take
-   the version, URL and digest for this target from it.
+3. **Fetch the signed release manifest** for the host's channel and take
+   the version, URL and digest for this target from it. The script checks
+   the **digest**, because `shasum` is on every macOS and `sha256sum` on
+   every Debian; the **signature** is checked by the binary, which has the
+   public key compiled in — a signature tool is not something an installer
+   can assume, and shipping one would be a second thing to trust.
 4. **Download and verify**: SHA-256 against the manifest, then the
    artifact's detached signature. A mismatch aborts and deletes the
    download — there is no "continue anyway" flag.
@@ -124,12 +127,19 @@ putting the user's credentials on it.
 ### 5. Updates
 
 - **Artifacts.** A tag builds `runner_<version>_<os>_<arch>.tar.gz` for
-  the four targets, `CGO_ENABLED=0 -trimpath`, version stamped through
+  the four targets (`darwin/arm64`, `darwin/amd64`, `linux/amd64`,
+  `linux/arm64`), `CGO_ENABLED=0 -trimpath`, version stamped through
   ldflags. The release carries `SHA256SUMS` and a detached signature
-  made with a **minisign key held offline**, never a CI secret. The
+  made with an **Ed25519 key held offline**, never a CI secret. The
   public key is **compiled into the runner** so the update path does not
   depend on the network to know what to trust; the binary carries the
   current key and the next one, so a key roll does not strand old hosts.
+  Signing is `openssl` and nothing else — `openssl genpkey -algorithm
+  ed25519` once, `openssl pkeyutl -sign -rawin` per release — so the key
+  can live on a machine with no toolchain on it
+  (`scripts/runner/sign-release.sh`). A build made without a key refuses
+  every update rather than trusting one: the alternative to "no key" is
+  "no updates", never "unsigned updates".
 - **The manifest.** The control plane serves
   `GET /v1/runner/releases?channel=…&os=…&arch=…` with the version, the
   artifact URL, its digest, the signature, and `min_supported`. The
@@ -218,9 +228,11 @@ putting the user's credentials on it.
 
 ## Open questions
 
-1. Signing tool: minisign, or cosign with a key in a hardware token.
-   Minisign is the smaller dependency and easy to verify in a shell
-   script; cosign buys transparency-log verification we do not need yet.
+1. ~~Signing tool~~: decided — plain Ed25519 with `openssl` on both ends,
+   verified in the runner with `crypto/ed25519`. It adds no dependency to
+   the binary, to the installer or to the machine holding the key.
+   Cosign's transparency log is the thing to revisit if we ever want
+   third parties to audit our releases.
 2. Do we also publish a Homebrew tap and a `.deb` at launch, or wait for
    install friction to prove it? Waiting, on the assumption that the
    install command is the onboarding path and a package is the

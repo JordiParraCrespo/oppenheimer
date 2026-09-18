@@ -11,5 +11,6 @@ use (
 	./packages/go/health
 	./packages/go/httpx
 	./packages/go/postgres
+	./packages/go/selfupdate
 	./packages/go/ws
 )

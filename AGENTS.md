@@ -63,7 +63,7 @@ oppenheimer/
 │   ├── mcp/              # MCP server (stdio + Streamable HTTP)
 │   ├── mobile/           # Consumer Expo app
 │   ├── mobile-showcase/  # Expo app showcasing the mobile design system
-│   ├── runner/           # Go service template (REST + WS, API keys) the API delegates to
+│   ├── runner/           # The Go host agent: pairing, service install, signed self-update (+ the REST/WS service it grew from)
 │   ├── web/              # Consumer Vite + TanStack Router SPA
 │   └── web-showcase/     # Next.js app showcasing the web design system
 ├── packages/
@@ -90,7 +90,7 @@ oppenheimer/
 │   │   │   ├── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
 │   │   │   └── mobile/   # NativeWind + rn-primitives (@oppenheimer/design-system-mobile)
 │   │   └── nitro-app-info/ # Nitro native module exposing app info to the Expo apps (@oppenheimer/nitro-app-info)
-│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws
+│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
 ├── docker/               # Docker Compose (dev + prod)
@@ -208,8 +208,13 @@ static binary, long-lived connections or process orchestration (runners, VMs,
 containers) — `apps/runner` is the template, and the API talks to it with an
 API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
 `packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
-`health`, `ws`, `postgres`), tied together by the root `go.work`, each also published to
+`health`, `ws`, `postgres`, `selfupdate`), tied together by the root `go.work`, each also published to
 Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
+`apps/runner` is more than the template now: it is the host agent, and it
+pairs a macOS, Debian or Ubuntu machine with a workspace, installs itself as a
+launchd agent or systemd user unit, and keeps itself on the current signed
+release (`runner run|register|install|status|update`; `runner serve` is the
+template's HTTP service, which is what the container runs).
 The app is the same hexagon as `apps/api` in idiomatic Go: standard
 `net/http` routing, `slog`, interfaces as ports, constructor injection, one
 composition root (`internal/server`). Errors are the same RFC 7807 documents
@@ -320,7 +325,7 @@ packages/frontend/admin       → used by admin-web, admin-mobile
 packages/frontend/web         → used by web, admin-web
 packages/frontend/mobile      → used by mobile, admin-mobile
 packages/go/core              → used by every other packages/go module and runner
-packages/go/{config,httpx,auth,health,ws,postgres} → used by runner (auth ← ws, httpx ← health, auth)
+packages/go/{config,httpx,auth,health,ws,postgres,selfupdate} → used by runner (auth ← ws, httpx ← health, auth)
 ```
 
 ## Commands

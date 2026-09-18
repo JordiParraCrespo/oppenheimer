@@ -36,8 +36,14 @@ idioms.
 
 - `cmd/<binary>/main.go` only parses signals, loads config, builds the logger
   and calls `server.New`. No wiring lives in `main`.
-- `internal/server` is the **composition root**: the only package that names
-  concrete adapters. A context's `module.go` may pick its own defaults.
+- `internal/server` is the **composition root** of `runner serve`, and
+  `internal/cli` is the composition root of the host agent's subcommands:
+  those two are the only packages that name concrete adapters. A context's
+  `module.go` may pick its own defaults. `cmd/runner/main.go` parses flags and
+  dispatches; it wires nothing.
+- A subcommand is a method on `cli.App`, not logic in `main`. Anything a
+  second entry point would need (the `~/.oppenheimer` layout, which init
+  system this platform uses) lives in `internal/cli`, not in a context.
 - A bounded context is `internal/<name>/{domain,app,adapters/*,module.go}`.
   `domain` imports nothing but `core/problem`, `auth/scope` and the app's
   `scopes`; `app` adds `auth` and `core`; adapters import their own context
@@ -79,6 +85,12 @@ idioms.
   (`resource:read|write`; `write` implies `read`); the grammar and `Set`
   live in `packages/go/auth/scope` and are never redefined per service. Keys and tokens can only carry scopes their minter
   holds — keep that check in the use case.
+- On a host, the identity files are 0600 and their directory 0700, written
+  atomically (temp file, rename). A key any other account can read is refused,
+  not used.
+- Nothing downloaded is trusted before it is verified, and nothing that failed
+  verification survives on disk. The release-signing key is never in CI, in a
+  config file or on a host: only its public half, compiled into the binary.
 - Secrets are compared with `crypto/subtle.ConstantTimeCompare`, stored as
   SHA-256 (they are 256-bit random, not passwords), and never logged. A
   verifier reports one `ErrInvalidCredential`; the reason is for the log.

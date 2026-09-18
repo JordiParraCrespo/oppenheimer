@@ -15,11 +15,14 @@ packages/go/                  shared toolkit, one Go module each (see its README
   auth/ auth/scope            Principal, bearer middleware, scope grammar + guard, JWT
   health/                     /healthz /readyz /health/capabilities
   ws/                         hub, connection, envelope, upgrade handler
+  selfupdate/                 signed manifests, verified downloads, atomic binary swaps
 
 apps/runner/
-cmd/server/main.go            signals, config, logger → server.New → httpx.Serve
+cmd/runner/main.go            signals, flags, subcommand dispatch — no wiring
 internal/
-  server/                     composition root: the only importer of adapters
+  cli/                        composition root of the host agent's subcommands
+  server/                     composition root of `runner serve`
+  host/ pairing/ service/ updates/   the host-agent contexts
   config/                     the variables this service reads → Config
   scopes/                     this service's scope catalog on auth/scope
   apikeys/                    bounded context: credentials
@@ -33,32 +36,36 @@ internal/
 ```
 
 The product contexts are designed in `product/versions/mvp/02-runner.md` §3
-and are not here yet. They arrive in this order, each in the same layout as
-`apikeys`:
+and `09-runner-install-and-update.md`. Four of them exist:
 
-1. `pairing` — registration token, host keypair, host identity, boot JWT.
-2. `link` — the one outbound WebSocket: dial, auth, multiplexed streams,
-   heartbeat, reconnect ladder with an epoch counter.
-3. `sessions` — the aggregate, with `adapters/tmux`, `adapters/git` and
-   `adapters/manifest` behind the `Terminals`, `Worktrees` and `Classifier`
-   ports.
-4. `credentials` — the per-session GitHub token cache behind the git
-   credential helper on the local Unix socket.
-5. `host` — preflight facts, agent versions, disk pressure.
-6. `updates` — channel, safe window, staging and rollback, on top of a new
-   `packages/go/selfupdate` module that holds the domain-agnostic half
-   (verify, atomic swap, prune). Install and update are
-   `product/versions/mvp/09-runner-install-and-update.md`.
+| Context | What it owns |
+| ------- | ------------ |
+| `host` | the inventory: platform (macOS, Debian, Ubuntu), `git`/`tmux`/`claude`, disk, and the conditions that make a host unusable |
+| `pairing` | the registration token, the Ed25519 host key, `config.json`, the boot JWT every dial is signed with |
+| `service` | the launchd agent and the systemd user unit, rendered and controlled |
+| `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
 
-`apikeys` goes once `pairing` replaces it as the way this host proves who it
-is. Two contexts never import each other: where one needs another, the
-consumer declares a port in its `app` and `internal/server` supplies the
-other context's service as the implementation.
+Three are still to come, in this order: `link` (the one outbound WebSocket:
+dial, auth, multiplexed streams, heartbeat, epoch-guarded reconnect), then
+`sessions` (worktree, tmux, PTY stream, screen manifest), then `credentials`
+(the per-session GitHub token behind the git credential helper). `apikeys` is
+the template's inbound credential surface and goes once `link` makes it
+redundant.
 
-Two shape changes come with `run`. `cmd/server` becomes `cmd/runner`, whose
-`main` dispatches the subcommands (`run`, `register`, `install`, `status`,
-`credential-helper`, `update`, `selfcheck`) and still does no wiring. And on
-a paired host the router is bound to a 0600 Unix socket
+Two contexts never import each other. Where one needs another — `updates`
+restarting the service, `link` reading the host's facts — the consumer
+declares a port in its `app` and a composition root supplies the other
+context's service as the implementation.
+
+There are **two composition roots**, because the binary has two jobs:
+
+- `internal/server` builds the HTTP service `runner serve` runs (REST,
+  WebSocket, api keys) — the template, unchanged.
+- `internal/cli` builds the host agent: it resolves `~/.oppenheimer`, picks
+  launchd or systemd by GOOS, wires the four contexts, and implements every
+  subcommand. `cmd/runner` only parses flags and dispatches.
+
+On a paired host the agent's router is bound to a 0600 Unix socket
 (`~/.oppenheimer/run/runner.sock`) rather than a TCP port, because the host
 must expose nothing: the same `httpx` router and the same problem documents,
 on a different `net.Listener`.
