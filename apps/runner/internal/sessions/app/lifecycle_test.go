@@ -41,7 +41,7 @@ func newFakeHarness(t *testing.T) *fakeHarness {
 	terminals, worktrees := fake.NewTerminals(), fake.NewWorktrees()
 	events, store := &recorder{}, &memoryStore{}
 	svc, err := app.New(app.Options{
-		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(),
+		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
 		Store: store, Publisher: events,
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
 		Env: func(s domain.Session) map[string]string {

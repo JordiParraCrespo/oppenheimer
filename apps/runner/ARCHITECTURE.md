@@ -46,6 +46,13 @@ and `09-runner-install-and-update.md`. Five of them exist:
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
 | `sessions` | the lifecycle: mirror and worktree, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
+`sessions/adapters/manifest` is the one adapter whose behaviour is **data**:
+one JSON manifest per agent (bundled with `go:embed`, overridable from
+`~/.oppenheimer/manifests/`) describing what that agent's terminal looks like
+in each state. Agents change their screens far more often than we ship a
+runner, so those rules must be replaceable without a release — and a manifest
+that does not parse is skipped with a reason rather than taken as fatal.
+
 Two are still to come: `link` (the one outbound WebSocket: dial, auth,
 multiplexed streams, heartbeat, epoch-guarded reconnect) and `credentials`
 (the per-session GitHub token the helper hands git — the helper's own half is

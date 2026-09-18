@@ -125,5 +125,12 @@ idioms.
   compiler). All three must be clean before a push that touches goroutines.
 - Add a dependency only when the standard library cannot do the job, and pin
   it in `go.mod` with `go mod tidy`.
+- Agent detection rules are **data**, in
+  `internal/sessions/adapters/manifest/manifests/*.json`, not Go. A new agent
+  is a file; a changed spinner is an edit to one, with the `version` bumped.
+  Every rule carries a `note` saying why it exists — the test suite fails
+  without one, because a regex with no reason is unmaintainable. Anything a
+  manifest could be used to attack (the vendor-login allowlist) stays in code:
+  manifests are content that will one day arrive over the network.
 - Tests use `httptest` end to end (`internal/server/server_test.go`) and the
   in-memory adapters; nothing in `pnpm test` needs Docker.

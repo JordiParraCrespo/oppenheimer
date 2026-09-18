@@ -194,10 +194,12 @@ func waitFor(t *testing.T, s *tmux.Server, target, want string) string {
 	deadline := time.Now().Add(5 * time.Second)
 	var screen string
 	for time.Now().Before(deadline) {
-		var err error
-		screen, err = s.Capture(context.Background(), target)
-		if err == nil && strings.Contains(screen, want) {
-			return screen
+		captured, err := s.Capture(context.Background(), target)
+		if err == nil {
+			screen = captured.Body
+			if strings.Contains(screen, want) {
+				return screen
+			}
 		}
 		time.Sleep(50 * time.Millisecond)
 	}

@@ -16,6 +16,10 @@ const (
 	DirLog   = "log"
 	DirRun   = "run"
 	DirState = "state"
+	// DirManifests holds agent manifests newer than the ones compiled in.
+	// The control plane writes here; an empty directory is the normal case
+	// and means the bundled rules are in force.
+	DirManifests = "manifests"
 )
 
 // Paths resolves every location the runner uses on a host.
@@ -69,6 +73,9 @@ func (p Paths) Run() string { return filepath.Join(p.Home, DirRun) }
 // State holds update.json.
 func (p Paths) State() string { return filepath.Join(p.Home, DirState) }
 
+// Manifests is where newer agent manifests are dropped.
+func (p Paths) Manifests() string { return filepath.Join(p.Home, DirManifests) }
+
 // Socket is the local Unix socket: the runner's only listener.
 func (p Paths) Socket() string { return filepath.Join(p.Run(), "runner.sock") }
 
@@ -78,7 +85,7 @@ func (p Paths) Lock() string { return filepath.Join(p.Run(), "runner.lock") }
 // Ensure creates the directories the runner owns, 0700 — everything it holds
 // is either a secret or a log of what the user's agent is doing.
 func (p Paths) Ensure() error {
-	for _, dir := range []string{p.Home, p.Bin(), p.Log(), p.Run(), p.State()} {
+	for _, dir := range []string{p.Home, p.Bin(), p.Log(), p.Run(), p.State(), p.Manifests()} {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			return err
 		}

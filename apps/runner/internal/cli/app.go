@@ -104,7 +104,7 @@ func New(version string) (*App, error) {
 			// command line.
 			CredentialHelper: credentialHelper(),
 		}),
-		Classifier: manifest.New(),
+		Classifier: manifest.New(manifest.Options{Dir: paths.Manifests()}),
 		Store:      sessionstate.New(paths.State()),
 		Layout:     layout,
 		Env: func(session sessionsdomain.Session) map[string]string {

@@ -28,8 +28,9 @@ type Terminals interface {
 	List(ctx context.Context) ([]string, error)
 	// Has reports whether one tmux session exists.
 	Has(ctx context.Context, name string) (bool, error)
-	// Capture returns the visible text of a window, for the classifier.
-	Capture(ctx context.Context, target string) (string, error)
+	// Capture returns what the classifier reads: the visible text of a
+	// window and the terminal title the program in it has set.
+	Capture(ctx context.Context, target string) (Screen, error)
 	// Windows lists a session's windows.
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
@@ -68,10 +69,20 @@ type Worktrees interface {
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
 }
 
+// Screen is one capture of a window.
+type Screen struct {
+	// Body is the visible text of the pane.
+	Body string
+	// Title is what the program set through an OSC escape sequence. It is
+	// the most trustworthy signal available: the agent controls it, and
+	// nothing a person types into their prompt can appear in it.
+	Title string
+}
+
 // Classifier turns a captured screen into a state and, when it sees one, the
 // vendor login URL the console offers as a button.
 type Classifier interface {
-	Classify(screen string, agent domain.Agent) (domain.State, string)
+	Classify(screen Screen, agent domain.Agent) (domain.State, string)
 }
 
 // Store persists the session map across restarts. It is a cache — the control

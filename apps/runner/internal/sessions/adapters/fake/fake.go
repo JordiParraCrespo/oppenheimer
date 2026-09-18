@@ -29,9 +29,12 @@ type Terminals struct {
 	mu sync.Mutex
 	// Missing makes Available fail, standing in for a host without tmux.
 	Missing bool
-	// Screens is what Capture returns per target; set it to drive the
-	// classifier.
+	// Screens is the pane text Capture returns per target; set it to drive
+	// the classifier.
 	Screens map[string]string
+	// Titles is the terminal title per target, the signal an agent sets
+	// through an escape sequence.
+	Titles map[string]string
 
 	sessions map[string]*fakeSession
 	// Attached counts live attachments, so a test can prove that detaching
@@ -49,7 +52,11 @@ type fakeSession struct {
 
 // NewTerminals returns an empty server.
 func NewTerminals() *Terminals {
-	return &Terminals{Screens: map[string]string{}, sessions: map[string]*fakeSession{}}
+	return &Terminals{
+		Screens:  map[string]string{},
+		Titles:   map[string]string{},
+		sessions: map[string]*fakeSession{},
+	}
 }
 
 // Available implements app.Terminals.
@@ -140,10 +147,10 @@ func (t *Terminals) Has(_ context.Context, name string) (bool, error) {
 }
 
 // Capture implements app.Terminals.
-func (t *Terminals) Capture(_ context.Context, target string) (string, error) {
+func (t *Terminals) Capture(_ context.Context, target string) (app.Screen, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.Screens[target], nil
+	return app.Screen{Body: t.Screens[target], Title: t.Titles[target]}, nil
 }
 
 // Windows implements app.Terminals.

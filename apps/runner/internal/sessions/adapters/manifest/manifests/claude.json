@@ -1,0 +1,82 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "claude",
+  "version": "2026.09.18.1",
+  "minEngine": 1,
+  "notes": "Claude Code draws a spinner line with an elapsed time and an 'esc to interrupt' hint while it works, a numbered list when it needs an answer, and a prompt box with a '>' when it is waiting for a task. It also writes its state into the terminal title, which is the signal to trust: nothing a person types into the prompt can appear there.",
+  "rules": [
+    {
+      "id": "title-working",
+      "state": "working",
+      "priority": 1100,
+      "region": "title",
+      "any": ["[\\x{2800}-\\x{28FF}\\x{25D0}-\\x{25D3}]", "(?i)\\b(thinking|working|running)\\b"],
+      "note": "The title carries the spinner glyph while a turn is running. Braille covers older releases, the half-circles the newer busy spinner."
+    },
+    {
+      "id": "title-waiting",
+      "state": "blocked",
+      "priority": 1150,
+      "region": "title",
+      "any": ["(?i)\\b(waiting|input needed|needs input|permission)\\b", "^\\s*[!?]"],
+      "note": "Outranks title-working: a title that says both is a turn that stopped to ask."
+    },
+    {
+      "id": "question",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:12",
+      "any": [
+        "(?i)\\bdo you want to (proceed|continue|allow)\\b",
+        "(?i)[(\\[]?\\b(y/n|yes/no)\\b[)\\]]?",
+        "(?i)^\\s*\\d\\.\\s+(yes|no)\\b",
+        "(?i)\\bpress enter to (continue|confirm)\\b",
+        "(?i)\\bwaiting for (your )?(input|approval|confirmation)\\b",
+        "(?i)\\bpaste (the )?code\\b",
+        "(?i)\\b(permission|approval) (needed|required)\\b"
+      ],
+      "note": "The screen half of the same signal, for releases and terminals where the title is not set."
+    },
+    {
+      "id": "spinner",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:12",
+      "any": [
+        "(?i)esc to interrupt",
+        "(?i)\\b(thinking|working|running|building|searching|editing|analyzing|analysing)\\b\\s*[.…]",
+        "(?i)\\((\\d+s|\\d+m\\s?\\d*s?)\\s*·",
+        "[\\x{2800}-\\x{28FF}]"
+      ],
+      "not": [
+        "do you want to proceed",
+        "do you want to continue",
+        "do you want to allow",
+        "waiting for permission",
+        "permission required",
+        "approval required",
+        "esc to cancel",
+        "(y/n)"
+      ],
+      "note": "Claude leaves the spinner frame on screen under a question it has just asked. Without the guards this reports 'working' for a session that is in fact stuck, which is the one failure the sidebar exists to prevent."
+    },
+    {
+      "id": "turn-finished",
+      "state": "done",
+      "priority": 900,
+      "region": "bottom:12",
+      "any": ["(?i)\\bdone\\b.*\\((\\d+)\\s*(files?|changes?|edits?)\\)", "(?i)^\\s*✓\\s", "(?i)\\bcompleted\\b"],
+      "not": ["esc to interrupt"],
+      "note": "A finished turn, before the prompt box comes back."
+    },
+    {
+      "id": "prompt",
+      "state": "idle",
+      "priority": 800,
+      "region": "bottom:5",
+      "any": ["(?m)^\\s*(>|❯|›)\\s*$", "(?i)\\btry \"", "(?i)\\bwhat would you like\\b"],
+      "not": ["esc to interrupt"],
+      "note": "The prompt box with nothing happening. It is also on screen mid-turn, hence the lower priority and the guard."
+    }
+  ]
+}

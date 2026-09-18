@@ -191,9 +191,23 @@ func (s *Server) Has(ctx context.Context, name string) (bool, error) {
 	return false, domain.ErrTmuxCommand.WithDetail("tmux has-session: %s", firstLine(out, err)).WithCause(err)
 }
 
-// Capture returns a window's visible text, which is what the classifier reads.
-func (s *Server) Capture(ctx context.Context, target string) (string, error) {
-	return s.command(ctx, "capture-pane", "-p", "-t", target)
+// Capture returns what the classifier reads: the pane's visible text and the
+// title the program in it has set. tmux tracks the title from the OSC
+// sequence and hands it over as a format variable, which is the only way to
+// get at it — `capture-pane` returns the grid, and the title was never part
+// of the grid.
+func (s *Server) Capture(ctx context.Context, target string) (app.Screen, error) {
+	body, err := s.command(ctx, "capture-pane", "-p", "-t", target)
+	if err != nil {
+		return app.Screen{}, err
+	}
+	title, err := s.command(ctx, "display-message", "-p", "-t", target, "#{pane_title}")
+	if err != nil {
+		// A pane that will not report its title is not a reason to lose the
+		// screen we already have.
+		return app.Screen{Body: body}, nil //nolint:nilerr // the body is still worth classifying
+	}
+	return app.Screen{Body: body, Title: strings.TrimSpace(title)}, nil
 }
 
 // Windows lists a session's windows, marking window 0 as the agent's.

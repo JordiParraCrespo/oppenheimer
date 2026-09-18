@@ -47,7 +47,7 @@ func newRealHarness(t *testing.T) *realHarness {
 	store := statestore.New(t.TempDir())
 	svc, err := app.New(app.Options{
 		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
-		Classifier: manifest.New(), Store: store, Publisher: &recorder{}, Layout: layout,
+		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
 		},
@@ -173,7 +173,7 @@ func TestARealSessionSurvivesTheRunnerGoingAway(t *testing.T) {
 	// or rolled back — runner is. The tmux server never went away.
 	restarted, err := app.New(app.Options{
 		Terminals: h.terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: h.layout}),
-		Classifier: manifest.New(), Store: h.store, Layout: h.layout,
+		Classifier: manifest.New(manifest.Options{}), Store: h.store, Layout: h.layout,
 	})
 	if err != nil {
 		t.Fatal(err)

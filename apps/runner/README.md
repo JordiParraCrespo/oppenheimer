@@ -46,7 +46,8 @@ Exit codes are a contract, the same one `apps/cli` publishes: 0 ok, 1 failure,
   config.json   0600  host id, control plane, pinned fingerprint, channel
   host.key      0600  the Ed25519 key every dial is signed with
   bin/                runner-<version> binaries and the `current` symlink
-  state/              update.json: what the last update did
+  state/              update.json, sessions.json
+  manifests/          agent detection rules newer than the bundled ones
   log/ run/           logs, the Unix socket, the single-instance lock
 ~/oppenheimer-ai/workspaces/<owner>/<repo>/main             the fetch source, never edited
 ~/oppenheimer-ai/workspaces/<owner>/<repo>/worktrees/<slug>  one per session

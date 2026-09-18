@@ -234,13 +234,29 @@ the runner, so a runner restart or upgrade loses nothing.
   client is attached, every 10 s when none is — and maps the screen to
   working, blocked, done, idle or unknown (note 03 §1), plus the login
   URL. Claude Code's manifest first, Codex's next.
-- **Rules carry a priority, a region and negative guards**, and the
-  highest-priority match wins; a chain of ifs reports "working" for a
-  session that is actually blocked, because the spinner frame is still
-  on screen under the question (note 13 §1). Where an agent has
-  lifecycle hooks, the hooks are authoritative and the screen is the
-  fallback. The rules want to be versioned data the control plane
-  ships, so an agent's next release does not need a runner release.
+- **A manifest is one agent's rules, as data.** One JSON file per
+  agent, carrying a schema, an agent id, its own version and the engine
+  version it needs; each rule names the region it reads, the patterns
+  that match, the substrings that veto it, and a priority so the
+  highest match wins. A chain of ifs reports "working" for a session
+  that is actually blocked, because the spinner frame is still on
+  screen under the question (note 13 §1).
+- **Regions** are `title`, `screen`, `bottom:N` and `top:N`. `title` is
+  the terminal title the agent sets through an escape sequence, read
+  with tmux's `#{pane_title}`, and it is the signal to trust: the agent
+  controls it, and nothing a person types into their prompt can appear
+  in it.
+- **Manifests ship without a binary.** The runner bundles a set so a
+  host with no control plane still classifies its sessions; anything in
+  `~/.oppenheimer/manifests/` replaces a bundled file by agent id, which
+  is how a fix for an agent's new spinner reaches hosts without a
+  release, a signature and a rollout. A file that does not parse is
+  skipped with a reason, never fatal.
+- Where an agent has lifecycle hooks, the hooks are authoritative and
+  the screen is the fallback; that half is still to build.
+- The vendor-login allowlist stays in code, not in a manifest: what the
+  console may turn into a clickable link should not travel over the
+  network (F3).
 - Idle is terminal silence **and** a manifest state that is not working,
   so a long unattended run is never called idle.
 - State changes go to the control plane as events; the control plane
@@ -314,9 +330,10 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 2. ~~Screen manifests: regexes or hooks?~~ Decided in §9 from note 13:
    hooks are authoritative where an agent has them, screen rules are the
    fallback, and the rules carry priorities and `not` guards. What is
-   still open is *when* the rules become control-plane-shipped data
-   rather than a Go table, and whether the terminal title (OSC) becomes
-   a region we read — herdr's most reliable signal.
+   still open is the hook half — an agent that reports its own state
+   should not be guessed at — and the delivery: the runner reads
+   manifests from `~/.oppenheimer/manifests/`, and nothing writes there
+   yet, because that is the control plane's side of the link.
 3. ~~Idle detection input~~: decided in §9, silence **and** manifest
    state.
 4. ~~macOS install~~: decided in 09 §2 — a user launchd agent and a
