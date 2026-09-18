@@ -115,7 +115,16 @@ jobs:
       # The gha-vm runners ship no C compiler, and -race needs cgo; run the
       # race detector locally (make test-race) and plain tests here.
       - run: go test -count=1 github.com/jordiparracrespo/oppenheimer/...
-      - run: go build -trimpath ./cmd/server
+      # The host agent builds for every target it is shipped to, not just
+      # the runner's own: a `syscall` or a build tag that only compiles on
+      # Linux is a release-day discovery otherwise.
+      - run: go build -trimpath ./cmd/runner
+        working-directory: apps/runner
+      - run: GOOS=darwin GOARCH=arm64 go build -o /dev/null ./...
+        working-directory: apps/runner
+      - run: GOOS=darwin GOARCH=amd64 go build -o /dev/null ./...
+        working-directory: apps/runner
+      - run: GOOS=linux GOARCH=arm64 go build -o /dev/null ./...
         working-directory: apps/runner
   # oppenheimer:end runner
 
