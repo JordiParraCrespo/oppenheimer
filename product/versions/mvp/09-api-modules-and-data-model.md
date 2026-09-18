@@ -140,21 +140,40 @@ that it is genuinely derived.
   retries after a dropped response gets the same host back instead of a
   409.
 
-### The runner talks HTTPS for request/response and one WebSocket for push
+### The runner makes exactly one HTTP call, ever
 
-Registration, reconciliation, event append and token minting are
-ordinary versioned routes under `/api/v1/runner/*` behind a
-`RunnerAuthGuard` that verifies the boot JWT against the host's stored
-public key and binds a *host* principal. They inherit RFC 7807 errors,
-throttling, Swagger and therefore a generated typed client — which is
-what `apps/runner/ARCHITECTURE.md` already asks for. The one outbound
-WebSocket carries what must be pushed (`session.start`, `session.stop`,
-`attach.*`, PTY input) and what streams (PTY output).
+`POST /hosts/pairing/redeem`, from the install command, before the host
+has a key to authenticate with. Everything after that — reconciliation,
+event append, token delivery and rotation, session start and stop, PTY
+bytes — rides the single outbound WebSocket, as
+[`00-scope.md`](00-scope.md) decided ("no ports on the host, ever… the
+runner holds one outbound WebSocket") and [`08-auth.md`](08-auth.md)
+decided for the token specifically ("the control plane mints a one-hour
+installation token narrowed to the session's repository and **hands it
+to the runner over the relay**"). Job payloads are sealed to the host's
+public key, which is F7 met rather than avoided.
 
-**No frame pushed to a runner ever carries a secret.** The git token is
-*pulled* by the credential helper over the host-authenticated HTTPS
-channel. That is what makes F7 satisfiable by construction in the MVP:
-there is no secret in a job payload to encrypt.
+A hybrid shape — ordinary `/api/v1/runner/*` HTTPS routes for
+request/response, the socket only for push — is tempting, because it
+would inherit RFC 7807 errors, throttling, Swagger and a generated typed
+client, which is what `apps/runner/ARCHITECTURE.md` asks for. It is
+rejected here for two reasons. It contradicts the two decided notes
+above and would need them changed first. And it would satisfy F7 by
+avoidance: "no secret travels in a pushed frame because the token is
+pulled instead" leaves the finding technically unviolated and
+substantively unaddressed.
+
+**A finding worth recording either way.** If a runner HTTP route is ever
+added, the host's boot assertion must **not** travel in
+`Authorization: Bearer`. `ScopesGuard` is registered globally as an
+`APP_GUARD` and calls `CredentialScopeResolver.resolve()` on every HTTP
+route; that resolver treats any bearer value that is neither an
+`oppenheimer_pat_…` token nor a recognised OAuth grant nor a Better Auth
+session as a forgery and throws `INVALID_CREDENTIAL`
+(`apps/api/src/auth/application/credential-scope.resolver.ts`,
+`rejectUnlessSession`). A host JWT presented that way would 401 before
+any route-level guard ran. It needs its own header, or the resolver
+needs to be taught the host credential kind.
 
 ### The three "not a table" decisions
 
@@ -291,23 +310,45 @@ POST   /sessions/{id}/attach-ticket  attach Session  sessions:write
 `attach` is a **distinct CASL action**, so a read-only credential can
 list sessions without being able to open a PTY on one.
 
-Runner-facing, behind `RunnerAuthGuard` (host principal, no user):
+Two more console routes the screens need:
 
 ```
-POST /runner/register                      the installer's one unauthenticated call
-GET  /runner/sessions                      reconcile on connect
-POST /runner/sessions/{id}/events          append, idempotent
-POST /runner/sessions/{id}/git-token       mint/rotate, one repo, one hour
-GET  /runner/connect                       WebSocket upgrade, boot JWT
+GET    /hosts/pairing/{id}        read Host     hosts:read   → redeemedHostId
+POST   /sessions/{id}/restart     update Session sessions:write
 ```
+
+`GET /hosts/pairing/{id}` is how Add host "flips to online"
+([`05-screens.md`](05-screens.md)) without polling the whole host list —
+the console's `usePairHost` deliberately does not invalidate it.
+`restart` is required by [`02-runner.md`](02-runner.md): a host reboot
+shows every session as stopped with a Restart button that recreates
+window 0 in the same worktree.
+
+`POST /sessions/{id}/attach-ticket` returns `{ticket, url, expiresAt,
+window, hint}`. `window` because tabs are tmux windows in one tmux
+session (`02-runner.md`), so a ticket authorises one window, not a
+session. `hint` because [`01-protocol.md`](01-protocol.md) decided
+tickets can carry structured hints — `host-offline`,
+`runner-update-required`.
+
+Not HTTP at all: the runner uplink (`GET /relay/runner`, WebSocket,
+host assertion) and everything it carries. See the transport section
+above.
 
 Unauthenticated by design, and therefore carrying no `@RequireScopes`:
 
 ```
-POST /runner/register        credential = the registration token, checked in the handler
+POST /hosts/pairing/redeem   credential = the registration token, checked in the handler
 POST /github/webhook         credential = X-Hub-Signature-256 over the raw body
 GET  /relay/attach?ticket=   credential = the single-use ticket; Origin checked (F2)
 ```
+
+Each carries `@NoPolicy('<reason>')` rather than no decorator at all:
+`PoliciesGuard` fails closed, and
+`apps/api/src/auth/__tests__/route-policy-coverage.spec.ts` turns a
+missing declaration into a build failure. The exemption returns before
+the `request.user` check, so it is the intended way to model a route
+with no principal.
 
 The install command and the agent install prompt are served from
 `POST /hosts/pairing`'s response, templated from deploy-owned runner
@@ -326,27 +367,45 @@ code execution on a host.
    imported by the console through a narrow subpath.
 3. Zod schemas for the session and host shapes, which nothing validates
    today.
-4. A data migration granting the org-scoped `owner` role `manage` on
-   `Host`, `Session`, `Installation` and `Repository` within
-   `${activeOrganizationId}`, **and bumping `organization.roleVersion`**
-   so cached abilities refresh. Without it every freshly provisioned
-   workspace owner is refused from every new route — and it is invisible
-   to any test that stubs the ability.
+4. **The owner role, in two places that must agree.** A data migration
+   granting the org-scoped `owner` role `manage` on `Host`, `Session`,
+   `Installation` and `Repository` within `${activeOrganizationId}`,
+   **and bumping `organization.roleVersion`** so cached abilities
+   refresh — `ScopeResolver` and `UserRoleRepository` key their caches
+   on it. And the same four entries added to
+   `SYSTEM_ROLE_PERMISSIONS.owner` in
+   `packages/shared/src/permissions/abilities.ts`, because the seed
+   writes roles from that constant and `AddOwnerRole` says the migration
+   mirrors it. The migration alone fixes existing databases; the
+   constant alone fixes freshly seeded ones. Miss either and a workspace
+   owner is refused from every new route — and both are invisible to any
+   test that stubs the ability.
 5. `pnpm generate:api-client`, plus a changeset. The console then drops
    the hand-rolled DTOs in `packages/frontend/consumer` that today call
-   `/api/v1/sessions` and `/api/v1/hosts` directly.
+   `/api/v1/sessions` and `/api/v1/hosts` directly. Two more consumers
+   regenerate with it: `apps/cli/src/lib/api-types.ts` and the tool
+   definitions in `apps/mcp/src/tools/`. Neither has a sessions or hosts
+   command today; both will once the scopes exist.
 
-### Two additive changes to the committed client contract
+### One additive change to the committed client contract
 
 The console's `SessionState` is
-`starting | running | idle | stopped | failed`. It gains:
+`starting | running | idle | stopped | failed`. It gains **`blocked`**:
+[`00-scope.md`](00-scope.md) names the sidebar dot's three states as
+working, blocked and idle, and the design system's `StatusState`
+already carries `needs-input`. Without it the one feature the dot
+exists for is unrepresentable on the wire.
 
-- **`blocked`** — [`00-scope.md`](00-scope.md) names the sidebar dot's
-  three states as working, blocked and idle, and the design system's
-  `StatusState` already carries `needs-input`. Without it the one
-  feature the dot exists for is unrepresentable on the wire.
-- **`stopping`** — closing pushes a branch and removes a worktree, so
-  pressing Stop twice must be a visible no-op rather than a lie.
+That is the only union change. `stopping` was considered and dropped —
+`POST /sessions/{id}/stop` answering 202 on an already-stopping session,
+plus `stateDetail`, covers the same ground without a second wire break.
+
+The mapping is still not complete, and that is open question 8 below:
+[`02-runner.md`](02-runner.md) has the screen manifest classify a pane
+as `working, blocked, done, idle, unknown`, and adding `blocked` maps
+three of those five. `done` and `unknown` have no home in
+`SessionState`, and the design system has a seventh value, `completed`,
+that nothing produces.
 
 Everything else the console has committed to keeps its exact shape:
 the URLs, `CreateSessionInput`, `HostDto`, and `HostPairingDto`.
@@ -356,13 +415,17 @@ the URLs, `CreateSessionInput`, `HostDto`, and `HostPairingDto`.
 Each step is a vertical slice that can land alone.
 
 1. `packages/shared`: the three scope resources, the four subjects, the
-   agent catalog, the Zod schemas.
-2. `hosts/`, starting with `mint-host-pairing-token` and
-   `register-host` — the smallest slice that exercises a new scope
+   agent catalog, the Zod schemas, and the `SYSTEM_ROLE_PERMISSIONS`
+   entries.
+2. `github/` — installations, the repository cache, the webhook, the
+   repo chip. It goes first because it is the only module that can be
+   built and tested end to end against a real App installation with no
+   WebSocket surface in existence, and because nothing else can resolve
+   a repository without it.
+3. `hosts/`, starting with `mint-host-pairing-token` and
+   `redeem-host-pairing` — the smallest slice that exercises a new scope
    resource, a new CASL resource, a scoped repository, a single-use
    credential and a public route at once.
-3. `github/` — installations, the repository cache, the webhook. It can
-   be tested against a real App installation before any socket exists.
 4. `sessions/` — the row, the log and the fold, with no relay: create,
    list, stop, events.
 5. `relay/` — the runner uplink and the browser attach, which turns the
@@ -383,10 +446,12 @@ Each step is a vertical slice that can land alone.
    workspace?** Still open from [`08-auth.md`](08-auth.md). The proposal
    is workspace-bound with `createdByUserId` for audit, so a token does
    not stop working if the person is removed mid-install.
-4. **Does the security review accept** "no secret ever travels in a
-   pushed frame; the git token is pulled over host-authenticated HTTPS"
-   as satisfying F7 for the MVP, or must `session.start` still be sealed
-   to the host key even though it carries nothing sensitive?
+4. **Does F5's "source IP shown" survive the proxy?** The control plane
+   sits behind one. `credential-scope.resolver.ts`'s own `sourceAddress`
+   helper notes that `request.ip` is the proxy's address unless Express
+   `trust proxy` is set, so recording `request.ip` into `createdFromIp`
+   and `redeemedFromIp` would show the load balancer on every row. Is
+   `trust proxy` set in the deployment, and how many hops?
 5. **Is the App configured with "request user authorization during
    installation"?** Claiming an installation into a workspace must prove
    the signed-in user can actually see it — otherwise
@@ -402,3 +467,16 @@ Each step is a vertical slice that can land alone.
    the client's verb wants renaming before the SDK is generated.
 7. **Host JWT replay.** Is a five-minute boot JWT over TLS enough, or
    should `hosts/` keep a short Redis set of seen `jti`s?
+8. **What do `done` and `unknown` become?** The screen manifest
+   ([`02-runner.md`](02-runner.md)) classifies a pane as `working,
+   blocked, done, idle, unknown`. Adding `blocked` to `SessionState`
+   maps three of the five. Does `done` collapse into `idle`, or does the
+   sidebar want to distinguish "the agent finished its task" from "the
+   agent is waiting"? The design system already carries a `completed`
+   value that nothing currently produces. And does `unknown` mean a
+   sixth state, or the absence of a recent event?
+9. **Can a second workspace claim an installation the first already
+   has?** `POST /installations` needs an `INSTALLATION_ALREADY_CONNECTED`
+   409 for the case where the GitHub installation id is already held by
+   a different workspace — otherwise two workspaces silently share one
+   repository cache and one token source.

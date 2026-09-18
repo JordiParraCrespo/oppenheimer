@@ -68,4 +68,5 @@ at the bottom of this file.
   closed list in `packages/shared` and per-host availability is a host
   fact. **"Repositories" and "GitHub allowed repositories" are one
   noun**, because the App installation is a boundary GitHub enforces.
-  `SessionState` gains `blocked` and `stopping`.
+  `SessionState` gains `blocked`, the one wire change; `done` and
+  `unknown` from the screen manifest are still unmapped (09 open Q8).
