@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { DataTableProps } from '../lib/data-table-types';
 import { DataTable } from './data-table';
 
 /**
@@ -17,7 +18,9 @@ const rows: Row[] = [
   { id: 'b', name: 'Bob' },
 ];
 
-function renderTable(page: number, bulkActions: ReturnType<typeof vi.fn>) {
+type BulkActions = NonNullable<DataTableProps<Row>['bulkActions']>;
+
+function renderTable(page: number, bulkActions: BulkActions) {
   return (
     <DataTable
       columns={columns}
@@ -32,7 +35,7 @@ function renderTable(page: number, bulkActions: ReturnType<typeof vi.fn>) {
 
 describe('DataTable selection', () => {
   it('drops the selection when the query moves and does not restore it on return', () => {
-    const bulkActions = vi.fn(() => null);
+    const bulkActions = vi.fn<BulkActions>(() => null);
     const { rerender } = render(renderTable(1, bulkActions));
 
     fireEvent.click(screen.getAllByRole('checkbox', { name: 'table.selectRow' })[0]);

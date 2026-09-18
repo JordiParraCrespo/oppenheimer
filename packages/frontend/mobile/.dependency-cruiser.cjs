@@ -2,5 +2,5 @@
 module.exports = require('@oppenheimer/tsconfig/depcruise/frontend-kit.cjs')({
   leaves: ['platform', 'theme', 'analytics', 'forms', 'config'],
   middle: ['i18n', 'layout'],
-  top: [],
+  top: ['auth'],
 });

@@ -1,4 +1,4 @@
-import { asArray, asRecord } from '../auth/better-auth.util';
+import { asArray, asRecord } from '../auth/infrastructure/better-auth.util';
 import type {
   FullOrganizationResponseDto,
   InvitationResponseDto,

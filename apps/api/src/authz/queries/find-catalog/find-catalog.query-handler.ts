@@ -1,6 +1,6 @@
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ResourceRegistry } from '@oppenheimer/backend-authz';
-import { AbilityFactory } from '../../../roles/services/ability.factory';
+import { AbilityFactory } from '../../../roles/application/ability.factory';
 import { toCatalogResponse } from '../../authz.mapper';
 import type { AuthzCatalogResponseDto } from '../../dtos/authz-catalog.response.dto';
 import { FindAuthzCatalogQuery } from './find-catalog.query';

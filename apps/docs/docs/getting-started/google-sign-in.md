@@ -16,16 +16,16 @@ provider on.
 
 | Piece                 | Where                                              | What it does                                                              |
 | --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------- |
-| Provider registration | `apps/api/src/auth/auth.ts`                        | Adds `socialProviders.google` **only** when both env vars are set         |
+| Provider registration | `apps/api/src/auth/infrastructure/better-auth.config.ts`                        | Adds `socialProviders.google` **only** when both env vars are set         |
 | Callback route        | Better Auth                                        | Serves `${BETTER_AUTH_URL}/api/auth/callback/google`                      |
-| Name mapping          | `apps/api/src/auth/auth.ts` (`splitName`)          | Splits Google's `name` into the app's `firstName` / `lastName`            |
+| Name mapping          | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`splitName`)          | Splits Google's `name` into the app's `firstName` / `lastName`            |
 | Capability detection  | `apps/api/src/capabilities/capabilities.module.ts` | Resolves `google_oauth` from config at boot, logs it, serves it over HTTP |
 | Capability endpoint   | `GET /api/v1/health/capabilities`                  | Tells clients whether the provider is configured                          |
 | Web button            | `apps/web/src/components/social-login-buttons.tsx` | Renders only when the capability read says Google is available            |
 | Mobile button         | `apps/mobile/app/(auth)/login.tsx`, `register.tsx` | Opens an in-app browser and deep-links back via the `oppenheimer://` scheme     |
-| Sign-up gating        | `apps/api/src/auth/auth.ts` (`disableImplicitSignUp`) | Refuses a Google account with no user here, unless the caller asked to register |
-| Account linking       | `apps/api/src/auth/auth.ts` (`account.accountLinking`) | Attaches Google to an existing email/password account on the same verified address |
-| Post-sign-up hooks    | `apps/api/src/auth/auth.ts` (`databaseHooks`)      | Welcome email, default `user` role                                       |
+| Sign-up gating        | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`disableImplicitSignUp`) | Refuses a Google account with no user here, unless the caller asked to register |
+| Account linking       | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`account.accountLinking`) | Attaches Google to an existing email/password account on the same verified address |
+| Post-sign-up hooks    | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`databaseHooks`)      | Welcome email, default `user` role                                       |
 
 A missing `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` is not an error — it is a
 disabled capability. The API boots normally, the button hides itself, and the
@@ -189,7 +189,7 @@ second one, and from then on either method lands in the same place. Nothing has
 to be done by hand and no password is asked for at the door.
 
 Two checks guard that link, both configured under `account.accountLinking` in
-`apps/api/src/auth/auth.ts`:
+`apps/api/src/auth/infrastructure/better-auth.config.ts`:
 
 - **The provider must have verified the address.** `trustedProviders` is
   deliberately left empty, so what is trusted is Google's own `email_verified`
@@ -265,7 +265,7 @@ network stack can keep using `localhost`.
 
 ## Optional tweaks
 
-All of these go on the `google` entry in `apps/api/src/auth/auth.ts`:
+All of these go on the `google` entry in `apps/api/src/auth/infrastructure/better-auth.config.ts`:
 
 | Option                     | Effect                                                               |
 | -------------------------- | -------------------------------------------------------------------- |

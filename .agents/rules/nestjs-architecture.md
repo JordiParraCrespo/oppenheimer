@@ -11,36 +11,60 @@ point inward: the domain depends on nothing, the application orchestrates the
 domain, and infrastructure/interface adapters depend on the inside. The shared
 building blocks live in `@oppenheimer/backend-ddd`.
 
-## Module layout (vertical slices)
+## Module layout: one shape, enforced
 
-Each feature module is organised by use case, not by technical layer:
+Every module under `apps/api/src/` is cut the same way. A directory appears
+only when it has something to hold — there are no placeholder layers — but the
+set of directories is closed, and so is the set of file names each admits.
 
+**That table lives in one place:
+[`apps/api/ARCHITECTURE.md`](../../apps/api/ARCHITECTURE.md), and is executable
+as `pnpm check:api-structure`.** Read it there rather than from a copy here —
+a second copy is a second thing to update when the contract moves.
+
+Two commands decide whether a module conforms, and they answer different
+questions:
+
+```bash
+pnpm check:api-structure        # where a file may live, what it may be called
+pnpm --filter @oppenheimer/api arch   # what it is then allowed to import
 ```
-<module>/
-├── commands/<use-case>/        # state changes (one folder per use case)
-│   ├── <use-case>.command.ts        # extends CommandBase
-│   ├── <use-case>.service.ts        # @CommandHandler (the handler)
-│   ├── <use-case>.http.controller.ts
-│   └── <use-case>.request.dto.ts    # Zod DTO (createZodDto), when there's a body
-├── queries/<use-case>/         # reads (no side effects)
-│   ├── <use-case>.query.ts          # extends QueryBase
-│   ├── <use-case>.query-handler.ts  # @QueryHandler
-│   └── <use-case>.http.controller.ts
-├── domain/                     # pure domain, no framework/persistence imports
-│   ├── <module>.entity.ts           # AggregateRoot / Entity
-│   ├── value-objects/
-│   ├── events/<event>.domain-event.ts
-│   └── <module>.errors.ts
-├── database/                   # infrastructure
-│   ├── <module>.orm-entity.ts       # TypeORM persistence model
-│   ├── <module>.repository.port.ts  # the port (interface)
-│   └── <module>.repository.ts       # TypeORM adapter implementing the port
-├── application/event-handlers/ # @OnEvent domain-event handlers
-├── dtos/<module>.response.dto.ts
-├── <module>.mapper.ts
-├── <module>.di-tokens.ts
-└── <module>.module.ts
-```
+
+### There is no `services/`
+
+A "service" is not a layer, and a directory named after one is where a module
+goes to stop being a hexagon. When you are about to write one, ask which of
+these it is:
+
+| It…                                        | goes in                                        |
+| ------------------------------------------ | ---------------------------------------------- |
+| decides something from the domain alone     | `domain/<name>.policy.ts` / `.factory.ts`      |
+| calls out of the process                    | `infrastructure/<name>.port.ts` + an adapter   |
+| is what a route does                        | `commands/<use-case>/` or `queries/<use-case>/`|
+| needs ports but no route reaches it         | `application/<name>.{factory,policy,resolver}.ts` |
+
+The same applies to `entities/`, `utils/`, `helpers/`, `common/`, `types/`,
+`interfaces/`, `constants/` and `models/`. `pnpm check:api-structure` names
+each of them and the question to ask instead. The command handler is
+`<use-case>.command-handler.ts` — there is no `.service.ts` either.
+
+### What a handler may import
+
+This is the part that is local to writing code, rather than to laying it out:
+
+- `domain/` imports **only** `@oppenheimer/backend-ddd`, `@oppenheimer/backend-authz`,
+  `@oppenheimer/shared` and node core. No `@nestjs/*`, no `typeorm`, no `oxide.ts`,
+  no `express`.
+- Handlers (`commands/`, `queries/`, `application/`) inject the **port** via
+  its DI token — never a `*.repository.ts`, `*.adapter.ts` or `*.gateway.ts`.
+- Only `database/` and `infrastructure/` name TypeORM; only `infrastructure/`
+  (and the auth module's own guards) name Better Auth.
+- A controller dispatches on the bus and maps; it never touches `database/` at
+  runtime. It is capped at 110 lines, a handler at 120.
+- Slices do not import each other's internals. Reusing another slice's
+  `*.command.ts` / `*.query.ts` to dispatch is fine.
+- A module publishes its `domain/`, `dtos/`, ports, DI tokens, bus messages and
+  inbound adapters. Everything else is its own.
 
 ## CQRS command/query handlers
 

@@ -33,6 +33,13 @@ fi
 output=$(pnpm arch 2>&1)
 status=$?
 
+if [[ -n "$api_changed" ]]; then
+  api_structure=$(node scripts/check-api-structure.mjs 2>&1) || {
+    status=1
+    output="$output"$'\n\n'"$api_structure"
+  }
+fi
+
 if [[ -n "$frontend_changed" ]]; then
   structure=$(node scripts/check-frontend-structure.mjs 2>&1) || {
     status=1

@@ -25,13 +25,13 @@
 | Piece | Where |
 | --- | --- |
 | Resource registry (`defineResource`, `ResourceRegistry`) | `packages/backend/authz/src/registry/` |
-| `AccessScope`, `ScopeResolverPort`, the default resolver | `packages/backend/authz/src/scope/`, `apps/api/src/authz/services/scope.resolver.ts` |
+| `AccessScope`, `ScopeResolverPort`, the default resolver | `packages/backend/authz/src/scope/`, `apps/api/src/authz/application/scope.resolver.ts` |
 | SQL predicate generation + `ScopedRepositoryBase` | `packages/backend/authz/src/scope/` |
 | `${scope.*}` placeholders, deny precedence | `packages/shared/src/permissions/index.ts` |
 | Fail-closed `PoliciesGuard`, `@NoPolicy`, coverage test | `apps/api/src/auth/guards/`, `apps/api/src/__tests__/` |
-| Org-scoped roles + `X-Active-Organization` validation | `apps/api/src/migrations/1781400000000-AddOrgScopedRoles.ts`, `apps/api/src/authz/services/` |
+| Org-scoped roles + `X-Active-Organization` validation | `apps/api/src/migrations/1781400000000-AddOrgScopedRoles.ts`, `apps/api/src/authz/application/` |
 | Generic `access_grant` table | `apps/api/src/migrations/1781500000000-AddAccessGrants.ts` |
-| `canGrant` / `canGrantScope` containment | `packages/backend/authz/src/grants/`, `apps/api/src/roles/services/role-grant.policy.ts` |
+| `canGrant` / `canGrantScope` containment | `packages/backend/authz/src/grants/`, `apps/api/src/roles/application/role-grant.policy.ts` |
 | `GET /v1/authz/catalog` | `apps/api/src/authz/queries/find-catalog/` |
 | `leads` reference module | `apps/api/src/leads/` |
 
@@ -93,8 +93,8 @@ not a product feature; it is the executable specification.
 | `PoliciesGuard` + `@CheckPolicies`, ability attached to `request.ability`                         | `apps/api/src/auth/guards/policies.guard.ts`                                  |
 | Credential scopes: catalog, `@RequireScopes`, `ScopesGuard` (**fails closed**), `grantableScopes` | `packages/shared/src/scopes/`, `apps/api/src/auth/guards/scopes.guard.ts`     |
 | Organization-restricted credentials (`ResourceScope`, `@OrganizationScoped`)                      | `packages/shared/src/scopes/resource-scope.ts`                                |
-| Platform tier: Better Auth `admin` plugin, `superadmin` role, impersonation                       | `apps/api/src/auth/auth.ts`, `apps/api/src/admin/`                            |
-| Orgs, members, teams (= workspaces), `session.activeOrganizationId` / `activeTeamId`              | `apps/api/src/organizations/`, `apps/api/src/auth/entities/session.entity.ts` |
+| Platform tier: Better Auth `admin` plugin, `superadmin` role, impersonation                       | `apps/api/src/auth/infrastructure/better-auth.config.ts`, `apps/api/src/admin/`                            |
+| Orgs, members, teams (= workspaces), `session.activeOrganizationId` / `activeTeamId`              | `apps/api/src/organizations/`, `apps/api/src/auth/database/session.orm-entity.ts` |
 | Transactional outbox for domain events                                                            | `packages/backend/ddd/src/outbox/`                                            |
 | Permission picker UI + `GET /v1/tokens/permissions` serving `{ groups, grantable }`               | `apps/web/src/components/permission-picker.tsx`                               |
 
@@ -176,7 +176,7 @@ packages/backend/authz/                    # @oppenheimer/backend-authz
     ├── scope/
     │   ├── access-scope.ts                # AccessScope type + helpers
     │   ├── scope-resolver.port.ts         # ScopeResolver interface + DI token
-    │   ├── scope-context.ts               # request-scoped holder
+    │   ├── infrastructure/scope-context.types.ts  # request-scoped holder
     │   └── apply-access-scope.ts          # AccessScope + ResourceDefinition → SQL predicate
     ├── ability/
     │   ├── build-ability.ts               # deny-ordered CASL build

@@ -1,5 +1,5 @@
-import type { DataTablePagination } from '../components/data-table';
 import type { TableQuery } from '../hooks/use-table-query';
+import type { DataTablePagination } from '../lib/data-table-types';
 
 /**
  * Page a list the server hands over whole.

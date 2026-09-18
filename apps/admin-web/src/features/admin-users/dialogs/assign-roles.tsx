@@ -8,23 +8,29 @@ import {
   DialogTitle,
 } from '@oppenheimer/design-system-web';
 import { Shield } from '@oppenheimer/design-system-web/icons';
-import type { AdminUserEntity, RoleEntity } from '@oppenheimer/frontend-admin';
-import { useAssignAdminUserRoles } from '@oppenheimer/frontend-admin/react';
+import type { AdminUserEntity } from '@oppenheimer/frontend-admin';
+import { useAssignAdminUserRoles, useRoles, useUserRoles } from '@oppenheimer/frontend-admin/react';
 import { useTranslation } from 'react-i18next';
 import { AssignRolesForm } from '@/features/admin-users/forms/assign-roles-form';
 
+/**
+ * Assign a user's roles.
+ *
+ * Both lists are asked for here, when the dialog opens, rather than kept warm
+ * by the table behind it: nothing else on that screen renders the catalog, and
+ * the reader's current roles are already cached under the same key the row's
+ * pills used, so this costs a lookup rather than a request.
+ */
 export function AssignRolesDialog({
   user,
-  roles,
-  assignedRoles,
   onClose,
 }: {
   user: AdminUserEntity;
-  roles: RoleEntity[];
-  assignedRoles: RoleEntity[];
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const roles = useRoles({ page: 1, limit: 100 });
+  const assignedRoles = useUserRoles(user.id);
   const assign = useAssignAdminUserRoles();
 
   return (
@@ -42,8 +48,8 @@ export function AssignRolesDialog({
           </DialogDescription>
         </DialogHeader>
         <AssignRolesForm
-          roles={roles}
-          assignedRoles={assignedRoles}
+          roles={roles.data?.data ?? []}
+          assignedRoles={assignedRoles.data ?? []}
           isPending={assign.isPending}
           error={assign.error}
           onCancel={onClose}

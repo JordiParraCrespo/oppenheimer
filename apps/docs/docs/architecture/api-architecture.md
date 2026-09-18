@@ -4,38 +4,52 @@ sidebar_position: 3
 
 # API Architecture
 
-The NestJS API (`apps/api`) follows a pragmatic DDD approach with single-responsibility services, event-driven async processing, and structured error handling.
+The NestJS API (`apps/api`) is a **Domain-Driven Hexagon**: dependencies point
+inward, each use case is a vertical slice, and everything that talks to the
+outside world does so through a port.
+
+:::info The contract is in the repository, and it is checked
+`apps/api/ARCHITECTURE.md` is the source of truth for how a module is cut —
+the closed set of layer directories, what each may hold, and what a file in it
+may be called. It is executable as `pnpm check:api-structure`, with the import
+rules in `apps/api/.dependency-cruiser.cjs` (`pnpm arch`) beside it.
+
+This page describes what the API *does*. It deliberately does not restate that
+table: a second copy would drift from the one CI enforces.
+:::
 
 ## Module structure
 
+Every module under `src/` is cut the same way, and a directory appears only
+once it has something to hold:
+
 ```
-apps/api/src/
-├── auth/                  # Authentication & authorization
-│   ├── auth.ts            # Better Auth instance (providers, email, plugins)
-│   ├── email-queue.ts     # Standalone BullMQ queue for transactional emails
-│   ├── entities/          # user / session / account / verification tables
-│   ├── guards/            # PoliciesGuard (CASL)
-│   └── decorators/        # @CurrentUser, @CheckPolicies
-├── users/                 # User management
-│   ├── services/          # UsersService, Update, Delete
-│   ├── dtos/              # Response DTOs
-│   ├── requests/          # Zod-validated request bodies
-│   ├── errors/            # Error catalog
-│   └── events/            # Domain events
-├── health/                # Liveness + readiness checks
-├── queue/                 # BullMQ processors + event listeners
-├── config/                # 6 config factories
-└── database/              # Seed script
+apps/api/src/<module>/
+├── domain/              # aggregates, value objects, events, errors — pure
+├── database/            # ORM model, repository port, TypeORM adapter
+├── infrastructure/      # ports + adapters for everything else outside
+├── commands/<use-case>/ # a write: command, handler, controller, request DTO
+├── queries/<use-case>/  # a read: query, handler, controller
+├── application/         # needs ports, is not a use case
+├── dtos/                # the response contracts it publishes
+├── guards/ decorators/ interceptors/   # inbound adapters
+├── probes/              # liveness / readiness, for modules that have them
+├── <module>.mapper.ts   # domain ↔ persistence ↔ response
+├── <module>.di-tokens.ts
+└── <module>.module.ts
 ```
+
+There is **no `services/` directory**, and no service at a module root. A thing
+is domain logic, a port, an adapter, or a use case.
 
 ## Auth module
 
 Authentication is handled by [Better Auth](https://www.better-auth.com/),
 mounted into NestJS via [`@thallesp/nestjs-better-auth`](https://github.com/ThallesP/nestjs-better-auth).
-The Better Auth instance lives in `auth/auth.ts` and is registered in
+The Better Auth instance lives in `auth/infrastructure/better-auth.config.ts` and is registered in
 `AppModule` with `AuthModule.forRoot({ auth })`.
 
-### Configuration (`auth/auth.ts`)
+### Configuration (`auth/infrastructure/better-auth.config.ts`)
 
 | Feature            | Setup                                                                 |
 | ------------------ | --------------------------------------------------------------------- |
@@ -78,22 +92,28 @@ frontend.
 
 ## Users module
 
-### 3-layer mapper
+`users/` is the reference implementation of the contract — read it when a
+shape is unclear.
 
-`UserMapper` implements `Mapper<User, UserServiceModel, UserResponseDto>`:
+### Mapper
 
-- `toRepository()` — partial data to entity
-- `toService()` — entity to service model (strips password, refreshToken)
-- `toController()` — service model to response DTO
+`UserMapper` implements `Mapper<UserEntity, UserOrmEntity, UserResponseDto>`:
+
+- `toPersistence()` — domain entity → ORM record, writing only app-owned columns
+- `toDomain()` — ORM record → domain entity
+- `toResponse()` — domain entity → response DTO, never leaking sensitive fields
 
 ### Routes
 
-| Route               | CASL policy | Handler           |
-| ------------------- | ----------- | ----------------- |
-| `GET /users`        | read User   | Paginated list    |
-| `GET /users/:id`    | read User   | FindById          |
-| `PATCH /users/:id`  | update User | UpdateUserService |
-| `DELETE /users/:id` | delete User | DeleteUserService |
+Each is its own slice under `commands/` or `queries/`, with one controller:
+
+| Route                      | CASL policy | Slice                            |
+| -------------------------- | ----------- | -------------------------------- |
+| `GET /v1/users`            | read User   | `queries/find-users/`            |
+| `GET /v1/users/:id`        | read User   | `queries/find-user-by-id/`       |
+| `GET /v1/users/me`         | —           | `queries/get-me/`                |
+| `PATCH /v1/users/:id`      | update User | `commands/update-user/`          |
+| `DELETE /v1/users/:id`     | delete User | `commands/delete-user/`          |
 
 ## Authentication & sessions
 
@@ -116,12 +136,21 @@ roles/RBAC docs); Better Auth's plugin roles only gate the `/api/auth/*` surface
 
 ## Event-driven processing
 
+Domain events are raised by aggregates and staged on a **transactional
+outbox** by the repository, inside the same transaction as the write — so the
+state change and the events it owes commit or roll back together:
+
 ```
-Registration → UserRegisteredEvent → Listener → Email Queue → Processor → EmailService
-Deletion     → UserDeletedEvent    → (extensible via listeners)
+UserEntity.delete() raises UserDeletedDomainEvent
+  → repository stages it on the outbox in the same transaction
+  → commit → relay delivers it → @OnEvent handler → Email Queue → Processor
 ```
 
-Events use `@nestjs/event-emitter`. The email processor (`WorkerHost`) routes jobs by name to the appropriate `EmailService` method.
+The relay claims due rows with `FOR UPDATE SKIP LOCKED`, so concurrent API
+replicas lease disjoint rows. Delivery failures retry with backoff and park as
+`failed` rather than being dropped. BullMQ still owns retries, delayed jobs and
+concurrency for the queued work itself; the outbox solves only the one thing it
+cannot — atomicity with the database transaction.
 
 ## Error catalog
 

@@ -28,7 +28,8 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **table** — `DataTable`, `DataTableColumn`, `useTableQuery`,
   `useClampedPage`, `downloadCsv`, the pagination helpers.
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useErrorMessage`.
+- **forms** — `useZodResolver`; `useErrorMessage` is owned by frontend core and
+  re-exported for compatibility.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
   `useLocale`, `useApplyUserSettings`, the date formatters

@@ -39,7 +39,7 @@ const { root, loaded, applied } = loadEnv();
 ## Who uses it
 
 - `apps/api` — every entrypoint (`main.ts`, TypeORM CLI `data-source.ts`,
-  `database/seed.ts`, `generate-openapi.ts`) and `auth/auth.ts` load it first.
+  `database/seed.ts`, `generate-openapi.ts`) and `auth/infrastructure/better-auth.config.ts` load it first.
 - `apps/mobile` — `app.config.ts` calls it so Expo/Metro inline
   `EXPO_PUBLIC_*` values from the root `.env`.
 - `apps/mcp` — both entrypoints load it (a no-op when the server is installed

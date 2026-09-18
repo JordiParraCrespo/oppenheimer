@@ -153,7 +153,6 @@ The consumer app's account flows sit under `apps/web/src/routes`:
 | `/accept-invitation`      | Invitation links carry `id`, `email`, `name`, `role` and `inviter`. A newcomer registers from the link and the acceptance completes in the same submission; an existing account signs in and is returned to the link. | `features/organizations`       |
 | `/profile`                | The signed-in user's own account, as four panes: details, password, sessions and preferences. Theme and language apply to the device at once and the saved copy becomes the default elsewhere.        | `features/profile`             |
 | `/settings`               | Three panes, with the open one in `?section=`: the workspace's name and mark (`general`), the reader's sessions (`security`), and their API keys (`api`).                                              | `features/organizations`, `features/profile`, `features/api-tokens` |
-| `/settings/api-tokens`    | The full API-token screen behind the settings pane.                                                                                                                                                    | `features/api-tokens`          |
 | `/oauth/consent`          | The consent screen an OAuth client is sent to.                                                                                                                                                         | `features/auth`                |
 
 The sidebar and command palette are gated by the caller's permissions: each nav

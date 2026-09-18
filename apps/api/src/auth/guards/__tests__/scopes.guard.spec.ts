@@ -2,10 +2,10 @@ import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialScopeResolver } from '../../application/credential-scope.resolver';
 import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../../decorators/require-scopes.decorator';
-import type { ScopeContext } from '../../scope-context';
-import type { CredentialScopeResolver } from '../../services/credential-scope.resolver';
+import type { ScopeContext } from '../../domain/scope-context.types';
 import { ScopesGuard } from '../scopes.guard';
 
 const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({

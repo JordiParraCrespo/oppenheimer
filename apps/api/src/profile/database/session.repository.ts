@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { None, type Option, Some } from 'oxide.ts';
 import { MoreThan, type Repository } from 'typeorm';
-import { Session } from '../../auth/entities/session.entity';
+import { Session } from '../../auth/database/session.orm-entity';
 import type { OwnedSession, SessionReaderPort } from './session.repository.port';
 
 /**
@@ -15,7 +15,7 @@ import type { OwnedSession, SessionReaderPort } from './session.repository.port'
  * for.
  *
  * Delegated rows are filtered out for a stronger reason: they are not devices
- * at all. `DelegatedSessionService` mints one per API token or OAuth client so
+ * at all. `DelegatedSessionAdapter` mints one per API token or OAuth client so
  * the Better Auth façades can resolve their caller, and listing them as
  * signed-in devices turned two real sign-ins into 23 (issue #122). Both
  * methods exclude them, so an id that names one is "not found" to the revoke

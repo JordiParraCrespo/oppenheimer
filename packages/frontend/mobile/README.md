@@ -2,15 +2,15 @@
 
 What both Expo apps — `apps/mobile` and `apps/admin-mobile` — share below
 their routes: the persisted query client, secure storage and MMKV, remote
-config, form plumbing, i18n, theming, error boundaries and analytics. It is
-source-exported (`main` points at `src/index.ts`) and compiled by each app's
-Metro bundler, with a subpath export per concern.
+config, form plumbing, i18n, theming, the sign-in chrome, error boundaries and
+analytics. It is source-exported (`main` points at `src/index.ts`) and compiled
+by each app's Metro bundler, with a subpath export per concern.
 
 The kit is organised by concern — `src/<concern>/<kind>/`, the kinds a
 feature has — and the concerns are layered: `platform`, `theme`, `config`,
-`forms` and `analytics` are leaves, `i18n` and `layout` build on them. The
-kit imports `@oppenheimer/design-system-mobile` and `@oppenheimer/frontend-core`, never a
-product package.
+`forms` and `analytics` are leaves, `i18n` and `layout` build on them, and
+`auth` sits on top. The kit imports `@oppenheimer/design-system-mobile` and
+`@oppenheimer/frontend-core`, never a product package.
 
 Two modules run code when imported and are imported for that alone:
 `@oppenheimer/frontend-mobile/polyfills` (first line of the entry file) and
@@ -19,20 +19,28 @@ listed in `package.json` `sideEffects`, with `platform/lib/sentry.ts`.
 
 ## What it exports
 
-From the root and from the matching subpath (`./analytics`, `./config`,
-`./forms`, `./i18n`, `./layout`, `./platform`, `./theme`):
+From the root and from the matching subpath (`./analytics`, `./auth`,
+`./config`, `./forms`, `./i18n`, `./layout`, `./platform`, `./theme`):
 
 - **platform** — `createQueryPersistence` (a `QueryClient` plus MMKV-backed
   `persistOptions`), `ExpoSecureStoreService`, `storage`, `stateStorage`,
   `queryStorage`, `initPurchases`, `Sentry`, `sentryEnabled`.
 - **config** — `configManager`, `ConfigManagerContext`, `useConfigManager`,
   `useConfig`, `AppConfig`, `staticConfig`.
-- **forms** — `useZodResolver`, `FormField`.
+- **forms** — `useZodResolver` and `FormField`; translated API failures come
+  from `@oppenheimer/frontend-core/react` and are re-exported for compatibility.
 - **i18n** — the i18next instance, `LOCALE_STORAGE_KEY`, `setLocale`,
   `LanguageSwitcher`.
-- **theme** — `THEME`, `NAV_THEME`.
+- **theme** — `THEME`, `NAV_THEME`, `BrandGlyph`, `ThemeToggle`.
+- **auth** — the sign-in chrome both apps wear, mirroring
+  `@oppenheimer/frontend-web`'s concern of the same name: `AuthLayout`, `BrandLogo`,
+  the `Auth*` primitives (title, subtitle, divider, note, form error, …),
+  `PasswordInput`, `PasswordRequirements`/`PasswordChecklist`,
+  `SocialLoginButtons` and the provider marks.
 - **layout** — `ErrorBoundary`, `AppErrorFallback`, `ScreenErrorFallback`.
 - **analytics** — `createMobileAnalyticsClient`, `ScreenViewTracker`.
+- **tailwind-config** — the package-owned NativeWind content glob, exported
+  separately for app Tailwind configs.
 
 ## How to use it
 

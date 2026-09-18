@@ -1,27 +1,36 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Session } from '../auth/entities/session.entity';
+import { Session } from '../auth/database/session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { UsersModule } from '../users/user.module';
+import { LocaleResolver } from './application/locale.resolver';
+import { ChangePasswordCommandHandler } from './commands/change-password/change-password.command-handler';
 import { ChangePasswordHttpController } from './commands/change-password/change-password.http.controller';
-import { ChangePasswordService } from './commands/change-password/change-password.service';
+import { DeleteAvatarCommandHandler } from './commands/delete-avatar/delete-avatar.command-handler';
 import { DeleteAvatarHttpController } from './commands/delete-avatar/delete-avatar.http.controller';
-import { DeleteAvatarService } from './commands/delete-avatar/delete-avatar.service';
+import { RevokeOtherSessionsCommandHandler } from './commands/revoke-other-sessions/revoke-other-sessions.command-handler';
 import { RevokeOtherSessionsHttpController } from './commands/revoke-other-sessions/revoke-other-sessions.http.controller';
-import { RevokeOtherSessionsService } from './commands/revoke-other-sessions/revoke-other-sessions.service';
+import { RevokeSessionCommandHandler } from './commands/revoke-session/revoke-session.command-handler';
 import { RevokeSessionHttpController } from './commands/revoke-session/revoke-session.http.controller';
-import { RevokeSessionService } from './commands/revoke-session/revoke-session.service';
+import { UpdateProfileCommandHandler } from './commands/update-profile/update-profile.command-handler';
 import { UpdateProfileHttpController } from './commands/update-profile/update-profile.http.controller';
-import { UpdateProfileService } from './commands/update-profile/update-profile.service';
+import { UpdateUserSettingsCommandHandler } from './commands/update-user-settings/update-user-settings.command-handler';
 import { UpdateUserSettingsHttpController } from './commands/update-user-settings/update-user-settings.http.controller';
-import { UpdateUserSettingsService } from './commands/update-user-settings/update-user-settings.service';
+import { UploadAvatarCommandHandler } from './commands/upload-avatar/upload-avatar.command-handler';
 import { UploadAvatarHttpController } from './commands/upload-avatar/upload-avatar.http.controller';
-import { UploadAvatarService } from './commands/upload-avatar/upload-avatar.service';
 import { SessionRepository } from './database/session.repository';
 import { UserSettingsOrmEntity } from './database/user-settings.orm-entity';
 import { UserSettingsRepository } from './database/user-settings.repository';
-import { SESSION_READER, USER_SETTINGS_REPOSITORY } from './profile.di-tokens';
+import { AvatarStorageAdapter } from './infrastructure/avatar-storage.adapter';
+import { ProfileAuthGateway } from './infrastructure/profile-auth.gateway';
+import {
+  AVATAR_STORAGE,
+  LOCALE_RESOLVER,
+  PROFILE_AUTH,
+  SESSION_READER,
+  USER_SETTINGS_REPOSITORY,
+} from './profile.di-tokens';
 import { ProfileMapper } from './profile.mapper';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
@@ -29,9 +38,6 @@ import { GetProfileHttpController } from './queries/get-profile/get-profile.http
 import { GetProfileQueryHandler } from './queries/get-profile/get-profile.query-handler';
 import { GetUserSettingsHttpController } from './queries/get-user-settings/get-user-settings.http.controller';
 import { GetUserSettingsQueryHandler } from './queries/get-user-settings/get-user-settings.query-handler';
-import { AvatarStorage } from './services/avatar.storage';
-import { LocaleResolver } from './services/locale.resolver';
-import { ProfileAuthFacade } from './services/profile-auth.facade';
 
 // Registration order matters: every static sub-route (`settings`, `avatar`,
 // `sessions`) must be matched before `sessions/:id`, and the bare `GET`/`PATCH`
@@ -50,13 +56,13 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
-  UpdateProfileService,
-  UpdateUserSettingsService,
-  UploadAvatarService,
-  DeleteAvatarService,
-  ChangePasswordService,
-  RevokeSessionService,
-  RevokeOtherSessionsService,
+  UpdateProfileCommandHandler,
+  UpdateUserSettingsCommandHandler,
+  UploadAvatarCommandHandler,
+  DeleteAvatarCommandHandler,
+  ChangePasswordCommandHandler,
+  RevokeSessionCommandHandler,
+  RevokeOtherSessionsCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -70,7 +76,13 @@ const repositories: Provider[] = [
   { provide: SESSION_READER, useClass: SessionRepository },
 ];
 
-const services: Provider[] = [AvatarStorage, ProfileAuthFacade, LocaleResolver];
+// Every outbound dependency is bound to the token its port is named by, so a
+// handler names the port and the choice of adapter is made once, here.
+const adapters: Provider[] = [
+  { provide: AVATAR_STORAGE, useClass: AvatarStorageAdapter },
+  { provide: PROFILE_AUTH, useClass: ProfileAuthGateway },
+  { provide: LOCALE_RESOLVER, useClass: LocaleResolver },
+];
 
 /**
  * The caller's own account: profile fields, preferences, password and sessions.
@@ -86,9 +98,10 @@ const services: Provider[] = [AvatarStorage, ProfileAuthFacade, LocaleResolver];
     TypeOrmModule.forFeature([UserSettingsOrmEntity, Session, UserOrmEntity]),
   ],
   controllers: [...httpControllers],
-  providers: [...commandHandlers, ...queryHandlers, ...repositories, ...services, ProfileMapper],
-  // `LocaleResolver` is what the email worker reads a recipient's language
-  // through — the settings row is this module's aggregate.
-  exports: [USER_SETTINGS_REPOSITORY, LocaleResolver, TypeOrmModule],
+  providers: [...commandHandlers, ...queryHandlers, ...repositories, ...adapters, ProfileMapper],
+  // `LOCALE_RESOLVER` is what the email worker reads a recipient's language
+  // through — the settings row is this module's aggregate. Tokens are exported,
+  // never the classes behind them.
+  exports: [USER_SETTINGS_REPOSITORY, LOCALE_RESOLVER, TypeOrmModule],
 })
 export class ProfileModule {}

@@ -1,32 +1,41 @@
-import {
-  Badge,
-  Button,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@oppenheimer/design-system-web';
-import { Download, Plus, Shield, Trash2 } from '@oppenheimer/design-system-web/icons';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@oppenheimer/design-system-web';
+import { Plus, Shield, Trash2 } from '@oppenheimer/design-system-web/icons';
 import type { RoleEntity } from '@oppenheimer/frontend-admin';
 import { useRoles } from '@oppenheimer/frontend-admin/react';
-import {
-  DataTable,
-  type DataTableColumn,
-  downloadCsvRows,
-  TABLE_HEADER_CONTROL_SIZE,
-  useTableQuery,
-} from '@oppenheimer/frontend-web';
+import { DataTable, useTableQuery } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ExportRolesButton } from '@/features/roles/components/export-roles-button';
 import { DeleteRoleDialog } from '@/features/roles/dialogs/delete-role';
 import { RoleEditorDialog } from '@/features/roles/dialogs/role-editor';
+import { useRoleColumns } from '@/features/roles/hooks/use-role-columns';
 
 /** The design's roles table shows eight rows before it pages. */
 const PAGE_SIZE = 8;
 
-export function RolesList({ roleCounts }: { roleCounts?: Map<string, number> }) {
+/**
+ * The roles table.
+ *
+ * The two dialogs are opened from here rather than from the row that triggers
+ * them, and that is deliberate: `rowActions` renders inside the overflow
+ * popup, so a dialog owned by the row would unmount the moment the menu closed.
+ * It costs nothing — the table's props do not change when `editor` does.
+ *
+ * What did cost something was the search box: while the live value was a prop
+ * of `DataTable`, every character re-rendered all eight rows. The field keeps
+ * it now, and `setSearch` is called once per burst.
+ *
+ * It took a `roleCounts` map once, for a member-count column and a CSV column.
+ * Nothing ever passed it: the only caller is the roles screen, so the column
+ * never rendered and the export wrote a column of zeros. There is no endpoint
+ * behind it either — `RoleEntity` carries no count — so it went, rather than
+ * shipping a placeholder number.
+ */
+export function RolesList() {
   const { t } = useTranslation();
   // Prefixed for the same reason as the members tab beside it.
   const query = useTableQuery({ prefix: 'roles' });
-  const { search, searchQuery, page } = query;
+  const { search, page } = query;
 
   /**
    * A page at a time, from the server. `GET /roles` has always returned a
@@ -40,7 +49,7 @@ export function RolesList({ roleCounts }: { roleCounts?: Map<string, number> }) 
   const roles = useRoles({
     page,
     limit: PAGE_SIZE,
-    search: searchQuery || undefined,
+    search: search || undefined,
   });
   const rows = roles.data?.data ?? [];
   const meta = roles.data?.meta;
@@ -51,52 +60,7 @@ export function RolesList({ roleCounts }: { roleCounts?: Map<string, number> }) 
   } | null>(null);
   const [deleteRole, setDeleteRole] = useState<RoleEntity | null>(null);
 
-  const columns: DataTableColumn<RoleEntity>[] = [
-    {
-      key: 'role',
-      label: t('pages.team.roles.columns.role'),
-      width: 380,
-      render: (role) => (
-        <span className="flex items-center gap-3">
-          <span className="flex size-8 flex-none items-center justify-center rounded-lg border border-border-subtle bg-surface-sunken text-ink-600">
-            <Shield className="size-4" />
-          </span>
-          <span className="min-w-0">
-            <span className="block font-medium text-ink-900">{role.name}</span>
-            <span className="block max-w-96 truncate text-xs text-ink-400">
-              {role.description || '—'}
-            </span>
-          </span>
-        </span>
-      ),
-    },
-    ...(roleCounts
-      ? [
-          {
-            key: 'members',
-            label: t('pages.team.roles.columns.members'),
-            width: 140,
-            render: (role: RoleEntity) => (
-              <span className="text-ink-600">
-                {t('pages.team.roles.memberCount', {
-                  count: roleCounts.get(role.id) ?? 0,
-                })}
-              </span>
-            ),
-          },
-        ]
-      : []),
-    {
-      key: 'type',
-      label: t('pages.team.roles.columns.type'),
-      width: 120,
-      render: (role) => (
-        <Badge variant="neutral">
-          {t(role.isSystem ? 'pages.team.roles.system' : 'pages.team.roles.custom')}
-        </Badge>
-      ),
-    },
-  ];
+  const columns = useRoleColumns();
 
   return (
     <>
@@ -129,27 +93,7 @@ export function RolesList({ roleCounts }: { roleCounts?: Map<string, number> }) 
         // role is still edited, duplicated or deleted one at a time through the
         // row menu.
         bulkActions={(selected) => (
-          <Button
-            variant="secondary"
-            size={TABLE_HEADER_CONTROL_SIZE}
-            onClick={() =>
-              exportRoles(
-                rows.filter((role) => selected.includes(role.id)),
-                roleCounts ?? new Map(),
-                {
-                  role: t('pages.team.roles.columns.role'),
-                  description: t('pages.team.roles.columns.description'),
-                  members: t('pages.team.roles.columns.members'),
-                  type: t('pages.team.roles.columns.type'),
-                  system: t('pages.team.roles.system'),
-                  custom: t('pages.team.roles.custom'),
-                },
-              )
-            }
-          >
-            <Download />
-            {t('pages.team.roles.export')}
-          </Button>
+          <ExportRolesButton roles={rows.filter((role) => selected.includes(role.id))} />
         )}
         rowActions={(role) => (
           <>
@@ -184,34 +128,5 @@ export function RolesList({ roleCounts }: { roleCounts?: Map<string, number> }) 
       )}
       {deleteRole && <DeleteRoleDialog role={deleteRole} onClose={() => setDeleteRole(null)} />}
     </>
-  );
-}
-
-/**
- * Export the picked roles. The type column is translated to match the members
- * export — a reader who exports both should not get one file in their language
- * and one in English.
- */
-function exportRoles(
-  roles: RoleEntity[],
-  roleCounts: Map<string, number>,
-  labels: {
-    role: string;
-    description: string;
-    members: string;
-    type: string;
-    system: string;
-    custom: string;
-  },
-): void {
-  downloadCsvRows(
-    'roles.csv',
-    [labels.role, labels.description, labels.members, labels.type],
-    roles.map((role) => [
-      role.name,
-      role.description ?? '',
-      String(roleCounts.get(role.id) ?? 0),
-      role.isSystem ? labels.system : labels.custom,
-    ]),
   );
 }

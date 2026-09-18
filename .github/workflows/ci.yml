@@ -75,6 +75,11 @@ jobs:
       - name: Architecture boundaries
         if: needs.changes.outputs.packages != '[]'
         run: pnpm turbo run arch ${{ needs.changes.outputs.filters }}
+      # The API module contract: the closed set of layer directories, the file
+      # names each admits, use-case slice completeness and the line caps.
+      # Import rules are dependency-cruiser's, above.
+      - name: API structure
+        run: pnpm check:api-structure
       # oppenheimer:begin web|admin-web|mobile|admin-mobile
       # The frontend layout contract: feature names, kind directories, the
       # route line cap, no copies of what a kit ships, and the docs every

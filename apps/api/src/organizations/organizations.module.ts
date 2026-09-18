@@ -1,11 +1,11 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Session } from '../auth/entities/session.entity';
+import { Session } from '../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
-import { ProvisionPersonalWorkspaceService } from './commands/provision-personal-workspace/provision-personal-workspace.service';
+import { ProvisionPersonalWorkspaceCommandHandler } from './commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from './database/invitation.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
 import { OrganizationOrmEntity } from './database/organization.orm-entity';
@@ -31,9 +31,9 @@ import { WorkspacesService } from './workspaces.service';
  * org-scoped role that opens it — so it is a proper vertical slice: an
  * aggregate, a repository port and a command handler
  * (`commands/provision-personal-workspace/`), dispatched by the sign-up hook
- * through `auth/auth-command-bus.ts`.
+ * through `auth/infrastructure/auth-command-bus.adapter.ts`.
  */
-const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceService];
+const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceCommandHandler];
 
 const repositories: Provider[] = [
   { provide: PERSONAL_WORKSPACE_REPOSITORY, useClass: PersonalWorkspaceRepository },

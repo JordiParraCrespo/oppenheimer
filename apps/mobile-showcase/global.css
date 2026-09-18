@@ -52,8 +52,8 @@
 
     /* Theme pill. The knob and its active icon are the one bit of chrome that
        deliberately does NOT invert, so the dark block restates only the idle
-       icon — see the web `globals.css`. Mirrored here to keep the three token
-       files in step; mobile has no theme pill of its own yet. */
+       icon — see the web `globals.css`. `ThemeToggle` in
+       `@oppenheimer/frontend-mobile/theme` draws it on the auth screens. */
     --theme-toggle-knob: 240 5% 90%; /* #E5E5E8 */
     --theme-toggle-icon: 220 8% 36%; /* #555A63 */
     --theme-toggle-icon-idle: 220 8% 36%;

@@ -21,7 +21,7 @@ its documentation. Never add a per-package `.env` or `.env.example`.
   overrides `.env`.
 - Entry points load it as their first import: `import '@oppenheimer/env/load';`
   (`main.ts`, `config/data-source.ts`, `database/seed.ts`,
-  `generate-openapi.ts`, `auth/auth.ts`). Do not import `dotenv/config` —
+  `generate-openapi.ts`, `auth/infrastructure/better-auth.config.ts`). Do not import `dotenv/config` —
   it resolves `.env` against `process.cwd()`, which is exactly the fragility
   `@oppenheimer/env` replaces.
 - `apps/web` does not use the loader: `vite.config.ts` points `envDir` at the

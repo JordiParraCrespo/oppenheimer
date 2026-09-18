@@ -2,8 +2,8 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { CreateLeadCommandHandler } from './commands/create-lead/create-lead.command-handler';
 import { CreateLeadHttpController } from './commands/create-lead/create-lead.http.controller';
-import { CreateLeadService } from './commands/create-lead/create-lead.service';
 import { LeadOrmEntity } from './database/lead.orm-entity';
 import { LeadRepository } from './database/lead.repository';
 import { LEAD_REPOSITORY } from './leads.di-tokens';
@@ -21,7 +21,7 @@ const httpControllers = [
   FindLeadByIdHttpController,
 ];
 
-const commandHandlers: Provider[] = [CreateLeadService];
+const commandHandlers: Provider[] = [CreateLeadCommandHandler];
 const queryHandlers: Provider[] = [FindLeadsQueryHandler, FindLeadByIdQueryHandler];
 const mappers: Provider[] = [LeadMapper];
 const repositories: Provider[] = [{ provide: LEAD_REPOSITORY, useClass: LeadRepository }];

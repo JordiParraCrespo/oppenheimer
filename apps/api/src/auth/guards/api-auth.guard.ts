@@ -1,11 +1,12 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import { auth } from '../auth';
-import { betterAuthHeaders } from '../better-auth.util';
+import type { CredentialScopePort } from '../application/credential-scope.port';
+import { CREDENTIAL_SCOPE, DELEGATED_SESSION } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
-import type { ScopedRequest } from '../scope-context';
-import { CredentialScopeResolver } from '../services/credential-scope.resolver';
-import { DelegatedSessionService } from '../services/delegated-session.service';
+import type { ScopedRequest } from '../domain/scope-context.types';
+import { auth } from '../infrastructure/better-auth.config';
+import { betterAuthHeaders } from '../infrastructure/better-auth.util';
+import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
 
 /**
  * Authenticates a request by any of the three supported credentials and
@@ -24,8 +25,10 @@ import { DelegatedSessionService } from '../services/delegated-session.service';
 @Injectable()
 export class ApiAuthGuard implements CanActivate {
   constructor(
-    private readonly credentials: CredentialScopeResolver,
-    private readonly delegatedSessions: DelegatedSessionService,
+    @Inject(CREDENTIAL_SCOPE)
+    private readonly credentials: CredentialScopePort,
+    @Inject(DELEGATED_SESSION)
+    private readonly delegatedSessions: DelegatedSessionPort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

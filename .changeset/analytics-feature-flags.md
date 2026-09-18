@@ -27,6 +27,6 @@ caching, deduplication and refetching come from the query client. Providers that
 can push flag changes may also implement the optional `onFeatureFlags`, which
 invalidates the query when it fires.
 
-The web and mobile kits ship PostHog adapters driven by `VITE_POSTHOG_KEY` /
-`EXPO_PUBLIC_POSTHOG_KEY`. Both default to the EU cloud region and are inert
-when unset.
+`@oppenheimer/frontend-web` and `@oppenheimer/frontend-mobile` ship the PostHog adapters,
+driven by `VITE_POSTHOG_KEY` / `EXPO_PUBLIC_POSTHOG_KEY`. Both default to the
+EU cloud region and are inert when unset.

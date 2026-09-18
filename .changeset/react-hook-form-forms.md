@@ -16,7 +16,8 @@ screens held one `useState` per field and reported the first Zod failure in an
 them, and no longer submit until the whole form parses.
 
 `@oppenheimer/frontend-core` gains a `/validation` entrypoint exporting
-`createZodErrorMap`, and each platform kit a `useZodResolver` over it.
+`createZodErrorMap`, and `@oppenheimer/frontend-web` and `@oppenheimer/frontend-mobile`
+each ship the `useZodResolver` hook that wires it into React Hook Form.
 The shared schemas carry English messages because the API validates against the
 same objects, so the map re-derives the message from the Zod issue code and
 resolves it against a `validation.*` translation key. Each app passes its own

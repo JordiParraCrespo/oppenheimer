@@ -48,16 +48,34 @@ const member =
 ```
 
 Shared shaping helpers (`asRecord`, `asArray`, `unwrap`, `unwrapArray`) live in
-`src/auth/better-auth.util.ts`; array/envelope mappers (`mapMembers`,
-`mapUserFromResult`, …) live alongside the scalar ones in `*.mappers.ts`.
+`src/auth/infrastructure/better-auth.util.ts`.
+
+**One mapper per aggregate, named for it** — `subscription.mapper.ts`, not a
+`*.mappers.ts` bag of loose functions. `pnpm check:api-structure` rejects the
+plural name; `admin.mappers.ts` and `organization.mappers.ts` are on its ledger
+precisely because they are that bag. Array and envelope mappers belong on the
+aggregate's mapper beside the scalar ones, as methods.
 
 ## Delegating façades (organizations, admin)
 
 `src/organizations/` and `src/admin/` expose the Better Auth organization/admin
 plugin operations as typed, Swagger-documented, CASL-guarded REST endpoints that
-**delegate to `auth.api.*`** — Better Auth owns the tables, so these are
-infrastructure modules (controller → injectable service → `auth.api`), not
-CQRS/domain slices. Use `betterAuthHeaders` from `src/auth/better-auth.util.ts`,
+**delegate to `auth.api.*`**. Better Auth owns the tables, so there is no
+aggregate to write — but not owning the data is a reason to have a **port**,
+not a reason to skip the module contract. The target shape, like every other
+module (see [`ARCHITECTURE.md`](./ARCHITECTURE.md)), is: a port in
+`infrastructure/` describing what the application needs, a gateway beside it
+that speaks to `auth.api.*`, and one use-case slice per operation.
+
+> **Both modules are mid-migration.** They still carry a root-level
+> `*.service.ts` and multi-route `*.controller.ts` — the pre-contract layout.
+> `pnpm check:api-structure` reports each of those files, and
+> `.dependency-cruiser.cjs` carries a ledger entry for
+> `organizations.service.ts`. **Do not add a route to either module in the old
+> shape.** A new operation goes in as a slice; a route you touch is a chance to
+> move it. Neither module is an example to copy — `users/` and `profile/` are.
+
+Use `betterAuthHeaders` from `src/auth/infrastructure/better-auth.util.ts`,
 and normalize every `auth.api` result through a mapper (see above). See
 `.agents/rules/rbac-roles.md` for the full RBAC + org/admin guide.
 
@@ -82,9 +100,9 @@ A **write that encodes a product rule** — what an account is owed, what it may
 do, what it belongs to — never goes in a hook. That is how the personal
 workspace ended up as `INSERT` statements no domain object knew about. The hook
 raises one command (`CompleteSignUpCommand`) through `dispatchFromAuthHook`
-(`src/auth/auth-command-bus.ts`), and a handler that *can* inject decides what
+(`src/auth/infrastructure/auth-command-bus.adapter.ts`), and a handler that *can* inject decides what
 that means. The hook names no module: a new side effect is a change to
-`CompleteSignUpService`, not another import here.
+`CompleteSignUpCommandHandler`, not another import here.
 
 Dispatches from a hook are best-effort and logged — Better Auth does not await
 `after` hooks, so a throw there would be an unhandled rejection rather than a
@@ -94,7 +112,10 @@ script owes itself those side effects by calling the handlers directly.
 **Wrap every `auth.api.*` call in the module's own invoker** —
 `invokeOrganizationApi` (`organizations/organization-error.mapper.ts`) or
 `invokeAdminApi` (`admin/admin-error.mapper.ts`), both built with
-`betterAuthInvoker`. They fold Better Auth's `APIError` onto the module's error
+`betterAuthInvoker`. Those two files sit at the module root today only because
+`*.mapper.ts` is on the root allowlist; once each module is cut into slices the
+error fold belongs beside its gateway in `infrastructure/`, not as a second
+mapper at the root. They fold Better Auth's `APIError` onto the module's error
 catalog so the response is a proper problem document with an `ORG_*`/`ADMIN_*`
 code, keeping the upstream code as an `upstreamCode` extension. Throwing a bare
 `HttpException` here loses the code entirely — see "Structured errors" in

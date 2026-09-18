@@ -1,12 +1,13 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import { isOrganizationAllowed, missingScopes, type Scope } from '@oppenheimer/shared';
 import { ApiTokenErrors } from '../../api-tokens/domain/api-token.errors';
+import type { CredentialScopePort } from '../application/credential-scope.port';
+import { CREDENTIAL_SCOPE } from '../auth.di-tokens';
 import { ORGANIZATION_PARAM_KEY } from '../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../decorators/require-scopes.decorator';
-import type { ScopeContext, ScopedRequest } from '../scope-context';
-import { CredentialScopeResolver } from '../services/credential-scope.resolver';
+import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
 
 /**
  * Enforces what a scoped credential may reach. Registered globally, so it
@@ -29,7 +30,8 @@ import { CredentialScopeResolver } from '../services/credential-scope.resolver';
 export class ScopesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly credentials: CredentialScopeResolver,
+    @Inject(CREDENTIAL_SCOPE)
+    private readonly credentials: CredentialScopePort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

@@ -15,7 +15,7 @@ concern map, the layering and the "add a concern" cookbook are
 - A new concern → `src/<concern>/` with the kind directories it needs, an
   `index.ts`, `export * from './<concern>'` in `src/index.ts`, a
   `"./<concern>"` entry in `package.json` `exports`, and the concern's name
-  in the `leaves` or `middle` list of
+  in the `leaves`, `middle` or `top` list of
   [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs).
 - A file that runs code at import (a polyfill, an i18n bootstrap, an SDK
   init) → add it to `sideEffects` in `package.json`, or the bundler is free
@@ -43,5 +43,9 @@ pnpm --filter @oppenheimer/frontend-mobile arch
   are named through `nonPersistedFeatures`.
 - Writing a second copy of a helper in `apps/mobile` rather than promoting
   the first one here; `pnpm check:structure` compares basenames.
+- Keeping product-neutral auth UI or flows in an app instead of reaching for
+  `auth`. The concern owns the frame, forms, forgot/reset state machines,
+  password controls and provider buttons. An app keeps only product-specific
+  composition such as consumer registration or an admin brand wrapper.
 
 See [`.agents/rules/frontend-architecture.md`](../../../.agents/rules/frontend-architecture.md).

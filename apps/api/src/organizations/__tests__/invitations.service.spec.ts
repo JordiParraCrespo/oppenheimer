@@ -2,7 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../auth/auth', () => ({
+vi.mock('../../auth/infrastructure/better-auth.config', () => ({
   auth: {
     api: {
       createInvitation: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock('../../auth/auth', () => ({
   },
 }));
 
-import { auth } from '../../auth/auth';
+import { auth } from '../../auth/infrastructure/better-auth.config';
 import { InvitationsService } from '../invitations.service';
 
 const api = auth.api as unknown as Record<string, ReturnType<typeof vi.fn>>;

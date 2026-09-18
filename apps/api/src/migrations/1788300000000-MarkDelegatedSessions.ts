@@ -3,7 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Tells device sessions apart from the internal ones minted for a credential.
  *
- * `DelegatedSessionService` mints a Better Auth session so an API token or an
+ * `DelegatedSessionAdapter` mints a Better Auth session so an API token or an
  * OAuth client can reach the façades that resolve their caller through Better
  * Auth. Those rows landed in the same table as real sign-ins, and the profile
  * and security "Active sessions" screens — which list every unexpired row as a
@@ -34,7 +34,7 @@ export class MarkDelegatedSessions1788300000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "session" ADD COLUMN IF NOT EXISTS "delegatedCredentialId" character varying`,
     );
-    // The label `DelegatedSessionService` has always written: `oppenheimer-<kind>/<credential>`.
+    // The label `DelegatedSessionAdapter` has always written: `oppenheimer-<kind>/<credential>`.
     await queryRunner.query(
       `UPDATE "session"
           SET "delegated" = true

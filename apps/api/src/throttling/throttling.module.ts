@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { RedisThrottlerStorage } from './redis-throttler.storage';
+import { RedisThrottlerStorage } from './infrastructure/redis-throttler.adapter';
 
 /**
  * Owns the rate limiter's Redis-backed counter store.

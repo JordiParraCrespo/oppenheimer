@@ -1,5 +1,6 @@
 {
   "appName": "Oppenheimer",
+  "controlAppName": "Oppenheimer Control",
   "loading": "Cargando...",
   "error": "Algo salió mal",
   "save": "Guardar",

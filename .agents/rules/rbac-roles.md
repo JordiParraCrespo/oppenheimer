@@ -42,7 +42,7 @@ convenience — application authorization goes through the database.
 | Permission/ability building (CASL)  | `packages/shared/src/permissions` (`defineAbilitiesFromPermissions`)                        |
 | Role Zod schemas                    | `packages/shared/src/schemas/role.schema.ts`                                                |
 | Roles module (aggregate, use cases) | `apps/api/src/roles/`                                                                       |
-| Effective-ability resolution        | `apps/api/src/roles/services/ability.factory.ts`                                            |
+| Effective-ability resolution        | `apps/api/src/roles/application/ability.factory.ts`                                            |
 | Route guard + policy decorator      | `apps/api/src/auth/guards/policies.guard.ts`, `auth/decorators/check-policies.decorator.ts` |
 
 ## Data model
@@ -182,7 +182,7 @@ from the legacy `user.role` column.
 ## Organizations, workspaces & super-admin (Better Auth plugins)
 
 Multi-tenancy and super-admin are provided by Better Auth's **`admin`** and
-**`organization`** plugins, configured in `apps/api/src/auth/auth.ts`. Their
+**`organization`** plugins, configured in `apps/api/src/auth/infrastructure/better-auth.config.ts`. Their
 endpoints live under `/api/auth/*` (not NestJS controllers), so the frontend
 calls them through the `adminClient()` / `organizationClient()` client plugins,
 **not** the generated api-client.
@@ -206,7 +206,7 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   first sign-in (`product/versions/mvp/08-auth.md`). It is the app's own rule
   rather than Better Auth's, so it is a real vertical slice —
   `organizations/commands/provision-personal-workspace/`, dispatched from the
-  Better Auth sign-up hook through `auth/auth-command-bus.ts`. It is
+  Better Auth sign-up hook through `auth/infrastructure/auth-command-bus.adapter.ts`. It is
   best-effort and idempotent: an account it did not land for still exists and
   is sent to `/onboarding`, the console's one organization-creating screen,
   which makes the caller the owner of their own workspace and nothing else
@@ -217,7 +217,7 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   to and *create* one. Every path that creates a membership writes the
   org-scoped application role — the tenant `owner` system role for a Better
   Auth owner/admin, `user` for a member in the same breath —
-  `ProvisionPersonalWorkspaceService` for the workspace sign-up gives,
+  `ProvisionPersonalWorkspaceCommandHandler` for the workspace sign-up gives,
   `InvitationsService.accept` for a workspace someone joins, and
   `OrganizationsService.create` for one the caller makes (which also
   provisions the "General" workspace) — so "you are a member" and "you may work
@@ -241,11 +241,14 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   `/v1/organizations/:id/invitations` + `/v1/invitations`, `/v1/workspaces`,
   `/v1/admin/users`) so they land in the generated `@oppenheimer/api-client`. These are
   **delegating façades**: the controllers/services call `auth.api.*` (via
-  `auth/better-auth.util.ts` — `betterAuthHeaders` + `invokeBetterAuth`) rather
-  than writing the tables, so Better Auth stays the single source of truth. They
-  are infrastructure modules (controller → injectable service → `auth.api`), not
-  CQRS/domain slices, since there is no app-owned aggregate. Impersonation
-  forwards Better Auth's `Set-Cookie` to the client.
+  `auth/infrastructure/better-auth.util.ts` — `betterAuthHeaders` + `invokeBetterAuth`) rather
+  than writing the tables, so Better Auth stays the single source of truth.
+  There is no app-owned aggregate, but the module contract still applies: the
+  target is a port plus a gateway in `infrastructure/` and one use-case slice
+  per operation. Both modules still carry the pre-contract
+  controller → service → `auth.api` layout and are being migrated — add a new
+  operation as a slice, never to the old service (see `apps/api/AGENTS.md`).
+  Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
 - **Org-scoped CASL** — `PoliciesGuard` reads `session.activeOrganizationId` and
