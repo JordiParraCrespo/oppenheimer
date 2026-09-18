@@ -1,6 +1,5 @@
 ---
 "@oppenheimer/api": minor
-"@oppenheimer/translations": patch
 ---
 
 Sign-up's side effects are domain use cases instead of SQL in a Better Auth
