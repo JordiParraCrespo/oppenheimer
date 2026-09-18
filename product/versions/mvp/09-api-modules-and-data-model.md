@@ -66,10 +66,31 @@ apps/api/src/
 
 `organizations/` is **not touched**. The `organization` row already is
 the personal workspace ([`08-auth.md`](08-auth.md)), and `AGENTS.md`
-says that module is not an example to copy. Every new product table
-carries `organizationId`, declares a resource with `defineResource`, and
-uses a repository extending `ScopedRepositoryBase`, so the SQL predicate
-and the CASL condition are generated from one declaration (F24).
+says that module is not an example to copy.
+
+**Tenant scoping, precisely.** Every table that is reachable on its own
+— `host`, `host_pairing_token`, `github_installation`,
+`github_repository`, `project`, `work_session` — carries
+`organizationId`, declares a resource with `defineResource`, and uses a
+repository extending `ScopedRepositoryBase`, so the SQL predicate and
+the CASL condition are generated from one declaration (F24).
+
+`session_checkout` and `work_session_event` carry **no**
+`organizationId` and declare **no** resource, on purpose: they are
+inside the `WorkSession` aggregate and are reachable only through it.
+`applyAccessScope` writes its predicate as
+`${alias}.${keys.organization}` against the **query's root table** and
+never traverses a join
+(`packages/backend/authz/src/scope/apply-access-scope.ts`), so a child
+table with no such column cannot be scoped by that mechanism at all —
+declaring the dimension without the column would be a resource that
+scopes nothing. The rule that replaces it: **these two ORM entities are
+never queried outside `sessions/database/`, and every read loads the
+organization-scoped `work_session` first, then reads children by the
+already-verified `sessionId`.** `GET /sessions/{id}/events` follows that
+path rather than querying the event table directly. Stating this
+matters because the generic mechanism silently does not apply here, and
+a handler that assumed it did would be scoping nothing.
 
 **`hosts/`** owns which machines this workspace has paired, how we prove
 a connecting process is one of them, what each machine can run, and
@@ -250,7 +271,11 @@ that it is genuinely derived.
   expiry and a source IP — three things you can only act on if they
   persist. Burning it is one atomic statement:
   `UPDATE … WHERE tokenHash = $1 AND redeemedAt IS NULL AND
-  expiresAt > now() RETURNING …`. Zero rows is the only failure, and it
+  revokedAt IS NULL AND expiresAt > now() RETURNING …`. **The
+  `revokedAt IS NULL` term is load-bearing**: `DELETE /hosts/pairing/{id}`
+  sets that column and nothing else, so without it F5's "revocable"
+  is a column nobody reads and a revoked token still pairs a host.
+  Zero rows is the only failure, and it
   does not distinguish used, expired and forged, on purpose. Only the
   SHA-256 is stored.
 - **The attach ticket is not**, because nothing about it is revocable:
@@ -405,14 +430,24 @@ de-duplication only saves a redundant GitHub call — a Redis key with a
 
 **`projects/`**
 
-- `project` — `id`, `organizationId`, `name` ("XRP Mobile"), `slug`
-  ("xrp-mobile" — the directory name), `archivedAt`, timestamps.
-  Unique `(organizationId, slug)`.
+- `project` — `id`, `organizationId`, `name`, `slug`, `archivedAt`,
+  timestamps. Unique `(organizationId, slug)`.
 
-  Auto-created on the first session for a repository, named after it.
-  The MVP never shows a project chip; the row exists so the directory
-  name is a constraint rather than a convention, and so agents and
-  documents have an owner when they arrive.
+  **Both come from the GitHub repository name.** Auto-created on the
+  first session for a repository: `slug` is the sanitised repository
+  name, `name` starts as the same thing. The MVP never shows a project
+  chip — `00-scope.md` decided four chips, and a fifth is real friction
+  on the most-used screen for a concept with one instance.
+
+  **`slug` is immutable; `name` is free.** The slug is a directory name
+  on every host, so a rename that changed it would have to move
+  `projects/<old>/` on every machine holding the project, with live
+  sessions inside it. Splitting them makes renaming display-only and
+  free. This is the same lesson as rule 1 below: a path is never an
+  identity. The cost is that a project's directory keeps its first
+  repository's name for ever, so `projects/xrp-mobile/` can hold a
+  project called something else — cheap against moving directories
+  under running sessions.
 
 **`sessions/`**
 
@@ -565,8 +600,12 @@ code execution on a host.
    granting the org-scoped `owner` role `manage` on `Host`, `Project`,
    `Session`, `Installation` and `Repository` within
    `${activeOrganizationId}`, **and bumping `organization.roleVersion`**
-   so cached abilities refresh — `ScopeResolver` and
-   `UserRoleRepository` key their caches on it. And the same entries
+   so cached abilities refresh. Precisely: `ScopeResolver` itself caches
+   nothing ("Nothing here is cached", `authz/application/scope.resolver.ts`)
+   because team membership is written by Better Auth outside any app
+   transaction — but *role rules* are cached keyed on
+   `organization.roleVersion`, which is what the bump invalidates, and
+   `UserRoleRepository` is what writes it. And the same entries
    added to `SYSTEM_ROLE_PERMISSIONS.owner` in
    `packages/shared/src/permissions/abilities.ts`, because the seed
    writes roles from that constant and `AddOwnerRole` says the migration
@@ -637,23 +676,18 @@ Each step is a vertical slice that can land alone.
 
 ## Open questions
 
-1. **Is the project auto-created silently, or named?** The MVP creates
-   one per repository on first use and never shows a chip. The moment a
-   second repository joins a project, someone has to name it. Does the
-   New session screen grow a project chip then, or does the project get
-   named the first time you add a second repository to it?
-2. **Attach ticket lifetime and reuse.** Carried over from
+1. **Attach ticket lifetime and reuse.** Carried over from
    [`01-protocol.md`](01-protocol.md). Thirty seconds and single-use is
    the proposal; too tight for a phone on a cold radio?
-3. **Is the pairing token bound to the minting user or only to the
+2. **Is the pairing token bound to the minting user or only to the
    workspace?** Still open from [`08-auth.md`](08-auth.md). The proposal
    is workspace-bound with `createdByUserId` for audit, so a token does
    not stop working if the person is removed mid-install.
-4. **Does F5's "source IP shown" survive the proxy?**
+3. **Does F5's "source IP shown" survive the proxy?**
    `credential-scope.resolver.ts`'s own `sourceAddress` helper notes
    that `request.ip` is the proxy's address unless Express `trust proxy`
    is set. Is it set in the deployment, and how many hops?
-5. **Is the App configured with "request user authorization during
+4. **Is the App configured with "request user authorization during
    installation"?** Claiming an installation into a workspace must prove
    the signed-in user can see it — otherwise `POST /installations` with
    someone else's `installation_id` hands the caller tokens to their
@@ -662,19 +696,19 @@ Each step is a vertical slice that can land alone.
    and discard it. Without that parameter the fallback is to accept only
    installations whose `account.login` matches a GitHub account linked
    to the caller.
-6. **What do `done` and `unknown` become?** The screen manifest
+5. **What do `done` and `unknown` become?** The screen manifest
    classifies a pane five ways; `blocked` maps three of them. Does
    `done` collapse into `idle`, or does the sidebar want to distinguish
    "the agent finished" from "the agent is waiting"? The design system
    already carries a `completed` value that nothing produces.
-7. **Does `stop` mean "close"?** [`00-scope.md`](00-scope.md) defines
+6. **Does `stop` mean "close"?** [`00-scope.md`](00-scope.md) defines
    closing as push the branch and remove the worktree. With `restart`
    now present for host reboots, `stop` probably means "leave it on
    disk" and `DELETE` means close — but the client's verb wants
    confirming before the SDK is generated.
-8. **Can a second workspace claim an installation the first already
+7. **Can a second workspace claim an installation the first already
    has?** `POST /installations` needs an `INSTALLATION_ALREADY_CONNECTED`
    409, or two workspaces silently share one repository cache and one
    token source.
-9. **Host JWT replay.** Is a five-minute boot JWT over TLS enough, or
+8. **Host JWT replay.** Is a five-minute boot JWT over TLS enough, or
    should `hosts/` keep a short Redis set of seen `jti`s?
