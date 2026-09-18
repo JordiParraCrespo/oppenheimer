@@ -23,7 +23,7 @@ import { createFakeSessionStream } from '../lib/session-stream';
  */
 export function SessionTerminal() {
   const { t } = useTranslation();
-  const { containerRef, status, grid, submit } = useTerminal(createFakeSessionStream);
+  const { containerRef, status, submit } = useTerminal(createFakeSessionStream);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">
@@ -48,12 +48,9 @@ export function SessionTerminal() {
         {/* The artboard's other items — context used, rate-limit windows,
             memory, permission mode, host count — are numbers the runner and
             the control plane report. They stay out until there is something
-            real to put in them. */}
-        {grid.cols > 0 ? (
-          <TerminalStatusItem>
-            {grid.cols}×{grid.rows}
-          </TerminalStatusItem>
-        ) : null}
+            real to put in them, and the grid size is not one of them: how
+            many columns the pane resolved to is our business, not the
+            reader's. */}
       </TerminalStatusBar>
     </Terminal>
   );
