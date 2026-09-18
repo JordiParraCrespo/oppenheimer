@@ -491,7 +491,34 @@ de-duplication only saves a redundant GitHub call — a Redis key with a
   index is needed.
 
 No `attach_ticket` table — a Redis key, `attach:<random>` →
-`{sessionId, window, userId}`, with the TTL doing the expiry. **This
+`{sessionId, organizationId, window, userId}`, with a **60-second** TTL
+doing the expiry.
+
+**Decided, and the transport is the part that matters.** The ticket
+travels in `Sec-WebSocket-Protocol`, never in the query string. A
+browser cannot set headers on a WebSocket but it can set a subprotocol,
+which is the standard idiom for exactly this. The query string is the
+one weakness here that leaks *permanently*: reverse proxies, CDNs and
+load balancers log request lines by default, and
+`.agents/rules/` already says never to log query strings "because they
+routinely carry session cookies, bearer tokens" — a rule applied to
+pino and then bypassed by the layer above it. Thirty seconds is short;
+a log line is forever, and this ticket buys an interactive shell.
+
+**Sixty seconds, not thirty.** Single use is the real control, so the
+lifetime should buy reliability rather than shave a risk that is already
+bounded to one attach. Mint → DNS → TLS → upgrade on a cold radio can
+take five to ten seconds, and the failure mode of being too tight is
+"the terminal did not open" on precisely the device this product exists
+for.
+
+**One ticket, one attach**, consumed atomically. Every reconnect mints a
+fresh one. **And the relay re-checks at consume**: the session is still
+live, and the user is still a member of the owning workspace. Without
+that, authorization is frozen at mint — stop the session, remove the
+person from the workspace or revoke their credential inside the window
+and they still get a PTY. The relay must load the session anyway to
+find the host, so the check is nearly free. **This
 costs one new primitive, and that is the honest trade.** `CacheService`
 today is `get`/`set`/`del`/`reset`, and `get`-then-`del` is a race two
 relay connections could both win. Single use needs an atomic
@@ -556,7 +583,8 @@ already has, and confining it to the create screen would be a needless
 limit.
 
 `POST /sessions/{id}/attach-ticket` returns `{ticket, url, expiresAt,
-window, hint}`. `window` because tabs are tmux windows, so a ticket
+window, hint}`; the client presents `ticket` as a WebSocket subprotocol,
+not a query parameter. `window` because tabs are tmux windows, so a ticket
 authorises one window; `hint` because
 [`01-protocol.md`](01-protocol.md) decided tickets can carry structured
 hints (`host-offline`, `runner-update-required`).
@@ -566,7 +594,8 @@ Unauthenticated by design, and therefore carrying no `@RequireScopes`:
 ```
 POST /hosts/pairing/redeem   credential = the registration token, checked in the handler
 POST /github/webhook         credential = X-Hub-Signature-256 over the raw body
-GET  /relay/attach?ticket=   credential = the single-use ticket; Origin checked (F2)
+GET  /relay/attach            credential = the single-use ticket in Sec-WebSocket-Protocol,
+                              never the query string; Origin checked (F2)
 ```
 
 Each carries `@NoPolicy('<reason>')` rather than no decorator at all:
@@ -674,41 +703,53 @@ Each step is a vertical slice that can land alone.
    step-one spike ([`06-step-one-spike.md`](06-step-one-spike.md)) into
    the real path.
 
+## Decided since the first draft
+
+- **F5's source IP needs `TRUST_PROXY` set.** The mechanism already
+  exists and is correctly defaulted: `app.config.ts` takes a hop count,
+  `main.ts` leaves Express's `trust proxy` off at `0` so "a direct
+  client cannot spoof `X-Forwarded-For`". The consequence is that at the
+  default, `createdFromIp` and `redeemedFromIp` record *the proxy*. The
+  control plane sits behind public HTTPS
+  ([`03-control-plane.md`](03-control-plane.md)), so `TRUST_PROXY` must
+  be set to the real number of hops or F5's "source IP shown" is a
+  column full of one address. A deployment requirement, not a design
+  question.
+
+- **The App is configured with "request user authorization during
+  installation", and that is not optional.** `POST /installations` must
+  prove the caller can see the installation it is claiming, or a forged
+  `installation_id` hands them one-hour tokens to another account's
+  repositories. The proof is to exchange the OAuth `code` GitHub
+  attaches to the same redirect, call `GET /user/installations`, verify,
+  and discard the code. There is **no fallback**: matching
+  `account.login` against the caller's linked GitHub accounts fails for
+  organization installations, where that login is the org, not a user —
+  so it would either refuse every org install or reopen the hole.
+
+- **A second workspace cannot claim an installation**, because
+  `githubInstallationId` is globally unique. The only open part was the
+  error, which is `INSTALLATION_ALREADY_CONNECTED` 409 rather than a
+  constraint violation surfacing as a 500.
+
+- **The host boot assertion lives 60 seconds and its `jti` is burned.**
+  Five minutes was proposed with no replay cache. A captured assertion
+  cannot *read* anything — job payloads are sealed to the host key
+  (F7) — but it can open an uplink and **inject events into a session's
+  log**, which is the source of truth. Redis is already a dependency, so
+  a `SETNX jti` with a 60-second TTL at uplink accept closes it for a
+  few lines. The connection epoch fence bounds a replay's lifetime but
+  does not prevent the injection, so it is not a substitute.
+
 ## Open questions
 
-1. **Attach ticket lifetime and reuse.** Carried over from
-   [`01-protocol.md`](01-protocol.md). Thirty seconds and single-use is
-   the proposal; too tight for a phone on a cold radio?
-2. **Is the pairing token bound to the minting user or only to the
-   workspace?** Still open from [`08-auth.md`](08-auth.md). The proposal
-   is workspace-bound with `createdByUserId` for audit, so a token does
-   not stop working if the person is removed mid-install.
-3. **Does F5's "source IP shown" survive the proxy?**
-   `credential-scope.resolver.ts`'s own `sourceAddress` helper notes
-   that `request.ip` is the proxy's address unless Express `trust proxy`
-   is set. Is it set in the deployment, and how many hops?
-4. **Is the App configured with "request user authorization during
-   installation"?** Claiming an installation into a workspace must prove
-   the signed-in user can see it — otherwise `POST /installations` with
-   someone else's `installation_id` hands the caller tokens to their
-   repositories. The check is to exchange the OAuth `code` GitHub
-   attaches to the same redirect, list the user's installations, verify,
-   and discard it. Without that parameter the fallback is to accept only
-   installations whose `account.login` matches a GitHub account linked
-   to the caller.
-5. **What do `done` and `unknown` become?** The screen manifest
+1. **What do `done` and `unknown` become?** The screen manifest
    classifies a pane five ways; `blocked` maps three of them. Does
    `done` collapse into `idle`, or does the sidebar want to distinguish
    "the agent finished" from "the agent is waiting"? The design system
    already carries a `completed` value that nothing produces.
-6. **Does `stop` mean "close"?** [`00-scope.md`](00-scope.md) defines
+2. **Does `stop` mean "close"?** [`00-scope.md`](00-scope.md) defines
    closing as push the branch and remove the worktree. With `restart`
    now present for host reboots, `stop` probably means "leave it on
    disk" and `DELETE` means close — but the client's verb wants
    confirming before the SDK is generated.
-7. **Can a second workspace claim an installation the first already
-   has?** `POST /installations` needs an `INSTALLATION_ALREADY_CONNECTED`
-   409, or two workspaces silently share one repository cache and one
-   token source.
-8. **Host JWT replay.** Is a five-minute boot JWT over TLS enough, or
-   should `hosts/` keep a short Redis set of seen `jti`s?
