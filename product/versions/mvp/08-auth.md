@@ -30,10 +30,21 @@ history) to work on the MVP.
   personal workspace"; the two come apart the day an invitation can
   place an account somewhere before it owns anything, and the teams
   slice decides then whether an invitee also gets one of their own.
-- **Hosts belong to the workspace that paired them.** A host row carries
-  the workspace id; the pairing token is minted by a signed-in user and
-  the runner's keypair is bound to that host row. A host answers only to
-  its own workspace.
+- **Hosts carry a workspace *and* an owner.** A host row carries the
+  workspace id and answers only to that workspace — that is the tenant
+  boundary, and the column the scoping predicate reads (F24). It also
+  carries `ownerUserId`, the person whose machine it is, which is **not
+  audit only**: a session on a direct-mode host has full access to that
+  machine (F10), runs under its owner's Unix account, and spends the
+  agent login that is "the host's own" (00-scope.md) — that person's own
+  subscription. So the workspace is who may *see* a host; the owner is
+  who may *use* it, with `'own'` and `'grant'` on `HostResource` so
+  sharing one with a teammate is an `access_grant` the kernel already
+  supports. In the MVP the two are the same person; the distinction is
+  in the schema so the teams slice inherits "your machine is yours
+  unless you share it" rather than the reverse. The pairing token is
+  minted by a signed-in user, is valid only while that user is still a
+  member, and the runner's keypair is bound to the host row.
 - **Sessions belong to a host, so to a workspace.** Attaching to a
   session needs a session in the caller's workspace plus a short-lived
   attach ticket minted by the control plane (01-protocol.md). The relay

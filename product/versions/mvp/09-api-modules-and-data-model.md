@@ -94,7 +94,28 @@ a handler that assumed it did would be scoping nothing.
 
 **`hosts/`** owns which machines this workspace has paired, how we prove
 a connecting process is one of them, what each machine can run, and
-whether it is reachable now. Pairing lives here because a registration
+whether it is reachable now.
+
+**A host has a tenant *and* an owner, and they answer different
+questions.** `organizationId` is the tenant boundary — which workspace
+may see it at all, and the column F24's scoping predicate reads.
+`ownerUserId` is whose machine it physically is, and it is **not audit
+only**. [`08-auth.md`](08-auth.md) said hosts belong to the workspace
+that paired them; that is right about the boundary and wrong as a
+default for *use*. A session on a direct-mode host has full access to
+that machine (F10 — "never sandbox"), runs under its owner's Unix
+account, and spends the agent login that is "the host's own"
+([`00-scope.md`](00-scope.md)) — that person's own Claude subscription.
+Workspace-ownership makes handing all of that to a teammate the
+*default*, which is wrong for hardware someone physically owns. In the
+MVP the two are the same person and nothing changes; the day `member`
+holds two rows they come apart, and the safe default should already be
+in the schema. So `HostResource` declares
+`keys: { organization: 'organizationId', owner: 'ownerUserId', id: 'id' }`
+with `'own'` and `'grant'` among its scopes, exactly as `leads` does —
+sharing a host with a teammate is then an `access_grant` over `Host`,
+which the authz kernel already supports, rather than something the
+teams slice has to retrofit. Pairing lives here because a registration
 token is host identity *before the host exists*. Aggregates:
 `HostEntity` (the host, its current key and the previous one still
 inside its rotation window — a host must never be left with zero valid
@@ -378,7 +399,7 @@ scope, exactly as `lead` does.
 
 **`hosts/`**
 
-- `host` — `id`, `organizationId`, `pairedByUserId`, `name`, `hostname`,
+- `host` — `id`, `organizationId`, `ownerUserId`, `name`, `hostname`,
   `os`, `arch`, `runnerVersion`, `capabilities` jsonb (git/tmux/disk and
   the detected agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyExpiresAt` null,

@@ -99,3 +99,13 @@ at the bottom of this file.
   never hard-deleted. The pairing token gains `intendedName` so a host
   can be named before it exists, as Orca's Add-remote-server dialog
   does.
+- 2026-09-18: **a host has an owner, not just a workspace.** 08-auth.md
+  said hosts belong to the workspace that paired them. That is right
+  about the tenant boundary and wrong as a default for use: a session on
+  a direct-mode host has full access to the machine (F10), runs under
+  its owner's Unix account, and spends the agent login that is "the
+  host's own" — so workspace-ownership would make handing a teammate
+  your laptop and your subscription the default. `host.ownerUserId` is
+  therefore not audit only, and `HostResource` declares `'own'` and
+  `'grant'` as `leads` does. Identical in the MVP, where one person is
+  the whole workspace; the teams slice inherits the safe default.
