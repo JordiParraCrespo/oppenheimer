@@ -85,7 +85,6 @@
     "roles": {
       "columns": {
         "description": "Descripción",
-        "members": "Miembros",
         "role": "Rol",
         "type": "Tipo"
       },
@@ -95,8 +94,6 @@
       "edit": "Editar",
       "empty": "No se han encontrado roles.",
       "export": "Exportar CSV",
-      "memberCount_one": "{{count}} miembro",
-      "memberCount_other": "{{count}} miembros",
       "new": "Nuevo rol",
       "search": "Buscar roles",
       "system": "Sistema"

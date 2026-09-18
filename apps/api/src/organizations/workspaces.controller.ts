@@ -20,9 +20,9 @@ import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../auth/decorators/current-scope.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
-import type { ScopeContext } from '../auth/scope-context';
 import {
   AddWorkspaceMemberRequest,
   CreateWorkspaceRequest,

@@ -1,16 +1,19 @@
+import { THEME } from '@oppenheimer/frontend-mobile/theme';
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 
 export default function AuthLayout() {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
+  // Each screen paints its own background through the kit's `AuthLayout`; this
+  // is only what shows behind a push transition, so it takes the same token
+  // rather than a hand-written HSL triple that drifted from it.
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: isDark ? 'hsl(0 0% 3.9%)' : 'hsl(0 0% 100%)',
+          backgroundColor: THEME[colorScheme === 'dark' ? 'dark' : 'light'].background,
         },
       }}
     />

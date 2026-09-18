@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The controller imports AdminService, which imports `../auth/auth` (a real pg
 // pool at import time) — mock it so the module graph loads without a database.
-vi.mock('../../auth/auth', () => ({ auth: { api: {} } }));
+vi.mock('../../auth/infrastructure/better-auth.config', () => ({ auth: { api: {} } }));
 
 import { AdminController } from '../admin.controller';
 import type { AdminService } from '../admin.service';

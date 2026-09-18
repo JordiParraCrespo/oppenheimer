@@ -6,7 +6,7 @@
  * server doesn't serve.
  *
  * Server-only options (invitation emails, membership limits, team-removal
- * policy) stay in `apps/api/src/auth/auth.ts`.
+ * policy) stay in `apps/api/src/auth/infrastructure/better-auth.config.ts`.
  */
 export const organizationSharedOptions = {
   teams: { enabled: true },

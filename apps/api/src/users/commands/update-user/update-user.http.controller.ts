@@ -16,12 +16,12 @@ import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
-import type { AbilityRequest } from '../../../roles/services/ability.factory';
+import type { AbilityRequest } from '../../../roles/application/ability.factory';
+import { assertCanAccessUser } from '../../application/user-access.policy';
 import type { UserEntity } from '../../domain/user.entity';
 import { UserResponseDto } from '../../dtos/user.response.dto';
 import { FindUserByIdQuery } from '../../queries/find-user-by-id/find-user-by-id.query';
 import { UserMapper } from '../../user.mapper';
-import { assertCanAccessUser } from '../../user-access';
 import { UpdateUserCommand } from './update-user.command';
 import { UpdateUserRequest } from './update-user.request.dto';
 

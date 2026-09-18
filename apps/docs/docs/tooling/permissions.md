@@ -91,7 +91,7 @@ list() {}
 
 ### API tokens
 
-Personal access tokens, minted from `/settings/api-tokens` or
+Personal access tokens, minted from the API pane of `/settings` or
 `oppenheimer tokens create`. Format `oppenheimer_pat_…`; only a SHA-256 digest is stored, so
 the secret is shown once and is not recoverable. Tokens support an expiry, an
 IP allowlist and organization scoping, and are revoked (not deleted) so the

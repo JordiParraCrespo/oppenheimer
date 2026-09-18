@@ -119,6 +119,193 @@ const kitBasenames = (kit) => {
   return names;
 };
 
+/**
+ * One render-topology check: a query belongs where its result is drawn.
+ *
+ * Everything above this point is about where a file sits. This is about what a
+ * component *does*, and it is the only such rule worth a source scan — the
+ * mistake it catches (subscribe on the page, thread the result down) is a
+ * placement mistake wearing a hook, and placement is what this script reads.
+ *
+ * What a component *costs* is not checked here. It was, briefly, as a line cap
+ * per kind; a cap is a formatter, not a model — a section that still owns the
+ * query, the column factory, six dialogs and the row menu passes it at 149
+ * lines, and the pressure it creates is to shard files rather than to name the
+ * jobs. The `*-render.spec.tsx` files, with the React Compiler off, are the
+ * check for cost. See .agents/rules/frontend-architecture.md.
+ *
+ * This scan is deliberately narrow and easy to walk around: it reads named
+ * imports from a product package's React entrypoint and a single local JSX
+ * consumer, so two dummy readers, a default import, a query hook re-exported by
+ * the kit, or a `Map` that arrived as a prop all pass it. It is a tripwire on
+ * the shape that actually recurred, not a proof.
+ */
+
+/** What a React Query result exposes. Reading any of these makes a value derived from it. */
+const QUERY_FIELDS = ['data', 'isLoading', 'isFetching', 'isPending', 'isError', 'error', 'status'];
+
+/**
+ * The JSX opening tag for `<Name`, from the character after the name to the `>`
+ * that closes it.
+ *
+ * Scanned rather than matched because a prop value holds arrows and generics —
+ * `onCreated={(secret) => setSecret(secret)}` has two `>` in it, and a regex
+ * stopping at the first one reads half a tag.
+ */
+function openingTag(source, from) {
+  let depth = 0;
+  for (let i = from; i < source.length; i += 1) {
+    const char = source[i];
+    if (char === '{') depth += 1;
+    else if (char === '}') depth -= 1;
+    else if (char === '>' && depth === 0) return source.slice(from, i);
+    else if (char === '<' && depth === 0 && i > from) return source.slice(from, i);
+  }
+  return '';
+}
+
+/** Every `<Name` in `source`, with the text of its opening tag. */
+function jsxUsages(source, name) {
+  const tags = [];
+  const pattern = new RegExp(`<${name}\\b`, 'g');
+  let match = pattern.exec(source);
+  while (match !== null) {
+    tags.push(openingTag(source, match.index + match[0].length));
+    match = pattern.exec(source);
+  }
+  return tags;
+}
+
+/** The names a file imports from a product package's React entrypoint — its query and mutation hooks. */
+function queryHooksOf(source) {
+  const names = new Set();
+  const pattern = /import\s*{([^}]*)}\s*from\s*'@oppenheimer\/frontend-[a-z-]+\/react'/g;
+  let match = pattern.exec(source);
+  while (match !== null) {
+    for (const part of match[1].split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
+      if (name) names.add(name);
+    }
+    match = pattern.exec(source);
+  }
+  return names;
+}
+
+/**
+ * The components a file imports from elsewhere in its own feature tree, each
+ * with the kind directory it came from.
+ *
+ * The kind is what decides whether handing it a query result is a mistake:
+ * `forms/` and `components/` are forbidden to fetch, so the section above them
+ * *must* pass the pending flag and the error down. A `sections/`, `dialogs/` or
+ * `screens/` sibling has no such excuse.
+ */
+function featureComponentsOf(source) {
+  const byName = new Map();
+  const pattern =
+    /import\s*(?:type\s*)?{([^}]*)}\s*from\s*'[^']*features\/[^'/]+\/([a-z_]+)\/[^']*'/g;
+  let match = pattern.exec(source);
+  while (match !== null) {
+    for (const part of match[1].split(',')) {
+      const name = part
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
+      if (name && /^[A-Z]/.test(name)) byName.set(name, match[2]);
+    }
+    match = pattern.exec(source);
+  }
+  return byName;
+}
+
+/**
+ * The identifiers in `source` that hold a query result, or something read out of
+ * one. Two passes, so `const rows = roles.data?.data ?? []` counts as derived.
+ */
+function queryBindingsOf(source, hooks) {
+  const bound = new Set();
+  for (const hook of hooks) {
+    const pattern = new RegExp(
+      `\\b(?:const|let)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${hook}\\s*\\(`,
+      'g',
+    );
+    let match = pattern.exec(source);
+    while (match !== null) {
+      bound.add(match[1]);
+      match = pattern.exec(source);
+    }
+  }
+  for (let pass = 0; pass < 2; pass += 1) {
+    for (const name of [...bound]) {
+      const pattern = new RegExp(
+        `\\b(?:const|let)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${name}[.?]`,
+        'g',
+      );
+      let match = pattern.exec(source);
+      while (match !== null) {
+        bound.add(match[1]);
+        match = pattern.exec(source);
+      }
+    }
+  }
+  return bound;
+}
+
+/**
+ * A query result may not be handed down to its only consumer.
+ *
+ * Passing one page of rows to `DataTable` is the intended flow — the kit is
+ * where data is rendered — and so is handing a mutation's pending flag to a
+ * `forms/` child, which is forbidden to fetch. What this catches is narrower:
+ * a screen that subscribes to a query so that exactly one sibling below it can
+ * render the result. That sibling can call the hook itself, and until it does,
+ * every settle of that query re-renders everything else on the page.
+ *
+ * `api-tokens.tsx` held `usePermissionCatalog()` for `CreateTokenCard` alone,
+ * which forwarded all three of its props to the form below it and read none.
+ * Two siblings genuinely sharing one result is a different thing and passes:
+ * `profile.tsx` fetches the profile once for its hero and its details pane.
+ */
+const FETCHING_KINDS = new Set(['screens', 'sections', 'dialogs']);
+
+function checkQueryStaysHome(source, label) {
+  const hooks = queryHooksOf(source);
+  if (hooks.size === 0) return;
+  const locals = featureComponentsOf(source);
+  if (locals.size === 0) return;
+  const bindings = queryBindingsOf(source, hooks);
+  if (bindings.size === 0) return;
+
+  /** binding -> the components below that read it, by name. */
+  const consumers = new Map();
+  for (const [component, kind] of locals) {
+    for (const tag of jsxUsages(source, component)) {
+      for (const binding of bindings) {
+        const reads =
+          new RegExp(`\\b${binding}\\s*[.?]\\s*(?:${QUERY_FIELDS.join('|')})\\b`).test(tag) ||
+          new RegExp(`=\\s*{\\s*${binding}\\s*}`).test(tag);
+        if (!reads) continue;
+        if (!consumers.has(binding)) consumers.set(binding, new Map());
+        consumers.get(binding).set(component, kind);
+      }
+    }
+  }
+
+  for (const [binding, readers] of consumers) {
+    if (readers.size !== 1) continue;
+    const [component, kind] = [...readers][0];
+    if (!FETCHING_KINDS.has(kind)) continue;
+    fail(
+      `${label}: subscribes to \`${binding}\` only to hand it to <${component} /> (${kind}/), its one consumer. A ${kind.replace(/s$/, '')} may fetch — let it call the hook, so a settle of this query stops re-rendering everything beside it. See .agents/rules/frontend-architecture.md`,
+    );
+  }
+}
+
 for (const { app, routes, features, product, allow, kit } of APPS) {
   const appDir = join(root, app);
   if (!existsSync(appDir)) continue;
@@ -153,6 +340,12 @@ for (const { app, routes, features, product, allow, kit } of APPS) {
           continue;
         }
         for (const entry of readdirSync(kindDir, { withFileTypes: true })) {
+          if (entry.isFile() && /\.tsx$/.test(entry.name) && !/\.spec\.tsx$/.test(entry.name)) {
+            const file = join(kindDir, entry.name);
+            const source = readFileSync(file, 'utf8');
+            const label = `${app}/${features}/${name}/${kind}/${entry.name}`;
+            checkQueryStaysHome(source, label);
+          }
           if (entry.isDirectory() && kind !== '__tests__') {
             fail(
               `${app}/${features}/${name}/${kind}/${entry.name}: a kind directory holds files, never a sub-directory — a feature that wants one is two features`,

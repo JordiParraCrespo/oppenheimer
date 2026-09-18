@@ -13,9 +13,9 @@ import {
   sortScopes,
   toResourceScope,
 } from '@oppenheimer/shared';
-import { generateApiTokenSecret } from './api-token.secret';
+import { generateApiTokenSecret } from './api-token-secret.factory';
 import { ApiTokenRevokedDomainEvent } from './events/api-token-revoked.domain-event';
-import { isIpAllowed } from './ip-allowlist';
+import { isIpAllowed } from './ip-allowlist.policy';
 
 export interface ApiTokenProps {
   /** Owner. The token's reach is re-derived from this user on every request. */

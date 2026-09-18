@@ -1,4 +1,4 @@
-import { asArray, asRecord, unwrap, unwrapArray } from '../auth/better-auth.util';
+import { asArray, asRecord, unwrap, unwrapArray } from '../auth/infrastructure/better-auth.util';
 import type {
   AdminSessionResponseDto,
   AdminUserListResponseDto,

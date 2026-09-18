@@ -2,10 +2,10 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserDeletedDomainEventHandler } from './application/event-handlers/user-deleted.domain-event-handler';
+import { DeleteUserCommandHandler } from './commands/delete-user/delete-user.command-handler';
 import { DeleteUserHttpController } from './commands/delete-user/delete-user.http.controller';
-import { DeleteUserService } from './commands/delete-user/delete-user.service';
+import { UpdateUserCommandHandler } from './commands/update-user/update-user.command-handler';
 import { UpdateUserHttpController } from './commands/update-user/update-user.http.controller';
-import { UpdateUserService } from './commands/update-user/update-user.service';
 import { UserOrmEntity } from './database/user.orm-entity';
 import { UserRepository } from './database/user.repository';
 import { FindUserByIdHttpController } from './queries/find-user-by-id/find-user-by-id.http.controller';
@@ -28,7 +28,7 @@ const httpControllers = [
   DeleteUserHttpController,
 ];
 
-const commandHandlers: Provider[] = [UpdateUserService, DeleteUserService];
+const commandHandlers: Provider[] = [UpdateUserCommandHandler, DeleteUserCommandHandler];
 
 const queryHandlers: Provider[] = [
   FindUsersQueryHandler,

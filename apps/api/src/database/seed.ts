@@ -3,23 +3,23 @@ import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { ROLES, type Role } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { ApiTokenOrmEntity } from '../api-tokens/database/api-token.orm-entity';
-import { auth, closeAuthConnections } from '../auth/auth';
-import { Account } from '../auth/entities/account.entity';
-import { OAuthAccessTokenOrmEntity } from '../auth/entities/oauth-access-token.entity';
-import { OAuthApplicationOrmEntity } from '../auth/entities/oauth-application.entity';
-import { OAuthConsentOrmEntity } from '../auth/entities/oauth-consent.entity';
-import { Session } from '../auth/entities/session.entity';
-import { Verification } from '../auth/entities/verification.entity';
+import { Account } from '../auth/database/account.orm-entity';
+import { OAuthAccessTokenOrmEntity } from '../auth/database/oauth-access-token.orm-entity';
+import { OAuthApplicationOrmEntity } from '../auth/database/oauth-application.orm-entity';
+import { OAuthConsentOrmEntity } from '../auth/database/oauth-consent.orm-entity';
+import { Session } from '../auth/database/session.orm-entity';
+import { Verification } from '../auth/database/verification.orm-entity';
+import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
-import { ProvisionPersonalWorkspaceService } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.service';
+import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
-import { AssignDefaultRoleService } from '../roles/commands/assign-default-role/assign-default-role.service';
+import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleRepository } from '../roles/database/role.repository';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
@@ -157,8 +157,8 @@ async function seed() {
     new OutboxService(dataSource),
   );
   const userRoleRepository = new UserRoleRepository(userRoleRepo, roleRepo, roleMapper);
-  const assignDefaultRole = new AssignDefaultRoleService(roleRepository, userRoleRepository);
-  const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceService(
+  const assignDefaultRole = new AssignDefaultRoleCommandHandler(roleRepository, userRoleRepository);
+  const provisionPersonalWorkspace = new ProvisionPersonalWorkspaceCommandHandler(
     new PersonalWorkspaceRepository(dataSource, new OutboxService(dataSource), userRoleRepository),
     roleRepository,
   );
@@ -184,7 +184,7 @@ async function seed() {
 
     // Elevate this account to its seed role. Only the elevation is written
     // here: the default `user` grant every account gets belongs to
-    // `AssignDefaultRoleService`, which the loop below runs for all of them.
+    // `AssignDefaultRoleCommandHandler`, which the loop below runs for all of them.
     const user = await userRepo.findOneBy({ email: seedUser.email });
     const role = await roleRepo.findOneBy({ name: seedUser.role });
     if (user && role && seedUser.role !== ROLES.USER) {

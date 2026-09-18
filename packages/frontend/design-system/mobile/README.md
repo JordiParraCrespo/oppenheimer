@@ -16,11 +16,29 @@ import { Text } from "@oppenheimer/design-system-mobile/text";
 import { cn } from "@oppenheimer/design-system-mobile/utils";
 ```
 
+Compose the NativeWind preset and its package-owned source glob from the
+exported Tailwind config:
+
+```js
+const designSystem = require('@oppenheimer/design-system-mobile/tailwind-config');
+
+module.exports = {
+  content: ['./{app,features,lib}/**/*.{ts,tsx}', ...designSystem.content],
+  presets: [designSystem],
+};
+```
+
+Tailwind does not merge `content` from presets, so consumers spread the
+exported entries explicitly. The paths are resolved by this package and do not
+depend on the monorepo layout.
+
 ## What's inside
 
-- `src/components/ui/*` — Accordion, AlertDialog, Avatar, Button, Card, Dialog,
-  DropdownMenu, Select, Tabs, Tooltip, Text, and more — each with its own export.
+- `src/components/ui/*` — Accordion, AlertDialog, Avatar, BrandMark, Button,
+  Card, Dialog, DropdownMenu, Select, Tabs, Tooltip, Text, and more — each with
+  its own export.
 - `src/lib/utils` — `cn()` (clsx + tailwind-merge).
+- `tailwind.config.js` — the NativeWind preset and design-system source glob.
 
 Styling uses NativeWind (Tailwind for React Native). The `@rn-primitives/*`
 packages, `nativewind`, `react`, and `react-native` (plus its native

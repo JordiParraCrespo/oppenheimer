@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `../auth/auth` opens a real Postgres pool at import time, so mock it before
 // the service pulls it in. Each `auth.api.*` method is a vi.fn we can assert on.
-vi.mock('../../auth/auth', () => ({
+vi.mock('../../auth/infrastructure/better-auth.config', () => ({
   auth: {
     api: {
       listUsers: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('../../auth/auth', () => ({
   },
 }));
 
-import { auth } from '../../auth/auth';
+import { auth } from '../../auth/infrastructure/better-auth.config';
 import { AdminService } from '../admin.service';
 
 const api = auth.api as unknown as Record<string, ReturnType<typeof vi.fn>>;

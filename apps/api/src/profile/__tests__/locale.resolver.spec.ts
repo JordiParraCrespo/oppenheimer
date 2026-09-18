@@ -1,8 +1,8 @@
 import { I18nService } from '@oppenheimer/backend-i18n';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import { LocaleResolver } from '../application/locale.resolver';
 import { UserSettingsEntity } from '../domain/user-settings.entity';
-import { LocaleResolver } from '../services/locale.resolver';
 
 function resolver(saved: UserSettingsEntity | null, userId: string | null = 'user-1') {
   const i18n = new I18nService({
@@ -12,7 +12,9 @@ function resolver(saved: UserSettingsEntity | null, userId: string | null = 'use
     onMissingKey: () => {},
   });
   const settings = { findOneById: vi.fn().mockResolvedValue(saved ? Some(saved) : None) };
-  const users = { findOne: vi.fn().mockResolvedValue(userId ? { id: userId } : null) };
+  const users = {
+    findOneByEmail: vi.fn().mockResolvedValue(userId ? Some({ id: userId }) : None),
+  };
   return new LocaleResolver(i18n, settings as never, users as never);
 }
 

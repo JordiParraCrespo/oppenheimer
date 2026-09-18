@@ -1,33 +1,13 @@
 import { cn } from '@oppenheimer/design-system-web';
 import { Check } from '@oppenheimer/design-system-web/icons';
+import {
+  checkPassword,
+  meetsPasswordRequirements,
+  type PasswordRule,
+} from '@oppenheimer/frontend-core';
 import { useTranslation } from 'react-i18next';
 
-export type PasswordRule = 'length' | 'case' | 'number' | 'match';
-
-/**
- * The rules the checklist reports on. They mirror what the API enforces on a
- * new password; `match` is the confirm-field rule and is only asked for on the
- * screens that have one.
- */
-export function checkPassword(
-  password: string,
-  confirmation?: string,
-): Record<PasswordRule, boolean> {
-  return {
-    length: password.length >= 8,
-    case: /[a-z]/.test(password) && /[A-Z]/.test(password),
-    number: /[0-9]/.test(password),
-    match: password.length > 0 && password === confirmation,
-  };
-}
-
-/** True once every rule the given screen shows is satisfied. */
-export function meetsRequirements(
-  results: Record<PasswordRule, boolean>,
-  rules: readonly PasswordRule[],
-) {
-  return rules.every((rule) => results[rule]);
-}
+export { checkPassword, meetsPasswordRequirements as meetsRequirements, type PasswordRule };
 
 /**
  * The live checklist under a password field. Rules read tertiary until they

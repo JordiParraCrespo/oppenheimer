@@ -1,6 +1,6 @@
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { grantableScopes, type Scope } from '@oppenheimer/shared';
-import { AbilityFactory } from '../../../roles/services/ability.factory';
+import { AbilityFactory } from '../../../roles/application/ability.factory';
 import { FindGrantablePermissionsQuery } from './find-grantable-permissions.query';
 
 @QueryHandler(FindGrantablePermissionsQuery)

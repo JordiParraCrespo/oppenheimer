@@ -23,9 +23,9 @@ import es from '@oppenheimer/translations/es/index.json';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { AdminModule } from './admin/admin.module';
 import { ApiTokensModule } from './api-tokens/api-tokens.module';
-import { auth } from './auth/auth';
 import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
+import { auth } from './auth/infrastructure/better-auth.config';
 import { AuthzModule } from './authz/authz.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
@@ -44,8 +44,8 @@ import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
 import { QueueModule } from './queue/queue.module';
 import { RolesModule } from './roles/roles.module';
-import { CredentialThrottlerGuard } from './throttling/credential-throttler.guard';
-import { RedisThrottlerStorage } from './throttling/redis-throttler.storage';
+import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
+import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
 import { UsersModule } from './users/user.module';
 

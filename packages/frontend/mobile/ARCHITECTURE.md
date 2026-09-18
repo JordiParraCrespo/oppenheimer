@@ -7,31 +7,38 @@ Most of what is here is glue — native modules, storage, a bundler-level
 bootstrap — so `lib/` is the largest kind, and there is no `dialogs/`.
 
 The package is source-exported: `main`, and one subpath per concern
-(`./analytics`, `./config`, `./forms`, `./i18n`, `./layout`, `./platform`,
-`./theme`, plus `./polyfills`), all pointing into `src/`. Metro compiles it
-with the app.
+(`./analytics`, `./auth`, `./config`, `./forms`, `./i18n`, `./layout`,
+`./platform`, `./theme`, plus `./polyfills`), all pointing into `src/`. Metro
+compiles it with the app.
 
 ## The concerns
 
 | Concern | What it holds | Layer |
 | --- | --- | --- |
 | `platform` | `createQueryPersistence`, `ExpoSecureStoreService`, the MMKV stores (`storage`, `stateStorage`, `queryStorage`), `initPurchases`, `Sentry`/`sentryEnabled`, the fetch polyfills | leaf |
-| `theme` | `THEME` (the NativeWind variable sets) and `NAV_THEME` for React Navigation | leaf |
+| `theme` | `THEME` (the NativeWind variable sets), `NAV_THEME` for React Navigation, `BrandGlyph`, `ThemeToggle` | leaf |
 | `config` | `configManager` over the kernel's `ConfigManager`, `AppConfig`, `staticConfig`, `ConfigManagerContext`, `useConfig` | leaf |
 | `forms` | `useZodResolver`, `FormField` (a `Controller` field with its label and error) | leaf |
 | `analytics` | `createMobileAnalyticsClient` (PostHog), `ScreenViewTracker` | leaf |
 | `i18n` | the i18next instance, `LOCALE_STORAGE_KEY`, `setLocale`, `LanguageSwitcher` — it reads `platform`'s MMKV store for the saved locale | middle |
 | `layout` | `ErrorBoundary`, `AppErrorFallback`, `ScreenErrorFallback` | middle |
+| `auth` | the sign-in chrome: `AuthLayout`, `BrandLogo`, the `Auth*` primitives, `PasswordInput`, `PasswordRequirements`/`PasswordChecklist`, `SocialLoginButtons`, the provider marks | top |
 
-There is no `top` list: nothing on mobile plays the part `shell` plays on
-web. The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs),
+`auth` is the one concern on top, and it is on top because it is the one that
+composes: it frames a screen with the wordmark, the theme pill and the
+language switch, so it reaches `theme`, `forms` and `i18n` at once. It is the
+mobile half of `@oppenheimer/frontend-web`'s concern of the same name — same names,
+same type ramp, same rhythm — so a change to how sign-in looks is one decision
+made twice rather than two designs drifting apart.
+
+The lists live in [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs),
 which passes them to `packages/tsconfig/depcruise/frontend-kit.cjs`.
 
 ## The layering, and why
 
 A leaf imports only `@oppenheimer/design-system-mobile` and
-`@oppenheimer/frontend-core`. A middle concern may import a leaf. Nothing imports
-upwards, and the `top` list is empty so the rule is one line to read.
+`@oppenheimer/frontend-core`. A middle concern may import a leaf, and `auth` on top
+may import anything below it. Nothing imports upwards.
 
 The rule exists for the reason it exists on web: the concern everyone reaches
 for — here `platform`, with storage and the query client in it — must stay at
@@ -93,7 +100,7 @@ root layout mounts it beside the app's content.
 3. Add `export * from './<concern>'` to `src/index.ts` and a
    `"./<concern>": "./src/<concern>/index.ts"` entry to `package.json`
    `exports`.
-4. Put the concern in `leaves` or `middle` in
+4. Put the concern in `leaves`, `middle` or `top` in
    [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs).
 5. If a file runs code at import, add it to `sideEffects`.
 6. `pnpm --filter @oppenheimer/frontend-mobile arch lint test`.
@@ -102,9 +109,8 @@ root layout mounts it beside the app's content.
 
 - `no-circular` — no import cycles, counting value imports only.
 - `leaves-stay-leaves` — `platform`, `theme`, `analytics`, `forms`, `config`
-  never import `i18n` or `layout`.
-- `middle-below-top` — `i18n` and `layout` import nothing above them (the
-  `top` list is empty here).
+  never import `i18n`, `layout` or `auth`.
+- `middle-below-top` — `i18n` and `layout` never import `auth`.
 - `concerns-meet-at-their-index` — a concern reaches another only through
   that concern's `index.ts`.
 - `lib-has-no-jsx` — a concern's `lib/` may name React types but not import

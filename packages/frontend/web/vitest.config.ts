@@ -1,10 +1,5 @@
+import { frontendVitestProjects } from '@oppenheimer/tsconfig/vitest-frontend.mjs';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx'],
-  },
-});
+export default defineConfig({ test: frontendVitestProjects({ react }) });

@@ -1,9 +1,12 @@
 import { Alert, AlertDescription, BrandGlyph, Button } from '@oppenheimer/design-system-web';
 import { Info } from '@oppenheimer/design-system-web/icons';
 import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
-import { useDeploymentCapabilities, useSocialLogin } from '@oppenheimer/frontend-core/react';
+import {
+  useDeploymentCapabilities,
+  useErrorMessage,
+  useSocialLogin,
+} from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
-import { useErrorMessage } from '../../forms';
 
 /**
  * The social sign-in row at the top of the sign-in and create-account

@@ -6,16 +6,16 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
-import type { ScopedRequest } from '../../../auth/scope-context';
 import { ApiTokenMapper } from '../../api-tokens.mapper';
 import type { ApiTokenEntity } from '../../domain/api-token.entity';
 import { CreatedApiTokenResponseDto } from '../../dtos/api-token.response.dto';
 import { FindApiTokenByIdQuery } from '../../queries/find-api-token-by-id/find-api-token-by-id.query';
 import { CreateApiTokenCommand } from './create-api-token.command';
+import type { CreateApiTokenResult } from './create-api-token.command-handler';
 import { CreateApiTokenRequest } from './create-api-token.request.dto';
-import type { CreateApiTokenResult } from './create-api-token.service';
 
 @ApiTags('API tokens')
 @ApiBearerAuth()

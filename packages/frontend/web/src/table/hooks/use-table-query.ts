@@ -1,12 +1,11 @@
 import {
-  debounce,
   parseAsArrayOf,
   parseAsInteger,
   parseAsString,
   parseAsStringLiteral,
   useQueryStates,
 } from 'nuqs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 /**
  * What the reader has narrowed a table to, held in the URL rather than in
@@ -26,9 +25,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  *   nothing". `leads` had this as a `useEffect` with a lint suppression on it;
  *   the other five did not have it at all.
  * - **Typing costs one history entry and one request**, not one of each per
- *   keystroke. Both the URL write and `searchQuery` are debounced. What the
- *   field renders is not: `search` updates on the keystroke, so the input stays
- *   live while the work behind it waits.
+ *   keystroke — and the debounce that makes that true is not here. What a
+ *   reader is typing is the *field's* state until it settles, so
+ *   `DataTableSearch` holds the half-typed word and calls `setSearch` once per
+ *   burst. Keeping the live value here made every character a prop of the
+ *   table, and so a re-render of every row, for a request that had not been
+ *   made yet.
+ *
+ *   There is deliberately no second debounce on the way out. One did survive
+ *   the move, on the URL write, and it was not free: the field syncs an
+ *   incoming `search` back down, so a late write could land after the reader
+ *   had typed on and snap the caret string back a burst. A caller that renders
+ *   its own input uses `DataTableSearch`; the policy lives in one place.
  *
  * Updates replace the current history entry (nuqs' default). The URL here is
  * for reloading and sharing, not for stepping a filter back one control at a
@@ -43,12 +51,6 @@ const ORDERS = ['asc', 'desc'] as const;
 /** Stable identities, so the parsers do not change on every render. */
 const NO_FILTERS: string[] = [];
 const NO_SORT_KEYS: readonly string[] = [];
-
-/**
- * Long enough that a typed word is one history entry and one request, short
- * enough that the answer still feels like it belongs to what was typed.
- */
-const SEARCH_DEBOUNCE_MS = 300;
 
 export interface TableSort<TSortKey extends string> {
   key: TSortKey;
@@ -102,19 +104,12 @@ export interface TableQueryOptions<TSortKey extends string, TFilter extends stri
 
 export interface TableQuery<TSortKey extends string, TFilter extends string = string> {
   /**
-   * What is in the field, updated on the keystroke. This is what the search
-   * input renders — anything slower makes typing lag behind the cursor.
+   * The settled search — what the URL holds, what seeds the field, and what a
+   * request reads. One name: it used to have a debounced twin, and once the
+   * debounce moved into the field the twin was the same string under a second
+   * name that every call site had to remember was an alias.
    */
   search: string;
-  /**
-   * The same thing, debounced. This is what a query takes.
-   *
-   * Every table's search is answered by the server, so the difference is one
-   * request per search rather than one per character. It starts out equal to
-   * `search`, so a link arriving with `?q=` asks once, immediately, rather than
-   * showing an unfiltered table for the length of the debounce.
-   */
-  searchQuery: string;
   setSearch: (value: string) => void;
   filters: TFilter[];
   setFilters: (values: string[]) => void;
@@ -189,8 +184,6 @@ export function useTableQuery<TSortKey extends string = string, TFilter extends 
 
   const [query, setQuery] = useQueryStates(parsers, { urlKeys });
 
-  const searchQuery = useDebounced(query.search, SEARCH_DEBOUNCE_MS);
-
   // Sanitised on the way out rather than in the parser, so a link carrying one
   // good value and one junk one still filters by the good one.
   const filters = useMemo(
@@ -205,7 +198,7 @@ export function useTableQuery<TSortKey extends string = string, TFilter extends 
 
   const setSearch = useCallback(
     (value: string) => {
-      setQuery({ search: value, page: 1 }, { limitUrlUpdates: debounce(SEARCH_DEBOUNCE_MS) });
+      setQuery({ search: value, page: 1 });
     },
     [setQuery],
   );
@@ -245,7 +238,6 @@ export function useTableQuery<TSortKey extends string = string, TFilter extends 
 
   return {
     search: query.search,
-    searchQuery,
     setSearch,
     filters,
     setFilters,
@@ -266,22 +258,4 @@ export function useTableQuery<TSortKey extends string = string, TFilter extends 
 
 function withPrefix(name: string, prefix: string | undefined): string {
   return prefix ? `${prefix}_${name}` : name;
-}
-
-/**
- * Trails `value` by `delay`, starting equal to it.
- *
- * Starting equal is the part worth stating: the first render is a page load or
- * a followed link, where the value came from the URL and nobody is typing.
- * Waiting there would show every reader an unfiltered table first.
- */
-function useDebounced<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debounced;
 }

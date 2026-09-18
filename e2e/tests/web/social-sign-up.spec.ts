@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test';
  *
  * The two codes below are the ones the auth config raises on purpose
  * (`disableImplicitSignUp` and `requireLocalEmailVerified` in
- * `apps/api/src/auth/auth.ts`); both used to leave the reader on a screen that
+ * `apps/api/src/auth/infrastructure/better-auth.config.ts`); both used to leave the reader on a screen that
  * said nothing.
  *
  * Nothing here asserts the provider buttons themselves: they render from the

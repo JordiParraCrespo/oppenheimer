@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiTokenEntity } from '../domain/api-token.entity';
-import { API_TOKEN_PREFIX, hashApiTokenSecret } from '../domain/api-token.secret';
+import { API_TOKEN_PREFIX, hashApiTokenSecret } from '../domain/api-token-secret.factory';
 import { ApiTokenRevokedDomainEvent } from '../domain/events/api-token-revoked.domain-event';
 
 const issue = (overrides: Partial<Parameters<typeof ApiTokenEntity.issue>[0]> = {}) =>

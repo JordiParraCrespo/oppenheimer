@@ -49,7 +49,7 @@ describe('Auth (integration)', () => {
     // Better Auth's email queue is a module singleton outside the DI container,
     // so `app.close()` does not reach it. Close it before the containers go
     // away, or its in-flight ioredis commands reject into nothing.
-    const { emailQueue } = await import('../src/auth/email-queue');
+    const { emailQueue } = await import('../src/auth/infrastructure/email-queue.util');
     await emailQueue.close().catch(() => {});
     await Promise.all([pgContainer?.stop(), redisContainer?.stop()]);
   });

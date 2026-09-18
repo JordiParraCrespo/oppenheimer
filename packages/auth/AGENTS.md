@@ -30,7 +30,7 @@ Consequences:
 
 - Config both sides must agree on (user fields, the org `teams` flag) → here.
 - Server-only options (database, hooks, emails, admin roles, OAuth) →
-  `apps/api/src/auth/auth.ts`.
+  `apps/api/src/auth/infrastructure/better-auth.config.ts`.
 - Platform glue (Expo plugin, SecureStore, cookies) → the apps.
 - The `IAuthClient` contract → `@oppenheimer/frontend` (this package must not depend
   on it; `AuthSession` here mirrors it structurally).

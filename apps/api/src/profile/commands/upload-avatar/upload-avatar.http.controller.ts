@@ -5,6 +5,7 @@
 
 import {
   Controller,
+  Inject,
   Post,
   UploadedFile,
   UseGuards,
@@ -20,17 +21,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ApiAuthProblemResponses, ApiProblemResponse, AppError } from '@oppenheimer/backend-core';
+import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { ProfileErrors } from '../../domain/profile.errors';
 import { ProfileResponseDto } from '../../dtos/profile.response.dto';
+import type { AvatarStoragePort } from '../../infrastructure/avatar-storage.port';
+import { AvatarFileInterceptor } from '../../interceptors/avatar-file.interceptor';
+import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { ProfileMapper } from '../../profile.mapper';
 import { GetProfileQuery } from '../../queries/get-profile/get-profile.query';
-import { AvatarStorage } from '../../services/avatar.storage';
-import { AvatarFileInterceptor } from '../../services/avatar-file.interceptor';
 import { UploadAvatarCommand } from './upload-avatar.command';
 
 @ApiTags('Profile')
@@ -43,7 +44,8 @@ export class UploadAvatarHttpController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly mapper: ProfileMapper,
-    private readonly avatars: AvatarStorage,
+    @Inject(AVATAR_STORAGE)
+    private readonly avatars: AvatarStoragePort,
   ) {}
 
   @Post('avatar')
@@ -83,17 +85,9 @@ export class UploadAvatarHttpController {
   })
   async uploadAvatar(
     @CurrentUser('id') userId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<ProfileResponseDto> {
-    if (!file) {
-      // No file part at all. Reported as an unsupported type rather than a
-      // validation failure: `invalidParams` describes rejected *fields*, and a
-      // missing multipart part is not one.
-      throw new AppError(ProfileErrors.UNSUPPORTED_IMAGE_TYPE, {
-        detail: 'No file was uploaded under the `file` field.',
-      });
-    }
-
+    // `AvatarFileInterceptor` has already rejected a request with no file.
     await this.commandBus.execute(
       new UploadAvatarCommand({
         userId,

@@ -1,5 +1,5 @@
 import type { ErrorDefinition } from '@oppenheimer/backend-ddd';
-import { type BetterAuthFailure, betterAuthInvoker } from '../auth/better-auth.util';
+import { type BetterAuthFailure, betterAuthInvoker } from '../auth/infrastructure/better-auth.util';
 import { OrganizationErrors } from './domain/organization.errors';
 
 /**

@@ -1,4 +1,4 @@
-import { Body, Controller, Patch, UseGuards, Version } from '@nestjs/common';
+import { Body, Controller, Inject, Patch, UseGuards, Version } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
@@ -7,9 +7,10 @@ import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { ProfileResponseDto } from '../../dtos/profile.response.dto';
+import type { AvatarStoragePort } from '../../infrastructure/avatar-storage.port';
+import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { ProfileMapper } from '../../profile.mapper';
 import { GetProfileQuery } from '../../queries/get-profile/get-profile.query';
-import { AvatarStorage } from '../../services/avatar.storage';
 import { UpdateProfileCommand } from './update-profile.command';
 import { UpdateProfileRequest } from './update-profile.request.dto';
 
@@ -23,7 +24,8 @@ export class UpdateProfileHttpController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly mapper: ProfileMapper,
-    private readonly avatars: AvatarStorage,
+    @Inject(AVATAR_STORAGE)
+    private readonly avatars: AvatarStoragePort,
   ) {}
 
   @Patch()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CredentialScopeResolver } from '../../auth/services/credential-scope.resolver';
-import { CredentialThrottlerGuard } from '../credential-throttler.guard';
+import type { CredentialScopeResolver } from '../../auth/application/credential-scope.resolver';
+import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
 
 /**
  * The tracker decides which requests share a rate-limit bucket, and getting it

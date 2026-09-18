@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Oppenheimer",
+    "controlAppName": "Oppenheimer Control",
     "loading": "Cargando...",
     "error": "Algo salió mal",
     "save": "Guardar",
@@ -107,6 +108,7 @@
       "FAILED_TO_CREATE_USER": "No se ha podido crear tu cuenta. Inténtalo de nuevo.",
       "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
       "ROLE_006": "Ese rol pertenece a otra organización.",
+      "ROLE_007": "A esta instalación le falta un rol de sistema que necesita. Ejecuta las migraciones de la base de datos.",
       "AUTHZ_001": "No eres miembro de esa organización.",
       "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
       "GRANT_001": "No se ha encontrado esa concesión de acceso.",
@@ -558,7 +560,6 @@
       "roles": {
         "columns": {
           "description": "Descripción",
-          "members": "Miembros",
           "role": "Rol",
           "type": "Tipo"
         },
@@ -568,8 +569,6 @@
         "edit": "Editar",
         "empty": "No se han encontrado roles.",
         "export": "Exportar CSV",
-        "memberCount_one": "{{count}} miembro",
-        "memberCount_other": "{{count}} miembros",
         "new": "Nuevo rol",
         "search": "Buscar roles",
         "system": "Sistema"
