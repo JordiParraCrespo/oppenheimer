@@ -107,7 +107,6 @@
       "FAILED_TO_CREATE_USER": "No se ha podido crear tu cuenta. Inténtalo de nuevo.",
       "ROLE_005": "No puedes dar a un rol más acceso del que tienes tú.",
       "ROLE_006": "Ese rol pertenece a otra organización.",
-      "ROLE_007": "Este servidor no ha terminado de configurarse. Contacta con soporte.",
       "AUTHZ_001": "No eres miembro de esa organización.",
       "AUTHZ_002": "Hay un problema de configuración en el servidor. Inténtalo más tarde.",
       "GRANT_001": "No se ha encontrado esa concesión de acceso.",
@@ -261,6 +260,15 @@
       "subtitle": "Elige máquina, repositorio, rama y agente.",
       "emptyTitle": "Llega con la primera máquina",
       "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+    },
+    "session": {
+      "subtitle": "El agente corre en la ventana 0 de tmux. Escribe en la terminal como lo harías en la máquina.",
+      "back": "Todas las sesiones",
+      "status": {
+        "connecting": "Conectando",
+        "live": "En directo",
+        "closed": "Desconectado"
+      }
     }
   },
   "home": {

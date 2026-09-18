@@ -9,5 +9,14 @@
     "subtitle": "Elige máquina, repositorio, rama y agente.",
     "emptyTitle": "Llega con la primera máquina",
     "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+  },
+  "session": {
+    "subtitle": "El agente corre en la ventana 0 de tmux. Escribe en la terminal como lo harías en la máquina.",
+    "back": "Todas las sesiones",
+    "status": {
+      "connecting": "Conectando",
+      "live": "En directo",
+      "closed": "Desconectado"
+    }
   }
 }

@@ -107,7 +107,6 @@
       "FAILED_TO_CREATE_USER": "Your account could not be created. Please try again.",
       "ROLE_005": "You cannot give a role more access than you have yourself.",
       "ROLE_006": "That role belongs to another organization.",
-      "ROLE_007": "This server is not finished setting up. Please contact support.",
       "AUTHZ_001": "You are not a member of that organization.",
       "AUTHZ_002": "Something is misconfigured on the server. Please try again later.",
       "GRANT_001": "That access grant could not be found.",
@@ -261,6 +260,15 @@
       "subtitle": "Pick a host, a repository, a branch and an agent.",
       "emptyTitle": "Coming with the first host",
       "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+    },
+    "session": {
+      "subtitle": "The agent runs in tmux window 0. Type into the terminal as you would on the host.",
+      "back": "All sessions",
+      "status": {
+        "connecting": "Connecting",
+        "live": "Live",
+        "closed": "Disconnected"
+      }
     }
   },
   "home": {
