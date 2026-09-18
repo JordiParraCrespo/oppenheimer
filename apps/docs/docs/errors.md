@@ -255,7 +255,7 @@ The Go runner (`apps/runner`) emits the same document shape with its own
 catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
-unit, `UPD_*` to self-update. The host-agent codes also reach a person
+unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
 through the CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 
@@ -296,6 +296,15 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `UPD_006` <a id="upd_006" />           | The new version could not be activated       | 500  |
 | `UPD_007` <a id="upd_007" />           | The update was rolled back                   | 500  |
 | `UPD_008` <a id="upd_008" />           | This build has no release key and cannot self-update | 424 |
+| `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
+| `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
+| `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
+| `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
+| `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
+| `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
+| `GIT_002` <a id="git_002" />           | A git command failed                         | 500  |
+| `GIT_003` <a id="git_003" />           | The branch could not be pushed               | 409  |
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

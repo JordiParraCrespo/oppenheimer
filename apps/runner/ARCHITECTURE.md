@@ -22,7 +22,7 @@ cmd/runner/main.go            signals, flags, subcommand dispatch — no wiring
 internal/
   cli/                        composition root of the host agent's subcommands
   server/                     composition root of `runner serve`
-  host/ pairing/ service/ updates/   the host-agent contexts
+  host/ pairing/ service/ sessions/ updates/   the host-agent contexts
   config/                     the variables this service reads → Config
   scopes/                     this service's scope catalog on auth/scope
   apikeys/                    bounded context: credentials
@@ -36,7 +36,7 @@ internal/
 ```
 
 The product contexts are designed in `product/versions/mvp/02-runner.md` §3
-and `09-runner-install-and-update.md`. Four of them exist:
+and `09-runner-install-and-update.md`. Five of them exist:
 
 | Context | What it owns |
 | ------- | ------------ |
@@ -44,11 +44,12 @@ and `09-runner-install-and-update.md`. Four of them exist:
 | `pairing` | the registration token, the Ed25519 host key, `config.json`, the boot JWT every dial is signed with |
 | `service` | the launchd agent and the systemd user unit, rendered and controlled |
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
+| `sessions` | the lifecycle: mirror and worktree, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
-Three are still to come, in this order: `link` (the one outbound WebSocket:
-dial, auth, multiplexed streams, heartbeat, epoch-guarded reconnect), then
-`sessions` (worktree, tmux, PTY stream, screen manifest), then `credentials`
-(the per-session GitHub token behind the git credential helper). `apikeys` is
+Two are still to come: `link` (the one outbound WebSocket: dial, auth,
+multiplexed streams, heartbeat, epoch-guarded reconnect) and `credentials`
+(the per-session GitHub token the helper hands git — the helper's own half is
+built, and answers "I have none" until the link can mint one). `apikeys` is
 the template's inbound credential surface and goes once `link` makes it
 redundant.
 

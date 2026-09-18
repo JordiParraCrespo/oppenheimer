@@ -9,13 +9,17 @@ How it is installed on that machine and how it updates itself afterwards are
 `product/versions/mvp/09-runner-install-and-update.md`.
 
 **What works today**: a macOS, Debian or Ubuntu machine pairs with a
-workspace, installs itself as a user service, reports its own health, and
-keeps itself on the current signed release — including rolling back a version
-that will not stay up. **What does not exist yet**: the outbound WebSocket to
-the control plane and the session contexts (worktrees, tmux, PTY streaming,
-the git credential helper). `runner run` therefore holds the local socket and
-the update loop, and has no link to talk over; that is the next slice, in the
-order `apps/runner/ARCHITECTURE.md` lists.
+workspace, installs itself as a user service, keeps itself on the current
+signed release (rolling back a version that will not stay up), and runs
+sessions — a git worktree plus a tmux session with the agent in window 0,
+tabs as further windows, a screen classifier for the sidebar dot, and a close
+that pushes the branch and removes the worktree.
+
+**What does not exist yet**: the outbound WebSocket to the control plane. So
+sessions are driven from the host itself (`runner sessions …`) rather than
+from a browser, and the git credential helper answers "I have none" because
+the token it would hand git is minted by the control plane over that link.
+Both are the next slice, in the order `apps/runner/ARCHITECTURE.md` lists.
 
 ## Subcommands
 
@@ -25,6 +29,8 @@ order `apps/runner/ARCHITECTURE.md` lists.
 | `runner register --token … --url …` | redeems a one-hour registration token: generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity]` | stops the service, revokes the host, erases the identity. Never touches `~/oppenheimer-ai` |
+| `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself |
+| `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, service, tools, disk. Exits non-zero when the host is not ready |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
@@ -42,8 +48,14 @@ Exit codes are a contract, the same one `apps/cli` publishes: 0 ok, 1 failure,
   bin/                runner-<version> binaries and the `current` symlink
   state/              update.json: what the last update did
   log/ run/           logs, the Unix socket, the single-instance lock
-~/oppenheimer-ai/workspaces/   the user's code — never touched by an uninstall
+~/oppenheimer-ai/workspaces/<owner>/<repo>/main             the fetch source, never edited
+~/oppenheimer-ai/workspaces/<owner>/<repo>/worktrees/<slug>  one per session
 ```
+
+Sessions live in a tmux server on its own socket (`tmux -L oppenheimer`), so
+the runner never collides with the user's own tmux and the server outlives
+every runner restart, update and rollback. That is why the service units are
+written to stop only the runner process.
 
 ## Releasing
 

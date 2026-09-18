@@ -20,6 +20,12 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/adapters/systemd"
 	svcapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/app"
 	svcdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/service/domain"
+	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
+	sessionstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
+	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/binaries"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/release"
 	updstate "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/adapters/state"
@@ -35,6 +41,8 @@ type App struct {
 	Host    *hostapp.Service
 	Pairing *pairapp.Service
 	Service *svcapp.Service
+	// Sessions is the worktree-plus-tmux lifecycle.
+	Sessions *sessionsapp.Service
 	// Updates is nil on a host that is not paired: the release URL and the
 	// channel come from the identity, so there is nothing to build from.
 	Updates *updapp.Service
@@ -44,6 +52,9 @@ type App struct {
 	StatePath string
 	// UnitPath is the service unit's location, for `status` and `uninstall`.
 	UnitPath string
+	// Terminals is the tmux server, exposed so `sessions attach` can hand
+	// the terminal over to tmux directly.
+	Terminals *tmux.Server
 }
 
 // New wires the host agent. It reads the identity when there is one, which is
@@ -78,6 +89,37 @@ func New(version string) (*App, error) {
 	if manager != nil {
 		app.UnitPath = manager.Path()
 	}
+
+	terminals, err := tmux.New(tmux.Options{ConfigPath: filepath.Join(paths.Home, "tmux.conf")})
+	if err != nil {
+		return nil, err
+	}
+	layout := sessionsdomain.Layout{Root: paths.Workspaces}
+	sessions, err := sessionsapp.New(sessionsapp.Options{
+		Terminals: terminals,
+		Worktrees: gitadapter.New(gitadapter.Options{
+			Layout: layout,
+			// git asks the runner over the local socket when it needs a
+			// token; nothing is written to disk and nothing is passed on a
+			// command line.
+			CredentialHelper: credentialHelper(),
+		}),
+		Classifier: manifest.New(),
+		Store:      sessionstate.New(paths.State()),
+		Layout:     layout,
+		Env: func(session sessionsdomain.Session) map[string]string {
+			return map[string]string{
+				"OPPENHEIMER_SESSION": session.ID,
+				"OPPENHEIMER_SOCKET":  paths.Socket(),
+				"OPPENHEIMER_REPO":    session.Repo,
+			}
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	app.Sessions = sessions
+	app.Terminals = terminals
 
 	binStore, err := binaries.New(binaries.Options{
 		Dir: paths.Bin(), Name: "runner", HTTP: &http.Client{Timeout: 10 * time.Minute},
@@ -153,6 +195,17 @@ func unit(paths Paths) svcdomain.Unit {
 		Env:        env,
 		User:       accountName(),
 	}
+}
+
+// credentialHelper is the command git calls for a password: this binary's own
+// subcommand, resolved to an absolute path so git finds it whatever PATH a
+// session's shell ends up with.
+func credentialHelper() string {
+	executable, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return executable + " credential-helper"
 }
 
 // accountName is the account the runner runs as. os/user is the source of

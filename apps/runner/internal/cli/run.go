@@ -61,6 +61,20 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		go a.updateLoop(ctx, logger)
 	}
 
+	// Sessions live in tmux, which outlived this process being replaced.
+	// Take them back over before anything else looks at them.
+	if adopted, err := a.Sessions.Adopt(ctx); err != nil {
+		logger.Warn("could not adopt sessions", slog.Any("error", err))
+	} else if len(adopted) > 0 {
+		logger.Info("sessions adopted", slog.Int("count", len(adopted)))
+	}
+	if orphans, err := a.Sessions.Orphans(ctx); err == nil && len(orphans) > 0 {
+		// Reported, never killed here: an orphan holds someone's work, and
+		// ending it is a decision, not a side effect of booting.
+		logger.Warn("tmux sessions this runner does not recognise", slog.Any("sessions", orphans))
+	}
+	go a.sessionLoop(ctx, logger)
+
 	if facts, err := a.Host.Collect(ctx); err == nil {
 		if err := facts.Validate(); err != nil {
 			// Not fatal: a host missing tmux still reports, and the console
@@ -124,6 +138,39 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		}
 		return httpx.WriteJSON(w, http.StatusOK, payload)
 	})
+	router.HandleFunc("GET /v1/sessions", func(w http.ResponseWriter, r *http.Request) error {
+		sessions := a.Sessions.List()
+		for i, session := range sessions {
+			if session.State.Live() {
+				if refreshed, err := a.Sessions.Refresh(r.Context(), session.ID); err == nil {
+					sessions[i] = refreshed
+				}
+			}
+		}
+		return httpx.WriteJSON(w, http.StatusOK, map[string]any{"sessions": sessions})
+	})
+	router.HandleFunc("GET /v1/sessions/{id}", func(w http.ResponseWriter, r *http.Request) error {
+		session, err := a.Sessions.Refresh(r.Context(), r.PathValue("id"))
+		if err != nil {
+			return err
+		}
+		return httpx.WriteJSON(w, http.StatusOK, session)
+	})
+	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
+		// The token comes from the control plane, per session and per
+		// repository, and the link that fetches it is the next slice. Until
+		// then this answers honestly rather than inventing a credential:
+		// the helper turns a 404 into git's "I have none".
+		var request map[string]string
+		if err := httpx.DecodeJSON(r, &request); err != nil {
+			return err
+		}
+		logger.Info("credential requested",
+			slog.String("session", request["session"]),
+			slog.String("host", request["host"]))
+		return problem.ErrNotFound.WithDetail(
+			"this runner has no credential for %s yet: the control-plane link is not implemented", request["host"])
+	})
 	router.HandleFunc("GET /v1/updates", func(w http.ResponseWriter, _ *http.Request) error {
 		if a.Updates == nil {
 			return upddomain.ErrBlocked.WithDetail("this host is not paired")
@@ -135,6 +182,31 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		return httpx.WriteJSON(w, http.StatusOK, state)
 	})
 	return router
+}
+
+// sessionLoop keeps every live session's state fresh. It polls slowly: with
+// no client attached nobody is watching a dot change, and `capture-pane` on a
+// busy host is not free. The link will make this adaptive — a second while a
+// browser is attached — when it lands.
+func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+		for _, session := range a.Sessions.List() {
+			if !session.State.Live() {
+				continue
+			}
+			if _, err := a.Sessions.Refresh(ctx, session.ID); err != nil {
+				logger.Warn("could not refresh a session",
+					slog.String("session", session.ID), slog.Any("error", err))
+			}
+		}
+	}
 }
 
 // updateLoop keeps the host current: the health gate first, then a check at

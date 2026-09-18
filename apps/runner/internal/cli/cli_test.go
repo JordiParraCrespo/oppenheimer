@@ -1,10 +1,12 @@
 package cli_test
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/cli"
@@ -114,5 +116,47 @@ func TestExitCodeUnwrapsAWrappedProblem(t *testing.T) {
 
 	if got := cli.ExitCode(wrapped); got != 6 {
 		t.Fatalf("ExitCode = %d, want 6", got)
+	}
+}
+
+func TestCredentialHelperSpeaksGitsProtocol(t *testing.T) {
+	t.Setenv(cli.EnvHome, filepath.Join(t.TempDir(), ".oppenheimer"))
+	app, err := cli.New("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out strings.Builder
+
+	// No runner is listening on the socket, which is what a `git` run on a
+	// host whose daemon is stopped looks like.
+	err = app.CredentialHelper(context.Background(), "get",
+		strings.NewReader("protocol=https\nhost=github.com\n\n"), &out)
+
+	if err != nil {
+		t.Fatalf("the helper must never fail a git command: %v", err)
+	}
+	if out.String() != "" {
+		t.Fatalf("out = %q; an empty answer is git's \"I have no credentials\"", out.String())
+	}
+}
+
+func TestCredentialHelperIgnoresStoreAndErase(t *testing.T) {
+	t.Setenv(cli.EnvHome, filepath.Join(t.TempDir(), ".oppenheimer"))
+	app, err := cli.New("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, operation := range []string{"store", "erase"} {
+		var out strings.Builder
+		// The runner keeps no credential, so there is nothing to record or
+		// forget — but git must never see an error for saying so.
+		if err := app.CredentialHelper(context.Background(), operation,
+			strings.NewReader("protocol=https\nhost=github.com\npassword=secret\n\n"), &out); err != nil {
+			t.Fatalf("%s: %v", operation, err)
+		}
+		if out.String() != "" {
+			t.Fatalf("%s wrote %q", operation, out.String())
+		}
 	}
 }

@@ -73,8 +73,19 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			return app.Status(ctx, os.Stdout)
 		})
+	case "sessions", "session":
+		return sessions(ctx, args)
 	case "update":
 		return update(ctx, args)
+	case "credential-helper":
+		// git calls this with the operation as its one argument.
+		operation := ""
+		if len(args) > 0 {
+			operation = args[0]
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.CredentialHelper(ctx, operation, os.Stdin, os.Stdout)
+		})
 	case "selfcheck":
 		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 			report, err := app.SelfCheck(ctx)
@@ -180,6 +191,103 @@ func update(ctx context.Context, args []string) (int, error) {
 	})
 }
 
+// sessions dispatches the session subcommands. They are what a person uses on
+// the host itself; the console will drive the same use cases over the link.
+func sessions(ctx context.Context, args []string) (int, error) {
+	sub := "ls"
+	if len(args) > 0 {
+		sub, args = args[0], args[1:]
+	}
+	switch sub {
+	case "ls", "list":
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.ListSessions(ctx, os.Stdout)
+		})
+	case "create", "new":
+		fs := flag.NewFlagSet("sessions create", flag.ContinueOnError)
+		opts := cli.CreateSessionOptions{}
+		fs.StringVar(&opts.Repo, "repo", "", "owner/name (required)")
+		fs.StringVar(&opts.Remote, "remote", "", "clone URL, the first time this host sees the repository")
+		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
+		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
+		fs.StringVar(&opts.Name, "name", "", "name for the session")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex or shell")
+		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
+		if err := fs.Parse(args); err != nil {
+			return cli.ExitUsage, err
+		}
+		if opts.Repo == "" {
+			fs.Usage()
+			return cli.ExitUsage, errors.New("--repo is required")
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.CreateSession(ctx, os.Stdout, opts)
+		})
+	case "attach":
+		fs := flag.NewFlagSet("sessions attach", flag.ContinueOnError)
+		window := fs.Int("window", 0, "window to attach to; 0 is the agent")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		if len(rest) != 1 {
+			return cli.ExitUsage, errors.New("usage: runner sessions attach <id> [--window N]")
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.AttachSession(ctx, rest[0], *window)
+		})
+	case "window":
+		if len(args) != 1 {
+			return cli.ExitUsage, errors.New("usage: runner sessions window <id>")
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.OpenWindow(ctx, os.Stdout, args[0])
+		})
+	case "restart":
+		if len(args) != 1 {
+			return cli.ExitUsage, errors.New("usage: runner sessions restart <id>")
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.RestartSession(ctx, os.Stdout, args[0])
+		})
+	case "close", "rm":
+		fs := flag.NewFlagSet("sessions close", flag.ContinueOnError)
+		opts := cli.CloseSessionOptions{}
+		fs.BoolVar(&opts.NoPush, "no-push", false, "do not push the branch")
+		fs.BoolVar(&opts.Force, "force", false, "remove the worktree even with uncommitted changes")
+		rest, err := parse(fs, args)
+		if err != nil {
+			return cli.ExitUsage, err
+		}
+		if len(rest) != 1 {
+			return cli.ExitUsage, errors.New("usage: runner sessions close <id> [--no-push] [--force]")
+		}
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.CloseSession(ctx, os.Stdout, rest[0], opts)
+		})
+	default:
+		usage(os.Stderr)
+		return cli.ExitUsage, fmt.Errorf("unknown sessions command %q", sub)
+	}
+}
+
+// parse reads flags that may come before or after the positional arguments,
+// because `sessions close abc --force` is how a person types it and Go's flag
+// package stops at the first non-flag on its own.
+func parse(fs *flag.FlagSet, args []string) ([]string, error) {
+	var positional []string
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		if fs.NArg() == 0 {
+			return positional, nil
+		}
+		positional = append(positional, fs.Arg(0))
+		args = fs.Args()[1:]
+	}
+}
+
 // serve runs the control-plane-facing HTTP service: the template's REST and
 // WebSocket surface, on a TCP port, as the container image does. The host
 // agent is `run`, which opens no port at all.
@@ -223,8 +331,15 @@ func usage(w *os.File) {
   runner install [--print]        install the launchd agent or systemd user unit
   runner uninstall [--keep-identity]
                                   stop the service and unpair this machine
+  runner sessions ls              what this host is running
+  runner sessions create --repo owner/name [--remote URL] [--base main] [--agent claude]
+  runner sessions attach <id> [--window N]
+  runner sessions window <id>     open another tab in a session
+  runner sessions restart <id>    recreate window 0 after a reboot
+  runner sessions close <id> [--no-push] [--force]
   runner status                   platform, pairing, service, tools, disk
   runner update [--check|--force|--pin V|--unpin|--rollback]
+  runner credential-helper get    git's credential protocol, answered over the socket
   runner selfcheck                what a staged binary must pass to be activated
   runner serve                    the HTTP service on a TCP port (containers)
   runner version

@@ -210,11 +210,13 @@ API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
 `packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
 `health`, `ws`, `postgres`, `selfupdate`), tied together by the root `go.work`, each also published to
 Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
-`apps/runner` is more than the template now: it is the host agent, and it
-pairs a macOS, Debian or Ubuntu machine with a workspace, installs itself as a
-launchd agent or systemd user unit, and keeps itself on the current signed
-release (`runner run|register|install|status|update`; `runner serve` is the
-template's HTTP service, which is what the container runs).
+`apps/runner` is more than the template now: it is the host agent. It pairs a
+macOS, Debian or Ubuntu machine with a workspace, installs itself as a launchd
+agent or systemd user unit, keeps itself on the current signed release, and
+runs sessions as git worktrees with a tmux session each
+(`runner run|register|install|sessions|status|update`; `runner serve` is the
+template's HTTP service, which is what the container runs). The control-plane
+link is the piece still missing, so sessions are driven from the host today.
 The app is the same hexagon as `apps/api` in idiomatic Go: standard
 `net/http` routing, `slog`, interfaces as ports, constructor injection, one
 composition root (`internal/server`). Errors are the same RFC 7807 documents
