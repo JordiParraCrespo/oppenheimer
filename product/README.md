@@ -79,3 +79,14 @@ earlier note:
   with the account as its single owner member, created at sign-up. No
   roster, no invitations, no teams are exposed in the MVP
   (`versions/mvp/08-auth.md`).
+- The control-plane modules and data model *have* now changed, where the
+  line above said only the framework had. `versions/mvp/09-api-modules-and-data-model.md`
+  replaces note 03's seven modules and its first-cut table list with
+  four modules — `hosts`, `github`, `sessions`, `relay` — and nine
+  tables. `installations` and `repositories` merge into one aggregate;
+  `tokens` becomes a port rather than a module because an installation
+  token is never stored; `events` is a table inside `sessions`; `jobs`
+  disappears because the outbox already is one. Models and coding agents
+  get no table at all, and "GitHub allowed repositories" turns out to be
+  the same noun as "repositories" — the App installation is a boundary
+  GitHub already enforces.

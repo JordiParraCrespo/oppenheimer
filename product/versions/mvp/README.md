@@ -18,6 +18,7 @@ at the bottom of this file.
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
+| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the four API modules, their aggregates, the nine new tables, the endpoint surface, and where agents and models live |
 
 ## Decision log
 
@@ -54,3 +55,17 @@ at the bottom of this file.
   `AGENTS.md` and `.agents/rules/rbac-roles.md`. 08-auth.md also now
   records that provisioning is gated on *membership* rather than
   ownership, which the MVP cannot tell apart and the teams slice will.
+- 2026-09-18: 09-api-modules-and-data-model.md added, deepening 03's
+  "Data model, first cut" into the module map and schema the enforced
+  `apps/api` contract can carry. Four modules, not seven: `identity` is
+  the starter's auth, `installations` and `repositories` merge into
+  `github/` (one aggregate, because a webhook replaces the repository
+  set as a whole), `tokens` is a port on `github/` rather than a module
+  because installation tokens are never stored, and `events` is a table
+  inside `sessions/` rather than a module of its own. **Models and
+  coding agents get no table**: a model picker is a stated MVP non-goal
+  and an agent needs runner code either way, so the agent catalog is a
+  closed list in `packages/shared` and per-host availability is a host
+  fact. **"Repositories" and "GitHub allowed repositories" are one
+  noun**, because the App installation is a boundary GitHub enforces.
+  `SessionState` gains `blocked` and `stopping`.

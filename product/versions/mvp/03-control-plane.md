@@ -29,12 +29,23 @@
 
 ## Data model, first cut
 
+**Superseded by [`09-api-modules-and-data-model.md`](09-api-modules-and-data-model.md)**,
+which turns this list into the module map and schema the enforced
+`apps/api` contract can carry. Kept here for the record.
+
 users, installations, repositories (cached from GitHub, refreshed by
 webhook), hosts, host_keys, sessions (host, repo, base branch, branch,
 worktree path, agent, state, name), session_events, attach_tickets,
 jobs. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
+
+Note 09 keeps `hosts`, `host_keys`, `session_events` and
+`attach_tickets`, merges `installations` and `repositories` into one
+`github/` module, drops `jobs` (the outbox already is one and the
+session row already is the desired state), and drops a tokens table
+outright (an installation token is minted on demand and never stored,
+per F20 and F23).
 
 ## Open questions
 
