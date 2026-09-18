@@ -2,4 +2,4 @@
 "@oppenheimer/frontend-core": minor
 ---
 
-Add a pluggable `analytics` module: an `IAnalyticsClient` port, an `AnalyticsService` that survives a failing SDK, feature flags served through TanStack Query, and the React hooks for both.
+Add a pluggable `analytics` module with feature flags: an adapter implements `getFeatureFlags()`, and `NoopAnalyticsClient` stands in whenever no provider is configured.

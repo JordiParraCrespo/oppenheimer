@@ -2,4 +2,4 @@
 "@oppenheimer/api": minor
 ---
 
-Every module is cut to one enforced shape — a closed set of directories, a use case per directory, no `services/` — checked by `pnpm check:api-structure`, with the pre-contract façades listed as a ledger rather than excused.
+Module layout is now a machine-checked contract: `services/` is gone, a probe is not a use case, and `pnpm check:api-structure` enforces the shape.

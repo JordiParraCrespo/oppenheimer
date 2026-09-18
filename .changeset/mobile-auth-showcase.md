@@ -2,4 +2,4 @@
 "@oppenheimer/mobile-showcase": patch
 ---
 
-Follow the mobile auth and brand-mark additions.
+Add a `BrandMark` entry to the component registry.

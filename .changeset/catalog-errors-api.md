@@ -2,4 +2,4 @@
 "@oppenheimer/api": minor
 ---
 
-Organization, admin and guard failures answer with a catalog `code` instead of a codeless problem document, and `PoliciesGuard` reports a missing principal as 401 rather than 403.
+New `AuthErrors`, `OrganizationErrors` and `AdminErrors` catalogs; `betterAuthInvoker` folds Better Auth's upstream codes onto them, and the guards throw catalog errors — a missing principal is now 401 rather than 403.
