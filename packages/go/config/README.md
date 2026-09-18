@@ -66,6 +66,6 @@ pnpm --filter @oppenheimer/go-config build   # go build ./...
 ## Dependencies
 
 Standard library only; it imports no sibling module. Consumed by
-`apps/runner/internal/config`, and by `cmd/server/main.go` through it. The
+`apps/runner/internal/config`, and by `cmd/runner/main.go` through it. The
 variables themselves are documented in the root `.env.example` under
 "Runner (apps/runner)".

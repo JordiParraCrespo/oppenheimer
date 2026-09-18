@@ -1,7 +1,8 @@
 # @oppenheimer/backend-ddd — Agent Instructions
 
-Domain-Driven Hexagon building blocks used by `apps/api`. Depends on
-`@oppenheimer/backend-core`.
+Domain-Driven Hexagon building blocks used by `apps/api`. Framework-agnostic —
+depends on nothing in the workspace; `@oppenheimer/backend-core` depends on
+this package, not the other way around.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md), [`apps/api/ARCHITECTURE.md`](../../../apps/api/ARCHITECTURE.md),
 > and [`.agents/rules/nestjs-architecture.md`](../../../.agents/rules/nestjs-architecture.md).

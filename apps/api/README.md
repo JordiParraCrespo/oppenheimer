@@ -29,7 +29,9 @@ module file. [`ARCHITECTURE.md`](./ARCHITECTURE.md) is the layer model and the
 ## Depends on / used by
 
 Depends on `@oppenheimer/shared`, `@oppenheimer/auth`, `@oppenheimer/backend-*` and
-`@oppenheimer/backend-i18n` (with `@oppenheimer/translations`). Used by every app and
-by `apps/runner`, which it delegates long-lived work to.
+`@oppenheimer/backend-i18n` (with `@oppenheimer/translations`). Used by every app.
+The control-plane link to `apps/runner` — the piece that would let it delegate
+long-lived work there — does not exist yet; sessions are driven from the host
+today (see `apps/runner/README.md`).
 
 See [`AGENTS.md`](./AGENTS.md) for the conventions.

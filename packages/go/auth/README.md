@@ -45,13 +45,13 @@ service understands the other.
 The composition root builds the verifiers and mounts the middleware once; a
 module then declares what each route group needs (from
 `apps/runner/internal/server/server.go` and
-`apps/runner/internal/jobs/adapters/http/handler.go`):
+`apps/runner/internal/apikeys/adapters/http/handler.go`):
 
 ```go
 j, err := auth.NewJWT(auth.JWTOptions{Secret: cfg.JWT.Secret, Issuer: cfg.JWT.Issuer, Audience: cfg.JWT.Audience})
 api.Use(auth.Authenticate(problems, logger, verifiers...))
 
-g.Use(auth.RequireScopes(h.problems, scopes.JobsRead))
+g.Use(auth.RequireScopes(h.problems, scopes.KeysRead))
 ```
 
 A handler that needs the caller reads `auth.FromContext(r.Context())`.

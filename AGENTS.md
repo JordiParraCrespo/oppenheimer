@@ -304,11 +304,11 @@ and `apps/mobile-showcase`. Usage rules are `.agents/rules/frontend-ui.md`.
 
 ```
 packages/tsconfig         → used by all apps and packages (tsconfig extends)
-packages/env              → used by api, mcp, mobile (root .env loader)
+packages/env              → used by api, mcp, mobile, admin-mobile (root .env loader)
 packages/shared           → used by api, frontend, api-client, backend/core (wire types)
 packages/auth             → used by api, web, mobile (shared Better Auth config)
 packages/backend/core     → used by api, other backend packages
-packages/backend/ddd      → used by api (depends on backend/core)
+packages/backend/ddd      → used by api, backend/core (depends on nothing in the workspace)
 packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api

@@ -8,15 +8,18 @@ across the monorepo.
 
 | File                    | Extend it from                                                   |
 | ----------------------- | ---------------------------------------------------------------- |
+| `tsconfig.base.json`    | Nothing directly — the shared options every preset below extends |
 | `tsconfig.library.json` | Buildable TS packages (`packages/*`)                             |
 | `tsconfig.nestjs.json`  | The NestJS API (`apps/api`, backend packages)                    |
 | `tsconfig.nextjs.json`  | Next.js apps (`apps/web-showcase`)                               |
 | `tsconfig.expo.json`    | Expo / React Native apps (`apps/mobile`, `apps/mobile-showcase`) |
 
-Two build-time helpers ride along, for the same reason the tsconfigs do — one
-copy, extended rather than pasted: `vite-chunks.mjs` (the Rollup
-`manualChunks` the Vite SPAs share) and `depcruise/*.cjs` (the
-dependency-cruiser rule factories the frontend apps and kits extend).
+Three build/test-time helpers ride along, for the same reason the tsconfigs do
+— one copy, extended rather than pasted: `vite-chunks.mjs` (the Rollup
+`manualChunks` the Vite SPAs share), `vitest-frontend.mjs` (the shared Vitest
+project config `apps/web`, `apps/admin-web` and `packages/frontend/web` use),
+and `depcruise/*.cjs` (the dependency-cruiser rule factories the frontend apps
+and kits extend).
 
 ## Usage
 

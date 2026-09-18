@@ -61,7 +61,7 @@ place. Nothing in the MVP builds on them.
 | `packages/frontend/web`           | What both Vite apps share below their routes, by concern           |
 | `packages/frontend/mobile`        | What both Expo apps share below their routes                       |
 | `packages/backend/*`              | Cross-cutting NestJS toolkit: errors/filters (`core`), DDD building blocks (`ddd`), authorization kernel (`authz`), Redis cache (`cache`), queues (`queue`), file storage (`storage`), email (`email`), i18n (`i18n`) |
-| `packages/go/*`                   | Cross-cutting Go toolkit for `apps/runner`: `core`, `config`, `httpx`, `auth`, `health`, `ws`, `postgres` |
+| `packages/go/*`                   | Cross-cutting Go toolkit for `apps/runner`: `core`, `config`, `httpx`, `auth`, `health`, `ws`, `postgres`, `selfupdate` |
 | `packages/frontend/design-system/web`      | shadcn/ui + Base UI + Tailwind v4 components                       |
 | `packages/frontend/design-system/mobile`   | NativeWind + rn-primitives React Native components                 |
 | `packages/frontend/api-client`    | Auto-generated typed client from Swagger                           |
@@ -112,7 +112,7 @@ file that mentions one wraps those lines in `oppenheimer:begin`/`oppenheimer:end
 | Admin Web          | http://localhost:3003          |
 | API                | http://localhost:3001          |
 | API Docs (Swagger) | http://localhost:3001/api/docs |
-| Docs               | http://localhost:3002          |
+| Docs               | http://localhost:3003          |
 
 ## Tech stack
 

@@ -30,7 +30,9 @@ the API's tests read it.
 
 ## Depends on / used by
 
-Depends on nothing in the workspace. Nothing depends on it; it is an optional
-app the starter prunes with `scripts/starter/features.json`.
+Depends on nothing in the workspace. `apps/api`'s
+`error-catalog-coverage.spec.ts` reads `docs/errors.md` and fails if a code is
+undocumented, so that test is itself one of the paths
+`scripts/starter/features.json` removes when the `docs` feature is pruned.
 
 See [`AGENTS.md`](./AGENTS.md) for the conventions.

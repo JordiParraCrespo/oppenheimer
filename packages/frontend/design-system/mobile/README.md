@@ -80,4 +80,4 @@ and the findings it inherited are in `.agents/rules/frontend-ui.md`.
 
 ## Consumed by
 
-`apps/mobile`, `apps/mobile-showcase`.
+`apps/mobile`, `apps/admin-mobile`, `apps/mobile-showcase`, `packages/frontend/mobile`.
