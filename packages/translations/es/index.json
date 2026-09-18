@@ -262,8 +262,7 @@
       "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
     },
     "session": {
-      "subtitle": "El agente corre en la ventana 0 de tmux. Escribe en la terminal como lo harías en la máquina.",
-      "back": "Todas las sesiones",
+      "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
       "status": {
         "connecting": "Conectando",
         "live": "En directo",

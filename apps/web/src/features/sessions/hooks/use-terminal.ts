@@ -29,6 +29,8 @@ export interface TerminalGrid {
  */
 export function useTerminal(createStream: () => SessionStream) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const streamRef = useRef<SessionStream | null>(null);
+  const focusRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<StreamStatus>('connecting');
   const [grid, setGrid] = useState<TerminalGrid>({ cols: 0, rows: 0 });
 
@@ -37,6 +39,7 @@ export function useTerminal(createStream: () => SessionStream) {
     if (!container) return;
 
     const stream = createStream();
+    streamRef.current = stream;
 
     const term = new Terminal({
       ...TERMINAL_FONT,
@@ -63,6 +66,7 @@ export function useTerminal(createStream: () => SessionStream) {
     term.unicode.activeVersion = '11';
 
     term.open(container);
+    focusRef.current = () => term.focus();
 
     // WebGL is the renderer the product wants — a noisy build should not cost
     // CPU — but it is unavailable on some machines and in headless browsers,
@@ -112,8 +116,23 @@ export function useTerminal(createStream: () => SessionStream) {
       resizeObserver.disconnect();
       term.dispose();
       stream.dispose();
+      streamRef.current = null;
+      focusRef.current = null;
     };
   }, [createStream]);
 
-  return { containerRef, status, grid };
+  /**
+   * Post a line to the session, as the composer does.
+   *
+   * The grid is still where keystrokes go — this is the additive path for a
+   * block of text someone would rather write in a box than type at a prompt.
+   * It ends in `\r` because that is what the Return key sends; the host sees
+   * no difference between this and a fast typist.
+   */
+  const submit = (text: string) => {
+    streamRef.current?.send(`${text}\r`);
+    focusRef.current?.();
+  };
+
+  return { containerRef, status, grid, submit };
 }

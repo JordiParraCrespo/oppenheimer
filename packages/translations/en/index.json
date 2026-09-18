@@ -262,8 +262,7 @@
       "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
     },
     "session": {
-      "subtitle": "The agent runs in tmux window 0. Type into the terminal as you would on the host.",
-      "back": "All sessions",
+      "composerPlaceholder": "Ask the agent, or run a command",
       "status": {
         "connecting": "Connecting",
         "live": "Live",
