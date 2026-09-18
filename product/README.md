@@ -79,3 +79,10 @@ earlier note:
   with the account as its single owner member, created at sign-up. No
   roster, no invitations, no teams are exposed in the MVP
   (`versions/mvp/08-auth.md`).
+- The MVP's out-list deferred signed auto-update. It is now in the MVP:
+  a host that can only be updated by the user pasting the install command
+  again does not survive the first ten hosts, and the protocol needs the
+  update-required hint regardless. The runner self-updates from artifacts
+  signed with an offline key whose public half is compiled into the
+  binary, so the control plane offers versions and never supplies code
+  (`versions/mvp/09-runner-install-and-update.md`, security finding F26).

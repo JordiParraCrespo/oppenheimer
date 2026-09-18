@@ -56,6 +56,14 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   pushes the branch and removes the worktree.
 - **Hosted control plane** in the same Hetzner region as your hosts,
   public HTTPS for the browser, outbound WebSocket from runners.
+- **The runner keeps itself current.** Releases are signed with an
+  offline key whose public half is compiled into the binary; the control
+  plane offers a version and can stage a rollout, but can never hand a
+  host code to run. The runner applies an update when no session is
+  working and no client is attached, verifies the staged binary before
+  it becomes the service, and rolls back automatically if the new one
+  does not come up. Sessions live in tmux, so an update costs a
+  reconnect and nothing else (09 §5).
 
 ## Out, for later slices
 
@@ -63,8 +71,8 @@ Virtual machines in any form (Shared workspace VM, Clean VM,
 Firecracker, tart, cloud adapters), sleep tiers, account objects and
 volumes, the egress proxy, Codex and other agents, Create PR and diff
 view, preview URLs, auto-fix and routines, usage meters, delegation,
-Tailscale mode, signed auto-update, orgs and billing, agent
-personalities and any other directory under `~/oppenheimer-ai`.
+Tailscale mode, orgs and billing, agent personalities and any other
+directory under `~/oppenheimer-ai`.
 
 The VM design already written (notes 08, 10, 11 §2 and §5, and the VM
 parts of the documents in this directory) stays as the next slice. It

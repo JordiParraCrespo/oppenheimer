@@ -5,6 +5,9 @@ binary that will own the worktrees, the tmux sessions and the PTY stream on
 a host you own. The NestJS API is the control plane; this service is the
 thing that runs on the machine.
 
+How it is installed on that machine and how it updates itself afterwards are
+`product/versions/mvp/09-runner-install-and-update.md`.
+
 What is here today is the **shell**, not the agent: configuration, RFC 7807
 errors, the credential context (`apikeys`) and the event stream. The first
 product context (pairing, then session attach) lands with the step-one spike

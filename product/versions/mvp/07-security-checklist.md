@@ -19,8 +19,14 @@ feature lands.
 - [ ] F23 no vendor credential ever stored by the platform
 - [ ] F24 every object owned by the user; queries scoped
 - [ ] F25 unguessable session ids plus ticket authorization
+- [ ] F26 runner releases signed with an offline key, verified against a
+      public key compiled into the binary, before a staged binary is ever
+      executed; the control plane offers versions and never supplies code
+      (09 §5)
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
-retention. Also deferred: F26 signed updates and Tailscale mode for the
-control plane itself.
+retention. Also deferred: Tailscale mode for the control plane itself.
+F26 was deferred and is now in the list above: self-update landed in the
+MVP with 09, and an unsigned update path would be the widest hole
+in it.

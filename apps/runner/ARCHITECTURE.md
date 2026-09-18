@@ -32,12 +32,36 @@ internal/
   arch/                       import-boundary test
 ```
 
-The product contexts from `product/versions/mvp/02-runner.md` are not here
-yet and arrive in this order: `pairing` (registration token, host keypair,
-the outbound control-plane connection), then `sessions` (worktree, tmux, PTY
-stream, screen manifest), then the git credential helper. They follow the
-same layout as `apikeys`; `apikeys` itself goes once pairing replaces it as
-the way the control plane authenticates this host.
+The product contexts are designed in `product/versions/mvp/02-runner.md` §3
+and are not here yet. They arrive in this order, each in the same layout as
+`apikeys`:
+
+1. `pairing` — registration token, host keypair, host identity, boot JWT.
+2. `link` — the one outbound WebSocket: dial, auth, multiplexed streams,
+   heartbeat, reconnect ladder with an epoch counter.
+3. `sessions` — the aggregate, with `adapters/tmux`, `adapters/git` and
+   `adapters/manifest` behind the `Terminals`, `Worktrees` and `Classifier`
+   ports.
+4. `credentials` — the per-session GitHub token cache behind the git
+   credential helper on the local Unix socket.
+5. `host` — preflight facts, agent versions, disk pressure.
+6. `updates` — channel, safe window, staging and rollback, on top of a new
+   `packages/go/selfupdate` module that holds the domain-agnostic half
+   (verify, atomic swap, prune). Install and update are
+   `product/versions/mvp/09-runner-install-and-update.md`.
+
+`apikeys` goes once `pairing` replaces it as the way this host proves who it
+is. Two contexts never import each other: where one needs another, the
+consumer declares a port in its `app` and `internal/server` supplies the
+other context's service as the implementation.
+
+Two shape changes come with `run`. `cmd/server` becomes `cmd/runner`, whose
+`main` dispatches the subcommands (`run`, `register`, `install`, `status`,
+`credential-helper`, `update`, `selfcheck`) and still does no wiring. And on
+a paired host the router is bound to a 0600 Unix socket
+(`~/.oppenheimer/run/runner.sock`) rather than a TCP port, because the host
+must expose nothing: the same `httpx` router and the same problem documents,
+on a different `net.Listener`.
 
 ## Layers and the rule between them
 
