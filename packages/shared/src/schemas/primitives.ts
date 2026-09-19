@@ -25,10 +25,6 @@ export const FIELD_BOUNDS = {
   displayName: { min: 1, max: 200 },
   /** A git ref: branch names are bounded by what git and the filesystem take. */
   gitRef: { min: 1, max: 255 },
-  /** A tool version string, as a CLI prints it. */
-  toolVersion: { min: 1, max: 64 },
-  /** `hostname`, `os`, `arch` — short, non-empty, host-reported. */
-  hostFact: { min: 1, max: 255 },
 } as const;
 
 /**
@@ -63,39 +59,86 @@ export const displayNameSchema = z
 
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
-const hostFactSchema = z.string().min(FIELD_BOUNDS.hostFact.min).max(FIELD_BOUNDS.hostFact.max);
+/**
+ * The host family, at the granularity the installer and the service manager care
+ * about. `unsupported` is a real value the runner sends, not an error: it detects
+ * the platform, names it, and the control plane refuses with the supported list.
+ */
+export const HOST_PLATFORMS = ['macos', 'debian', 'ubuntu', 'linux', 'unsupported'] as const;
 
-const toolVersionSchema = z
-  .string()
-  .min(FIELD_BOUNDS.toolVersion.min)
-  .max(FIELD_BOUNDS.toolVersion.max);
+export type HostPlatform = (typeof HOST_PLATFORMS)[number];
+
+export const hostPlatformSchema = z.enum(HOST_PLATFORMS);
 
 /**
- * What the runner reports about a machine — **one shape, two arrivals.**
+ * One executable a session depends on, as the runner probed it.
  *
- * Registration sends it over HTTPS before any link exists; `hello` and
- * `heartbeat` send it on the link. It used to be `z.record(z.unknown())` on
- * registration, which meant pairing persisted whatever bag arrived and the link
- * then refused the same host for not matching the structured shape. Storing it
- * as jsonb is a storage detail; it is not a licence to skip the contract.
+ * `path` absent means it is not on PATH — that is how "looked, not there" is
+ * expressed, because Go omits the empty string. An agent is just a probed tool
+ * (`claude`, `codex`), which is why there is no separate agents list: deriving
+ * one by name costs a filter and keeps a single source for "what is installed".
+ * `name` is a free-form string rather than an enum because the runner owns the
+ * probe list and adding `codex` to it must not require a control-plane release.
+ */
+export const hostToolSchema = z.object({
+  name: z.string(),
+  /** Absolute path, omitted when the tool was not found. */
+  path: z.string().optional(),
+  /** As the CLI reported it, omitted when unknown. */
+  version: z.string().optional(),
+  /** Whether its absence stops sessions. `git` and `tmux` are required; agents are not. */
+  required: z.boolean(),
+});
+
+export type HostToolDto = z.infer<typeof hostToolSchema>;
+
+/**
+ * What the runner reports about a machine — **one shape, two arrivals**, and it
+ * is the runner's shape verbatim.
  *
- * `null` for a tool means "looked, not there" — a fact worth sending, because
- * the console shows it as a hint on the agent chip and only `tmux` is a hard
- * requirement.
+ * This mirrors `Facts` in `apps/runner/internal/host/domain/facts.go` key for key
+ * and tag for tag, because the runner marshals that struct whole into
+ * `POST /hosts/register` and into `hello`/`heartbeat`. The register JSON is the
+ * runner's to define; this schema follows it. An earlier version invented
+ * `hostname`/`os`/`arch` with a `tools` map and an `agents` array, which no
+ * runner has ever sent — a real registration would have been a 400.
+ *
+ *
+ * Agents installed on a host are read from `tools` — the entries named `claude`
+ * and `codex` — and there is no separate agents key; that is what the console
+ * consumes for the agent chip.
+ *
+ * Two deliberate loosenings, both so that a truthful runner cannot be refused:
+ *
+ * - the non-`omitempty` strings accept `''`. Go always emits those keys, and
+ *   `workspacePath` genuinely can be empty (`service.go` guards `s.workspace !== ''`
+ *   before measuring disk), so a `min(1)` here would 400 exactly the host this
+ *   change exists to admit;
+ * - `tools` accepts `null`. A nil Go slice marshals to `null`, not `[]`, and the
+ *   field has no `omitempty`; it is normalised to an empty array so consumers
+ *   never branch on it.
  */
 export const hostFactsSchema = z.object({
-  hostname: hostFactSchema,
-  os: hostFactSchema,
-  arch: hostFactSchema,
-  /** `git`, `tmux`, and each agent's command. */
-  tools: z.record(toolVersionSchema.nullable()),
-  /** Agents detected on PATH, with the version if the CLI reported one. */
-  agents: z.array(
-    z.object({
-      id: codingAgentSchema,
-      version: toolVersionSchema.nullable(),
-    }),
-  ),
+  platform: hostPlatformSchema,
+  /** Omitted when the prober could not determine it. */
+  osVersion: z.string().optional(),
+  arch: z.string(),
+  hostname: z.string(),
+  /** The account the runner runs as, and its home. Never root — `root` reports that. */
+  user: z.string(),
+  home: z.string(),
+  /** True is a refusal condition, reported rather than hidden. */
+  root: z.boolean(),
+  /** A probe result per tool: `git`, `tmux`, `claude`, and `codex` when it is probed. */
+  tools: z
+    .array(hostToolSchema)
+    .nullable()
+    .transform((tools) => tools ?? []),
+  /** Where `~/oppenheimer-ai` lives on this host. May be empty before it is chosen. */
+  workspacePath: z.string(),
+  /** Free bytes on the workspace filesystem. A JSON number; `uint64` in Go. */
+  diskFreeBytes: z.number().int().min(0),
+  runnerVersion: z.string(),
 });
 
 export type HostFactsDto = z.infer<typeof hostFactsSchema>;
