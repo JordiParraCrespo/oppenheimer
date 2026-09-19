@@ -30,25 +30,28 @@ history) to work on the MVP.
   personal workspace"; the two come apart the day an invitation can
   place an account somewhere before it owns anything, and the teams
   slice decides then whether an invitee also gets one of their own.
-- **Hosts carry a workspace *and* an owner.** A host row carries the
-  workspace id and answers only to that workspace — that is the tenant
-  boundary, and the column the scoping predicate reads (F24). It also
-  carries `ownerUserId`, the person whose machine it is, which is **not
-  audit only**: a session on a direct-mode host has full access to that
-  machine (F10), runs under its owner's Unix account, and spends the
-  agent login that is "the host's own" (00-scope.md) — that person's own
-  subscription. So the workspace is who may *see* a host; the owner is
-  who may *use* it, with `'own'` and `'grant'` on `HostResource` so
-  sharing one with a teammate is an `access_grant` the kernel already
-  supports. In the MVP the two are the same person; the distinction is
-  in the schema so the teams slice inherits "your machine is yours
-  unless you share it" rather than the reverse. The pairing token is
-  minted by a signed-in user, is valid only while that user is still a
-  member, and the runner's keypair is bound to the host row.
-- **Sessions belong to a host, so to a workspace.** Attaching to a
-  session needs a session in the caller's workspace plus a short-lived
-  attach ticket minted by the control plane (01-protocol.md). The relay
-  checks the ticket, never the browser cookie, on the socket.
+- **Hosts belong to a person; workspaces borrow them.** A host row
+  carries `ownerUserId` and no workspace id, the way Better Auth hangs
+  `session`, `account` and `passkey` off `user`: a laptop is a device of
+  the person's. `HostResource` declares only `'own'` and `'grant'`, so
+  the kernel scopes hosts own-or-grant with no tenant block
+  (`applyAccessScope` skips it when the resource has no organization
+  key), and sharing one with a teammate is an `access_grant` it already
+  supports. The reasons are physical: a session on a direct-mode host
+  has full access to that machine (F10), runs under its owner's Unix
+  account, and spends the agent login that is "the host's own"
+  (00-scope.md) — that person's subscription, which is why host and
+  login sit on one axis. A person with a personal and a company
+  workspace pairs one laptop once, and either workspace runs sessions on
+  it; the layout keeps them apart under `workspaces/<org.slug>/` (note
+  09). The pairing token is minted by a signed-in user, and the host it
+  creates is theirs; the runner's keypair is bound to the host row.
+- **Sessions belong to a workspace, and run on a host their creator may
+  use.** `POST /sessions` loads the host through the own-or-grant scope
+  and refuses otherwise. Attaching to a session needs a session in the
+  caller's workspace plus a short-lived attach ticket minted by the
+  control plane (01-protocol.md). The relay checks the ticket, never the
+  browser cookie, on the socket.
 - **GitHub access is per session.** The control plane mints a one-hour
   installation token narrowed to the session's repository and hands it
   to the runner over the relay; nothing lands on disk (00-scope.md).

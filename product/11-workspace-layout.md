@@ -45,8 +45,8 @@ the same name, the second gets `<owner>--<repo>`.
 ### What note 09 changes, and why
 
 ```
-~/oppenheimer-ai/projects/<project-slug>/
-  repos/<owner>--<repo>.git/          bare store, always owner-prefixed
+~/oppenheimer-ai/workspaces/<org-slug>/projects/<project-slug>/
+  repos/<store-name>.git/             bare store, named <owner>--<repo> once and frozen
   sessions/<session-slug>/
     .oppenheimer                      provenance: only what carries this is ours to delete
     <repo>/                           a checkout — worktree, or a clone when one is not possible
@@ -58,9 +58,10 @@ the same name, the second gets `<owner>--<repo>`.
    work a person thinks in; the repository is the first thing inside
    it, and agents and documents follow. Without this level, adding them
    later means moving every clone on every host.
-2. **`projects/`, not `workspaces/`.** "Workspace" already means the
-   `organization` row in the API. Two meanings for one word is a bug
-   generator.
+2. **`workspaces/<org-slug>/` above `projects/`.** A host belongs to a
+   person and serves every workspace they are in, so the `organization`
+   row's slug is the top level — the word used for the thing it means in
+   the API — and `projects/` sits inside it.
 3. **Worktrees move under the session.** A session may check out
    several repositories, and they sit side by side in one directory the
    agent works in — which a per-repository `worktrees/` folder cannot

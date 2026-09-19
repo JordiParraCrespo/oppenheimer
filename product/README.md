@@ -102,3 +102,10 @@ earlier note:
   bare clone, always owner-prefixed, and every directory name is a
   database constraint instead of a convention. Note 11 §2 onward still
   stands.
+- `versions/mvp/08-auth.md` said hosts belong to the workspace that
+  paired them, then to a workspace and an owner. `versions/mvp/09` now
+  makes a host the person's, borrowed by every workspace they are in,
+  the way Better Auth hangs devices and logins off `user`; the on-disk
+  layout gains a `workspaces/<org>/` level above `projects/`. Note 06's
+  per-account config directories remain the answer to several logins on
+  one machine, and remain a later slice.

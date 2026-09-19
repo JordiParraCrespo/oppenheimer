@@ -53,13 +53,15 @@
   an explicit do-not list: not as root, no ports, do not copy the token
   elsewhere, stop if the checksum differs. The only secret in it is the
   registration token, which can do exactly one thing, add one host to
-  your workspace, and expires in an hour. The prompt is versioned and
+  you (a host is the person's, not a workspace's — note 09), and
+  expires in an hour. The prompt is versioned and
   served by the control plane so a runner release can change steps and
   checksums without a web deploy.
 - Screen manifests classify each pane as working, blocked, done, idle,
   or unknown (note 03 §1). Codex manifest first.
 - Workspaces: on session create, ensure the project's bare store
-  `~/oppenheimer-ai/projects/<project>/repos/<owner>--<repo>.git` exists
+  `~/oppenheimer-ai/workspaces/<org>/projects/<project>/repos/<store>.git`
+  (the store name is frozen on the repository row) exists
   and is fetched, write the `.oppenheimer` marker into
   `sessions/<slug>/` **before** any setup runs, then `git worktree add`
   each checkout into `sessions/<slug>/<dir>` at its chosen branch. A
@@ -77,6 +79,12 @@
 - Agent launch: `claude` from the host's own installation and login,
   in the worktree, inside tmux. The login URL it prints is detected and
   sent to the browser as a button.
+- First prompt: the runner reads the first user message from the
+  agent's own transcript (Claude Code under `~/.claude/projects/`, keyed
+  by cwd; Codex under `~/.codex/sessions/`), never from the PTY, and
+  sends it once as a `prompt.first` event of at most 2 KB. The control
+  plane names the session from it (note 09). Event idempotency keys are
+  `<runId>:<n>`, with `runId` minted at process start.
 - Deferred to the VM slice: guest agent, vsock, libvirt lifecycle,
   sleep tiers, account volumes, capacity gate.
 

@@ -131,3 +131,26 @@ at the bottom of this file.
   leaves the worktrees on disk and `DELETE` closes, refusing when work
   is unpushed and relaying git's refusal verbatim. No open questions
   remain in note 09.
+- 2026-09-19: **a host belongs to a person; workspaces borrow it.**
+  Reverses the 2026-09-18 line above: `host` loses `organizationId`
+  and keeps `ownerUserId`, scoped own-or-grant, because Better Auth
+  hangs every device-and-login table off `user`, and because the case
+  that matters — one person, a personal and a company workspace, one
+  laptop — pairs the machine once. The Claude login on that machine is
+  the person's too, so host and login sit on one axis; several logins
+  per machine are the accounts slice (note 06, `CLAUDE_CONFIG_DIR`, as
+  Orca and OpenClaw do it), not the MVP. The layout gains
+  `workspaces/<organization.slug>/` above `projects/`. Three more
+  decisions: **one API replica** for now (`connectionEpoch` and
+  `connectedReplicaId` gone; the fence is a named slice in `relay/`);
+  **sessions are named from the first prompt** by `claude-haiku-4-5`
+  behind a port, with an opaque minted slug (`bold-otter-3f9a7k`) as
+  directory, branch and fallback name; **each checkout picks a base
+  branch** and the working branch is always
+  `oppenheimer/<project>/<session>`. The review's eleven act-on
+  findings are folded into 09: composite `(organizationId, …)` keys,
+  `removedAt` on repositories and checkouts, a frozen
+  `storeDirectoryName`, `Idempotency-Key` on create, `<runId>:<n>`
+  runner keys, the redeem-and-insert transaction with a fingerprint
+  retry, gateways in `relay/infrastructure/` that guard themselves in
+  the handshake, and three GitHub webhooks instead of one.
