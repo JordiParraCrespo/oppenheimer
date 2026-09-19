@@ -28,8 +28,10 @@ what a full run looked like and steal a trick, not a target inventory.
 ## 2026-09-19: the second sync
 
 - The export moved under the port. Two later commits reworked the
-  artboards without touching `_ds/`; the audit that mapped them is
-  `product/versions/mvp/design/audit-2026-09.md`. Diff the artboards
+  artboards without touching `_ds/`; the walk that mapped them is
+  recorded in the MVP decision log (2026-09-19) and in 00/05/08, not in
+  a separate audit file: the review of PR #20 rightly refused a third
+  spec beside the notes and the export. Diff the artboards
   against the previous sync before re-rendering: most of the delta was in
   markup the shooter cannot see (search rows, a multi-select, a pane swap).
 - The shooter's `page.route` for vendored CDN scripts never matches when

@@ -4,9 +4,9 @@ The Claude Design canvas export for the MVP, dropped in verbatim. Open
 [`version1/Flow.dc.html`](version1/Flow.dc.html) in a browser: it is the index,
 with every screen framed live and linked by name.
 
-The screens are the visual counterpart of [`../05-screens.md`](../05-screens.md);
-that note remains the written spec and has not been reconciled with these frames
-yet.
+The screens are the visual counterpart of [`../05-screens.md`](../05-screens.md),
+which is the written spec; the two were reconciled on 2026-09-19 (see the
+decision log in [`../README.md`](../README.md)).
 
 ## Screens
 
@@ -52,12 +52,6 @@ canvas, sidebar and terminal sit within a few percent of each other instead.
 The one-line `base` constant at the top of that file is what points the
 artboards at `../_ds/<folder>`; the layout here already matches it.
 
-## Audits
-
-- [`audit-2026-09.md`](audit-2026-09.md) — what the September syncs (PRs #18
-  and #19) changed screen by screen, mapped onto the ported inventory, with
-  the build list and the open decisions.
-
 ## Notes
 
 - This tree is a design export, not application code. It is excluded from Biome
@@ -66,10 +60,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `packages/frontend/design-system/web` (`src/styles/globals.css` and the components
   listed in `apps/web-showcase/src/lib/toc.ts`), using this folder's version-1
   dark ramp rather than the system's true black. The artboards here remain the
-  design record; the showcase is the rendered one. The September syncs
-  (searchable scope pickers, the multi-repo branch pane, the Add host dialog,
-  CreateWorkspace and Ready) are ported per `audit-2026-09.md`; the agent
-  marks in the package come from the vendors' brand assets, not from
-  `version1/assets/agents/`.
+  design record; the showcase is the rendered one. The agent marks in the
+  package are inline SVGs from the vendors' brand assets, not the PNG copies
+  in `version1/assets/agents/`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
