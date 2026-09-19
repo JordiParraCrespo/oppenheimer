@@ -5,24 +5,30 @@ import { PROTOCOL_VERSION } from './version';
 /**
  * Emit the link's JSON Schema from the Zod union.
  *
- * This is the one seam where the wire leaves TypeScript: the committed
- * `protocol-schema/protocol.schema.json` is what the Go structs in
- * `packages/go/protocol` are generated from (runner slice R2). One source, two
- * languages, no hand-written twin — which is what open question 1 of
- * `product/versions/mvp/01-protocol.md` was asking for.
+ * **Build-only.** This module is not re-exported from `./index.ts`: the emitter
+ * runs as part of `pnpm --filter @oppenheimer/shared build`, which writes
+ * `protocol-schema/protocol.schema.json`, and nothing at runtime should pull
+ * `z.toJSONSchema` in behind it.
  *
- * `io: 'input'` because the schema describes what a peer may **send**: it is
- * what a defaulted field looks like before the default applies.
- * `unrepresentable: 'any'` because two constraints genuinely have no JSON
- * Schema form — the 8 KB cap on an event payload is a refinement, and a
- * validator that cannot express it must not refuse the whole document over it.
- * Both stay enforced by the Zod parse on the control plane.
+ * The artifact is committed because the Go structs are generated from it, so a
+ * wire change is a reviewable diff. The emission is wired into `build` rather
+ * than a separate script precisely so it cannot be the step someone forgets.
+ *
+ * `io: 'input'` because the schema describes what a peer may **send**: it is what
+ * a defaulted field looks like before the default applies. `reused: 'ref'` puts
+ * a schema used by more than one message — the session snapshot — under `$defs`
+ * once and `$ref`s it, so a field added to it cannot land in `hello` and miss
+ * `heartbeat`.
+ *
+ * There is no `unrepresentable` escape hatch any more: the one constraint that
+ * used to need it, the 8 KB cap on an event payload, is now `maxLength` on a JSON
+ * string and survives the trip.
  */
 export function toProtocolJsonSchema(): Record<string, unknown> {
   const emitted = z.toJSONSchema(protocolMessageSchema, {
     target: 'draft-2020-12',
     io: 'input',
-    unrepresentable: 'any',
+    reused: 'ref',
   });
 
   return {

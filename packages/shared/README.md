@@ -7,16 +7,22 @@ of duplicating them per app.
 
 ## What's inside
 
-| Export path                 | Contents                                                                                                                                |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `@oppenheimer/shared`             | Re-exports everything below                                                                                                             |
-| `@oppenheimer/shared/schemas`     | Zod schemas — the source of truth for request/response DTOs                                                                             |
-| `@oppenheimer/shared/types`       | TypeScript types: `Role`, `PermissionDefinition`, `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`, `PaginatedResponse<T>` |
-| `@oppenheimer/shared/permissions` | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES` |
-| `@oppenheimer/shared/constants`   | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                 |
-| `@oppenheimer/shared/scopes`      | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES` and the helpers that expand, sort and grant them                    |
-| `@oppenheimer/shared/agents/catalog` | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                            |
-| `@oppenheimer/shared/protocol`    | The runner link's wire vocabulary as Zod, plus `PROTOCOL_VERSION` and the JSON Schema emitter                                            |
+| Export path                          | Contents                                                                                                                                       |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@oppenheimer/shared`                | Re-exports `schemas`, `types`, `constants`, `permissions` and `scopes` — **not** `agents` or `protocol` (see below)                             |
+| `@oppenheimer/shared/schemas`        | Zod schemas — the source of truth for request/response DTOs — plus the shared primitives every schema is built from                             |
+| `@oppenheimer/shared/schemas/*`      | One narrow subpath per schema file (`auth`, `admin`, `profile`, `organization`, `role`, `host`, `project`, `session`, `github`)                  |
+| `@oppenheimer/shared/types`          | `Role`, `PaginationParams`, `PaginatedResponse<T>`, the deployment/client capability catalogs and the RFC 7807 problem-details helpers           |
+| `@oppenheimer/shared/constants`      | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                         |
+| `@oppenheimer/shared/permissions`    | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES`  |
+| `@oppenheimer/shared/scopes`         | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES`, and the helpers that expand, sort, compare and grant them       |
+| `@oppenheimer/shared/agents`         | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                                         |
+| `@oppenheimer/shared/protocol`       | The runner link's wire vocabulary as Zod: `protocolMessageSchema`, the per-message schemas, the hint sets, and `PROTOCOL_VERSION`               |
+
+`agents` and `protocol` are reachable **only** through their subpaths. The root
+barrel is not tree-shakeable in the CJS build, so everything it re-exports lands
+whole in the browser bundle; keeping the agent catalog and the wire protocol out
+of it is what stops `apps/web` paying for them.
 
 ## Usage
 
@@ -45,17 +51,20 @@ import { PAGINATION } from "@oppenheimer/shared/constants";
 ## Scripts
 
 ```bash
-pnpm build           # tsc -> dist
-pnpm build:protocol  # build, then emit protocol-schema/protocol.schema.json from the Zod union
-pnpm dev             # tsc --watch
-pnpm lint            # biome check src/
+pnpm build   # tsc -> dist, then emit protocol-schema/protocol.schema.json
+pnpm dev     # tsc --watch
+pnpm lint    # biome check src/
 ```
 
-`protocol-schema/protocol.schema.json` is **generated and committed**. It is what
-the Go structs in `packages/go/protocol` are generated from, so a wire change
-shows up as a reviewable diff in it; the spec in `src/protocol/__tests__/` fails
-if the committed file has drifted from the schemas.
+`protocol-schema/protocol.schema.json` is **generated and committed**, and it is
+emitted by `build` itself rather than by a script somebody has to remember. It is
+what the Go structs for the runner are generated from, so a wire change shows up
+as a reviewable diff in it, and the spec in `src/protocol/__tests__/` fails if the
+committed file has drifted from the schemas.
 
 ## Consumed by
 
-`apps/api`, `packages/frontend`, `packages/frontend/api-client`.
+`apps/api`, `apps/web`, `apps/admin-web`, `apps/mobile`, `apps/admin-mobile`,
+`apps/cli`, `apps/mcp`, `packages/auth`, `packages/backend/core`,
+`packages/backend/authz`, and the four `packages/frontend` products
+(`core`, `consumer`, `admin`, `web`, `mobile`).

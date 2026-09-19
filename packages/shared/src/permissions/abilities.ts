@@ -54,15 +54,15 @@ export const KNOWN_SUBJECTS = [
   'ApiToken',
   'AuditLog',
   'Billing',
-  // The control plane's own nouns. `Host` is person-owned; the other four are
-  // workspace-owned. `Repository` has no table at all — the GitHub App
-  // installation is the boundary and GitHub answers it — but it is a CASL
-  // subject because routes are guarded by subject, not by table.
+  // The control plane's own nouns. `Host` is person-owned; the other three are
+  // workspace-owned. There is deliberately no `Repository` subject: a repository
+  // has no row, and the thing that *is* a row and *does* carry the tenant is the
+  // installation, so the routes that list repositories check `read Installation`.
+  // Two subjects for one boundary is how the conditions stop meaning anything.
   'Host',
   'Project',
   'Session',
   'Installation',
-  'Repository',
   'all',
 ] as const;
 
@@ -314,6 +314,12 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     // absent: a host belongs to the *person* who paired it and workspaces
     // borrow it, so it sits on the `user` role below. The tenant boundary for
     // what runs on a host is `work_session.organizationId`, not the host row.
+    //
+    // These grant the workspace *owner*. A workspace **member** is granted
+    // nothing here and therefore cannot yet read the workspace's projects,
+    // sessions or installations from the seed: there is no `member` entry in
+    // this constant at all, and adding one is its own change with its own
+    // migration. The product surface is not finished by this block.
     {
       action: 'manage',
       subject: 'Project',
@@ -327,15 +333,6 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Installation',
-      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
-    },
-    // `Repository` is not a row anywhere: repositories are listed live through
-    // the installation. The condition therefore only bites at the type level,
-    // which is where route guards check — an instance check would be made
-    // against the installation the repository was reached through.
-    {
-      action: 'manage',
-      subject: 'Repository',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
   ],

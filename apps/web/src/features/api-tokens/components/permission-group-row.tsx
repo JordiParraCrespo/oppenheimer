@@ -2,9 +2,13 @@ import { Badge, ToggleGroup, ToggleGroupItem } from '@oppenheimer/design-system-
 import {
   Building2,
   CreditCard,
+  FolderGit2,
+  GitBranch,
   KeyRound,
+  Laptop,
   Mail,
   Shield,
+  SquareTerminal,
   UserRound,
   Users,
   Workflow,
@@ -26,6 +30,12 @@ const PERMISSION_ICONS: Record<ScopeResource, typeof UserRound> = {
   tokens: KeyRound,
   billing: CreditCard,
   leads: Users,
+  // The control plane. A host is a machine the person owns, which is why it is
+  // a laptop and not a server.
+  hosts: Laptop,
+  projects: FolderGit2,
+  sessions: SquareTerminal,
+  repositories: GitBranch,
 };
 
 /**
@@ -33,12 +43,12 @@ const PERMISSION_ICONS: Record<ScopeResource, typeof UserRound> = {
  *
  * This is where the leaf subscription pays: `useController` here means a click
  * on "Edit" for `tokens` re-renders the tokens row. While the picker held one
- * flat `Scope[]`, the same click re-rendered all eleven rows and their
+ * flat `Scope[]`, the same click re-rendered all fifteen rows and their
  * thirty-three toggles.
  *
  * It takes two booleans rather than the catalog of grantable scopes for the
  * same reason. A row that held the whole array rebuilt a `Set` of it on every
- * render and took a new identity whenever the catalog settled — eleven rows
+ * render and took a new identity whenever the catalog settled — fifteen rows
  * waiting on a list ten of them do not read.
  */
 export function PermissionGroupRow<TFieldValues extends FieldValues>({

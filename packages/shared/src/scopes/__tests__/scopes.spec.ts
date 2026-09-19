@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { defineAbilitiesFromPermissions, SYSTEM_ROLE_PERMISSIONS } from '../../permissions';
+import {
+  defineAbilitiesFromPermissions,
+  KNOWN_ACTIONS,
+  KNOWN_SUBJECTS,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '../../permissions';
 import {
   DEFAULT_OAUTH_SCOPES,
   expandScopes,
@@ -82,18 +87,44 @@ describe('the control plane’s scopes', () => {
     expect(scopesForPolicy({ action: 'read', subject: 'Installation' })).toEqual([
       'repositories:read',
     ]);
-    expect(scopesForPolicy({ action: 'read', subject: 'Repository' })).toEqual([
-      'repositories:read',
-    ]);
     expect(scopesForPolicy({ action: 'create', subject: 'Installation' })).toEqual([
       'repositories:write',
     ]);
   });
 
-  it('puts `attach` behind the write level, so reading a session never opens a PTY', () => {
-    expect(scopesForPolicy({ action: 'attach', subject: 'Session' })).toEqual(['sessions:write']);
+  it('backs the repositories scope with Installation alone — there is no Repository subject', () => {
+    expect(scopesForPolicy({ action: 'read', subject: 'Repository' })).toEqual([]);
+    for (const level of ['read', 'write'] as const) {
+      for (const policy of getPermissionGroup('repositories').levels[level].policies) {
+        expect(policy.subject).toBe('Installation');
+      }
+    }
+  });
+
+  it('opens a terminal with `update Session`, not a fourth verb', () => {
+    expect(scopesForPolicy({ action: 'attach', subject: 'Session' })).toEqual([]);
+    expect(scopesForPolicy({ action: 'update', subject: 'Session' })).toEqual(['sessions:write']);
+    // What keeps a read-only credential off a PTY is the level, not the verb.
     expect(hasScope(['sessions:read'], 'sessions:write')).toBe(false);
     expect(hasScope(['sessions:write'], 'sessions:read')).toBe(true);
+  });
+
+  /**
+   * Scoped to the control plane's four resources on purpose. The same assertion
+   * over the whole catalog fails today on `leads`, whose `Lead` subject was never
+   * added to `KNOWN_SUBJECTS` — a pre-existing gap in a reference module, not
+   * something to fix from here.
+   */
+  it('uses only actions and subjects the seed and the role UI know', () => {
+    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
+      const group = getPermissionGroup(resource);
+      for (const level of SCOPE_ACCESS_LEVELS) {
+        for (const policy of group.levels[level].policies) {
+          expect(KNOWN_ACTIONS).toContain(policy.action);
+          expect(KNOWN_SUBJECTS).toContain(policy.subject);
+        }
+      }
+    }
   });
 
   it('lets a workspace owner grant every workspace-owned resource but not hosts', () => {
@@ -114,7 +145,34 @@ describe('the control plane’s scopes', () => {
     const grantable = grantableScopes(ability);
     expect(grantable).toContain('hosts:read');
     expect(grantable).toContain('hosts:write');
-    expect(grantable).not.toContain('sessions:write');
+  });
+
+  /**
+   * The seed changes exactly two roles, and this is the whole story rather than
+   * half of it. A plain account can grant its own hosts and nothing else new; an
+   * owner can grant the workspace's work but not a machine. There is **no
+   * `member` entry in `SYSTEM_ROLE_PERMISSIONS` at all**, so a teammate invited
+   * into a workspace is granted nothing by the seed — asserted here so the gap
+   * is a recorded fact and not a discovery.
+   */
+  it('tells the three roles apart, and records that `member` is not seeded', () => {
+    const workspaceScopes = ['projects:read', 'sessions:read', 'repositories:read'] as const;
+
+    const user = grantableScopes(
+      defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, { user: { id: 'me' } }),
+    );
+    for (const scope of workspaceScopes) expect(user).not.toContain(scope);
+    expect(user).toContain('hosts:write');
+
+    const owner = grantableScopes(
+      defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.owner, {
+        activeOrganizationId: 'org-1',
+      }),
+    );
+    for (const scope of workspaceScopes) expect(owner).toContain(scope);
+    expect(owner).not.toContain('hosts:write');
+
+    expect(SYSTEM_ROLE_PERMISSIONS.member).toBeUndefined();
   });
 });
 
