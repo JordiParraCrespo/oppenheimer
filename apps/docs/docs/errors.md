@@ -283,7 +283,6 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `PAIR_004` <a id="pair_004" />         | The host key could not be read or written    | 500  |
 | `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
 | `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
-| `PAIR_007` <a id="pair_007" />         | Key rotation needs the control-plane link    | 501  |
 | `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
 | `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
 | `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |

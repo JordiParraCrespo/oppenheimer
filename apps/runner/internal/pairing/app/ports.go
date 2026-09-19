@@ -1,6 +1,6 @@
 // Package app holds the pairing use cases: redeem a registration token, read
-// the identity back, mint a boot token, rotate the key. Every side effect —
-// the files, the network, the signature — is a port.
+// the identity back, mint a boot token. Every side effect — the files, the
+// network, the signature — is a port.
 package app
 
 import (
@@ -43,9 +43,7 @@ type RegisterResponse struct {
 // ControlPlane is the registration endpoint. `Revoke` is the uninstall half:
 // it tells the control plane this host is gone, authenticated by the boot
 // assertion rather than by the spent registration token — which is also how
-// the host names itself, so no id is passed. These two calls are the only HTTP
-// the host agent makes at the control plane; everything else rides the link
-// (product/versions/mvp/10-api-modules-and-data-model.md).
+// the host names itself, so no id is passed.
 type ControlPlane interface {
 	Register(ctx context.Context, baseURL string, req RegisterRequest) (RegisterResponse, error)
 	Revoke(ctx context.Context, baseURL, assertion string) error

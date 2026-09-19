@@ -271,35 +271,6 @@ func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T)
 	}
 }
 
-func TestRotateKeyWaitsForTheControlPlaneLink(t *testing.T) {
-	svc, _, cp := newService(t)
-	register(t, svc)
-	calls := len(cp.Requests)
-
-	_, err := svc.RotateKey(context.Background())
-
-	var prob *problem.Error
-	if !errors.As(err, &prob) || prob.Code != "PAIR_007" {
-		t.Fatalf("err = %v, want PAIR_007", err)
-	}
-	// Rotation used to redeem itself at the register route with a boot JWT in
-	// the token field; that route only ever redeems registration tokens.
-	if len(cp.Requests) != calls {
-		t.Fatalf("requests = %+v, want no call to the register route", cp.Requests)
-	}
-}
-
-func TestRotateKeyOnAnUnpairedHostSaysItIsNotPaired(t *testing.T) {
-	svc, _, _ := newService(t)
-
-	_, err := svc.RotateKey(context.Background())
-
-	var prob *problem.Error
-	if !errors.As(err, &prob) || prob.Code != "PAIR_001" {
-		t.Fatalf("err = %v, want PAIR_001", err)
-	}
-}
-
 func TestSaveIsAtomicEnoughToLeaveNoStrayFiles(t *testing.T) {
 	svc, store, _ := newService(t)
 	register(t, svc)

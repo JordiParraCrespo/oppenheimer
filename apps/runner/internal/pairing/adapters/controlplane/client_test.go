@@ -14,11 +14,9 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// The two paths and the one header are the contract with the API
-// (product/versions/mvp/10-api-modules-and-data-model.md, and R1 in
-// product/versions/mvp/11-api-implementation-plan.md). They are pinned here
-// because a typo in either is a 404 or a 401 nobody sees until a real host
-// pairs.
+// The two paths and the credential are the wire (01-protocol.md,
+// 03-control-plane.md). They are pinned here because a typo in either is a 404
+// or a 401 nobody sees until a real host pairs.
 
 type recorded struct {
 	method string
@@ -74,7 +72,7 @@ func TestRegisterPostsUnderTheApiV1Prefix(t *testing.T) {
 	}
 }
 
-func TestRevokeDeletesHostsSelfWithTheAssertionHeader(t *testing.T) {
+func TestRevokeDeletesHostsSelfWithTheBootJWT(t *testing.T) {
 	client, baseURL, seen := serve(t, http.StatusNoContent, nil)
 
 	if err := client.Revoke(context.Background(), baseURL, "the.boot.jwt"); err != nil {
@@ -84,13 +82,8 @@ func TestRevokeDeletesHostsSelfWithTheAssertionHeader(t *testing.T) {
 	if seen.method != http.MethodDelete || seen.path != "/api/v1/hosts/self" {
 		t.Fatalf("%s %s, want DELETE /api/v1/hosts/self", seen.method, seen.path)
 	}
-	if got := seen.header.Get("X-Oppenheimer-Host-Assertion"); got != "the.boot.jwt" {
-		t.Fatalf("assertion header = %q", got)
-	}
-	// The API's global scopes guard rejects any bearer it does not recognise,
-	// so the assertion must never travel as one.
-	if got := seen.header.Get("Authorization"); got != "" {
-		t.Fatalf("Authorization = %q, want the assertion header instead", got)
+	if got := seen.header.Get("Authorization"); got != "Bearer the.boot.jwt" {
+		t.Fatalf("Authorization = %q, want the boot JWT as the bearer", got)
 	}
 }
 
@@ -138,5 +131,46 @@ func TestRegisterReportsAnUnreachableControlPlane(t *testing.T) {
 	var prob *problem.Error
 	if !errors.As(err, &prob) || prob.Code != "PAIR_006" {
 		t.Fatalf("err = %v, want PAIR_006", err)
+	}
+}
+
+func TestRevokeRefusesACrossOriginRedirectAndCarriesNoCredentialToIt(t *testing.T) {
+	elsewhere := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("the redirect target was called with Authorization %q", r.Header.Get("Authorization"))
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(elsewhere.Close)
+	controlPlane := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, elsewhere.URL+"/api/v1/hosts/self", http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(controlPlane.Close)
+	client := controlplane.New(controlplane.Options{HTTP: controlPlane.Client()})
+
+	err := client.Revoke(context.Background(), controlPlane.URL, "the.boot.jwt")
+
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "PAIR_006" {
+		t.Fatalf("err = %v, want PAIR_006 for a redirect off the control plane", err)
+	}
+}
+
+func TestRevokeFollowsASameOriginRedirect(t *testing.T) {
+	var seen []string
+	controlPlane := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.URL.Path+" "+r.Header.Get("Authorization"))
+		if r.URL.Path == "/api/v1/hosts/self" {
+			http.Redirect(w, r, "/api/v1/hosts/self/", http.StatusTemporaryRedirect)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	t.Cleanup(controlPlane.Close)
+	client := controlplane.New(controlplane.Options{HTTP: controlPlane.Client()})
+
+	if err := client.Revoke(context.Background(), controlPlane.URL, "the.boot.jwt"); err != nil {
+		t.Fatalf("a redirect within the control plane is ordinary: %v", err)
+	}
+	if len(seen) != 2 || seen[1] != "/api/v1/hosts/self/ Bearer the.boot.jwt" {
+		t.Fatalf("requests = %v", seen)
 	}
 }

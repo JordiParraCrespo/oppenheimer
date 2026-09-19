@@ -18,9 +18,7 @@ type ControlPlane struct {
 	Response app.RegisterResponse
 	Err      error
 	Requests []app.RegisterRequest
-	// Revoked records the assertion each uninstall presented: the host names
-	// itself by the subject of that token, so there is no id to record.
-	Revoked []string
+	Revoked  []string
 }
 
 // New returns a control plane that accepts one registration.

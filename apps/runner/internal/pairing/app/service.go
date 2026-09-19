@@ -142,23 +142,6 @@ func (s *Service) BootToken(_ context.Context) (string, error) {
 	return token, nil
 }
 
-// RotateKey is not available yet, and says so instead of guessing. Rotation
-// (F8) is a runner-initiated frame on the link, signed by the current key and
-// carrying the next public key, acknowledged before the runner switches
-// (product/versions/mvp/10-api-modules-and-data-model.md), and that link is
-// the next slice. What stood here sent the boot JWT in the register route's
-// `token` field, a route that redeems registration tokens and would reject a
-// JWT — a rotation that looks like it works and leaves the host on its old
-// key is worse than one that refuses.
-func (s *Service) RotateKey(context.Context) (domain.Identity, error) {
-	if _, err := s.Identity(); err != nil {
-		return domain.Identity{}, err
-	}
-	return domain.Identity{}, domain.ErrRotationNeedsLink.WithDetail(
-		"the host key rotates over the control-plane link, which this build does not have yet; " +
-			"re-pair with `runner register --force` to move this host onto a new key")
-}
-
 // SetChannel and SetPin are the two settings a user changes after pairing.
 func (s *Service) SetChannel(channel domain.Channel) (domain.Identity, error) {
 	if !channel.Valid() {
