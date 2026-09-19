@@ -44,7 +44,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       publicKey: registration.publicKey,
       publicKeyFingerprint: registration.publicKeyFingerprint,
       hostname: facts?.hostname ?? null,
-      os: facts?.os ?? null,
+      os: facts?.platform ?? null,
       arch: facts?.arch ?? null,
       runnerVersion: null,
       capabilities: facts ? { ...facts } : null,

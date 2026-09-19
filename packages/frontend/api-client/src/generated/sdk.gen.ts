@@ -2,9 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, ConnectData, ConnectErrors, ConnectResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectData, DisconnectErrors, DisconnectResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, List8Data, List8Errors, List8Responses, ListData, ListErrors, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, UnbanData, UnbanErrors, UnbanResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, ListData, ListErrors, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, UnbanData, UnbanErrors, UnbanResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListData, ListErrors, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, ConnectData, ConnectErrors, ConnectResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectData, DisconnectErrors, DisconnectResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, LeaveData, LeaveErrors, LeaveResponses, List10Data, List10Errors, List10Responses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, List8Data, List8Errors, List8Responses, List9Data, List9Errors, List9Responses, ListData, ListErrors, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -695,13 +693,6 @@ export const removeMember = <ThrowOnError extends boolean = false>(options: Opti
 export const list6 = <ThrowOnError extends boolean = false>(options?: Options<List6Data, ThrowOnError>): RequestResult<List6Responses, List6Errors, ThrowOnError> => (options?.client ?? client).get<List6Responses, List6Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/installations',
- * List the hosts the caller can reach
- *
- * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
- */
-export const list6 = <ThrowOnError extends boolean = false>(options?: Options<List6Data, ThrowOnError>): RequestResult<List6Responses, List6Errors, ThrowOnError> => (options?.client ?? client).get<List6Responses, List6Errors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/hosts',
     ...options
 });
 
@@ -713,11 +704,63 @@ export const list6 = <ThrowOnError extends boolean = false>(options?: Options<Li
 export const connect = <ThrowOnError extends boolean = false>(options: Options<ConnectData, ThrowOnError>): RequestResult<ConnectResponses, ConnectErrors, ThrowOnError> => (options.client ?? client).post<ConnectResponses, ConnectErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/installations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the repositories an installation covers
+ *
+ * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
+ */
+export const list7 = <ThrowOnError extends boolean = false>(options: Options<List7Data, ThrowOnError>): RequestResult<List7Responses, List7Errors, ThrowOnError> => (options.client ?? client).get<List7Responses, List7Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}/repositories',
+    ...options
+});
+
+/**
+ * List a repository’s branches
+ *
+ * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
+ */
+export const list8 = <ThrowOnError extends boolean = false>(options: Options<List8Data, ThrowOnError>): RequestResult<List8Responses, List8Errors, ThrowOnError> => (options.client ?? client).get<List8Responses, List8Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches',
+    ...options
+});
+
+/**
+ * Disconnect a GitHub App installation
+ *
+ * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
+ */
+export const disconnect = <ThrowOnError extends boolean = false>(options: Options<DisconnectData, ThrowOnError>): RequestResult<DisconnectResponses, DisconnectErrors, ThrowOnError> => (options.client ?? client).delete<DisconnectResponses, DisconnectErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}',
+    ...options
+});
+
+/**
+ * List the hosts the caller can reach
+ *
+ * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
+ */
+export const list9 = <ThrowOnError extends boolean = false>(options?: Options<List9Data, ThrowOnError>): RequestResult<List9Responses, List9Errors, ThrowOnError> => (options?.client ?? client).get<List9Responses, List9Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts',
+    ...options
+});
+
+/**
  * List the caller’s pairing tokens
  *
  * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
  */
-export const list7 = <ThrowOnError extends boolean = false>(options?: Options<List7Data, ThrowOnError>): RequestResult<List7Responses, List7Errors, ThrowOnError> => (options?.client ?? client).get<List7Responses, List7Errors, ThrowOnError>({
+export const list10 = <ThrowOnError extends boolean = false>(options?: Options<List10Data, ThrowOnError>): RequestResult<List10Responses, List10Errors, ThrowOnError> => (options?.client ?? client).get<List10Responses, List10Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts/pairing',
     ...options
@@ -739,13 +782,6 @@ export const mint = <ThrowOnError extends boolean = false>(options: Options<Mint
 });
 
 /**
- * List the repositories an installation covers
- *
- * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
- */
-export const list7 = <ThrowOnError extends boolean = false>(options: Options<List7Data, ThrowOnError>): RequestResult<List7Responses, List7Errors, ThrowOnError> => (options.client ?? client).get<List7Responses, List7Errors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/installations/{id}/repositories',
  * Revoke a pairing token
  *
  * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
@@ -757,13 +793,6 @@ export const revoke3 = <ThrowOnError extends boolean = false>(options: Options<R
 });
 
 /**
- * List a repository’s branches
- *
- * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
- */
-export const list8 = <ThrowOnError extends boolean = false>(options: Options<List8Data, ThrowOnError>): RequestResult<List8Responses, List8Errors, ThrowOnError> => (options.client ?? client).get<List8Responses, List8Errors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches',
  * Redeem a registration token and become a host
  *
  * Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.
@@ -789,13 +818,6 @@ export const uninstall = <ThrowOnError extends boolean = false>(options?: Option
 });
 
 /**
- * Disconnect a GitHub App installation
- *
- * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
- */
-export const disconnect = <ThrowOnError extends boolean = false>(options: Options<DisconnectData, ThrowOnError>): RequestResult<DisconnectResponses, DisconnectErrors, ThrowOnError> => (options.client ?? client).delete<DisconnectResponses, DisconnectErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/installations/{id}',
  * Unpair a host
  *
  * Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.

@@ -75,7 +75,7 @@ function existingHost(fingerprint: string, publicKey: string) {
 
 const FACTS = {
   hostname: 'devbox.local',
-  os: 'macos',
+  platform: 'macos',
   arch: 'arm64',
   tools: { git: '2.51.0', tmux: '3.5a', claude: null },
   agents: [],

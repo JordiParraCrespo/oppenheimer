@@ -181,11 +181,20 @@ describe('Hosts & pairing (integration)', () => {
   }
 
   const FACTS = {
-    hostname: 'devbox.local',
-    os: 'macos',
+    platform: 'macos',
     arch: 'arm64',
-    tools: { git: '2.51.0', tmux: '3.5a' },
-    agents: [{ id: 'claude-code', version: '2.1.0' }],
+    hostname: 'devbox.local',
+    user: 'jordi',
+    home: '/Users/jordi',
+    root: false,
+    tools: [
+      { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
+      { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
+      { name: 'claude', path: '/opt/homebrew/bin/claude', version: '2.1.0', required: false },
+    ],
+    workspacePath: '/Users/jordi/oppenheimer-ai',
+    diskFreeBytes: 120_000_000_000,
+    runnerVersion: '0.1.0',
   };
 
   function register(secret: string, key: ReturnType<typeof hostKey>, name = 'detected-name') {

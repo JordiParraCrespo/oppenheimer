@@ -616,36 +616,6 @@ export type InstallationResponseDto = {
      * Set while GitHub reports the installation suspended; nothing resolves until it clears.
      */
     suspendedAt?: string | null;
-export type HostResponseDto = {
-    id: string;
-    /**
-     * The person who paired this machine. A host has no workspace.
-     */
-    ownerUserId: string;
-    name: string;
-    hostname?: string | null;
-    os?: string | null;
-    arch?: string | null;
-    runnerVersion?: string | null;
-    /**
-     * What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.
-     */
-    capabilities?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.
-     */
-    publicKeyFingerprint: string;
-    /**
-     * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
-     */
-    online: boolean;
-    lastSeenAt?: string | null;
-    /**
-     * When the host was unpaired. The row is kept so its history survives.
-     */
-    unpairedAt?: string | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -688,6 +658,42 @@ export type RepositoryBranchResponseDto = {
      * Whether this is the repository’s default branch.
      */
     isDefault: boolean;
+};
+
+export type HostResponseDto = {
+    id: string;
+    /**
+     * The person who paired this machine. A host has no workspace.
+     */
+    ownerUserId: string;
+    name: string;
+    hostname?: string | null;
+    os?: string | null;
+    arch?: string | null;
+    runnerVersion?: string | null;
+    /**
+     * What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.
+     */
+    capabilities?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.
+     */
+    publicKeyFingerprint: string;
+    /**
+     * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
+     */
+    online: boolean;
+    lastSeenAt?: string | null;
+    /**
+     * When the host was unpaired. The row is kept so its history survives.
+     */
+    unpairedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type PairingTokenResponseDto = {
     id: string;
     /**
@@ -761,16 +767,22 @@ export type RegisterHostRequest = {
     name: string;
     publicKey: string;
     facts?: {
-        hostname: string;
-        os: string;
+        platform: 'macos' | 'debian' | 'ubuntu' | 'linux' | 'unsupported';
+        osVersion?: string;
         arch: string;
-        tools: {
-            [key: string]: string | null;
-        };
-        agents: Array<{
-            id: 'claude-code' | 'codex';
-            version: string | null;
-        }>;
+        hostname: string;
+        user: string;
+        home: string;
+        root: boolean;
+        tools: Array<{
+            name: string;
+            path?: string;
+            version?: string;
+            required: boolean;
+        }> | null;
+        workspacePath: string;
+        diskFreeBytes: number;
+        runnerVersion: string;
     };
 };
 
@@ -899,6 +911,10 @@ export type CapabilitiesResponseDto = {
      * Stripe billing is configured.
      */
     stripe_billing: boolean;
+    /**
+     * The sessions GitHub App is configured.
+     */
+    github_app: boolean;
 };
 
 export type GetSettingsData = {
@@ -3137,7 +3153,6 @@ export type List6Data = {
     path?: never;
     query?: never;
     url: '/api/v1/installations';
-    url: '/api/v1/hosts';
 };
 
 export type List6Errors = {
@@ -3155,7 +3170,6 @@ export type List6Error = List6Errors[keyof List6Errors];
 
 export type List6Responses = {
     200: Array<InstallationResponseDto>;
-    200: Array<HostResponseDto>;
 };
 
 export type List6Response = List6Responses[keyof List6Responses];
@@ -3205,11 +3219,6 @@ export type List7Data = {
     };
     query?: never;
     url: '/api/v1/installations/{id}/repositories';
-export type List7Data = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/v1/hosts/pairing';
 };
 
 export type List7Errors = {
@@ -3243,7 +3252,6 @@ export type List7Error = List7Errors[keyof List7Errors];
 
 export type List7Responses = {
     200: Array<RepositoryResponseDto>;
-    200: Array<PairingTokenResponseDto>;
 };
 
 export type List7Response = List7Responses[keyof List7Responses];
@@ -3259,14 +3267,6 @@ export type List8Data = {
 };
 
 export type List8Errors = {
-export type MintData = {
-    body: MintPairingTokenRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/hosts/pairing';
-};
-
-export type MintErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3289,7 +3289,6 @@ export type MintErrors = {
     502: ProblemDetailsDto;
     /**
      * GITHUB_002 — The GitHub App is not configured on this server
-     * HOSTS_004 — This deployment has no runner release configured
      */
     503: ProblemDetailsDto;
 };
@@ -3303,6 +3302,114 @@ export type List8Responses = {
 export type List8Response = List8Responses[keyof List8Responses];
 
 export type DisconnectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}';
+};
+
+export type DisconnectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DisconnectError = DisconnectErrors[keyof DisconnectErrors];
+
+export type DisconnectResponses = {
+    /**
+     * The installation is no longer connected.
+     */
+    204: void;
+};
+
+export type DisconnectResponse = DisconnectResponses[keyof DisconnectResponses];
+
+export type List9Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts';
+};
+
+export type List9Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type List9Error = List9Errors[keyof List9Errors];
+
+export type List9Responses = {
+    200: Array<HostResponseDto>;
+};
+
+export type List9Response = List9Responses[keyof List9Responses];
+
+export type List10Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
+};
+
+export type List10Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type List10Error = List10Errors[keyof List10Errors];
+
+export type List10Responses = {
+    200: Array<PairingTokenResponseDto>;
+};
+
+export type List10Response = List10Responses[keyof List10Responses];
+
+export type MintData = {
+    body: MintPairingTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
+};
+
+export type MintErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_004 — This deployment has no runner release configured
+     */
+    503: ProblemDetailsDto;
+};
+
 export type MintError = MintErrors[keyof MintErrors];
 
 export type MintResponses = {
@@ -3317,10 +3424,6 @@ export type Revoke3Data = {
         id: string;
     };
     query?: never;
-    url: '/api/v1/installations/{id}';
-};
-
-export type DisconnectErrors = {
     url: '/api/v1/hosts/pairing/{id}';
 };
 
@@ -3334,17 +3437,11 @@ export type Revoke3Errors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_001 — GitHub installation not found
      * HOSTS_002 — Pairing token not found
      */
     404: ProblemDetailsDto;
 };
 
-export type DisconnectError = DisconnectErrors[keyof DisconnectErrors];
-
-export type DisconnectResponses = {
-    /**
-     * The installation is no longer connected.
 export type Revoke3Error = Revoke3Errors[keyof Revoke3Errors];
 
 export type Revoke3Responses = {
@@ -3354,7 +3451,6 @@ export type Revoke3Responses = {
     204: void;
 };
 
-export type DisconnectResponse = DisconnectResponses[keyof DisconnectResponses];
 export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
 
 export type RegisterData = {
