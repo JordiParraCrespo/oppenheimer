@@ -15,7 +15,26 @@ describe('resolveCapabilities', () => {
       s3_storage: false,
       email_delivery: false,
       github_app: false,
+      hosts: false,
     });
+  });
+
+  it('only reports hosts once a deployment can actually pair a machine', () => {
+    // Two of the three is not a working pairing flow: without the install URL
+    // there is no command to print, and without the signing key there is no
+    // fingerprint for the runner to pin.
+    const partial = configWith({
+      'hosts.signingKey': 'key',
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+    });
+    expect(resolveCapabilities(partial).hosts).toBe(false);
+
+    const complete = configWith({
+      'hosts.signingKey': 'key',
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+      'hosts.installUrl': 'https://releases.example.com/install.sh',
+    });
+    expect(resolveCapabilities(complete).hosts).toBe(true);
   });
 
   it('requires both halves of an OAuth credential pair', () => {

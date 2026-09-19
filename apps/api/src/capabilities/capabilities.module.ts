@@ -53,6 +53,14 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('storage.s3AccessKeyId') &&
           configService.get('storage.s3SecretAccessKey'),
       ),
+    // A machine can only pair with a deployment that has somewhere to download
+    // the runner from and a key of its own to be pinned by, so all three are
+    // required together; see `hosts.config.ts`.
+    hosts: Boolean(
+      configService.get('hosts.signingKey') &&
+        configService.get('hosts.releaseBaseUrl') &&
+        configService.get('hosts.installUrl'),
+    ),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

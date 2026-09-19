@@ -8,6 +8,8 @@ import {
   hashApiTokenSecret,
   isApiTokenSecret,
 } from '../../api-tokens/domain/api-token-secret.factory';
+import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
+import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { UserRepositoryPort } from '../../users/database/user.repository.port';
 import { USER_REPOSITORY } from '../../users/user.di-tokens';
 import { CREDENTIAL_VERIFIER } from '../auth.di-tokens';
@@ -27,13 +29,19 @@ interface WithResolution {
 /**
  * Turns the credential on a request into a {@link ScopeContext}.
  *
- * Three kinds of credential reach the API:
+ * Four kinds of credential reach the API:
  *
  * - **Browser session cookie** — no scope context; the user's roles govern.
  * - **API token** (`oppenheimer_pat_…`, in `Authorization: Bearer` or `x-api-key`)
  *   — looked up by digest, checked for revocation, expiry and source IP.
  * - **OAuth access token** — verified by Better Auth's MCP plugin, its granted
  *   scopes carried through.
+ * - **A host's boot assertion** — an EdDSA JWS a runner signs with the key it
+ *   registered, presented as an ordinary bearer because that is what the
+ *   protocol says it is (`product/versions/mvp/03-control-plane.md`). It yields
+ *   no scope context at all: there is no person behind it, so there is nothing
+ *   for scopes or roles to narrow. It is marked on the request instead, as
+ *   `request.hostPrincipal`, and `HostPrincipalGuard` is what admits it.
  *
  * A bearer credential that cannot be resolved is rejected rather than ignored:
  * silently falling back to a cookie would let a stale token act with the
@@ -51,6 +59,8 @@ export class CredentialScopeResolver {
     private readonly users: UserRepositoryPort,
     @Inject(CREDENTIAL_VERIFIER)
     private readonly credentials: CredentialVerifierPort,
+    @Inject(HOST_ASSERTION)
+    private readonly hostAssertions: HostAssertionPort,
   ) {}
 
   /** Resolve (once per request) the scoped credential, or `null` for a session. */
@@ -67,7 +77,32 @@ export class CredentialScopeResolver {
     if (isApiTokenSecret(presented)) {
       return this.resolveApiToken(presented, request);
     }
+    if (this.hostAssertions.recognises(presented)) {
+      return this.resolveHostAssertion(presented, request);
+    }
     return this.resolveOAuthToken(request);
+  }
+
+  /**
+   * A machine authenticating as itself.
+   *
+   * The shape is unmistakable — a compact JWS whose header says `EdDSA`, which
+   * neither an API token nor a Better Auth session token can be — so routing on
+   * it takes nothing away from the other three kinds. Verification (signature,
+   * audience, expiry, replay) belongs to the hosts module and is reached through
+   * its port; a failure throws from there with that module's opaque rejection.
+   *
+   * It resolves to `null`, not to a `ScopeContext`: a host has no scopes to
+   * narrow and no owner to act as. The principal goes on the request, where
+   * `ScopesGuard` and `HostPrincipalGuard` read it.
+   */
+  private async resolveHostAssertion(
+    assertion: string,
+    request: ScopedRequest,
+  ): Promise<ScopeContext | null> {
+    const { hostId } = await this.hostAssertions.verify(assertion);
+    request.hostPrincipal = { hostId };
+    return null;
   }
 
   /** The raw credential string, from either supported header. */

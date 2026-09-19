@@ -5,6 +5,10 @@
  * a missing key removes the capability — it never prevents the app from
  * booting. Required settings (database, `BETTER_AUTH_SECRET`) are the
  * opposite: they fail fast at boot and are not capabilities.
+ *
+ * `hosts` is the control plane's: without the runner release settings and the
+ * signing key there is nothing to hand a machine that wants to pair, so the
+ * host routes answer "not configured" and the rest of the API is unaffected.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -13,6 +17,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   's3_storage',
   'email_delivery',
   'github_app',
+  'hosts',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];

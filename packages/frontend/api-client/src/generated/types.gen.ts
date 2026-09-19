@@ -616,6 +616,36 @@ export type InstallationResponseDto = {
      * Set while GitHub reports the installation suspended; nothing resolves until it clears.
      */
     suspendedAt?: string | null;
+export type HostResponseDto = {
+    id: string;
+    /**
+     * The person who paired this machine. A host has no workspace.
+     */
+    ownerUserId: string;
+    name: string;
+    hostname?: string | null;
+    os?: string | null;
+    arch?: string | null;
+    runnerVersion?: string | null;
+    /**
+     * What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.
+     */
+    capabilities?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.
+     */
+    publicKeyFingerprint: string;
+    /**
+     * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
+     */
+    online: boolean;
+    lastSeenAt?: string | null;
+    /**
+     * When the host was unpaired. The row is kept so its history survives.
+     */
+    unpairedAt?: string | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -658,6 +688,113 @@ export type RepositoryBranchResponseDto = {
      * Whether this is the repository’s default branch.
      */
     isDefault: boolean;
+export type PairingTokenResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+};
+
+export type MintPairingTokenRequest = {
+    name: string;
+};
+
+export type MintedPairingTokenResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+    /**
+     * The one-line command that installs and registers the runner on the machine.
+     */
+    installCommand: string;
+    /**
+     * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
+     */
+    agentPrompt: string;
+};
+
+export type RegisterHostRequest = {
+    token: string;
+    name: string;
+    publicKey: string;
+    facts?: {
+        hostname: string;
+        os: string;
+        arch: string;
+        tools: {
+            [key: string]: string | null;
+        };
+        agents: Array<{
+            id: 'claude-code' | 'codex';
+            version: string | null;
+        }>;
+    };
+};
+
+export type HostRegistrationResponseDto = {
+    /**
+     * The host this machine now is.
+     */
+    hostId: string;
+    /**
+     * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
+     */
+    fingerprint: string;
+    /**
+     * The release channel this host follows.
+     */
+    channel?: string;
+    /**
+     * Where the runner fetches signed release artifacts from.
+     */
+    releaseBaseUrl?: string;
+};
+
+export type RenameHostRequest = {
+    name: string;
 };
 
 export type AdminUserResponseDto = {
@@ -3000,6 +3137,7 @@ export type List6Data = {
     path?: never;
     query?: never;
     url: '/api/v1/installations';
+    url: '/api/v1/hosts';
 };
 
 export type List6Errors = {
@@ -3017,6 +3155,7 @@ export type List6Error = List6Errors[keyof List6Errors];
 
 export type List6Responses = {
     200: Array<InstallationResponseDto>;
+    200: Array<HostResponseDto>;
 };
 
 export type List6Response = List6Responses[keyof List6Responses];
@@ -3066,6 +3205,11 @@ export type List7Data = {
     };
     query?: never;
     url: '/api/v1/installations/{id}/repositories';
+export type List7Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
 };
 
 export type List7Errors = {
@@ -3099,6 +3243,7 @@ export type List7Error = List7Errors[keyof List7Errors];
 
 export type List7Responses = {
     200: Array<RepositoryResponseDto>;
+    200: Array<PairingTokenResponseDto>;
 };
 
 export type List7Response = List7Responses[keyof List7Responses];
@@ -3114,6 +3259,14 @@ export type List8Data = {
 };
 
 export type List8Errors = {
+export type MintData = {
+    body: MintPairingTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
+};
+
+export type MintErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3136,6 +3289,7 @@ export type List8Errors = {
     502: ProblemDetailsDto;
     /**
      * GITHUB_002 — The GitHub App is not configured on this server
+     * HOSTS_004 — This deployment has no runner release configured
      */
     503: ProblemDetailsDto;
 };
@@ -3149,6 +3303,15 @@ export type List8Responses = {
 export type List8Response = List8Responses[keyof List8Responses];
 
 export type DisconnectData = {
+export type MintError = MintErrors[keyof MintErrors];
+
+export type MintResponses = {
+    201: MintedPairingTokenResponseDto;
+};
+
+export type MintResponse = MintResponses[keyof MintResponses];
+
+export type Revoke3Data = {
     body?: never;
     path: {
         id: string;
@@ -3158,6 +3321,10 @@ export type DisconnectData = {
 };
 
 export type DisconnectErrors = {
+    url: '/api/v1/hosts/pairing/{id}';
+};
+
+export type Revoke3Errors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3168,6 +3335,7 @@ export type DisconnectErrors = {
     403: ProblemDetailsDto;
     /**
      * GITHUB_001 — GitHub installation not found
+     * HOSTS_002 — Pairing token not found
      */
     404: ProblemDetailsDto;
 };
@@ -3177,11 +3345,167 @@ export type DisconnectError = DisconnectErrors[keyof DisconnectErrors];
 export type DisconnectResponses = {
     /**
      * The installation is no longer connected.
+export type Revoke3Error = Revoke3Errors[keyof Revoke3Errors];
+
+export type Revoke3Responses = {
+    /**
+     * Pairing token revoked
      */
     204: void;
 };
 
 export type DisconnectResponse = DisconnectResponses[keyof DisconnectResponses];
+export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
+
+export type RegisterData = {
+    body: RegisterHostRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/register';
+};
+
+export type RegisterErrors = {
+    /**
+     * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
+     */
+    401: ProblemDetailsDto;
+    /**
+     * HOSTS_004 — This deployment has no runner release configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type RegisterError = RegisterErrors[keyof RegisterErrors];
+
+export type RegisterResponses = {
+    201: HostRegistrationResponseDto;
+};
+
+export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+
+export type UninstallData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/self';
+};
+
+export type UninstallErrors = {
+    /**
+     * HOSTS_005 — No valid host assertion was presented
+     */
+    401: ProblemDetailsDto;
+};
+
+export type UninstallError = UninstallErrors[keyof UninstallErrors];
+
+export type UninstallResponses = {
+    /**
+     * The calling host is unpaired
+     */
+    204: void;
+};
+
+export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
+
+export type UnpairData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type UnpairErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UnpairError = UnpairErrors[keyof UnpairErrors];
+
+export type UnpairResponses = {
+    /**
+     * Host unpaired
+     */
+    204: void;
+};
+
+export type UnpairResponse = UnpairResponses[keyof UnpairResponses];
+
+export type Get2Data = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type Get2Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type Get2Error = Get2Errors[keyof Get2Errors];
+
+export type Get2Responses = {
+    200: HostResponseDto;
+};
+
+export type Get2Response = Get2Responses[keyof Get2Responses];
+
+export type RenameData = {
+    body: RenameHostRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type RenameErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RenameError = RenameErrors[keyof RenameErrors];
+
+export type RenameResponses = {
+    200: HostResponseDto;
+};
+
+export type RenameResponse = RenameResponses[keyof RenameResponses];
 
 export type ListUsersData = {
     body?: never;
