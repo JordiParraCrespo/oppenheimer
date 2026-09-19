@@ -148,7 +148,8 @@ apps/api/src/hosts/
   commands/register-host/        POST /hosts/register        (@NoPolicy, @Throttle 10/min; redeem + insert one tx; fingerprint retry)
   commands/rename-host/          PATCH /hosts/{id}
   commands/unpair-host/          DELETE /hosts/{id}          (console)
-  commands/uninstall-host/       DELETE /hosts/self          (@NoPolicy; X-Oppenheimer-Host-Assertion)
+  commands/uninstall-host/       DELETE /hosts/self          (@NoPolicy('the caller is a host, not a user'); HostPrincipalGuard; Authorization: Bearer <boot JWT>)
+  guards/host-principal.guard.ts               # admits only a request the resolver classified as a host principal
   queries/find-hosts/            GET /hosts                  (online = lastSeenAt > now() − 30 s, in SQL)
   queries/find-host/             GET /hosts/{id}
   queries/find-pairing-tokens/   GET /hosts/pairing
@@ -164,10 +165,15 @@ apps/api/src/hosts/
   fingerprint, from a new `CONTROL_PLANE_SIGNING_KEY` in `.env.example`
   (required once hosts exist; the runner pins it, F6). The name is the
   token's `intendedName` when set, else the runner's `name`.
-- The assertion header is **`X-Oppenheimer-Host-Assertion`**, never
-  `Authorization: Bearer` (note 10's finding). The two routes that carry
-  it are `@NoPolicy` and verify in the handler; the same verifier is
-  what the relay gateway calls in slice 6.
+- The boot JWT is an ordinary `Authorization: Bearer`, so this slice
+  also touches `apps/api/src/auth/application/credential-scope.resolver.ts`:
+  a fourth credential kind, resolved by asking hosts' `HostAssertionPort`
+  when the bearer parses as an EdDSA JWT with a host `sub`, yielding a
+  host principal with no scopes. `ScopesGuard` lets it through with no
+  `@RequireScopes` on the route, and `HostPrincipalGuard` refuses
+  everyone else. The same port is what the relay gateway calls in
+  slice 6. Never a private header (note 10, decided after the owner's
+  review of R1).
 - Tests: own/grant scoping with no tenant predicate and `1 = 0` for a
   stranger; redeem is single-use under concurrency (integration, two
   parallel redeems, one host); retry with the same key returns the same
@@ -265,7 +271,7 @@ stays fake until slice 6. Each is a feature under
 ```
 apps/api/src/relay/
   relay.module.ts  relay.di-tokens.ts
-  infrastructure/runner-link.gateway.ts        # GET /api/v1/relay/runner; handshake: X-Oppenheimer-Host-Assertion → hosts' HostAssertionPort; hello; min_supported → update_required
+  infrastructure/runner-link.gateway.ts        # GET /api/v1/relay/runner; handshake: Authorization: Bearer <boot JWT> → hosts' HostAssertionPort; hello; min_supported → update_required
   infrastructure/browser-attach.gateway.ts     # GET /api/v1/relay/attach; Sec-WebSocket-Protocol ticket → cache.take(); re-check session live + membership; Origin
   infrastructure/link-registry.adapter.ts      # in-process: hostId → socket; attachment ids per link; freed on detach
   infrastructure/frame.util.ts                 # 4-byte big-endian attachment id + bytes; JSON text frames for control
@@ -299,14 +305,15 @@ apps/api/src/relay/
 
 ## Runner counterparts (`apps/runner`, separate pull requests)
 
-- **R1, with slice 2**: `pairing/adapters/controlplane/client.go` moves
-  to `/api/v1/hosts/register` and `DELETE /api/v1/hosts/self`, and
-  sends the boot JWT in `X-Oppenheimer-Host-Assertion` instead of
-  `Authorization: Bearer`. Three constants. `--rotate-key` stops reusing
-  the register route; rotation waits for R2 and rides the link, as note
-  10 decided.
+- **R1, with slice 2** (landed as pull request #21):
+  `pairing/adapters/controlplane/client.go` moves to
+  `/api/v1/hosts/register` and `DELETE /api/v1/hosts/self`; the boot JWT
+  stays an `Authorization: Bearer`; `RotateKey` leaves `Service`
+  entirely rather than surviving as a stub, and rotation arrives with
+  R2 on the link, as 09 §3 places it. Notes 01 and 03 and the decision
+  log are reconciled in the same pull request.
 - **R2, with slice 6**: `internal/link` — the `Link` port's adapter:
-  outbound dial with the assertion header, hello with the protocol range
+  outbound dial with the boot JWT as a bearer, hello with the protocol range
   and the session snapshot, 15 s heartbeat, the 4-byte framing, the
   reconnect ladder with its epoch, `credentials.token` answered to the
   helper socket; `internal/credentials` replaces the empty helper;
@@ -327,9 +334,11 @@ apps/api/src/relay/
   gains the `/api` segment.
 - Uninstall is a second HTTP call, `DELETE /hosts/self`, so "exactly one
   HTTP call" in note 10 becomes two, which is what 01 always said.
-- The host assertion travels in `X-Oppenheimer-Host-Assertion` and keeps
-  the runner's five-minute lifetime; the `jti` is burned for that
-  lifetime rather than shortening the token, so a replay is refused
+- The host assertion stays an `Authorization: Bearer` and the API's
+  credential resolver learns the host kind; a first draft of this plan
+  put it in a private header, and the owner's review of R1 sent it back.
+  It keeps the runner's five-minute lifetime; the `jti` is burned for
+  that lifetime rather than shortening the token, so a replay is refused
   either way and a slow dial is not.
 - Hints are one closed vocabulary across 01 and 10: `update_available`,
   `update_required`, `blocked`, `host_offline`.

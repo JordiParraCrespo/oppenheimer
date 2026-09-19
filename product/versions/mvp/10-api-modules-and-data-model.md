@@ -541,17 +541,28 @@ decided ("the runner holds one outbound WebSocket") and
 to the runner over the relay"). Job payloads are sealed to the host's
 public key, which is F7 met rather than avoided.
 
-**Decided: the host assertion travels in `X-Oppenheimer-Host-Assertion`**,
-on `DELETE /hosts/self` and on the runner link's handshake, never in
-`Authorization: Bearer`. `ScopesGuard` is registered globally as an
-`APP_GUARD` and calls `CredentialScopeResolver.resolve()` on every HTTP
-route; that resolver treats any bearer value that is neither an
-`oppenheimer_pat_…` token nor a recognised OAuth grant nor a Better Auth
-session as a forgery and throws `INVALID_CREDENTIAL`
+**Decided: the host assertion is an ordinary bearer, and the API learns
+the host credential kind.** The runner presents its boot JWT as
+`Authorization: Bearer` on `DELETE /hosts/self` and on the link's
+handshake, as [`03`](03-control-plane.md) always said. The problem that
+raises is real and is the API's to solve: `ScopesGuard` is registered
+globally as an `APP_GUARD` and calls `CredentialScopeResolver.resolve()`
+on every HTTP route; that resolver treats any bearer value that is
+neither an `oppenheimer_pat_…` token nor a recognised OAuth grant nor a
+Better Auth session as a forgery and throws `INVALID_CREDENTIAL`
 (`apps/api/src/auth/application/credential-scope.resolver.ts`,
-`rejectUnlessSession`). A host JWT presented that way would 401 before
-any route-level guard ran. The runner sends `Bearer` today and changes
-one constant ([`11`](11-api-implementation-plan.md), R1).
+`rejectUnlessSession`). So the resolver gains a **fourth credential
+kind**: an EdDSA JWT whose `iss` and `sub` name a `host` row, verified
+against that row's current or previous public key, `aud` the control
+plane's URL, `jti` burned in Redis for the token's lifetime; it yields a
+host principal with no scopes and no ability. `DELETE /hosts/self` is
+then reachable only by such a principal, through a `HostPrincipalGuard`
+in `hosts/guards/`, and carries `@NoPolicy('the caller is a host, not a
+user')`. An earlier draft of this note invented a private
+`X-Oppenheimer-Host-Assertion` header to route around the guard; the
+owner's review of the runner pull request rejected it, rightly: a guard
+problem in the API is not solved by freezing a second auth scheme into
+every installed runner.
 
 ### Where the two sockets live, and what guards them
 
@@ -967,7 +978,7 @@ Unauthenticated by design, and therefore carrying no `@RequireScopes`:
 
 ```
 POST /hosts/register         credential = the registration token, checked in the handler; @Throttle
-DELETE /hosts/self           credential = the host assertion in X-Oppenheimer-Host-Assertion
+DELETE /hosts/self           credential = the host's boot JWT as Authorization: Bearer, a host principal (HostPrincipalGuard)
 POST /github/webhook         credential = X-Hub-Signature-256 over the raw body
 GET  /relay/attach            credential = the single-use ticket in Sec-WebSocket-Protocol,
                               never the query string; Origin checked (F2)

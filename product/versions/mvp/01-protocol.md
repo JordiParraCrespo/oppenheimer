@@ -74,7 +74,7 @@ Three calls are ordinary outbound HTTPS, and each has a reason:
 | Call | Why not the link |
 |---|---|
 | `POST /api/v1/hosts/register` | There is no link yet; this is what creates the identity that authenticates one |
-| `DELETE /api/v1/hosts/self`, host assertion in `X-Oppenheimer-Host-Assertion` | Uninstall runs with the daemon stopped; the host names itself by the assertion's subject (10, 11) |
+| `DELETE /api/v1/hosts/self` | Uninstall runs with the daemon stopped; authenticated by the host's boot JWT as a bearer, and the host names itself by the token's subject |
 | `GET <release base>/<channel>.json` and `.sig` | It must work when the link will not come up |
 
 That last one is the escape hatch, and it is the reason the release

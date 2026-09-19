@@ -220,8 +220,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   four contract mismatches: the register route is `POST /hosts/register`
   as the runner and 01/09 already say, plus `DELETE /hosts/self` for
   uninstall (10 said one call and `/hosts/pairing/redeem`); the host
-  assertion travels in `X-Oppenheimer-Host-Assertion` and keeps the
-  runner's five-minute lifetime with the `jti` burned for that long; the
+  assertion stays an `Authorization: Bearer` that the API's credential
+  resolver learns to recognise as a host principal — a first draft put
+  it in a private header and the owner's review of R1 sent it back —
+  and keeps the runner's five-minute lifetime with the `jti` burned for
+  that long; the
   hint vocabulary is one closed set across 01 and 10 with `host_offline`
   added; and 01's open question 1 is decided — the wire schema is Zod,
   JSON Schema emitted, Go generated. Error-code prefixes on the API side
