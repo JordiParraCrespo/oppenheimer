@@ -40,6 +40,20 @@ export interface ScopeContext {
 }
 
 /**
+ * The credential a **host** presents: its own boot assertion, verified against
+ * the key it registered with.
+ *
+ * Deliberately not a {@link ScopeContext}. That type describes a credential
+ * acting on behalf of a person — it carries an owner, a user id, scopes and a
+ * resource scope, and a machine has none of those. A host principal has exactly
+ * one fact, and modelling it as a narrow credential would have every reader of
+ * `scopeContext.owner` handle an absence that only this one case produces.
+ */
+export interface HostPrincipal {
+  hostId: string;
+}
+
+/**
  * A request as the auth layer sees it: the headers a credential arrives in,
  * plus what the guards attach once they have resolved it.
  *
@@ -63,6 +77,12 @@ export interface ScopedRequest {
   session?: Record<string, unknown> | null;
   ability?: unknown;
   scopeContext?: ScopeContext | null;
+  /**
+   * Set when the bearer was a host's boot assertion. Such a request has no
+   * `user` and no `scopeContext`: `ScopesGuard` lets it reach only routes that
+   * declare no scopes, and `HostPrincipalGuard` is what actually admits it.
+   */
+  hostPrincipal?: HostPrincipal | null;
 }
 
 /** The organization selected in the caller's session. */

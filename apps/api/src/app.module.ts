@@ -32,6 +32,7 @@ import {
   appConfig,
   databaseConfig,
   emailConfig,
+  hostsConfig,
   oauthConfig,
   redisConfig,
   storageConfig,
@@ -39,6 +40,7 @@ import {
 } from './config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { HealthModule } from './health/health.module';
+import { HostsModule } from './hosts/hosts.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -61,6 +63,7 @@ import { UsersModule } from './users/user.module';
         storageConfig,
         oauthConfig,
         stripeConfig,
+        hostsConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -179,6 +182,9 @@ import { UsersModule } from './users/user.module';
     // MVP and the product contexts (hosts, installations, sessions, relay)
     // take their place here as they land.
     OrganizationsModule,
+    // The control plane's own modules. `hosts` is first of them: the machines a
+    // person paired, and the credential a runner authenticates with.
+    HostsModule,
     AdminModule,
     HealthModule,
     QueueModule,
