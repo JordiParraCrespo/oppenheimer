@@ -5,7 +5,8 @@ import type { CredentialResolverPort } from './credential-resolver.port';
  * Every credential kind the running application accepts, collected at boot.
  *
  * This is the extension point that replaces the kernel hard-coding the list:
- * a module registers its resolver through `AuthModule.forFeature([...])`, and
+ * a module registers its resolver through `AuthModule.contributeCredentials`,
+ * and
  * `CredentialScopeResolver` asks whoever is registered. A module that is never
  * imported contributes nothing, so the registry describes the application that
  * is actually running.

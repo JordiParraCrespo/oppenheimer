@@ -20,10 +20,3 @@ export const CREDENTIAL_OWNER = Symbol('CREDENTIAL_OWNER');
 
 /** Builds the caller's effective CASL ability for a request. */
 export const ABILITY = Symbol('ABILITY');
-
-/**
- * The resolvers one `AuthModule.forFeature` call contributes; constructing it
- * is what registers them. Internal to that wiring — a module passes resolver
- * classes and never names this token.
- */
-export const CREDENTIAL_RESOLVERS = Symbol('CREDENTIAL_RESOLVERS');

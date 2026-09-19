@@ -194,7 +194,7 @@ module.exports = {
     {
       name: 'auth-is-a-kernel',
       comment:
-        'src/auth is the kernel every other module is built on: it authenticates a request, resolves what its credential authorizes and applies the route’s policy. It must therefore know nothing of the features built on it — a credential kind is contributed with AuthModule.forFeature, what a principal may do is asked through the ABILITY port, and who a credential belongs to through CREDENTIAL_OWNER. An import here is the kernel depending on one of its dependents, which is how the credential resolver came to hard-code API tokens.',
+        'src/auth is the kernel every other module is built on: it authenticates a request, resolves what its credential authorizes and applies the route’s policy. It must therefore know nothing of the features built on it — a credential kind is contributed with AuthModule.contributeCredentials, what a principal may do is asked through the ABILITY port, and who a credential belongs to through CREDENTIAL_OWNER. An import here is the kernel depending on one of its dependents, which is how the credential resolver came to hard-code API tokens.',
       severity: 'error',
       from: {
         path: '^src/auth/',

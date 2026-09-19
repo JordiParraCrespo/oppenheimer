@@ -30,7 +30,8 @@ interface WithResolution {
  *   scopes carried through.
  *
  * Every other kind is a **contribution**: the module that owns a credential
- * registers a {@link CredentialResolverPort} with `AuthModule.forFeature`, and
+ * contributes a {@link CredentialResolverPort} through
+ * `AuthModule.contributeCredentials`, and
  * this resolver asks each registered resolver, in registration order, whether
  * the presented string is theirs. API tokens (`oppenheimer_pat_…`) are the
  * first such contribution; nothing here names them.

@@ -1,15 +1,10 @@
-import { type DynamicModule, Global, Module, type Type } from '@nestjs/common';
+import { Global, Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import type { CredentialResolverPort } from './application/credential-resolver.port';
 import { CredentialResolverRegistry } from './application/credential-resolver.registry';
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
-import {
-  CREDENTIAL_RESOLVERS,
-  CREDENTIAL_SCOPE,
-  CREDENTIAL_VERIFIER,
-  DELEGATED_SESSION,
-} from './auth.di-tokens';
+import { CREDENTIAL_SCOPE, CREDENTIAL_VERIFIER, DELEGATED_SESSION } from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { Account } from './database/account.orm-entity';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
@@ -30,7 +25,8 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
  * It owns what every request is asked on the way in — who is calling, with
  * what credential, and whether the route admits it — and it knows nothing
  * about the features built on top of it. A module that owns a credential kind
- * contributes a resolver with {@link AuthModule.forFeature}; what a principal
+ * contributes a resolver with {@link AuthModule.contributeCredentials}; what a
+ * principal
  * may do it asks through the `ABILITY` port, which `roles` binds; who a
  * credential belongs to it asks through `CREDENTIAL_OWNER`, which `users`
  * binds. `auth-is-a-kernel` in `.dependency-cruiser.cjs` is the enforced
@@ -109,52 +105,43 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
 })
 export class AuthModule {
   /**
-   * Contribute credential kinds from the module that owns them:
+   * The providers a module adds to contribute its own credential kinds:
    *
    * ```ts
-   * imports: [AuthModule.forFeature([ApiTokenCredentialResolver])]
+   * providers: [...AuthModule.contributeCredentials([ApiTokenCredentialResolver])]
    * ```
    *
-   * The resolvers are provided here and registered when this module is
-   * instantiated, so a feature module that is never imported contributes
-   * nothing. Registration is the whole payload: the returned module carries no
-   * static metadata of the kernel's, so importing it a second time does not
-   * build a second `CredentialScopeResolver` or a second registry.
+   * They go in the **feature module's** `providers`, not in an imported
+   * module of the kernel's, and that placement is the whole point: the
+   * resolver is constructed in the injector of the module that owns the
+   * credential, so it injects that module's own repository ports without
+   * anything having to be published application-wide. The only thing reached
+   * across is the registry, which the kernel provides globally.
    *
-   * A contributed resolver may inject anything resolvable application-wide —
-   * its own module's tokens when that module is `@Global`, and the kernel's
-   * own ports — because it is constructed in this module's injector, not in
-   * the importing module's.
+   * Registration happens when the module is instantiated — Nest constructs
+   * every provider a module declares, so the factory below runs although
+   * nothing injects it — which means a module that is never imported
+   * contributes nothing, and the registry describes the application that is
+   * actually running.
    */
-  static forFeature(resolvers: Type<CredentialResolverPort>[]): DynamicModule {
-    return {
-      module: CredentialContributionModule,
-      providers: [
-        ...resolvers,
-        {
-          // Constructing this provider is the registration: the resolvers are
-          // instantiated as its dependencies and handed to the kernel's
-          // registry, which the root module owns.
-          provide: CREDENTIAL_RESOLVERS,
-          inject: [CredentialResolverRegistry, ...resolvers],
-          useFactory: (
-            registry: CredentialResolverRegistry,
-            ...contributed: CredentialResolverPort[]
-          ) => {
-            registry.registerAll(contributed);
-            return contributed;
-          },
+  static contributeCredentials(resolvers: Type<CredentialResolverPort>[]): Provider[] {
+    return [
+      ...resolvers,
+      {
+        // Constructing this provider *is* the registration: the resolvers are
+        // instantiated as its dependencies and handed to the kernel's registry.
+        // The token is unique per call so two contributions in one module
+        // cannot overwrite one another.
+        provide: Symbol('CREDENTIAL_CONTRIBUTION'),
+        inject: [CredentialResolverRegistry, ...resolvers],
+        useFactory: (
+          registry: CredentialResolverRegistry,
+          ...contributed: CredentialResolverPort[]
+        ) => {
+          registry.registerAll(contributed);
+          return contributed;
         },
-      ],
-    };
+      },
+    ];
   }
 }
-
-/**
- * The module `AuthModule.forFeature` returns. It exists so that a contribution
- * carries only its own providers: a dynamic module built on `AuthModule`
- * itself would re-apply the kernel's static metadata — a second registry for
- * the feature to register into, which the guards would never read.
- */
-@Module({})
-class CredentialContributionModule {}

@@ -113,7 +113,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   on two of the things built on it — and the hosts slice was about to
   add a third the same way. The kernel now recognises only what it
   issues (session, OAuth grant) and takes every other kind from a
-  registry a module contributes to with `AuthModule.forFeature`, the
-  same shape `AuthzModule.forFeature` uses for resources. Nothing about
+  registry a module contributes to with
+  `AuthModule.contributeCredentials`, in the spirit of
+  `AuthzModule.forFeature` for resources — except that the providers go in
+  the contributing module, so nothing has to be published
+  application-wide to be reachable. Nothing about
   what a credential authorizes changed, and no error code moved that a
   client can see.

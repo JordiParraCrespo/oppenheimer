@@ -101,11 +101,11 @@ every other kind from the module that owns it:
 1. write `<module>/application/<kind>-credential.resolver.ts` implementing
    `CredentialResolverPort` (a unique `kind`, a cheap `recognises` on the
    presented string, a `resolve` that verifies it and throws on refusal);
-2. add `AuthModule.forFeature([<Kind>CredentialResolver])` to that module's
-   imports — it injects its own module's tokens (make the module `@Global`, as
-   `api-tokens` and `users` are, since the kernel constructs it for an
-   `APP_GUARD`) and the kernel's `CREDENTIAL_OWNER` port for the account
-   behind the credential.
+2. spread `AuthModule.contributeCredentials([<Kind>CredentialResolver])` into
+   that module's **`providers`**. The resolver is then built in your module's
+   own injector, so it injects your repository ports directly — nothing has to
+   be made `@Global` to reach it — plus the kernel's `CREDENTIAL_OWNER` port
+   for the account behind the credential.
 
 Refusals a guard raises about any credential (`TOKEN_003`, `TOKEN_005`–`007`)
 belong to `auth/domain/auth.errors.ts`; what your kind specifically can fail on

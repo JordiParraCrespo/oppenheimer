@@ -48,11 +48,13 @@ const repositories: Provider[] = [{ provide: USER_REPOSITORY, useClass: UserRepo
 const ports: Provider[] = [{ provide: CREDENTIAL_OWNER, useClass: UserCredentialOwnerAdapter }];
 
 /**
- * Marked `@Global` for the same reason as `roles` and `api-tokens`: the auth
- * kernel resolves a request's credential inside globally registered guards,
- * and a credential resolver contributed by a feature module is instantiated in
- * that contribution's own injector. What both of them ask this module for —
- * the credential's owner — therefore has to be resolvable application-wide.
+ * Marked `@Global` for one reason: the auth kernel resolves an OAuth grant
+ * itself, in `AuthModule`'s injector, and it asks this module who the grant
+ * belongs to through `CREDENTIAL_OWNER`. The kernel may not import this module
+ * (`auth-is-a-kernel` in `.dependency-cruiser.cjs`), so the binding has to be
+ * resolvable application-wide. A contributed credential resolver does *not*
+ * need this — it is built in its own module's injector — so this is about the
+ * kernel's own path, nothing else.
  */
 @Global()
 @Module({

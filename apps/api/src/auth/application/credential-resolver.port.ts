@@ -8,8 +8,8 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
  * and the two kinds it issues itself — a Better Auth session and an OAuth
  * grant. It deliberately does **not** know the kinds built on top of it. An
  * API token is the api-tokens module's concept; a runner's key will be the
- * runner module's. Each registers a resolver with
- * `AuthModule.forFeature([...])`, and the kernel asks them in turn.
+ * runner module's. Each contributes a resolver through
+ * `AuthModule.contributeCredentials`, and the kernel asks them in turn.
  *
  * Implementations live in the owning module's `application/` layer, where they
  * may inject that module's repository ports.

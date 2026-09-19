@@ -51,27 +51,27 @@ const repositories: Provider[] = [
 /**
  * API tokens module.
  *
- * It owns a credential kind, so it registers a resolver with the auth kernel
- * rather than the kernel knowing what an `oppenheimer_pat_…` secret is —
- * `AuthModule.forFeature` below is the whole of that contribution.
+ * It owns a credential kind, so what an `oppenheimer_pat_…` secret is stays
+ * here: the resolver below is contributed to the auth kernel
+ * (`AuthModule.contributeCredentials`) and built in this module's injector, so
+ * it injects this module's repository port like any other provider.
  *
- * Marked `@Global` because the resolver it contributes is constructed by the
- * kernel, for a guard registered as an `APP_GUARD`: the token repository it
- * asks has to be resolvable outside any feature module's injector.
+ * Marked `@Global` as it has always been, which publishes the token repository
+ * application-wide. That is no longer what makes token authentication work —
+ * the contributed resolver resolves its dependencies here — so dropping it is
+ * a question about who else reads the port, not about auth.
  */
 @Global()
 @Module({
-  imports: [
-    CqrsModule,
-    TypeOrmModule.forFeature([ApiTokenOrmEntity, MemberOrmEntity]),
-    AuthModule.forFeature([ApiTokenCredentialResolver]),
-  ],
+  imports: [CqrsModule, TypeOrmModule.forFeature([ApiTokenOrmEntity, MemberOrmEntity])],
   controllers: [...httpControllers],
   providers: [
     ...commandHandlers,
     ...queryHandlers,
     ...repositories,
     ApiTokenMapper,
+    // This module's credential kind, registered with the kernel by being built.
+    ...AuthModule.contributeCredentials([ApiTokenCredentialResolver]),
     // Revoking a token has to reach the session cached for it; the kernel
     // publishes the port, this module knows when to call it.
     ApiTokenRevokedDomainEventHandler,

@@ -52,8 +52,9 @@ history) to work on the MVP.
   knows.** `apps/api/src/auth` is a kernel: it recognises the two
   credentials it issues itself — a Better Auth session and an OAuth
   grant — and knows nothing else about who authenticates. Every other
-  kind is registered by the module that owns it, with
-  `AuthModule.forFeature([<Kind>CredentialResolver])`: API tokens
+  kind is registered by the module that owns it, which spreads
+  `AuthModule.contributeCredentials([<Kind>CredentialResolver])` into its
+  own providers: API tokens
   contribute theirs from `apps/api/src/api-tokens`, and hosts will
   contribute the runner's key from theirs. The kernel asks each
   registered resolver whether a presented credential is its own and
