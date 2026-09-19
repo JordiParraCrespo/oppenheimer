@@ -101,12 +101,6 @@
       "require": "./dist/agents/index.js",
       "default": "./dist/agents/index.js"
     },
-    "./agents/catalog": {
-      "types": "./dist/agents/catalog.d.ts",
-      "import": "./dist/agents/catalog.js",
-      "require": "./dist/agents/catalog.js",
-      "default": "./dist/agents/catalog.js"
-    },
     "./protocol": {
       "types": "./dist/protocol/index.d.ts",
       "import": "./dist/protocol/index.js",
@@ -115,8 +109,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "build:protocol": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && biome format --write protocol-schema/protocol.schema.json",
+    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist",
     "lint": "biome check src/",

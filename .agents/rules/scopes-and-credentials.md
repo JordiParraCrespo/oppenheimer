@@ -112,6 +112,12 @@ and `apps/mcp` is on Zod 4 while the rest of the repo is on Zod 3 — the MCP SD
 v2 requires it. Do not import Zod schemas from `@oppenheimer/shared` here; that is
 what keeps the two versions from meeting.
 
+One caveat until it is resolved: `@oppenheimer/shared`'s `src/protocol/` is itself on
+`zod/v4`, because only that entry point can emit JSON Schema. Its DTO schemas are
+still Zod 3, so the rule above stands as written — but the isolation is now one
+module thin, and the fix is to put the whole package on one Zod line with a
+build-only converter rather than to relax this.
+
 The server is built **per request** from the calling credential, because
 protocol revision `2026-07-28` removed sessions: there is nowhere to cache the
 decision, and nowhere it could go stale. `tools/list` is sorted by name (the

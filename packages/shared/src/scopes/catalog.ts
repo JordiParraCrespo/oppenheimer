@@ -378,15 +378,15 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         label: 'Edit',
         description:
           'Create, rename, stop, restart and close sessions, change their checkouts, and open a terminal.',
-        // `attach` is its own action, so a read-only credential can list
-        // sessions without opening a PTY on one — the precedent is `leads`'
-        // `export`. It is listed here because the route that mints an attach
-        // ticket requires this level.
+        // Opening a terminal is `update Session`, not a fourth verb. The model
+        // is CRUD plus `manage`, and what keeps a read-only credential from
+        // opening a PTY is that the attach route requires this level — not a
+        // bespoke action that `KNOWN_ACTIONS` and the seed would both have to
+        // learn.
         policies: [
           { action: 'create', subject: 'Session' },
           { action: 'update', subject: 'Session' },
           { action: 'delete', subject: 'Session' },
-          { action: 'attach', subject: 'Session' },
         ],
       },
     },
@@ -395,16 +395,17 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     resource: 'repositories',
     label: 'Repositories',
     description: 'GitHub App installations and the repositories they grant access to.',
+    // The scope keeps the name a token holder thinks in — they are granting
+    // access to repositories — but every level is backed by `Installation`
+    // policies alone. There is no `Repository` subject: a repository has no row,
+    // and the installation is what carries the tenant and the allowlist.
     levels: {
       read: {
         scope: 'repositories:read',
         label: 'Read',
         description:
           'List connected installations, and the repositories and branches they cover — answered live by GitHub, never from a mirror.',
-        policies: [
-          { action: 'read', subject: 'Installation' },
-          { action: 'read', subject: 'Repository' },
-        ],
+        policies: [{ action: 'read', subject: 'Installation' }],
       },
       write: {
         scope: 'repositories:write',

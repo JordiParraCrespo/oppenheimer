@@ -47,12 +47,18 @@ export interface CodingAgentDefinition {
    * needs an account, so the console can turn it into a button.
    *
    * It is a source string rather than a `RegExp` so this stays plain data, and
-   * it is anchored on purpose: `claude.ai` and `claude.ai.attacker.test`
-   * differ by a suffix, and an unanchored or substring match would hand a
-   * person a button to the second one (`product/04-security-review.md`, F3).
-   * The runner keeps its own allowlist in code for the same reason
-   * (`apps/runner/internal/sessions/adapters/manifest/engine.go`); this entry
-   * is the same fact stated for the control plane and the console.
+   * it is anchored on purpose: `claude.ai` and `claude.ai.attacker.test` differ
+   * by a suffix, and an unanchored or substring match would hand a person a
+   * button to the second one (`product/04-security-review.md`, F3).
+   *
+   * **This is the only statement of it.** The link enforces it —
+   * `sessionSnapshotSchema.loginUrl` in `../protocol/primitives.ts` checks a
+   * reported URL against the reporting agent's pattern, and the constraint
+   * survives into the emitted JSON Schema, so the generated runner code refuses a
+   * lookalike host where the control plane does. The runner's existing allowlist
+   * in `apps/runner/internal/sessions/adapters/manifest/engine.go` is the twin
+   * this replaces; it is retired when the runner consumes the generated types
+   * (its own slice), and until then the two must not be edited apart.
    */
   readonly loginUrlPattern: string;
   /** Where the CLI writes the transcript the first prompt is read from. */
