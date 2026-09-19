@@ -179,7 +179,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `workspaces/<organization.slug>/` above `projects/`. Three more
   decisions: **one API replica** for now (`connectionEpoch` and
   `connectedReplicaId` gone; the fence is a named slice in `relay/`);
-  **sessions are named from the first prompt** by `claude-haiku-4-5`
+  **sessions are named from the first prompt** by a model chosen in
+  configuration (`SESSION_NAMER_PROVIDER`, `SESSION_NAMER_MODEL`)
   behind a port, with an opaque minted slug (`bold-otter-3f9a7k`) as
   directory, branch and fallback name; **each checkout picks a base
   branch** and the working branch is always

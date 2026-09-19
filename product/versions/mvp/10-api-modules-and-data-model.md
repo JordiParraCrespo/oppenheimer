@@ -411,20 +411,23 @@ reads the first user message from the agent's own transcript — Claude
 Code keeps one under `~/.claude/projects/`, keyed by working directory;
 Codex under `~/.codex/sessions/` — never by scraping the PTY, and
 reports it as a `prompt.first` event carrying at most its first 2 KB.
-The `name-session` command in `sessions/` then asks a fast model for a
-title of at most six words: one call on `@anthropic-ai/sdk` to
-`claude-haiku-4-5` with a few dozen `max_tokens`, behind a
-`SessionNamerPort` in `sessions/infrastructure/` with two adapters, the
-Anthropic one and a no-op one used when `ANTHROPIC_API_KEY` is unset —
-the abstract-class-plus-factory pattern `packages/backend/email` already
-follows. The result is a `session.named` event, and `PATCH
+The `name-session` command in `sessions/` then asks a model for a title
+of at most six words. **Which model is configuration, not a decision in
+this note**: the call goes through a `SessionNamerPort` in
+`sessions/infrastructure/` whose adapter and model id come from
+`SESSION_NAMER_PROVIDER` and `SESSION_NAMER_MODEL`, with a no-op adapter
+when neither is set — the abstract-class-plus-factory pattern
+`packages/backend/email` already follows, where the provider is likewise
+an environment variable. The first adapter is the Anthropic one on
+`@anthropic-ai/sdk`, because it is the SDK the repo already carries;
+any small, cheap model does the job, and a deployment picks its own. The result is a `session.named` event, and `PATCH
 /sessions/{id}` can overwrite it at any time. A failed or absent call
 leaves the slug as the name, which reads fine ("bold-otter-3f9a7k") and
 costs nothing. Reading the transcript is the posture note 06 already
 takes with the CLIs' usage files: the runner reads what the CLI writes
 and sends one line of it; the transcript never leaves the host. The one
-line that does leave is the person's own prompt, sent to Anthropic's
-API under the platform's key — a sentence for the privacy note, and the
+line that does leave is the person's own prompt, sent to whichever
+provider is configured under the platform's key — a sentence for the privacy note, and the
 reason a deployment with no key simply names nothing.
 
 ### One login per machine, and why that settles whose the host is
@@ -1002,9 +1005,11 @@ code execution on a host.
 5. `pnpm generate:api-client`, plus a changeset. Three consumers
    regenerate: `packages/frontend/consumer` (which drops its hand-rolled
    DTOs), `apps/cli/src/lib/api-types.ts`, and `apps/mcp/src/tools/`.
-6. The root `.env.example` gains `ANTHROPIC_API_KEY`, optional, with the
-   note that it only names sessions and that leaving it unset disables
-   naming and nothing else. `apps/api` gains `@anthropic-ai/sdk`,
+6. The root `.env.example` gains `SESSION_NAMER_PROVIDER`,
+   `SESSION_NAMER_MODEL` and the provider's key (`ANTHROPIC_API_KEY` for
+   the first adapter), all optional, with the note that they only name
+   sessions and that leaving them unset disables naming and nothing
+   else. `apps/api` gains `@anthropic-ai/sdk`,
    `@nestjs/websockets` and `@nestjs/platform-ws`.
 7. `packages/backend/cache` gains `take<T>(key)` over `GETDEL`, the one
    primitive the single-use attach ticket needs.
@@ -1122,8 +1127,9 @@ Each step is a vertical slice that can land alone.
   are gone and the relay's in-process registry is the connection truth.
   The multi-replica fence is a named slice inside `relay/`.
 
-- **Sessions are named by their first prompt**, by a fast model behind a
-  port, with the minted slug as the fallback name; the slug is opaque
+- **Sessions are named by their first prompt**, by a model chosen in
+  configuration behind a port, with the minted slug as the fallback
+  name; the slug is opaque
   because it is a directory before it is a name.
 
 - **Each checkout picks a base branch; the working branch is always
