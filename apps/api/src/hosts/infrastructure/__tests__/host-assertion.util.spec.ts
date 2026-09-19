@@ -6,7 +6,6 @@ import {
   decodeHostAssertion,
   keyFingerprint,
   looksLikeHostAssertion,
-  signingKeyFingerprint,
 } from '../host-assertion.util';
 
 /**
@@ -84,6 +83,17 @@ describe('decodeHostAssertion', () => {
     expect(decodeHostAssertion('not.a.token')).toBeNull();
     expect(decodeHostAssertion('only.two')).toBeNull();
   });
+
+  it('refuses a segment with trailing garbage rather than decoding what it can', () => {
+    // Node's base64 decoder skips what it does not recognise and returns the
+    // rest, so without a re-encode check a token could verify on bytes the
+    // decoder chose out of a longer string.
+    const { privateKey } = keypair();
+    const [header, payload, signature] = assertion(privateKey, { sub: 'host-1' }).split('.');
+
+    expect(decodeHostAssertion(`${header}!!!.${payload}.${signature}`)).toBeNull();
+    expect(decodeHostAssertion(`${header}.${payload}.${signature}~~`)).toBeNull();
+  });
 });
 
 describe('assertionIsSignedBy', () => {
@@ -137,36 +147,8 @@ describe('keyFingerprint', () => {
     expect(keyFingerprint(Buffer.alloc(31).toString('base64'))).toBeNull();
     expect(keyFingerprint('')).toBeNull();
   });
-});
 
-describe('signingKeyFingerprint', () => {
-  it('derives the public fingerprint of the control plane’s own key', () => {
-    const { publicKey, privateKey } = generateKeyPairSync('ed25519');
-    const der = privateKey.export({ format: 'der', type: 'pkcs8' });
-    const raw = publicKey.export({ format: 'der', type: 'spki' }).subarray(12);
-
-    // It has to be the fingerprint of the *public* half, because that is what a
-    // runner computes for itself once the console shows it one.
-    expect(signingKeyFingerprint(der.toString('base64'))).toBe(
-      createHash('sha256').update(raw).digest('hex'),
-    );
-  });
-
-  it('tolerates the line breaks a copied key arrives with', () => {
-    const { privateKey } = generateKeyPairSync('ed25519');
-    const base64 = privateKey.export({ format: 'der', type: 'pkcs8' }).toString('base64');
-    const wrapped = base64.replace(/(.{20})/g, '$1\n');
-
-    expect(signingKeyFingerprint(wrapped)).toBe(signingKeyFingerprint(base64));
-  });
-
-  it('refuses a key of the wrong kind rather than fingerprinting it', () => {
-    // A deployment that pasted an RSA key should hear "not configured", not be
-    // handed a fingerprint no runner can ever pin.
-    const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
-    const der = privateKey.export({ format: 'der', type: 'pkcs8' });
-
-    expect(signingKeyFingerprint(der.toString('base64'))).toBeNull();
-    expect(signingKeyFingerprint('not base64 at all !!')).toBeNull();
+  it('refuses a key that is not base64 at all', () => {
+    expect(keyFingerprint('this is not a key, it is a sentence!!')).toBeNull();
   });
 });

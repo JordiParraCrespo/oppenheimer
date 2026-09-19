@@ -12,7 +12,7 @@ export class HostPairingTokenMapper
   toPersistence(entity: HostPairingTokenEntity): HostPairingTokenOrmEntity {
     const record = new HostPairingTokenOrmEntity();
     record.id = entity.id;
-    record.createdByUserId = entity.createdByUserId;
+    record.ownerUserId = entity.ownerUserId;
     record.intendedName = entity.intendedName;
     record.prefix = entity.prefix;
     record.tokenHash = entity.tokenHash;
@@ -31,7 +31,7 @@ export class HostPairingTokenMapper
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       props: {
-        createdByUserId: record.createdByUserId,
+        ownerUserId: record.ownerUserId,
         intendedName: record.intendedName,
         prefix: record.prefix,
         tokenHash: record.tokenHash,

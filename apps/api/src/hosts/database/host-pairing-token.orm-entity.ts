@@ -9,13 +9,17 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColum
  * lookup key of the one statement that spends a token.
  */
 @Entity('host_pairing_token')
-@Index(['createdByUserId'])
+@Index(['ownerUserId'])
 export class HostPairingTokenOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   id!: string;
 
+  /**
+   * The person the token belongs to — the same column name the host it redeems
+   * into carries, because it is the same person and the same scope rule.
+   */
   @Column({ type: 'uuid' })
-  createdByUserId!: string;
+  ownerUserId!: string;
 
   /** The name the host adopts when it registers with this token. */
   @Column({ type: 'varchar', length: 80 })

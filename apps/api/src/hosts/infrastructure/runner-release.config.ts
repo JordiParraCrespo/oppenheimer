@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { signingKeyFingerprint } from './host-assertion.util';
+import { hostsAreConfigured } from '../../config/hosts.config';
 
 /**
  * What this deployment hands a machine that is about to become a host: the
@@ -21,10 +21,11 @@ export class RunnerReleaseConfig {
 
   /**
    * Whether a machine can actually be paired with this deployment. False leaves
-   * every host route answering "not configured" and changes nothing else.
+   * every host route answering "not configured" and changes nothing else. It is
+   * the same predicate the `hosts` capability is computed from.
    */
   get isConfigured(): boolean {
-    return Boolean(this.installUrl && this.releaseBaseUrl && this.controlPlaneFingerprint);
+    return hostsAreConfigured(this.configService);
   }
 
   /** The origin a runner dials, and the audience it signs its assertions for. */
@@ -41,13 +42,13 @@ export class RunnerReleaseConfig {
   }
 
   /**
-   * SHA-256 of this control plane's Ed25519 public key, hex — derived from the
-   * configured private key, which itself never leaves the process.
+   * SHA-256 of this control plane's Ed25519 public key, hex.
+   *
+   * Derived when the configuration is parsed, from a private key that never
+   * leaves that factory — this is the only half of it anything here can read.
    */
   get controlPlaneFingerprint(): string | null {
-    const key = this.configService.get<string>('hosts.signingKey');
-    if (!key) return null;
-    return signingKeyFingerprint(key);
+    return this.configService.get<string>('hosts.signingKeyFingerprint') ?? null;
   }
 
   /**
@@ -72,11 +73,12 @@ export class RunnerReleaseConfig {
    */
   agentPromptFor(secret: string): string {
     return [
-      'Install the Oppenheimer runner on this machine and pair it with my workspace.',
+      'Install the Oppenheimer runner on this machine and pair it with my account.',
       '',
       'The runner is a single static Go binary. It opens no ports: it holds one',
       'outbound WebSocket to the control plane and runs my coding sessions as git',
-      'worktrees with a tmux session each.',
+      'worktrees with a tmux session each. The machine becomes mine, usable from',
+      'any of my workspaces.',
       '',
       'Steps:',
       `1. Run the installer as the current user: ${this.installCommandFor(secret)}`,

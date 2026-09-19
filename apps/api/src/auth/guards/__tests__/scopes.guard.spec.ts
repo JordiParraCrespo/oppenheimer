@@ -5,10 +5,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialScopeResolver } from '../../application/credential-scope.resolver';
 import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../../decorators/require-scopes.decorator';
-import type { ScopeContext } from '../../domain/scope-context.types';
+import type {
+  HostCredentialContext,
+  ScopeContext,
+  UserCredentialContext,
+} from '../../domain/scope-context.types';
 import { ScopesGuard } from '../scopes.guard';
 
-const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({
+const hostContext = (): HostCredentialContext => ({
+  kind: 'host',
+  credentialId: 'host:host-1',
+  hostId: 'host-1',
+  scopes: [],
+  resourceScope: toResourceScope(null),
+  expiresAt: null,
+});
+
+const tokenContext = (overrides: Partial<UserCredentialContext> = {}): ScopeContext => ({
   kind: 'api-token',
   credentialId: 'token-1',
   userId: 'user-1',
@@ -212,29 +225,14 @@ describe('ScopesGuard', () => {
     });
   });
 
-  describe('a host principal', () => {
+  describe('a host credential', () => {
     /**
-     * The runner's boot assertion resolves to no scope context at all — there is
-     * no person behind it — and the resolver marks the request instead. These are
-     * the two halves of what that then means here.
+     * A machine's assertion resolves to a credential with an empty scope list
+     * and no owner. The point of these three is that the guard needs no case of
+     * its own to handle it: the rules above already say the right thing.
      */
-    const asHost = () => {
-      vi.mocked(credentials.resolve).mockImplementation(async () => {
-        request.hostPrincipal = { hostId: 'host-1' };
-        return null;
-      });
-    };
-
-    it('reaches a route that declares no scopes', async () => {
-      asHost();
-
-      await expect(guard.canActivate(context())).resolves.toBe(true);
-    });
-
-    it('is refused by any route that declares one', async () => {
-      // A machine holds no permissions of its own, so everything a scoped
-      // credential could ask for is closed to it.
-      asHost();
+    it('is refused by any route that declares a scope', async () => {
+      useCredential(hostContext());
       metadata[REQUIRE_SCOPES_KEY] = ['hosts:read'];
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
@@ -243,11 +241,17 @@ describe('ScopesGuard', () => {
       });
     });
 
-    it('is not offered the token-only exemption', async () => {
-      // `TOKEN_006` is the inverse rule and belongs to credentials that act for a
-      // person: a scope-free route is closed to those and open to this.
-      asHost();
-      metadata[REQUIRE_SCOPES_KEY] = [];
+    it('is refused by a route that declares nothing at all', async () => {
+      useCredential(hostContext());
+
+      await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'TOKEN_006' });
+    });
+
+    it('reaches a route that explicitly asks for no permission', async () => {
+      // `@AllowAnyScope()` is how the two machine routes say so, and it is the
+      // same decorator `GET /tokens/current` and the health probe already use.
+      useCredential(hostContext());
+      metadata[ALLOW_ANY_SCOPE_KEY] = true;
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });

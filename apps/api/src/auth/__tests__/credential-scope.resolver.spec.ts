@@ -48,7 +48,9 @@ describe('CredentialScopeResolver', () => {
       // Only the shape decides whether this module is asked; verification is its
       // own business.
       recognises: vi.fn((bearer: string) => bearer === HOST_ASSERTION),
-      verify: vi.fn().mockResolvedValue({ hostId: 'host-1' }),
+      verify: vi
+        .fn()
+        .mockResolvedValue({ hostId: 'host-1', expiresAt: new Date('2026-09-19T12:05:00Z') }),
     };
 
     resolver = new CredentialScopeResolver(
@@ -59,14 +61,33 @@ describe('CredentialScopeResolver', () => {
     );
   });
 
-  it('marks a verified host assertion on the request and yields no scope context', async () => {
+  it('resolves a verified host assertion to a credential of its own kind', async () => {
     const target = request(`Bearer ${HOST_ASSERTION}`);
 
-    // `null` is deliberate: a host has no owner to act as and no scopes to
-    // narrow, so a `ScopeContext` would be a credential with an empty middle.
-    await expect(resolver.resolve(target)).resolves.toBeNull();
-    expect(target.hostPrincipal).toEqual({ hostId: 'host-1' });
+    const credential = await resolver.resolve(target);
+
+    // No owner and no scopes: that is the whole of what the guards need, and
+    // the type is what stops anything reading a user off a machine.
+    expect(credential).toMatchObject({ kind: 'host', hostId: 'host-1', scopes: [] });
+    expect(credential).not.toHaveProperty('owner');
     expect(target.user).toBeUndefined();
+  });
+
+  it('buckets a host by its own id for the rate limiter, and carries the expiry', async () => {
+    const credential = await resolver.resolve(request(`Bearer ${HOST_ASSERTION}`));
+
+    expect(credential?.credentialId).toBe('host:host-1');
+    expect(credential?.expiresAt).toEqual(new Date('2026-09-19T12:05:00Z'));
+  });
+
+  it('nothing is written onto the request for a host', async () => {
+    // The request type is a contract every controller in the API names; a
+    // machine credential does not get to grow an optional field on it.
+    const target = request(`Bearer ${HOST_ASSERTION}`);
+
+    await resolver.resolve(target);
+
+    expect(Object.keys(target)).toEqual(['headers']);
   });
 
   it('does not fall back to a session lookup for a host', async () => {
@@ -94,7 +115,6 @@ describe('CredentialScopeResolver', () => {
 
     await expect(resolver.resolve(target)).resolves.toBeNull();
     expect(hostAssertions.recognises).not.toHaveBeenCalled();
-    expect(target.hostPrincipal).toBeUndefined();
   });
 
   it('never asks the hosts module about an API token', async () => {

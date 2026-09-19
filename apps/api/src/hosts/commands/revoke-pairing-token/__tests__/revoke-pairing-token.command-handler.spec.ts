@@ -20,7 +20,7 @@ function token(revokedAt: Date | null = null) {
   return HostPairingTokenEntity.create({
     id: 'token-1',
     props: {
-      createdByUserId: 'jordi',
+      ownerUserId: 'jordi',
       intendedName: 'Dev box',
       prefix: 'opr_reg_abcdef',
       tokenHash: 'h'.repeat(64),

@@ -1,7 +1,9 @@
 import type { ExecutionContext } from '@nestjs/common';
+import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialScopePort } from '../../../auth/application/credential-scope.port';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
+import { HOST_PRINCIPAL, type HostPrincipalRequest } from '../../decorators/current-host.decorator';
 import { HostPrincipalGuard } from '../host-principal.guard';
 
 /**
@@ -9,12 +11,21 @@ import { HostPrincipalGuard } from '../host-principal.guard';
  * request, so if this guard admitted anyone else the route would be open.
  */
 describe('HostPrincipalGuard', () => {
-  let request: ScopedRequest;
+  let request: ScopedRequest & HostPrincipalRequest;
   let credentials: Pick<CredentialScopePort, 'resolve'>;
   let guard: HostPrincipalGuard;
 
   const context = () =>
     ({ switchToHttp: () => ({ getRequest: () => request }) }) as unknown as ExecutionContext;
+
+  const host = () => ({
+    kind: 'host' as const,
+    credentialId: 'host:host-1',
+    hostId: 'host-1',
+    scopes: [],
+    resourceScope: toResourceScope(null),
+    expiresAt: null,
+  });
 
   beforeEach(() => {
     request = { headers: {} };
@@ -22,27 +33,19 @@ describe('HostPrincipalGuard', () => {
     guard = new HostPrincipalGuard(credentials as CredentialScopePort);
   });
 
-  it('admits a request the resolver classified as a host', async () => {
-    vi.mocked(credentials.resolve).mockImplementation(async (target) => {
-      (target as ScopedRequest).hostPrincipal = { hostId: 'host-1' };
-      return null;
-    });
+  it('admits a host and leaves it where the route can read it', async () => {
+    vi.mocked(credentials.resolve).mockResolvedValue(host());
 
     await expect(guard.canActivate(context())).resolves.toBe(true);
-  });
-
-  it('resolves the credential itself rather than trusting what ran before it', async () => {
-    // Global guards run before controller-level ones today; a guard whose
-    // correctness depended on that order would break silently when it changes.
-    await guard.canActivate(context()).catch(() => undefined);
-
-    expect(credentials.resolve).toHaveBeenCalledWith(request);
+    // Under a module-local symbol, so the rest of the API never sees it.
+    expect(request[HOST_PRINCIPAL]).toEqual({ hostId: 'host-1' });
   });
 
   it('refuses a browser session', async () => {
     request.user = { id: 'jordi' };
 
     await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'HOSTS_005' });
+    expect(request[HOST_PRINCIPAL]).toBeUndefined();
   });
 
   it('refuses a perfectly valid API token', async () => {
@@ -62,11 +65,22 @@ describe('HostPrincipalGuard', () => {
         emailVerified: true,
       },
       scopes: ['hosts:write'],
-      resourceScope: { organizationIds: null },
+      resourceScope: toResourceScope(null),
       expiresAt: null,
     });
 
     await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'HOSTS_005' });
+  });
+
+  it('resolves the credential once, through the shared port', async () => {
+    // Verification burns the assertion's `jti`, so a guard that re-verified
+    // instead of reading the memoized resolution would refuse itself as a replay.
+    vi.mocked(credentials.resolve).mockResolvedValue(host());
+
+    await guard.canActivate(context());
+
+    expect(credentials.resolve).toHaveBeenCalledTimes(1);
+    expect(credentials.resolve).toHaveBeenCalledWith(request);
   });
 
   it('lets the resolver’s own rejection through', async () => {

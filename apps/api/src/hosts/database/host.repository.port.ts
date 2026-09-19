@@ -22,13 +22,38 @@ export interface HostPresence {
   online: boolean;
 }
 
+/** What the burn hands back about the token it claimed, and nothing more. */
+export interface RedeemedPairingToken {
+  id: string;
+  /** The person the host belongs to. */
+  ownerUserId: string;
+  /** The name the console gave the machine before it existed. */
+  intendedName: string;
+  /**
+   * The id the statement recorded as the host this token created.
+   *
+   * It is minted before the statement runs, because the statement writes it —
+   * which is also why the foreign key on that column is deferred to commit. The
+   * host built from this row must carry it, or the response would name a row
+   * nobody can read.
+   */
+  redeemedHostId: string;
+}
+
 export interface RedeemAndRegisterInput {
   /** SHA-256 of the presented secret — the only thing the burn matches on. */
   tokenHash: string;
-  /** The host to create if, and only if, the burn claims the token. */
-  host: HostEntity;
   redeemedFromIp: string | null;
   now: Date;
+  /**
+   * Builds the host from the token that was actually claimed.
+   *
+   * A callback rather than a ready-made aggregate because who the host belongs
+   * to and what it is called are columns of the row the burn locks, and the
+   * burn is the only authority on whether that row may be spent. Constructing
+   * the host first would mean building one for every forged token too.
+   */
+  host: (token: RedeemedPairingToken) => HostEntity;
 }
 
 /**
@@ -60,9 +85,11 @@ export interface HostRepositoryPort {
    *
    * The burn is a single statement whose `WHERE` carries every reason a token
    * may not be spent, so two machines racing on the same secret produce one host
-   * and one rejection rather than two hosts. `None` means the statement claimed
-   * nothing — used, expired, revoked or never real, deliberately
-   * indistinguishable from each other.
+   * and one rejection rather than two hosts. It returns the owner and the
+   * intended name with the row it claimed, so the host is built from what was
+   * spent rather than from a second read of the same row. `None` means the
+   * statement claimed nothing — used, expired, revoked or never real,
+   * deliberately indistinguishable from each other.
    */
   redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>>;
 }

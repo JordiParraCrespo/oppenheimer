@@ -1,6 +1,37 @@
+import { createHash, createPrivateKey, createPublicKey } from 'node:crypto';
+import type { ConfigService } from '@nestjs/config';
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 import { parseEnv } from './env';
+
+/** DER prefix of an Ed25519 SubjectPublicKeyInfo, which wraps the raw 32 bytes. */
+const SPKI_PREFIX_BYTES = 12;
+
+/**
+ * The public fingerprint of the control plane's Ed25519 signing key: SHA-256 of
+ * the raw public key, hex — the value a runner pins at registration (F6).
+ *
+ * Derived here, at parse time, so the **private** key never leaves this factory:
+ * what the rest of the process can read is the fingerprint. An unparsable or
+ * non-Ed25519 value yields `undefined`, which is how a malformed key reports as
+ * "not configured" rather than as a fingerprint of the wrong thing — a sentinel
+ * would be a string pretending to be an absence
+ * (`.agents/rules/api-config.md`).
+ */
+function fingerprintOf(base64PrivateKey: string | undefined): string | undefined {
+  if (!base64PrivateKey) return undefined;
+  try {
+    const der = Buffer.from(base64PrivateKey.replace(/\s+/g, ''), 'base64');
+    const privateKey = createPrivateKey({ key: der, format: 'der', type: 'pkcs8' });
+    if (privateKey.asymmetricKeyType !== 'ed25519') return undefined;
+    const raw = createPublicKey(privateKey)
+      .export({ format: 'der', type: 'spki' })
+      .subarray(SPKI_PREFIX_BYTES);
+    return createHash('sha256').update(raw).digest('hex');
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * What this deployment needs in order to pair a machine with it.
@@ -35,11 +66,12 @@ const schema = z
     releaseChannel: z.enum(['stable', 'beta']).default('stable'),
     installUrl: z.string().url().optional(),
   })
-  .transform(({ apiPublicUrl, controlPlaneUrl, ...rest }) => ({
+  .transform(({ apiPublicUrl, controlPlaneUrl, signingKey, ...rest }) => ({
     // Trailing slashes are stripped on both sides of the audience comparison,
     // so `https://api.example.com/` and `https://api.example.com` are the same
     // control plane rather than two.
     controlPlaneUrl: (controlPlaneUrl ?? apiPublicUrl).replace(/\/+$/, ''),
+    signingKeyFingerprint: fingerprintOf(signingKey),
     ...rest,
   }));
 
@@ -53,3 +85,22 @@ export const hostsConfig = registerAs('hosts', () =>
     installUrl: 'RUNNER_INSTALL_URL',
   }),
 );
+
+/**
+ * Whether this deployment can pair a machine at all: somewhere to download the
+ * runner from, somewhere to fetch signed releases from, and a usable key of its
+ * own for the runner to pin.
+ *
+ * One function with two callers, and that is the point: `RunnerReleaseConfig`
+ * refuses every host route on it, and `resolveCapabilities` reports the `hosts`
+ * capability from it. A capability that said yes while every route answered
+ * `HOSTS_004` would be a second source of truth, and the console reads the
+ * capability first.
+ */
+export function hostsAreConfigured(configService: ConfigService): boolean {
+  return Boolean(
+    configService.get<string>('hosts.installUrl') &&
+      configService.get<string>('hosts.releaseBaseUrl') &&
+      configService.get<string>('hosts.signingKeyFingerprint'),
+  );
+}

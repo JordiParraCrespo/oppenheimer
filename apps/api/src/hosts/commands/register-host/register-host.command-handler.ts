@@ -59,29 +59,29 @@ export class RegisterHostCommandHandler
     if (!fingerprint) throw new ArgumentInvalidException('publicKey must be a 32-byte Ed25519 key');
 
     const tokenHash = hashPairingTokenSecret(command.token);
-    const found = await this.tokens.findOneByHash(tokenHash);
-    if (found.isNone()) throw this.rejected();
-    const token = found.unwrap();
-
-    const host = HostEntity.register(
-      this.mapper.toRegisterProps({
-        ownerUserId: token.createdByUserId,
-        // The token named the machine before it existed, which is the whole
-        // point of naming it there; the runner's own detected name is the
-        // fallback for a token that carries none.
-        name: token.intendedName || command.name,
-        publicKey: command.publicKey,
-        publicKeyFingerprint: fingerprint,
-        facts: command.facts,
-        pairingTokenId: token.id,
-      }),
-    );
 
     const registered = await this.hosts.redeemAndRegister({
       tokenHash,
-      host,
       redeemedFromIp: command.redeemedFromIp,
       now: new Date(),
+      // Built from the row the burn claimed, so a forged token never constructs
+      // an aggregate: who the host belongs to and what it is called come back
+      // with the statement that decided it may be spent.
+      host: (token) =>
+        HostEntity.register(
+          this.mapper.toRegisterProps({
+            id: token.redeemedHostId,
+            ownerUserId: token.ownerUserId,
+            // The token named the machine before it existed, which is the whole
+            // point of naming it there; the runner's own detected name is the
+            // fallback for a token that carries none.
+            name: token.intendedName || command.name,
+            publicKey: command.publicKey,
+            publicKeyFingerprint: fingerprint,
+            facts: command.facts,
+            pairingTokenId: token.id,
+          }),
+        ),
     });
 
     const hostId = registered.isSome()

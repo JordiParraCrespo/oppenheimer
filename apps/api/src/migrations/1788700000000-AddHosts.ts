@@ -12,7 +12,14 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * `host_pairing_token` is the registration token: a credential that exists
  * before its subject does, which is why it is a table and not a column. Only
  * the digest of the secret is stored, and the unique index on it is the lookup
- * key of the single statement that spends one.
+ * key of the single statement that spends one. Its owner column is named
+ * `ownerUserId` like the host's, because it is the same person and the host it
+ * redeems into inherits the value.
+ *
+ * The host's key is one column plus its fingerprint. The retired key that a
+ * rotation window needs is not here: rotation is a frame on an authenticated
+ * link (09 §3), nothing in this slice can write one, and three nullable columns
+ * with no writer are harder to explain later than adding them then.
  *
  * Neither table's rows are hard-deleted: unpairing sets `unpairedAt`, and a
  * spent token is kept so the pairing history — including the two source
@@ -34,9 +41,6 @@ export class AddHosts1788700000000 implements MigrationInterface {
         "capabilities"                  jsonb,
         "publicKey"                     text NOT NULL,
         "publicKeyFingerprint"          character varying(64) NOT NULL,
-        "previousPublicKey"             text,
-        "previousPublicKeyFingerprint"  character varying(64),
-        "previousPublicKeyExpiresAt"    TIMESTAMP WITH TIME ZONE,
         "lastSeenAt"                    TIMESTAMP WITH TIME ZONE,
         "unpairedAt"                    TIMESTAMP WITH TIME ZONE,
         "createdAt"                     TIMESTAMP NOT NULL DEFAULT now(),
@@ -45,25 +49,16 @@ export class AddHosts1788700000000 implements MigrationInterface {
         CONSTRAINT "UQ_host_public_key_fingerprint" UNIQUE ("publicKeyFingerprint"),
         CONSTRAINT "FK_host_owner"
           FOREIGN KEY ("ownerUserId") REFERENCES "user"("id")
-          ON DELETE CASCADE ON UPDATE NO ACTION,
-        -- A retired key with no end to its window would either be valid for
-        -- ever or be dropped on the next boot; both leave a running runner in
-        -- an unrecoverable state, so the pair is required together.
-        CONSTRAINT "CHK_host_previous_key_window"
-          CHECK (("previousPublicKey" IS NULL) = ("previousPublicKeyExpiresAt" IS NULL))
+          ON DELETE CASCADE ON UPDATE NO ACTION
       )
     `);
 
     await queryRunner.query(`CREATE INDEX "IDX_host_owner" ON "host" ("ownerUserId")`);
-    // A boot assertion may arrive signed by either key, so both are looked up.
-    await queryRunner.query(
-      `CREATE INDEX "IDX_host_previous_key_fingerprint" ON "host" ("previousPublicKeyFingerprint") WHERE "previousPublicKeyFingerprint" IS NOT NULL`,
-    );
 
     await queryRunner.query(`
       CREATE TABLE "host_pairing_token" (
         "id"               uuid NOT NULL DEFAULT gen_random_uuid(),
-        "createdByUserId"  uuid NOT NULL,
+        "ownerUserId"      uuid NOT NULL,
         "intendedName"     character varying(80) NOT NULL,
         "prefix"           character varying(32) NOT NULL,
         "tokenHash"        character varying(64) NOT NULL,
@@ -77,8 +72,8 @@ export class AddHosts1788700000000 implements MigrationInterface {
         "updatedAt"        TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_host_pairing_token" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_host_pairing_token_hash" UNIQUE ("tokenHash"),
-        CONSTRAINT "FK_host_pairing_token_creator"
-          FOREIGN KEY ("createdByUserId") REFERENCES "user"("id")
+        CONSTRAINT "FK_host_pairing_token_owner"
+          FOREIGN KEY ("ownerUserId") REFERENCES "user"("id")
           ON DELETE CASCADE ON UPDATE NO ACTION,
         -- Deferred, because redemption writes this column in the same statement
         -- that claims the token and the host it names is inserted later in the
@@ -97,14 +92,13 @@ export class AddHosts1788700000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(
-      `CREATE INDEX "IDX_host_pairing_token_creator" ON "host_pairing_token" ("createdByUserId")`,
+      `CREATE INDEX "IDX_host_pairing_token_owner" ON "host_pairing_token" ("ownerUserId")`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX "IDX_host_pairing_token_creator"`);
+    await queryRunner.query(`DROP INDEX "IDX_host_pairing_token_owner"`);
     await queryRunner.query(`DROP TABLE "host_pairing_token"`);
-    await queryRunner.query(`DROP INDEX "IDX_host_previous_key_fingerprint"`);
     await queryRunner.query(`DROP INDEX "IDX_host_owner"`);
     await queryRunner.query(`DROP TABLE "host"`);
   }

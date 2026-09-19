@@ -1,7 +1,6 @@
 import { type AccessScope, applyAccessScope, expectAbility } from '@oppenheimer/backend-authz';
 import type { PermissionDefinition } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
-import { HostPairingTokenResource } from '../host-pairing-token.resource';
 import { HostResource } from '../hosts.resource';
 
 /**
@@ -107,20 +106,15 @@ describe('host row scoping (SQL)', () => {
 });
 
 describe('pairing token row scoping (SQL)', () => {
-  it('scopes a token to whoever minted it, and to nothing else', () => {
-    const clauses = whereClausesFor(scope(), HostPairingTokenResource, 'token');
-
-    expect(clauses).toEqual(['(token.createdByUserId = :authzUserId)']);
-  });
-
-  it('cannot be reached by a grant, because a token is not shareable', () => {
-    const clauses = whereClausesFor(
-      scope({ grants: new Map([['HostPairingToken', new Set(['token-1'])]]) }),
-      HostPairingTokenResource,
-      'token',
-    );
-
-    expect(clauses).toEqual(['(token.createdByUserId = :authzUserId)']);
+  it('is the same predicate on the same column, because it is the same resource', () => {
+    // A pairing token is how a host comes to exist: the routes that mint and
+    // revoke one are `create Host` and `delete Host`, and the column is the same
+    // `ownerUserId`. A declaration of its own would be a column map pretending to
+    // be a noun, and the day a host is shared by grant the two listings would
+    // diverge with nothing in the policy table to explain it.
+    expect(whereClausesFor(scope(), HostResource, 'token')).toEqual([
+      '(token.ownerUserId = :authzUserId)',
+    ]);
   });
 });
 
@@ -185,11 +179,15 @@ describe('the declarations themselves', () => {
     expect(HostResource.credentialScope).toBe('hosts');
   });
 
-  it('keeps the pairing token out of the credential catalog', () => {
-    // Pairing routes are authorized as `Host`; the token's declaration exists to
-    // scope rows, and giving it a credential scope would publish a second noun
-    // no policy names.
-    expect(HostPairingTokenResource.credentialScope).toBeUndefined();
-    expect(HostPairingTokenResource.scopes).toEqual(['own']);
+  it('is the only resource this module declares', () => {
+    // Pairing tokens are scoped by it too. One noun, one row predicate, one set
+    // of verbs in the role builder.
+    expect(HostResource.subject).toBe('Host');
+    expect(HostResource.actions.map((action) => action.name)).toEqual([
+      'read',
+      'create',
+      'update',
+      'delete',
+    ]);
   });
 });

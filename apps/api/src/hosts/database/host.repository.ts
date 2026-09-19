@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
@@ -13,6 +14,7 @@ import {
   type HostPresence,
   type HostRepositoryPort,
   type RedeemAndRegisterInput,
+  type RedeemedPairingToken,
 } from './host.repository.port';
 
 /** The presence flag, computed by the database beside the row it describes. */
@@ -104,7 +106,10 @@ export class HostRepository
    * together — so the events are staged inside the transaction this method owns.
    */
   async redeemAndRegister(input: RedeemAndRegisterInput): Promise<Option<HostEntity>> {
-    const record = this.mapper.toPersistence(input.host);
+    // The id is minted before the statement runs because the burn writes it into
+    // `redeemedHostId` in the same breath; the row it names is inserted below,
+    // which is why that foreign key is deferred to commit.
+    const hostId = randomUUID();
 
     const registered = await this.dataSource.transaction(async (manager) => {
       // TypeORM answers an `UPDATE … RETURNING` with `[rows, affectedCount]`,
@@ -117,25 +122,28 @@ export class HostRepository
             AND "redeemedAt" IS NULL
             AND "revokedAt" IS NULL
             AND "expiresAt" > $2
-        RETURNING "id"`,
-        [input.tokenHash, input.now, record.id, input.redeemedFromIp],
-      )) as [{ id: string }[], number];
+        RETURNING "id", "ownerUserId", "intendedName"`,
+        [input.tokenHash, input.now, hostId, input.redeemedFromIp],
+      )) as [RedeemedPairingToken[], number];
 
-      if (burned.length === 0) return false;
+      if (burned.length === 0) return null;
+
+      const host = input.host({ ...burned[0], redeemedHostId: hostId });
+      const record = this.mapper.toPersistence(host);
 
       const hosts = manager.getRepository(HostOrmEntity);
       // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
       // represent the free-form `capabilities` jsonb.
       await hosts.insert(record as Parameters<typeof hosts.insert>[0]);
-      await this.outbox.stageEvents(manager, input.host.domainEvents);
-      return true;
+      await this.outbox.stageEvents(manager, host.domainEvents);
+      return host;
     });
 
     if (!registered) return None;
 
-    input.host.clearEvents();
+    registered.clearEvents();
     await this.outbox.wake();
-    return Some(input.host);
+    return Some(registered);
   }
 
   /** Adds the presence flag to a query without disturbing its entity mapping. */

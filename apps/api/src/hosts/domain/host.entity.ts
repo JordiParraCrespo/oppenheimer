@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import {
   AggregateRoot,
   ArgumentInvalidException,
@@ -28,10 +27,6 @@ export interface HostProps {
   publicKey: string;
   /** SHA-256 of the raw public key, hex — the form shown beside a host. */
   publicKeyFingerprint: string;
-  /** The key being retired, still accepted until its window closes. */
-  previousPublicKey: string | null;
-  previousPublicKeyFingerprint: string | null;
-  previousPublicKeyExpiresAt: Date | null;
   /** Last heartbeat. `online` is derived from it, never stored. */
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */
@@ -39,6 +34,12 @@ export interface HostProps {
 }
 
 export interface RegisterHostProps {
+  /**
+   * The id the redemption statement recorded for this host. It is minted by the
+   * repository because the statement that claims the token writes it, and the
+   * row this aggregate becomes has to be the row that statement named.
+   */
+  id: string;
   ownerUserId: string;
   name: string;
   publicKey: string;
@@ -58,13 +59,11 @@ const FINGERPRINT = /^[0-9a-f]{64}$/;
 /**
  * A machine someone paired with this control plane.
  *
- * The key pair is **two columns on this row, not a child table**: rotation
- * needs the old key to stay valid for a grace window, which is two keys and
- * never N, and every runner boot verifies an assertion against this row — so a
- * join here would sit on the hottest path in the system
- * (`product/versions/mvp/09-runner-install-and-update.md` §3). A host must
- * never be left with zero valid keys, which is why the pair lives on the
- * aggregate that can enforce it.
+ * Its key is **a column on this row, not a child table**: every runner boot
+ * verifies an assertion against this row, so a join would sit on the hottest
+ * path in the system, and when rotation arrives on the link
+ * (`product/versions/mvp/09-runner-install-and-update.md` §3) the retired key
+ * is one more column beside it — two keys, never N.
  */
 export class HostEntity extends AggregateRoot<HostProps> {
   /** Rehydrate an existing host (used by the mapper). */
@@ -75,7 +74,7 @@ export class HostEntity extends AggregateRoot<HostProps> {
   /** A machine that has just redeemed a pairing token. */
   static register(props: RegisterHostProps): HostEntity {
     const host = new HostEntity({
-      id: randomUUID(),
+      id: props.id,
       props: {
         ownerUserId: props.ownerUserId,
         name: props.name,
@@ -86,9 +85,6 @@ export class HostEntity extends AggregateRoot<HostProps> {
         capabilities: props.capabilities ?? null,
         publicKey: props.publicKey,
         publicKeyFingerprint: props.publicKeyFingerprint,
-        previousPublicKey: null,
-        previousPublicKeyFingerprint: null,
-        previousPublicKeyExpiresAt: null,
         lastSeenAt: null,
         unpairedAt: null,
       },
@@ -143,18 +139,6 @@ export class HostEntity extends AggregateRoot<HostProps> {
     return this.props.publicKeyFingerprint;
   }
 
-  get previousPublicKey(): string | null {
-    return this.props.previousPublicKey;
-  }
-
-  get previousPublicKeyFingerprint(): string | null {
-    return this.props.previousPublicKeyFingerprint;
-  }
-
-  get previousPublicKeyExpiresAt(): Date | null {
-    return this.props.previousPublicKeyExpiresAt;
-  }
-
   get lastSeenAt(): Date | null {
     return this.props.lastSeenAt;
   }
@@ -165,22 +149,6 @@ export class HostEntity extends AggregateRoot<HostProps> {
 
   get isUnpaired(): boolean {
     return this.props.unpairedAt !== null;
-  }
-
-  /**
-   * The keys that may sign for this host at `now`: the current one always, and
-   * the retired one only while its window is open.
-   *
-   * Asking the aggregate rather than reading two columns at the call site is
-   * what keeps "a host is never left with zero valid keys" a property of the
-   * host instead of a rule each verifier remembers.
-   */
-  keysValidAt(now: Date): string[] {
-    const keys = [this.props.publicKey];
-    const previous = this.props.previousPublicKey;
-    const expiresAt = this.props.previousPublicKeyExpiresAt;
-    if (previous && expiresAt && expiresAt.getTime() > now.getTime()) keys.push(previous);
-    return keys;
   }
 
   /** Is this the machine we already paired under that key? */
@@ -222,11 +190,6 @@ export class HostEntity extends AggregateRoot<HostProps> {
       throw new ArgumentInvalidException(
         'A host key fingerprint is the SHA-256 of the raw key, as 64 hex characters',
       );
-    }
-    // Losing the retired key while its window is still open would leave a
-    // running runner unable to authenticate at its next boot.
-    if (this.props.previousPublicKey && !this.props.previousPublicKeyExpiresAt) {
-      throw new ArgumentInvalidException('A retired host key must carry the end of its window');
     }
   }
 }

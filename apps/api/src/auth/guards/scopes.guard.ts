@@ -25,12 +25,12 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
  * This is only half of the check. The credential's owner still has to be
  * allowed to perform the operation at all, which `PoliciesGuard` evaluates
  * against their live roles — so the effective permission is the intersection.
+
  *
- * A **host principal** is the fourth case and the one with no owner at all: a
- * runner presenting its own boot assertion. It carries no scopes, so the only
- * routes open to it are the ones that require none — which is why it is refused
- * here rather than being let through to a policy check that has no user to
- * evaluate.
+ * A host's boot assertion is the fourth kind of credential and needs no case of
+ * its own: it carries an empty scope list, so the rules above refuse it on every
+ * route that declares a scope, and the two machine routes say `@AllowAnyScope()`
+ * because there is no permission for a machine to hold.
  */
 @Injectable()
 export class ScopesGuard implements CanActivate {
@@ -45,10 +45,6 @@ export class ScopesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<ScopedRequest>();
     const scopeContext = await this.credentials.resolve(request);
-
-    // Resolving is what classifies a host's assertion, so this is readable only
-    // after the await above.
-    if (request.hostPrincipal) return this.assertRouteTakesNoScopes(context);
     if (!scopeContext) return true;
 
     const allowAnyScope = this.reflector.getAllAndOverride<boolean>(ALLOW_ANY_SCOPE_KEY, [
@@ -60,25 +56,6 @@ export class ScopesGuard implements CanActivate {
     this.assertOrganization(context, request, scopeContext);
 
     return true;
-  }
-
-  /**
-   * A host reaches a route that asks for nothing, and no other.
-   *
-   * `TOKEN_006` — "this endpoint cannot be called with a scoped credential" — is
-   * the inverse rule and belongs to credentials that act for a person: a route
-   * declaring no scopes is closed to those, and open to this. Everything a
-   * scoped credential could ask for is closed to a host, because a machine
-   * holds no permissions of its own.
-   */
-  private assertRouteTakesNoScopes(context: ExecutionContext): boolean {
-    const required = this.requiredScopes(context);
-    if (!required || required.length === 0) return true;
-
-    throw new AppError(ApiTokenErrors.INSUFFICIENT_SCOPE, {
-      detail: `A host credential carries no permissions; this endpoint requires: ${required.join(', ')}`,
-      extensions: { missingScopes: required },
-    });
   }
 
   private assertScopes(context: ExecutionContext, scopeContext: ScopeContext): void {

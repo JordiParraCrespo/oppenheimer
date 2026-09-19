@@ -34,6 +34,13 @@ describe('MintPairingTokenCommandHandler', () => {
   const command = () =>
     new MintPairingTokenCommand({ userId: 'jordi', name: 'Dev box', createdFromIp: '203.0.113.7' });
 
+  it('hands back the row it wrote, so nothing has to read it again', async () => {
+    const result = await handler.execute(command());
+
+    const [inserted] = vi.mocked(tokens.insert).mock.calls[0];
+    expect(result.token).toBe(inserted);
+  });
+
   it('stores only the digest of the secret it hands back', async () => {
     const result = await handler.execute(command());
 
@@ -66,7 +73,7 @@ describe('MintPairingTokenCommandHandler', () => {
 
     const [token] = vi.mocked(tokens.insert).mock.calls[0];
     expect(token).toMatchObject({ intendedName: 'Dev box', createdFromIp: '203.0.113.7' });
-    expect(token.createdByUserId).toBe('jordi');
+    expect(token.ownerUserId).toBe('jordi');
   });
 
   it('expires the token within the hour', async () => {

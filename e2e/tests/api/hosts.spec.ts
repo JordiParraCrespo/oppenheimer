@@ -16,6 +16,10 @@ import { expectProblemDocument, newContext, signedUpContext } from '../../suppor
  * Skipped when the deployment has no runner release configured: without it
  * pairing answers `HOSTS_004` by design, and a red test would be reporting the
  * configuration rather than the code.
+ *
+ * `DELETE /hosts/self` is the uninstall route both 01 and 03 name, and the path
+ * carries no host id on purpose: the machine is the subject of the assertion it
+ * presents, so it can only ever remove itself.
  */
 
 /** A machine's keypair, encoded the way the runner encodes it. */
@@ -70,12 +74,26 @@ async function mintPairingToken(api: APIRequestContext, name = 'e2e box') {
   };
 }
 
+/**
+ * `apps/runner/internal/host/domain.Facts` as Go marshals it — the shared schema
+ * takes that struct verbatim, so this is what a real `runner register` posts.
+ */
 const FACTS = {
-  hostname: 'e2e-box.local',
-  os: 'linux',
+  platform: 'debian',
+  osVersion: '13',
   arch: 'amd64',
-  tools: { git: '2.51.0', tmux: '3.5a' },
-  agents: [],
+  hostname: 'e2e-box.local',
+  user: 'runner',
+  home: '/home/runner',
+  root: false,
+  tools: [
+    { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
+    { name: 'tmux', path: '/usr/bin/tmux', version: '3.5a', required: true },
+    { name: 'claude', required: false },
+  ],
+  workspacePath: '/home/runner/oppenheimer-ai',
+  diskFreeBytes: 53_687_091_200,
+  runnerVersion: '0.3.1',
 };
 
 test.describe('Hosts', () => {
@@ -116,6 +134,9 @@ test.describe('Hosts', () => {
       name: 'Pairing flow',
       ownerUserId: userId,
       publicKeyFingerprint: key.fingerprint,
+      hostname: 'e2e-box.local',
+      os: 'debian 13',
+      runnerVersion: '0.3.1',
       online: false,
     });
 

@@ -18,18 +18,21 @@ describe('resolveCapabilities', () => {
     });
   });
 
-  it('only reports hosts once a deployment can actually pair a machine', () => {
+  it('reports hosts from the same predicate the host routes refuse on', () => {
     // Two of the three is not a working pairing flow: without the install URL
-    // there is no command to print, and without the signing key there is no
-    // fingerprint for the runner to pin.
+    // there is no command to print, and without a usable signing key there is no
+    // fingerprint for the runner to pin. The key is validated when the config is
+    // parsed, so what is read here is the fingerprint — a capability that said
+    // yes while every route answered HOSTS_004 would be the second source of
+    // truth the console reads first.
     const partial = configWith({
-      'hosts.signingKey': 'key',
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
       'hosts.releaseBaseUrl': 'https://releases.example.com',
     });
     expect(resolveCapabilities(partial).hosts).toBe(false);
 
     const complete = configWith({
-      'hosts.signingKey': 'key',
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
       'hosts.releaseBaseUrl': 'https://releases.example.com',
       'hosts.installUrl': 'https://releases.example.com/install.sh',
     });

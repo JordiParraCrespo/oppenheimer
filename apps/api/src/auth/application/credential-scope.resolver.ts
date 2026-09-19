@@ -38,10 +38,10 @@ interface WithResolution {
  *   scopes carried through.
  * - **A host's boot assertion** — an EdDSA JWS a runner signs with the key it
  *   registered, presented as an ordinary bearer because that is what the
- *   protocol says it is (`product/versions/mvp/03-control-plane.md`). It yields
- *   no scope context at all: there is no person behind it, so there is nothing
- *   for scopes or roles to narrow. It is marked on the request instead, as
- *   `request.hostPrincipal`, and `HostPrincipalGuard` is what admits it.
+ *   protocol says it is (`product/versions/mvp/03-control-plane.md`). It
+ *   resolves to a credential of its own kind, carrying no scopes and no owner,
+ *   which the guards then refuse everywhere a scope is declared without
+ *   knowing anything about machines.
  *
  * A bearer credential that cannot be resolved is rejected rather than ignored:
  * silently falling back to a cookie would let a stale token act with the
@@ -78,7 +78,7 @@ export class CredentialScopeResolver {
       return this.resolveApiToken(presented, request);
     }
     if (this.hostAssertions.recognises(presented)) {
-      return this.resolveHostAssertion(presented, request);
+      return this.resolveHostAssertion(presented);
     }
     return this.resolveOAuthToken(request);
   }
@@ -92,17 +92,23 @@ export class CredentialScopeResolver {
    * audience, expiry, replay) belongs to the hosts module and is reached through
    * its port; a failure throws from there with that module's opaque rejection.
    *
-   * It resolves to `null`, not to a `ScopeContext`: a host has no scopes to
-   * narrow and no owner to act as. The principal goes on the request, where
-   * `ScopesGuard` and `HostPrincipalGuard` read it.
+   * The result is a credential with an empty scope list and no owner. That is
+   * all the guards need: `ScopesGuard` refuses it on every route that declares a
+   * scope by the rule it already had, and `ApiAuthGuard` refuses it outright
+   * because there is no person to act as.
    */
-  private async resolveHostAssertion(
-    assertion: string,
-    request: ScopedRequest,
-  ): Promise<ScopeContext | null> {
-    const { hostId } = await this.hostAssertions.verify(assertion);
-    request.hostPrincipal = { hostId };
-    return null;
+  private async resolveHostAssertion(assertion: string): Promise<ScopeContext> {
+    const { hostId, expiresAt } = await this.hostAssertions.verify(assertion);
+    return {
+      kind: 'host',
+      // There is no token record to name, so the host is the identity — which is
+      // also the right rate-limit bucket for a machine that reconnects.
+      credentialId: `host:${hostId}`,
+      hostId,
+      scopes: [],
+      resourceScope: toResourceScope(null),
+      expiresAt,
+    };
   }
 
   /** The raw credential string, from either supported header. */

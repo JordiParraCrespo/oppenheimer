@@ -7,7 +7,7 @@ import {
 
 export interface HostPairingTokenProps {
   /** The person who minted it. The host it creates belongs to them. */
-  createdByUserId: string;
+  ownerUserId: string;
   /**
    * The name the machine is given before it exists — the console names a box
    * ("Dev box") and the host adopts it at registration, so nobody has to rename
@@ -28,7 +28,7 @@ export interface HostPairingTokenProps {
 }
 
 export interface MintHostPairingTokenProps {
-  createdByUserId: string;
+  ownerUserId: string;
   intendedName: string;
   prefix: string;
   tokenHash: string;
@@ -60,7 +60,7 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
     return new HostPairingTokenEntity({
       id: randomUUID(),
       props: {
-        createdByUserId: props.createdByUserId,
+        ownerUserId: props.ownerUserId,
         intendedName: props.intendedName,
         prefix: props.prefix,
         tokenHash: props.tokenHash,
@@ -74,8 +74,8 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
     });
   }
 
-  get createdByUserId(): string {
-    return this.props.createdByUserId;
+  get ownerUserId(): string {
+    return this.props.ownerUserId;
   }
 
   get intendedName(): string {
@@ -128,7 +128,7 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
   }
 
   public validate(): void {
-    if (!this.props.createdByUserId?.trim()) {
+    if (!this.props.ownerUserId?.trim()) {
       throw new ArgumentNotProvidedException('A pairing token must have a creator');
     }
     if (!this.props.intendedName?.trim()) {

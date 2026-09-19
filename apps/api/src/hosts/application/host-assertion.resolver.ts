@@ -39,7 +39,9 @@ const REPLAY_KEY_PREFIX = 'host-assertion:jti';
  *    runner issues its own credential, so anything else is a different scheme;
  * 2. the audience is this control plane, so an assertion minted for another
  *    deployment cannot be replayed here;
- * 3. it has not expired and does not claim a longer life than a boot token has;
+ * 3. it has not expired, was not issued in the future, and was minted with no
+ *    more life than a boot token has — the claimed lifetime, not just what is
+ *    left of it;
  * 4. its `jti` has not been seen before.
  *
  * The fourth is why this is not a pure function. A captured assertion cannot
@@ -77,15 +79,16 @@ export class HostAssertionResolver implements HostAssertionPort {
     if (found.isNone()) throw this.rejected('no such host');
 
     const host = found.unwrap();
-    // Either key is this host: during a rotation window the old one is still
-    // valid, because a runner switches only once the new key is acknowledged.
-    if (!assertionIsSignedBy(decoded, host.keysValidAt(now))) {
+    // One key, because nothing can rotate one yet. The verifier takes a list so
+    // that the retired key joins it, and nothing else changes, when the link can
+    // carry a rotation (09 §3).
+    if (!assertionIsSignedBy(decoded, [host.publicKey])) {
       throw this.rejected('not signed by this host');
     }
 
     await this.burn(hostId, jti, expiresAt, now);
 
-    return { hostId };
+    return { hostId, expiresAt };
   }
 
   /**
@@ -102,16 +105,31 @@ export class HostAssertionResolver implements HostAssertionPort {
 
   private expiryOf(decoded: DecodedHostAssertion, now: Date): Date {
     const exp = numberClaim(decoded.claims.exp);
+    const iat = numberClaim(decoded.claims.iat);
     if (exp === null) throw this.rejected('no expiry');
+    if (iat === null) throw this.rejected('no issued-at');
 
     const expiresAt = new Date(exp * 1000);
+    const issuedAt = new Date(iat * 1000);
     const secondsLeft = (expiresAt.getTime() - now.getTime()) / 1000;
     if (secondsLeft <= -CLOCK_SKEW_SECONDS) throw this.rejected('expired');
-    // A token claiming a longer life than a boot token has was minted by
-    // something else, and accepting it would silently widen the replay window
-    // the burn below is sized against.
+
+    // **Claimed life, not remaining life.** The protocol says a boot token is
+    // minted with a five-minute expiry, so a token issued last week with four
+    // minutes left on it was not minted as one — and capping only what is left
+    // would accept it. Both bounds matter: the first is what the token says about
+    // itself, the second is what the replay window below is sized against.
+    const claimedLifetime = (expiresAt.getTime() - issuedAt.getTime()) / 1000;
+    if (claimedLifetime > MAX_LIFETIME_SECONDS + CLOCK_SKEW_SECONDS) {
+      throw this.rejected('minted with a longer life than a boot token');
+    }
     if (secondsLeft > MAX_LIFETIME_SECONDS + CLOCK_SKEW_SECONDS) {
       throw this.rejected('lives longer than a boot token');
+    }
+    // A future `iat` is either a clock that is wrong by more than the skew we
+    // tolerate, or a token minted to outlive this check.
+    if (issuedAt.getTime() - now.getTime() > CLOCK_SKEW_SECONDS * 1000) {
+      throw this.rejected('issued in the future');
     }
     return expiresAt;
   }

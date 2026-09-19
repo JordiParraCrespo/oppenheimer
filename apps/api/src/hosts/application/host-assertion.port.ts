@@ -1,9 +1,12 @@
 /**
- * What a verified host credential amounts to: the id of the machine, and nothing
- * else. A host is not a person — it has no roles, no scopes and no ability.
+ * What a verified host credential amounts to: the machine that signed it and
+ * how long the assertion it signed is good for. A host is not a person — it has
+ * no roles, no scopes and no ability.
  */
 export interface HostPrincipalIdentity {
   hostId: string;
+  /** The assertion's own expiry, so a caller can bound what it caches. */
+  expiresAt: Date;
 }
 
 /**

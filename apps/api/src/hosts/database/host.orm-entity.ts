@@ -8,9 +8,9 @@ import type { HostCapabilities } from '../domain/host.entity';
  * Better Auth's own device-and-login tables (`session`, `account`) hang off
  * `user`; what *runs* on a host is scoped by the session's workspace instead.
  *
- * Both key columns sit on this row rather than in a `host_key` table: rotation
- * needs exactly two keys, never N, and the boot lookup for an assertion is the
- * hottest read in the system.
+ * The key sits on this row rather than in a `host_key` table: the boot lookup
+ * for an assertion is the hottest read in the system, and when rotation arrives
+ * on the link the retired key is one more column beside it — two keys, never N.
  */
 @Entity('host')
 @Index(['ownerUserId'])
@@ -47,17 +47,6 @@ export class HostOrmEntity {
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 64 })
   publicKeyFingerprint!: string;
-
-  @Column({ type: 'text', nullable: true })
-  previousPublicKey!: string | null;
-
-  /** Indexed because a boot lookup may arrive under either key. */
-  @Index()
-  @Column({ type: 'varchar', length: 64, nullable: true })
-  previousPublicKeyFingerprint!: string | null;
-
-  @Column({ type: 'timestamp with time zone', nullable: true })
-  previousPublicKeyExpiresAt!: Date | null;
 
   /** Last heartbeat. `online` is derived from it in the read query. */
   @Column({ type: 'timestamp with time zone', nullable: true })

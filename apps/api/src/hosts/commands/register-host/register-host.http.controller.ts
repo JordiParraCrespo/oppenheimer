@@ -11,11 +11,11 @@ import type { RegisterHostResult } from './register-host.command-handler';
 import { RegisterHostRequest } from './register-host.request.dto';
 
 /**
- * The first of the two HTTP calls a runner ever makes. It runs from the install
- * command, before the machine has a key this control plane has heard of — so
- * there is no session, no token and no principal on the request: the
- * registration token in the body is the whole credential, and the handler is
- * what checks it.
+ * `POST /hosts/register`, the call the install command makes before the machine
+ * has a key this control plane has heard of — so there is no session, no token
+ * and no principal on the request: the registration token in the body is the
+ * whole credential, and the handler is what checks it
+ * (`product/versions/mvp/03-control-plane.md`).
  */
 @ApiTags('Hosts')
 @Controller('hosts')
@@ -26,8 +26,10 @@ export class RegisterHostHttpController {
   @Version('1')
   @NoPolicy('the caller is a machine redeeming a registration token, not a signed-in user')
   // The token is the only thing standing between a caller and a paired host, so
-  // guessing is bounded here rather than only by its entropy (F5).
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  // guessing is bounded here rather than only by its entropy (F5). Five a minute
+  // is what `.agents/rules/api-config.md` sets for a registration endpoint, and
+  // an install that needs a sixth attempt in a minute has a different problem.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Redeem a registration token and become a host',
     description:

@@ -3,11 +3,12 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../../auth/application/credential-scope.port';
 import { CREDENTIAL_SCOPE } from '../../auth/auth.di-tokens';
 import type { ScopedRequest } from '../../auth/domain/scope-context.types';
+import { HOST_PRINCIPAL, type HostPrincipalRequest } from '../decorators/current-host.decorator';
 import { HostErrors } from '../domain/hosts.errors';
 
 /**
  * Admits a request only when the credential on it is a host's own boot
- * assertion.
+ * assertion, and leaves the host it named where `@CurrentHost()` can read it.
  *
  * There is no person behind such a request — no session, no roles, no scopes —
  * so the routes it guards carry `@NoPolicy` and this guard is the whole of their
@@ -15,10 +16,10 @@ import { HostErrors } from '../domain/hosts.errors';
  * token: a route that exists for a machine to call about itself is not a route a
  * person's credential should reach.
  *
- * It resolves the credential itself rather than reading what another guard left
- * behind. Resolution is memoized on the request, so asking costs nothing — and
- * a guard whose correctness depended on the order guards happen to run in would
- * be a guard that silently stops working when that order changes.
+ * The credential is resolved through the same port every other guard uses, and
+ * the resolution is memoized per request — which matters more than it looks:
+ * verifying an assertion burns its `jti`, so a second verification of the same
+ * token would refuse itself as a replay.
  */
 @Injectable()
 export class HostPrincipalGuard implements CanActivate {
@@ -28,14 +29,14 @@ export class HostPrincipalGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<ScopedRequest>();
+    const request = context.switchToHttp().getRequest<ScopedRequest & HostPrincipalRequest>();
 
-    // Classifying the credential is what puts the host principal on the request
-    // (see `CredentialScopeResolver`); an unrecognisable bearer throws from
-    // there with the same opaque answer it gives everywhere else.
-    await this.credentials.resolve(request);
+    // An unrecognisable bearer throws from the resolver with the same opaque
+    // answer it gives everywhere else; a session or a token resolves to
+    // something that is simply not a host.
+    const credential = await this.credentials.resolve(request);
 
-    if (!request.hostPrincipal) {
+    if (credential?.kind !== 'host') {
       // Returning `false` would hand back Nest's own codeless 403; the catalog
       // error is what the runner reads a `detail` out of.
       throw new AppError(HostErrors.ASSERTION_REJECTED, {
@@ -43,6 +44,7 @@ export class HostPrincipalGuard implements CanActivate {
       });
     }
 
+    request[HOST_PRINCIPAL] = { hostId: credential.hostId };
     return true;
   }
 }

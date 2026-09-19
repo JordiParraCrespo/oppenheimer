@@ -1,4 +1,4 @@
-import { createHash, createPrivateKey, createPublicKey, type KeyObject, verify } from 'node:crypto';
+import { createHash, createPublicKey, type KeyObject, verify } from 'node:crypto';
 
 /**
  * The Ed25519 half of the host credential, in `node:crypto` alone.
@@ -125,33 +125,6 @@ export function publicKeyFromBase64(base64PublicKey: string): KeyObject | null {
   }
 }
 
-/**
- * The public fingerprint of this control plane's own signing key, which a runner
- * pins at registration and refuses to talk to anything else by (F6).
- *
- * The key is configured as the base64 of its PKCS#8 DER — one line, no PEM
- * header. Returns `null` for anything that is not an Ed25519 private key, so a
- * misconfigured deployment reports "not configured" rather than handing out a
- * fingerprint of the wrong thing.
- */
-export function signingKeyFingerprint(base64PrivateKey: string): string | null {
-  let der: Buffer;
-  try {
-    der = Buffer.from(base64PrivateKey.replace(/\s+/g, ''), 'base64');
-  } catch {
-    return null;
-  }
-  try {
-    const privateKey = createPrivateKey({ key: der, format: 'der', type: 'pkcs8' });
-    if (privateKey.asymmetricKeyType !== 'ed25519') return null;
-    const publicKey = createPublicKey(privateKey);
-    const raw = publicKey.export({ format: 'der', type: 'spki' }).subarray(SPKI_PREFIX.length);
-    return createHash('sha256').update(raw).digest('hex');
-  } catch {
-    return null;
-  }
-}
-
 function rawKeyFromBase64(base64PublicKey: string): Buffer | null {
   const raw = fromBase64Url(base64PublicKey);
   if (!raw || raw.length !== RAW_KEY_BYTES) return null;
@@ -159,15 +132,22 @@ function rawKeyFromBase64(base64PublicKey: string): Buffer | null {
 }
 
 /**
- * Base64 that tolerates both alphabets: the runner sends standard base64 for the
- * public key and base64url inside the token, and both mean the same bytes.
+ * Base64 that tolerates both alphabets — the runner sends standard base64 for the
+ * public key and base64url inside the token, and both mean the same bytes — and
+ * refuses anything that is not base64 at all.
+ *
+ * The refusal has to be a re-encode, because Node's decoder never throws: it
+ * skips characters it does not recognise and returns whatever it managed to
+ * read. So `{"alg":"EdDSA"}!!!` decodes happily, and a token with trailing
+ * garbage would otherwise verify on the bytes the decoder chose to keep.
  */
 function fromBase64Url(value: string): Buffer | null {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, '');
   const decoded = Buffer.from(normalized, 'base64');
-  // Node's decoder never throws, it truncates — so a value that does not
-  // re-encode to what arrived was not base64 in the first place.
   if (decoded.length === 0) return null;
+  // Unpadded standard base64 is the canonical form of both alphabets here, so a
+  // value that does not round-trip to it carried something the decoder dropped.
+  if (decoded.toString('base64').replace(/=+$/, '') !== normalized) return null;
   return decoded;
 }
 
