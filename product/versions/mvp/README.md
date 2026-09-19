@@ -22,7 +22,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
-| 10 | [API modules and data model](10-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the eight new tables, the on-disk layout, the endpoint surface, and where agents and models live |
+| 10 | [API modules and data model](10-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the seven new tables, the on-disk layout, the endpoint surface, and where agents and models live |
 
 ## Decision log
 
@@ -203,3 +203,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `host.capabilities` is what the runner last saw, a hint on the agent
   chip and never a gate; a session opens without `claude` and the
   install command appears in the terminal, as on Orca.
+- 2026-09-19: **no repository table at all.** The lazily created
+  `github_repository` row from the entry above was still a repository
+  table by another name. A checkout carries `installationId`,
+  `githubRepoId` and a `repositoryFullName` snapshot inline, the way
+  Better Auth's `account` carries its provider ids; the runner names
+  stores `<owner>--<repo>.git`, writes the GitHub id into the bare
+  repo's config, finds them by that id thereafter, and reports the name
+  back. `project.originRepositoryId` becomes `originGithubRepoId`.
+  Seven tables.

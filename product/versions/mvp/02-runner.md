@@ -152,8 +152,12 @@ one is observable on disk:
    (`git clone --bare` the first time, then `git fetch`, with the
    `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
    set), authenticated through the credential helper (§8). The store
-   name is frozen on the repository row, never derived from the current
-   GitHub name.
+   is found **by GitHub id**, never by name: the runner writes
+   `git config oppenheimer.repo-id <id>` into the bare repo when it
+   creates it as `<owner>--<repo>.git`, suffixes the name if that one is
+   taken by a different id, and reports the name back to the control
+   plane, which records it on the checkout as a fact. A GitHub rename
+   therefore moves nothing on disk.
 3. `git worktree add sessions/<slug>/<dir>` from the store, on the
    branch `oppenheimer/<project>/<slug>` created from the chosen base.
    When a worktree is not possible, clone instead and **report which

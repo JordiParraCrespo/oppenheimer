@@ -20,14 +20,14 @@ whose contract the API serves.
 | **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project` | yes |
-| **Sessions** | `sessions/` → `work_session`, `session_checkout`, `work_session_event` | yes |
-| **Repositories** | `github/` → listed **live from GitHub** through the installation; a `github_repository` row exists only once a checkout uses one | lazily |
+| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event` | yes |
+| **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
 | **Models** | no table, no column — a field on the shared catalog entry and on the session's launch spec | no table |
 
-Three of these resolve to "not a table" and one to "a table only for
-what we have on disk". Each is argued below; none is an oversight.
+Four of these resolve to "not a table". Each is argued below; none is
+an oversight.
 
 ## Decided
 
@@ -72,8 +72,8 @@ apps/api/src/
 the personal workspace ([`08-auth.md`](08-auth.md)), and `AGENTS.md`
 says that module is not an example to copy.
 
-**Scoping, precisely.** Four tables are tenant-owned —
-`github_installation`, `github_repository`, `project`, `work_session` —
+**Scoping, precisely.** Three tables are tenant-owned —
+`github_installation`, `project`, `work_session` —
 and carry `organizationId`, declare a resource with `defineResource`,
 and use a repository extending `ScopedRepositoryBase`, so the SQL
 predicate and the CASL condition are generated from one declaration
@@ -141,11 +141,11 @@ lives on the aggregate rather than a child table) and
 **`github/`** owns which App installations belong to the workspace, how
 to list what they cover **when asked**, and how to turn one repository
 into a one-hour token. One aggregate, `GithubInstallationEntity`. The
-repository list is **not** mirrored: the picker asks GitHub through the
-installation token, cached for a minute in Redis, and a
-`github_repository` row is created lazily the first time a checkout
-uses a repository — it records what we have on disk, not what GitHub
-has. The vendor name stops at the
+repository list is **not** stored, in any form: the picker asks GitHub
+through the installation token, cached for a minute in Redis, and a
+checkout remembers the repository it took as three columns of its own
+(`installationId`, `githubRepoId`, a `repositoryFullName` snapshot).
+There is no repository table. The vendor name stops at the
 directory: the CASL subjects are `Installation` and `Repository`, the
 scope resource is `repositories`, and no Octokit type leaves
 `infrastructure/`.
@@ -235,18 +235,18 @@ This replaces [`11-workspace-layout.md`](../../11-workspace-layout.md)
    inside its own repository means `git status` sees it and IDE file
    watchers recurse into it.
 
-**Three naming rules**, and every one of them is a column:
+**Three naming rules**, two of them columns and one a runner fact:
 
 | Level | Rule | Why a column |
 |---|---|---|
 | `workspaces/<slug>` | `organization.slug` | already unique, already immutable in practice |
-| `repos/<name>.git` | `github_repository.storeDirectoryName`, set **once** to `<owner>--<repo>.git` when the row is first created | a worktree's `.git` file points at its store by absolute path, so the store can never move; deriving the name from `fullName` would move it on every GitHub rename. Unique `(organizationId, storeDirectoryName)`; a later repository that wants a taken name gets a suffix |
+| `repos/<name>.git` | the **runner** names it `<owner>--<repo>.git` when it first creates the store, writes the GitHub id into the bare repo (`git config oppenheimer.repo-id`), and thereafter finds the store **by id**, never by name; a later repository that wants a taken name gets a suffix. The name is reported back and recorded on the checkout as a fact | a worktree's `.git` file points at its store by absolute path, so the store can never move, and `fullName` moves on every GitHub rename — so the disk, which the runner owns, is where the frozen name lives (Orca: the host is the truth for what is on the host) |
 | `sessions/<slug>/<dir>` | `<repo>`, or `<owner>--<repo>` if taken *in this session* | a set of two or three the API controls at create time; held by `uq (sessionId, directoryName)`, and never reused inside a session |
 
 Paths are then fully derived, every segment a unique-constrained column:
 
 ```
-store     workspaces/{organization.slug}/projects/{project.slug}/repos/{github_repository.storeDirectoryName}
+store     workspaces/{organization.slug}/projects/{project.slug}/repos/{session_checkout.storeDirectoryName}   (as the runner reported it)
 checkout  workspaces/{organization.slug}/projects/{project.slug}/sessions/{work_session.slug}/{session_checkout.directoryName}
 ```
 
@@ -619,10 +619,14 @@ current with three webhooks, a daily resync, a sync endpoint and
 `removedAt`/`hiddenAt` columns — all of it to maintain a copy of a
 list GitHub already serves, with the invented failure mode "in our
 copy but the mint fails". Orca asks git and GitHub directly and stores
-nothing; so do we. What *is* durable is the repository **we have on
-disk**: a `github_repository` row created the first time a checkout
-uses one, carrying the frozen store name and the identity the
-checkout's foreign key needs.
+nothing; so do we. A first correction kept a `github_repository` row
+"for what we have on disk"; that was still a repository table by
+another name. What a checkout needs from a repository is GitHub's id,
+the installation that mints its token, and a name to display — three
+columns on `session_checkout`, flat, exactly as Better Auth's `account`
+row carries its provider's ids inline rather than in a `provider`
+table. The store's directory name is a fact the runner reports, because
+the runner owns the disk.
 
 ### The schema follows Better Auth's own shape
 
@@ -643,13 +647,15 @@ tables this codebase already reads every request. Four rules, read off
 4. **A table earns its place by independent lifetime**, not by being a
    different noun.
 
-Applied honestly, those rules delete three tables an earlier draft had:
+Applied honestly, those rules delete four tables earlier drafts had:
 a `host_key` table (rule 2), an `attach_ticket` table (rule 4 — it
-cannot outlive the sixty seconds it is valid for), and a
+cannot outlive the sixty seconds it is valid for), a
 `github_webhook_delivery` table (the one webhook left, `installation`,
-writes a status that is idempotent to rewrite).
+writes a status that is idempotent to rewrite), and a
+`github_repository` table (rule 2 again: the ids a checkout needs sit
+inline on the checkout, as `account` carries its provider ids).
 
-Uniform across all eight: `id` uuid primary key minted with
+Uniform across all seven: `id` uuid primary key minted with
 `randomUUID()`, `@CreateDateColumn`/`@UpdateDateColumn`, snake_case name
 (the convention `api_token`, `user_role`, `access_grant` and
 `user_settings` already follow), and an owner column — `organizationId`
@@ -658,7 +664,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 `ownerUserId` / `createdByUserId` on the two host tables, exactly as
 `session` and `account` do.
 
-### Eight new tables
+### Seven new tables
 
 **`hosts/`**
 
@@ -696,37 +702,19 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 - `github_installation` — `id`, `organizationId`, `githubInstallationId`
   bigint unique, `accountLogin`, `accountType`, `repositorySelection`
-  (`all` | `selected`), `installedByUserId`, `suspendedAt`, `syncedAt`,
-  `deletedAt`, timestamps. Index `(organizationId)`.
-- `github_repository` — `id`, `installationId`, `organizationId`
-  (**denormalised** from the installation), `githubRepoId` bigint,
-  `fullName`, `owner`, `name`, `storeDirectoryName`, `defaultBranch`,
-  `isPrivate`, `firstUsedAt`, timestamps. Unique
-  `(installationId, githubRepoId)`, `(organizationId, storeDirectoryName)`
-  and `(organizationId, id)`. A repository never moves workspace (you
-  disconnect and reconnect instead), so the copy of `organizationId` is
-  an invariant, not a sync.
-
-  **A row is created lazily, on first use, and is never deleted.** The
-  picker does not read this table; it reads GitHub. The row appears
-  when `POST /sessions` or `POST /sessions/{id}/checkouts` names a
-  repository this workspace has not checked out before:
-  `INSERT … ON CONFLICT (installationId, githubRepoId) DO NOTHING`,
-  then reselect — the same race-as-written shape as project
-  auto-creation, and a taken `storeDirectoryName` gets a suffix on
-  retry. `fullName`, `owner`, `name` and `defaultBranch` are the
-  snapshot taken then, refreshed opportunistically whenever a checkout
-  is created, and never relied on for access: access is the token
-  mint, which is live. A repository that leaves the installation keeps
-  its row, because live checkouts point at it, and simply cannot mint
-  a token any more — git reports the plain authentication failure it
-  is.
-
-  **`storeDirectoryName` is set once and never changes.** Worktrees
-  point at their store by absolute path, so the store cannot move — and
-  `fullName` moves on every GitHub rename or transfer. The name is
-  `<owner>--<repo>.git` at row creation, then frozen, the same lesson
-  as `project.slug`.
+  (`all` | `selected`), `installedByUserId`, `suspendedAt`,
+  `deletedAt`, timestamps. Index `(organizationId)`; unique
+  `(organizationId, id)` so a checkout's composite key can reference it.
+  The only table in `github/`.
+**No `github_repository` table.** The picker reads GitHub. A checkout
+records the repository it took as `installationId`, `githubRepoId` and
+a `repositoryFullName` snapshot, and the runner records the store
+directory it created or found. A repository that leaves the
+installation changes nothing in the database: the next token mint fails
+and git reports the plain authentication failure it is. A repository
+renamed on GitHub changes nothing on disk: the runner finds the store
+by the id it wrote into the bare repo's config, and the snapshot name
+is refreshed the next time a checkout of it is created.
 
 **One webhook**, `installation`, for suspend, unsuspend and delete —
 the three facts about an installation that change without us and that
@@ -742,15 +730,15 @@ there.
 **`projects/`**
 
 - `project` — `id`, `organizationId`, `name`, `slug`,
-  `originRepositoryId` null, `archivedAt`, timestamps. Unique
+  `originGithubRepoId` bigint null, `archivedAt`, timestamps. Unique
   `(organizationId, slug)` and `(organizationId, id)`; index
-  `(originRepositoryId)`.
+  `(organizationId, originGithubRepoId)`.
 
   **Both come from the GitHub repository name.** Auto-created on the
   first session for a repository: `slug` is the sanitised repository
-  name, `name` starts as the same thing, and `originRepositoryId`
+  name, `name` starts as the same thing, and `originGithubRepoId`
   records which repository did it, so the next session on that
-  repository finds its project by a foreign key rather than by
+  repository finds its project by GitHub's id rather than by
   re-deriving a string. The MVP never shows a project chip —
   `00-scope.md` decided four chips, and a fifth is real friction on the
   most-used screen for a concept with one instance. `POST /sessions`
@@ -760,7 +748,7 @@ there.
   **Auto-creation is a race and is written as one.** Two concurrent
   creates on a fresh repository both try the insert:
   `INSERT … ON CONFLICT (organizationId, slug) DO NOTHING` then reselect
-  by `originRepositoryId`. If the reselect finds the slug held by a
+  by `originGithubRepoId`. If the reselect finds the slug held by a
   project with a *different* origin — `acme/xrp-mobile` and
   `other/xrp-mobile` sanitise to the same slug — the slug gets a short
   random suffix and the insert runs again. Never a second query that
@@ -835,19 +823,23 @@ there.
   session inheriting a retired session's agent conversation state.
 
 - `session_checkout` — `id`, `organizationId`, `sessionId`,
-  `repositoryId`, `directoryName`, `mode` (`worktree` | `clone`),
-  `baseBranch`, `branch`, `createdBy` (the provenance marker),
-  `worktreeCreatedAt`, `pushedAt`, `removedAt`, `createdAt`.
+  `installationId`, `githubRepoId` bigint, `repositoryFullName`,
+  `storeDirectoryName`, `directoryName`, `mode` (`worktree` | `clone`),
+  `baseBranch`, `branch`, `worktreeCreatedAt`, `pushedAt`, `removedAt`,
+  `createdAt`.
   Foreign keys `(organizationId, sessionId) → work_session
-  (organizationId, id)` and `(organizationId, repositoryId) →
-  github_repository (organizationId, id)`, which together make a
-  checkout of another workspace's repository unrepresentable — the
-  escalation an earlier draft left to the handler. Unique
-  `(sessionId, repositoryId) WHERE removedAt IS NULL` (a repository may
+  (organizationId, id)` and `(organizationId, installationId) →
+  github_installation (organizationId, id)`, which together make a
+  checkout through another workspace's installation unrepresentable —
+  the escalation an earlier draft left to the handler. Whether
+  `githubRepoId` is *inside* that installation is GitHub's to say, and
+  it says so at every token mint. Unique
+  `(sessionId, githubRepoId) WHERE removedAt IS NULL` (a repository may
   be re-added after removal), `(sessionId, directoryName)` (a directory
   name is never reused inside a session, rule 4 again), and
   `(sessionId, id)` — the last so the composite key above can reference
-  it. **Rows are never hard-deleted**; `DELETE
+  it. `repositoryFullName` is a display snapshot and `storeDirectoryName`
+  is what the runner reported; neither is ever used for access. **Rows are never hard-deleted**; `DELETE
   /sessions/{id}/checkouts/{checkoutId}` runs `git worktree remove` with
   the same refuse-on-unpushed-work posture as closing a session, then
   sets `removedAt`.
@@ -1044,7 +1036,7 @@ interface SessionDto {
   id; name; slug; hostId; projectId; agent; state; createdAt;
   cwdCheckoutId: string | null;
   checkouts: {
-    id; repository; directoryName;
+    id; installationId; githubRepoId; repositoryFullName; directoryName;
     mode: 'worktree' | 'clone';
     baseBranch; branch;
   }[];
@@ -1080,8 +1072,8 @@ Each step is a vertical slice that can land alone.
 1. `packages/shared`: the four scope resources, the five subjects, the
    agent catalog, the Zod schemas, and the `SYSTEM_ROLE_PERMISSIONS`
    entries.
-2. `github/` — installations, the live repository listing, the lazy
-   repository row, the `installation` webhook, the repo chip. It goes
+2. `github/` — installations, the live repository listing, the
+   `installation` webhook, the repo chip. It goes
    first because it is the only module that can be built and tested end
    to end against a real App installation with no WebSocket surface in
    existence, and because nothing else can resolve a repository without
@@ -1154,14 +1146,17 @@ Each step is a vertical slice that can land alone.
 - **Each checkout picks a base branch; the working branch is always
   `oppenheimer/<project>/<session>`**, never the base itself.
 
-- **Repositories are listed live, not mirrored.** The first draft
-  mirrored every installation's repository set and kept it current with
-  three webhooks, a daily resync, a sync endpoint and
-  `removedAt`/`hiddenAt`. All of it maintained a copy of a list GitHub
-  serves in one call. The picker now asks GitHub through the
-  installation token, cached a minute; a `github_repository` row is
-  created lazily on first checkout and records only what we have on
-  disk. The `installation` webhook stays, for suspend and delete.
+- **No repository table.** The first draft mirrored every
+  installation's repository set and kept it current with three
+  webhooks, a daily resync, a sync endpoint and `removedAt`/`hiddenAt`;
+  a first correction kept a lazily created row "for what is on disk".
+  Both were a copy of something that has an owner elsewhere: GitHub owns
+  the list and the runner owns the disk. The picker asks GitHub through
+  the installation token, cached a minute; a checkout carries
+  `installationId`, `githubRepoId` and a name snapshot inline; the
+  runner names and finds stores by the GitHub id it writes into the
+  bare repo. Seven tables. The `installation` webhook stays, for suspend
+  and delete.
 
 - **Agents are never required on a host.** `host.capabilities` is what
   the runner last saw, shown as a hint on the agent chip. A session
@@ -1194,8 +1189,8 @@ each at the place it changed:
    `work_session` and `session_checkout`; the host reference is the one
    handler check, and is named as such;
 2. `ON DELETE SET NULL (cwdCheckoutId)` in the column-list form;
-3. repository rows are never deleted (superseded: there is no resync
-   any more; the row is created lazily and kept);
+3. superseded: there is no repository table to keep in step with
+   GitHub;
 4. redemption and host insert in one transaction, fingerprint-matched
    retry, `previousPublicKeyFingerprint` and the rotation frame;
 5. `session_checkout.removedAt`, never hard-deleted, partial unique on
@@ -1203,7 +1198,7 @@ each at the place it changed:
 6. `Idempotency-Key` on `POST /sessions`;
 7. `<runId>:<n>` runner keys and per-row `ON CONFLICT DO NOTHING`;
 8. branch names carry the ids;
-9. `project.originRepositoryId` and the auto-create race written as
+9. `project.originGithubRepoId` and the auto-create race written as
    one;
 10. gateways live in `relay/infrastructure/`, are unguarded by default,
     and authenticate in the handshake with a spec each;

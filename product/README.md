@@ -128,3 +128,6 @@ earlier note:
   and keeps a row only for repositories a session has checked out. Note
   09's "the installation is the access control" is unchanged; what
   changed is that we stopped keeping a copy of the list it controls.
+- The same note then dropped the repository table entirely: a checkout
+  carries GitHub's ids inline and the runner owns the store on disk.
+  Seven new tables, not eight.
