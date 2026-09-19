@@ -8728,51 +8728,74 @@
           "facts": {
             "type": "object",
             "properties": {
-              "hostname": {
+              "platform": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 255
+                "enum": ["macos", "debian", "ubuntu", "linux", "unsupported"]
               },
-              "os": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
+              "osVersion": {
+                "type": "string"
               },
               "arch": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 255
+                "type": "string"
+              },
+              "hostname": {
+                "type": "string"
+              },
+              "user": {
+                "type": "string"
+              },
+              "home": {
+                "type": "string"
+              },
+              "root": {
+                "type": "boolean"
               },
               "tools": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 64,
-                  "nullable": true
-                }
-              },
-              "agents": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "id": {
-                      "type": "string",
-                      "enum": ["claude-code", "codex"]
+                    "name": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
                     },
                     "version": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 64,
-                      "nullable": true
+                      "type": "string"
+                    },
+                    "required": {
+                      "type": "boolean"
                     }
                   },
-                  "required": ["id", "version"]
-                }
+                  "required": ["name", "required"]
+                },
+                "nullable": true
+              },
+              "workspacePath": {
+                "type": "string"
+              },
+              "diskFreeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": false
+              },
+              "runnerVersion": {
+                "type": "string"
               }
             },
-            "required": ["hostname", "os", "arch", "tools", "agents"]
+            "required": [
+              "platform",
+              "arch",
+              "hostname",
+              "user",
+              "home",
+              "root",
+              "tools",
+              "workspacePath",
+              "diskFreeBytes",
+              "runnerVersion"
+            ]
           }
         },
         "required": ["token", "name", "publicKey"]

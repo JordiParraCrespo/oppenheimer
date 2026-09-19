@@ -696,16 +696,22 @@ export type RegisterHostRequest = {
     name: string;
     publicKey: string;
     facts?: {
-        hostname: string;
-        os: string;
+        platform: 'macos' | 'debian' | 'ubuntu' | 'linux' | 'unsupported';
+        osVersion?: string;
         arch: string;
-        tools: {
-            [key: string]: string | null;
-        };
-        agents: Array<{
-            id: 'claude-code' | 'codex';
-            version: string | null;
-        }>;
+        hostname: string;
+        user: string;
+        home: string;
+        root: boolean;
+        tools: Array<{
+            name: string;
+            path?: string;
+            version?: string;
+            required: boolean;
+        }> | null;
+        workspacePath: string;
+        diskFreeBytes: number;
+        runnerVersion: string;
     };
 };
 
