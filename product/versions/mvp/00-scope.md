@@ -26,10 +26,12 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
-  (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
-  personalities and the like come later (note 11 §1).
-- **Create session chips:** host, repo, branch, agent. Agent is Claude
-  Code in the MVP; Codex is the next entry.
+  (one per session) — superseded by 10: the layout is now
+  `workspaces/<org>/projects/<project>/{repos,sessions}`. Agent
+  personalities and the like come later.
+- **Create session chips:** host, repositories (several, each with its
+  base branch), agent. Agent is Claude Code in the MVP; Codex is the
+  next entry.
 - **Agent login is the host's own.** The runner launches `claude` with
   the host's existing config; you log in once per host by typing it in
   the terminal, and the login URL becomes a button. No account objects,
@@ -101,10 +103,11 @@ more and switch in the sidebar.
 
 1. ~~Tabs~~: decided, tmux windows in one tmux session per session
    (02 §tmux).
-2. Session naming: typed by the user, derived from the first task, or
-   from the branch?
-3. Branch chip: base for a new session-named branch, or check out an
-   existing branch directly? Both, with new-branch as default?
+2. ~~Session naming~~: decided, derived from the first prompt by a fast
+   model, with an opaque minted slug as the fallback and an optional
+   typed name (10).
+3. ~~Branch chip~~: decided, the base for a new session-named branch,
+   chosen per repository; never an existing branch directly (10).
 4. Should the runner refuse to start a session if the host has no
    `claude` login, or start it and let the login prompt appear? Let it
    appear; that is the flow.

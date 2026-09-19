@@ -36,7 +36,7 @@ The Add host screen offers, in this order:
   online, report the preflight. It carries an explicit do-not list: not
   as root, no ports, do not copy the token elsewhere, stop if the
   checksum differs. The only secret in it is the registration token,
-  which can do exactly one thing — add one host to your workspace — and
+  which can do exactly one thing — add one host, yours (10) — and
   expires in an hour. The prompt is versioned and served by the control
   plane, so a runner release can change steps and checksums without a
   web deploy.

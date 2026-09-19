@@ -73,8 +73,8 @@ Three calls are ordinary outbound HTTPS, and each has a reason:
 
 | Call | Why not the link |
 |---|---|
-| `POST /v1/hosts/register` | There is no link yet; this is what creates the identity that authenticates one |
-| `DELETE /v1/hosts/{id}` | Uninstall runs with the daemon stopped |
+| `POST /api/v1/hosts/register` | There is no link yet; this is what creates the identity that authenticates one |
+| `DELETE /api/v1/hosts/self` | Uninstall runs with the daemon stopped; authenticated by the host's boot JWT as a bearer, and the host names itself by the token's subject |
 | `GET <release base>/<channel>.json` and `.sig` | It must work when the link will not come up |
 
 That last one is the escape hatch, and it is the reason the release
@@ -94,7 +94,8 @@ grounds can still fetch, verify and install the version that fixes it
   agent, and the update channel.
 - **Hints** may ride a heartbeat reply or an attach ticket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (note 12).
+  `blocked` with a retry-after (note 12), and `host_offline` on an
+  attach ticket whose host has no link right now (10).
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).

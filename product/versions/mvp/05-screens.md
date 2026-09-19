@@ -17,8 +17,9 @@
   the add-host step.
 - Sidebar: sessions with a state dot, name, age; New session on top;
   user at the bottom; hosts and accounts in a settings drawer.
-- New session: chips for host, repo, branch, agent; a box for a name
-  or first task; chips remember last choice. Runtime and lifetime chips
+- New session: chips for host, repositories (several, each with its
+  base branch), agent; an optional name box — the first prompt names
+  the session otherwise; chips remember last choice. Runtime and lifetime chips
   arrive with the VM slice.
 - Session: terminal full-bleed, tabs (tmux windows, window 0 the
   agent, the rest shells in the same worktree), thin status line with host,
