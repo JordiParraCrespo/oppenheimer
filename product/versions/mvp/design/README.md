@@ -52,6 +52,12 @@ canvas, sidebar and terminal sit within a few percent of each other instead.
 The one-line `base` constant at the top of that file is what points the
 artboards at `../_ds/<folder>`; the layout here already matches it.
 
+## Audits
+
+- [`audit-2026-09.md`](audit-2026-09.md) — what the September syncs (PRs #18
+  and #19) changed screen by screen, mapped onto the ported inventory, with
+  the build list and the open decisions.
+
 ## Notes
 
 - This tree is a design export, not application code. It is excluded from Biome
