@@ -505,10 +505,14 @@ difference between a slow create and a stalled project.
 - **The attach ticket is not**, because nothing about it is revocable:
   it expires in sixty seconds and is burned on first use, faster than
   anyone could revoke it.
-- **Installation access tokens are not rows at all.** Minted on demand
-  from the App key in the secret store, cached in Redis until shortly
-  before expiry. F20 and F23 become structural facts rather than rules
-  someone has to remember.
+- **Installation access tokens are not rows at all, and not cache keys
+  either.** Minted live on every request from the App key in the secret
+  store; GitHub's own token lasts an hour and the runner holds it in
+  memory for that hour (02 §8), so a cache on the control plane would
+  only keep a token working after the repository left the installation
+  — the failure mode the live listing exists to avoid. The mint is what
+  makes "access is the installation" true at every moment. F20 and F23
+  become structural facts rather than rules someone has to remember.
 
 **Redemption and host creation are one transaction**, and a lost
 response is not a lost host. The burn statement and the `INSERT` into
@@ -722,11 +726,20 @@ on the workspace-owned tables, exactly as `lead` does (all but
 **`github/`**
 
 - `github_installation` — `id`, `organizationId`, `githubInstallationId`
-  bigint unique, `accountLogin`, `accountType`, `repositorySelection`
-  (`all` | `selected`), `installedByUserId`, `suspendedAt`,
-  `deletedAt`, timestamps. Index `(organizationId)`; unique
+  bigint, `accountLogin`, `accountType` (`User` | `Organization`, a
+  check constraint), `repositorySelection` (`all` | `selected`),
+  `installedByUserId` (audit, never `ON DELETE CASCADE`: the aggregate
+  belongs to the workspace, not to the person who clicked),
+  `suspendedAt`, `deletedAt`, timestamps. Index `(organizationId)`;
+  **partial** unique `(githubInstallationId) WHERE deletedAt IS NULL`,
+  so the claim is live, not forever: a workspace that disconnected no
+  longer blocks another from connecting the same installation, and a
+  same-workspace reconnect revives its own soft-deleted row; unique
   `(organizationId, id)` so a checkout's composite key can reference it.
-  The only table in `github/`.
+  A simultaneous claim by two workspaces surfaces the unique violation
+  as the 409, never as a 500. Reconnecting never clears `suspendedAt` on
+  its own; the claim proof reads the installation's current suspended
+  state from GitHub. The only table in `github/`.
 **No `github_repository` table.** The picker reads GitHub. A checkout
 records the repository it took as `installationId`, `githubRepoId` and
 a `repositoryFullName` snapshot, and the runner records the store
@@ -947,8 +960,8 @@ DELETE /hosts/pairing/{id}        delete Host        hosts:write
 GET    /installations             read Installation  repositories:read
 POST   /installations             create Installation repositories:write
 DELETE /installations/{id}        delete Installation repositories:write
-GET    /installations/{id}/repositories            read Repository  repositories:read   live from GitHub, cached 60 s
-GET    /installations/{id}/repositories/{githubRepoId}/branches  read Repository  repositories:read   live from GitHub
+GET    /installations/{id}/repositories            read Installation  repositories:read   live from GitHub, cached 60 s
+GET    /installations/{id}/repositories/{githubRepoId}/branches  read Installation  repositories:read   live: GET /repositories/{id} then its branches; GitHub's 404 is the refusal
 
 GET    /projects                  read Project       projects:read
 GET    /projects/{id}             read Project       projects:read

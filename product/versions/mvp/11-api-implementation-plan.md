@@ -113,13 +113,13 @@ apps/api/src/github/
   infrastructure/octokit-github-app.adapter.ts # @octokit/app + @octokit/rest, the only Octokit importer
   infrastructure/github-webhook.util.ts        # X-Hub-Signature-256 over the raw body
   application/repository-access.port.ts        # what sessions/ and relay/ inject: mintRepositoryToken(installationId, githubRepoId)
-  application/repository-access.resolver.ts    # Redis cache of tokens until ~55 min
+  application/repository-access.resolver.ts    # live mint every time; nothing token-shaped is cached
   commands/connect-installation/   POST /installations        (OAuth code → GET /user/installations proof; 409 GITHUB_ALREADY_CONNECTED)
   commands/disconnect-installation/ DELETE /installations/{id}
   commands/handle-github-webhook/  POST /github/webhook       (@NoPolicy, @SkipThrottle, RawBodyRequest; `installation` events only)
   queries/find-installations/      GET /installations
   queries/list-installation-repositories/  GET /installations/{id}/repositories           (GitHub, Redis 60 s)
-  queries/list-repository-branches/        GET /installations/{id}/repositories/{githubRepoId}/branches
+  queries/list-repository-branches/        GET /installations/{id}/repositories/{githubRepoId}/branches   (GET /repositories/{id} then branches; never the installation's full list)
   dtos/installation.response.dto.ts  dtos/repository.response.dto.ts
   __tests__/installation-scoping.spec.ts  __tests__/github-webhook.spec.ts
 ```
@@ -136,9 +136,14 @@ apps/api/src/github/
   403.
 - Config `github.config.ts`: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`,
   `GITHUB_APP_WEBHOOK_SECRET`, `GITHUB_APP_CLIENT_ID`,
-  `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_SLUG` — all optional, surfaced
-  as the `github_app` capability; without them the repo chip says
-  "connect GitHub" and nothing else breaks.
+  `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_SLUG` — all optional, all six
+  one predicate, surfaced as the `github_app` capability **on the client
+  subset** (the console needs "not configured" and the slug for the
+  install URL); the adapter asks the capability rather than re-deriving
+  it. Without them the repo chip says "connect GitHub" and nothing else
+  breaks. The GitHub adapter is `fetch` plus `node:crypto` (RS256 App
+  JWT), not Octokit: no dependency to add, and the App API is five
+  routes.
 - The raw body already reaches `request.rawBody` (Better Auth's
   `bodyParser.rawBody`), so the webhook needs no bootstrap change: copy
   `billing/commands/handle-stripe-webhook`.
