@@ -5,10 +5,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialScopeResolver } from '../../application/credential-scope.resolver';
 import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../../decorators/require-scopes.decorator';
-import type { ScopeContext } from '../../domain/scope-context.types';
+import type {
+  HostCredentialContext,
+  ScopeContext,
+  UserCredentialContext,
+} from '../../domain/scope-context.types';
 import { ScopesGuard } from '../scopes.guard';
 
-const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({
+const hostContext = (): HostCredentialContext => ({
+  kind: 'host',
+  credentialId: 'host:host-1',
+  hostId: 'host-1',
+  scopes: [],
+  resourceScope: toResourceScope(null),
+  expiresAt: null,
+});
+
+const tokenContext = (overrides: Partial<UserCredentialContext> = {}): ScopeContext => ({
   kind: 'api-token',
   credentialId: 'token-1',
   userId: 'user-1',
@@ -207,6 +220,38 @@ describe('ScopesGuard', () => {
           resourceScope: toResourceScope(['org-1']),
         }),
       );
+
+      await expect(guard.canActivate(context())).resolves.toBe(true);
+    });
+  });
+
+  describe('a host credential', () => {
+    /**
+     * A machine's assertion resolves to a credential with an empty scope list
+     * and no owner. The point of these three is that the guard needs no case of
+     * its own to handle it: the rules above already say the right thing.
+     */
+    it('is refused by any route that declares a scope', async () => {
+      useCredential(hostContext());
+      metadata[REQUIRE_SCOPES_KEY] = ['hosts:read'];
+
+      await expect(guard.canActivate(context())).rejects.toMatchObject({
+        code: 'TOKEN_005',
+        extensions: { missingScopes: ['hosts:read'] },
+      });
+    });
+
+    it('is refused by a route that declares nothing at all', async () => {
+      useCredential(hostContext());
+
+      await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'TOKEN_006' });
+    });
+
+    it('reaches a route that explicitly asks for no permission', async () => {
+      // `@AllowAnyScope()` is how the two machine routes say so, and it is the
+      // same decorator `GET /tokens/current` and the health probe already use.
+      useCredential(hostContext());
+      metadata[ALLOW_ANY_SCOPE_KEY] = true;
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });

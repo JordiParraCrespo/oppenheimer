@@ -2,6 +2,7 @@ import { Global, Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
+import { hostsAreConfigured } from '../config/hosts.config';
 
 /**
  * Resolves this deployment's optional capabilities from config, once at boot.
@@ -29,6 +30,10 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('storage.s3AccessKeyId') &&
           configService.get('storage.s3SecretAccessKey'),
       ),
+    // The same predicate the host routes refuse on, called rather than
+    // re-derived: a capability that says yes while every route answers
+    // HOSTS_004 is a second source of truth, and the console reads this one.
+    hosts: hostsAreConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

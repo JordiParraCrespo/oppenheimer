@@ -25,6 +25,12 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
  * This is only half of the check. The credential's owner still has to be
  * allowed to perform the operation at all, which `PoliciesGuard` evaluates
  * against their live roles — so the effective permission is the intersection.
+
+ *
+ * A host's boot assertion is the fourth kind of credential and needs no case of
+ * its own: it carries an empty scope list, so the rules above refuse it on every
+ * route that declares a scope, and the two machine routes say `@AllowAnyScope()`
+ * because there is no permission for a machine to hold.
  */
 @Injectable()
 export class ScopesGuard implements CanActivate {
@@ -53,10 +59,7 @@ export class ScopesGuard implements CanActivate {
   }
 
   private assertScopes(context: ExecutionContext, scopeContext: ScopeContext): void {
-    const required = this.reflector.getAllAndOverride<Scope[]>(REQUIRE_SCOPES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.requiredScopes(context);
 
     if (!required || required.length === 0) {
       throw new AppError(ApiTokenErrors.ENDPOINT_NOT_TOKEN_ACCESSIBLE);
@@ -72,6 +75,14 @@ export class ScopesGuard implements CanActivate {
         extensions: { missingScopes: missing },
       });
     }
+  }
+
+  /** What the route declared, at method or class level. */
+  private requiredScopes(context: ExecutionContext): Scope[] | undefined {
+    return this.reflector.getAllAndOverride<Scope[]>(REQUIRE_SCOPES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
   }
 
   private assertOrganization(

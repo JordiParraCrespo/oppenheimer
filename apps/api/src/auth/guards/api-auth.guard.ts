@@ -37,6 +37,15 @@ export class ApiAuthGuard implements CanActivate {
 
     if (!scopeContext) return this.authenticateSession(request);
 
+    // A host is not a person. There is no owner to act as and no session to
+    // delegate, so every route this guard protects is closed to it — the two
+    // machine routes carry `HostPrincipalGuard` instead and never reach here.
+    if (scopeContext.kind === 'host') {
+      throw new AppError(AuthErrors.UNAUTHENTICATED, {
+        detail: 'This endpoint requires a user credential; a host credential acts for no user.',
+      });
+    }
+
     // A token restricted to exactly one organization acts inside it by
     // default, so organization-scoped routes resolve without an explicit id.
     const pinnedOrganizationId =

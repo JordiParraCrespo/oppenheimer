@@ -34,6 +34,16 @@ export class RedisCacheService extends CacheService {
     }
   }
 
+  /**
+   * `SET key value EX ttl NX` — one round trip, and Redis decides the race.
+   * Returns `false` when the key was already there, which is what makes a
+   * replayed credential refusable.
+   */
+  async setIfAbsent<T>(key: string, value: T, ttlSeconds: number): Promise<boolean> {
+    const stored = await this.redis.set(key, JSON.stringify(value), 'EX', ttlSeconds, 'NX');
+    return stored === 'OK';
+  }
+
   async del(key: string): Promise<void> {
     await this.redis.del(key);
   }

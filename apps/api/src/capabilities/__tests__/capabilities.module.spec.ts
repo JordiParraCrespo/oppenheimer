@@ -14,7 +14,29 @@ describe('resolveCapabilities', () => {
       stripe_billing: false,
       s3_storage: false,
       email_delivery: false,
+      hosts: false,
     });
+  });
+
+  it('reports hosts from the same predicate the host routes refuse on', () => {
+    // Two of the three is not a working pairing flow: without the install URL
+    // there is no command to print, and without a usable signing key there is no
+    // fingerprint for the runner to pin. The key is validated when the config is
+    // parsed, so what is read here is the fingerprint — a capability that said
+    // yes while every route answered HOSTS_004 would be the second source of
+    // truth the console reads first.
+    const partial = configWith({
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+    });
+    expect(resolveCapabilities(partial).hosts).toBe(false);
+
+    const complete = configWith({
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+      'hosts.installUrl': 'https://releases.example.com/install.sh',
+    });
+    expect(resolveCapabilities(complete).hosts).toBe(true);
   });
 
   it('requires both halves of an OAuth credential pair', () => {

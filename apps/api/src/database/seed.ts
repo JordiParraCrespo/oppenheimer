@@ -11,6 +11,8 @@ import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { HostOrmEntity } from '../hosts/database/host.orm-entity';
+import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -46,6 +48,8 @@ const dataSource = new DataSource({
     OAuthConsentOrmEntity,
     RoleOrmEntity,
     AccessGrantOrmEntity,
+    HostOrmEntity,
+    HostPairingTokenOrmEntity,
     UserRoleOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
