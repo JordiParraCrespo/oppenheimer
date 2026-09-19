@@ -12,6 +12,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'stripe_billing',
   's3_storage',
   'email_delivery',
+  'github_app',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
