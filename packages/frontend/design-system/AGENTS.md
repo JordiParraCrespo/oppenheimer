@@ -40,6 +40,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   fade for anything that appears. All durations go to 0 under reduced motion.
 - **Copy** is sentence case, verb-first, no emoji. It navigates, it is a
   `Link`; it acts, it is a `Button`.
+- **Every scope picker filters.** A `ChipSelect` popup always carries the
+  search row and the empty line, even over three options, so the console's
+  four chips behave as one thing. It is built on Popover, not Base UI
+  Select, for that reason; `RepositorySelect` reuses its parts for the
+  multi-repo pane.
+- **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
+  Anthropic's Claude mark and OpenCode's square from their published brand
+  assets, in the vendor's colour where it has one. An agent whose mark is
+  not available (Codex) takes the neutral glyph; never a redrawn imitation.
 
 ## Conventions
 

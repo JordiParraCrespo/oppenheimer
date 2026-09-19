@@ -2,15 +2,27 @@
 
 import { Avatar, AvatarFallback } from '@oppenheimer/design-system-web/avatar';
 import { Button } from '@oppenheimer/design-system-web/button';
+import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
+import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
+import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
+import { Field, FieldDescription, FieldLabel } from '@oppenheimer/design-system-web/field';
+import { Link } from '@oppenheimer/design-system-web/link';
 import {
-  ChipSelect,
-  ChipSelectAction,
-  ChipSelectOption,
-} from '@oppenheimer/design-system-web/chip-select';
+  RepositorySelect,
+  type RepositoryOption,
+  type RepositoryScope,
+} from '@oppenheimer/design-system-web/repository-select';
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@oppenheimer/design-system-web/segmented-control';
+import { SlugInput, type SlugStatus } from '@oppenheimer/design-system-web/slug-input';
+import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { Composer } from '@oppenheimer/design-system-web/composer';
 import {
   Dialog,
   DialogBody,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -60,7 +72,6 @@ import {
   BotIcon,
   ChevronsUpDownIcon,
   CpuIcon,
-  FolderIcon,
   GitBranchIcon,
   GlobeIcon,
   LogOutIcon,
@@ -72,42 +83,74 @@ import * as React from 'react';
 
 /* ── Dialog ──────────────────────────────────────────────────────────────── */
 
-export function DialogDemo() {
+const INSTALL = 'curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s -- --token opk_7f3a9c';
+const PROMPT =
+  'Install the oppenheimer runner here, then run\noppenheimer-runner status and report the hostname.\ncurl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
+
+/**
+ * The one dialog in v1. One instruction, two ways to read it, and a status
+ * line that resolves in place so nothing below it moves.
+ */
+export function AddHostDialogDemo() {
+  const [tab, setTab] = React.useState('cmd');
+  const [registered, setRegistered] = React.useState(false);
   return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="secondary" />}>Open the welcome modal</DialogTrigger>
+    <Dialog onOpenChange={(open) => !open && setRegistered(false)}>
+      <DialogTrigger render={<Button variant="secondary" />}>Add a host…</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>You're set up</DialogTitle>
-          <DialogDescription>Three things worth knowing before your first session.</DialogDescription>
+          <DialogTitle>Add a host</DialogTitle>
+          <DialogDescription>
+            A server you control — a cloud VM, a build box, or your own workstation.
+          </DialogDescription>
         </DialogHeader>
-        <DialogBody className="flex flex-col gap-4 text-fg-muted">
-          <p className="flex gap-3">
-            <CpuIcon className="mt-0.5 size-4 shrink-0 text-fg-subtle" />
-            <span>
-              Sessions run on <span className="text-fg">your own hosts</span>, in a git worktree per
-              session. Nothing executes in our cloud unless you pick a cloud VM.
-            </span>
-          </p>
-          <p className="flex gap-3">
-            <TerminalIcon className="mt-0.5 size-4 shrink-0 text-fg-subtle" />
-            <span>
-              Every step is <span className="text-fg">visible and interruptible</span>: read the
-              output live, send an instruction mid-run, stop it at any point.
-            </span>
-          </p>
-          <p className="flex gap-3">
-            <GitBranchIcon className="mt-0.5 size-4 shrink-0 text-fg-subtle" />
-            <span>
-              Scope comes first: <span className="text-fg">host, repository, branch, agent</span>.
-              Change any of them per session from the chips.
-            </span>
-          </p>
+        <DialogBody className="flex flex-col gap-[18px]">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="flex-1 text-sm font-medium text-fg">Run this on it, once</span>
+              <SegmentedControl value={tab} onValueChange={setTab} aria-label="Format">
+                <SegmentedControlItem value="cmd">Command</SegmentedControlItem>
+                <SegmentedControlItem value="prompt">Agent prompt</SegmentedControlItem>
+              </SegmentedControl>
+            </div>
+            <CodeBlock layout="panel" code={tab === 'cmd' ? INSTALL : PROMPT} />
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
+                Token expires in 59:41 · single use
+              </span>
+              <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
+                New token
+              </Link>
+            </div>
+          </div>
+          <div className="h-px bg-border-subtle" />
+          <div className="flex min-h-[52px] items-center">
+            {registered ? (
+              <div className="flex w-full flex-wrap items-center gap-2.5">
+                <StatusDot state="running" className="items-center">
+                  <span className="figures text-[13px]">mac-studio</span>
+                </StatusDot>
+                <span className="text-xs text-fg-muted">macOS 15 · echo 38 ms</span>
+                <span className="flex-1" />
+                <span className="text-xs text-fg-muted">git, tmux, claude ready</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setRegistered(true)}
+                className="text-left"
+                title="Click to simulate the host registering"
+              >
+                <StatusDot state="pending" pulse>
+                  Listening for this host…
+                </StatusDot>
+              </button>
+            )}
+          </div>
         </DialogBody>
         <DialogFooter>
-          <Button size="lg" block>
-            Start your first session
-          </Button>
+          <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
+          <Button disabled={!registered}>Use this host</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -255,10 +298,34 @@ const MODELS = [
   ['haiku', 'Claude Haiku 4.5', 'Fastest for quick answers'],
 ] as const;
 
-export function ModelMenu() {
-  const [model, setModel] = React.useState<string>('sonnet');
+type Harness = 'claude-code' | 'codex' | 'opencode';
+
+/** The menu is scoped to the harness: each agent drives only the models it supports. */
+const HARNESS_MODELS: Record<Harness, { label: string; models: readonly (readonly [string, string, string])[] }> = {
+  'claude-code': { label: 'Claude Code', models: MODELS },
+  codex: {
+    label: 'Codex',
+    models: [
+      ['gpt', 'GPT-5.2', 'Strong at wide refactors'],
+      ['gpt-codex', 'GPT-5.2 Codex', 'Tuned for long coding runs'],
+      ['gpt-mini', 'GPT-5.2 mini', 'Fastest for quick answers'],
+    ],
+  },
+  opencode: {
+    label: 'OpenCode',
+    models: [
+      ['qwen', 'Qwen3 Coder 480B', 'Open weights · runs on your host'],
+      ['deepseek', 'DeepSeek V3.2', 'Open weights · strong at tests'],
+      ['kimi', 'Kimi K2', 'Open weights · long context'],
+    ],
+  },
+};
+
+export function ModelMenu({ harness = 'claude-code' }: { harness?: Harness }) {
+  const { label: harnessLabel, models } = HARNESS_MODELS[harness];
+  const [model, setModel] = React.useState<string>(models[1]?.[0] ?? models[0]?.[0] ?? '');
   const [effort, setEffort] = React.useState<string>('Medium');
-  const name = MODELS.find((m) => m[0] === model)?.[1];
+  const name = (models.find((m) => m[0] === model) ?? models[0])?.[1];
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -272,9 +339,9 @@ export function ModelMenu() {
         {name} <span className="text-fg-muted">{effort}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="end" className="min-w-[290px]">
-        <DropdownMenuLabel>Claude Code</DropdownMenuLabel>
+        <DropdownMenuLabel>{harnessLabel}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={model} onValueChange={(v) => setModel(String(v))}>
-          {MODELS.map(([id, label, desc]) => (
+          {models.map(([id, label, desc]) => (
             <DropdownMenuRadioItem key={id} value={id} description={desc}>
               {label}
             </DropdownMenuRadioItem>
@@ -325,53 +392,186 @@ export function TooltipDemo() {
 
 /* ── ChipSelect ──────────────────────────────────────────────────────────── */
 
+const HOSTS: ChipSelectOption[] = [
+  { value: 'optimus', label: 'optimus', description: '32 vCPU · eu-west · idle' },
+  { value: 'mac-studio', label: 'jordis-mac-studio', description: 'local · 2 sessions running' },
+  { value: 'fable', label: 'fable', description: '16 vCPU · us-east · idle' },
+];
+
+const BRANCHES = (extra: string[]) => [
+  { value: 'main' },
+  ...extra.map((value) => ({ value })),
+];
+
+export const REPOS: RepositoryOption[] = [
+  {
+    id: 'xrp-mobile',
+    name: 'xrp-mobile',
+    description: 'updated 3h ago',
+    keywords: 'JordiParraCrespo',
+    branches: BRANCHES([
+      'port/121-api-config-hardening',
+      'feat/auth-key-hashing',
+      'changeset-release/main',
+      'claude/amazing-clarke-p631o4',
+      'claude/festive-goldberg-uvpii6',
+      'release/1.4',
+    ]),
+  },
+  {
+    id: 'atlas',
+    name: 'atlas',
+    description: 'updated 1d ago',
+    keywords: 'JordiParraCrespo',
+    branches: BRANCHES(['eval/rerank-v3', 'ops/invoices']),
+  },
+  {
+    id: 'flama-ai',
+    name: 'flama-ai',
+    description: 'updated 3d ago',
+    keywords: 'JordiParraCrespo',
+    branches: BRANCHES(['design-system']),
+  },
+  {
+    id: 'adri-rodriguez',
+    name: 'adri-rodriguez',
+    description: 'updated last wk.',
+    keywords: 'JordiParraCrespo',
+    branches: BRANCHES(['feat/leads-spam-column']),
+  },
+];
+
+export const AGENTS: ChipSelectOption[] = [
+  {
+    value: 'claude-code',
+    label: 'Claude Code',
+    description: 'Anthropic · terminal-native',
+    leading: <AgentMark agent="claude-code" />,
+  },
+  {
+    value: 'codex',
+    label: 'Codex',
+    description: 'OpenAI · fast wide edits',
+    leading: <AgentMark agent="codex" />,
+  },
+  {
+    value: 'opencode',
+    label: 'OpenCode',
+    description: 'Open source · bring your own model',
+    leading: <AgentMark agent="opencode" />,
+  },
+  {
+    value: 'shell',
+    label: 'Blank terminal',
+    description: 'No agent · just a shell in the worktree',
+    leading: <AgentMark agent="shell" />,
+  },
+];
+
+/**
+ * The scope row on New session. Every picker filters; the repository one
+ * multi-selects with a branch pane per repo, and the branch chip only shows
+ * while exactly one repository is selected.
+ */
 export function ScopeChips() {
-  const [host, setHost] = React.useState<string | null>('mac-studio');
-  const [repo, setRepo] = React.useState<string | null>('xrp-mobile');
-  const [branch, setBranch] = React.useState<string | null>('main');
-  const [agent, setAgent] = React.useState<string | null>('claude');
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [scope, setScope] = React.useState<RepositoryScope[]>([{ id: 'xrp-mobile', branch: 'main' }]);
+  const [agent, setAgent] = React.useState<string | null>('claude-code');
+  const single = scope.length === 1 ? scope[0] : undefined;
+  const singleRepo = single ? REPOS.find((r) => r.id === single.id) : undefined;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <ChipSelect value={host} onValueChange={setHost} icon={<CpuIcon />} aria-label="Host">
-        <ChipSelectOption value="mac-studio" description="macOS 15 · echo 38 ms">
-          mac-studio
-        </ChipSelectOption>
-        <ChipSelectOption value="optimus" description="Ubuntu 24.04 · echo 112 ms">
-          optimus
-        </ChipSelectOption>
-        <ChipSelectAction description="Install the runner on another machine">Add a host…</ChipSelectAction>
-      </ChipSelect>
-      <ChipSelect value={repo} onValueChange={setRepo} icon={<FolderIcon />} aria-label="Repository">
-        <ChipSelectOption value="xrp-mobile" description="JordiParraCrespo">
-          xrp-mobile
-        </ChipSelectOption>
-        <ChipSelectOption value="orchestrator" description="JordiParraCrespo">
-          orchestrator
-        </ChipSelectOption>
-        <ChipSelectOption value="oppenheimer" description="JordiParraCrespo">
-          oppenheimer
-        </ChipSelectOption>
-      </ChipSelect>
-      <ChipSelect value={branch} onValueChange={setBranch} icon={<GitBranchIcon />} aria-label="Branch">
-        <ChipSelectOption value="main">main</ChipSelectOption>
-        <ChipSelectOption value="release/1.4">release/1.4</ChipSelectOption>
-      </ChipSelect>
-      <ChipSelect value={agent} onValueChange={setAgent} icon={<BotIcon />} aria-label="Agent">
-        <ChipSelectOption
-          value="claude"
-          description={
-            <>
-              Runs <span className="figures text-[11.5px]">claude</span> on the host
-            </>
-          }
-        >
-          Claude Code
-        </ChipSelectOption>
-        <ChipSelectOption value="shell" description="No agent, just a terminal">
-          Plain shell
-        </ChipSelectOption>
-      </ChipSelect>
+      <ChipSelect
+        value={host}
+        onValueChange={setHost}
+        options={HOSTS}
+        icon={<CpuIcon />}
+        aria-label="Host"
+        searchPlaceholder="Search hosts…"
+        emptyText="No host matches."
+        action={{ label: 'Add host…', onSelect: () => {} }}
+      />
+      <RepositorySelect
+        repositories={REPOS}
+        value={scope}
+        onValueChange={setScope}
+        action={{ label: 'Add repository…', onSelect: () => {} }}
+      />
+      {single && singleRepo ? (
+        <ChipSelect
+          value={single.branch}
+          onValueChange={(branch) => setScope([{ id: single.id, branch }])}
+          options={singleRepo.branches.map((b) => ({ value: b.value, label: b.value, mono: true }))}
+          icon={<GitBranchIcon />}
+          aria-label="Branch"
+          searchPlaceholder="Search branches…"
+          emptyText="No branch matches."
+        />
+      ) : null}
+      <ChipSelect
+        value={agent}
+        onValueChange={setAgent}
+        options={AGENTS}
+        icon={<BotIcon />}
+        aria-label="Agent"
+        searchPlaceholder="Search agents…"
+        emptyText="No agent matches."
+      />
     </div>
+  );
+}
+
+/* ── SlugInput ───────────────────────────────────────────────────────────── */
+
+const TAKEN = ['acme', 'test', 'admin', 'oppenheimer', 'console', 'app'];
+
+/** Type an address: "acme" is taken, anything else is available after a beat. */
+export function SlugFieldDemo() {
+  const [slug, setSlug] = React.useState('versio');
+  const [status, setStatus] = React.useState<SlugStatus>('ok');
+  const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
+  function onChange(next: string) {
+    const clean = next.toLowerCase().replace(/[^a-z0-9-]+/g, '-').slice(0, 32);
+    setSlug(clean);
+    clearTimeout(timer.current);
+    if (!clean) return setStatus('idle');
+    setStatus('checking');
+    timer.current = setTimeout(() => setStatus(TAKEN.includes(clean) ? 'taken' : 'ok'), 550);
+  }
+  return (
+    <Field className="w-full max-w-[400px]" data-invalid={status === 'taken' || undefined}>
+      <FieldLabel htmlFor="ws-slug">Workspace URL</FieldLabel>
+      <SlugInput
+        id="ws-slug"
+        size="lg"
+        prefix="oppenheimer.dev/"
+        placeholder="versio"
+        value={slug}
+        status={status}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {status === 'ok' ? (
+        <FieldDescription tone="success">oppenheimer.dev/{slug} is available.</FieldDescription>
+      ) : status === 'taken' ? (
+        <FieldDescription tone="danger">oppenheimer.dev/{slug} is taken. Try another address.</FieldDescription>
+      ) : status === 'checking' ? (
+        <FieldDescription>Checking availability…</FieldDescription>
+      ) : (
+        <FieldDescription>Letters, numbers and hyphens. This is the address your team signs in at.</FieldDescription>
+      )}
+    </Field>
+  );
+}
+
+/* ── SegmentedControl ────────────────────────────────────────────────────── */
+
+export function SegmentedDemo() {
+  const [value, setValue] = React.useState('cmd');
+  return (
+    <SegmentedControl value={value} onValueChange={setValue} aria-label="Format">
+      <SegmentedControlItem value="cmd">Command</SegmentedControlItem>
+      <SegmentedControlItem value="prompt">Agent prompt</SegmentedControlItem>
+    </SegmentedControl>
   );
 }
 
@@ -412,7 +612,8 @@ export function ComposerDemo({ full }: { full?: boolean }) {
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 
-const SESSIONS: [string, string, 'running' | 'needs-input' | 'failed' | 'idle'][] = [
+const SESSIONS: [string, string, 'running' | 'needs-input' | 'failed' | 'idle' | 'pending'][] = [
+  ['xrp-mobile +1 · main', '', 'pending'],
   ['PR #121 porting to peersyst', '2m', 'running'],
   ['nightly ingest', '14m', 'running'],
   ['invoice triage', '1h', 'needs-input'],
@@ -423,7 +624,7 @@ const SESSIONS: [string, string, 'running' | 'needs-input' | 'failed' | 'idle'][
 ];
 
 export function SidebarDemo({ empty }: { empty?: boolean }) {
-  const [active, setActive] = React.useState(0);
+  const [active, setActive] = React.useState(1);
   const [filters, setFilters] = React.useState<string[]>(empty ? [] : ['Running only']);
   return (
     <div className="flex h-[560px] w-[264px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
@@ -464,7 +665,7 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
               <SessionItem
                 key={name}
                 name={name}
-                age={age}
+                age={age || undefined}
                 state={state}
                 active={i === active}
                 onClick={() => setActive(i)}

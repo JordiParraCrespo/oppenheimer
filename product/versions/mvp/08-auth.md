@@ -13,6 +13,10 @@ history) to work on the MVP.
   `organization` row with the account as its single `owner` member and
   the org-scoped `owner` application role that opens it
   (`apps/api/src/organizations/commands/provision-personal-workspace/`). One user per workspace.
+  Onboarding step 2 **names** that workspace and gives it its permanent
+  address (the slug under `oppenheimer.dev/`, checked for availability
+  as you type); the name can change later, the address cannot
+  (05 §onboarding, decided 2026-09-19).
   No roster UI, no invitations, no teams in the MVP; the routes the
   starter ships for them stay unexposed in the console and come back
   with the teams slice on the same tables.
