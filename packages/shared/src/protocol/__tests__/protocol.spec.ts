@@ -18,6 +18,25 @@ const checkoutId = 'a1f2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
 const commandId = 'b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e';
 const occurredAt = '2026-09-19T10:00:00Z';
 
+/** `apps/runner/internal/host/domain/facts.go`, marshalled. */
+const hostFacts = {
+  platform: 'macos' as const,
+  osVersion: '15.3.1',
+  arch: 'arm64',
+  hostname: 'jordis-mbp',
+  user: 'jordi',
+  home: '/Users/jordi',
+  root: false,
+  tools: [
+    { name: 'git', path: '/usr/bin/git', version: '2.45.0', required: true },
+    { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
+    { name: 'claude', required: false },
+  ],
+  workspacePath: '/Users/jordi/oppenheimer-ai',
+  diskFreeBytes: 120_000_000_000,
+  runnerVersion: '0.4.1',
+};
+
 const snapshot = {
   sessionId,
   agent: 'claude-code',
@@ -39,22 +58,15 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     runnerVersion: '0.4.1',
     protocol: { min: 1, max: 1 },
     runId: 'run-7f3a',
-    host: {
-      hostname: 'jordis-mbp',
-      os: 'darwin',
-      arch: 'arm64',
-      tools: { git: '2.45.0', tmux: '3.5a', claude: null },
-      agents: [{ id: 'claude-code', version: '2.1.144' }],
-    },
+    host: hostFacts,
     sessions: [snapshot],
   },
   heartbeat: {
     type: 'heartbeat',
     sentAt: occurredAt,
-    runnerVersion: '0.4.1',
     channel: 'stable',
-    load: { loadAverage1m: 1.25, workspacesFreeBytes: 120_000_000_000 },
-    tools: { git: '2.45.0', tmux: '3.5a' },
+    host: hostFacts,
+    load: { loadAverage1m: 1.25 },
     sessions: [snapshot],
   },
   hint: { type: 'hint', kind: 'update_required', detail: 'below min_supported' },
@@ -268,6 +280,65 @@ describe('events.append', () => {
         events: [{ idempotencyKey: 'run:1', kind: 'k', payload: { a: 1 }, occurredAt }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('host facts on the link', () => {
+  it('carries the runner’s Facts struct in hello, tools and all', () => {
+    const parsed = protocolMessageSchema.parse(SAMPLES.hello);
+    expect(parsed).toMatchObject({ type: 'hello' });
+    if (parsed.type === 'hello') {
+      expect(parsed.host.platform).toBe('macos');
+      expect(parsed.host.tools.map((tool) => tool.name)).toEqual(['git', 'tmux', 'claude']);
+      expect(parsed.host.workspacePath).toBe('/Users/jordi/oppenheimer-ai');
+    }
+  });
+
+  it('refuses the invented facts shape in hello', () => {
+    expect(
+      protocolMessageSchema.safeParse({
+        ...SAMPLES.hello,
+        host: { hostname: 'h', os: 'darwin', arch: 'arm64', tools: {}, agents: [] },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('sends the same Facts on the heartbeat, not a thinner variant', () => {
+    const parsed = protocolMessageSchema.parse(SAMPLES.heartbeat);
+    if (parsed.type === 'heartbeat') {
+      expect(parsed.host).toEqual(hostFacts);
+      expect(parsed.host.tools[0]).toEqual({
+        name: 'git',
+        path: '/usr/bin/git',
+        version: '2.45.0',
+        required: true,
+      });
+      // The three fields the heartbeat used to duplicate now live on `host`.
+      expect(parsed).not.toHaveProperty('tools');
+      expect(parsed).not.toHaveProperty('runnerVersion');
+      expect(parsed.load).not.toHaveProperty('workspacesFreeBytes');
+    }
+  });
+
+  it('refuses the old version-map tools on the heartbeat', () => {
+    expect(
+      protocolMessageSchema.safeParse({ ...SAMPLES.heartbeat, host: { tools: { git: '2.45.0' } } })
+        .success,
+    ).toBe(false);
+  });
+
+  it('carries no agents key anywhere — an agent is a probed tool', () => {
+    for (const type of ['hello', 'heartbeat'] as const) {
+      expect(JSON.stringify(SAMPLES[type])).not.toContain('"agents"');
+    }
+  });
+
+  it('normalises a nil Go tools slice to an empty array', () => {
+    const parsed = protocolMessageSchema.parse({
+      ...SAMPLES.hello,
+      host: { ...hostFacts, tools: null },
+    });
+    if (parsed.type === 'hello') expect(parsed.host.tools).toEqual([]);
   });
 });
 

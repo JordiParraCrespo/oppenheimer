@@ -11,7 +11,6 @@ import {
   protocolRangeSchema,
   sessionIdSchema,
   sessionSnapshotSchema,
-  toolVersionsSchema,
   windowIndexSchema,
 } from './primitives';
 
@@ -56,17 +55,23 @@ export type HelloMessage = z.infer<typeof helloSchema>;
 export const heartbeatSchema = z.object({
   type: z.literal('heartbeat'),
   sentAt: z.iso.datetime(),
-  runnerVersion: z.string().min(1).max(64),
   /** The update channel this host follows, so the control plane can offer the right release. */
   channel: z.string().min(1).max(64),
+  /**
+   * The host's facts, re-read — **the same `Facts` shape registration sends**, not
+   * a thinner summary of it.
+   *
+   * This carries `tools`, `diskFreeBytes` and `runnerVersion`, which is why the
+   * heartbeat no longer has its own copies of those three: a second, narrower
+   * host-facts variant here is how the two descriptions of one machine drift. A
+   * tool the person has just installed, or a disk that has filled, becomes visible
+   * without waiting for a re-registration.
+   */
+  host: hostFactsSchema,
   load: z.object({
-    /** One-minute load average, as the kernel reports it. */
+    /** One-minute load average, as the kernel reports it. Not part of `Facts`. */
     loadAverage1m: z.number().min(0),
-    /** Free bytes on the filesystem holding `~/oppenheimer-ai/workspaces`. */
-    workspacesFreeBytes: z.number().int().min(0),
   }),
-  /** `git`, `tmux` and each agent's command, re-read so a host upgrade is visible. */
-  tools: toolVersionsSchema,
   sessions: z.array(sessionSnapshotSchema),
 });
 
@@ -332,7 +337,7 @@ export const sessionRestartSchema = z.object({
 
 export type SessionRestartMessage = z.infer<typeof sessionRestartSchema>;
 
-/** Re-read the host's tools and agents now, rather than waiting for a heartbeat. */
+/** Re-read the host's facts now, rather than waiting for the next heartbeat. */
 export const hostPreflightSchema = z.object({
   type: z.literal('host.preflight'),
   commandId: commandIdSchema,

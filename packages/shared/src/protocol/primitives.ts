@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 import { CODING_AGENT_IDS, CODING_AGENTS } from '../agents/catalog';
-import { FIELD_BOUNDS } from '../schemas/primitives';
+import { FIELD_BOUNDS, HOST_PLATFORMS } from '../schemas/primitives';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
@@ -39,11 +39,6 @@ export const githubRepoIdSchema = z.number().int().positive();
 /** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 
-const toolVersionSchema = z
-  .string()
-  .min(FIELD_BOUNDS.toolVersion.min)
-  .max(FIELD_BOUNDS.toolVersion.max);
-
 /**
  * Every catalog login pattern, or-ed into one anchored expression.
  *
@@ -58,8 +53,6 @@ const ANY_VENDOR_LOGIN_URL = new RegExp(
     .join('|')})$`,
 );
 
-const hostFactSchema = z.string().min(FIELD_BOUNDS.hostFact.min).max(FIELD_BOUNDS.hostFact.max);
-
 /** A git ref or a slug — a short, non-empty, path-safe string on the wire. */
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
 
@@ -72,24 +65,47 @@ export const protocolRangeSchema = z.object({
   max: z.number().int().min(1),
 });
 
-/** A tool the runner found and the version it reported; `null` means "looked, not there". */
-export const toolVersionsSchema = z.record(z.string().min(1), toolVersionSchema.nullable());
+/**
+ * One probed executable. The wire half of `hostToolSchema` in
+ * `../schemas/primitives`; see there for why `path` absent means "not found" and
+ * why an agent is just a tool.
+ */
+export const hostToolSchema = z.object({
+  name: z.string(),
+  path: z.string().optional(),
+  version: z.string().optional(),
+  required: z.boolean(),
+});
 
 /**
  * What the runner last saw about the machine — the wire half of
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
+ *
+ *
+ * Agents installed on a host are read from `tools` — the entries named `claude`
+ * and `codex` — and there is no separate agents key; that is what the console
+ * consumes for the agent chip.
+ *
+ * Both mirror `Facts` in `apps/runner/internal/host/domain/facts.go` verbatim,
+ * because the runner marshals that struct whole into both `POST /hosts/register`
+ * and this link. Keep the two identical; the conformance spec fails otherwise.
  */
 export const hostFactsSchema = z.object({
-  hostname: hostFactSchema,
-  os: hostFactSchema,
-  arch: hostFactSchema,
-  tools: toolVersionsSchema,
-  agents: z.array(
-    z.object({
-      id: protocolAgentSchema,
-      version: toolVersionSchema.nullable(),
-    }),
-  ),
+  platform: z.enum(HOST_PLATFORMS),
+  osVersion: z.string().optional(),
+  arch: z.string(),
+  hostname: z.string(),
+  user: z.string(),
+  home: z.string(),
+  root: z.boolean(),
+  /** `null` when the Go slice was nil, normalised so consumers never branch on it. */
+  tools: z
+    .array(hostToolSchema)
+    .nullable()
+    .transform((tools) => tools ?? []),
+  workspacePath: z.string(),
+  diskFreeBytes: z.number().int().min(0),
+  runnerVersion: z.string(),
 });
 
 /**
@@ -178,8 +194,7 @@ export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
 for (const [id, schema] of [
   ['sessionSnapshot', sessionSnapshotSchema],
   ['hostFacts', hostFactsSchema],
-  ['toolVersions', toolVersionsSchema],
-  ['toolVersion', toolVersionSchema],
+  ['hostTool', hostToolSchema],
   ['codingAgentId', protocolAgentSchema],
   ['observedAgentState', observedAgentStateSchema],
   ['sessionId', sessionIdSchema],
@@ -189,7 +204,6 @@ for (const [id, schema] of [
   ['windowIndex', windowIndexSchema],
   ['githubRepoId', githubRepoIdSchema],
   ['gitRef', gitRefSchema],
-  ['hostFact', hostFactSchema],
 ] as const) {
   z.globalRegistry.add(schema, { id });
 }

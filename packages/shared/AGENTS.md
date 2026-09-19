@@ -43,6 +43,15 @@ src/
   frozen config record per agent. It is deliberately **not a table** — every
   entry carries behaviour the runner needs code for anyway, so a row would be a
   second source of truth. Keep it data; the type guard is the only function.
+- **`hostFactsSchema` is the runner's `Facts` struct, verbatim.** It mirrors
+  `apps/runner/internal/host/domain/facts.go` key for key and json tag for json
+  tag, because the runner marshals that struct whole into `POST /hosts/register`
+  and into the link's `hello` and `heartbeat` — all three parse one schema. The
+  register body is the **runner's** to define: if the struct changes, this
+  schema follows it, never the other way round. Agents are read from `tools`
+  (entries named `claude` / `codex`); there is no agents key. Keep the classic
+  and `zod/v4` copies identical — `src/__tests__/cross-version-primitives.spec.ts`
+  parses a literal sample of the Go output against both.
 - **The wire protocol** (`protocol/`): the runner link's control messages as
   Zod, with `protocolMessageSchema` the discriminated union over `type`. It is
   the **only** description of the wire: `pnpm build` emits
