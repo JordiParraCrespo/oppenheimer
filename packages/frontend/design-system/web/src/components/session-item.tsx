@@ -12,6 +12,8 @@ import type { StatusState } from './status-dot';
  * hundreds, so the row is a glyph and a name: the branch icon coloured by run
  * state (green running, amber needs input, red failed, grey otherwise), the
  * name truncated, and a mono age that appears on hover and on the active row.
+ * A session still provisioning is `pending`: the grey glyph pulses, so a row
+ * that joined the list a second ago reads as on its way rather than idle.
  * 30px is the floor; tighter and the pointer target gets unreliable in a long
  * list. Rows sit 1px apart in a `SessionList`.
  */
@@ -63,6 +65,7 @@ function SessionItem({
           state === 'running' && 'text-success',
           state === 'needs-input' && 'text-warning',
           state === 'failed' && 'text-danger',
+          state === 'pending' && 'motion-safe:animate-pulse',
         )}
       >
         {icon ?? <GitBranchIcon />}

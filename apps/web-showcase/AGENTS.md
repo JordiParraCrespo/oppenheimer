@@ -15,7 +15,7 @@ src/app/
 └── globals.css       # tailwind + the package styles + the dark variant
 src/components/
 ├── foundations.tsx   # colours, type ladder, space, radii, elevation, motion, icons
-├── demos.tsx         # interactive demos (menus, dialog, chip select, composer, sidebar, terminal, carousel)
+├── demos.tsx         # interactive demos (menus, the Add host dialog, scope chips, slug field, composer, sidebar, terminal, carousel)
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy
 └── top-bar.tsx       # search palette and theme toggle
