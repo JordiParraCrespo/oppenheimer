@@ -42,8 +42,10 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ...repositories,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
   ],
-  // `PROJECT_LOOKUP` is the surface the module that owns sessions injects to
-  // resolve — and, on a repository's first session, create — a project.
-  exports: [PROJECT_REPOSITORY, PROJECT_LOOKUP],
+  // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
+  // injects it to resolve — and, on a repository's first session, create — a
+  // project. The repository stays inside so no consumer can read rows past the
+  // scoped lookup.
+  exports: [PROJECT_LOOKUP],
 })
 export class ProjectsModule {}
