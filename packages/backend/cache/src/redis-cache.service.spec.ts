@@ -65,5 +65,25 @@ describe('RedisCacheService', () => {
 
       await expect(service().setIfAbsent('jti:abc', 1, 300)).resolves.toBe(false);
     });
+
+    it('has exactly one winner when two callers race', async () => {
+      // The property the replay guard is built on, and the reason this is not
+      // get-then-set: whichever call reaches Redis second is told so, rather than
+      // both reading "absent" and both proceeding.
+      const cache = service();
+      let claimed = false;
+      redisSet.mockImplementation(async () => {
+        if (claimed) return null;
+        claimed = true;
+        return 'OK';
+      });
+
+      const results = await Promise.all([
+        cache.setIfAbsent('jti:abc', 1, 300),
+        cache.setIfAbsent('jti:abc', 1, 300),
+      ]);
+
+      expect(results.filter(Boolean)).toHaveLength(1);
+    });
   });
 });
