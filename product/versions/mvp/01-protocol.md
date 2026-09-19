@@ -94,7 +94,8 @@ grounds can still fetch, verify and install the version that fixes it
   agent, and the update channel.
 - **Hints** may ride a heartbeat reply or an attach ticket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (note 12).
+  `blocked` with a retry-after (note 12), and `host_offline` on an
+  attach ticket whose host has no link right now (10).
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).

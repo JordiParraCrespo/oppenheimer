@@ -525,19 +525,24 @@ Boot lookup is by fingerprint on **either** column, which is why
 `previousPublicKeyFingerprint` is a column too, indexed. A host is never
 left with zero valid keys.
 
-### The runner makes exactly one HTTP call, ever
+### The runner makes two HTTP calls to the API, ever
 
-`POST /hosts/pairing/redeem`, from the install command, before the host
-has a key to authenticate with. Everything after — reconciliation, event
-append, token delivery and rotation, session start and stop, PTY bytes —
-rides the single outbound WebSocket, as [`00-scope.md`](00-scope.md)
+`POST /hosts/register`, from the install command, before the host has a
+key to authenticate with — the path the runner already speaks
+(`apps/runner/internal/pairing/adapters/controlplane/client.go`) and
+[`01-protocol.md`](01-protocol.md) and [`09`](09-runner-install-and-update.md)
+already name; an earlier draft of this note said `/hosts/pairing/redeem`
+and was the outlier. And `DELETE /hosts/self`, from uninstall, which
+runs with the daemon stopped and so cannot use the link. Everything
+else — reconciliation, event append, token delivery and rotation,
+session start and stop, PTY bytes — rides the single outbound WebSocket, as [`00-scope.md`](00-scope.md)
 decided ("the runner holds one outbound WebSocket") and
 [`08-auth.md`](08-auth.md) decided for the token specifically ("hands it
 to the runner over the relay"). Job payloads are sealed to the host's
 public key, which is F7 met rather than avoided.
 
-**A finding worth recording either way.** If a runner HTTP route is ever
-added, the host's boot assertion must **not** travel in
+**Decided: the host assertion travels in `X-Oppenheimer-Host-Assertion`**,
+on `DELETE /hosts/self` and on the runner link's handshake, never in
 `Authorization: Bearer`. `ScopesGuard` is registered globally as an
 `APP_GUARD` and calls `CredentialScopeResolver.resolve()` on every HTTP
 route; that resolver treats any bearer value that is neither an
@@ -545,8 +550,8 @@ route; that resolver treats any bearer value that is neither an
 session as a forgery and throws `INVALID_CREDENTIAL`
 (`apps/api/src/auth/application/credential-scope.resolver.ts`,
 `rejectUnlessSession`). A host JWT presented that way would 401 before
-any route-level guard ran. It needs its own header, or the resolver
-needs to be taught the host credential kind.
+any route-level guard ran. The runner sends `Bearer` today and changes
+one constant ([`11`](11-api-implementation-plan.md), R1).
 
 ### Where the two sockets live, and what guards them
 
@@ -946,7 +951,8 @@ window, hint}`; the client presents `ticket` as a WebSocket subprotocol,
 not a query parameter. `window` because tabs are tmux windows, so a ticket
 authorises one window; `hint` because
 [`01-protocol.md`](01-protocol.md) decided tickets can carry structured
-hints (`host-offline`, `runner-update-required`).
+hints; the vocabulary is 01's closed set plus `host_offline`:
+`update_available`, `update_required`, `blocked`, `host_offline`.
 
 `POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
 [{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
@@ -960,7 +966,8 @@ usually absent; the first prompt names the session.
 Unauthenticated by design, and therefore carrying no `@RequireScopes`:
 
 ```
-POST /hosts/pairing/redeem   credential = the registration token, checked in the handler; @Throttle
+POST /hosts/register         credential = the registration token, checked in the handler; @Throttle
+DELETE /hosts/self           credential = the host assertion in X-Oppenheimer-Host-Assertion
 POST /github/webhook         credential = X-Hub-Signature-256 over the raw body
 GET  /relay/attach            credential = the single-use ticket in Sec-WebSocket-Protocol,
                               never the query string; Origin checked (F2)
@@ -1118,13 +1125,14 @@ Each step is a vertical slice that can land alone.
   error, which is `INSTALLATION_ALREADY_CONNECTED` 409 rather than a
   constraint violation surfacing as a 500.
 
-- **The host boot assertion lives 60 seconds and its `jti` is burned.**
-  Five minutes was proposed with no replay cache. A captured assertion
-  cannot *read* anything — job payloads are sealed to the host key
-  (F7) — but it can open an uplink and **inject events into a session's
-  log**, which is the source of truth. Redis is already a dependency, so
-  a `SETNX jti` with a 60-second TTL at uplink accept closes it for a
-  few lines.
+- **The host boot assertion's `jti` is burned for its lifetime.** A
+  captured assertion cannot *read* anything — job payloads are sealed to
+  the host key (F7) — but it can open an uplink and **inject events into
+  a session's log**, which is the source of truth. Redis is already a
+  dependency, so a `SETNX jti` with the token's own TTL at uplink accept
+  closes it for a few lines. The lifetime stays the runner's five
+  minutes (`BootTokenTTL`): a burned `jti` refuses a replay either way,
+  and a shorter token only fails a slow dial.
 
 - **A host belongs to a person; workspaces borrow it.** The 2026-09-18
   decision gave a host both a workspace and an owner. The workspace

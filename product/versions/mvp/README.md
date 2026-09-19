@@ -23,6 +23,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API modules and data model](10-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the seven new tables, the on-disk layout, the endpoint surface, and where agents and models live |
+| 11 | [API implementation plan](11-api-implementation-plan.md) | How 10 becomes code: six API slices and three runner ones, each with its files, migration, tests and definition of done; the contract mismatches the plan settled |
 
 ## Decision log
 
@@ -212,3 +213,19 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   repo's config, finds them by that id thereafter, and reports the name
   back. `project.originRepositoryId` becomes `originGithubRepoId`.
   Seven tables.
+- 2026-09-19: 11-api-implementation-plan.md added: six API slices
+  (shared vocabulary, `github/`, `hosts/`, `projects/`, `sessions/`,
+  console, `relay/`) and three runner counterparts, each a pull request
+  green on the checks CI runs today. Writing it against the code settled
+  four contract mismatches: the register route is `POST /hosts/register`
+  as the runner and 01/09 already say, plus `DELETE /hosts/self` for
+  uninstall (10 said one call and `/hosts/pairing/redeem`); the host
+  assertion travels in `X-Oppenheimer-Host-Assertion` and keeps the
+  runner's five-minute lifetime with the `jti` burned for that long; the
+  hint vocabulary is one closed set across 01 and 10 with `host_offline`
+  added; and 01's open question 1 is decided — the wire schema is Zod,
+  JSON Schema emitted, Go generated. Error-code prefixes on the API side
+  are plural (`HOSTS_`, `SESSIONS_`…) because the runner owns the
+  singular ones in the same catalog. The `user` system role, not
+  `owner`, carries `manage Host` by `ownerUserId`, the way it carries
+  `ApiToken`.
