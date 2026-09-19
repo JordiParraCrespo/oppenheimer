@@ -11,23 +11,11 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
  * resources — the owner of the question and the owner of the answer meet at a
  * contract rather than at an import.
  *
- * Fail-closed is therefore a DI fact: with nothing registered there is no
- * implementation, and the archive refuses. That is not a fallback to be caught; it
- * is the absence of an answer on a destructive path.
+ * Fail-closed is therefore a DI fact: with nothing contributed the registry is
+ * empty, and the archive refuses. That is not a fallback to be caught; it is the
+ * absence of an answer on a destructive path.
  */
 export interface ProjectUsagePort {
   /** Whether the project holds sessions the fold has not moved to `resolved`. */
   hasUnresolvedSessions(scope: AccessScope, projectId: string): Promise<boolean>;
-}
-
-/**
- * How the module that can answer hands its implementation in.
- *
- * It is a second port rather than an exported class because the dependency only
- * runs one way: `sessions/` imports this module — a session needs the project it
- * belongs to — so this module cannot import that one, and what crosses the seam is
- * a contract plus a token, never an internal.
- */
-export interface ProjectUsageRegistrarPort {
-  register(usage: ProjectUsagePort): void;
 }

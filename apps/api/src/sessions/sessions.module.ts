@@ -1,4 +1,4 @@
-import { Inject, Module, type OnModuleInit, type Provider } from '@nestjs/common';
+import { Module, type Provider } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -6,8 +6,6 @@ import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
-import type { ProjectUsageRegistrarPort } from '../projects/application/project-usage.port';
-import { PROJECT_USAGE_REGISTRAR } from '../projects/projects.di-tokens';
 import { ProjectsModule } from '../projects/projects.module';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
@@ -137,8 +135,8 @@ const adapters: Provider[] = [
     // The three modules this one is built on, imported rather than assumed: the
     // project a session belongs to, the machine it may run on, and what a
     // repository is called. The one edge that runs the other way — the answer to
-    // "is this project still in use" — is registered in `onModuleInit` below, so
-    // `projects/` never has to import this module.
+    // "is this project still in use" — is contributed from this module's own
+    // providers, so `projects/` never has to import this module.
     ProjectsModule,
     HostsModule,
     GithubModule,
@@ -151,7 +149,10 @@ const adapters: Provider[] = [
     WorkSessionMapper,
     SessionPlanFactory,
     SessionNamingResolver,
-    SessionProjectUsage,
+    // Contributed rather than exported: the implementation is built here, in this
+    // module's injector, so it injects this module's repository port while
+    // `projects/` reaches across only for the registry.
+    ...ProjectsModule.contributeUsage([SessionProjectUsage]),
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
   ],
   // The two application ports, and nothing else. The repository is this module's
@@ -159,30 +160,4 @@ const adapters: Provider[] = [
   // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
   exports: [SESSION_DISPATCH, RECORD_SESSION_EVENTS],
 })
-export class SessionsModule implements OnModuleInit {
-  constructor(
-    @Inject(PROJECT_USAGE_REGISTRAR)
-    private readonly projectUsage: ProjectUsageRegistrarPort,
-    private readonly sessionUsage: SessionProjectUsage,
-  ) {}
-
-  /**
-   * Hand `projects/` the one question it cannot answer for itself.
-   *
-   * The dependency only runs one way — a session needs the project it belongs to,
-   * so `projects/` cannot import this module to inject a port from it — and this is
-   * the way back: the implementation is provided here, where its own dependencies
-   * are, and registered on boot. A deployment built without this module registers
-   * nothing and archiving refuses, which is fail-closed by construction rather than
-   * by a caught exception.
-   *
-   * It is a lifecycle hook rather than a `forFeature`-style factory provider on
-   * `ProjectsModule` because the implementation needs *this* module's injector: a
-   * provider declared inside a dynamic module of `ProjectsModule` cannot resolve
-   * `WORK_SESSION_REPOSITORY`. What crosses the seam is a port and a token, never
-   * a class from the other module's insides.
-   */
-  onModuleInit(): void {
-    this.projectUsage.register(this.sessionUsage);
-  }
-}
+export class SessionsModule {}

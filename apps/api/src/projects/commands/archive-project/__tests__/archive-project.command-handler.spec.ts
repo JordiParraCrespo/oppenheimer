@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ProjectUsageResolver } from '../../../application/project-usage.resolver';
+import { ProjectUsageRegistry } from '../../../application/project-usage.registry';
 import type { ProjectRepositoryPort } from '../../../database/project.repository.port';
 import { ProjectEntity } from '../../../domain/project.entity';
 import { ArchiveProjectCommand } from '../archive-project.command';
@@ -7,10 +7,10 @@ import { ArchiveProjectCommandHandler } from '../archive-project.command-handler
 
 /**
  * Archiving is the destructive path in this module, and the whole of its design is
- * that it **fails closed**: it asks the module that owns sessions whether any work
- * is still going on inside the project's directory, and refuses if nothing can
- * answer. That refusal is a DI fact — no contribution, no implementation — rather
- * than a caught exception, which is what these tests pin.
+ * that it **fails closed**: it asks whoever contributed an answer whether any work
+ * is still going on inside the project's directory, and refuses if nothing did.
+ * That refusal is a DI fact — an empty registry — rather than a caught exception,
+ * which is what these tests pin.
  *
  * The lock that serialises this against creating a session lives in the repository,
  * where the transaction is; this is the layer that proves the handler asks the
@@ -38,7 +38,7 @@ function project(archivedAt: Date | null = null) {
 
 describe('ArchiveProjectCommandHandler', () => {
   let projects: ProjectRepositoryPort;
-  let usage: ProjectUsageResolver;
+  let usage: ProjectUsageRegistry;
   let hasUnresolvedSessions: ReturnType<typeof vi.fn>;
   let handler: ArchiveProjectCommandHandler;
 
@@ -58,7 +58,7 @@ describe('ArchiveProjectCommandHandler', () => {
     } as unknown as ProjectRepositoryPort;
 
     hasUnresolvedSessions = vi.fn().mockResolvedValue(false);
-    usage = new ProjectUsageResolver();
+    usage = new ProjectUsageRegistry();
     usage.register({ hasUnresolvedSessions });
     handler = new ArchiveProjectCommandHandler(projects, usage);
   });
@@ -82,7 +82,7 @@ describe('ArchiveProjectCommandHandler', () => {
     // A deployment built without the module that owns sessions. Nothing is
     // registered, so there is no implementation and the archive refuses — rather
     // than assuming the answer it would prefer on a destructive path.
-    handler = new ArchiveProjectCommandHandler(projects, new ProjectUsageResolver());
+    handler = new ArchiveProjectCommandHandler(projects, new ProjectUsageRegistry());
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_003' });
     expect(projects.archiveIfUnused).not.toHaveBeenCalled();

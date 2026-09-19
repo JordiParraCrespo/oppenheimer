@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { ProjectUsageResolver } from '../../application/project-usage.resolver';
+import { ProjectUsageRegistry } from '../../application/project-usage.registry';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectErrors } from '../../domain/projects.errors';
@@ -16,9 +16,10 @@ import { ArchiveProjectCommand } from './archive-project.command';
  *
  * **It fails closed, and that is a DI fact rather than a caught exception.** "Is
  * any session still open in this project" is a question only the module that owns
- * sessions can answer, and it answers it by contributing a `ProjectUsagePort`. With
- * nothing contributed there is no implementation and the archive refuses; assuming
- * "no sessions" on a destructive path is the fail-open this shape rules out.
+ * sessions can answer, and it answers it by contributing a `ProjectUsagePort` to
+ * the registry. With nothing contributed the registry is empty and the archive
+ * refuses; assuming "no sessions" on a destructive path is the fail-open this shape
+ * rules out.
  *
  * **The check and the write are one transaction.** The repository takes
  * `SELECT … FOR UPDATE` on the project row, asks the question inside that lock and
@@ -33,19 +34,18 @@ export class ArchiveProjectCommandHandler
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projects: ProjectRepositoryPort,
-    private readonly usage: ProjectUsageResolver,
+    private readonly usage: ProjectUsageRegistry,
   ) {}
 
   async execute(command: ArchiveProjectCommand): Promise<ProjectEntity> {
-    const usage = this.usage.current();
-    if (!usage) {
+    if (!this.usage.canAnswer()) {
       throw new AppError(ProjectErrors.ARCHIVE_UNAVAILABLE, {
         detail: 'Nothing in this deployment can say whether the project still has open sessions',
       });
     }
 
     const outcome = await this.projects.archiveIfUnused(command.scope, command.projectId, () =>
-      usage.hasUnresolvedSessions(command.scope, command.projectId),
+      this.usage.isInUse(command.scope, command.projectId),
     );
 
     switch (outcome.result) {
