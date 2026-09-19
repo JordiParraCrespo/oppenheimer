@@ -29,6 +29,11 @@ multi-line, so a grep for `export` misses most of them.
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |
 | A dialog taller than the viewport | `DialogBody` around its middle | `overflow-y-auto` on `DialogContent` |
+| Two ways to read the same panel (Command / Agent prompt) | `SegmentedControl` | `Tabs`, two `Button`s |
+| An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
+| Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
+| An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
+| A coding agent's logo | `AgentMark` | an `<img>` of a copied PNG |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
@@ -49,6 +54,8 @@ the table (`GroupHeading`), never inside the bar.
 | A workspace list, one value, in a labelled field | `Combobox` |
 | Thousands, several values, fetched per keystroke | `AsyncMultiSelect` |
 | A toolbar filter rather than a field | `SelectMenu` (one) / `FilterMenu` (many) |
+| A scope chip on the console (host, branch, agent) | `ChipSelect`, always searchable |
+| Several repositories, each on its own branch | `RepositorySelect` |
 
 The threshold: if the option list is fetched from an endpoint, it is an
 autocomplete. `Combobox` is a form control (`Field` + `FieldLabel` +

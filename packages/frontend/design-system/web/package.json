@@ -95,6 +95,13 @@
     "./status-dot": "./src/components/status-dot.tsx",
     "./terminal": "./src/components/terminal.tsx",
     "./wordmark": "./src/components/wordmark.tsx",
+    "./repository-select": "./src/components/repository-select.tsx",
+    "./step-header": "./src/components/step-header.tsx",
+    "./slug-input": "./src/components/slug-input.tsx",
+    "./success-mark": "./src/components/success-mark.tsx",
+    "./summary-card": "./src/components/summary-card.tsx",
+    "./segmented-control": "./src/components/segmented-control.tsx",
+    "./agent-mark": "./src/components/agent-mark.tsx",
     "./assets/*": "./src/assets/*"
   },
   "scripts": {

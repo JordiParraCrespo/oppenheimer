@@ -24,3 +24,23 @@ what a full run looked like and steal a trick, not a target inventory.
   app; the skill's showcase script had to be listed under `web-showcase`
   and the export folder skipped by the check.
 - PRs: JordiParraCrespo/oppenheimer#6 (the port), #7 (this skill).
+
+## 2026-09-19: the second sync
+
+- The export moved under the port. Two later commits reworked the
+  artboards without touching `_ds/`; the audit that mapped them is
+  `product/versions/mvp/design/audit-2026-09.md`. Diff the artboards
+  against the previous sync before re-rendering: most of the delta was in
+  markup the shooter cannot see (search rows, a multi-select, a pane swap).
+- The shooter's `page.route` for vendored CDN scripts never matches when
+  the page loads them with `crossorigin` and SRI; the captures only worked
+  because `ignoreHTTPSErrors` let the proxy serve them. A state capture
+  script (typing, clicking through panes) needs its own Playwright run
+  with the same flag.
+- Base UI `Select` cannot filter; the chip picker was rebuilt on Popover
+  with exported parts so a two-pane picker reuses them. Base UI's
+  `PopoverTrigger render` overwrites the child's `data-slot`, so test
+  selectors target `aria-label` instead.
+- Third-party logos: the export carried PNG copies from another repo.
+  The decision was vendors' official SVGs inline, in the vendor's colour,
+  with a neutral glyph where none is available.
