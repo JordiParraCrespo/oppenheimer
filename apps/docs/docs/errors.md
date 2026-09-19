@@ -248,6 +248,29 @@ operation, its code is folded onto the catalog, and the original survives as
 | `ADMIN_008` <a id="admin_008" /> | The admin service failed to handle this request                   | 502  |
 | `ADMIN_009` <a id="admin_009" /> | No such session for that user                                     | 404  |
 
+## Projects
+
+A project is a body of work sessions belong to, and its `slug` is the name of its
+directory on every host that holds it. That is why archiving keeps the row and
+why nothing renames a slug.
+
+| Code                                   | Title                                             | HTTP |
+| -------------------------------------- | ------------------------------------------------- | ---- |
+| `PROJECTS_001` <a id="projects_001" /> | Project not found                                 | 404  |
+| `PROJECTS_002` <a id="projects_002" /> | This project still has open sessions              | 409  |
+| `PROJECTS_003` <a id="projects_003" /> | Projects belong to an organization                | 400  |
+| `PROJECTS_004` <a id="projects_004" /> | Could not reserve a directory name for this project | 503  |
+
+`PROJECTS_001` is also returned for a project that exists in another workspace:
+the scoped read cannot see it, and distinguishing the two would confirm the id.
+
+`PROJECTS_002` is a refusal, not a cascade — the sessions in a project own
+worktrees on a host. Close them and archive again.
+
+`PROJECTS_004` means every candidate directory name was taken by a project with
+a different origin. The first candidate is the repository's own name and the
+rest carry a random suffix, so it says nothing about the request: retry.
+
 <!-- oppenheimer:begin runner -->
 ## Runner service
 
