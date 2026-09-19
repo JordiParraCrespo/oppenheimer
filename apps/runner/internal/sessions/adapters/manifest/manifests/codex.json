@@ -23,11 +23,7 @@
       "state": "working",
       "priority": 970,
       "region": "bottom:12",
-      "any": [
-        "(?i)\\b(thinking|working|running|applying patch)\\b\\s*[.…]",
-        "(?i)esc to interrupt",
-        "[\\x{2800}-\\x{28FF}]"
-      ],
+      "any": ["(?i)\\b(thinking|working|running|applying patch)\\b\\s*[.…]", "(?i)esc to interrupt", "[\\x{2800}-\\x{28FF}]"],
       "not": ["allow this command", "approve", "(y/n)"],
       "note": "Same shape as Claude's, same reason for the guards."
     },

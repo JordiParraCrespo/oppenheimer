@@ -65,11 +65,7 @@
       "state": "done",
       "priority": 900,
       "region": "bottom:12",
-      "any": [
-        "(?i)\\bdone\\b.*\\((\\d+)\\s*(files?|changes?|edits?)\\)",
-        "(?i)^\\s*✓\\s",
-        "(?i)\\bcompleted\\b"
-      ],
+      "any": ["(?i)\\bdone\\b.*\\((\\d+)\\s*(files?|changes?|edits?)\\)", "(?i)^\\s*✓\\s", "(?i)\\bcompleted\\b"],
       "not": ["esc to interrupt"],
       "note": "A finished turn, before the prompt box comes back."
     },
