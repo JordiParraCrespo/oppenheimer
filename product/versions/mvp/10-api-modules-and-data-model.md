@@ -17,7 +17,7 @@ whose contract the API serves.
 
 | The noun | Where it lives | New? |
 |---|---|---|
-| **Organizations** (name, url, members) | the Better Auth `organization` + `member` tables, unchanged | no |
+| **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project` | yes |
 | **Sessions** | `sessions/` → `work_session`, `session_checkout`, `work_session_event` | yes |
@@ -110,8 +110,9 @@ whether it is reachable now.
 draft gave `host` an `organizationId` as the tenant boundary and
 `ownerUserId` as the owner. That is one column too many, and the Better
 Auth reference says so: the tables that describe a person's *devices
-and logins* — `session`, `account`, `passkey`, `two_factor` — hang off
-`user`, never off `organization`. A laptop is that kind of thing. The
+and logins* — `session` and `account` here, `passkey` and `two_factor`
+where those Better Auth plugins are on — hang off `user`, never off
+`organization`. A laptop is that kind of thing. The
 case that decides it is one person with a personal workspace and a
 company workspace on one machine. With a per-workspace host the same
 laptop is paired twice, runs two runner processes with two keys, and
@@ -139,8 +140,7 @@ lives on the aggregate rather than a child table) and
 which repositories they cover, and how to turn that into a one-hour
 token narrowed to one repository. One aggregate,
 `GithubInstallationEntity`, holding the installation *and its repository
-set*, because that set is replaced as a whole by every
-`installation_repositories` webhook. The vendor name stops at the
+set*, because that set is resynced as a whole on every webhook. The vendor name stops at the
 directory: the CASL subjects are `Installation` and `Repository`, the
 scope resource is `repositories`, and no Octokit type leaves
 `infrastructure/`.
@@ -292,8 +292,9 @@ space.
    `~/oppenheimer-ai/`. Orca: *"path shape alone is not authority."*
    So the runner writes `.oppenheimer` into each session directory at
    creation, **before** any setup runs, and removes only directories
-   carrying it. [`02-runner.md`](02-runner.md)'s "kills orphans after a
-   grace period" is qualified by this, or it deletes a person's work.
+   carrying it — and only when the control plane says so:
+   [`02-runner.md`](02-runner.md) §11 has the runner *report* an
+   unclaimed session on boot rather than reap it.
 3. **Ownership and visibility are different axes.** Importing a foreign
    worktree may make it visible; it never makes it ours to delete.
    Orca calls collapsing the two "the single most dangerous
@@ -492,7 +493,8 @@ difference between a slow create and a stalled project.
   does not distinguish used, expired and forged, on purpose. Only the
   SHA-256 is stored.
 - **The attach ticket is not**, because nothing about it is revocable:
-  it expires in thirty seconds, faster than anyone could revoke it.
+  it expires in sixty seconds and is burned on first use, faster than
+  anyone could revoke it.
 - **Installation access tokens are not rows at all.** Minted on demand
   from the App key in the secret store, cached in Redis until shortly
   before expiry. F20 and F23 become structural facts rather than rules
@@ -640,9 +642,10 @@ Uniform across all eight: `id` uuid primary key minted with
 `randomUUID()`, `@CreateDateColumn`/`@UpdateDateColumn`, snake_case name
 (the convention `api_token`, `user_role`, `access_grant` and
 `user_settings` already follow), and an owner column — `organizationId`
-on the six workspace-owned tables, exactly as `lead` does;
+on the workspace-owned tables, exactly as `lead` does (all but
+`work_session_event`, which is only ever read through its session);
 `ownerUserId` / `createdByUserId` on the two host tables, exactly as
-`account` and `passkey` do.
+`session` and `account` do.
 
 ### Eight new tables
 

@@ -32,7 +32,7 @@ history) to work on the MVP.
   slice decides then whether an invitee also gets one of their own.
 - **Hosts belong to a person; workspaces borrow them.** A host row
   carries `ownerUserId` and no workspace id, the way Better Auth hangs
-  `session`, `account` and `passkey` off `user`: a laptop is a device of
+  `session` and `account` off `user`: a laptop is a device of
   the person's. `HostResource` declares only `'own'` and `'grant'`, so
   the kernel scopes hosts own-or-grant with no tenant block
   (`applyAccessScope` skips it when the resource has no organization
