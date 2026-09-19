@@ -752,32 +752,47 @@ there.
 
 - `project` — `id`, `organizationId`, `name`, `slug`,
   `originGithubRepoId` bigint null, `archivedAt`, timestamps. Unique
-  `(organizationId, slug)` and `(organizationId, id)`; index
-  `(organizationId, originGithubRepoId)`.
+  `(organizationId, slug)` and, partial on non-null,
+  `(organizationId, originGithubRepoId)`; the `(organizationId, id)`
+  unique that the sessions composite key needs is added **by the
+  sessions migration**, not before it (a constraint for a table that
+  is not in the tree is speculative schema).
 
-  **Both come from the GitHub repository name.** Auto-created on the
-  first session for a repository: `slug` is the sanitised repository
-  name, `name` starts as the same thing, and `originGithubRepoId`
+  **Both come from the GitHub repository.** Auto-created on the first
+  session for a repository: `name` is the repository's name as GitHub
+  spells it, `slug` is its sanitised form, and `originGithubRepoId`
   records which repository did it, so the next session on that
   repository finds its project by GitHub's id rather than by
-  re-deriving a string. The MVP never shows a project chip —
+  re-deriving a string. Inside the API the id travels as a string, as
+  the driver exchanges a bigint; the wire's number becomes a string at
+  the boundary. The MVP never shows a project chip —
   `00-scope.md` decided four chips, and a fifth is real friction on the
   most-used screen for a concept with one instance. `POST /sessions`
   takes an optional `projectId`; absent, the project is the one whose
   origin is the first checkout's repository.
 
-  **Auto-creation is a race and is written as one.** Two concurrent
-  creates on a fresh repository both try the insert:
-  `INSERT … ON CONFLICT (organizationId, slug) DO NOTHING` then reselect
-  by `originGithubRepoId`. If the reselect finds the slug held by a
-  project with a *different* origin — `acme/xrp-mobile` and
-  `other/xrp-mobile` sanitise to the same slug — the slug gets a short
-  random suffix and the insert runs again. Never a second query that
-  assumes the first won.
+  **Auto-creation is a race and is written as one, on the origin.**
+  `INSERT … ON CONFLICT (organizationId, originGithubRepoId) DO
+  NOTHING RETURNING id`; a miss reselects by origin and returns the
+  winner. Only a *slug* conflict from a different origin —
+  `acme/xrp-mobile` and `other/xrp-mobile` sanitise to the same word —
+  moves to the next candidate, and the candidates are **deterministic**,
+  the rule [`11-workspace-layout.md`](../../11-workspace-layout.md)
+  already wrote: `<repo>`, then `<owner>--<repo>`, then
+  `<owner>--<repo>-<githubRepoId>`. No random suffix, no retry budget,
+  no "could not reserve a name" error: a directory name can always be
+  derived from the repository, and two runner versions cannot disagree
+  about it. Never a second query that assumes the first won.
 
   **Rows are never hard-deleted**; closing sets `archivedAt`, so
   `uq (organizationId, slug)` is a permanent tombstone for the directory
-  name, exactly as `work_session.slug` is. herdr-projects is the warning
+  name, exactly as `work_session.slug` is. A tombstone is a tombstone
+  on the create path too: `ensureForRepository` never returns an
+  archived project, and a first session on an archived origin is
+  refused rather than silently reopening a retired directory. Archiving
+  ships **with the sessions slice**, because "has open sessions" is the
+  one question the archive command must ask, and a placeholder that
+  answers no is fail-open on the destructive path. herdr-projects is the warning
   here: deleting a project there frees its slug immediately while the
   privilege grants keyed by its path survive, so a new project of the
   same name silently inherits the old one's approvals — their own code

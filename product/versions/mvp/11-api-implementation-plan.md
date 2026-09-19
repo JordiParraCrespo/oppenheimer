@@ -207,19 +207,26 @@ apps/api/src/hosts/
 ```
 apps/api/src/projects/
   projects.module.ts  projects.resource.ts  projects.di-tokens.ts  project.mapper.ts
-  domain/project.entity.ts  domain/projects.errors.ts  domain/project-slug.policy.ts  (sanitise + suffix)
+  domain/project.entity.ts  domain/projects.errors.ts  domain/project-slug.policy.ts  (sanitise; the three deterministic candidates)
   database/project.orm-entity.ts  *.repository.port.ts  *.repository.ts
-  application/project-lookup.port.ts           # what sessions/ injects: ensureForRepository(scope, githubRepoId, repositoryName) → projectId
-  application/project-lookup.resolver.ts       # INSERT … ON CONFLICT (organizationId, slug) DO NOTHING, reselect by origin, suffix and retry
-  commands/update-project/   PATCH /projects/{id}       (name only; slug immutable)
-  commands/archive-project/  DELETE /projects/{id}      (sets archivedAt; refuses with open sessions)
-  queries/find-projects/     GET /projects
+  application/project-lookup.port.ts           # what sessions/ injects: ensureForRepository(scope, { githubRepoId, owner, name }) → projectId
+  application/project-lookup.resolver.ts       # INSERT … ON CONFLICT (organizationId, originGithubRepoId) DO NOTHING RETURNING; reselect by origin; next candidate only on a foreign slug conflict
+  commands/update-project/   PATCH /projects/{id}       (name only; slug immutable; targeted UPDATE, never a full-entity save)
+  queries/find-projects/     GET /projects              (non-archived)
   queries/find-project/      GET /projects/{id}
   dtos/project.response.dto.ts  __tests__/project-scoping.spec.ts  __tests__/project-slug.spec.ts
 ```
 
-Migration `AddProjects`: unique `(organizationId, slug)` and
-`(organizationId, id)`, index `(organizationId, originGithubRepoId)`.
+Archive (`DELETE /projects/{id}`) is **not** in this slice: it needs
+"has open sessions", which only the sessions slice can answer, and a
+placeholder answering no would be fail-open on the destructive path.
+Migration `AddProjects`: unique `(organizationId, slug)`, partial unique
+`(organizationId, originGithubRepoId)`, organization FK `ON DELETE
+RESTRICT`; the `(organizationId, id)` unique comes with the sessions
+migration. `AddProjectRolePermissions`: `owner` gains `manage Project`,
+`roleVersion` bumped. `operationId`s are `listProjects`, `getProject`,
+`updateProject`; `ENDPOINT_POLICIES` gains the three routes; notes 03
+and 11 gain the project noun in the same pull request.
 The auto-create race gets an integration test with two concurrent
 creates on a fresh repository.
 
