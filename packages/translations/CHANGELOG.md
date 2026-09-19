@@ -1,5 +1,19 @@
 # @oppenheimer/translations
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Add an `errors` namespace with a message per error code in both locales.
+- 1a51afc: Split the catalogs into namespaced translation files.
+- f099524: Add the `validation.*` messages the shared error map resolves (`required`, `email`, `minLength`, `maxLength`, `minItems`, `maxItems`) plus `apiTokens.permissionsRequired`, in both locales.
+- 1a51afc: Add `/locales` and `/lazy` entrypoints so only the default locale reaches the critical path, and declare `sideEffects`.
+
+### Patch Changes
+
+- f099524: Add the strings the login page renders when a deployment has no social provider configured.
+- 1a51afc: Add an `errors.byCode` message for `ROLE_007` (`SYSTEM_ROLE_MISSING`) in both locales.
+
 ## 0.2.0
 
 ### Minor Changes

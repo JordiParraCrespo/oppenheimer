@@ -1,5 +1,60 @@
 # @oppenheimer/api
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Adopt the authorization kernel. A route that declares no policy no longer admits any authenticated caller, and two tenants can both define a `manager` role.
+- f099524: An optional feature is enabled by its config being present rather than by a `'not-set'` sentinel, and `GET /health/capabilities` serves the client-facing set.
+- f099524: New `AuthErrors`, `OrganizationErrors` and `AdminErrors` catalogs; `betterAuthInvoker` folds Better Auth's upstream codes onto them, and the guards throw catalog errors — a missing principal is now 401 rather than 403.
+- f099524: Domain events and queued jobs are staged in the same transaction as the write that owes them, so a crash between commit and dispatch no longer drops them.
+- f099524: Sign-up grants the default role and provisions the personal workspace through domain use cases rather than SQL in a Better Auth hook. A slug with no URL-safe characters falls back to `workspace-…` everywhere, and `ROLE_007` replaces a bare 500 when a system role is missing.
+- f099524: `TOKEN_002` and `TOKEN_005` report the offending scopes in `detail` and as `ungrantableScopes` / `missingScopes`, instead of interpolating them into the catalog message.
+- f099524: Entry points load the root `.env` through `@oppenheimer/env/load`; the TypeORM CLI previously loaded no env file at all.
+- f099524: Conditional User permissions are enforced against the loaded record, and listing the global user directory requires `manage User`. A non-admin caller with only `read User` now receives 403; organization-scoped member endpoints cover tenant directories.
+- 1ad71b4: Module layout is now a machine-checked contract: `services/` is gone, a probe is not a use case, and `pnpm check:api-structure` enforces the shape.
+- f099524: Describe scope and permission-catalog responses properly in OpenAPI, so the generated client keeps their types. The wire format is unchanged.
+
+### Patch Changes
+
+- f099524: Pin the controllers to `ENDPOINT_POLICIES`: a new catalog entry fails to compile until a handler is named for it.
+- f099524: Add opt-in SQL query logging (`DB_LOG_QUERIES=true`) that never logs bound parameters.
+- f099524: Take the Better Auth configuration from `@oppenheimer/auth` instead of a local copy.
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+  - @oppenheimer/backend-authz@0.2.0
+  - @oppenheimer/shared@0.3.0
+  - @oppenheimer/backend-core@0.3.0
+  - @oppenheimer/translations@0.3.0
+  - @oppenheimer/backend-ddd@0.3.0
+  - @oppenheimer/env@0.2.0
+  - @oppenheimer/auth@0.2.0
+  - @oppenheimer/backend-cache@0.1.0
+  - @oppenheimer/backend-email@0.2.0
+  - @oppenheimer/backend-i18n@0.1.0
+  - @oppenheimer/backend-queue@0.1.1
+  - @oppenheimer/backend-storage@0.1.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -76,7 +131,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

@@ -1,5 +1,21 @@
 # @oppenheimer/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Read RFC 7807 problem documents from the API, while still understanding the old `{ statusCode, code, message }` body.
+
+### Patch Changes
+
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+  - @oppenheimer/shared@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -42,7 +58,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

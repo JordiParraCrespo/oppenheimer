@@ -1,5 +1,16 @@
 # @oppenheimer/shared
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Carry the resource and permission vocabulary the authorization kernel builds abilities from.
+- f099524: Export `DEPLOYMENT_CAPABILITIES` / `DeploymentCapabilities` and the `CLIENT_CAPABILITIES` wire subset.
+- f099524: `ENDPOINT_POLICIES` moves to `@oppenheimer/shared/permissions`, and `./navigation` is gone.
+- f099524: Add the `ProblemDetails` wire type, replacing the unused `ApiErrorResponse`.
+- f099524: The auth schemas no longer hardcode English failure messages, and a new `./schemas/auth` export ships them on their own.
+- f099524: `canAccess()` performs the instance-level check against a loaded record, rather than answering from the grant alone.
+
 ## 0.2.0
 
 ### Minor Changes
@@ -76,7 +87,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

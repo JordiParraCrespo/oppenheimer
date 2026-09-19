@@ -1,5 +1,12 @@
 # @oppenheimer/backend-ddd
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Add transactional-outbox building blocks: `OutboxMessageSchema`, an `OutboxService` that stages inside the caller's transaction and leases claims with `FOR UPDATE SKIP LOCKED`, and `OutboxRelay`.
+- f099524: Domain exceptions carry an `httpStatus`, so a `NotFoundException` surfaces as 404 rather than a blanket 500.
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,10 +1,12 @@
-# @oppenheimer/admin-web
+# @oppenheimer/frontend-web
 
 ## 0.2.0
 
 ### Minor Changes
 
-- 1a51afc: Serve the built SPAs with gzip, `immutable` caching on hashed assets and a real CSP; prefetch route chunks on intent, issue the session lookup from `<head>`, split vendor chunks per library, and fail `pnpm check:bundle` past a committed budget.
+- f099524: Ship the PostHog web analytics adapter, driven by `VITE_POSTHOG_KEY`.
+- 1ad71b4: Split `DataTable` so the search field, the selection and the rows stop sharing a clock: a keystroke now re-renders zero rows. `useTableQuery` keeps one `search` — the settled value — and no longer debounces its URL write.
+- f099524: Ship `useZodResolver`, which wires `createZodErrorMap` into React Hook Form.
 
 ### Patch Changes
 
@@ -18,15 +20,8 @@
 - Updated dependencies [f099524]
 - Updated dependencies [f099524]
 - Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [f099524]
 - Updated dependencies [1a51afc]
 - Updated dependencies [1a51afc]
-- Updated dependencies [1a51afc]
-- Updated dependencies [f099524]
-- Updated dependencies [1ad71b4]
-- Updated dependencies [f099524]
 - Updated dependencies [f099524]
 - Updated dependencies [f099524]
 - Updated dependencies [f099524]
@@ -36,25 +31,9 @@
 - Updated dependencies [1a51afc]
 - Updated dependencies [f099524]
 - Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [f099524]
-- Updated dependencies [1a51afc]
-- Updated dependencies [1a51afc]
 - Updated dependencies [1a51afc]
 - Updated dependencies [1a51afc]
   - @oppenheimer/design-system-web@0.2.0
   - @oppenheimer/frontend-core@0.3.0
-  - @oppenheimer/frontend-web@0.2.0
   - @oppenheimer/shared@0.3.0
-  - @oppenheimer/api-client@0.3.0
   - @oppenheimer/translations@0.3.0
-  - @oppenheimer/auth@0.2.0
-  - @oppenheimer/frontend-admin@0.2.1
-
-## 0.1.0
-
-### Minor Changes
-
-- Add the web control plane for platform users, roles, and permissions.

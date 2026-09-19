@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/frontend-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "What both Vite apps share below their routes: shell, auth chrome, table, layout, forms, theme, i18n, analytics, platform glue.",
   "type": "module",

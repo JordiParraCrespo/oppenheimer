@@ -1,5 +1,25 @@
 # @oppenheimer/mcp
 
+## 0.3.0
+
+### Minor Changes
+
+- 9ae654e: Adopt MCP protocol revision `2026-07-28`: stateless per-request identity in place of the `initialize` handshake and `Mcp-Session-Id`, `server/discover`, and cacheable tool lists. Clients on the 2025 handshake keep working.
+- f099524: Read RFC 7807 problem documents from the API, while still understanding the old `{ statusCode, code, message }` body.
+- f099524: Load the root `.env`, and prefer `MCP_PORT` over `PORT` so a shared root file cannot make the HTTP port collide with the API.
+
+### Patch Changes
+
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+  - @oppenheimer/shared@0.3.0
+  - @oppenheimer/env@0.2.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -42,7 +62,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no
