@@ -118,7 +118,8 @@ It creates the eight kind directories with a note in each and a first screen.
 Then: write the screen, add a route in `src/routes/` that mounts it, add a nav
 row in `src/lib/nav.ts` if the screen is a destination (a gated row's
 `policies` come from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed
-by the endpoint it reads), add the translation keys, and
+by the method and route it reads — `ENDPOINT_POLICIES['GET /tokens']`), add the
+translation keys, and
 add a spec in `e2e/tests/web/`.
 
 Module names this app may use: the kernel's `analytics`, `auth`,
@@ -170,7 +171,8 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
 - **`nav.ts`** — the workspace's destinations, `/sessions`, `/sessions/new`
   and `/settings`, plus `USER_MENU_LINKS`. Every row is ungated (`policies: []`);
   a row that needs a permission takes it from `ENDPOINT_POLICIES` in
-  `@oppenheimer/shared/permissions`, never a literal rule list. `apps/admin-web`
+  `@oppenheimer/shared/permissions`, keyed by method and route
+  (`ENDPOINT_POLICIES['GET /tokens']`), never a literal rule list. `apps/admin-web`
   lists `/users` and `/roles` instead.
 
 The query client is a provider, not a lib file: `src/providers/query-provider.tsx`
