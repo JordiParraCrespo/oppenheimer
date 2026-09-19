@@ -262,6 +262,14 @@
       "subtitle": "Elige máquina, repositorio, rama y agente.",
       "emptyTitle": "Llega con la primera máquina",
       "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+    },
+    "session": {
+      "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
+      "status": {
+        "connecting": "Conectando",
+        "live": "En directo",
+        "closed": "Desconectado"
+      }
     }
   },
   "home": {

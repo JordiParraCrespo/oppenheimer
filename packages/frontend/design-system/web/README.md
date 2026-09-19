@@ -81,4 +81,4 @@ and the findings it inherited are in `.agents/rules/frontend-ui.md`.
 
 ## Consumed by
 
-`apps/web`, `apps/web-showcase`.
+`apps/web`, `apps/admin-web`, `apps/web-showcase`, `packages/frontend/web`.

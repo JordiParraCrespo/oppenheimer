@@ -52,11 +52,11 @@ root.Use(
 )
 root.Group(func(api *httpx.Router) {
 	api.Use(auth.Authenticate(problems, logger, verifiers...))
-	jobsModule.Mount(api)
+	keys.Mount(api)
 })
 ```
 
-A handler in `apps/runner/internal/jobs/adapters/http` decodes, calls the
+A handler in `apps/runner/internal/apikeys/adapters/http` decodes, calls the
 use case and returns whatever fails:
 
 ```go
@@ -82,4 +82,4 @@ pnpm --filter @oppenheimer/go-httpx build   # go build ./...
 
 Imports `@oppenheimer/go-core` (`core/problem`). Imported by `@oppenheimer/go-health`,
 `@oppenheimer/go-auth`, `@oppenheimer/go-ws`, and in `apps/runner` by every HTTP adapter,
-the composition root and `cmd/server/main.go` (`httpx.Serve`).
+the composition root and `cmd/runner/main.go` (`httpx.Serve`).

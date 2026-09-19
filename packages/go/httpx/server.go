@@ -11,7 +11,12 @@ import (
 
 // ServerOptions are the knobs config exposes for the listener.
 type ServerOptions struct {
-	Addr            string
+	Addr string
+	// Listener, when set, is served instead of dialing Addr. It is how a
+	// service binds somewhere that is not a TCP port — a host agent serves
+	// a 0600 Unix socket so the machine it runs on opens no port at all.
+	// Serve closes it on shutdown.
+	Listener        net.Listener
 	ShutdownTimeout time.Duration
 	// ReadHeaderTimeout bounds slowloris-style header dribbling. Body and
 	// write timeouts are deliberately not set globally: long-lived WebSocket
@@ -36,8 +41,16 @@ func Serve(ctx context.Context, logger *slog.Logger, opts ServerOptions, h http.
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("http server listening", slog.String("addr", opts.Addr))
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		var err error
+		if opts.Listener != nil {
+			logger.Info("http server listening", slog.String("addr", opts.Listener.Addr().String()),
+				slog.String("network", opts.Listener.Addr().Network()))
+			err = srv.Serve(opts.Listener)
+		} else {
+			logger.Info("http server listening", slog.String("addr", opts.Addr))
+			err = srv.ListenAndServe()
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
 		close(errCh)

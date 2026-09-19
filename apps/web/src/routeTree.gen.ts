@@ -23,6 +23,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
+import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 
@@ -95,6 +96,12 @@ const AuthenticatedSessionsIndexRoute =
     path: '/sessions/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSessionsSessionIdRoute =
+  AuthenticatedSessionsSessionIdRouteImport.update({
+    id: '/sessions/$sessionId',
+    path: '/sessions/$sessionId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSessionsNewRoute =
   AuthenticatedSessionsNewRouteImport.update({
     id: '/sessions/new',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -136,6 +144,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -155,6 +164,7 @@ export interface FileRoutesById {
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/profile'
     | '/oauth/consent'
+    | '/sessions/$sessionId'
     | '/sessions/new'
     | '/sessions/'
     | '/settings/'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/profile'
     | '/oauth/consent'
+    | '/sessions/$sessionId'
     | '/sessions/new'
     | '/sessions'
     | '/settings'
@@ -207,6 +219,7 @@ export interface FileRouteTypes {
     | '/_auth/reset-password'
     | '/_authenticated/profile'
     | '/oauth/consent'
+    | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/sessions/$sessionId': {
+      id: '/_authenticated/sessions/$sessionId'
+      path: '/sessions/$sessionId'
+      fullPath: '/sessions/$sessionId'
+      preLoaderRoute: typeof AuthenticatedSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/sessions/new': {
       id: '/_authenticated/sessions/new'
       path: '/sessions/new'
@@ -358,6 +378,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -365,6 +386,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,

@@ -5,13 +5,75 @@ binary that will own the worktrees, the tmux sessions and the PTY stream on
 a host you own. The NestJS API is the control plane; this service is the
 thing that runs on the machine.
 
-What is here today is the **shell**, not the agent: configuration, RFC 7807
-errors, the credential context (`apikeys`) and the event stream. The first
-product context (pairing, then session attach) lands with the step-one spike
-(`product/versions/mvp/06-step-one-spike.md`); it replaces the inbound
-API-key surface with a pairing token, a host keypair and an outbound
-WebSocket to the control plane. Until then, nothing product-shaped should be
-built on the key-minting endpoints.
+How it is installed on that machine and how it updates itself afterwards are
+`product/versions/mvp/09-runner-install-and-update.md`.
+
+**What works today**: a macOS, Debian or Ubuntu machine pairs with a
+workspace, installs itself as a user service, keeps itself on the current
+signed release (rolling back a version that will not stay up), and runs
+sessions — a git worktree plus a tmux session with the agent in window 0,
+tabs as further windows, a screen classifier for the sidebar dot, and a close
+that pushes the branch and removes the worktree.
+
+**What does not exist yet**: the outbound WebSocket to the control plane. So
+sessions are driven from the host itself (`runner sessions …`) rather than
+from a browser, and the git credential helper answers "I have none" because
+the token it would hand git is minted by the control plane over that link.
+Both are the next slice, in the order `apps/runner/ARCHITECTURE.md` lists.
+
+`runner serve` and the `apikeys` context are the template this grew from:
+an inbound API-key surface on a TCP port, which is what the container
+image runs and what the API talks to today. **Nothing product-shaped
+should be built on the key-minting endpoints** — pairing replaces them as
+the way this host proves who it is, and they go when the link lands.
+
+## Subcommands
+
+| Command | What it does |
+| ------- | ------------ |
+| `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
+| `runner register --token … --url …` | redeems a one-hour registration token: generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint |
+| `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
+| `runner uninstall [--keep-identity]` | stops the service, revokes the host, erases the identity. Never touches `~/oppenheimer-ai` |
+| `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself |
+| `runner credential-helper get` | git's credential protocol, answered over the local socket |
+| `runner status` | platform, pairing, service, tools, disk. Exits non-zero when the host is not ready |
+| `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
+| `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
+| `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
+
+Exit codes are a contract, the same one `apps/cli` publishes: 0 ok, 1 failure,
+2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable.
+
+## On a host
+
+```
+~/.oppenheimer/
+  config.json   0600  host id, control plane, pinned fingerprint, channel
+  host.key      0600  the Ed25519 key every dial is signed with
+  bin/                runner-<version> binaries and the `current` symlink
+  state/              update.json, sessions.json
+  manifests/          agent detection rules newer than the bundled ones
+  log/ run/           logs, the Unix socket, the single-instance lock
+~/oppenheimer-ai/workspaces/<owner>/<repo>/main             the fetch source, never edited
+~/oppenheimer-ai/workspaces/<owner>/<repo>/worktrees/<slug>  one per session
+```
+
+Sessions live in a tmux server on its own socket (`tmux -L oppenheimer`), so
+the runner never collides with the user's own tmux and the server outlives
+every runner restart, update and rollback. That is why the service units are
+written to stop only the runner process.
+
+## Releasing
+
+```bash
+scripts/runner/sign-release.sh --keygen release.key       # once, offline
+RELEASE_PUBLIC_KEYS=<public key> scripts/runner/release.sh 1.2.3
+scripts/runner/sign-release.sh dist/runner/stable.json release.key
+```
+
+The private key never touches CI. Every binary carries the public half, so a
+runner verifies a manifest without asking anyone what to trust.
 
 ## What is in the box
 

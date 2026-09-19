@@ -1,7 +1,8 @@
 # @oppenheimer/design-system-mobile — Agent Instructions
 
 Mobile UI component library: React Native components styled with **NativeWind**
-(Tailwind for RN). Consumed by `apps/mobile` and `apps/mobile-showcase`.
+(Tailwind for RN). Consumed by `apps/mobile`, `apps/admin-mobile`,
+`apps/mobile-showcase` and `packages/frontend/mobile`.
 
 > Read the root [`CLAUDE.md`](../../../../CLAUDE.md) and the design-system overview
 > in [`../AGENTS.md`](../AGENTS.md) first.

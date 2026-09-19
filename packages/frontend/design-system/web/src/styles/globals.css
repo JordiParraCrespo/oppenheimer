@@ -147,6 +147,11 @@
     --term-danger: var(--op-red-700);
     --term-caret: var(--op-blue-600);
     --term-selection: rgba(0, 113, 227, 0.16);
+    /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
+       coloured with them — but a real PTY emits all sixteen slots, so the two
+       missing hues take the chart ramp's violet and teal. */
+    --term-magenta: #6a4bdb;
+    --term-cyan: #00808d;
 
     /* ---- Elevation ----------------------------------------------------
        Surfaces never cast shadows; depth is tonal. Only three transient
@@ -426,6 +431,8 @@
     --term-danger: var(--op-red-400);
     --term-caret: var(--op-blue-400);
     --term-selection: rgba(41, 151, 255, 0.24);
+    --term-magenta: var(--op-violet-500);
+    --term-cyan: var(--op-teal-500);
 
     --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px -8px rgba(0, 0, 0, 0.7);
     --shadow-modal: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 80px -16px rgba(0, 0, 0, 0.8);
@@ -618,6 +625,8 @@
   --color-term-danger: var(--term-danger);
   --color-term-caret: var(--term-caret);
   --color-term-selection: var(--term-selection);
+  --color-term-magenta: var(--term-magenta);
+  --color-term-cyan: var(--term-cyan);
   --color-glass: var(--glass);
 
   /* ---- shadcn semantic colours ---------------------------------------- */

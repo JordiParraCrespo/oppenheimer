@@ -34,13 +34,13 @@ only the standard library.
 ## How to use it
 
 A bounded context declares its errors once and returns them with detail; the
-router renders them (from `apps/runner/internal/jobs/domain/errors.go` and
+router renders them (from `apps/runner/internal/apikeys/domain/errors.go` and
 the composition root):
 
 ```go
-var ErrQueueFull = problem.New("JOB_003", http.StatusTooManyRequests, "Job queue is full")
+var ErrScopeEscalation = problem.New("APIKEY_003", http.StatusForbidden, "Cannot grant scopes you do not hold")
 
-return ErrQueueFull.WithDetail("%d jobs queued", depth)
+return ErrScopeEscalation.WithDetail("key holds %v", granted)
 ```
 
 ```go
@@ -59,6 +59,6 @@ pnpm --filter @oppenheimer/go-core build   # go build ./...
 ## Dependencies
 
 Depends on nothing but the standard library. Imported by every other
-`packages/go` module except `config` and `postgres`, and by every layer of
-`apps/runner` (`domain` may import `core/problem` and nothing else from the
-toolkit).
+`packages/go` module except `config`, `postgres` and `selfupdate`, and by every
+layer of `apps/runner` (`domain` may import `core/problem` and nothing else
+from the toolkit).

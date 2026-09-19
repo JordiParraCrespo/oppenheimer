@@ -7,18 +7,22 @@ then the questions still open. Decisions made here are final for the
 MVP; when one changes, update the document and add a line to the log
 at the bottom of this file.
 
+A bare number is a document in this directory (`02 §6`, `09 §5`);
+"note 9" with the word is a research note in [`product/`](../../README.md).
+
 | # | Document | Covers |
 |---|----------|--------|
 | 00 | [Scope](00-scope.md) | The exact feature list, in and out, and the demo scene it must satisfy |
-| 01 | [Protocol](01-protocol.md) | Messages between browser, control plane, and runner; PTY frames; tickets; events |
-| 02 | [Runner](02-runner.md) | The Go binary: sessions, tmux, ring buffer, reconnect, screen manifests, libvirt, vsock, sleep, account volumes |
-| 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, sleep scheduler |
+| 01 | [Protocol](01-protocol.md) | **The wire**: the two sockets and their two shapes, frame layout and the attachment id, hello, heartbeat, hints, the command list, and which calls are HTTPS instead |
+| 02 | [Runner](02-runner.md) | The Go binary: process shape, subcommands, package map, the link, sessions, tmux, streaming, credentials, screen manifests, state, failure modes |
+| 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, and the runner-facing surfaces: register, host JWTs, the link's server half, release rollout |
 | 04 | [Guest image](04-guest-image.md) | Deferred with the VM slice; kept for later |
 | 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, settings drawer; components and states |
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
-| 09 | [API modules and data model](09-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the eight new tables, the on-disk layout, the endpoint surface, and where agents and models live |
+| 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
+| 10 | [API modules and data model](10-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the eight new tables, the on-disk layout, the endpoint surface, and where agents and models live |
 
 ## Decision log
 
@@ -55,7 +59,39 @@ at the bottom of this file.
   `AGENTS.md` and `.agents/rules/rbac-roles.md`. 08-auth.md also now
   records that provisioning is gated on *membership* rather than
   ownership, which the MVP cannot tell apart and the teams slice will.
-- 2026-09-18: 09-api-modules-and-data-model.md added, deepening 03's
+- 2026-09-18: the runner is designed in full (02): one binary with
+  subcommands, no inbound port and a 0600 Unix socket for the credential
+  helper and the CLI, one multiplexed link with a 4-byte stream header on
+  binary frames, a snapshot on reconnect instead of a durable outbox, and
+  a package map onto `apps/runner`'s hexagon. That map answers 02's open
+  question 6 and 01's open questions 3, 4 and 5. Pairing and the agent
+  install prompt keep their decisions word for word but move from 02 to 09,
+  where the rest of the install story is.
+- 2026-09-18: **signed self-update moves into the MVP** and gets its own
+  note (09). It was in 00's out-list as "signed auto-update"; a host that
+  can only be updated by the user pasting a command again is a support
+  burden the first ten hosts already cannot carry, and the protocol needs
+  the update-required hint anyway. F26 therefore moves from deferred into
+  07's checklist. The shape: artifacts signed with an offline key whose
+  public half is compiled into the binary, a manifest the control plane
+  serves but cannot forge, a safe window, selfcheck before the swap, a
+  health gate and automatic rollback.
+- 2026-09-18: review pass on the design, and the notes moved to match it.
+  01 now owns the wire — 02 §4 had grown a second copy of it — and names
+  the **attachment** (one PTY on one window for one browser connection)
+  as what the 4-byte stream id identifies; the two sockets have two
+  shapes on purpose. Registration, uninstall and the release manifest are
+  ordinary HTTPS, which is what lets a runner the control plane refuses
+  on protocol grounds still fetch the version that fixes it. 03 takes the
+  control-plane half 09 had been specifying from outside, and 05 takes
+  the host row (version, channel, pin, last outcome). 09's swap is a
+  four-state transition table rather than a paragraph, and says what
+  `selfcheck` is allowed to do — not dial the control plane, not take the
+  lock. F26 keeps its rootfs-image half (deferred with the VM slice) and
+  gains F26a: first install is trust-on-first-use, so F26 begins at the
+  first self-update, not at install. The link is a **port**, not a
+  bounded context.
+- 2026-09-18: 10-api-modules-and-data-model.md added, deepening 03's
   "Data model, first cut" into the module map and schema the enforced
   `apps/api` contract can carry. Four modules, not seven: `identity` is
   the starter's auth, `installations` and `repositories` merge into
@@ -69,7 +105,7 @@ at the bottom of this file.
   fact. **"Repositories" and "GitHub allowed repositories" are one
   noun**, because the App installation is a boundary GitHub enforces.
   `SessionState` gains `blocked`, the one wire change; `done` and
-  `unknown` from the screen manifest are still unmapped (09 open Q8).
+  `unknown` from the screen manifest are still unmapped (10 open Q8).
   The schema is held to the shape of the starter's own Better Auth
   tables — flat rows, credentials inline with their subject, a table
   only where the lifetime is genuinely independent. That deletes three
@@ -130,7 +166,7 @@ at the bottom of this file.
   path-keyed grants survive, and warns about it in its own code. `stop`
   leaves the worktrees on disk and `DELETE` closes, refusing when work
   is unpushed and relaying git's refusal verbatim. No open questions
-  remain in note 09.
+  remain in 10.
 - 2026-09-19: **a host belongs to a person; workspaces borrow it.**
   Reverses the 2026-09-18 line above: `host` loses `organizationId`
   and keeps `ownerUserId`, scoped own-or-grant, because Better Auth
@@ -148,7 +184,7 @@ at the bottom of this file.
   directory, branch and fallback name; **each checkout picks a base
   branch** and the working branch is always
   `oppenheimer/<project>/<session>`. The review's eleven act-on
-  findings are folded into 09: composite `(organizationId, …)` keys,
+  findings are folded into 10: composite `(organizationId, …)` keys,
   `removedAt` on repositories and checkouts, a frozen
   `storeDirectoryName`, `Idempotency-Key` on create, `<runId>:<n>`
   runner keys, the redeem-and-insert transaction with a fingerprint

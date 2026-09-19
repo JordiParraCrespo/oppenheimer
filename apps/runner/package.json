@@ -2,10 +2,10 @@
   "name": "@oppenheimer/runner",
   "version": "0.1.0",
   "private": true,
-  "description": "Go service template: REST + WebSocket, API-key and service-token auth, hexagonal modules",
+  "description": "The Oppenheimer host agent: pairing, service install, signed self-update, and the REST + WebSocket service it grew from",
   "scripts": {
-    "build": "go build -trimpath -o dist/runner ./cmd/server",
-    "dev": "go run ./cmd/server",
+    "build": "go build -trimpath -o dist/runner ./cmd/runner",
+    "dev": "go run ./cmd/runner serve",
     "lint": "golangci-lint run ./...",
     "test": "go test -count=1 ./...",
     "clean": "rm -rf dist"
@@ -17,6 +17,7 @@
     "@oppenheimer/go-health": "workspace:*",
     "@oppenheimer/go-httpx": "workspace:*",
     "@oppenheimer/go-postgres": "workspace:*",
+    "@oppenheimer/go-selfupdate": "workspace:*",
     "@oppenheimer/go-ws": "workspace:*"
   }
 }

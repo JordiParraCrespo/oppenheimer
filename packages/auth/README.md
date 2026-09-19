@@ -17,7 +17,7 @@ Platform-specific pieces stay in the apps: the Expo plugin and SecureStore in
 `apps/mobile`, cookie handling in `apps/web`, and everything server-only
 (database, hooks, email, OAuth providers, admin roles) in
 `apps/api/src/auth/infrastructure/better-auth.config.ts`. The `IAuthClient` boundary itself remains in
-`@oppenheimer/frontend`.
+`@oppenheimer/frontend-core`.
 
 ## Two entry points, two build modes
 

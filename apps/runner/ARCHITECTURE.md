@@ -15,11 +15,14 @@ packages/go/                  shared toolkit, one Go module each (see its README
   auth/ auth/scope            Principal, bearer middleware, scope grammar + guard, JWT
   health/                     /healthz /readyz /health/capabilities
   ws/                         hub, connection, envelope, upgrade handler
+  selfupdate/                 signed manifests, verified downloads, atomic binary swaps
 
 apps/runner/
-cmd/server/main.go            signals, config, logger → server.New → httpx.Serve
+cmd/runner/main.go            signals, flags, subcommand dispatch — no wiring
 internal/
-  server/                     composition root: the only importer of adapters
+  cli/                        composition root of the host agent's subcommands
+  server/                     composition root of `runner serve`
+  host/ pairing/ service/ sessions/ updates/   the host-agent contexts
   config/                     the variables this service reads → Config
   scopes/                     this service's scope catalog on auth/scope
   apikeys/                    bounded context: credentials
@@ -32,12 +35,48 @@ internal/
   arch/                       import-boundary test
 ```
 
-The product contexts from `product/versions/mvp/02-runner.md` are not here
-yet and arrive in this order: `pairing` (registration token, host keypair,
-the outbound control-plane connection), then `sessions` (worktree, tmux, PTY
-stream, screen manifest), then the git credential helper. They follow the
-same layout as `apikeys`; `apikeys` itself goes once pairing replaces it as
-the way the control plane authenticates this host.
+The product contexts are designed in `product/versions/mvp/02-runner.md` §3
+and `09-runner-install-and-update.md`. Five of them exist:
+
+| Context | What it owns |
+| ------- | ------------ |
+| `host` | the inventory: platform (macOS, Debian, Ubuntu), `git`/`tmux`/`claude`, disk, and the conditions that make a host unusable |
+| `pairing` | the registration token, the Ed25519 host key, `config.json`, the boot JWT every dial is signed with |
+| `service` | the launchd agent and the systemd user unit, rendered and controlled |
+| `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
+| `sessions` | the lifecycle: mirror and worktree, the tmux session and its windows, the screen classifier, adoption after a restart, close |
+
+`sessions/adapters/manifest` is the one adapter whose behaviour is **data**:
+one JSON manifest per agent (bundled with `go:embed`, overridable from
+`~/.oppenheimer/manifests/`) describing what that agent's terminal looks like
+in each state. Agents change their screens far more often than we ship a
+runner, so those rules must be replaceable without a release — and a manifest
+that does not parse is skipped with a reason rather than taken as fatal.
+
+Two are still to come: `link` (the one outbound WebSocket: dial, auth,
+multiplexed streams, heartbeat, epoch-guarded reconnect) and `credentials`
+(the per-session GitHub token the helper hands git — the helper's own half is
+built, and answers "I have none" until the link can mint one). `apikeys` is
+the template's inbound credential surface and goes once `link` makes it
+redundant.
+
+Two contexts never import each other. Where one needs another — `updates`
+restarting the service, `link` reading the host's facts — the consumer
+declares a port in its `app` and a composition root supplies the other
+context's service as the implementation.
+
+There are **two composition roots**, because the binary has two jobs:
+
+- `internal/server` builds the HTTP service `runner serve` runs (REST,
+  WebSocket, api keys) — the template, unchanged.
+- `internal/cli` builds the host agent: it resolves `~/.oppenheimer`, picks
+  launchd or systemd by GOOS, wires the four contexts, and implements every
+  subcommand. `cmd/runner` only parses flags and dispatches.
+
+On a paired host the agent's router is bound to a 0600 Unix socket
+(`~/.oppenheimer/run/runner.sock`) rather than a TCP port, because the host
+must expose nothing: the same `httpx` router and the same problem documents,
+on a different `net.Listener`.
 
 ## Layers and the rule between them
 
@@ -53,6 +92,14 @@ the way the control plane authenticates this host.
 `internal/arch/arch_test.go` enforces the table. It walks every non-test file,
 parses imports only, and fails with the offending file and rule. It is the
 Go equivalent of `apps/api/.dependency-cruiser.cjs` and runs under `pnpm test`.
+
+`internal/arch/catalog_test.go` holds the other public contract: it walks the
+same files for `problem.New("CODE"` and fails when a code is registered twice
+or has no row in `apps/docs/docs/errors.md`. cosmos-sdk keeps a registry that
+complains when a `(codespace, code)` pair is reused; our catalog is
+package-level values with nothing to hook into, so the source is what gets
+walked — same guarantee, and it fails before the push rather than in
+somebody's client.
 
 ## Conventions that replace NestJS machinery
 

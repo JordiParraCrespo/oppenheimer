@@ -9,5 +9,13 @@
     "subtitle": "Pick a host, a repository, a branch and an agent.",
     "emptyTitle": "Coming with the first host",
     "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+  },
+  "session": {
+    "composerPlaceholder": "Ask the agent, or run a command",
+    "status": {
+      "connecting": "Connecting",
+      "live": "Live",
+      "closed": "Disconnected"
+    }
   }
 }

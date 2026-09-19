@@ -41,9 +41,11 @@ decisions that changed along the way.
   silently rewrite history in earlier notes.
 - The one-page brief `product/brief.html` is regenerated from the notes;
   keep it in sync when a note changes.
-- The Go runner (`apps/runner`) is the host agent from the notes: it will
-  own worktrees, tmux and PTY streaming. The NestJS API is the control
-  plane.
+- The Go runner (`apps/runner`) is the host agent: worktrees, tmux, PTY
+  streaming, the git credential helper and its own signed updates. The
+  NestJS API is the control plane. Designed in
+  `product/versions/mvp/02-runner.md` and `…/09-runner-install-and-update.md`;
+  the wire between them is `…/01-protocol.md`.
 
 ## Monorepo structure
 
@@ -58,7 +60,7 @@ oppenheimer/
 │   ├── mcp/              # MCP server (stdio + Streamable HTTP)
 │   ├── mobile/           # Consumer Expo app
 │   ├── mobile-showcase/  # Expo app showcasing the mobile design system
-│   ├── runner/           # Go service template (REST + WS, API keys) the API delegates to
+│   ├── runner/           # The Go host agent: pairing, service install, signed self-update (+ the REST/WS service it grew from)
 │   ├── web/              # Consumer Vite + TanStack Router SPA
 │   └── web-showcase/     # Next.js app showcasing the web design system
 ├── packages/
@@ -85,7 +87,7 @@ oppenheimer/
 │   │   │   ├── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
 │   │   │   └── mobile/   # NativeWind + rn-primitives (@oppenheimer/design-system-mobile)
 │   │   └── nitro-app-info/ # Nitro native module exposing app info to the Expo apps (@oppenheimer/nitro-app-info)
-│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws
+│   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
 ├── docker/               # Docker Compose (dev + prod)
@@ -203,8 +205,15 @@ static binary, long-lived connections or process orchestration (runners, VMs,
 containers) — `apps/runner` is the template, and the API talks to it with an
 API key. The cross-cutting toolkit is `packages/go/*`, the Go counterpart of
 `packages/backend/*`: one Go module each (`core`, `config`, `httpx`, `auth`,
-`health`, `ws`, `postgres`), tied together by the root `go.work`, each also published to
+`health`, `ws`, `postgres`, `selfupdate`), tied together by the root `go.work`, each also published to
 Turborepo as `@oppenheimer/go-<name>` so the task graph and `--affected` see them.
+`apps/runner` is more than the template now: it is the host agent. It pairs a
+macOS, Debian or Ubuntu machine with a workspace, installs itself as a launchd
+agent or systemd user unit, keeps itself on the current signed release, and
+runs sessions as git worktrees with a tmux session each
+(`runner run|register|install|sessions|status|update`; `runner serve` is the
+template's HTTP service, which is what the container runs). The control-plane
+link is the piece still missing, so sessions are driven from the host today.
 The app is the same hexagon as `apps/api` in idiomatic Go: standard
 `net/http` routing, `slog`, interfaces as ports, constructor injection, one
 composition root (`internal/server`). Errors are the same RFC 7807 documents
@@ -295,11 +304,11 @@ and `apps/mobile-showcase`. Usage rules are `.agents/rules/frontend-ui.md`.
 
 ```
 packages/tsconfig         → used by all apps and packages (tsconfig extends)
-packages/env              → used by api, mcp, mobile (root .env loader)
+packages/env              → used by api, mcp, mobile, admin-mobile (root .env loader)
 packages/shared           → used by api, frontend, api-client, backend/core (wire types)
 packages/auth             → used by api, web, mobile (shared Better Auth config)
 packages/backend/core     → used by api, other backend packages
-packages/backend/ddd      → used by api (depends on backend/core)
+packages/backend/ddd      → used by api, backend/core (depends on nothing in the workspace)
 packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api
@@ -315,7 +324,7 @@ packages/frontend/admin       → used by admin-web, admin-mobile
 packages/frontend/web         → used by web, admin-web
 packages/frontend/mobile      → used by mobile, admin-mobile
 packages/go/core              → used by every other packages/go module and runner
-packages/go/{config,httpx,auth,health,ws,postgres} → used by runner (auth ← ws, httpx ← health, auth)
+packages/go/{config,httpx,auth,health,ws,postgres,selfupdate} → used by runner (auth ← ws, httpx ← health, auth)
 ```
 
 ## Commands

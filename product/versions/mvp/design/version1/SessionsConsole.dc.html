@@ -7,7 +7,12 @@
 </head>
 <body>
 <x-dc>
-<helmet><script src="./ds-base.js"></script></helmet>
+<helmet><script src="./ds-base.js"></script>
+<style>
+@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+@media (prefers-reduced-motion:reduce){.op-scrim,.op-dialog,[data-anim]{animation-duration:0s!important}}
+</style>
+</helmet>
 <div style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
 
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
@@ -128,13 +133,25 @@
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg><span>{{ hostLabel }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ hostOpen }}">
-<div class="op-listbox" role="listbox">
+<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search hosts…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
 <sc-for list="{{ hostOptions }}" as="h" hint-placeholder-count="3">
-<button class="op-option" type="button" role="option" data-selected="{{ h.selected }}" onClick="{{ h.pick }}">
-<span class="op-option__stack"><span>{{ h.label }}</span><span class="op-option__desc">{{ h.desc }}</span></span>
+<button class="op-option" type="button" role="option" data-selected="{{ h.selected }}" onClick="{{ h.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<span class="op-option__stack"><span>{{ h.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ h.desc }}</span></span>
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
+<sc-if value="{{ noHostMatch }}"><div class="op-listbox__empty">No host matches.</div></sc-if>
+<div style="margin:3px -4px -4px;padding:3px 4px 3px;border-top:1px solid var(--border-subtle)">
+<button class="op-option" type="button" role="option" onClick="{{ openAddHost }}" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px">
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+<span class="op-option__stack"><span>Add host…</span></span>
+<span style="display:flex;align-items:center;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+</button>
+</div>
 </div>
 </sc-if>
 </div>
@@ -143,43 +160,94 @@
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>{{ repoShort }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ repoOpen }}">
-<div class="op-listbox" role="listbox">
+<div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
+
+<sc-if value="{{ repoListPane }}" hint-placeholder-val="{{ true }}">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search repositories…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
 <sc-for list="{{ repoOptions }}" as="r" hint-placeholder-count="4">
-<button class="op-option" type="button" role="option" data-selected="{{ r.selected }}" onClick="{{ r.pick }}">
-<span class="op-option__stack"><span>{{ r.label }}</span><span class="op-option__desc">{{ r.desc }}</span></span>
+<div class="op-option" role="option" data-selected="{{ r.selected }}" style="padding:0;gap:0;align-items:stretch;overflow:hidden">
+<button type="button" onClick="{{ r.pick }}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 10px;border:0;background:none;color:inherit;font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer">
+<span class="op-option__stack"><span>{{ r.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ r.desc }}</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<sc-if value="{{ r.selected }}">
+<button type="button" onClick="{{ r.openBranch }}" aria-label="Change branch" title="Change branch" style="display:flex;align-items:center;justify-content:space-between;gap:4px;flex:none;width:134px;box-sizing:border-box;padding:0 10px;border:0;border-left:1px solid var(--border-subtle);background:none;color:var(--fg-subtle);font:inherit;font-family:var(--font-mono);font-size:11px;letter-spacing:-0.004em;cursor:pointer" style-hover="color:var(--fg)">
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.branch }}</span>
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.7"><path d="m9 18 6-6-6-6"/></svg>
+</button>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">No repository matches.</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ repoBranchPane }}">
+<button type="button" onClick="{{ backToRepos }}" style="display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;margin:0 0 5px;padding:6px 9px;border:0;border-bottom:1px solid var(--border-subtle);background:var(--popover);color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="m15 18-6-6 6-6"/></svg>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Branch for {{ paneRepoName }}</span>
+</button>
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
+<sc-for list="{{ paneBranchOptions }}" as="b" hint-placeholder-count="6">
+<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}" style="padding:6px 10px;gap:10px;font-family:var(--font-mono);font-size:12px;line-height:1.45">
+<span class="op-option__label">{{ b.label }}</span>
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
+<sc-if value="{{ noBranchMatch }}"><div class="op-listbox__empty">No branch matches.</div></sc-if>
+</sc-if>
+
 </div>
 </sc-if>
 </div>
+<sc-if value="{{ singleRepo }}" hint-placeholder-val="{{ true }}">
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ branchOpen }}" onClick="{{ toggleBranch }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>{{ branchLabel }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ branchOpen }}">
-<div class="op-listbox" role="listbox">
-<sc-for list="{{ branchOptions }}" as="b" hint-placeholder-count="4">
-<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}">
-<span class="op-option__stack"><span>{{ b.label }}</span><span class="op-option__desc">{{ b.desc }}</span></span>
+<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
+<sc-for list="{{ branchOptions }}" as="b" hint-placeholder-count="8">
+<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}" style="padding:6px 10px;gap:10px;font-family:var(--font-mono);font-size:12px;line-height:1.45">
+<span class="op-option__label">{{ b.label }}</span>
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
+<sc-if value="{{ noBranchMatch }}"><div class="op-listbox__empty">No branch matches.</div></sc-if>
 </div>
 </sc-if>
 </div>
+</sc-if>
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ agentOpen }}" onClick="{{ toggleAgent }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>{{ agentLabel }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ agentOpen }}">
-<div class="op-listbox" role="listbox">
+<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search agents…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
 <sc-for list="{{ agentOptions }}" as="a" hint-placeholder-count="2">
-<button class="op-option" type="button" role="option" data-selected="{{ a.selected }}" onClick="{{ a.pick }}">
-<span class="op-option__stack"><span>{{ a.label }}</span><span class="op-option__desc">{{ a.desc }}</span></span>
+<button class="op-option" type="button" role="option" data-selected="{{ a.selected }}" onClick="{{ a.pick }}" style="padding:6px 10px;gap:9px;font-size:13px;line-height:1.35">
+<sc-if value="{{ a.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ a.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ a.isShell }}"><span style="display:flex;flex:none;width:15px;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
+<sc-if value="{{ a.noIcon }}"><span style="display:flex;flex:none;width:15px;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
+<span class="op-option__stack"><span>{{ a.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ a.desc }}</span></span>
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
+<sc-if value="{{ noAgentMatch }}"><div class="op-listbox__empty">No agent matches.</div></sc-if>
 </div>
 </sc-if>
 </div>
@@ -200,6 +268,7 @@
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
 </button>
 <div class="op-composer__spacer"></div>
+<sc-if value="{{ hasModel }}" hint-placeholder-val="{{ true }}">
 <div class="op-modelwrap">
 <button class="op-modelbtn" type="button" data-open="{{ modelOpen }}" onClick="{{ toggleModel }}">
 <span>{{ modelLabel }}</span><span class="op-modelbtn__effort">{{ effortLabel }}</span>
@@ -234,6 +303,7 @@
 </div>
 </sc-if>
 </div>
+</sc-if>
 <button class="op-composer__tool" type="button" data-recording="{{ recording }}" aria-label="Dictate" title="Dictate" onClick="{{ toggleMic }}">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>
 <sc-if value="{{ recording }}"><span>{{ recordingTime }}</span></sc-if>
@@ -330,6 +400,85 @@
 </sc-if>
 
 </div>
+
+<sc-if value="{{ addHostOpen }}">
+<div class="op-scrim" onClick="{{ closeAddHost }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="addhost-title" onClick="{{ stopClick }}">
+
+<div class="op-dialog__head">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 class="op-dialog__title" id="addhost-title" style="flex:none">Add a host</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;letter-spacing:-0.008em;text-wrap:pretty">A server you control — a cloud VM, a build box, or your own workstation.</p>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAddHost }}" style="flex:none;border-radius:980px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+</div>
+
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:10px">
+<span class="op-label" style="flex:1;margin:0">Run this on it, once</span>
+<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<button type="button" onClick="{{ showCmd }}" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }}">Command</button>
+<button type="button" onClick="{{ showPrompt }}" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }}">Agent prompt</button>
+</div>
+</div>
+
+<div style="position:relative;border-radius:10px;background:var(--hover-surface)">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy" onClick="{{ copyBlock }}" style="position:absolute;top:6px;right:6px">
+<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg></sc-if>
+<sc-if value="{{ didCopy }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></sc-if>
+</button>
+<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
+<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+  | sh -s -- --token opk_7f3a9c</pre>
+</sc-if>
+<sc-if value="{{ showingPrompt }}">
+<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">Install the oppenheimer runner here, then run
+oppenheimer-runner status and report the hostname.
+curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c</pre>
+</sc-if>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span>
+<a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a>
+</div>
+</div>
+
+<div style="height:1px;background:var(--border-subtle)"></div>
+
+<div style="min-height:52px;display:flex;flex-direction:column;justify-content:center">
+<sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+Listening for this host…
+</div>
+</sc-if>
+<sc-if value="{{ hostRegistered }}">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
+<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</sc-if>
+</div>
+
+</div>
+
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeAddHost }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ useNewHost }}" disabled="{{ hostWaiting }}">Use this host</button>
+</div>
+
+</div>
+</div>
+</sc-if>
+
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -380,10 +529,10 @@ const HOSTS = [
 ];
 
 const REPOS = [
-  { value: 'xrp-mobile', label: 'JordiParraCrespo/xrp-mobile', desc: 'main · updated 3h ago' },
-  { value: 'atlas', label: 'JordiParraCrespo/atlas', desc: 'main · updated 1d ago' },
-  { value: 'flama-ai', label: 'JordiParraCrespo/flama-ai', desc: 'main · updated 3d ago' },
-  { value: 'adri-rodriguez', label: 'JordiParraCrespo/adri-rodriguez', desc: 'main · updated last wk.' },
+  { value: 'xrp-mobile', label: 'JordiParraCrespo/xrp-mobile', desc: 'updated 3h ago' },
+  { value: 'atlas', label: 'JordiParraCrespo/atlas', desc: 'updated 1d ago' },
+  { value: 'flama-ai', label: 'JordiParraCrespo/flama-ai', desc: 'updated 3d ago' },
+  { value: 'adri-rodriguez', label: 'JordiParraCrespo/adri-rodriguez', desc: 'updated last wk.' },
 ];
 
 // Branches belong to a repo, so the list is scoped — picking a new project
@@ -393,6 +542,16 @@ const BRANCHES = {
     { value: 'main', label: 'main', desc: 'default · updated 3h ago' },
     { value: 'port/121', label: 'port/121-api-config-hardening', desc: 'ahead 4 · updated 32m ago' },
     { value: 'feat/auth', label: 'feat/auth-key-hashing', desc: 'ahead 2 · updated 4h ago' },
+    { value: 'changeset-release/main', label: 'changeset-release/main', desc: 'ahead 1 · updated 6h ago' },
+    { value: 'claude/amazing-clarke', label: 'claude/amazing-clarke-p631o4', desc: 'ahead 3 · updated 1d ago' },
+    { value: 'claude/festive-goldberg', label: 'claude/festive-goldberg-uvpii6', desc: 'ahead 8 · updated 1d ago' },
+    { value: 'claude/festive-pascal', label: 'claude/festive-pascal-1hhyfi', desc: 'ahead 2 · updated 2d ago' },
+    { value: 'claude/gracious-edison', label: 'claude/gracious-edison-s8e0vu', desc: 'ahead 5 · updated 2d ago' },
+    { value: 'claude/kind-mccarthy', label: 'claude/kind-mccarthy-wxsks1', desc: 'ahead 1 · updated 3d ago' },
+    { value: 'claude/mvp-design', label: 'claude/mvp-design', desc: 'ahead 14 · updated 3d ago' },
+    { value: 'claude/nifty-ritchie', label: 'claude/nifty-ritchie-paxzio', desc: 'ahead 2 · updated 4d ago' },
+    { value: 'claude/vibrant-tesla', label: 'claude/vibrant-tesla-ixw20t', desc: 'ahead 6 · updated 5d ago' },
+    { value: 'release/1.4', label: 'release/1.4', desc: 'behind 2 · updated 1wk ago' },
   ],
   atlas: [
     { value: 'main', label: 'main', desc: 'default · updated 1d ago' },
@@ -438,6 +597,7 @@ const HARNESS_MODELS = {
     ],
   },
   opencode: { primary: OPEN_WEIGHTS },
+  shell: { primary: [] },
 };
 
 const ALL_MODELS = Object.values(HARNESS_MODELS).flatMap(h => h.primary);
@@ -459,11 +619,11 @@ const BOOT_STEPS = [
     doing: 'allocating 8 vCPU…', done: '8 vCPU · 32 GB', ms: 1700,
   },
   {
-    label: c => 'Clone ' + (c.repoName() || 'repository'),
+    label: c => c.cloneLabel(),
     doing: 'fetching objects…', done: 'depth 1 · 42 MB', ms: 1300,
   },
   {
-    label: c => 'Check out ' + (c.branchName() || 'branch'),
+    label: c => c.checkoutLabel(),
     doing: 'creating worktree…', done: 'clean worktree', ms: 700,
   },
   {
@@ -486,18 +646,24 @@ const EFFORTS = [
 
 // The harness, not the weights — each runs whatever model you pick below.
 const AGENTS = [
-  { value: 'claude-code', label: 'Claude Code', desc: 'Anthropic · terminal-native' },
+  { value: 'claude-code', label: 'Claude Code', desc: 'Anthropic · terminal-native', icon: './assets/agents/claude.svg' },
+  // No OpenAI mark ships with this system, so Codex keeps the neutral glyph
+  // rather than a hand-drawn imitation of someone else's logo.
   { value: 'codex', label: 'Codex', desc: 'OpenAI · fast wide edits' },
-  { value: 'opencode', label: 'OpenCode', desc: 'Open source · bring your own model' },
+  { value: 'opencode', label: 'OpenCode', desc: 'Open source · bring your own model', icon: './assets/agents/opencode.png' },
+  { value: 'shell', label: 'Blank terminal', desc: 'No agent · just a shell in the worktree' },
 ];
 
 class Component extends DCLogic {
   state = {
     view: 'terminal', project: 'all', fAgent: 'all', fHost: 'all', sort: 'recent',
     filterOpen: false, menu: null,
-    open: null, host: 'optimus', repo: 'xrp-mobile', branch: 'main', agentId: 'claude-code',
+    open: null, host: 'optimus', repos: ['xrp-mobile'], branchOf: { 'xrp-mobile': 'main' },
+    repoPane: null, agentId: 'claude-code', query: '',
     effort: 'medium', model: 'sonnet', modelOpen: false, modelMenu: null,
     recording: false, seconds: 0, files: [], zoom: false,
+    addHost: false, hostAdded: false, hostSecs: 3581, hostCopied: null,
+    hostName: '', hostTab: 'cmd',
     accountOpen: false, accountMenu: null, theme: 'system', lang: 'en',
     // One terminal at a time. Starting a session replaces the current one.
     session: { label: 'PR #121 porting to peersyst', state: 'running', meta: 'Claude Code · Sonnet 4.6 · xrp-mobile/port-121' },
@@ -513,13 +679,17 @@ class Component extends DCLogic {
       const { open, filterOpen, modelOpen, accountOpen } = this.state;
       if (open || filterOpen || modelOpen || accountOpen) {
         this.setState({
-          open: null, filterOpen: false, menu: null,
+          open: null, filterOpen: false, menu: null, repoPane: null,
           modelOpen: false, modelMenu: null, accountOpen: false, accountMenu: null,
         });
       }
     };
     document.addEventListener('click', this._away);
-    this._esc = (e) => { if (e.key === 'Escape' && this.state.zoom) this.setState({ zoom: false }); };
+    this._esc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.state.addHost) this.closeAddHost();
+      else if (this.state.zoom) this.setState({ zoom: false });
+    };
     document.addEventListener('keydown', this._esc);
     this._mq = window.matchMedia('(prefers-color-scheme: dark)');
     this._onScheme = () => { if (this.state.theme === 'system') this.applyTheme('system'); };
@@ -553,6 +723,9 @@ class Component extends DCLogic {
   componentWillUnmount() {
     document.removeEventListener('click', this._away);
     document.removeEventListener('keydown', this._esc);
+    clearInterval(this._hostTick);
+    clearTimeout(this._hostReg);
+    clearTimeout(this._hostCopy);
     if (this._mq) this._mq.removeEventListener('change', this._onScheme);
     clearInterval(this._tick);
     clearInterval(this._bootClock);
@@ -597,8 +770,34 @@ class Component extends DCLogic {
     return mine.map((m, i) => (i === 0 ? { ...m, state: 'running' } : m));
   }
 
-  repoName() { const r = REPOS.find(o => o.value === this.state.repo); return r ? r.label.split('/').pop() : ''; }
-  branchName() { const b = (BRANCHES[this.state.repo] || []).find(o => o.value === this.state.branch); return b ? b.label : ''; }
+  primaryRepo() { return this.state.repos[0] || REPOS[0].value; }
+  repoName() { const r = REPOS.find(o => o.value === this.primaryRepo()); return r ? r.label.split('/').pop() : ''; }
+  // What the boot trace and the session row call the scope: one repo by name,
+  // several counted, with the primary named and the rest tallied.
+  cloneLabel() {
+    const n = this.state.repos.length;
+    return n > 1 ? 'Clone ' + n + ' repositories' : 'Clone ' + (this.repoName() || 'repository');
+  }
+  checkoutLabel() {
+    return this.state.repos.length > 1 ? 'Check out branches' : 'Check out ' + (this.branchName() || 'branch');
+  }
+  scopeShort() {
+    const n = this.state.repos.length;
+    const extra = n > 1 ? '  +' + (n - 1) : '';
+    return this.repoName() + extra + ' · ' + this.branchName();
+  }
+  branchFor(id) { return this.state.branchOf[id] || (BRANCHES[id] || [{ value: 'main' }])[0].value; }
+  branchName() { return this.branchFor(this.primaryRepo()); }
+  // Single repo reads as a path; several read as an explicit pair list, because
+  // "3 repositories" alone would hide which branch each one is on.
+  scopeLine() {
+    const ids = this.state.repos;
+    if (ids.length === 1) {
+      const r = REPOS.find(o => o.value === ids[0]);
+      return (r ? r.label : ids[0]) + ' · ' + this.branchFor(ids[0]);
+    }
+    return ids.map(id => id + '@' + this.branchFor(id)).join(', ');
+  }
   agentName() { const a = AGENTS.find(o => o.value === this.state.agentId); return a ? a.label : 'agent'; }
 
   applyTheme(theme) {
@@ -628,16 +827,85 @@ class Component extends DCLogic {
     e.target.value = '';
   };
 
+  openAddHost() {
+    this.setState({ addHost: true, hostAdded: false, hostSecs: 3581, open: null, query: '', hostTab: 'cmd', hostCopied: null });
+    clearInterval(this._hostTick);
+    clearTimeout(this._hostReg);
+    this._hostTick = setInterval(() => this.setState(st => ({ hostSecs: Math.max(0, st.hostSecs - 1) })), 1000);
+    this._hostReg = setTimeout(() => this.setState({ hostAdded: true }), 6000);
+  }
+
+  closeAddHost() {
+    clearInterval(this._hostTick);
+    clearTimeout(this._hostReg);
+    this.setState({ addHost: false });
+  }
+
+  // The two strings live here so the panes and the clipboard never drift.
+  installText(which) {
+    const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
+    if (which === 'cmd') return cmd;
+    return [
+      'Install the oppenheimer runner on this machine.',
+      'Run: ' + cmd,
+      'Then confirm it is running with: oppenheimer-runner status',
+      'Report the hostname and OS version back to me.',
+    ].join('\n');
+  }
+
+  copyInstall(which) {
+    return e => {
+      if (e) e.stopPropagation();
+      const text = this.installText(which);
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
+      this.setState({ hostCopied: which });
+      clearTimeout(this._hostCopy);
+      this._hostCopy = setTimeout(() => this.setState({ hostCopied: null }), 1600);
+    };
+  }
+
   // Every trigger stops the document listener from immediately reclosing it.
   toggle(key, e) {
     if (e) e.stopPropagation();
-    this.setState(s => ({ open: s.open === key ? null : key }));
+    this.setState(s => ({ open: s.open === key ? null : key, query: '', repoPane: null }));
+  }
+
+  // Every scope list is long enough to need typing, so all four are the same
+  // control: a filtered listbox, never a bare menu.
+  match(list) {
+    const q = this.state.query.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(o => (o.label + ' ' + (o.desc || '')).toLowerCase().indexOf(q) !== -1);
+  }
+
+  // A session can hold several worktrees, so repositories toggle instead of
+  // replacing, and the list stays open. The first one is primary — it owns
+  // the branch, and dropping it moves the branch with it.
+  chooseRepo(value, e) {
+    if (e) e.stopPropagation();
+    this.setState(st => {
+      const has = st.repos.indexOf(value) !== -1;
+      let repos = has ? st.repos.filter(v => v !== value) : st.repos.concat(value);
+      if (!repos.length) repos = [value];
+      const branchOf = { ...st.branchOf };
+      // Adding a repo lands it on its own default branch; dropping one forgets
+      // its branch so re-adding it does not resurrect a stale choice.
+      repos.forEach(id => {
+        if (!branchOf[id]) branchOf[id] = (BRANCHES[id] || [{ value: 'main' }])[0].value;
+      });
+      Object.keys(branchOf).forEach(id => { if (repos.indexOf(id) === -1) delete branchOf[id]; });
+      return { repos: repos, branchOf: branchOf };
+    });
+  }
+  // The branch pane is scoped to one repo. Picking returns to the repo list so
+  // the next repo's branch is one click away.
+  chooseBranchFor(repoId, value, e) {
+    if (e) e.stopPropagation();
+    this.setState(st => ({ branchOf: { ...st.branchOf, [repoId]: value }, repoPane: null, query: '' }));
   }
   choose(key, value, e) {
     if (e) e.stopPropagation();
-    const next = { [key]: value, open: null };
-    // Changing the repo invalidates the branch; fall back to its default.
-    if (key === 'repo') next.branch = (BRANCHES[value] || [{ value: 'main' }])[0].value;
+    const next = { [key]: value, open: null, query: '' };
     // Changing the harness invalidates the model — not every agent can drive
     // every model, so land on the new harness's default instead.
     if (key === 'agentId') {
@@ -647,7 +915,7 @@ class Component extends DCLogic {
     this.setState(next);
   }
   options(list, key) {
-    return list.map(o => ({
+    return this.match(list).map(o => ({
       ...o,
       selected: this.state[key] === o.value ? 'true' : undefined,
       pick: e => this.choose(key, o.value, e),
@@ -656,8 +924,11 @@ class Component extends DCLogic {
 
   renderVals() {
     const { view, project, fAgent, fHost, sort, filterOpen, menu,
-            open, host, repo, branch, agentId, session } = this.state;
-    const branches = BRANCHES[repo] || [];
+            open, host, repos, agentId, session } = this.state;
+    const repo = this.primaryRepo();
+    const single = repos.length === 1;
+    const paneRepo = this.state.repoPane;
+    const branches = BRANCHES[paneRepo || repo] || [];
     const harness = HARNESS_MODELS[agentId] || { primary: [] };
     const models = harness.primary;
     const sessions = this.state.mine.concat(ALL)
@@ -685,14 +956,14 @@ class Component extends DCLogic {
       if (e) e.stopPropagation();
       clearInterval(this._tick);
       const row = {
-        name: this.repoName() + ' · ' + this.branchName(),
+        name: this.scopeShort(),
         state: 'waiting', age: 'now', mins: 0,
         repo, agent: agentId, host,
       };
       this.setState(s => ({ mine: [row].concat(s.mine) }));
       this.setState({
         session: {
-          label: find(REPOS, repo).split('/').pop() + ' · ' + find(branches, branch),
+          label: this.scopeShort(),
           state: 'running',
           meta: find(AGENTS, agentId) + ' · ' + find(models, this.state.model) + ' · ' + find(HOST_FILTER, host),
         },
@@ -717,7 +988,7 @@ class Component extends DCLogic {
 
       provisionHost: find(HOST_FILTER, host),
       provisionTitle: 'Starting your session',
-      provisionSub: find(REPOS, repo) + ' · ' + find(branches, branch),
+      provisionSub: this.scopeLine(),
       bootStatus: BOOT_STEPS[this.state.bootStep] ? 'Working…' : 'Ready',
       bootElapsed: (this.state.bootMs / 1000).toFixed(1) + 's',
       bootSteps: BOOT_STEPS.map((b, i) => ({
@@ -779,17 +1050,80 @@ class Component extends DCLogic {
       toggleHost: e => this.toggle('host', e),
 
       repoLabel: find(REPOS, repo),
+      stopClick: e => e.stopPropagation(),
+
+      // Adding a host is a modal, not a page: the operator is mid-composition
+      // and should land back on the same session with the new host picked.
+      addHostOpen: this.state.addHost ? 'true' : undefined,
+      hostWaiting: this.state.addHost && !this.state.hostAdded ? 'true' : undefined,
+      hostRegistered: this.state.hostAdded ? 'true' : undefined,
+      hostCountdown: Math.floor(this.state.hostSecs / 60) + ':' + String(this.state.hostSecs % 60).padStart(2, '0'),
+      // v1 takes the hostname the runner reports on connect — no naming field.
+      // One block, two readings of the same instruction — a tab costs less
+      // room than a second card and keeps the copy button in one place.
+      showingCmd: this.state.hostTab === 'cmd' ? 'true' : undefined,
+      showingPrompt: this.state.hostTab === 'prompt' ? 'true' : undefined,
+      cmdTabBg: this.state.hostTab === 'cmd' ? 'var(--card)' : 'transparent',
+      cmdTabFg: this.state.hostTab === 'cmd' ? 'var(--fg)' : 'var(--fg-muted)',
+      promptTabBg: this.state.hostTab === 'prompt' ? 'var(--card)' : 'transparent',
+      promptTabFg: this.state.hostTab === 'prompt' ? 'var(--fg)' : 'var(--fg-muted)',
+      showCmd: e => { e.stopPropagation(); this.setState({ hostTab: 'cmd' }); },
+      showPrompt: e => { e.stopPropagation(); this.setState({ hostTab: 'prompt' }); },
+      didCopy: this.state.hostCopied ? 'true' : undefined,
+      notCopied: this.state.hostCopied ? undefined : 'true',
+      copyBlock: this.copyInstall(this.state.hostTab),
+      openAddHost: e => { if (e) e.stopPropagation(); this.openAddHost(); },
+      closeAddHost: e => { if (e) e.stopPropagation(); this.closeAddHost(); },
+      regenerateToken: e => { e.preventDefault(); e.stopPropagation(); this.setState({ hostSecs: 3600 }); },
+      useNewHost: e => {
+        if (e) e.stopPropagation();
+        this.closeAddHost();
+        this.setState({ host: 'mac-studio' });
+      },
+
+      query: this.state.query,
+      setQuery: e => this.setState({ query: e.target.value }),
+      noHostMatch: this.match(HOSTS).length ? undefined : 'true',
+      noRepoMatch: this.match(REPOS).length ? undefined : 'true',
+      noBranchMatch: this.match(branches).length ? undefined : 'true',
+      noAgentMatch: this.match(AGENTS).length ? undefined : 'true',
       // The chip has no room for the owner, and the owner is the same for all
       // of them — the repo name is the part that distinguishes.
-      repoShort: find(REPOS, repo).split('/').pop(),
-      repoOptions: this.options(REPOS, 'repo'),
+      repoShort: find(REPOS, repo).split('/').pop() + (repos.length > 1 ? '  +' + (repos.length - 1) : ''),
+      repoOptions: this.match(REPOS).map(o => ({
+        ...o,
+        selected: repos.indexOf(o.value) !== -1 ? 'true' : undefined,
+        name: o.label.split('/').pop(),
+        branch: this.branchFor(o.value),
+        openBranch: e => { if (e) e.stopPropagation(); this.setState({ repoPane: o.value, query: '' }); },
+        pick: e => this.chooseRepo(o.value, e),
+      })),
       repoOpen: open === 'repo',
       toggleRepo: e => this.toggle('repo', e),
 
-      branchLabel: find(branches, branch),
-      branchOptions: this.options(branches, 'branch'),
+      // Two panes in one popover: the repo list, and one repo's branches.
+      repoListPane: paneRepo ? undefined : 'true',
+      repoBranchPane: paneRepo ? 'true' : undefined,
+      paneRepoName: paneRepo ? (find(REPOS, paneRepo) || '').split('/').pop() : '',
+      backToRepos: e => { if (e) e.stopPropagation(); this.setState({ repoPane: null, query: '' }); },
+      paneBranchOptions: this.match(branches).map(o => ({
+        ...o,
+        selected: paneRepo && this.branchFor(paneRepo) === o.value ? 'true' : undefined,
+        pick: e => this.chooseBranchFor(paneRepo, o.value, e),
+      })),
+
+      // A branch belongs to a repo, so a sibling branch chip only tells the
+      // truth while there is exactly one. Past that it lives in the repo rows.
+      singleRepo: single ? 'true' : undefined,
+      branchLabel: this.branchFor(repo),
+      branchOptions: this.match(BRANCHES[repo] || []).map(o => ({
+        ...o,
+        selected: this.branchFor(repo) === o.value ? 'true' : undefined,
+        pick: e => this.chooseBranchFor(repo, o.value, e),
+      })),
       branchOpen: open === 'branch',
       toggleBranch: e => this.toggle('branch', e),
+      scopeLine: this.scopeLine(),
 
       fileRef: el => { this._file = el; },
       pickFiles: this.pickFiles,
@@ -843,12 +1177,22 @@ class Component extends DCLogic {
         },
       })),
 
+      // A blank terminal runs no model, so the model control has nothing to say.
+      hasModel: models.length ? 'true' : undefined,
       harnessLabel: find(AGENTS, agentId),
       modelOptions: this.picker(models, 'model', { close: true }),
       effortOptions: this.picker(EFFORTS, 'effort', { back: true }),
 
       agentLabel: find(AGENTS, agentId),
-      agentOptions: this.options(AGENTS, 'agentId'),
+      agentOptions: this.options(AGENTS, 'agentId').map(o => ({
+        ...o,
+        // A {{ }} hole in an img src is requested verbatim while the template
+        // parses, so every mark is a literal src gated on its own flag.
+        isClaude: o.value === 'claude-code' ? 'true' : undefined,
+        isOpenCode: o.value === 'opencode' ? 'true' : undefined,
+        isShell: o.value === 'shell' ? 'true' : undefined,
+        noIcon: !o.icon && o.value !== 'shell' ? 'true' : undefined,
+      })),
       agentOpen: open === 'agentId',
       toggleAgent: e => this.toggle('agentId', e),
     };

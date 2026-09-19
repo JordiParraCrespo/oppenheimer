@@ -77,10 +77,6 @@
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
 
-  - **`@oppenheimer/web`** / **`@oppenheimer/frontend`** / **`@oppenheimer/translations`**: a
-    token-creation screen with a per-resource permission picker (levels you cannot
-    grant are disabled) and an OAuth consent screen, backed by new `api-tokens`
-    and `organizations` modules with TanStack Query hooks.
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

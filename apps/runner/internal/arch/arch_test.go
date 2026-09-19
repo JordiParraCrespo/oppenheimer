@@ -12,7 +12,8 @@
 //   - `<ctx>/adapters/*` import their own context's app and domain plus any
 //     packages/go module — never another context, never the composition root.
 //   - `<ctx>/module.go` wires only its own context.
-//   - `server` and `config` (the composition root) may import anything.
+//   - `server` and `config` (the composition root) may import anything, and
+//     so may `cli`, which is the composition root of the subcommands.
 package arch
 
 import (
@@ -29,7 +30,7 @@ const (
 	sharedPrefix = "github.com/jordiparracrespo/oppenheimer/packages/go/"
 )
 
-var contexts = []string{"apikeys"}
+var contexts = []string{"apikeys", "host", "pairing", "service", "sessions", "updates"}
 
 func TestImportBoundaries(t *testing.T) {
 	root, err := filepath.Abs("..")

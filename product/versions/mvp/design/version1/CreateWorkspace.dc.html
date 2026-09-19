@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}</style>
+</helmet>
+<div style="position:relative;min-height:100vh;background:var(--canvas);padding:36px 40px;display:flex;font-family:var(--font-sans);color:var(--fg)">
+<span class="op-wordmark" style="position:absolute;top:34px;left:44px;font-size:20px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<div style="display:flex;flex:1;gap:48px;max-width:1360px;margin:0 auto;align-items:center">
+
+<div style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px 24px">
+<div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px">
+
+<div>
+<div style="display:flex;align-items:center;gap:14px">
+<a href="./SignIn.dc.html" style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</a>
+<span style="width:1px;height:12px;background:var(--border-subtle)"></span>
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">2 of 4</span>
+</div>
+<h1 style="margin-top:10px;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Name your workspace</h1>
+<p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">A workspace holds your hosts, repositories and run history. You can rename it later; the address is permanent.</p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px">
+<div class="op-field">
+<label class="op-label" for="ws-name">Workspace name</label>
+<div class="op-input op-input--lg"><input class="op-input__el" id="ws-name" type="text" placeholder="Versio Platform" value="{{ name }}" onChange="{{ setName }}"></div>
+</div>
+<div class="op-field">
+<label class="op-label" for="ws-slug">Workspace URL</label>
+<div class="op-input op-input--lg">
+<span style="flex:none;font-family:var(--font-mono);font-size:13px;color:var(--fg-subtle);white-space:nowrap">oppenheimer.dev/</span>
+<input class="op-input__el" id="ws-slug" type="text" placeholder="versio" value="{{ slug }}" onChange="{{ setSlug }}" style="font-family:var(--font-mono);font-size:13px">
+<span style="flex:none;display:flex;align-items:center;color:{{ checkColor }}">{{ checkGlyph }}</span>
+</div>
+<p style="margin:6px 0 0;font-size:12px;color:{{ hintColor }};line-height:1.5">{{ hint }}</p>
+</div>
+</div>
+
+<a class="op-btn op-btn--primary op-btn--lg op-btn--block" href="./ConnectGitHub.dc.html" style="text-decoration:none;pointer-events:{{ nextPointer }};opacity:{{ nextOpacity }}">Continue</a>
+
+<div style="display:flex;flex-direction:column;gap:4px;align-items:center;font-size:13px;color:var(--fg-muted)">
+<span>Using jordiparra99@gmail.com</span>
+<a href="./SignIn.dc.html">Use a different account</a>
+</div>
+
+</div>
+</div>
+
+<div style="flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center">
+<div style="position:relative;width:100%;max-width:470px;aspect-ratio:4/5;max-height:82vh;border-radius:20px;overflow:hidden;background:#1d1d1f">
+<img src="./assets/imagery/oppenheimer-portrait.png" alt="J. Robert Oppenheimer" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide0 }}">
+<img src="./assets/imagery/oppenheimer-einstein.png" alt="Oppenheimer with Albert Einstein" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide1 }}">
+<img src="./assets/imagery/calutron-operators.png" alt="Calutron operators at Oak Ridge" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide2 }}">
+<img src="./assets/imagery/oppenheimer-groves.png" alt="Oppenheimer with General Leslie Groves" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide3 }}">
+<img src="./assets/imagery/los-alamos-gate.png" alt="Los Alamos Project main gate" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transition:opacity 700ms cubic-bezier(.4,0,.2,1);opacity:{{ slide4 }}">
+<div style="position:absolute;left:0;right:0;bottom:0;padding:24px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.55) 55%,transparent 100%)">
+<p style="margin:0;font-size:13px;color:#fff;letter-spacing:-0.006em">{{ caption }}</p>
+<div style="display:flex;gap:6px">
+<button type="button" aria-label="Slide 1" onClick="{{ go0 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot0 }}"></button>
+<button type="button" aria-label="Slide 2" onClick="{{ go1 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot1 }}"></button>
+<button type="button" aria-label="Slide 3" onClick="{{ go2 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot2 }}"></button>
+<button type="button" aria-label="Slide 4" onClick="{{ go3 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot3 }}"></button>
+<button type="button" aria-label="Slide 5" onClick="{{ go4 }}" style="width:22px;height:3px;border:0;padding:0;border-radius:980px;cursor:pointer;transition:background 220ms;background:{{ dot4 }}"></button>
+</div>
+</div>
+</div></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;system&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;system&quot;,&quot;tsType&quot;:&quot;'system' | 'light' | 'dark'&quot;}}">
+const TAKEN = ['acme', 'test', 'admin', 'oppenheimer', 'console', 'app'];
+
+class Component extends DCLogic {
+  state = { name: '', slug: '', edited: false, checking: false, slide: 0 };
+
+  applyTheme() {
+    const t = this.props.theme || 'system';
+    const dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+  componentDidUpdate() { this.applyTheme(); }
+  componentDidMount() {
+    this.applyTheme();
+    this._c = setInterval(() => this.setState(s => ({ slide: (s.slide + 1) % 5 })), 5200);
+  }
+  componentWillUnmount() { clearInterval(this._c); clearTimeout(this._chk); }
+
+  slugify(v) {
+    return v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+  }
+
+  // A real check is a round trip, so the field shows it as one: a brief
+  // "Checking…" before the verdict, never an answer that appears instantly.
+  check(slug) {
+    clearTimeout(this._chk);
+    if (!slug) { this.setState({ checking: false }); return; }
+    this.setState({ checking: true });
+    this._chk = setTimeout(() => this.setState({ checking: false }), 550);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const ci = s.slide;
+    const captions = [
+      'J. Robert Oppenheimer, 1946.',
+      'With Albert Einstein at the Institute for Advanced Study, 1947.',
+      'Calutron operators at Oak Ridge, 1944.',
+      'With General Leslie Groves, Los Alamos, 1945.',
+      'The Los Alamos Project main gate, 1943.'
+    ];
+    const go = (n) => () => this.setState({ slide: n });
+    const dot = (n) => ci === n ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.35)';
+
+    const taken = !!s.slug && TAKEN.indexOf(s.slug) !== -1;
+    const free = !!s.slug && !taken && !s.checking;
+
+    let hint = 'Letters, numbers and hyphens. This is the address your team signs in at.';
+    let hintColor = 'var(--fg-subtle)';
+    if (s.checking) { hint = 'Checking availability…'; }
+    else if (taken) { hint = 'oppenheimer.dev/' + s.slug + ' is taken. Try another address.'; hintColor = 'var(--danger)'; }
+    else if (free) { hint = 'oppenheimer.dev/' + s.slug + ' is available.'; hintColor = 'var(--success)'; }
+
+    return {
+      slide0: ci === 0 ? 1 : 0,
+      slide1: ci === 1 ? 1 : 0,
+      slide2: ci === 2 ? 1 : 0,
+      slide3: ci === 3 ? 1 : 0,
+      slide4: ci === 4 ? 1 : 0,
+      dot0: dot(0), dot1: dot(1), dot2: dot(2), dot3: dot(3), dot4: dot(4),
+      go0: go(0), go1: go(1), go2: go(2), go3: go(3), go4: go(4),
+      caption: captions[ci],
+
+      name: s.name,
+      slug: s.slug,
+      hint: hint,
+      hintColor: hintColor,
+      checkGlyph: s.checking ? '·' : (taken ? '✕' : (free ? '✓' : '')),
+      checkColor: taken ? 'var(--danger)' : 'var(--success)',
+      nextPointer: free && s.name ? 'auto' : 'none',
+      nextOpacity: free && s.name ? 1 : 0.4,
+
+      setName: (e) => {
+        const name = e.target.value;
+        // The address follows the name until the operator takes it over.
+        const slug = s.edited ? s.slug : this.slugify(name);
+        this.setState({ name: name, slug: slug });
+        if (!s.edited) this.check(slug);
+      },
+      setSlug: (e) => {
+        const slug = this.slugify(e.target.value);
+        this.setState({ slug: slug, edited: true });
+        this.check(slug);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -43,8 +43,7 @@ history) to work on the MVP.
   (00-scope.md) — that person's subscription, which is why host and
   login sit on one axis. A person with a personal and a company
   workspace pairs one laptop once, and either workspace runs sessions on
-  it; the layout keeps them apart under `workspaces/<org.slug>/` (note
-  09). The pairing token is minted by a signed-in user, and the host it
+  it; the layout keeps them apart under `workspaces/<org.slug>/` (10). The pairing token is minted by a signed-in user, and the host it
   creates is theirs; the runner's keypair is bound to the host row.
 - **Sessions belong to a workspace, and run on a host their creator may
   use.** `POST /sessions` loads the host through the own-or-grant scope

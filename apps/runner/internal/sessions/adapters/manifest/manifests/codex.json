@@ -1,0 +1,40 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "codex",
+  "version": "2026.09.18.1",
+  "minEngine": 1,
+  "notes": "First cut, written from Codex's published behaviour rather than from a long soak on a real host. Treat every rule here as provisional until it has been watched against a live session; `unknown` is the honest answer in the meantime, and the sidebar says so.",
+  "rules": [
+    {
+      "id": "approval",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:12",
+      "any": [
+        "(?i)\\ballow (this )?command\\b",
+        "(?i)\\bapprove\\b.*\\?",
+        "(?i)[(\\[]?\\b(y/n|yes/no)\\b[)\\]]?",
+        "(?i)\\bwaiting for (your )?(input|approval)\\b"
+      ],
+      "note": "Codex asks before it runs a command outside its sandbox."
+    },
+    {
+      "id": "working",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:12",
+      "any": ["(?i)\\b(thinking|working|running|applying patch)\\b\\s*[.…]", "(?i)esc to interrupt", "[\\x{2800}-\\x{28FF}]"],
+      "not": ["allow this command", "approve", "(y/n)"],
+      "note": "Same shape as Claude's, same reason for the guards."
+    },
+    {
+      "id": "prompt",
+      "state": "idle",
+      "priority": 800,
+      "region": "bottom:5",
+      "any": ["(?m)^\\s*(>|❯|›)\\s*$"],
+      "not": ["esc to interrupt"],
+      "note": "Provisional: confirm against a real Codex session before trusting an idle dot from it."
+    }
+  ]
+}

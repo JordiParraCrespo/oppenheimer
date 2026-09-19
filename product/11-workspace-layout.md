@@ -1,7 +1,7 @@
 # 11 — Workspace layout: one place per repo, main plus worktrees
 
 **§1 is superseded by
-[`versions/mvp/09-api-modules-and-data-model.md`](versions/mvp/09-api-modules-and-data-model.md)**,
+[`versions/mvp/10-api-modules-and-data-model.md`](versions/mvp/10-api-modules-and-data-model.md)**,
 which adds a project level above the repository, moves worktrees under
 the session that owns them, and makes every directory name a database
 constraint rather than a convention. The layout below is kept as the
@@ -42,7 +42,7 @@ session, exactly like Orca's worktree model, so the UX is the same.
 Repo name is the GitHub repository name; if two installations expose
 the same name, the second gets `<owner>--<repo>`.
 
-### What note 09 changes, and why
+### What `versions/mvp/10` changes, and why
 
 ```
 ~/oppenheimer-ai/workspaces/<org-slug>/projects/<project-slug>/

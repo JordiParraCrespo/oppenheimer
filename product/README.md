@@ -17,8 +17,9 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/09`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
+| 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -79,8 +80,21 @@ earlier note:
   with the account as its single owner member, created at sign-up. No
   roster, no invitations, no teams are exposed in the MVP
   (`versions/mvp/08-auth.md`).
+- Signed self-update moved from `versions/mvp/00-scope.md`'s out-list
+  into the MVP. What changed is *when*, not what: F26 always said signed
+  updates the control plane cannot forge. Design in
+  `versions/mvp/09-runner-install-and-update.md`; F26 is now on the 07
+  checklist.
+- Note 03 cited herdr from its website. Note 13 reads its source: the
+  architecture matches ours, but herdr owns the PTYs, so its agents do not
+  survive a restart. Our tmux layer is what buys that, at the cost of
+  terminal fidelity — recorded as a trade, not a win.
+- Note 02's open question about screen manifests is answered by note 13:
+  lifecycle hooks are authoritative where an agent has them, screen reading
+  is the fallback, and rules carry a priority and negative guards rather than
+  being a chain of ifs (`versions/mvp/02-runner.md` §9).
 - The control-plane modules and data model *have* now changed, where the
-  line above said only the framework had. `versions/mvp/09-api-modules-and-data-model.md`
+  line above said only the framework had. `versions/mvp/10-api-modules-and-data-model.md`
   replaces note 03's seven modules and its first-cut table list with
   five modules — `hosts`, `github`, `projects`, `sessions`, `relay` —
   and eight tables, held to the shape of the starter's own Better Auth
@@ -95,7 +109,7 @@ earlier note:
   the same noun as "repositories" — the App installation is a boundary
   GitHub already enforces.
 - Note 11 said one worktree per session under
-  `workspaces/<repo>/main`. `versions/mvp/09-api-modules-and-data-model.md`
+  `workspaces/<repo>/main`. `versions/mvp/10-api-modules-and-data-model.md`
   supersedes its §1: a **project** level sits above the repository, a
   session may check out **several** repositories, and those checkouts
   live under the session rather than under the repo. The store is a
@@ -103,7 +117,7 @@ earlier note:
   database constraint instead of a convention. Note 11 §2 onward still
   stands.
 - `versions/mvp/08-auth.md` said hosts belong to the workspace that
-  paired them, then to a workspace and an owner. `versions/mvp/09` now
+  paired them, then to a workspace and an owner. `versions/mvp/10` now
   makes a host the person's, borrowed by every workspace they are in,
   the way Better Auth hangs devices and logins off `user`; the on-disk
   layout gains a `workspaces/<org>/` level above `projects/`. Note 06's

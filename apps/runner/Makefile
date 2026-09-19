@@ -4,13 +4,13 @@ GO      ?= go
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build dev run lint test test-race vet tidy clean
+.PHONY: build dev run lint test test-race vet tidy clean release
 
 build:
-	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o dist/runner ./cmd/server
+	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "$(LDFLAGS)" -o dist/runner ./cmd/runner
 
 dev run:
-	$(GO) run ./cmd/server
+	$(GO) run ./cmd/runner serve
 
 lint:
 	golangci-lint run ./...
@@ -31,3 +31,8 @@ tidy:
 
 clean:
 	rm -rf dist
+
+# Cross-compile every supported target and write the release manifest; see
+# scripts/runner/release.sh for the signing step, which stays offline.
+release:
+	../../scripts/runner/release.sh $(VERSION)

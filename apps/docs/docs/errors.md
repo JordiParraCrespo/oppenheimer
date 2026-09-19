@@ -252,8 +252,12 @@ operation, its code is folded onto the catalog, and the original survives as
 ## Runner service
 
 The Go runner (`apps/runner`) emits the same document shape with its own
-catalog. `RUNNER_*` codes are the generic layer shared by every route;
-`APIKEY_*` belongs to its bounded context.
+catalog. `RUNNER_*` codes are the generic layer shared by every route; the
+others belong to one bounded context each — `APIKEY_*` to credentials,
+`HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
+unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
+through the CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
+for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 
 | Code                                   | Title                                        | HTTP |
 | -------------------------------------- | -------------------------------------------- | ---- |
@@ -268,6 +272,39 @@ catalog. `RUNNER_*` codes are the generic layer shared by every route;
 | `APIKEY_002` <a id="apikey_002" />     | API key already revoked                      | 409  |
 | `APIKEY_003` <a id="apikey_003" />     | Cannot grant scopes you do not hold          | 403  |
 | `APIKEY_004` <a id="apikey_004" />     | Service tokens are not enabled               | 501  |
+| `HOST_001` <a id="host_001" />         | Host platform is not supported               | 400  |
+| `HOST_002` <a id="host_002" />         | The runner must not run as root              | 400  |
+| `HOST_003` <a id="host_003" />         | A tool the runner needs is missing           | 424  |
+| `HOST_004` <a id="host_004" />         | Free disk is below the floor                 | 507  |
+| `HOST_005` <a id="host_005" />         | Could not inspect the host                   | 500  |
+| `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
+| `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
+| `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
+| `PAIR_004` <a id="pair_004" />         | The host key could not be read or written    | 500  |
+| `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
+| `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
+| `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
+| `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
+| `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |
+| `SVC_004` <a id="svc_004" />           | The service manager refused the command      | 500  |
+| `SVC_005` <a id="svc_005" />           | The user service will not survive logout     | 424  |
+| `UPD_001` <a id="upd_001" />           | The release manifest could not be verified   | 502  |
+| `UPD_002` <a id="upd_002" />           | The release artifact could not be verified   | 502  |
+| `UPD_003` <a id="upd_003" />           | No release exists for this platform          | 404  |
+| `UPD_004` <a id="upd_004" />           | This host will not take that update          | 409  |
+| `UPD_005` <a id="upd_005" />           | The new binary failed its self-check         | 500  |
+| `UPD_006` <a id="upd_006" />           | The new version could not be activated       | 500  |
+| `UPD_007` <a id="upd_007" />           | The update was rolled back                   | 500  |
+| `UPD_008` <a id="upd_008" />           | This build has no release key and cannot self-update | 424 |
+| `SESS_001` <a id="sess_001" />         | Session not found                            | 404  |
+| `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
+| `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
+| `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
+| `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
+| `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
+| `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
+| `GIT_002` <a id="git_002" />           | A git command failed                         | 500  |
+| `GIT_003` <a id="git_003" />           | The branch could not be pushed               | 409  |
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants
