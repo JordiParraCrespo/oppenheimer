@@ -1023,11 +1023,14 @@ code execution on a host.
    nothing validates today.
 4. **The owner role, in two places that must agree.** A data migration
    granting the org-scoped `owner` role `manage` on `Project`,
-   `Session` and `Installation` within `${activeOrganizationId}`, the
-   `member` role `read` on the same three, and the default `user` role
+   `Session` and `Installation` within `${activeOrganizationId}` and
+   the default `user` role
    `manage` on `Host` where `ownerUserId = ${user.id}` — the host
    condition is the person, not the workspace — **and bumping
-   `organization.roleVersion`**
+   `organization.roleVersion`**. There is no `member` system role in
+   `SYSTEM_ROLE_PERMISSIONS` today, so a workspace member is granted
+   nothing here; the teams slice adds that role and its reads, and a
+   spec records the gap rather than implying it is filled
    so cached abilities refresh. Precisely: `ScopeResolver` itself caches
    nothing ("Nothing here is cached", `authz/application/scope.resolver.ts`)
    because team membership is written by Better Auth outside any app

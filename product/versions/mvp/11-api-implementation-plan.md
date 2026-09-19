@@ -58,8 +58,10 @@ No API code. Everything the API slices import.
 - `src/permissions/abilities.ts`: `SYSTEM_ROLE_PERMISSIONS.owner` gains
   `manage` on `Project`, `Session` and `Installation` conditioned on
   `${activeOrganizationId}` (no `Repository`: a subject with no row is a
-  fiction; listing routes sit on `read Installation`), `member` gains
-  `read` on the same three; **`SYSTEM_ROLE_PERMISSIONS.user`**
+  fiction; listing routes sit on `read Installation`); there is no
+  `member` system role in the constant, so a workspace member is
+  granted nothing until the teams slice, and a spec says so;
+  **`SYSTEM_ROLE_PERMISSIONS.user`**
   gains `manage Host` conditioned on `{ ownerUserId: '${user.id}' }`,
   because a host is the person's and belongs on the person's role, the
   way `ApiToken` already does. `KNOWN_SUBJECTS` gains the five.
