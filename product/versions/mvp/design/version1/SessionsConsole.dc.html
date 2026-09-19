@@ -160,21 +160,52 @@
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>{{ repoShort }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ repoOpen }}">
-<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
+<div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
+
+<sc-if value="{{ repoListPane }}" hint-placeholder-val="{{ true }}">
 <div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 <input type="text" placeholder="Search repositories…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
 <sc-for list="{{ repoOptions }}" as="r" hint-placeholder-count="4">
-<button class="op-option" type="button" role="option" data-selected="{{ r.selected }}" onClick="{{ r.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
-<span class="op-option__stack"><span>{{ r.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ r.desc }}</span></span>
+<div class="op-option" role="option" data-selected="{{ r.selected }}" style="padding:0;gap:0;align-items:stretch;overflow:hidden">
+<button type="button" onClick="{{ r.pick }}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 10px;border:0;background:none;color:inherit;font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer">
+<span class="op-option__stack"><span>{{ r.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ r.desc }}</span></span>
+<span class="op-option__check">✓</span>
+</button>
+<sc-if value="{{ r.selected }}">
+<button type="button" onClick="{{ r.openBranch }}" aria-label="Change branch" title="Change branch" style="display:flex;align-items:center;justify-content:space-between;gap:4px;flex:none;width:134px;box-sizing:border-box;padding:0 10px;border:0;border-left:1px solid var(--border-subtle);background:none;color:var(--fg-subtle);font:inherit;font-family:var(--font-mono);font-size:11px;letter-spacing:-0.004em;cursor:pointer" style-hover="color:var(--fg)">
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.branch }}</span>
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.7"><path d="m9 18 6-6-6-6"/></svg>
+</button>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">No repository matches.</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ repoBranchPane }}">
+<button type="button" onClick="{{ backToRepos }}" style="display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;margin:0 0 5px;padding:6px 9px;border:0;border-bottom:1px solid var(--border-subtle);background:var(--popover);color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="m15 18-6-6 6-6"/></svg>
+<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Branch for {{ paneRepoName }}</span>
+</button>
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
+<sc-for list="{{ paneBranchOptions }}" as="b" hint-placeholder-count="6">
+<button class="op-option" type="button" role="option" data-selected="{{ b.selected }}" onClick="{{ b.pick }}" style="padding:6px 10px;gap:10px;font-family:var(--font-mono);font-size:12px;line-height:1.45">
+<span class="op-option__label">{{ b.label }}</span>
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
-<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">No repository matches.</div></sc-if>
+<sc-if value="{{ noBranchMatch }}"><div class="op-listbox__empty">No branch matches.</div></sc-if>
+</sc-if>
+
 </div>
 </sc-if>
 </div>
+<sc-if value="{{ singleRepo }}" hint-placeholder-val="{{ true }}">
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ branchOpen }}" onClick="{{ toggleBranch }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>{{ branchLabel }}</span><span class="op-chipselect__chev">⌄</span>
@@ -195,6 +226,7 @@
 </div>
 </sc-if>
 </div>
+</sc-if>
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ agentOpen }}" onClick="{{ toggleAgent }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>{{ agentLabel }}</span><span class="op-chipselect__chev">⌄</span>
@@ -497,10 +529,10 @@ const HOSTS = [
 ];
 
 const REPOS = [
-  { value: 'xrp-mobile', label: 'JordiParraCrespo/xrp-mobile', desc: 'main · updated 3h ago' },
-  { value: 'atlas', label: 'JordiParraCrespo/atlas', desc: 'main · updated 1d ago' },
-  { value: 'flama-ai', label: 'JordiParraCrespo/flama-ai', desc: 'main · updated 3d ago' },
-  { value: 'adri-rodriguez', label: 'JordiParraCrespo/adri-rodriguez', desc: 'main · updated last wk.' },
+  { value: 'xrp-mobile', label: 'JordiParraCrespo/xrp-mobile', desc: 'updated 3h ago' },
+  { value: 'atlas', label: 'JordiParraCrespo/atlas', desc: 'updated 1d ago' },
+  { value: 'flama-ai', label: 'JordiParraCrespo/flama-ai', desc: 'updated 3d ago' },
+  { value: 'adri-rodriguez', label: 'JordiParraCrespo/adri-rodriguez', desc: 'updated last wk.' },
 ];
 
 // Branches belong to a repo, so the list is scoped — picking a new project
@@ -587,11 +619,11 @@ const BOOT_STEPS = [
     doing: 'allocating 8 vCPU…', done: '8 vCPU · 32 GB', ms: 1700,
   },
   {
-    label: c => 'Clone ' + (c.repoName() || 'repository'),
+    label: c => c.cloneLabel(),
     doing: 'fetching objects…', done: 'depth 1 · 42 MB', ms: 1300,
   },
   {
-    label: c => 'Check out ' + (c.branchName() || 'branch'),
+    label: c => c.checkoutLabel(),
     doing: 'creating worktree…', done: 'clean worktree', ms: 700,
   },
   {
@@ -626,7 +658,8 @@ class Component extends DCLogic {
   state = {
     view: 'terminal', project: 'all', fAgent: 'all', fHost: 'all', sort: 'recent',
     filterOpen: false, menu: null,
-    open: null, host: 'optimus', repos: ['xrp-mobile'], branch: 'main', agentId: 'claude-code', query: '',
+    open: null, host: 'optimus', repos: ['xrp-mobile'], branchOf: { 'xrp-mobile': 'main' },
+    repoPane: null, agentId: 'claude-code', query: '',
     effort: 'medium', model: 'sonnet', modelOpen: false, modelMenu: null,
     recording: false, seconds: 0, files: [], zoom: false,
     addHost: false, hostAdded: false, hostSecs: 3581, hostCopied: null,
@@ -646,7 +679,7 @@ class Component extends DCLogic {
       const { open, filterOpen, modelOpen, accountOpen } = this.state;
       if (open || filterOpen || modelOpen || accountOpen) {
         this.setState({
-          open: null, filterOpen: false, menu: null,
+          open: null, filterOpen: false, menu: null, repoPane: null,
           modelOpen: false, modelMenu: null, accountOpen: false, accountMenu: null,
         });
       }
@@ -739,7 +772,32 @@ class Component extends DCLogic {
 
   primaryRepo() { return this.state.repos[0] || REPOS[0].value; }
   repoName() { const r = REPOS.find(o => o.value === this.primaryRepo()); return r ? r.label.split('/').pop() : ''; }
-  branchName() { const b = (BRANCHES[this.primaryRepo()] || []).find(o => o.value === this.state.branch); return b ? b.label : ''; }
+  // What the boot trace and the session row call the scope: one repo by name,
+  // several counted, with the primary named and the rest tallied.
+  cloneLabel() {
+    const n = this.state.repos.length;
+    return n > 1 ? 'Clone ' + n + ' repositories' : 'Clone ' + (this.repoName() || 'repository');
+  }
+  checkoutLabel() {
+    return this.state.repos.length > 1 ? 'Check out branches' : 'Check out ' + (this.branchName() || 'branch');
+  }
+  scopeShort() {
+    const n = this.state.repos.length;
+    const extra = n > 1 ? '  +' + (n - 1) : '';
+    return this.repoName() + extra + ' · ' + this.branchName();
+  }
+  branchFor(id) { return this.state.branchOf[id] || (BRANCHES[id] || [{ value: 'main' }])[0].value; }
+  branchName() { return this.branchFor(this.primaryRepo()); }
+  // Single repo reads as a path; several read as an explicit pair list, because
+  // "3 repositories" alone would hide which branch each one is on.
+  scopeLine() {
+    const ids = this.state.repos;
+    if (ids.length === 1) {
+      const r = REPOS.find(o => o.value === ids[0]);
+      return (r ? r.label : ids[0]) + ' · ' + this.branchFor(ids[0]);
+    }
+    return ids.map(id => id + '@' + this.branchFor(id)).join(', ');
+  }
   agentName() { const a = AGENTS.find(o => o.value === this.state.agentId); return a ? a.label : 'agent'; }
 
   applyTheme(theme) {
@@ -809,7 +867,7 @@ class Component extends DCLogic {
   // Every trigger stops the document listener from immediately reclosing it.
   toggle(key, e) {
     if (e) e.stopPropagation();
-    this.setState(s => ({ open: s.open === key ? null : key, query: '' }));
+    this.setState(s => ({ open: s.open === key ? null : key, query: '', repoPane: null }));
   }
 
   // Every scope list is long enough to need typing, so all four are the same
@@ -829,10 +887,21 @@ class Component extends DCLogic {
       const has = st.repos.indexOf(value) !== -1;
       let repos = has ? st.repos.filter(v => v !== value) : st.repos.concat(value);
       if (!repos.length) repos = [value];
-      const next = { repos: repos };
-      if (repos[0] !== st.repos[0]) next.branch = (BRANCHES[repos[0]] || [{ value: 'main' }])[0].value;
-      return next;
+      const branchOf = { ...st.branchOf };
+      // Adding a repo lands it on its own default branch; dropping one forgets
+      // its branch so re-adding it does not resurrect a stale choice.
+      repos.forEach(id => {
+        if (!branchOf[id]) branchOf[id] = (BRANCHES[id] || [{ value: 'main' }])[0].value;
+      });
+      Object.keys(branchOf).forEach(id => { if (repos.indexOf(id) === -1) delete branchOf[id]; });
+      return { repos: repos, branchOf: branchOf };
     });
+  }
+  // The branch pane is scoped to one repo. Picking returns to the repo list so
+  // the next repo's branch is one click away.
+  chooseBranchFor(repoId, value, e) {
+    if (e) e.stopPropagation();
+    this.setState(st => ({ branchOf: { ...st.branchOf, [repoId]: value }, repoPane: null, query: '' }));
   }
   choose(key, value, e) {
     if (e) e.stopPropagation();
@@ -855,9 +924,11 @@ class Component extends DCLogic {
 
   renderVals() {
     const { view, project, fAgent, fHost, sort, filterOpen, menu,
-            open, host, repos, branch, agentId, session } = this.state;
+            open, host, repos, agentId, session } = this.state;
     const repo = this.primaryRepo();
-    const branches = BRANCHES[repo] || [];
+    const single = repos.length === 1;
+    const paneRepo = this.state.repoPane;
+    const branches = BRANCHES[paneRepo || repo] || [];
     const harness = HARNESS_MODELS[agentId] || { primary: [] };
     const models = harness.primary;
     const sessions = this.state.mine.concat(ALL)
@@ -885,14 +956,14 @@ class Component extends DCLogic {
       if (e) e.stopPropagation();
       clearInterval(this._tick);
       const row = {
-        name: this.repoName() + ' · ' + this.branchName(),
+        name: this.scopeShort(),
         state: 'waiting', age: 'now', mins: 0,
         repo, agent: agentId, host,
       };
       this.setState(s => ({ mine: [row].concat(s.mine) }));
       this.setState({
         session: {
-          label: find(REPOS, repo).split('/').pop() + ' · ' + find(branches, branch),
+          label: this.scopeShort(),
           state: 'running',
           meta: find(AGENTS, agentId) + ' · ' + find(models, this.state.model) + ' · ' + find(HOST_FILTER, host),
         },
@@ -917,7 +988,7 @@ class Component extends DCLogic {
 
       provisionHost: find(HOST_FILTER, host),
       provisionTitle: 'Starting your session',
-      provisionSub: find(REPOS, repo) + ' · ' + find(branches, branch),
+      provisionSub: this.scopeLine(),
       bootStatus: BOOT_STEPS[this.state.bootStep] ? 'Working…' : 'Ready',
       bootElapsed: (this.state.bootMs / 1000).toFixed(1) + 's',
       bootSteps: BOOT_STEPS.map((b, i) => ({
@@ -1022,15 +1093,37 @@ class Component extends DCLogic {
       repoOptions: this.match(REPOS).map(o => ({
         ...o,
         selected: repos.indexOf(o.value) !== -1 ? 'true' : undefined,
+        name: o.label.split('/').pop(),
+        branch: this.branchFor(o.value),
+        openBranch: e => { if (e) e.stopPropagation(); this.setState({ repoPane: o.value, query: '' }); },
         pick: e => this.chooseRepo(o.value, e),
       })),
       repoOpen: open === 'repo',
       toggleRepo: e => this.toggle('repo', e),
 
-      branchLabel: find(branches, branch),
-      branchOptions: this.options(branches, 'branch'),
+      // Two panes in one popover: the repo list, and one repo's branches.
+      repoListPane: paneRepo ? undefined : 'true',
+      repoBranchPane: paneRepo ? 'true' : undefined,
+      paneRepoName: paneRepo ? (find(REPOS, paneRepo) || '').split('/').pop() : '',
+      backToRepos: e => { if (e) e.stopPropagation(); this.setState({ repoPane: null, query: '' }); },
+      paneBranchOptions: this.match(branches).map(o => ({
+        ...o,
+        selected: paneRepo && this.branchFor(paneRepo) === o.value ? 'true' : undefined,
+        pick: e => this.chooseBranchFor(paneRepo, o.value, e),
+      })),
+
+      // A branch belongs to a repo, so a sibling branch chip only tells the
+      // truth while there is exactly one. Past that it lives in the repo rows.
+      singleRepo: single ? 'true' : undefined,
+      branchLabel: this.branchFor(repo),
+      branchOptions: this.match(BRANCHES[repo] || []).map(o => ({
+        ...o,
+        selected: this.branchFor(repo) === o.value ? 'true' : undefined,
+        pick: e => this.chooseBranchFor(repo, o.value, e),
+      })),
       branchOpen: open === 'branch',
       toggleBranch: e => this.toggle('branch', e),
+      scopeLine: this.scopeLine(),
 
       fileRef: el => { this._file = el; },
       pickFiles: this.pickFiles,
