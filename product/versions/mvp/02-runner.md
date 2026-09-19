@@ -126,6 +126,10 @@ What belongs here is what the runner does with it:
   control plane reconcile. The runner keeps no durable outbox: a laptop
   that was shut for a week has nothing worth replaying, and a snapshot
   is both cheaper and less wrong.
+- Every event it appends carries the idempotency key `<runId>:<n>`,
+  where `runId` is minted at process start and `n` is its own counter,
+  so a batch replayed after a lost ack is de-duplicated by the control
+  plane and the key depends on nothing the link assigned (10).
 - It pauses a PTY when an attachment's window is exhausted, so one
   runaway build stalls its own pane.
 - It survives the link being down indefinitely. Sessions keep running;
@@ -133,34 +137,61 @@ What belongs here is what the runner does with it:
 
 ### 5. Sessions
 
-A session is a worktree plus a tmux session plus its windows. Create, in
-order, each step resumable because the previous one is observable on disk:
+A session is a directory of checkouts plus a tmux session plus its
+windows. The layout and every name in it are 10's
+(`workspaces/<org>/projects/<project>/{repos,sessions}`; it supersedes
+note 11 §1). Create, in order, each step resumable because the previous
+one is observable on disk:
 
-1. Ensure the mirror: `~/oppenheimer-ai/workspaces/<repo>/main` exists
-   and is fetched (`git clone` the first time, `git fetch --prune`
-   after), authenticated through the credential helper (§8).
-2. `git worktree add worktrees/<slug>` from it, at a new branch off the
-   chosen base by default.
-3. `tmux new-session -d -s <id> -c <worktree>` on the dedicated socket,
-   with the session's environment set once (§6).
-4. Window 0 runs the agent; `claude` from the host's own installation
+1. Write the `.oppenheimer` marker into
+   `projects/<project>/sessions/<slug>/` **before** anything else. Only
+   a directory carrying it is ours to delete, ever (10, the rules
+   learned from Orca).
+2. For each checkout, ensure the project's bare store
+   `projects/<project>/repos/<store>.git` exists and is fetched
+   (`git clone --bare` the first time, then `git fetch`, with the
+   `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
+   set), authenticated through the credential helper (§8). The store
+   name is frozen on the repository row, never derived from the current
+   GitHub name.
+3. `git worktree add sessions/<slug>/<dir>` from the store, on the
+   branch `oppenheimer/<project>/<slug>` created from the chosen base.
+   When a worktree is not possible, clone instead and **report which
+   mode was used**, because cleanup differs. A session may have zero
+   checkouts.
+4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
+   `<cwd>` is the checkout the control plane names as the working
+   directory, or the session directory when it names none, with the
+   session's environment set once (§6).
+5. Window 0 runs the agent; `claude` from the host's own installation
    and login. The login URL it prints is detected by the classifier and
    sent to the browser as a button, linkified only for known vendor
    hosts (F3).
-5. The control plane hears `session.created` with the branch, the
-   worktree path and the initial state.
+6. The control plane hears `session.created` with each checkout's
+   branch, path and mode, and the initial state.
+7. The first user message is read from the agent's own transcript
+   (Claude Code keeps one under `~/.claude/projects/`, keyed by cwd;
+   Codex under `~/.codex/sessions/`), never scraped from the PTY, and
+   sent once as `prompt.first`, at most 2 KB. The control plane names
+   the session from it (10); the transcript itself never leaves the
+   host.
 
-Close pushes the branch if it has commits and a remote, then
-`git worktree remove` and `tmux kill-session`. A dirty worktree does not
-block the close: the runner commits nothing on the user's behalf, it
-reports `dirty` and leaves the worktree, which the Restart path can pick
-up again.
+Close pushes each checkout's branch if it has commits and a remote, then
+`git worktree remove` (or removes the directory, for a clone), prunes,
+and `tmux kill-session`. The runner commits nothing on the user's
+behalf and never passes `--force`: a checkout with unpushed work is
+reported as `dirty` with git's own message verbatim, and the control
+plane is what refuses the close unless the caller accepts the loss (10).
+Stop is not close: it ends the agent and the tmux session and leaves
+every checkout on disk for Restart.
 
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
-rehydrates each ring buffer from `capture-pane`, and kills the rest
-after a grace period — only sessions whose name matches its own id
-scheme, never a session the user created. **After a host reboot** tmux
+rehydrates each ring buffer from `capture-pane`, and **reports** the
+rest rather than reaping them (§11). Path shape and name shape are never
+authority: a person can run `git worktree add` by hand under
+`~/oppenheimer-ai/`, and only a directory carrying our `.oppenheimer`
+marker is ours to remove, and only when the control plane says so. **After a host reboot** tmux
 is gone: every session shows stopped with a Restart button that
 recreates window 0 in the same worktree, which survived.
 
@@ -267,13 +298,13 @@ One tree, named here and pointed at from 09:
 ~/.oppenheimer/
   config.json          0600  control plane URL, host id, key fingerprint, channel, pin
   host.key             0600  the ed25519 private key (F8; rotation supported)
-  state/sessions.json  0600  session id → worktree, branch, repo, agent
+  state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3
-~/oppenheimer-ai/workspaces/<repo>/main and /worktrees/<slug>   the user's code
+~/oppenheimer-ai/workspaces/<org>/projects/<project>/{repos/<store>.git, sessions/<slug>/<dir>}   the user's code (10)
 ```
 
 **The boot path trusts tmux.** It is the only one of the three that
