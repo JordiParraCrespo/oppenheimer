@@ -5849,6 +5849,269 @@
         "tags": ["Admin"]
       }
     },
+    "/api/v1/projects": {
+      "get": {
+        "description": "Newest first. Archived projects are left out unless asked for.",
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "description": "Include archived projects (default: false).",
+            "schema": {
+              "enum": ["true", "false"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the projects in the caller’s workspace",
+        "tags": ["Projects"]
+      }
+    },
+    "/api/v1/projects/{id}": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one project",
+        "tags": ["Projects"]
+      },
+      "patch": {
+        "description": "The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a project",
+        "tags": ["Projects"]
+      },
+      "delete": {
+        "description": "The row is kept: its slug is a directory name on every host that held the project, and retiring it for good is what stops a later project inheriting that directory. Refused while the project has open sessions.",
+        "operationId": "archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project archived"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PROJECTS_002 — The project still has open sessions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive a project",
+        "tags": ["Projects"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -6832,7 +7095,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6863,7 +7134,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6933,7 +7212,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7027,7 +7314,15 @@
               "billing:read",
               "billing:write",
               "leads:read",
-              "leads:write"
+              "leads:write",
+              "hosts:read",
+              "hosts:write",
+              "projects:read",
+              "projects:write",
+              "sessions:read",
+              "sessions:write",
+              "repositories:read",
+              "repositories:write"
             ],
             "example": "users:read"
           },
@@ -7077,7 +7372,11 @@
               "workspaces",
               "tokens",
               "billing",
-              "leads"
+              "leads",
+              "hosts",
+              "projects",
+              "sessions",
+              "repositories"
             ],
             "example": "users"
           },
@@ -7137,7 +7436,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           }
@@ -7179,7 +7486,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7253,7 +7568,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -8153,6 +8476,59 @@
           }
         },
         "required": ["newPassword"]
+      },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "xrp-mobile"
+          },
+          "slug": {
+            "type": "string",
+            "description": "The project’s directory name on every host that holds it. Immutable, and never reused once archived.",
+            "example": "xrp-mobile"
+          },
+          "originGithubRepoId": {
+            "type": "number",
+            "description": "GitHub id of the repository whose first session created the project.",
+            "nullable": true
+          },
+          "archivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the project was archived. Projects are never deleted.",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "organizationId", "name", "slug", "createdAt", "updatedAt"]
+      },
+      "UpdateProjectRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": ["name"]
       },
       "CapabilitiesResponseDto": {
         "type": "object",
