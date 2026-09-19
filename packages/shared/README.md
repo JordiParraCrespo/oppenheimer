@@ -14,6 +14,9 @@ of duplicating them per app.
 | `@oppenheimer/shared/types`       | TypeScript types: `Role`, `PermissionDefinition`, `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`, `PaginatedResponse<T>` |
 | `@oppenheimer/shared/permissions` | CASL helpers — `defineAbilitiesFromPermissions` (DB-driven, source of truth), the legacy `defineAbilitiesFor` fallback, and `ENDPOINT_POLICIES` |
 | `@oppenheimer/shared/constants`   | `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`                                                 |
+| `@oppenheimer/shared/scopes`      | The credential scope catalog: `SCOPE_RESOURCES`, `PERMISSION_GROUPS`, `SCOPES` and the helpers that expand, sort and grant them                    |
+| `@oppenheimer/shared/agents/catalog` | The closed coding-agent catalog: `CODING_AGENT_IDS`, `CODING_AGENTS`, `isCodingAgentId`                                            |
+| `@oppenheimer/shared/protocol`    | The runner link's wire vocabulary as Zod, plus `PROTOCOL_VERSION` and the JSON Schema emitter                                            |
 
 ## Usage
 
@@ -42,10 +45,16 @@ import { PAGINATION } from "@oppenheimer/shared/constants";
 ## Scripts
 
 ```bash
-pnpm build   # tsc -> dist
-pnpm dev     # tsc --watch
-pnpm lint    # biome check src/
+pnpm build           # tsc -> dist
+pnpm build:protocol  # build, then emit protocol-schema/protocol.schema.json from the Zod union
+pnpm dev             # tsc --watch
+pnpm lint            # biome check src/
 ```
+
+`protocol-schema/protocol.schema.json` is **generated and committed**. It is what
+the Go structs in `packages/go/protocol` are generated from, so a wire change
+shows up as a reviewable diff in it; the spec in `src/protocol/__tests__/` fails
+if the committed file has drifted from the schemas.
 
 ## Consumed by
 

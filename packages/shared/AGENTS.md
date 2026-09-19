@@ -16,6 +16,8 @@ src/
 ├── constants/     # shared constants
 ├── permissions/   # CASL ability helpers + the endpoint policy catalog
 ├── scopes/        # the credential scope catalog
+├── agents/        # the closed coding-agent catalog
+├── protocol/      # the runner link's wire vocabulary, as Zod
 └── index.ts
 ```
 
@@ -37,6 +39,23 @@ src/
   `PaginatedResponse<T>`.
 - **Constants**: `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`,
   `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`.
+- **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
+  frozen config record per agent. It is deliberately **not a table** — every
+  entry carries behaviour the runner needs code for anyway, so a row would be a
+  second source of truth. Keep it data; the type guard is the only function.
+- **The wire protocol** (`protocol/`): the runner link's control messages as
+  Zod, with `protocolMessageSchema` the discriminated union over `type`. It is
+  the **only** description of the wire: `pnpm build:protocol` emits
+  `protocol-schema/protocol.schema.json` from it and the Go structs are
+  generated from that, so never hand-write a twin in either language. Changing
+  a message means re-running `build:protocol` and committing the artifact —
+  `src/protocol/__tests__/` fails if you forget.
+
+  The protocol imports `zod/v4` while every other schema here imports `zod`
+  (v3 classic). That is on purpose and is the only place it happens: `zod`
+  3.25 ships both, only the v4 entry point can emit JSON Schema
+  (`z.toJSONSchema`), and the two never meet — the API's validation pipes see
+  the v3 DTO schemas, the relay gateway parses protocol messages directly.
 
 ## What does not live here
 

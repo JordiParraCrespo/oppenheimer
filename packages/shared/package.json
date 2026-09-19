@@ -47,6 +47,30 @@
       "require": "./dist/schemas/role.schema.js",
       "default": "./dist/schemas/role.schema.js"
     },
+    "./schemas/host": {
+      "types": "./dist/schemas/host.schema.d.ts",
+      "import": "./dist/schemas/host.schema.js",
+      "require": "./dist/schemas/host.schema.js",
+      "default": "./dist/schemas/host.schema.js"
+    },
+    "./schemas/project": {
+      "types": "./dist/schemas/project.schema.d.ts",
+      "import": "./dist/schemas/project.schema.js",
+      "require": "./dist/schemas/project.schema.js",
+      "default": "./dist/schemas/project.schema.js"
+    },
+    "./schemas/session": {
+      "types": "./dist/schemas/session.schema.d.ts",
+      "import": "./dist/schemas/session.schema.js",
+      "require": "./dist/schemas/session.schema.js",
+      "default": "./dist/schemas/session.schema.js"
+    },
+    "./schemas/github": {
+      "types": "./dist/schemas/github.schema.d.ts",
+      "import": "./dist/schemas/github.schema.js",
+      "require": "./dist/schemas/github.schema.js",
+      "default": "./dist/schemas/github.schema.js"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
@@ -70,10 +94,29 @@
       "import": "./dist/scopes/index.js",
       "require": "./dist/scopes/index.js",
       "default": "./dist/scopes/index.js"
+    },
+    "./agents": {
+      "types": "./dist/agents/index.d.ts",
+      "import": "./dist/agents/index.js",
+      "require": "./dist/agents/index.js",
+      "default": "./dist/agents/index.js"
+    },
+    "./agents/catalog": {
+      "types": "./dist/agents/catalog.d.ts",
+      "import": "./dist/agents/catalog.js",
+      "require": "./dist/agents/catalog.js",
+      "default": "./dist/agents/catalog.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol/index.d.ts",
+      "import": "./dist/protocol/index.js",
+      "require": "./dist/protocol/index.js",
+      "default": "./dist/protocol/index.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:protocol": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && biome format --write protocol-schema/protocol.schema.json",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist",
     "lint": "biome check src/",
