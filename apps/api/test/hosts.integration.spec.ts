@@ -292,6 +292,7 @@ describe('Hosts & pairing (integration)', () => {
       expect(hostRules).toHaveLength(1);
       expect(hostRules[0].action).toBe('manage');
       // Conditioned on the owner, or every account would manage every machine.
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: a condition placeholder the ability factory interpolates, not a template literal
       expect(hostRules[0].conditions).toEqual({ ownerUserId: '${user.id}' });
     });
   });
