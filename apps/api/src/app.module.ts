@@ -36,6 +36,7 @@ import {
   hostsConfig,
   oauthConfig,
   redisConfig,
+  sessionsConfig,
   storageConfig,
   stripeConfig,
 } from './config';
@@ -49,6 +50,7 @@ import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { QueueModule } from './queue/queue.module';
 import { RolesModule } from './roles/roles.module';
+import { SessionsModule } from './sessions/sessions.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -68,6 +70,7 @@ import { UsersModule } from './users/user.module';
         stripeConfig,
         githubAppConfig,
         hostsConfig,
+        sessionsConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -195,6 +198,9 @@ import { UsersModule } from './users/user.module';
     AdminModule,
     // The control plane's own modules, in the order their slices land.
     ProjectsModule,
+    // The module the other three feed into: the sessions themselves, their
+    // checkouts, and the append-only log the row is a fold of.
+    SessionsModule,
     HealthModule,
     QueueModule,
   ],

@@ -1,6 +1,6 @@
-import { Controller, Get, UseGuards, UseInterceptors, Version } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -13,6 +13,7 @@ import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectResponseDto } from '../../dtos/project.response.dto';
 import { ProjectMapper } from '../../project.mapper';
 import { FindProjectsQuery } from './find-projects.query';
+import { FindProjectsRequest } from './find-projects.request.dto';
 
 @ApiTags('Projects')
 @ApiBearerAuth()
@@ -35,12 +36,22 @@ export class FindProjectsHttpController {
     // name, and `list` would collide with every other resource's listing.
     operationId: 'listProjects',
     summary: 'List the projects in the caller’s workspace',
-    description: 'Newest first.',
+    description: 'Newest first. Archived projects are left out unless asked for.',
+  })
+  @ApiQuery({
+    name: 'includeArchived',
+    required: false,
+    type: Boolean,
+    description:
+      'Include retired projects. They are left out by default: a retired project keeps its slug for ever, so the listing would otherwise fill with rows nobody can put work in.',
   })
   @ApiResponse({ status: 200, type: [ProjectResponseDto] })
-  async list(@CurrentAccessScope() scope: AccessScope): Promise<ProjectResponseDto[]> {
+  async list(
+    @CurrentAccessScope() scope: AccessScope,
+    @Query() query: FindProjectsRequest,
+  ): Promise<ProjectResponseDto[]> {
     const projects = await this.queryBus.execute<FindProjectsQuery, ProjectEntity[]>(
-      new FindProjectsQuery({ scope }),
+      new FindProjectsQuery({ scope, includeArchived: query.includeArchived }),
     );
     return projects.map((project) => this.mapper.toResponse(project));
   }

@@ -30,9 +30,10 @@ describe('ProjectEntity', () => {
     expect(project.slug).toBe('xrp-mobile');
   });
 
-  it('offers no way to change the slug, or to archive, at all', () => {
+  it('offers no way to change the slug, and archives one way only', () => {
     // A slug setter would be a directory move on every host with live work
-    // inside it; archiving arrives with the slice that can refuse it.
+    // inside it. `archive` exists and has no counterpart: a retired slug is never
+    // reissued, so archiving is a one-way door by construction.
     const descriptor = (name: string) =>
       Object.getOwnPropertyDescriptor(ProjectEntity.prototype, name);
     const methods = Object.getOwnPropertyNames(ProjectEntity.prototype).filter(
@@ -41,8 +42,9 @@ describe('ProjectEntity', () => {
 
     expect(descriptor('slug')?.get).toBeTypeOf('function');
     expect(descriptor('slug')?.set).toBeUndefined();
-    expect(methods).toEqual(expect.arrayContaining(['rename']));
-    expect(methods.filter((name) => /slug|archive/i.test(name))).toEqual([]);
+    expect(methods).toEqual(expect.arrayContaining(['rename', 'archive']));
+    expect(methods.filter((name) => /slug/i.test(name))).toEqual([]);
+    expect(methods.filter((name) => /unarchive|restore|reopen/i.test(name))).toEqual([]);
   });
 
   it('refuses a project with no organization or no name', () => {

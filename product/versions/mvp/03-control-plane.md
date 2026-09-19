@@ -119,6 +119,79 @@ The App's six settings (`GITHUB_APP_*`, the slug included) are the
 connected yet" from "this deployment has no App". Without them the module
 boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 
+## Sessions, checkouts and the log
+
+The work itself: `work_session`, `session_checkout` — which is also **where a
+repository is remembered**, since there is no repository table — and the
+append-only `work_session_event`.
+
+```
+GET    /api/v1/sessions                                 read Session    sessions:read
+GET    /api/v1/sessions/{id}                            read Session    sessions:read
+GET    /api/v1/sessions/{id}/events                     read Session    sessions:read
+POST   /api/v1/sessions                                 create Session  sessions:write   Idempotency-Key
+PATCH  /api/v1/sessions/{id}                            update Session  sessions:write
+POST   /api/v1/sessions/{id}/stop                       update Session  sessions:write
+POST   /api/v1/sessions/{id}/restart                    update Session  sessions:write
+POST   /api/v1/sessions/{id}/attach-ticket              update Session  sessions:write
+POST   /api/v1/sessions/{id}/checkouts                  update Session  sessions:write
+DELETE /api/v1/sessions/{id}/checkouts/{checkoutId}     update Session  sessions:write
+DELETE /api/v1/sessions/{id}                            delete Session  sessions:write
+DELETE /api/v1/projects/{id}                            update Project  projects:write
+```
+
+**The log is the truth and the row is the fold.** `work_session.state` is a
+projection, so the aggregate has no `setState` — its only mutator applies an
+event — and a replay of any log rebuilds the row. `seq` is assigned by the
+control plane under a row lock, never by the writer, so a buggy or hostile host
+cannot create gaps; it is read in a **second statement after** that lock,
+because under READ COMMITTED a statement's snapshot is taken before it blocks,
+and the fold likewise re-reads the locked row rather than the instance the
+caller loaded. Idempotency is per row — `<runId>:<n>` from a runner, the command
+id from the API — and the append and the fold commit together.
+
+**One action is one entry.** A command appends exactly one event in the
+transaction that makes the row change it implies; what could not be delivered to
+a host comes back as a `host_offline` hint on the response, not as a second
+entry from a second writer.
+
+**Three vocabularies.** The stored lifecycle is
+`starting | open | failed | resolved` and answers *is this work finished* — so
+stopping does not move it, and `resolved` is terminal. The agent's observations
+(`working`, `blocked`, `idle`, `done`, `unknown`) are inputs. The **derived
+group** is what the sidebar dot shows and is a function of the row: the
+observation, when it was entered, and the report hashes are folded columns, so a
+listing answers it without walking a log. Its debounce is measured from a
+recorded transition, so no caller can claim a session has been stuck.
+
+**Stop is a decision; restart and close are requests.** The control plane will
+not dispatch a stopped session again, so stopping is the fact. Restarting and
+closing need work on the host that can legitimately refuse — closing pushes
+branches and will not remove a dirty worktree unless the caller accepted the
+loss — so the API records the request and `session.restarted` / `session.closed`
+come back from the host.
+
+**The attach ticket is a Redis key**, not a table: `attach:<random>` →
+`{sessionId, organizationId, window, userId}`, claimed with `SET … NX`, 60
+seconds, single use. It travels in `Sec-WebSocket-Protocol` and never in the
+query string, because proxies log request lines and this buys an interactive
+shell. Opening a terminal is `update Session`: there is no `attach` verb, and
+the scope split is what keeps a read-only credential out of a PTY.
+
+**Archiving a project fails closed.** "Is any session still open here" is a
+question only the module that owns sessions can answer, so it answers it through
+a port that module registers; with nothing registered the archive refuses. The
+check and the write share a transaction that locks the project row, and creating
+a session takes a share lock on the same row, so an archive and a create cannot
+both win.
+
+**Naming is configuration.** A session keeps its minted slug until the runner
+reports the first prompt; `SESSION_NAMER_PROVIDER` (`none` by default),
+`SESSION_NAMER_MODEL` and `ANTHROPIC_API_KEY` choose what titles it, and a
+deployment with none configured names nothing. A model-derived title never
+overwrites a name a person typed, and that rule is in the fold. The one line
+that leaves the host is the person's own prompt.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from
@@ -127,9 +200,15 @@ checkout that took it, as GitHub's own id plus the installation and a
 name snapshot), hosts, host pairing tokens, projects (the body of work a
 session belongs to; auto-created from the first repository a session checks
 out, and found again by that repository's GitHub id; its slug is a directory
-name on every host and is never reissued), sessions (host, **project**,
-repo, base branch, branch, worktree path, agent, state, name) — a session
-belongs to a project —, session_events, attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
+name on every host and is never reissued), **work_session**
+(workspace, project, host, agent, slug, name, the checkout the agent runs
+in, and the fold of its log) — a session belongs to a project —,
+**session_checkout** (one repository per session, on the session's own
+branch, and where a repository is remembered), **work_session_event** (the
+append-only log the row is a fold of). Attach tickets are **not a table**: a
+Redis key with a 60-second expiry, which is shorter than any row's life. There
+is no `jobs` table either — the desired state is the session row and the
+outbox is already a durable queue. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
 

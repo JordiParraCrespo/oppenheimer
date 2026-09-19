@@ -29,6 +29,9 @@ import { RoleRepository } from '../roles/database/role.repository';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { RoleMapper } from '../roles/roles.mapper';
+import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
+import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 const dataSource = new DataSource({
@@ -58,6 +61,9 @@ const dataSource = new DataSource({
     MemberOrmEntity,
     InvitationOrmEntity,
     ProjectOrmEntity,
+    WorkSessionOrmEntity,
+    SessionCheckoutOrmEntity,
+    WorkSessionEventOrmEntity,
     OutboxMessageSchema,
   ],
 });

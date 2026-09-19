@@ -191,26 +191,38 @@ export class GithubRestAdapter implements GithubAppPort {
     return repositories.map(toRepository);
   }
 
+  /**
+   * One repository, resolved by id. GitHub refuses it when the installation does
+   * not cover it, and that refusal *is* `GITHUB_010` — asking it here is cheaper
+   * and more current than rebuilding the installation's whole repository set in
+   * process to answer a question GitHub already answers.
+   */
+  async readRepository(
+    githubInstallationId: number,
+    githubRepoId: number,
+  ): Promise<GithubRepository> {
+    const token = await this.installationToken(githubInstallationId);
+    return toRepository(await this.rawRepository(token, githubRepoId));
+  }
+
+  /** The raw row, so the two readers above cannot drift on the refusal mapping. */
+  private async rawRepository(token: string, githubRepoId: number): Promise<RawRepository> {
+    const { body } = await this.request<RawRepository>(`${API}/repositories/${githubRepoId}`, {
+      token,
+      onStatus: {
+        403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
+        404: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
+      },
+    });
+    return body;
+  }
+
   async listRepositoryBranches(
     githubInstallationId: number,
     githubRepoId: number,
   ): Promise<{ branches: GithubBranch[]; defaultBranch: string }> {
     const token = await this.installationToken(githubInstallationId);
-
-    // One repository, resolved by id. GitHub refuses it when the installation
-    // does not cover it, and that refusal *is* `GITHUB_010` — asking it here is
-    // cheaper and more current than rebuilding the installation's whole
-    // repository set in process to answer a question GitHub already answers.
-    const { body: repository } = await this.request<RawRepository>(
-      `${API}/repositories/${githubRepoId}`,
-      {
-        token,
-        onStatus: {
-          403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
-          404: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
-        },
-      },
-    );
+    const repository = await this.rawRepository(token, githubRepoId);
 
     const [owner, name] = repository.full_name.split('/');
     const branches = await this.paginate<RawBranch>(

@@ -72,6 +72,14 @@ export interface GithubAppPort {
   readInstallation(githubInstallationId: number): Promise<GithubInstallationClaim>;
   /** Every repository the installation covers, read through its own token. */
   listInstallationRepositories(githubInstallationId: number): Promise<GithubRepository[]>;
+  /**
+   * One repository, by GitHub's own id.
+   *
+   * GitHub refuses it when the installation does not cover it, and that refusal
+   * *is* `GITHUB_010` — which is why naming one repository is a lookup here rather
+   * than a `find()` over the installation's whole catalogue.
+   */
+  readRepository(githubInstallationId: number, githubRepoId: number): Promise<GithubRepository>;
   /** One repository's branches, plus which of them is the default. */
   listRepositoryBranches(
     githubInstallationId: number,

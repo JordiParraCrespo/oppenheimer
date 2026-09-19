@@ -24,9 +24,9 @@ export interface ProjectProps {
    */
   originGithubRepoId: string | null;
   /**
-   * When the project was retired. Nothing sets it yet — archiving arrives with
-   * the module that owns sessions, because refusing to retire a directory that
-   * still has work in it needs sessions to answer.
+   * When the project was retired. Set by the archive command, which refuses while
+   * the project still holds sessions nobody has closed — a question only the module
+   * that owns sessions can answer.
    */
   archivedAt: Date | null;
 }
@@ -54,9 +54,7 @@ export interface CreateProjectProps {
  * the name of the repository that created it for ever, which is cheap against
  * moving directories under running work.
  *
- * `archivedAt` is the column that keeps a retired slug out of circulation. It is
- * read here and never written: the aggregate gains its archive method in the
- * slice that can also answer whether anything is still working in the project.
+ * `archivedAt` is the column that keeps a retired slug out of circulation.
  */
 export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /** Rehydrate an existing project (used by the mapper). */
@@ -100,6 +98,18 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   get isArchived(): boolean {
     return this.props.archivedAt !== null;
+  }
+
+  /**
+   * Retire the project. Idempotent: the first archive is the one that counts.
+   *
+   * There is no un-archive, and that is the point. The slug is a directory name on
+   * every host that held the project and it is never reissued, so archiving is a
+   * one-way door by construction rather than by policy.
+   */
+  archive(at: Date): void {
+    this.props.archivedAt = this.props.archivedAt ?? at;
+    this.setUpdatedAt(new Date());
   }
 
   /** Rename the project. Display only: the slug and every path stay as they are. */

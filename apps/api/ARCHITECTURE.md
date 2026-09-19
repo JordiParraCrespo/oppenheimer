@@ -64,7 +64,7 @@ holding only the file names that layer admits:
 | `infrastructure/`             | `*.port.ts`, `*.adapter.ts`, `*.gateway.ts`, `*.processor.ts`, `*.config.ts`, `*.util.ts`, `*.types.ts` |
 | `commands/<use-case>/`        | `<use-case>.command.ts`, `.command-handler.ts`, `.http.controller.ts`, `.request.dto.ts`   |
 | `queries/<use-case>/`         | `<use-case>.query.ts`, `.query-handler.ts`, `.http.controller.ts`, `.request.dto.ts`       |
-| `application/`                | `*.factory.ts`, `*.policy.ts`, `*.resolver.ts`, `*.port.ts`, and `event-handlers/*.domain-event-handler.ts` |
+| `application/`                | `*.factory.ts`, `*.policy.ts`, `*.resolver.ts`, `*.registry.ts`, `*.port.ts`, and `event-handlers/*.domain-event-handler.ts` |
 | `dtos/`                       | `*.response.dto.ts`                                                                        |
 | `guards/`                     | `*.guard.ts`                                                                               |
 | `decorators/`                 | `*.decorator.ts`                                                                           |
@@ -300,6 +300,7 @@ Read:   HTTP → Controller → new Query → QueryBus → QueryHandler
 | Adapter for a SaaS | `<name>.gateway.ts`             |
 | Queue worker       | `<name>.processor.ts`           |
 | Application resolver | `<name>.resolver.ts`          |
+| Contribution registry | `<name>.registry.ts`         |
 
 ## Adding a new module
 

@@ -898,6 +898,189 @@ export type UpdateProjectRequest = {
     name: string;
 };
 
+export type SessionCheckoutResponseDto = {
+    id: string;
+    /**
+     * The GitHub installation this repository’s tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string because the column is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * A display snapshot of `owner/repo`, refreshed whenever a checkout is created.
+     */
+    repositoryFullName: string;
+    /**
+     * The directory inside the session. Never reused, even after removal.
+     */
+    directoryName: string;
+    /**
+     * What the runner named the bare store under `repos/`. Null until it reports.
+     */
+    storeDirectoryName?: string | null;
+    /**
+     * Recorded rather than guessed: cleanup differs between the two.
+     */
+    mode: 'worktree' | 'clone';
+    /**
+     * What the session’s branch was created from.
+     */
+    baseBranch: string;
+    /**
+     * Always the session’s own branch, never the base.
+     */
+    branch: string;
+};
+
+export type SessionResponseDto = {
+    id: string;
+    organizationId: string;
+    projectId: string;
+    hostId: string;
+    /**
+     * Display name. It starts equal to the slug, then the first prompt names it.
+     */
+    name: string;
+    /**
+     * The session’s directory name and the last segment of its branch. Immutable, and never reissued.
+     */
+    slug: string;
+    /**
+     * The coding agent this session runs.
+     */
+    agent: string;
+    /**
+     * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
+     */
+    state: 'working' | 'waiting-on-you' | 'ready-for-review' | 'landing' | 'idle' | 'resolved';
+    /**
+     * The stored lifecycle: the fold of the session’s append-only log. It answers whether the work is finished, not whether a process is running — stopping a session does not move it.
+     */
+    lifecycle: 'starting' | 'open' | 'failed' | 'resolved';
+    /**
+     * Which checkout the agent was launched inside. Null starts it in the session directory with every checkout a peer.
+     */
+    cwdCheckoutId?: string | null;
+    agentSessionId?: string | null;
+    lastEventAt?: string | null;
+    /**
+     * When the agent and the tmux session last ended. The checkouts stay on disk.
+     */
+    stoppedAt?: string | null;
+    checkouts: Array<SessionCheckoutResponseDto>;
+    /**
+     * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
+     */
+    hints: Array<string>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type SessionPageMetaDto = {
+    /**
+     * Total matching sessions, across all pages.
+     */
+    total: number;
+    /**
+     * 1-based page number.
+     */
+    page: number;
+    /**
+     * Sessions per page.
+     */
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedSessionsResponseDto = {
+    data: Array<SessionResponseDto>;
+    meta: SessionPageMetaDto;
+};
+
+export type CreateSessionRequest = {
+    hostId: string;
+    agent: 'claude-code' | 'codex';
+    projectId?: string;
+    name?: string;
+    checkouts: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
+    cwdGithubRepoId?: number;
+};
+
+export type SessionEventResponseDto = {
+    id: string;
+    sessionId: string;
+    /**
+     * Dense and monotonic per session. Assigned by the control plane, never on the wire.
+     */
+    seq: number;
+    /**
+     * Who wrote the entry.
+     */
+    source: 'runner' | 'api';
+    /**
+     * What happened. Free-form on purpose: a runner newer than this control plane may log a kind it has never heard of, and the log keeps it.
+     */
+    kind: string;
+    /**
+     * At most 8 KB, and never pane text: PTY bytes go to the browser and the runner’s ring buffer, never to Postgres.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * The writer’s clock.
+     */
+    occurredAt: string;
+    /**
+     * Ours.
+     */
+    recordedAt: string;
+};
+
+export type SessionEventPageResponseDto = {
+    data: Array<SessionEventResponseDto>;
+    /**
+     * Pass as `afterSeq` to read on, or null at the end of the log.
+     */
+    nextSeq: number | null;
+};
+
+export type IssueAttachTicketRequest = {
+    window?: number;
+};
+
+export type AttachTicketResponseDto = {
+    /**
+     * Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the relay socket — never in the URL.
+     */
+    ticket: string;
+    /**
+     * The path to open the WebSocket on, on this API’s own origin.
+     */
+    url: string;
+    expiresAt: string;
+    /**
+     * The tmux window this ticket authorises. Tabs are tmux windows.
+     */
+    window: number;
+};
+
+export type AddCheckoutRequest = {
+    installationId: string;
+    githubRepoId: number;
+    baseBranch?: string;
+};
+
+export type RenameSessionRequest = {
+    name: string;
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -4251,7 +4434,12 @@ export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponse
 export type ListProjectsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Include retired projects. They are left out by default: a retired project keeps its slug for ever, so the listing would otherwise fill with rows nobody can put work in.
+         */
+        includeArchived?: boolean;
+    };
     url: '/api/v1/projects';
 };
 
@@ -4273,6 +4461,46 @@ export type ListProjectsResponses = {
 };
 
 export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
+
+export type ArchiveProjectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type ArchiveProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PROJECTS_005 — The project still has open sessions
+     */
+    409: ProblemDetailsDto;
+    /**
+     * PROJECTS_003 — Nothing can answer whether the project still has open sessions
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ArchiveProjectError = ArchiveProjectErrors[keyof ArchiveProjectErrors];
+
+export type ArchiveProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
 
 export type GetProjectData = {
     body?: never;
@@ -4337,6 +4565,432 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type ListSessions2Data = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * The stored lifecycle, not the derived group.
+         */
+        state?: 'starting' | 'open' | 'failed' | 'resolved';
+        /**
+         * One host’s sessions
+         */
+        hostId?: string;
+        /**
+         * One project’s sessions
+         */
+        projectId?: string;
+        /**
+         * Sessions per page
+         */
+        limit?: number;
+        /**
+         * Page number (default: 1)
+         */
+        page?: number;
+    };
+    url: '/api/v1/sessions';
+};
+
+export type ListSessions2Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListSessions2Error = ListSessions2Errors[keyof ListSessions2Errors];
+
+export type ListSessions2Responses = {
+    200: PaginatedSessionsResponseDto;
+};
+
+export type ListSessions2Response = ListSessions2Responses[keyof ListSessions2Responses];
+
+export type CreateSessionData = {
+    body: CreateSessionRequest;
+    headers?: {
+        /**
+         * Send one. A retry after a lost response returns the session already created instead of minting a second directory and a second branch.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions';
+};
+
+export type CreateSessionErrors = {
+    /**
+     * SESSIONS_009 — No project to put the session in
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 — That project is archived
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
+
+export type CreateSessionResponses = {
+    201: SessionResponseDto;
+};
+
+export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
+
+export type ListSessionEventsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Entries per page
+         */
+        limit?: number;
+        /**
+         * Read on from this `seq`. Omit for the start of the log.
+         */
+        afterSeq?: number;
+    };
+    url: '/api/v1/sessions/{id}/events';
+};
+
+export type ListSessionEventsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ListSessionEventsError = ListSessionEventsErrors[keyof ListSessionEventsErrors];
+
+export type ListSessionEventsResponses = {
+    200: SessionEventPageResponseDto;
+};
+
+export type ListSessionEventsResponse = ListSessionEventsResponses[keyof ListSessionEventsResponses];
+
+export type IssueAttachTicketData = {
+    body: IssueAttachTicketRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/attach-ticket';
+};
+
+export type IssueAttachTicketErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_008 — A terminal ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueAttachTicketError = IssueAttachTicketErrors[keyof IssueAttachTicketErrors];
+
+export type IssueAttachTicketResponses = {
+    201: AttachTicketResponseDto;
+};
+
+export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
+
+export type StopSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/stop';
+};
+
+export type StopSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type StopSessionError = StopSessionErrors[keyof StopSessionErrors];
+
+export type StopSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
+
+export type RestartSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/restart';
+};
+
+export type RestartSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RestartSessionError = RestartSessionErrors[keyof RestartSessionErrors];
+
+export type RestartSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
+
+export type AddSessionCheckoutData = {
+    body: AddCheckoutRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/checkouts';
+};
+
+export type AddSessionCheckoutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     *
+     * SESSIONS_004 — That repository is already checked out here
+     */
+    409: ProblemDetailsDto;
+};
+
+export type AddSessionCheckoutError = AddSessionCheckoutErrors[keyof AddSessionCheckoutErrors];
+
+export type AddSessionCheckoutResponses = {
+    201: SessionResponseDto;
+};
+
+export type AddSessionCheckoutResponse = AddSessionCheckoutResponses[keyof AddSessionCheckoutResponses];
+
+export type RemoveSessionCheckoutData = {
+    body?: never;
+    path: {
+        id: string;
+        checkoutId: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/checkouts/{checkoutId}';
+};
+
+export type RemoveSessionCheckoutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_003 — No such checkout on this session
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RemoveSessionCheckoutError = RemoveSessionCheckoutErrors[keyof RemoveSessionCheckoutErrors];
+
+export type RemoveSessionCheckoutResponses = {
+    200: SessionResponseDto;
+};
+
+export type RemoveSessionCheckoutResponse = RemoveSessionCheckoutResponses[keyof RemoveSessionCheckoutResponses];
+
+export type CloseSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Accept losing work that is not pushed. The refusal is the default.
+         */
+        acceptUnpushedWork?: boolean;
+    };
+    url: '/api/v1/sessions/{id}';
+};
+
+export type CloseSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CloseSessionError = CloseSessionErrors[keyof CloseSessionErrors];
+
+export type CloseSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type CloseSessionResponse = CloseSessionResponses[keyof CloseSessionResponses];
+
+export type GetSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}';
+};
+
+export type GetSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
+
+export type GetSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+
+export type RenameSessionData = {
+    body: RenameSessionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}';
+};
+
+export type RenameSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RenameSessionError = RenameSessionErrors[keyof RenameSessionErrors];
+
+export type RenameSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
 
 export type CheckData = {
     body?: never;
