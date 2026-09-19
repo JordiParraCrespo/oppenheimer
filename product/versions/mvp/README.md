@@ -109,3 +109,25 @@ at the bottom of this file.
   therefore not audit only, and `HostResource` declares `'own'` and
   `'grant'` as `leads` does. Identical in the MVP, where one person is
   the whole workspace; the teams slice inherits the safe default.
+- 2026-09-19: **lessons from `eliasstravik/herdr-projects`**, which runs
+  the same shape (a project of threads, each a worktree and a branch).
+  It keeps **three** state vocabularies where this note kept one, which
+  is why `done` and `unknown` had nowhere to go: a stored lifecycle, the
+  agent's own pane observation, and a group derived on read and
+  organised by *what needs you*. `done` and `unknown` are inputs, not
+  session states. The group adds `landing` — pushed, PR open and
+  approved, not merged — which nothing here had named, and makes
+  `ready-for-review` a hash comparison rather than a state. Two rules
+  come with it: debounce from a recorded transition, never a live probe,
+  so a caller with no history cannot fabricate "blocked for five
+  minutes"; and precedence order is a different function from display
+  order. **Branch names now carry the ids** —
+  `oppenheimer/<project>/<session>` — which makes the cross-session
+  branch collision three reviewers flagged impossible by construction
+  rather than checked. A session may have **zero** checkouts, for a
+  project of notes and bots. `project` rows are never hard-deleted, so
+  the slug is a tombstone: herdr frees its project slugs on delete while
+  path-keyed grants survive, and warns about it in its own code. `stop`
+  leaves the worktrees on disk and `DELETE` closes, refusing when work
+  is unpushed and relaying git's refusal verbatim. No open questions
+  remain in note 09.

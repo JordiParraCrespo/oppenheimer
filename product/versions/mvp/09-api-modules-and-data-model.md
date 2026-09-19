@@ -41,7 +41,11 @@ This is the shape the whole design turns on, so it comes first.
 - A **session** is one piece of work inside a project: a terminal, an
   agent, and a set of checkouts.
 - A **checkout** is one repository, checked out for one session, on its
-  own branch. A session has one or more.
+  own branch. A session has **zero or more**: zero is a real session
+  working in `sessions/<slug>/` with no git at all, which is what a
+  project of notes, documents and bots needs. herdr-projects models the
+  same case as a thread of kind `tab`, and a project with `repos = []`
+  is ordinary there.
 
 A project is **not** a repository, and a session is **not** a
 repository. Sessions belong to projects, and repositories are what a
@@ -286,6 +290,76 @@ a **projection**, not a second truth:
 A replay of the log rebuilds the column at any time, which is the test
 that it is genuinely derived.
 
+### Three state vocabularies, not one
+
+Read out of `eliasstravik/herdr-projects` (MIT), which runs the same
+shape — a project of threads, each a worktree and a branch. It keeps
+**three** vocabularies where an earlier draft of this note tried to keep
+one, and that conflation was the reason `done` and `unknown` had nowhere
+to go.
+
+| Layer | Values | Where it lives |
+|---|---|---|
+| **Stored lifecycle** | `starting`, `open`, `failed`, `resolved` | `work_session.status`, the fold of the event log |
+| **Agent observation** | `working`, `blocked`, `idle`, `done`, `unknown` | the screen manifest ([`02-runner.md`](02-runner.md)), reported as events; never a session state |
+| **Derived group** | `working`, `waiting-on-you`, `ready-for-review`, `landing`, `idle`, `resolved` | computed on read; what the sidebar dot shows |
+
+`done` and `unknown` are **inputs**, not states. `done` folds in with
+`idle` as "ready for a prompt"; `unknown` counts as not-ready and is
+what makes a launch look stuck. Mapping them onto `SessionState` was the
+error.
+
+The group is organised by **what needs you**, which is what a sidebar is
+for:
+
+- **`waiting-on-you`** has four sources, not one: the session failed; the
+  agent has been `blocked` for ≥ 30 s; a launch has sat in a non-ready
+  state for ≥ 60 s; or the pane is gone with no report.
+- **`landing`** is the phase after the agent stops — branch pushed, PR
+  open and approved, not yet merged. Nothing else in this design names
+  it, and it is what open question 2 was really about.
+- **`ready-for-review` versus `idle`** is not a state at all, it is a
+  hash comparison: a report exists and `reportHash != ackedReportHash`.
+  "Finished and you have not looked" needs no read-receipt table.
+
+Two rules that are easy to get wrong and both load-bearing:
+
+1. **Debounce is measured from a recorded transition, never a live
+   probe.** `stateSeconds` is non-zero only when the observed state
+   equals the last recorded one, so a caller with no history cannot
+   fabricate "blocked for five minutes" and move a healthy session into
+   `waiting-on-you`.
+2. **Precedence order is a different function from display order.**
+   "Blocked for 30 s beats an approved PR" is a correctness rule;
+   "ready-for-review sorts first" is a UI rule. Conflate them and
+   neither can change.
+
+### Branch names carry the session id
+
+```
+oppenheimer/<project.slug>/<work_session.slug>
+```
+
+Both segments are unique-constrained (`uq (organizationId, slug)` and
+`uq (projectId, slug)`), so a branch name is **self-identifying and
+collision-free by construction**. Two sessions can never want the same
+branch of the same repository, which is what three independent reviewers
+flagged as unconstrained — and it needs no partial index, no pre-flight
+check against GitHub, and no race. herdr-projects does the same thing
+(`hp/<project>/<thread-id>-<title>`) for the same reason.
+
+### Two operating principles worth stating
+
+**Files are the ledger; prompts are nudges.** Every "have I already told
+you this" decision is a hash comparison against what we last recorded,
+not a delivery receipt. A missed notification then loses nothing, which
+is the right posture when the other end is a laptop on hotel wifi.
+
+**Never hold a lock across a subprocess.** Session create does git work
+that can take a minute; the row lock is taken to commit the result, not
+to cover the work. herdr-projects states this as a rule and it is the
+difference between a slow create and a stalled project.
+
 ### Credentials are rows only when they must be revocable
 
 - **The pairing token is a row**, because F5 demands revocation, an
@@ -459,6 +533,15 @@ de-duplication only saves a redundant GitHub call — a Redis key with a
   name, `name` starts as the same thing. The MVP never shows a project
   chip — `00-scope.md` decided four chips, and a fifth is real friction
   on the most-used screen for a concept with one instance.
+
+  **Rows are never hard-deleted**; closing sets `archivedAt`, so
+  `uq (organizationId, slug)` is a permanent tombstone for the directory
+  name, exactly as `work_session.slug` is. herdr-projects is the warning
+  here: deleting a project there frees its slug immediately while the
+  privilege grants keyed by its path survive, so a new project of the
+  same name silently inherits the old one's approvals — their own code
+  prints a warning about it. Grants here key on the project's UUID and
+  the slug is never reissued, so neither half of that can happen.
 
   **`slug` is immutable; `name` is free.** The slug is a directory name
   on every host, so a rename that changed it would have to move
@@ -764,13 +847,22 @@ Each step is a vertical slice that can land alone.
 
 ## Open questions
 
-1. **What do `done` and `unknown` become?** The screen manifest
-   classifies a pane five ways; `blocked` maps three of them. Does
-   `done` collapse into `idle`, or does the sidebar want to distinguish
-   "the agent finished" from "the agent is waiting"? The design system
-   already carries a `completed` value that nothing produces.
-2. **Does `stop` mean "close"?** [`00-scope.md`](00-scope.md) defines
-   closing as push the branch and remove the worktree. With `restart`
-   now present for host reboots, `stop` probably means "leave it on
-   disk" and `DELETE` means close — but the client's verb wants
-   confirming before the SDK is generated.
+None outstanding in this note. The two that remained are decided above
+and below:
+
+- **`done` and `unknown`** are agent observations, not session states —
+  see "Three state vocabularies".
+- **`stop` does not mean close.** `POST /sessions/{id}/stop` ends the
+  agent and the tmux session and **leaves every checkout on disk**, so
+  `restart` can recreate window 0 in the same worktree after a host
+  reboot. `DELETE /sessions/{id}` is the close: push each checkout's
+  branch, then remove the worktrees and prune. It **refuses when a
+  checkout has unpushed work** unless the caller explicitly accepts the
+  loss, never passes `git worktree remove --force`, and relays git's own
+  refusal verbatim rather than paraphrasing it. herdr-projects splits
+  the same two verbs the same way and its `--remove-worktree` likewise
+  insists the work is home first; that refuse-and-explain posture is the
+  right default for a tool that owns other people's repositories.
+
+What remains for this design is not a question but a list: the findings
+from the adversarial review, tracked on the pull request.
