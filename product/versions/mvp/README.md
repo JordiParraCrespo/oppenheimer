@@ -90,6 +90,23 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   gains F26a: first install is trust-on-first-use, so F26 begins at the
   first self-update, not at install. The link is a **port**, not a
   bounded context.
+- 2026-09-19: **the version-1 frames win over the older screen notes**,
+  after a screen-by-screen walk with the owner (PR #20). Onboarding is
+  four numbered steps and a landing: sign in, name your workspace and
+  its address, connect GitHub, add a host, then Ready into the console
+  (00, 05, 08). A session may span several repositories, one worktree
+  each on its own branch (00); the repository chip multi-selects with a
+  branch pane per repository and the branch chip shows only for one
+  repository (05). Every scope chip filters. The agent chip lists Claude
+  Code, Codex, OpenCode and a blank terminal with the vendors' published
+  marks (Anthropic's Claude mark, OpenCode's square; none for Codex),
+  and the model menu is scoped to the harness. The Add host dialog is
+  the one dialog; the welcome modal is gone. Both themes. The design
+  system grew the components these need (`ChipSelect` rebuilt on the
+  Combobox primitive so it filters, `RepositorySelect`, `StepHeader`,
+  `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
+  `AgentMark`); the frames in `design/version1/` remain the visual
+  record and 05 is the written one.
 - 2026-09-19: the **shared vocabulary lands in `packages/shared`**, and two of
   these notes moved to match it. 01's open question 1 is **decided**: Zod is the
   source of truth for the wire and JSON Schema is emitted from it at build, with
