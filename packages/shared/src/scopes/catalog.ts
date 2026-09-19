@@ -24,6 +24,10 @@ export const SCOPE_RESOURCES = [
   'tokens',
   'billing',
   'leads',
+  'hosts',
+  'projects',
+  'sessions',
+  'repositories',
 ] as const;
 export type ScopeResource = (typeof SCOPE_RESOURCES)[number];
 
@@ -309,6 +313,108 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
         label: 'Edit',
         description: 'Create, edit and delete leads within your scope.',
         policies: [{ action: 'update', subject: 'Lead' }],
+      },
+    },
+  },
+  {
+    resource: 'hosts',
+    label: 'Hosts',
+    description: 'The machines the credential owner has paired, and the tokens that pair them.',
+    levels: {
+      read: {
+        scope: 'hosts:read',
+        label: 'Read',
+        description: 'List hosts, their capabilities and their pending pairing tokens.',
+        policies: [{ action: 'read', subject: 'Host' }],
+      },
+      write: {
+        scope: 'hosts:write',
+        label: 'Edit',
+        description: 'Mint and revoke pairing tokens, rename a host, and unpair one.',
+        policies: [
+          { action: 'create', subject: 'Host' },
+          { action: 'update', subject: 'Host' },
+          { action: 'delete', subject: 'Host' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'projects',
+    label: 'Projects',
+    description: 'The bodies of work sessions belong to.',
+    levels: {
+      read: {
+        scope: 'projects:read',
+        label: 'Read',
+        description: 'List and read projects.',
+        policies: [{ action: 'read', subject: 'Project' }],
+      },
+      write: {
+        scope: 'projects:write',
+        label: 'Edit',
+        description: 'Rename a project and archive one. The slug is immutable.',
+        policies: [
+          { action: 'create', subject: 'Project' },
+          { action: 'update', subject: 'Project' },
+          { action: 'delete', subject: 'Project' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'sessions',
+    label: 'Sessions',
+    description: 'Sessions, their checkouts, their event log, and opening a terminal on one.',
+    levels: {
+      read: {
+        scope: 'sessions:read',
+        label: 'Read',
+        description: 'List sessions, read one, and read its event log.',
+        policies: [{ action: 'read', subject: 'Session' }],
+      },
+      write: {
+        scope: 'sessions:write',
+        label: 'Edit',
+        description:
+          'Create, rename, stop, restart and close sessions, change their checkouts, and open a terminal.',
+        // `attach` is its own action, so a read-only credential can list
+        // sessions without opening a PTY on one — the precedent is `leads`'
+        // `export`. It is listed here because the route that mints an attach
+        // ticket requires this level.
+        policies: [
+          { action: 'create', subject: 'Session' },
+          { action: 'update', subject: 'Session' },
+          { action: 'delete', subject: 'Session' },
+          { action: 'attach', subject: 'Session' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'repositories',
+    label: 'Repositories',
+    description: 'GitHub App installations and the repositories they grant access to.',
+    levels: {
+      read: {
+        scope: 'repositories:read',
+        label: 'Read',
+        description:
+          'List connected installations, and the repositories and branches they cover — answered live by GitHub, never from a mirror.',
+        policies: [
+          { action: 'read', subject: 'Installation' },
+          { action: 'read', subject: 'Repository' },
+        ],
+      },
+      write: {
+        scope: 'repositories:write',
+        label: 'Edit',
+        description: 'Connect a GitHub App installation to the workspace, and disconnect one.',
+        // One level for both halves, until a second caller wants only one.
+        policies: [
+          { action: 'create', subject: 'Installation' },
+          { action: 'delete', subject: 'Installation' },
+        ],
       },
     },
   },

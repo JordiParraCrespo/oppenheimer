@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineAbilitiesFromPermissions } from '../../permissions';
+import { defineAbilitiesFromPermissions, SYSTEM_ROLE_PERMISSIONS } from '../../permissions';
 import {
   DEFAULT_OAUTH_SCOPES,
   expandScopes,
@@ -50,6 +50,71 @@ describe('scope catalog', () => {
 
   it('defaults OAuth clients to the narrowest useful grant', () => {
     expect(DEFAULT_OAUTH_SCOPES).toEqual(['profile:read']);
+  });
+
+  it('backs every level with at least one CASL rule, except the caller’s own profile', () => {
+    for (const group of PERMISSION_GROUPS) {
+      for (const level of SCOPE_ACCESS_LEVELS) {
+        const { policies } = group.levels[level];
+        if (group.resource === 'profile') expect(policies).toEqual([]);
+        else expect(policies.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('carries the control plane’s four resources', () => {
+    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
+      expect(SCOPE_RESOURCES).toContain(resource);
+      expect(getPermissionGroup(resource).levels.read.scope).toBe(`${resource}:read`);
+      expect(getPermissionGroup(resource).levels.write.scope).toBe(`${resource}:write`);
+    }
+  });
+});
+
+describe('the control plane’s scopes', () => {
+  it('maps each new route’s CASL rule back to the scope that authorizes it', () => {
+    expect(scopesForPolicy({ action: 'read', subject: 'Host' })).toEqual(['hosts:read']);
+    expect(scopesForPolicy({ action: 'delete', subject: 'Host' })).toEqual(['hosts:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Project' })).toEqual(['projects:read']);
+    expect(scopesForPolicy({ action: 'update', subject: 'Project' })).toEqual(['projects:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Session' })).toEqual(['sessions:read']);
+    expect(scopesForPolicy({ action: 'create', subject: 'Session' })).toEqual(['sessions:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Installation' })).toEqual([
+      'repositories:read',
+    ]);
+    expect(scopesForPolicy({ action: 'read', subject: 'Repository' })).toEqual([
+      'repositories:read',
+    ]);
+    expect(scopesForPolicy({ action: 'create', subject: 'Installation' })).toEqual([
+      'repositories:write',
+    ]);
+  });
+
+  it('puts `attach` behind the write level, so reading a session never opens a PTY', () => {
+    expect(scopesForPolicy({ action: 'attach', subject: 'Session' })).toEqual(['sessions:write']);
+    expect(hasScope(['sessions:read'], 'sessions:write')).toBe(false);
+    expect(hasScope(['sessions:write'], 'sessions:read')).toBe(true);
+  });
+
+  it('lets a workspace owner grant every workspace-owned resource but not hosts', () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.owner, {
+      activeOrganizationId: 'org-1',
+    });
+    const grantable = grantableScopes(ability);
+    expect(grantable).toContain('projects:write');
+    expect(grantable).toContain('sessions:write');
+    expect(grantable).toContain('repositories:write');
+    expect(grantable).not.toContain('hosts:read');
+  });
+
+  it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
+      user: { id: 'me' },
+    });
+    const grantable = grantableScopes(ability);
+    expect(grantable).toContain('hosts:read');
+    expect(grantable).toContain('hosts:write');
+    expect(grantable).not.toContain('sessions:write');
   });
 });
 

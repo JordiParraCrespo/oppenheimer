@@ -54,6 +54,15 @@ export const KNOWN_SUBJECTS = [
   'ApiToken',
   'AuditLog',
   'Billing',
+  // The control plane's own nouns. `Host` is person-owned; the other four are
+  // workspace-owned. `Repository` has no table at all — the GitHub App
+  // installation is the boundary and GitHub answers it — but it is a CASL
+  // subject because routes are guarded by subject, not by table.
+  'Host',
+  'Project',
+  'Session',
+  'Installation',
+  'Repository',
   'all',
 ] as const;
 
@@ -301,6 +310,34 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     // does not match, which is what `RoleGrantPolicy.assertCanModify` relies
     // on to keep the platform's own roles out of a tenant admin's reach.
     { action: 'manage', subject: 'Role', conditions: { organizationId: ACTIVE_ORGANIZATION_ID } },
+    // The control plane's workspace-owned resources. `Host` is deliberately
+    // absent: a host belongs to the *person* who paired it and workspaces
+    // borrow it, so it sits on the `user` role below. The tenant boundary for
+    // what runs on a host is `work_session.organizationId`, not the host row.
+    {
+      action: 'manage',
+      subject: 'Project',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Session',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Installation',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    // `Repository` is not a row anywhere: repositories are listed live through
+    // the installation. The condition therefore only bites at the type level,
+    // which is where route guards check — an instance check would be made
+    // against the installation the repository was reached through.
+    {
+      action: 'manage',
+      subject: 'Repository',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
   ],
   user: [
     /**
@@ -340,6 +377,16 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
       action: 'delete',
       subject: 'ApiToken',
       conditions: { userId: OWN_USER_ID },
+    },
+    // A host is the person's machine, not a workspace's: one laptop is paired
+    // once and every workspace its owner is in borrows it, and the login in
+    // `~/.claude` on it is theirs. So it belongs on the person's role, exactly
+    // as `ApiToken` does, and the condition keeps them off everyone else's.
+    // Sharing a host with a teammate is an `access_grant` over `Host`.
+    {
+      action: 'manage',
+      subject: 'Host',
+      conditions: { ownerUserId: OWN_USER_ID },
     },
   ],
 };
