@@ -61,10 +61,12 @@ here rather than in the notes that consume them:
 
 ## Data model, first cut
 
-users, installations, repositories (cached from GitHub, refreshed by
-webhook), hosts, host_keys, sessions (host, repo, base branch, branch,
-worktree path, agent, state, name), session_events, attach_tickets,
-jobs. Accounts and runtime_vms come with later slices. The starter's
+users, installations, repositories (**not a table**: listed live from
+GitHub through the installation; a repository is remembered only by the
+checkout that took it, as GitHub's own id plus the installation and a
+name snapshot), hosts, host_keys, sessions (host, repo, base branch,
+branch, worktree path, agent, state, name), session_events,
+attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
 

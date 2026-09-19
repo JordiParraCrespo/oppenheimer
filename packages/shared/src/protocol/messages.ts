@@ -5,6 +5,7 @@ import {
   checkoutIdSchema,
   commandIdSchema,
   githubRepoIdSchema,
+  gitRefSchema,
   hostFactsSchema,
   protocolAgentSchema,
   protocolRangeSchema,
@@ -74,56 +75,95 @@ export type HeartbeatMessage = z.infer<typeof heartbeatSchema>;
 /** The cap on one event's payload. It never carries pane text: PTY bytes never reach Postgres. */
 export const PROTOCOL_MAX_EVENT_PAYLOAD_BYTES = 8 * 1024;
 
-const jsonObjectSchema = z.record(z.string(), z.unknown());
-
 /**
- * UTF-8 byte length, computed rather than measured with `TextEncoder`: this
- * package is shared with the browser and with a CJS build, and a global that
- * exists in both but is typed in neither is not worth a `lib` change.
+ * `<runId>:<n>` — the writer's own idempotency key. It depends on nothing the
+ * control plane hands out, so it survives any reconnect, and it is what the
+ * acknowledgement below names a row by.
  */
-function utf8ByteLength(value: string): number {
-  let bytes = 0;
-  for (const character of value) {
-    const code = character.codePointAt(0) ?? 0;
-    if (code < 0x80) bytes += 1;
-    else if (code < 0x800) bytes += 2;
-    else if (code < 0x10000) bytes += 3;
-    else bytes += 4;
-  }
-  return bytes;
-}
+export const eventIdempotencyKeySchema = z
+  .string()
+  .min(3)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+:\d+$/);
+
+z.globalRegistry.add(eventIdempotencyKeySchema, { id: 'eventIdempotencyKey' });
 
 /**
  * One entry for a session's append-only log, which is the truth per session.
  *
  * `seq` is absent on purpose: it is assigned by the **control plane** under a
  * row lock, so a buggy or hostile host cannot create gaps or regress the log.
- * What the writer owns is `idempotencyKey`, `<runId>:<n>`, which makes a batch
- * replayed after a dropped ack append only what was not yet seen.
  */
 export const sessionEventSchema = z.object({
-  idempotencyKey: z
-    .string()
-    .min(3)
-    .max(128)
-    .regex(/^[A-Za-z0-9_-]+:\d+$/),
+  idempotencyKey: eventIdempotencyKeySchema,
   kind: z.string().min(1).max(64),
-  payload: jsonObjectSchema.refine(
-    (payload) => utf8ByteLength(JSON.stringify(payload)) <= PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
-  ),
+  /**
+   * The event's payload, as a **JSON string** rather than an object.
+   *
+   * That is what makes the 8 KB cap real in both languages: `maxLength` on a
+   * string survives the trip to JSON Schema, so the generated Go refuses an
+   * oversized payload exactly where the control plane does. As a nested object
+   * the cap could only be a Zod `refine`, which does not survive emission at all
+   * — leaving the runner and the API to disagree about the limit on day two. The
+   * control plane parses this and stores jsonb; the wire carries text.
+   */
+  payload: z.string().max(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES),
   occurredAt: z.iso.datetime(),
 });
 
 export type SessionEvent = z.infer<typeof sessionEventSchema>;
 
-/** A batch for one session's log. The append and the fold happen in one transaction. */
+/**
+ * A batch for one session's log. The append and the fold happen in one
+ * transaction, so the sidebar is never eventually-consistent with its own log.
+ *
+ * `batchId` exists because a WebSocket cannot tell "persisted before the
+ * disconnect" from "never arrived". The handshake is therefore explicit: the
+ * runner keeps a batch until an `events.ack` naming this `batchId` accounts for
+ * every key in it, and resends the batch otherwise. A resend is harmless
+ * because the append is one
+ * `INSERT … ON CONFLICT (sessionId, idempotencyKey) DO NOTHING` per row, so a
+ * batch replayed after a dropped ack, or half-applied before a crash, appends
+ * only what was not yet seen and the fold runs over exactly that.
+ */
 export const eventsAppendSchema = z.object({
   type: z.literal('events.append'),
+  batchId: z.string().min(1).max(64),
   sessionId: sessionIdSchema,
   events: z.array(sessionEventSchema).min(1).max(256),
 });
 
 export type EventsAppendMessage = z.infer<typeof eventsAppendSchema>;
+
+/**
+ * The control plane's answer to one `events.append`, and the only thing that
+ * lets a runner drop a batch from memory.
+ *
+ * `accepted` lists the keys now durable — the rows that landed *and* the rows a
+ * previous attempt had already landed, since `DO NOTHING` makes those
+ * indistinguishable and both mean "stop resending this". A key in neither list
+ * was not accounted for, so the runner resends the batch.
+ */
+export const eventsAckSchema = z.object({
+  type: z.literal('events.ack'),
+  batchId: z.string().min(1).max(64),
+  accepted: z.array(eventIdempotencyKeySchema),
+  /**
+   * Keys the control plane refuses and the runner must not resend — an
+   * oversized payload, an unknown kind, a session it no longer owns. Absent
+   * means nothing was refused.
+   */
+  rejected: z
+    .array(
+      z.object({
+        idempotencyKey: eventIdempotencyKeySchema,
+        reason: z.string().min(1).max(200),
+      }),
+    )
+    .optional(),
+});
+
+export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
 
 /* ------------------------------------------------------------------ control plane → runner */
 
@@ -141,9 +181,9 @@ export const sessionCreateSchema = z.object({
   type: z.literal('session.create'),
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
-  organizationSlug: z.string().min(1).max(255),
-  projectSlug: z.string().min(1).max(255),
-  sessionSlug: z.string().min(1).max(255),
+  organizationSlug: gitRefSchema,
+  projectSlug: gitRefSchema,
+  sessionSlug: gitRefSchema,
   agent: protocolAgentSchema,
   /**
    * A launch option of the agent, not a column and not a table anywhere: it is
@@ -151,15 +191,15 @@ export const sessionCreateSchema = z.object({
    * backfill of data nobody captured.
    */
   model: z.string().min(1).max(128).optional(),
-  branch: z.string().min(1).max(255),
+  branch: gitRefSchema,
   checkouts: z.array(
     z.object({
       checkoutId: checkoutIdSchema,
       githubRepoId: githubRepoIdSchema,
-      repositoryFullName: z.string().min(1).max(255),
+      repositoryFullName: gitRefSchema,
       /** Never reused inside a session: a retired name would inherit a stranger's history. */
-      directoryName: z.string().min(1).max(255),
-      baseBranch: z.string().min(1).max(255),
+      directoryName: gitRefSchema,
+      baseBranch: gitRefSchema,
     }),
   ),
   /**
@@ -204,6 +244,30 @@ export const sessionInputSchema = z.object({
 });
 
 export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
+
+/**
+ * Replenish one attachment's flow-control window.
+ *
+ * The browser acks the bytes it has consumed, the control plane relays that
+ * credit here, and the runner resumes the attachment's PTY reads. Without it a
+ * pane that outruns its 256 KB window stalls for good rather than briefly, so
+ * this is the message that makes "a runaway build stalls its own pane, never the
+ * link" true instead of aspirational
+ * (`product/versions/mvp/01-protocol.md`, "Flow control and reconnect").
+ *
+ * It is the same shape in both places it is used: the browser sends it to the
+ * control plane for its one attachment, and the control plane sends it on to the
+ * runner. The credit is a delta, never a running total — a lost frame then costs
+ * one window's worth of throughput rather than desynchronising the counter.
+ */
+export const attachmentCreditSchema = z.object({
+  type: z.literal('attachment.credit'),
+  attachmentId: attachmentIdSchema,
+  /** Bytes the consumer has drained since its last credit. */
+  bytes: z.number().int().positive(),
+});
+
+export type AttachmentCreditMessage = z.infer<typeof attachmentCreditSchema>;
 
 /** Resize one attachment's PTY. Resize is per attachment, not per window. */
 export const sessionResizeSchema = z.object({
@@ -291,15 +355,11 @@ export const hostUpdateSchema = z.object({
 export type HostUpdateMessage = z.infer<typeof hostUpdateSchema>;
 
 /**
- * A short-lived repository token, sealed to the host's public key.
+ * The runner asking for the installation token for one checkout's repository.
  *
- * One type, two directions, and the `grant` field says which: absent, this is
- * the runner asking for the installation token for one checkout's repository;
- * present, it is the control plane's answer. The token rides the link because
- * it is per session and the link is the only channel already authenticated per
- * host — a second HTTPS path would need a second auth story for nothing — and
- * it is sealed because a payload carrying a secret is encrypted to the runner's
- * key (F7), never readable off the relay.
+ * It rides the link because the token is per session and the link is the only
+ * channel already authenticated per host; a second HTTPS path would need a
+ * second auth story for nothing.
  */
 export const credentialsTokenSchema = z.object({
   type: z.literal('credentials.token'),
@@ -307,16 +367,31 @@ export const credentialsTokenSchema = z.object({
   sessionId: sessionIdSchema,
   checkoutId: checkoutIdSchema,
   githubRepoId: githubRepoIdSchema,
-  grant: z
-    .object({
-      /** The token, sealed to the host's Ed25519 identity. Base64. */
-      sealed: z.base64(),
-      expiresAt: z.iso.datetime(),
-    })
-    .optional(),
 });
 
 export type CredentialsTokenMessage = z.infer<typeof credentialsTokenSchema>;
+
+/**
+ * The control plane's answer, with the token **sealed to the host's public key**
+ * (F7) so it is never readable off the relay.
+ *
+ * This is its own type rather than an optional field on the ask. An optional
+ * `grant` as a direction flag means every handler branches on `grant == null`,
+ * the generated Go gets a pointer, and a confused peer can send a grant on a
+ * request or a request shaped like a grant. Both fields here are required,
+ * because a grant without them is not a grant.
+ */
+export const credentialsGrantSchema = z.object({
+  type: z.literal('credentials.grant'),
+  requestId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  checkoutId: checkoutIdSchema,
+  /** The token, sealed to the host's Ed25519 identity. Base64. */
+  sealed: z.base64(),
+  expiresAt: z.iso.datetime(),
+});
+
+export type CredentialsGrantMessage = z.infer<typeof credentialsGrantSchema>;
 
 /** Drop a token before it expires — a repository left the installation, or the session ended. */
 export const credentialsRevokeSchema = z.object({
@@ -342,9 +417,11 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   heartbeatSchema,
   hintSchema,
   eventsAppendSchema,
+  eventsAckSchema,
   sessionCreateSchema,
   sessionAttachSchema,
   sessionInputSchema,
+  attachmentCreditSchema,
   sessionResizeSchema,
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
@@ -353,29 +430,21 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   hostPreflightSchema,
   hostUpdateSchema,
   credentialsTokenSchema,
+  credentialsGrantSchema,
   credentialsRevokeSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;
 
-/** Every `type` value in the union, for exhaustiveness checks and tests. */
-export const PROTOCOL_MESSAGE_TYPES = [
-  'hello',
-  'heartbeat',
-  'hint',
-  'events.append',
-  'session.create',
-  'session.attach',
-  'session.input',
-  'session.resize',
-  'session.window.open',
-  'session.window.close',
-  'session.close',
-  'session.restart',
-  'host.preflight',
-  'host.update',
-  'credentials.token',
-  'credentials.revoke',
-] as const;
+/**
+ * Every `type` value the union carries.
+ *
+ * **Derived, never listed.** The type comes off `ProtocolMessage` and the values
+ * come off the union's own members, so a message added above cannot land in one
+ * place and not the other — which is exactly how a hand-written twin of this
+ * list would drift.
+ */
+export type ProtocolMessageType = ProtocolMessage['type'];
 
-export type ProtocolMessageType = (typeof PROTOCOL_MESSAGE_TYPES)[number];
+export const PROTOCOL_MESSAGE_TYPES: readonly ProtocolMessageType[] =
+  protocolMessageSchema.options.map((member) => member.shape.type.value);

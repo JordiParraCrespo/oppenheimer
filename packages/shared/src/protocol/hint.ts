@@ -1,25 +1,26 @@
 import { z } from 'zod/v4';
 
 /**
- * The hint vocabulary, and it is **closed**. A hint may ride a heartbeat reply
- * or an attach ticket, and it is the only thing the runner link and the browser
- * attach socket share (`product/versions/mvp/01-protocol.md`, plus
- * `host_offline` from note 10).
+ * Hints, split by the socket that carries them.
+ *
+ * `product/versions/mvp/01-protocol.md` closes the link's vocabulary at three
+ * kinds, and says the two sockets share only the kinds they both need. An
+ * attach ticket needs a fourth — the host has no link right now — and that one
+ * is meaningless on the link itself: a runner that is connected enough to send
+ * a frame cannot coherently report itself offline. Keeping one union for both
+ * let it.
  */
-export const HINT_KINDS = [
-  'update_available',
-  'update_required',
-  'blocked',
-  'host_offline',
-] as const;
+
+/** The link's closed vocabulary. */
+export const HINT_KINDS = ['update_available', 'update_required', 'blocked'] as const;
 
 export type HintKind = (typeof HINT_KINDS)[number];
 
 export const hintKindSchema = z.enum(HINT_KINDS);
 
 /**
- * A hint, as a message of its own on the link. `retryAfterSeconds` is what
- * makes `blocked` actionable rather than a dead end.
+ * A hint on the runner link. `retryAfterSeconds` is what makes `blocked`
+ * actionable rather than a dead end.
  */
 export const hintSchema = z.object({
   type: z.literal('hint'),
@@ -30,3 +31,22 @@ export const hintSchema = z.object({
 });
 
 export type HintMessage = z.infer<typeof hintSchema>;
+
+/**
+ * The link's kinds plus `host_offline`, which only an attach ticket can carry.
+ *
+ * Exported for the API's `POST /sessions/{id}/attach-ticket` response, so the
+ * ticket's `hint` and the link's `hint` cannot silently drift apart while still
+ * being two different sets.
+ */
+export const ATTACH_TICKET_HINT_KINDS = [...HINT_KINDS, 'host_offline'] as const;
+
+export type AttachTicketHintKind = (typeof ATTACH_TICKET_HINT_KINDS)[number];
+
+export const attachTicketHintSchema = z.object({
+  kind: z.enum(ATTACH_TICKET_HINT_KINDS),
+  retryAfterSeconds: z.number().int().min(0).optional(),
+  detail: z.string().max(500).optional(),
+});
+
+export type AttachTicketHint = z.infer<typeof attachTicketHintSchema>;

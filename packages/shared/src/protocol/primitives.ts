@@ -1,9 +1,16 @@
 import { z } from 'zod/v4';
-import { CODING_AGENT_IDS } from '../agents/catalog';
+import { CODING_AGENT_IDS, CODING_AGENTS } from '../agents/catalog';
+import { FIELD_BOUNDS } from '../schemas/primitives';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
  * every message lives in `./messages.ts` and carries a `type` discriminator.
+ *
+ * The bounds come from `../schemas/primitives`, so a length written down for a
+ * DTO is the same length on the wire. The schema *objects* cannot be shared —
+ * this module is built on `zod/v4` so the JSON Schema emitter can read it, the
+ * DTOs on classic `zod` — and `src/__tests__/cross-version-primitives.spec.ts`
+ * is what holds the two in step until the package is on one Zod line.
  */
 
 /** A control-plane id. Every table in the design has a UUID primary key. */
@@ -11,8 +18,8 @@ export const sessionIdSchema = z.uuid();
 export const checkoutIdSchema = z.uuid();
 
 /**
- * Every command is idempotent by session id and command id, because a
- * reconnect may redeliver it (`product/versions/mvp/01-protocol.md`).
+ * Every command is idempotent by session id and command id, because a reconnect
+ * may redeliver it.
  */
 export const commandIdSchema = z.uuid();
 
@@ -32,38 +39,55 @@ export const githubRepoIdSchema = z.number().int().positive();
 /** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
 
+const toolVersionSchema = z
+  .string()
+  .min(FIELD_BOUNDS.toolVersion.min)
+  .max(FIELD_BOUNDS.toolVersion.max);
+
 /**
- * The protocol range a runner speaks. The control plane reconciles against it
- * at hello rather than assuming the version it shipped.
+ * Every catalog login pattern, or-ed into one anchored expression.
+ *
+ * Derived from the catalog rather than restated, so a new agent's vendor is
+ * admitted by adding it there and nowhere else. Each entry is already anchored,
+ * so the anchors are stripped before joining and re-applied once — an unanchored
+ * alternative would reopen the suffix hole the anchors exist to close (F3).
+ */
+const ANY_VENDOR_LOGIN_URL = new RegExp(
+  `^(?:${Object.values(CODING_AGENTS)
+    .map((agent) => agent.loginUrlPattern.replace(/^\^/, '').replace(/\$$/, ''))
+    .join('|')})$`,
+);
+
+const hostFactSchema = z.string().min(FIELD_BOUNDS.hostFact.min).max(FIELD_BOUNDS.hostFact.max);
+
+/** A git ref or a slug — a short, non-empty, path-safe string on the wire. */
+export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
+
+/**
+ * The protocol range a runner speaks. The control plane reconciles against it at
+ * hello rather than assuming the version it shipped.
  */
 export const protocolRangeSchema = z.object({
   min: z.number().int().min(1),
   max: z.number().int().min(1),
 });
 
-/**
- * A tool the runner found, and the version it reported. `null` means "looked
- * and it is not there" — which is a fact worth sending, because the console
- * shows it as a hint on the agent chip and `tmux` missing is the one hard
- * failure.
- */
-export const toolVersionsSchema = z.record(z.string().min(1), z.string().min(1).nullable());
+/** A tool the runner found and the version it reported; `null` means "looked, not there". */
+export const toolVersionsSchema = z.record(z.string().min(1), toolVersionSchema.nullable());
 
 /**
- * What the runner last saw about the machine. Opaque to the schema beyond its
- * shape: it lands on `host.capabilities` as jsonb, is a hint and never a gate.
+ * What the runner last saw about the machine — the wire half of
+ * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  */
 export const hostFactsSchema = z.object({
-  hostname: z.string().min(1),
-  os: z.string().min(1),
-  arch: z.string().min(1),
-  /** `git`, `tmux`, and each agent's command. */
+  hostname: hostFactSchema,
+  os: hostFactSchema,
+  arch: hostFactSchema,
   tools: toolVersionsSchema,
-  /** Agents detected on PATH, with the version if the CLI reported one. */
   agents: z.array(
     z.object({
       id: protocolAgentSchema,
-      version: z.string().min(1).nullable(),
+      version: toolVersionSchema.nullable(),
     }),
   ),
 });
@@ -84,35 +108,88 @@ export const observedAgentStateSchema = z.enum(OBSERVED_AGENT_STATES);
  * One session as the host currently holds it. Sent in bulk at hello, where the
  * control plane reconciles against its own state rather than replaying a queue,
  * and per session on every heartbeat.
+ *
+ * **`loginUrl` is validated against the reporting agent's own login pattern**,
+ * not merely as a URL. A free-form URL here would be F3 straight through: this
+ * is the one field the console turns into a clickable button, and
+ * `https://claude.ai.attacker.test/oauth` parses as a perfectly good URL. The
+ * catalog's anchored pattern is therefore enforced on the wire, which is what
+ * makes it a control rather than a comment.
  */
-export const sessionSnapshotSchema = z.object({
-  sessionId: sessionIdSchema,
-  agent: protocolAgentSchema,
-  observed: observedAgentStateSchema,
-  /**
-   * How long the session has been in `observed`, measured from a **recorded
-   * transition** and never from a live probe: it is non-zero only when the
-   * observation equals the last recorded one, so a caller with no history
-   * cannot fabricate "blocked for five minutes" and move a healthy session
-   * into `waiting-on-you`.
-   */
-  stateSeconds: z.number().int().min(0),
-  windows: z.array(
-    z.object({
-      index: windowIndexSchema,
-      name: z.string().max(200).optional(),
-    }),
-  ),
-  /** The agent's own conversation id, once it has one. */
-  agentSessionId: z.string().min(1).nullable(),
-  /**
-   * Hash of the agent's last report. `ready-for-review` versus `idle` is this
-   * against the acknowledged hash — "finished and you have not looked" needs no
-   * read-receipt table.
-   */
-  reportHash: z.string().min(1).nullable(),
-  /** The vendor login URL the classifier saw, which the console turns into a button. */
-  loginUrl: z.url().nullable(),
-});
+export const sessionSnapshotSchema = z
+  .object({
+    sessionId: sessionIdSchema,
+    agent: protocolAgentSchema,
+    observed: observedAgentStateSchema,
+    /**
+     * How long the session has been in `observed`, measured from a **recorded
+     * transition** and never from a live probe: it is non-zero only when the
+     * observation equals the last recorded one, so a caller with no history
+     * cannot fabricate "blocked for five minutes" and move a healthy session
+     * into `waiting-on-you`.
+     */
+    stateSeconds: z.number().int().min(0),
+    windows: z.array(
+      z.object({
+        index: windowIndexSchema,
+        name: z.string().max(FIELD_BOUNDS.displayName.max).optional(),
+      }),
+    ),
+    /** The agent's own conversation id, once it has one. */
+    agentSessionId: z.string().min(1).nullable(),
+    /**
+     * Hash of the agent's last report. `ready-for-review` versus `idle` is this
+     * against the acknowledged hash — "finished and you have not looked" needs no
+     * read-receipt table.
+     */
+    reportHash: z.string().min(1).nullable(),
+    /**
+     * The vendor login URL the classifier saw.
+     *
+     * Two checks, on purpose. The `regex` is the union of every catalog pattern,
+     * so it **survives emission to JSON Schema** and the generated Go refuses
+     * `https://claude.ai.attacker.test/oauth` exactly where the control plane
+     * does. The `superRefine` below then narrows it to the *reporting agent's*
+     * own vendor, which depends on a sibling field and so can only live in Zod.
+     */
+    loginUrl: z.string().regex(ANY_VENDOR_LOGIN_URL).nullable(),
+  })
+  .superRefine((snapshot, ctx) => {
+    if (snapshot.loginUrl === null) return;
+    const pattern = new RegExp(CODING_AGENTS[snapshot.agent].loginUrlPattern);
+    if (!pattern.test(snapshot.loginUrl)) {
+      ctx.addIssue({ code: 'custom', path: ['loginUrl'] });
+    }
+  });
 
 export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
+
+/**
+ * Name everything the emitter would otherwise reuse anonymously.
+ *
+ * `reused: 'ref'` lifts any schema used more than once into `$defs`, and without
+ * ids those become `__schema0`, `__schema1`, … — which is what the Go generator
+ * would name the types it produces. Naming them here is the difference between
+ * `SessionSnapshot` and `Schema0` on the other side of the contract.
+ *
+ * The snapshot is the one that matters for correctness: named and `$ref`'d, a
+ * field added to it cannot land in `hello` and miss `heartbeat`.
+ */
+for (const [id, schema] of [
+  ['sessionSnapshot', sessionSnapshotSchema],
+  ['hostFacts', hostFactsSchema],
+  ['toolVersions', toolVersionsSchema],
+  ['toolVersion', toolVersionSchema],
+  ['codingAgentId', protocolAgentSchema],
+  ['observedAgentState', observedAgentStateSchema],
+  ['sessionId', sessionIdSchema],
+  ['checkoutId', checkoutIdSchema],
+  ['commandId', commandIdSchema],
+  ['attachmentId', attachmentIdSchema],
+  ['windowIndex', windowIndexSchema],
+  ['githubRepoId', githubRepoIdSchema],
+  ['gitRef', gitRefSchema],
+  ['hostFact', hostFactSchema],
+] as const) {
+  z.globalRegistry.add(schema, { id });
+}

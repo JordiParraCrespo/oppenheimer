@@ -1,12 +1,19 @@
 /**
- * The wire version the runner link speaks.
+ * The protocol version **this package describes**.
  *
- * A runner announces the range it can speak in `hello`; the control plane
- * refuses anything below its own `min_supported` **with** an
- * `update_required` hint rather than dropping the socket, so a runner too old
- * to talk can still be told why (`product/versions/mvp/01-protocol.md`).
+ * One number, one meaning, because there were nearly three. Concretely:
  *
- * What that floor is belongs to the control plane's configuration, not here:
- * the supported window is N-2 minor versions and a deployment may narrow it.
+ * - a peer built from this package advertises `hello.protocol.max ===
+ *   PROTOCOL_VERSION` — that is the contract between this constant and the
+ *   `protocol` range on `hello`, and `hello.protocol.min` is the oldest wire the
+ *   same peer still accepts;
+ * - the control plane's `min_supported` is **deployment configuration**, not this
+ *   constant. It is compared against a connecting runner's advertised range, and
+ *   a runner below it is refused at hello *with* an `update_required` hint rather
+ *   than dropped. The supported window is N-2;
+ * - it is also the `$id` path segment of the emitted JSON Schema, so an artifact
+ *   and the code that produced it cannot be mistaken for different versions.
+ *
+ * See `product/versions/mvp/01-protocol.md`, "Hello, heartbeat and hints".
  */
 export const PROTOCOL_VERSION = 1;

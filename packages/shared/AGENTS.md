@@ -45,17 +45,23 @@ src/
   second source of truth. Keep it data; the type guard is the only function.
 - **The wire protocol** (`protocol/`): the runner link's control messages as
   Zod, with `protocolMessageSchema` the discriminated union over `type`. It is
-  the **only** description of the wire: `pnpm build:protocol` emits
+  the **only** description of the wire: `pnpm build` emits
   `protocol-schema/protocol.schema.json` from it and the Go structs are
   generated from that, so never hand-write a twin in either language. Changing
-  a message means re-running `build:protocol` and committing the artifact —
-  `src/protocol/__tests__/` fails if you forget.
+  a message means rebuilding and committing the artifact —
+  `src/protocol/__tests__/` fails if you forget. The emitter
+  (`src/protocol/json-schema.ts`) is build-only and deliberately not exported
+  from `src/protocol/index.ts`.
 
-  The protocol imports `zod/v4` while every other schema here imports `zod`
-  (v3 classic). That is on purpose and is the only place it happens: `zod`
-  3.25 ships both, only the v4 entry point can emit JSON Schema
-  (`z.toJSONSchema`), and the two never meet — the API's validation pipes see
-  the v3 DTO schemas, the relay gateway parses protocol messages directly.
+  **The protocol is temporarily on a second Zod entry point.** Only `zod/v4` can
+  emit JSON Schema (`z.toJSONSchema`), so `src/protocol/` imports it while every
+  DTO schema imports classic `zod`. This is a known wart, not a design: it means
+  `hostFactsSchema` exists twice, and `src/__tests__/cross-version-primitives.spec.ts`
+  is what holds the two copies in step. The fix is one Zod line for the package
+  with a build-only converter; it needs a new devDependency, which could not be
+  installed here. Do not add more duplicated schemas in the meantime — shared
+  bounds and tuples live in `src/schemas/primitives.ts` and the protocol builds
+  from those.
 
 ## What does not live here
 

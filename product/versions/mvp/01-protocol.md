@@ -59,11 +59,26 @@ runner does with it and point back.
   window.close | close | restart`
 - `host.preflight`, `host.update`
 - `credentials.token` — the runner asks for the installation token for
-  one session's repository, and the control plane may push
-  `credentials.revoke` to drop it early. It is on the link because the
-  token is per session and the link is the only channel already
-  authenticated per host; a second HTTPS path would need a second
-  auth story for nothing.
+  one session's repository; the control plane answers with
+  `credentials.grant`, carrying the token sealed to the host's key and
+  its expiry, and may push `credentials.revoke` to drop it early. It is
+  on the link because the token is per session and the link is the only
+  channel already authenticated per host; a second HTTPS path would need
+  a second auth story for nothing. The grant is its own message rather
+  than an optional field on the ask, so neither peer infers a direction
+  from which fields happen to be present.
+- `events.append` and `events.ack` — the runner sends a batch of one
+  session's events, each with its own `<runId>:<n>` idempotency key, and
+  the control plane acknowledges **by key**. A WebSocket cannot tell
+  "persisted before the disconnect" from "never arrived", so the runner
+  keeps a batch until an ack accounts for every key in it and resends
+  otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
+  what makes the resend free. The log the batch lands in is 03's; the
+  wire that carries it is this note's.
+- `attachment.credit` — the browser's consumed-byte credit, relayed to
+  the runner so it resumes that attachment's PTY reads. Without it the
+  window below is a one-way valve: a noisy pane stalls for good rather
+  than briefly.
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver.
 
@@ -94,7 +109,12 @@ grounds can still fetch, verify and install the version that fixes it
   agent, and the update channel.
 - **Hints** may ride a heartbeat reply or an attach ticket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (note 12).
+  `blocked` with a retry-after (note 12). An attach ticket may
+  additionally carry `host_offline`, for a session whose host has no link
+  right now. That kind is the ticket's alone and is **not** a link hint:
+  a runner connected enough to send a frame cannot coherently report
+  itself offline. So the two sockets share three kinds and the ticket has
+  a fourth.
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).
@@ -111,11 +131,18 @@ grounds can still fetch, verify and install the version that fixes it
 
 ## Open questions
 
-1. Schema language for the shared package: JSON Schema with generated
-   TypeScript and Go, or protobuf. Both languages must generate from
-   one source. This is the next decision to force — the link's shape is
-   decided above, and every week it stays hand-written in two languages
-   is a week of drift.
+1. ~~Schema language for the shared package: JSON Schema with generated
+   TypeScript and Go, or protobuf.~~ **Decided: Zod is the source.** The
+   messages above live as Zod schemas in `packages/shared/src/protocol/`,
+   which is what this repo already uses for DTOs, so the wire is not a
+   second schema language to learn. JSON Schema is emitted from that
+   union at build into
+   `packages/shared/protocol-schema/protocol.schema.json` and committed,
+   and the Go structs are generated from the artifact — one source, two
+   languages, no hand-written twin. Protobuf was the alternative and buys
+   little here: the control frames are small and infrequent, the bytes
+   that matter are already raw binary frames, and a second toolchain is a
+   cost on every contributor.
 2. ~~One socket per session from the browser, or multiplexing?~~
    Decided above: one per attachment, unmultiplexed.
 3. ~~Runner to control plane: one socket or one per session?~~ Decided

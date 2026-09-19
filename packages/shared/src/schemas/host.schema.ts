@@ -1,16 +1,12 @@
 import { z } from 'zod';
+import { hostFactsSchema, hostNameSchema } from './primitives';
 
 /**
  * Host shapes. A host belongs to a **person**, not a workspace: one laptop is
- * paired once and every workspace its owner is in borrows it
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * paired once and every workspace its owner is in borrows it.
  *
- * Schemas state the constraint only, never a message: an explicit string would
- * pin every consumer to English (see `.agents/rules/forms.md`).
+ * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
-
-/** The display name a host is given, both at pairing time and on rename. */
-const hostNameSchema = z.string().min(1).max(80);
 
 /**
  * `POST /hosts/pairing`. The machine is named *before* it exists — the token
@@ -24,27 +20,24 @@ export const mintPairingTokenSchema = z.object({
 export type MintPairingTokenDto = z.infer<typeof mintPairingTokenSchema>;
 
 /**
- * `POST /hosts/register`, the first of the runner's two HTTP calls. This is the
- * runner's `RegisterRequest` exactly
- * (`apps/runner/internal/pairing/app/ports.go`): the registration token, the
- * name the runner detected, the host's Ed25519 public key, and an opaque bag
- * of host facts the pairing context only forwards.
+ * `POST /hosts/register`, the first of the runner's two HTTP calls: the
+ * registration token, the name the runner detected, the host's Ed25519 public
+ * key, and the host's facts.
  *
  * The public key travels with the token so a retry after a dropped response is
  * idempotent: redemption and host insert commit together, and a second attempt
  * with the same fingerprint returns the same host.
+ *
+ * `facts` is the **same `hostFactsSchema` the link's `hello` and `heartbeat`
+ * carry**, not an opaque bag. Registration and the link describe one machine, so
+ * they validate one shape.
  */
 export const registerHostSchema = z.object({
   token: z.string().min(1),
   name: hostNameSchema,
   /** Base64, as the runner encodes the raw Ed25519 key. */
   publicKey: z.string().min(1).base64(),
-  /**
-   * Host inventory — tools, versions, detected agents, disk. Opaque on the
-   * wire and stored as jsonb on `host.capabilities`; a hint for the console,
-   * never a gate.
-   */
-  facts: z.record(z.unknown()).optional(),
+  facts: hostFactsSchema.optional(),
 });
 
 export type RegisterHostDto = z.infer<typeof registerHostSchema>;

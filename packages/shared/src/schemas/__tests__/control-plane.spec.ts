@@ -31,11 +31,36 @@ describe('registerHostSchema', () => {
     publicKey: 'dGhpcyBpcyBub3QgYSByZWFsIGtleQ==',
   };
 
-  it("matches the runner's RegisterRequest, facts and all", () => {
-    expect(registerHostSchema.parse({ ...valid, facts: { git: '2.45.0', tmux: null } })).toEqual({
-      ...valid,
-      facts: { git: '2.45.0', tmux: null },
-    });
+  it('takes the same structured host facts the link carries', () => {
+    const facts = {
+      hostname: 'jordis-mbp',
+      os: 'darwin',
+      arch: 'arm64',
+      tools: { git: '2.45.0', tmux: null },
+      agents: [{ id: 'claude-code', version: '2.1.144' }],
+    };
+    expect(registerHostSchema.parse({ ...valid, facts })).toEqual({ ...valid, facts });
+  });
+
+  it('no longer accepts an opaque bag of facts', () => {
+    expect(registerHostSchema.safeParse({ ...valid, facts: { anything: 'goes' } }).success).toBe(
+      false,
+    );
+  });
+
+  it('refuses an agent outside the catalog inside the facts', () => {
+    expect(
+      registerHostSchema.safeParse({
+        ...valid,
+        facts: {
+          hostname: 'h',
+          os: 'linux',
+          arch: 'x64',
+          tools: {},
+          agents: [{ id: 'cursor', version: null }],
+        },
+      }).success,
+    ).toBe(false);
   });
 
   it('leaves facts optional — a runner that reports nothing still pairs', () => {
@@ -70,22 +95,46 @@ describe('renameHostSchema / updateProjectSchema / renameSessionSchema', () => {
 });
 
 describe('connectInstallationSchema', () => {
-  it('requires both the installation id and the OAuth code', () => {
-    expect(connectInstallationSchema.parse({ installationId: 12345, code: 'abc' })).toEqual({
-      installationId: 12345,
+  it('requires GitHub’s numeric installation id and the OAuth code', () => {
+    expect(connectInstallationSchema.parse({ githubInstallationId: 12345, code: 'abc' })).toEqual({
+      githubInstallationId: 12345,
       code: 'abc',
     });
-    expect(connectInstallationSchema.safeParse({ installationId: 12345 }).success).toBe(false);
+    expect(connectInstallationSchema.safeParse({ githubInstallationId: 12345 }).success).toBe(
+      false,
+    );
     expect(connectInstallationSchema.safeParse({ code: 'abc' }).success).toBe(false);
   });
 
-  it('rejects a non-positive or fractional installation id', () => {
-    expect(connectInstallationSchema.safeParse({ installationId: 0, code: 'a' }).success).toBe(
+  it('does not answer to the old `installationId` name', () => {
+    expect(
+      connectInstallationSchema.safeParse({ installationId: 12345, code: 'abc' }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a non-positive or fractional id', () => {
+    for (const githubInstallationId of [0, -1, 1.5]) {
+      expect(connectInstallationSchema.safeParse({ githubInstallationId, code: 'a' }).success).toBe(
+        false,
+      );
+    }
+  });
+});
+
+describe('the two installation ids cannot be confused', () => {
+  it('refuses GitHub’s numeric installation id where a checkout wants our row’s uuid', () => {
+    expect(addCheckoutSchema.safeParse({ installationId: 12345, githubRepoId: 7 }).success).toBe(
       false,
     );
-    expect(connectInstallationSchema.safeParse({ installationId: 1.5, code: 'a' }).success).toBe(
+    expect(addCheckoutSchema.safeParse({ installationId: '12345', githubRepoId: 7 }).success).toBe(
       false,
     );
+  });
+
+  it('refuses our uuid where GitHub’s numeric id belongs', () => {
+    expect(
+      connectInstallationSchema.safeParse({ githubInstallationId: uuid, code: 'a' }).success,
+    ).toBe(false);
   });
 });
 
@@ -152,6 +201,49 @@ describe('createSessionSchema', () => {
 
   it('refuses a missing checkouts array — empty is explicit, absent is a mistake', () => {
     expect(createSessionSchema.safeParse({ hostId: uuid, agent: 'codex' }).success).toBe(false);
+  });
+
+  describe('cwdGithubRepoId must name a posted checkout', () => {
+    it('accepts a cwd that is one of them', () => {
+      expect(
+        createSessionSchema.safeParse({
+          hostId: uuid,
+          agent: 'codex',
+          checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+          cwdGithubRepoId: 42,
+        }).success,
+      ).toBe(true);
+    });
+
+    it('refuses a cwd that is not', () => {
+      const result = createSessionSchema.safeParse({
+        hostId: uuid,
+        agent: 'codex',
+        checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+        cwdGithubRepoId: 99,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].path).toEqual(['cwdGithubRepoId']);
+      }
+    });
+
+    it('refuses a cwd when there are no checkouts at all', () => {
+      expect(
+        createSessionSchema.safeParse({
+          hostId: uuid,
+          agent: 'codex',
+          checkouts: [],
+          cwdGithubRepoId: 42,
+        }).success,
+      ).toBe(false);
+    });
+
+    it('leaves a session with no cwd alone', () => {
+      expect(
+        createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', checkouts: [] }).success,
+      ).toBe(true);
+    });
   });
 });
 
