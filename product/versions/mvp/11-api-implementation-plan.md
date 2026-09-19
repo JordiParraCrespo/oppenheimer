@@ -87,7 +87,16 @@ No API code. Everything the API slices import.
   source, two languages, no hand-written twin. Every addition to the
   link is written into 01 in the same pull request, because 01 owns the
   wire. Slice 6 is the first consumer; the package lands here so the
-  runner slices can start.
+  runner slices can start. **Interim, recorded on pull request #22:**
+  the protocol module sits on the `zod/v4` entry point of the installed
+  Zod because only that emits JSON Schema; the DTO schemas stay on
+  classic Zod because `nestjs-zod` 4.3.1 rejects v4 schema objects, and
+  no dependency could be added from the build environment (a mobile git
+  dependency lives on a blocked host). The one duplicated schema is
+  asserted identical by a spec. The follow-up is one command on a
+  machine with normal egress — `pnpm add -D zod-to-json-schema --filter
+  @oppenheimer/shared` — then the emitter moves to it and `zod/v4`
+  leaves the package.
 
 Done when `pnpm --filter @oppenheimer/shared test` is green and
 `@RequireScopes('hosts:read')` compiles in `apps/api`.
@@ -117,11 +126,14 @@ apps/api/src/github/
 
 - Migration `AddGithubInstallations`: the table with unique
   `githubInstallationId` and unique `(organizationId, id)`. Migration
-  `AddProductRolePermissions`: the append-only jsonb edit for `owner`
-  and `user` from slice 0 **and** `UPDATE organization SET roleVersion =
-  roleVersion + 1` — the first migration in the repo that bumps it,
-  because it is the first that changes a role's rules for existing
-  workspaces.
+  `AddInstallationRolePermissions`: the append-only jsonb edit giving
+  `owner` `manage Installation` **and** `UPDATE organization SET
+  roleVersion = roleVersion + 1`. **Each slice carries the role rule for
+  its own subject** (Project in the projects PR, Host on the `user` role
+  in the hosts PR, Session in the sessions PR), each idempotent and each
+  bumping `roleVersion`, so every stacked pull request is usable on its
+  own and none waits on another for a workspace owner to stop getting
+  403.
 - Config `github.config.ts`: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`,
   `GITHUB_APP_WEBHOOK_SECRET`, `GITHUB_APP_CLIENT_ID`,
   `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_SLUG` — all optional, surfaced
