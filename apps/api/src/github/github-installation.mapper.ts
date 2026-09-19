@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { Mapper } from '@oppenheimer/backend-ddd';
+import { ArgumentInvalidException, type Mapper } from '@oppenheimer/backend-ddd';
 import { GithubInstallationOrmEntity } from './database/github-installation.orm-entity';
 import {
+  type AccountType,
   GithubInstallationEntity,
   type RefreshInstallationProps,
   type RepositorySelection,
@@ -17,6 +18,16 @@ import type {
 /** GitHub only ever reports these two; anything else is a selected install. */
 function asRepositorySelection(value: string): RepositorySelection {
   return value === 'all' ? 'all' : 'selected';
+}
+
+/**
+ * The column is a `varchar` with a check constraint, so only these two can be in
+ * it. Reading anything else means the constraint was dropped, and refusing here
+ * is better than carrying a value the domain says cannot exist.
+ */
+function asAccountType(value: string): AccountType {
+  if (value === 'User' || value === 'Organization') return value;
+  throw new ArgumentInvalidException(`Unknown GitHub account type "${value}"`);
 }
 
 /**
@@ -56,7 +67,7 @@ export class GithubInstallationMapper
         organizationId: record.organizationId,
         githubInstallationId: Number(record.githubInstallationId),
         accountLogin: record.accountLogin,
-        accountType: record.accountType,
+        accountType: asAccountType(record.accountType),
         repositorySelection: asRepositorySelection(record.repositorySelection),
         installedByUserId: record.installedByUserId,
         suspendedAt: record.suspendedAt,
@@ -90,6 +101,9 @@ export class GithubInstallationMapper
       accountType: claim.accountType,
       repositorySelection: claim.repositorySelection,
       installedByUserId,
+      // GitHub's own answer, carried through rather than cleared: a reconnect
+      // must not be a way to unsuspend an installation GitHub still holds.
+      suspendedAt: claim.suspendedAt,
     };
   }
 

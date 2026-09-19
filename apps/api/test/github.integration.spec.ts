@@ -74,8 +74,8 @@ describe('GitHub installations schema (integration)', () => {
     }
   }
 
-  async function connect(organizationId: string, githubInstallationId: number): Promise<void> {
-    await dataSource.query(
+  async function connect(organizationId: string, githubInstallationId: number) {
+    return dataSource.query(
       `INSERT INTO "github_installation"
          ("organizationId", "githubInstallationId", "accountLogin", "accountType",
           "repositorySelection", "installedByUserId")
@@ -119,12 +119,31 @@ describe('GitHub installations schema (integration)', () => {
       expect(byName.get('deletedAt')?.is_nullable).toBe('YES');
     });
 
-    it('refuses a second workspace claiming the same installation', async () => {
+    it('refuses a second workspace claiming an installation the first still holds', async () => {
       await connect(ORG_ONE, 10000001);
 
       // This is the constraint behind the 409: without it two workspaces would
       // both mint tokens for the same repositories.
-      await expect(connect(ORG_TWO, 10000001)).rejects.toThrow(/UQ_github_installation_github_id/);
+      await expect(connect(ORG_TWO, 10000001)).rejects.toThrow(
+        /UQ_github_installation_live_github_id/,
+      );
+    });
+
+    it('frees the installation once the workspace disconnects', async () => {
+      await connect(ORG_ONE, 10000004);
+      await dataSource.query(
+        `UPDATE "github_installation" SET "deletedAt" = now()
+          WHERE "githubInstallationId" = 10000004`,
+      );
+
+      // A claim is what a workspace holds, not what it once touched. The
+      // disconnected row stays as history and stops occupying the number, so
+      // GITHUB_003 cannot come to mean "somebody once connected this".
+      await connect(ORG_TWO, 10000004);
+      const rows: { count: string }[] = await dataSource.query(
+        `SELECT count(*) FROM "github_installation" WHERE "githubInstallationId" = 10000004`,
+      );
+      expect(Number(rows[0].count)).toBe(2);
     });
 
     it('carries the composite unique a checkout’s foreign key will need', async () => {
@@ -132,22 +151,79 @@ describe('GitHub installations schema (integration)', () => {
         `SELECT constraint_name FROM information_schema.table_constraints
           WHERE table_name = 'github_installation' AND constraint_type = 'UNIQUE'`,
       );
-      expect(constraints.map((c) => c.constraint_name).sort()).toEqual([
-        'UQ_github_installation_github_id',
+      // The live-claim uniqueness is a partial index, not a table constraint, so
+      // it is deliberately absent from this list.
+      expect(constraints.map((c) => c.constraint_name)).toEqual([
         'UQ_github_installation_organization_id',
       ]);
     });
 
-    it('refuses a repository selection GitHub would never send', async () => {
-      await expect(
+    it('refuses values GitHub would never send', async () => {
+      const insert = (selection: string, accountType: string) =>
         dataSource.query(
           `INSERT INTO "github_installation"
              ("organizationId", "githubInstallationId", "accountLogin", "accountType",
               "repositorySelection", "installedByUserId")
-           VALUES ($1, 10000002, 'acme-labs', 'Organization', 'some', $2)`,
-          [ORG_ONE, USER],
-        ),
-      ).rejects.toThrow(/CHK_github_installation_repository_selection/);
+           VALUES ($1, 10000002, 'acme-labs', $3, $4, $2)`,
+          [ORG_ONE, USER, accountType, selection],
+        );
+
+      await expect(insert('some', 'Organization')).rejects.toThrow(
+        /CHK_github_installation_repository_selection/,
+      );
+      await expect(insert('all', 'Enterprise')).rejects.toThrow(
+        /CHK_github_installation_account_type/,
+      );
+    });
+
+    it('keeps the workspace’s access when the person who connected it is deleted', async () => {
+      const other = '44444444-4444-4444-8444-444444444444';
+      await dataSource.query(
+        `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+           VALUES ($1, 'Bea', 'bea@example.com', 'Bea', 'Ruiz')`,
+        [other],
+      );
+      await dataSource.query(
+        `INSERT INTO "github_installation"
+           ("organizationId", "githubInstallationId", "accountLogin", "accountType",
+            "repositorySelection", "installedByUserId")
+         VALUES ($1, 10000005, 'acme-labs', 'Organization', 'all', $2)`,
+        [ORG_ONE, other],
+      );
+
+      // `installedByUserId` is audit, not ownership: the installation belongs to
+      // the organization, so deleting the person who clicked Connect must not
+      // take the workspace's GitHub access — and every checkout naming it — away.
+      await expect(dataSource.query('DELETE FROM "user" WHERE "id" = $1', [other])).rejects.toThrow(
+        /FK_github_installation_installed_by/,
+      );
+    });
+
+    it('lets a webhook change a live row and never a disconnected one', async () => {
+      await connect(ORG_ONE, 10000006);
+      // The exact shape the webhook handler writes.
+      const statusChange = (suspended: string) =>
+        dataSource.query(
+          `UPDATE "github_installation" SET "suspendedAt" = ${suspended}, "updatedAt" = now()
+            WHERE "githubInstallationId" = 10000006 AND "deletedAt" IS NULL`,
+        );
+
+      await statusChange('now()');
+      await dataSource.query(
+        `UPDATE "github_installation" SET "deletedAt" = now()
+          WHERE "githubInstallationId" = 10000006`,
+      );
+      // An unsuspend that arrives after a disconnect matches nothing, so it
+      // cannot resurrect the claim. A load-mutate-save of the whole aggregate
+      // would have written `deletedAt` back to null.
+      await statusChange('NULL');
+
+      const [row] = await dataSource.query(
+        `SELECT "suspendedAt", "deletedAt" FROM "github_installation"
+          WHERE "githubInstallationId" = 10000006`,
+      );
+      expect(row.deletedAt).not.toBeNull();
+      expect(row.suspendedAt).not.toBeNull();
     });
 
     it('goes away with the workspace that claimed it', async () => {

@@ -43,7 +43,7 @@ export const GithubErrors = {
    * The claim proof failed: GitHub does not list the claimed installation for
    * the account that authorized the code. Without this check a forged
    * `githubInstallationId` would mint tokens for someone else's repositories
-   * (`product/09-github-app-install.md` §1).
+   * (`product/versions/mvp/00-scope.md`).
    */
   INSTALLATION_NOT_CLAIMABLE: {
     code: 'GITHUB_004',

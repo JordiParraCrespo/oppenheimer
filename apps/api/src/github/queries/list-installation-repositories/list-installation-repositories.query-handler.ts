@@ -16,10 +16,14 @@ const CACHE_TTL_SECONDS = 60;
 
 /**
  * The repository list is never stored: GitHub owns it, the installation is the
- * boundary GitHub enforces, and a repository that leaves the installation simply
- * stops appearing here (`product/09-github-app-install.md`). The cache is a
- * single Redis key per installation, not a mirror — it cannot drift into a state
- * where a repository is "in our copy but the mint fails".
+ * access control GitHub enforces, and a repository that leaves it simply stops
+ * appearing here (`product/versions/mvp/03-control-plane.md`).
+ *
+ * The one-minute Redis key is this module's only answer to "what does this
+ * installation cover", and it is only ever read here — the branch listing
+ * resolves its one repository through GitHub rather than through a second copy
+ * of this list, and the token mint never consults it at all. So it is a cache of
+ * a picker's page, not a mirror that anything authorises against.
  */
 @QueryHandler(ListInstallationRepositoriesQuery)
 export class ListInstallationRepositoriesQueryHandler

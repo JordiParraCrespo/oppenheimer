@@ -108,3 +108,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   took it. In the scope catalog there is no `Repository` CASL subject for the
   same reason, and no `attach` action: opening a terminal is `update Session`,
   so the model stays CRUD plus `manage`.
+- 2026-09-19: the **`github/` module is built** and 03 gains the section that
+  says so: six routes, one `github_installation` table, no repository table,
+  and `RepositoryAccessPort` as the only thing the module exports. Two
+  decisions tightened while writing it. A claim is what a workspace **holds**,
+  not what it once touched: `githubInstallationId` is unique among live rows
+  only, so a disconnected installation keeps its history and frees the number,
+  and `GITHUB_003` means "another workspace holds this" rather than "somebody
+  once connected it". And the minted repository token is **never cached** —
+  GitHub gives it an hour and the runner holds it for that hour, so minting
+  live is what makes "a repository removed from the installation stops working
+  on the next mint" true rather than true-after-a-TTL. `github_app` is on the
+  client capability subset, because a console cannot otherwise tell "you have
+  not connected yet" from "this deployment has no App".

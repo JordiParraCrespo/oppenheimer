@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { parseEnv } from './env';
 
 /**
- * The sessions GitHub App (`product/09-github-app-install.md`).
+ * The sessions GitHub App (`product/versions/mvp/03-control-plane.md`).
  *
  * Every value is **optional capability config**: without them the app boots,
  * `GET /installations` answers an empty list, and every GitHub-backed route

@@ -13,14 +13,19 @@ import { ConnectInstallationCommand } from './connect-installation.command';
 /**
  * Claims a GitHub App installation for the caller's workspace.
  *
- * The whole of this handler is the proof. The App is configured to request user
- * authorization during installation, so the redirect carries an OAuth `code`
- * beside the `installation_id`; exchanging it and asking GitHub which
- * installations that account can see is the only thing that stops a forged id
- * handing out one-hour tokens to another account's repositories
- * (`product/09-github-app-install.md` §1). There is no fallback: matching the
+ * Most of this handler is the proof. Connect GitHub is a step of its own, after
+ * sign-in, and the redirect it comes back on carries an OAuth `code` beside the
+ * installation id; exchanging it and asking GitHub which installations that
+ * account can see is the only thing that stops a forged id handing out one-hour
+ * tokens to another account's repositories
+ * (`product/versions/mvp/00-scope.md`). There is no fallback: matching the
  * installation's account login against the caller's linked GitHub account fails
  * for organization installations, where that login is the org and not a user.
+ *
+ * The rest is which row the claim lands on. A claim is something a workspace
+ * *holds*: a live row elsewhere is a conflict, this workspace's own disconnected
+ * row is revived, and another workspace's disconnected row is history that a new
+ * row sits beside.
  */
 @CommandHandler(ConnectInstallationCommand)
 export class ConnectInstallationCommandHandler
@@ -36,27 +41,31 @@ export class ConnectInstallationCommandHandler
 
   async execute(command: ConnectInstallationCommand): Promise<AggregateID> {
     const claim = await this.proveClaim(command);
-    const existing = await this.installations.findOneByGithubInstallationId(
+
+    const live = await this.installations.findLiveByGithubInstallationId(
       command.githubInstallationId,
     );
-
-    if (existing.isSome()) {
-      const installation = existing.unwrap();
-      // `githubInstallationId` is globally unique, so this is the only place a
-      // second workspace can be told no — and it must be told, or the insert
-      // below would surface a constraint violation as a 500.
+    if (live.isSome()) {
+      const installation = live.unwrap();
+      // A live claim, held up by the partial unique index. The insert below
+      // reports the same thing when two workspaces race this check.
       if (installation.organizationId !== command.organizationId) {
         throw new AppError(GithubErrors.INSTALLATION_ALREADY_CONNECTED, {
-          detail: 'Uninstall the App from that GitHub account before connecting it here.',
+          detail: 'Disconnect it from the workspace that holds it, or uninstall the App on GitHub.',
           extensions: { githubInstallationId: command.githubInstallationId },
         });
       }
+      // Re-posting the redirect is how a changed repository selection, a changed
+      // account name, and a changed suspension reach us.
+      return this.refresh(installation, claim, command.userId);
+    }
 
-      // Re-running the install redirect is how a workspace reconnects, and how
-      // a changed repository selection reaches us. Same row, refreshed.
-      installation.reconnect(this.mapper.toRefreshProps(claim, command.userId));
-      await this.installations.save(installation);
-      return installation.id;
+    const disconnected = await this.installations.findDisconnectedForOrganization(
+      command.organizationId,
+      command.githubInstallationId,
+    );
+    if (disconnected.isSome()) {
+      return this.refresh(disconnected.unwrap(), claim, command.userId);
     }
 
     const installation = GithubInstallationEntity.connect({
@@ -66,28 +75,43 @@ export class ConnectInstallationCommandHandler
       accountType: claim.accountType,
       repositorySelection: claim.repositorySelection,
       installedByUserId: command.userId,
+      suspendedAt: claim.suspendedAt,
     });
 
     await this.installations.insert(installation);
     return installation.id;
   }
 
-  /** The claimed installation, as GitHub reports it to the authorizing account. */
+  private async refresh(
+    installation: GithubInstallationEntity,
+    claim: GithubInstallationClaim,
+    userId: string,
+  ): Promise<AggregateID> {
+    installation.reconnect(this.mapper.toRefreshProps(claim, userId));
+    await this.installations.save(installation);
+    return installation.id;
+  }
+
+  /** The claimed installation: proven visible, then read from GitHub. */
   private async proveClaim(command: ConnectInstallationCommand): Promise<GithubInstallationClaim> {
     if (!this.github.isConfigured()) {
       throw new AppError(GithubErrors.APP_NOT_CONFIGURED);
     }
 
     const visible = await this.github.listUserInstallations(command.code);
-    const claim = visible.find(
+    const canSee = visible.some(
       (candidate) => candidate.githubInstallationId === command.githubInstallationId,
     );
-    if (!claim) {
+    if (!canSee) {
       throw new AppError(GithubErrors.INSTALLATION_NOT_CLAIMABLE, {
         detail: `GitHub does not list installation ${command.githubInstallationId} for the authorizing account`,
         extensions: { githubInstallationId: command.githubInstallationId },
       });
     }
-    return claim;
+
+    // Read once visibility is proven, with the App's own JWT: the account name,
+    // the repository selection and — the part a redirect cannot be trusted for —
+    // whether GitHub has the installation suspended right now.
+    return this.github.readInstallation(command.githubInstallationId);
   }
 }

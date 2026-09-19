@@ -1,4 +1,3 @@
-import type { CacheService } from '@oppenheimer/backend-cache';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
@@ -11,9 +10,9 @@ import { RepositoryAccessResolver } from '../repository-access.resolver';
  *
  * A repository token is the one credential this platform hands to a machine it
  * does not run, so the properties worth pinning are: it is narrowed to the one
- * repository asked for, it is cached short of its own expiry rather than stored,
- * and an installation that can no longer be exercised says so instead of
- * producing an opaque GitHub error on the host.
+ * repository asked for, it is **never stored or cached**, and an installation
+ * that can no longer be exercised says so instead of producing an opaque GitHub
+ * error on the host.
  */
 
 const EXPIRES_AT = new Date('2026-09-19T12:00:00.000Z');
@@ -26,19 +25,8 @@ function installation(): GithubInstallationEntity {
     accountType: 'Organization',
     repositorySelection: 'selected',
     installedByUserId: 'ana',
+    suspendedAt: null,
   });
-}
-
-function fakeCache() {
-  const store = new Map<string, unknown>();
-  return {
-    get: vi.fn(async (key: string) => store.get(key)),
-    set: vi.fn(async (key: string, value: unknown) => {
-      store.set(key, value);
-    }),
-    del: vi.fn(),
-    reset: vi.fn(),
-  };
 }
 
 function build(found: GithubInstallationEntity | null) {
@@ -50,15 +38,12 @@ function build(found: GithubInstallationEntity | null) {
     mintRepositoryToken: vi.fn().mockResolvedValue({ token: 'ghs_secret', expiresAt: EXPIRES_AT }),
   } satisfies Pick<GithubAppPort, 'mintRepositoryToken'>;
 
-  const cache = fakeCache();
-
   const resolver = new RepositoryAccessResolver(
     installations as unknown as GithubInstallationRepositoryPort,
     github as unknown as GithubAppPort,
-    cache as unknown as CacheService,
   );
 
-  return { resolver, installations, github, cache };
+  return { resolver, installations, github };
 }
 
 describe('repository access', () => {
@@ -79,28 +64,17 @@ describe('repository access', () => {
     expect(subject.github.mintRepositoryToken).toHaveBeenCalledWith(45678901, 831004242);
   });
 
-  it('caches per repository, short of the token’s own expiry', async () => {
+  it('mints live every time, and keeps nothing', async () => {
     const subject = build(connected);
 
     await subject.resolver.mintRepositoryToken(connected.id, 831004242);
-    const again = await subject.resolver.mintRepositoryToken(connected.id, 831004242);
-
-    expect(again.expiresAt).toEqual(EXPIRES_AT);
-    expect(subject.github.mintRepositoryToken).toHaveBeenCalledTimes(1);
-    expect(subject.cache.set).toHaveBeenCalledWith(
-      `github:token:${connected.id}:831004242`,
-      { token: 'ghs_secret', expiresAt: EXPIRES_AT.toISOString() },
-      55 * 60,
-    );
-  });
-
-  it('does not serve one repository’s token for another', async () => {
-    const subject = build(connected);
-
     await subject.resolver.mintRepositoryToken(connected.id, 831004242);
-    await subject.resolver.mintRepositoryToken(connected.id, 999);
 
+    // The guarantee the module is built on: a repository removed from the
+    // installation stops working on the next mint, not at the end of a cache
+    // TTL. A cached secret would also be a stored GitHub credential.
     expect(subject.github.mintRepositoryToken).toHaveBeenCalledTimes(2);
+    expect(subject.installations.findOneByIdForTokenMint).toHaveBeenCalledTimes(2);
   });
 
   it('refuses a suspended installation before asking GitHub', async () => {

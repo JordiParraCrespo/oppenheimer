@@ -10,9 +10,13 @@ import { ListRepositoryBranchesQuery } from './list-repository-branches.query';
 /**
  * Live, and deliberately uncached: a branch list is read once when a checkout is
  * being created, and a branch pushed seconds ago is exactly the one the person is
- * looking for. The adapter resolves the repository through the installation's own
- * listing first, so a repository the installation does not cover is refused here
- * rather than reached on GitHub.
+ * looking for.
+ *
+ * Coverage is GitHub's answer, not ours. The installation is loaded here under
+ * the caller's scope and checked for usability; whether it covers *this*
+ * repository is decided by GitHub refusing the repository read, which is what
+ * `GITHUB_010` reports. Nothing rebuilds the installation's repository set to
+ * ask a question GitHub already answers.
  */
 @QueryHandler(ListRepositoryBranchesQuery)
 export class ListRepositoryBranchesQueryHandler

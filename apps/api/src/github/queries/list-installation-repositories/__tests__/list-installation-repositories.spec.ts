@@ -43,6 +43,7 @@ function installation(): GithubInstallationEntity {
     accountType: 'Organization',
     repositorySelection: 'selected',
     installedByUserId: 'ana',
+    suspendedAt: null,
   });
 }
 

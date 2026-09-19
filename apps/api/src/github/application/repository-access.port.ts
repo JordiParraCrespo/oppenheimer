@@ -4,8 +4,8 @@
  * It is the one door out of this module for that purpose, and it is deliberately
  * one method: a caller names a connected installation and one repository, and
  * gets a credential for exactly that repository. There is nothing to ask for
- * "the repositories I may use" because the installation is the allowlist and
- * GitHub answers it (`product/09-github-app-install.md`).
+ * "the repositories I may use", because the installation is the access control
+ * and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
  */
 export interface RepositoryToken {
   /** The installation access token. Never logged, never stored in a row. */
@@ -27,9 +27,11 @@ export interface RepositoryAccessPort {
    * is the workspace's by construction, and `sessions/` asserts the match
    * against the session it is minting for.
    *
-   * Tokens are cached until shortly before they expire, so a session that
-   * reconnects does not spend a GitHub call, and are never rows: nothing about
-   * them is revocable in the hour they live.
+   * Every call is a live mint. Nothing caches the token and nothing stores it:
+   * GitHub gives it an hour, the runner holds it for that hour, and the platform
+   * keeps no GitHub credential beyond the scoped tokens it mints. That is also
+   * what makes the guarantee true — a repository removed from the installation
+   * stops working on the next mint rather than at the end of a cache TTL.
    */
   mintRepositoryToken(installationId: string, githubRepoId: number): Promise<RepositoryToken>;
 }

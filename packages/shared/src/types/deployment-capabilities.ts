@@ -36,6 +36,11 @@ export const CLIENT_CAPABILITIES = [
   'google_oauth',
   'github_oauth',
   'stripe_billing',
+  // The sessions GitHub App. A console cannot read this off anything else: an
+  // empty installation list says "you have not connected yet", never "this
+  // deployment has no App, so Connect GitHub will fail" — and the App slug the
+  // install link is built from only exists when the capability is on.
+  'github_app',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

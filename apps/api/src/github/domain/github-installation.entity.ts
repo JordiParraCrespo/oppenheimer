@@ -9,6 +9,13 @@ import { InstallationConnectedDomainEvent } from './events/installation-connecte
 /** What the installation dialog granted: every repository, or a chosen set. */
 export type RepositorySelection = 'all' | 'selected';
 
+/**
+ * Who the App is installed on. GitHub reports exactly these two, and the
+ * database carries the same check constraint — a free string here would be a
+ * column the migration does not constrain and a wire enum the domain does not.
+ */
+export type AccountType = 'User' | 'Organization';
+
 export interface GithubInstallationProps {
   /** Tenant the installation belongs to. Immutable — a claim never moves. */
   organizationId: string;
@@ -18,7 +25,7 @@ export interface GithubInstallationProps {
   /** The user or organization the App is installed on. */
   accountLogin: string;
   /** `User` or `Organization`, as GitHub reports it. */
-  accountType: string;
+  accountType: AccountType;
   repositorySelection: RepositorySelection;
   /** The account that completed the installation redirect. */
   installedByUserId: string;
@@ -32,24 +39,33 @@ export interface ConnectInstallationProps {
   organizationId: string;
   githubInstallationId: number;
   accountLogin: string;
-  accountType: string;
+  accountType: AccountType;
   repositorySelection: RepositorySelection;
   installedByUserId: string;
+  /** What GitHub says about the installation right now, not what we hope. */
+  suspendedAt: Date | null;
 }
 
 /** What GitHub reports about an installation and we keep in step with it. */
 export interface RefreshInstallationProps {
   accountLogin: string;
-  accountType: string;
+  accountType: AccountType;
   repositorySelection: RepositorySelection;
   installedByUserId: string;
+  /**
+   * GitHub's current answer. Required, not optional: a reconnect that defaulted
+   * this to `null` would silently unsuspend an installation GitHub still has
+   * suspended, and the row would look usable until the next webhook.
+   */
+  suspendedAt: Date | null;
 }
 
 /**
  * A GitHub App installation, which is the whole of what a workspace may reach
- * on GitHub: the installation *is* the allowlist and GitHub enforces it, so
- * there is no repository table and nothing here mirrors one
- * (`product/09-github-app-install.md`).
+ * on GitHub: the installation *is* the access control and GitHub enforces it,
+ * so there is no repository table and nothing here mirrors one — a repository is
+ * remembered only by the checkout that took it
+ * (`product/versions/mvp/03-control-plane.md`).
  *
  * The aggregate's only job beyond staying valid is to know whether it can still
  * be exercised — `isUsable` is what the listing and the token mint ask, so
@@ -72,7 +88,7 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
         accountType: props.accountType,
         repositorySelection: props.repositorySelection,
         installedByUserId: props.installedByUserId,
-        suspendedAt: null,
+        suspendedAt: props.suspendedAt,
         deletedAt: null,
       },
     });
@@ -93,7 +109,7 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
     return this.props.accountLogin;
   }
 
-  get accountType(): string {
+  get accountType(): AccountType {
     return this.props.accountType;
   }
 
@@ -122,10 +138,14 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
    * Re-claim an installation this workspace had disconnected, or refresh what
    * GitHub now reports about a live one.
    *
-   * Re-running the installation redirect is the only way back from a
-   * disconnect, and it arrives with the same `githubInstallationId` — so the
-   * row is revived rather than duplicated, which the unique column would refuse
-   * anyway.
+   * Re-running the install redirect is the way back from a disconnect, and it
+   * arrives with the same `githubInstallationId`, so this workspace's own row is
+   * revived rather than duplicated.
+   *
+   * `suspendedAt` comes from GitHub's own answer rather than being cleared.
+   * Clearing it would make re-posting the redirect a way to mark a suspended
+   * installation usable here, and it would stay that way until a webhook said
+   * otherwise.
    */
   reconnect(props: RefreshInstallationProps): void {
     const wasDisconnected = this.props.deletedAt !== null;
@@ -133,8 +153,8 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
     this.props.accountType = props.accountType;
     this.props.repositorySelection = props.repositorySelection;
     this.props.installedByUserId = props.installedByUserId;
+    this.props.suspendedAt = props.suspendedAt;
     this.props.deletedAt = null;
-    this.props.suspendedAt = null;
     this.setUpdatedAt(new Date());
     this.validate();
     if (wasDisconnected) this.raiseConnected();
@@ -180,6 +200,11 @@ export class GithubInstallationEntity extends AggregateRoot<GithubInstallationPr
     }
     if (!this.props.accountLogin?.trim()) {
       throw new ArgumentNotProvidedException('An installation must name the account it is on');
+    }
+    if (this.props.accountType !== 'User' && this.props.accountType !== 'Organization') {
+      throw new ArgumentNotProvidedException(
+        'An installation is on a user or an organization, and nothing else',
+      );
     }
     if (!this.props.installedByUserId?.trim()) {
       throw new ArgumentNotProvidedException('An installation must record who connected it');

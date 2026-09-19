@@ -251,10 +251,11 @@ operation, its code is folded onto the catalog, and the original survives as
 ## GitHub installations
 
 A GitHub App installation is the whole of what a workspace may reach on GitHub:
-the installation is the allowlist and GitHub enforces it, so there is no
+the installation is the access control and GitHub enforces it, so there is no
 repository table and no mirror. A repository that leaves an installation is not
 a state change here — it is simply absent from the next listing, and the next
-token mint fails.
+token mint fails. Mints are never cached, so "the next mint" is the next time a
+session asks.
 
 | Code                                 | Title                                                          | HTTP |
 | ------------------------------------ | -------------------------------------------------------------- | ---- |
@@ -272,11 +273,20 @@ token mint fails.
 `GITHUB_001` is also returned for an installation that exists but belongs to
 another workspace; distinguishing the two would confirm the id.
 
+`GITHUB_003` means another workspace **holds** the installation right now, not
+that one once did. A workspace that disconnects, or an App uninstalled on
+GitHub, frees the installation for anyone to connect: the id is unique among
+live rows only, and the disconnected row is kept as history.
+
 `GITHUB_004` is the claim proof, and it has no fallback. `POST /installations`
 exchanges the OAuth code GitHub attaches to the install redirect and asks GitHub
 which installations the authorizing account can see. Matching the installation's
 account login against a linked GitHub account instead would refuse every
 organization installation, where that login is the organization and not a user.
+
+`GITHUB_002` also covers a credential GitHub itself rejected: a `401` from the
+App's own JWT is a deployment problem, not a caller's, and reporting it as one
+sends whoever hit it to the right place.
 
 <!-- oppenheimer:begin runner -->
 ## Runner service

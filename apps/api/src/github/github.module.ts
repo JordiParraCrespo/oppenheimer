@@ -14,7 +14,7 @@ import { GithubInstallationRepository } from './database/github-installation.rep
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS } from './github.di-tokens';
 import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
-import { OctokitGithubAppAdapter } from './infrastructure/octokit-github-app.adapter';
+import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
 import { FindInstallationsQueryHandler } from './queries/find-installations/find-installations.query-handler';
@@ -51,7 +51,7 @@ const mappers: Provider[] = [GithubInstallationMapper];
 
 const adapters: Provider[] = [
   { provide: GITHUB_INSTALLATION_REPOSITORY, useClass: GithubInstallationRepository },
-  { provide: GITHUB_APP, useClass: OctokitGithubAppAdapter },
+  { provide: GITHUB_APP, useClass: GithubRestAdapter },
   { provide: REPOSITORY_ACCESS, useClass: RepositoryAccessResolver },
 ];
 
@@ -62,11 +62,12 @@ const adapters: Provider[] = [
  * which installations a workspace claimed. Repositories and branches are read
  * live through the installation token and tokens are minted on demand, so the
  * two facts that would otherwise drift — what access exists, and what it covers —
- * both have their owner on GitHub's side (`product/09-github-app-install.md`).
+ * both have their owner on GitHub's side
+ * (`product/versions/mvp/03-control-plane.md`).
  *
- * `REPOSITORY_ACCESS` is exported because that is the seam `sessions/` and
- * `relay/` use: they name an installation and a repository, and get a credential
- * for exactly that repository.
+ * `REPOSITORY_ACCESS` is the one thing exported, because it is the seam
+ * `sessions/` and `relay/` use: they name a connected installation and a
+ * repository, and get a credential for exactly that repository.
  */
 @Module({
   imports: [
@@ -76,6 +77,10 @@ const adapters: Provider[] = [
   ],
   controllers: [...httpControllers],
   providers: [...commandHandlers, ...queryHandlers, ...mappers, ...adapters],
-  exports: [GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS, GITHUB_APP],
+  // `REPOSITORY_ACCESS` and nothing else. The GitHub client and the unscoped
+  // installation lookup are this module's own: exporting them is how `sessions/`
+  // and `relay/` would end up minting with GitHub's numeric id, past the port
+  // that translates a checkout's uuid and checks the installation is usable.
+  exports: [REPOSITORY_ACCESS],
 })
 export class GithubModule {}

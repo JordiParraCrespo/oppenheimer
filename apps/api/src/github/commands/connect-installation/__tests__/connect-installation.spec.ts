@@ -2,6 +2,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
+import { GithubErrors } from '../../../domain/github.errors';
 import { GithubInstallationEntity } from '../../../domain/github-installation.entity';
 import { GithubInstallationMapper } from '../../../github-installation.mapper';
 import type {
@@ -12,12 +13,15 @@ import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
 
 /**
- * The claim proof, asserted directly.
+ * Two things are asserted here, and they fail independently.
  *
- * `POST /installations` takes an installation id from the caller's browser. If
- * the handler trusted it, anyone could post someone else's number and receive
- * one-hour write tokens for their repositories — so the test that matters is the
- * one where GitHub does not list the claimed installation.
+ * The **claim proof**: `POST /installations` takes an installation id from the
+ * caller's browser, so if the handler trusted it, anyone could post someone
+ * else's number and receive one-hour write tokens for their repositories.
+ *
+ * And **which row the claim lands on**: a claim is something a workspace holds,
+ * not something it once touched, so a live row elsewhere is a conflict while a
+ * disconnected one is history.
  */
 
 const CLAIM: GithubInstallationClaim = {
@@ -25,29 +29,40 @@ const CLAIM: GithubInstallationClaim = {
   accountLogin: 'acme-labs',
   accountType: 'Organization',
   repositorySelection: 'selected',
+  suspendedAt: null,
 };
 
-type Installations = Pick<
-  GithubInstallationRepositoryPort,
-  'insert' | 'save' | 'findOneByGithubInstallationId'
->;
-type App = Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations'>;
+interface Rows {
+  live?: GithubInstallationEntity;
+  disconnected?: GithubInstallationEntity;
+  visible?: { githubInstallationId: number }[];
+  claim?: GithubInstallationClaim;
+  insertFails?: AppError;
+}
 
-function build(
-  overrides: { visible?: GithubInstallationClaim[]; existing?: GithubInstallationEntity } = {},
-) {
+function build(rows: Rows = {}) {
   const installations = {
-    insert: vi.fn().mockResolvedValue(undefined),
+    insert: vi.fn().mockImplementation(() => {
+      if (rows.insertFails) return Promise.reject(rows.insertFails);
+      return Promise.resolve(undefined);
+    }),
     save: vi.fn().mockImplementation((entity) => Promise.resolve(entity)),
-    findOneByGithubInstallationId: vi
+    findLiveByGithubInstallationId: vi.fn().mockResolvedValue(rows.live ? Some(rows.live) : None),
+    findDisconnectedForOrganization: vi
       .fn()
-      .mockResolvedValue(overrides.existing ? Some(overrides.existing) : None),
-  } satisfies Installations;
+      .mockResolvedValue(rows.disconnected ? Some(rows.disconnected) : None),
+  } satisfies Pick<
+    GithubInstallationRepositoryPort,
+    'insert' | 'save' | 'findLiveByGithubInstallationId' | 'findDisconnectedForOrganization'
+  >;
 
   const github = {
     isConfigured: vi.fn().mockReturnValue(true),
-    listUserInstallations: vi.fn().mockResolvedValue(overrides.visible ?? [CLAIM]),
-  } satisfies App;
+    listUserInstallations: vi
+      .fn()
+      .mockResolvedValue(rows.visible ?? [{ githubInstallationId: CLAIM.githubInstallationId }]),
+    readInstallation: vi.fn().mockResolvedValue(rows.claim ?? CLAIM),
+  } satisfies Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations' | 'readInstallation'>;
 
   const handler = new ConnectInstallationCommandHandler(
     installations as unknown as GithubInstallationRepositoryPort,
@@ -68,42 +83,42 @@ function command(overrides: Partial<ConnectInstallationCommand> = {}) {
   });
 }
 
-function connected(organizationId: string): GithubInstallationEntity {
+function connected(organizationId: string, suspendedAt: Date | null = null) {
   return GithubInstallationEntity.connect({
     organizationId,
     githubInstallationId: CLAIM.githubInstallationId,
-    accountLogin: CLAIM.accountLogin,
-    accountType: CLAIM.accountType,
+    accountLogin: 'acme-labs',
+    accountType: 'Organization',
     repositorySelection: 'all',
     installedByUserId: 'someone',
+    suspendedAt,
   });
 }
 
-describe('connect installation', () => {
+describe('the claim proof', () => {
   let subject: ReturnType<typeof build>;
 
   beforeEach(() => {
     subject = build();
   });
 
-  it('records the installation GitHub confirms the caller can see', async () => {
+  it('records what GitHub says, not what the request body said', async () => {
     const id = await subject.handler.execute(command());
 
     expect(subject.github.listUserInstallations).toHaveBeenCalledWith('the-oauth-code');
-    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
     const [inserted] = subject.installations.insert.mock.calls[0] as [GithubInstallationEntity];
     expect(inserted.id).toBe(id);
     expect(inserted.organizationId).toBe('org-acme');
-    // What is stored is GitHub's answer, not the request body: only the id was
-    // ever the caller's to name.
+    // Only the id was ever the caller's to name; the rest is GitHub's answer.
     expect(inserted.accountLogin).toBe('acme-labs');
     expect(inserted.repositorySelection).toBe('selected');
   });
 
   it('refuses an installation GitHub does not list for the caller', async () => {
-    const other = build({ visible: [{ ...CLAIM, githubInstallationId: 999 }] });
+    const other = build({ visible: [{ githubInstallationId: 999 }] });
 
     await expect(other.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_004' });
+    expect(other.github.readInstallation).not.toHaveBeenCalled();
     expect(other.installations.insert).not.toHaveBeenCalled();
   });
 
@@ -114,29 +129,15 @@ describe('connect installation', () => {
     expect(empty.installations.insert).not.toHaveBeenCalled();
   });
 
-  it('refuses an installation another workspace already holds', async () => {
-    const taken = build({ existing: connected('org-rival') });
+  it('carries GitHub’s current suspension onto a new row', async () => {
+    const suspended = new Date('2026-09-19T09:00:00.000Z');
+    const subject = build({ claim: { ...CLAIM, suspendedAt: suspended } });
 
-    await expect(taken.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_003' });
-    expect(taken.installations.save).not.toHaveBeenCalled();
-    expect(taken.installations.insert).not.toHaveBeenCalled();
-  });
+    await subject.handler.execute(command());
 
-  it('refreshes the workspace’s own installation instead of duplicating it', async () => {
-    const existing = connected('org-acme');
-    existing.disconnect();
-    const again = build({ existing });
-
-    const id = await again.handler.execute(command());
-
-    expect(id).toBe(existing.id);
-    expect(again.installations.insert).not.toHaveBeenCalled();
-    expect(again.installations.save).toHaveBeenCalledTimes(1);
-    // Re-running the install redirect is how a workspace reconnects, and how a
-    // changed repository selection reaches us.
-    expect(existing.deletedAt).toBeNull();
-    expect(existing.repositorySelection).toBe('selected');
-    expect(existing.installedByUserId).toBe('ana');
+    const [inserted] = subject.installations.insert.mock.calls[0] as [GithubInstallationEntity];
+    expect(inserted.suspendedAt).toEqual(suspended);
+    expect(inserted.isUsable).toBe(false);
   });
 
   it('says the App is not configured rather than calling GitHub without credentials', async () => {
@@ -147,5 +148,76 @@ describe('connect installation', () => {
       code: 'GITHUB_002',
     });
     expect(unconfigured.github.listUserInstallations).not.toHaveBeenCalled();
+  });
+});
+
+describe('which row the claim lands on', () => {
+  it('refuses an installation another workspace holds right now', async () => {
+    const taken = build({ live: connected('org-rival') });
+
+    await expect(taken.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_003' });
+    expect(taken.installations.save).not.toHaveBeenCalled();
+    expect(taken.installations.insert).not.toHaveBeenCalled();
+  });
+
+  it('refreshes this workspace’s own live row instead of duplicating it', async () => {
+    const existing = connected('org-acme');
+    const subject = build({ live: existing });
+
+    const id = await subject.handler.execute(command());
+
+    expect(id).toBe(existing.id);
+    expect(subject.installations.insert).not.toHaveBeenCalled();
+    // Re-posting the redirect is how a changed repository selection reaches us.
+    expect(existing.repositorySelection).toBe('selected');
+    expect(existing.installedByUserId).toBe('ana');
+  });
+
+  it('revives this workspace’s own disconnected row', async () => {
+    const existing = connected('org-acme');
+    existing.disconnect();
+    const subject = build({ disconnected: existing });
+
+    const id = await subject.handler.execute(command());
+
+    expect(id).toBe(existing.id);
+    expect(existing.deletedAt).toBeNull();
+    expect(subject.installations.insert).not.toHaveBeenCalled();
+    expect(subject.installations.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('never silently unsuspends on a reconnect', async () => {
+    const existing = connected('org-acme');
+    const stillSuspended = new Date('2026-09-19T09:00:00.000Z');
+    const subject = build({
+      live: existing,
+      claim: { ...CLAIM, suspendedAt: stillSuspended },
+    });
+
+    await subject.handler.execute(command());
+
+    // Otherwise re-posting the redirect would be a way to mark a suspended
+    // installation usable here until the next webhook said otherwise.
+    expect(existing.suspendedAt).toEqual(stillSuspended);
+    expect(existing.isUsable).toBe(false);
+  });
+
+  it('claims an installation another workspace disconnected', async () => {
+    // A claim is something a workspace holds. Once it is given up, the number is
+    // free, and `GITHUB_003` would otherwise mean "someone once connected this".
+    const subject = build({ disconnected: undefined, live: undefined });
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the constraint’s refusal as the same 409, not a 500', async () => {
+    // Two workspaces posting the same installation in the same moment both pass
+    // the live-row check; the partial unique index is what actually decides.
+    const raced = build({
+      insertFails: new AppError(GithubErrors.INSTALLATION_ALREADY_CONNECTED),
+    });
+
+    await expect(raced.handler.execute(command())).rejects.toMatchObject({ code: 'GITHUB_003' });
   });
 });

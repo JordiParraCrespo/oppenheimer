@@ -4,6 +4,29 @@ import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
 
 /**
+ * Whether the sessions GitHub App is usable on this deployment.
+ *
+ * All six values are needed together — the id and key to mint tokens, the OAuth
+ * pair to prove an installation claim, the webhook secret to trust a suspension,
+ * the slug the console builds the install link from — so a partial set is off.
+ *
+ * Exported because this must be **one** predicate. It used to be two: this
+ * function's six keys and the GitHub adapter's own five-key check, which meant a
+ * deployment with no `GITHUB_APP_SLUG` reported `github_app: false` and still
+ * answered `POST /installations` with a 201.
+ */
+export function hasGithubApp(configService: ConfigService): boolean {
+  return Boolean(
+    configService.get('githubApp.appId') &&
+      configService.get('githubApp.privateKey') &&
+      configService.get('githubApp.webhookSecret') &&
+      configService.get('githubApp.clientId') &&
+      configService.get('githubApp.clientSecret') &&
+      configService.get('githubApp.slug'),
+  );
+}
+
+/**
  * Resolves this deployment's optional capabilities from config, once at boot.
  *
  * A capability is on only when everything it needs is actually present — a
@@ -23,18 +46,7 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
       configService.get('oauth.github.clientId') && configService.get('oauth.github.clientSecret'),
     ),
     stripe_billing: Boolean(configService.get('stripe.secretKey')),
-    // The sessions GitHub App. All six values are needed together — the id and
-    // key to mint tokens, the OAuth pair to prove an installation claim, the
-    // webhook secret to trust a suspension, the slug to link to the App's page —
-    // so a partial set is off, and every GitHub-backed route says so.
-    github_app: Boolean(
-      configService.get('githubApp.appId') &&
-        configService.get('githubApp.privateKey') &&
-        configService.get('githubApp.webhookSecret') &&
-        configService.get('githubApp.clientId') &&
-        configService.get('githubApp.clientSecret') &&
-        configService.get('githubApp.slug'),
-    ),
+    github_app: hasGithubApp(configService),
     s3_storage:
       configService.get('storage.provider') === 's3' &&
       Boolean(

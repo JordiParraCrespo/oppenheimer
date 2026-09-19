@@ -10,16 +10,21 @@ import {
 
 /**
  * The only table in `github/`. A repository is never a row: the picker asks
- * GitHub through the installation token and a checkout records the ids it took
- * inline (`product/09-github-app-install.md`).
+ * GitHub through the installation token, and a repository is remembered only by
+ * the checkout that took it (`product/versions/mvp/03-control-plane.md`).
  *
  * `(organizationId, id)` is unique so a checkout in another module can carry a
  * composite foreign key to it and be unable to reference another tenant's
  * installation.
+ *
+ * **`githubInstallationId` is unique among live rows only**, by
+ * `UQ_github_installation_live_github_id` — a partial index on
+ * `WHERE "deletedAt" IS NULL`, which is why it is declared in the migration and
+ * not here: TypeORM cannot express a predicate on an index, and declaring the
+ * unconditional version would have a disconnected row hold the number forever.
  */
 @Entity('github_installation')
 @Index(['organizationId'])
-@Unique('UQ_github_installation_github_id', ['githubInstallationId'])
 @Unique('UQ_github_installation_organization_id', ['organizationId', 'id'])
 export class GithubInstallationOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -35,7 +40,7 @@ export class GithubInstallationOrmEntity {
   @Column({ type: 'varchar' })
   accountLogin!: string;
 
-  /** `User` or `Organization`, as GitHub reports it. */
+  /** `User` or `Organization`; a check constraint holds the pair. */
   @Column({ type: 'varchar' })
   accountType!: string;
 
