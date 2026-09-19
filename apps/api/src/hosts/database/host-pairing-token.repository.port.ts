@@ -5,8 +5,9 @@ import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity
 /**
  * Port for the pairing-token aggregate.
  *
- * Scoped the same way hosts are, by the person: a token belongs to whoever
- * minted it, and `createdByUserId` is the only ownership column.
+ * Scoped by `HostResource`, exactly as hosts are: a token belongs to the person
+ * who minted it, under the same `ownerUserId` column, and pairing is a Host
+ * verb rather than a noun of its own.
  */
 export interface HostPairingTokenRepositoryPort {
   insert(entity: HostPairingTokenEntity): Promise<void>;

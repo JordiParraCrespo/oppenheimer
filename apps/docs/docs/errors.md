@@ -190,13 +190,15 @@ Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
 
 - `HOSTS_003` does not distinguish a token that was already used, one that
-  expired, one that was revoked and one that never existed. `detail` names all
-  four and the runner prints it verbatim. The one case it *does* tell apart is a
-  machine retrying after a lost response: presenting the key the spent token
-  already paired returns the same host, so a dropped answer never pairs a machine
-  twice.
-- `HOSTS_005` does not say whether the signature, the audience, the expiry or the
-  replay guard refused a host's boot assertion.
+  expired, one that was revoked and one that never existed. Its `detail` names
+  all four at once and the runner prints that sentence verbatim. The one case it
+  *does* tell apart is a machine retrying after a lost response: presenting the
+  key the spent token already paired returns the same host, so a dropped answer
+  never pairs a machine twice.
+- `HOSTS_005` refuses a host's boot assertion without saying which check refused
+  it. Its `detail` is a line for the operator's log, not a branch a client can
+  take, and this page does not enumerate the reasons — a catalog that listed them
+  would make the endpoint the oracle the single code exists to avoid.
 
 `HOSTS_004` is the optional-capability answer: without the runner release
 settings and the control plane's own signing key there is nothing to hand a

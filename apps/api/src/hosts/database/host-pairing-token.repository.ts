@@ -6,22 +6,26 @@ import { None, type Option, Some } from 'oxide.ts';
 import { Repository } from 'typeorm';
 import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity';
 import { HostPairingTokenMapper } from '../host-pairing-token.mapper';
-import { HostPairingTokenResource } from '../host-pairing-token.resource';
+import { HostResource } from '../hosts.resource';
 import { HostPairingTokenOrmEntity } from './host-pairing-token.orm-entity';
 import type { HostPairingTokenRepositoryPort } from './host-pairing-token.repository.port';
 
 /**
  * TypeORM adapter for the pairing-token aggregate.
  *
- * Scope-enforced like every other repository, against a declaration whose only
- * dimension is the person who minted the token.
+ * Scope-enforced against **`HostResource`**, not a declaration of its own: a
+ * pairing token is how a host comes to exist, the routes that mint and revoke
+ * one are `create Host` and `delete Host`, and the column it is filtered by is
+ * the same `ownerUserId` a host carries. A second resource would be a column
+ * map masquerading as a noun, and the day a host is shared by `access_grant`
+ * the two listings would diverge with nothing in the policy table to explain it.
  */
 @Injectable()
 export class HostPairingTokenRepository
   extends ScopedRepositoryBase<HostPairingTokenOrmEntity>
   implements HostPairingTokenRepositoryPort
 {
-  protected readonly resource = HostPairingTokenResource;
+  protected readonly resource = HostResource;
   protected readonly alias = 'token';
 
   constructor(

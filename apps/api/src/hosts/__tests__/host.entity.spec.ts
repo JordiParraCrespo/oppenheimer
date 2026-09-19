@@ -23,9 +23,6 @@ function host(overrides: Partial<Parameters<typeof HostEntity.create>[0]['props'
       capabilities: null,
       publicKey: current.base64,
       publicKeyFingerprint: current.fingerprint,
-      previousPublicKey: null,
-      previousPublicKeyFingerprint: null,
-      previousPublicKeyExpiresAt: null,
       lastSeenAt: null,
       unpairedAt: null,
       ...overrides,
@@ -38,6 +35,7 @@ describe('HostEntity.register', () => {
     const current = key();
 
     const registered = HostEntity.register({
+      id: 'host-1',
       ownerUserId: 'jordi',
       name: 'Dev box',
       publicKey: current.base64,
@@ -54,9 +52,10 @@ describe('HostEntity.register', () => {
     });
   });
 
-  it('starts with one key and no retired one', () => {
+  it('is the key the machine presented, and the fingerprint of it', () => {
     const current = key();
     const registered = HostEntity.register({
+      id: 'host-1',
       ownerUserId: 'jordi',
       name: 'Dev box',
       publicKey: current.base64,
@@ -64,42 +63,12 @@ describe('HostEntity.register', () => {
       pairingTokenId: 'token-1',
     });
 
-    expect(registered.keysValidAt(new Date())).toEqual([current.base64]);
-    expect(registered.previousPublicKey).toBeNull();
-  });
-});
-
-describe('keysValidAt', () => {
-  const now = new Date('2026-09-19T12:00:00Z');
-
-  it('always offers the current key', () => {
-    expect(host().keysValidAt(now)).toHaveLength(1);
-  });
-
-  it('offers a retired key while its window is open', () => {
-    const retired = key();
-    const subject = host({
-      previousPublicKey: retired.base64,
-      previousPublicKeyFingerprint: retired.fingerprint,
-      previousPublicKeyExpiresAt: new Date(now.getTime() + 60_000),
-    });
-
-    // A runner switches keys only once the control plane acknowledges, so a lost
-    // acknowledgement must leave it on a key that still works.
-    expect(subject.keysValidAt(now)).toContain(retired.base64);
-  });
-
-  it('drops a retired key once its window has closed', () => {
-    const retired = key();
-    const subject = host({
-      previousPublicKey: retired.base64,
-      previousPublicKeyFingerprint: retired.fingerprint,
-      previousPublicKeyExpiresAt: new Date(now.getTime() - 1),
-    });
-
-    expect(subject.keysValidAt(now)).not.toContain(retired.base64);
-    // Never zero keys: the current one is not part of the window.
-    expect(subject.keysValidAt(now)).toHaveLength(1);
+    // The id is the one the redemption statement recorded, not one the aggregate
+    // minted for itself — the row the statement named has to be this row.
+    expect(registered.id).toBe('host-1');
+    expect(registered.publicKey).toBe(current.base64);
+    expect(registered.hasFingerprint(current.fingerprint)).toBe(true);
+    expect(registered.hasFingerprint('f'.repeat(64))).toBe(false);
   });
 });
 
@@ -121,19 +90,6 @@ describe('unpair', () => {
 describe('invariants', () => {
   it('refuses a fingerprint that is not a SHA-256 digest', () => {
     expect(() => host({ publicKeyFingerprint: 'abc' })).toThrow();
-  });
-
-  it('refuses a retired key with no end to its window', () => {
-    // Either it is valid for ever or it is dropped at the next boot, and both
-    // leave a running runner unrecoverable.
-    const retired = key();
-    expect(() =>
-      host({
-        previousPublicKey: retired.base64,
-        previousPublicKeyFingerprint: retired.fingerprint,
-        previousPublicKeyExpiresAt: null,
-      }),
-    ).toThrow();
   });
 
   it('refuses a host with no owner', () => {

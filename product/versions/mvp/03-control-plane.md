@@ -30,13 +30,21 @@ The runner speaks to three things, and only one of them is the link
 (01). These are the control plane's side of it, and they are specified
 here rather than in the notes that consume them:
 
-- `POST /v1/hosts/register` — spends a one-hour single-use registration
+The API mounts every route under `/api/v1` (a global `api` prefix and URI
+version `1`), so the paths below carry that prefix and the runner's
+`--url` stays the bare control-plane origin.
+
+- `POST /api/v1/hosts/register` — spends a one-hour single-use registration
   token and answers with the host id, the control plane's key
   fingerprint (which the runner pins from then on), the release channel
   and the release base URL. Unauthenticated apart from the token; the
   source IP is recorded and shown (F5).
-- `DELETE /v1/hosts/{id}` — uninstall, authenticated by the host's boot
-  JWT rather than by the spent registration token.
+- `DELETE /api/v1/hosts/self` — uninstall, authenticated by the host's boot
+  JWT rather than by the spent registration token. The JWT is presented as
+  `Authorization: Bearer`, so the credential resolver must recognise a host
+  principal alongside sessions and personal access tokens — the second
+  verifier below. There is no id in the path: the host is the subject of
+  the token it presented.
 - **Host JWT verification.** Boot tokens are EdDSA over the host's
   Ed25519 public key, five minutes, `aud` the control plane's URL, with
   a `jti` worth replay-checking. That is a second verifier next to the
@@ -116,14 +124,52 @@ boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 users, installations, repositories (**not a table**: listed live from
 GitHub through the installation; a repository is remembered only by the
 checkout that took it, as GitHub's own id plus the installation and a
-name snapshot), hosts, host_keys, projects (the body of work a session
-belongs to; auto-created from the first repository a session checks out,
-and found again by that repository's GitHub id; its slug is a directory
+name snapshot), hosts, host pairing tokens, projects (the body of work a
+session belongs to; auto-created from the first repository a session checks
+out, and found again by that repository's GitHub id; its slug is a directory
 name on every host and is never reissued), sessions (host, **project**,
 repo, base branch, branch, worktree path, agent, state, name) — a session
 belongs to a project —, session_events, attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
+
+**`host` carries `ownerUserId` and no workspace id** (08): a machine
+belongs to the person who paired it and every workspace they are in
+borrows it. **There is no `host_keys` table** — the host's public key and
+its fingerprint are columns on the host row, and the retired key joins
+them as two more columns when rotation arrives on the link (09 §3);
+rotation needs exactly two keys, never N, and every runner boot verifies
+an assertion against that one row. The pairing token is a row of its own
+because it is a credential that exists before its subject does: it
+carries the same `ownerUserId`, the digest of its secret and nothing
+recoverable, plus the address it was minted from and the address it was
+spent from (F5).
+
+The module exposes these, and which credential each accepts is the whole
+of its authorization:
+
+| Route | Credential |
+|---|---|
+| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read` |
+| `POST /hosts/pairing`, `GET /hosts/pairing`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
+| `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
+| `POST /hosts/register` | the registration token in the body, and nothing else |
+| `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
+
+Two routes therefore delete a host and they are not the same operation:
+`DELETE /hosts/{id}` is a person unpairing a machine they own, guarded by
+policies; `DELETE /hosts/self` is the machine saying it has been
+uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
+neither deletes the row.
+
+**The machine's own read of its host row is unscoped, by design.** A host
+is not tenant-scoped and there is no person on that request to scope by:
+it proves who it is with a signature. Every *person's* read goes through
+the own-or-grant scoped repository, and anything that wants to run work
+on a host — `sessions/` first — asks `HostAccessPort.assertUsable(scope,
+hostId)`, which loads the host through that same scoped read and refuses
+an unreachable or unpaired one as missing. That port, not the repository,
+is what `hosts/` publishes.
 
 ## Open questions
 

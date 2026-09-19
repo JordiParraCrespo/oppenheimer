@@ -35,14 +35,13 @@ import { FindHostHttpController } from './queries/find-host/find-host.http.contr
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
 import { FindHostsHttpController } from './queries/find-hosts/find-hosts.http.controller';
 import { FindHostsQueryHandler } from './queries/find-hosts/find-hosts.query-handler';
-import { FindPairingTokenQueryHandler } from './queries/find-pairing-token/find-pairing-token.query-handler';
 import { FindPairingTokensHttpController } from './queries/find-pairing-tokens/find-pairing-tokens.http.controller';
 import { FindPairingTokensQueryHandler } from './queries/find-pairing-tokens/find-pairing-tokens.query-handler';
 
 /**
  * Registration order matters: every static path has to be registered before
  * `:id`, or `GET /hosts/pairing` is answered by the host detail route with
- * "pairing" as an id, and `DELETE /hosts/self` by unpair.
+ * "pairing" as an id, and `DELETE /hosts/self` by the console's unpair.
  */
 const httpControllers = [
   FindHostsHttpController,
@@ -69,7 +68,6 @@ const queryHandlers: Provider[] = [
   FindHostsQueryHandler,
   FindHostQueryHandler,
   FindPairingTokensQueryHandler,
-  FindPairingTokenQueryHandler,
 ];
 
 const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
@@ -114,9 +112,9 @@ const resolvers: Provider[] = [
     RunnerReleaseConfig,
     HostPrincipalGuard,
   ],
-  // The two application ports are the module's published surface: the auth layer
-  // needs the first to classify a bearer, and whatever runs work on a host needs
-  // the second to check the caller may.
-  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_REPOSITORY, TypeOrmModule],
+  // The two application ports, and nothing else. A consumer that could inject
+  // the repository could skip `assertUsable` and read unpaired rows unscoped,
+  // which is exactly the check the port exists to make unavoidable.
+  exports: [HOST_ASSERTION, HOST_ACCESS],
 })
 export class HostsModule {}

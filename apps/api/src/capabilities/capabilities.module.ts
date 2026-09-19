@@ -2,6 +2,7 @@ import { Global, Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
+import { hostsAreConfigured } from '../config/hosts.config';
 
 /**
  * Whether the sessions GitHub App is usable on this deployment.
@@ -53,14 +54,10 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
         configService.get('storage.s3AccessKeyId') &&
           configService.get('storage.s3SecretAccessKey'),
       ),
-    // A machine can only pair with a deployment that has somewhere to download
-    // the runner from and a key of its own to be pinned by, so all three are
-    // required together; see `hosts.config.ts`.
-    hosts: Boolean(
-      configService.get('hosts.signingKey') &&
-        configService.get('hosts.releaseBaseUrl') &&
-        configService.get('hosts.installUrl'),
-    ),
+    // The same predicate the host routes refuse on, called rather than
+    // re-derived: a capability that says yes while every route answers
+    // HOSTS_004 is a second source of truth, and the console reads this one.
+    hosts: hostsAreConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

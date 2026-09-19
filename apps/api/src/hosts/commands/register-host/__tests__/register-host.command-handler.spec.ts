@@ -30,13 +30,21 @@ function keypair() {
   return { base64, fingerprint: keyFingerprint(base64) as string };
 }
 
+/** What the burn hands back about the row it claimed. */
+const REDEEMED = {
+  id: 'token-1',
+  ownerUserId: 'jordi',
+  intendedName: 'Dev box',
+  redeemedHostId: 'host-new',
+};
+
 function token(
   overrides: Partial<Parameters<typeof HostPairingTokenEntity.create>[0]['props']> = {},
 ) {
   return HostPairingTokenEntity.create({
     id: 'token-1',
     props: {
-      createdByUserId: 'jordi',
+      ownerUserId: 'jordi',
       intendedName: 'Dev box',
       prefix: 'opr_reg_abcdef',
       tokenHash: TOKEN_HASH,
@@ -64,21 +72,33 @@ function existingHost(fingerprint: string, publicKey: string) {
       capabilities: null,
       publicKey,
       publicKeyFingerprint: fingerprint,
-      previousPublicKey: null,
-      previousPublicKeyFingerprint: null,
-      previousPublicKeyExpiresAt: null,
       lastSeenAt: null,
       unpairedAt: null,
     },
   });
 }
 
+/**
+ * The document `apps/runner/internal/host/domain.Facts` marshals, field for
+ * field — the shared schema takes the runner's struct verbatim, so a fixture
+ * that drifts from it is a fixture that hides a 400.
+ */
 const FACTS = {
-  hostname: 'devbox.local',
-  platform: 'macos',
+  platform: 'macos' as const,
+  osVersion: '15.2',
   arch: 'arm64',
-  tools: { git: '2.51.0', tmux: '3.5a', claude: null },
-  agents: [],
+  hostname: 'devbox.local',
+  user: 'jordi',
+  home: '/Users/jordi',
+  root: false,
+  tools: [
+    { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
+    { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
+    { name: 'claude', required: false },
+  ],
+  workspacePath: '/Users/jordi/oppenheimer-ai',
+  diskFreeBytes: 214_748_364_800,
+  runnerVersion: '0.3.1',
 };
 
 describe('RegisterHostCommandHandler', () => {
@@ -100,8 +120,9 @@ describe('RegisterHostCommandHandler', () => {
   beforeEach(() => {
     key = keypair();
     hosts = {
-      // The adapter hands back the aggregate it inserted; the double does the same.
-      redeemAndRegister: vi.fn(async ({ host }) => Some(host)),
+      // The adapter builds the host from the row its statement claimed, and hands
+      // back what it inserted; the double does the same with a fixed row.
+      redeemAndRegister: vi.fn(async ({ host }) => Some(host(REDEEMED))),
       findOneByIdForMachine: vi.fn().mockResolvedValue(None),
     };
     tokens = { findOneByHash: vi.fn().mockResolvedValue(Some(token())) };
@@ -133,11 +154,13 @@ describe('RegisterHostCommandHandler', () => {
     const result = await handler.execute(command());
 
     expect(result).toMatchObject({
+      // The id the redemption statement recorded, so the response names the row
+      // that statement wrote.
+      hostId: 'host-new',
       fingerprint: CONTROL_PLANE_FINGERPRINT,
       channel: 'stable',
       releaseBaseUrl: 'https://releases.example.com',
     });
-    expect(result.hostId).toBeTruthy();
   });
 
   it('adopts the name the token carried, not the one the runner detected', async () => {
@@ -146,17 +169,37 @@ describe('RegisterHostCommandHandler', () => {
     await handler.execute(command({ name: 'devbox.local' }));
 
     const [{ host }] = vi.mocked(hosts.redeemAndRegister).mock.calls[0];
-    expect(host.name).toBe('Dev box');
+    expect(host(REDEEMED).name).toBe('Dev box');
     // And the host belongs to whoever minted the token, not to whoever asked.
-    expect(host.ownerUserId).toBe('jordi');
+    expect(host(REDEEMED).ownerUserId).toBe('jordi');
   });
 
   it('records the machine’s facts, and the columns worth querying', async () => {
     await handler.execute(command());
 
     const [{ host }] = vi.mocked(hosts.redeemAndRegister).mock.calls[0];
-    expect(host).toMatchObject({ hostname: 'devbox.local', os: 'macos', arch: 'arm64' });
-    expect(host.capabilities).toEqual(FACTS);
+    const registered = host(REDEEMED);
+
+    expect(registered).toMatchObject({
+      hostname: 'devbox.local',
+      // The family the runner installs a service for, plus the release when it
+      // determined one.
+      os: 'macos 15.2',
+      arch: 'arm64',
+      runnerVersion: '0.3.1',
+    });
+    // The whole inventory as it arrived, tools included: an agent is a probed
+    // tool, so there is no second list to keep in step.
+    expect(registered.capabilities).toEqual(FACTS);
+  });
+
+  it('builds no aggregate for a token the burn refused', async () => {
+    // The callback is the whole point: a forged token never constructs a host,
+    // because the statement that decides it may be spent is what calls it.
+    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
+    vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
   });
 
   it('spends the token by digest, and never by the secret', async () => {
@@ -206,10 +249,12 @@ describe('RegisterHostCommandHandler', () => {
   });
 
   it('refuses a token nobody ever minted', async () => {
+    // One read, not two: the burn is the only thing that looks the token up
+    // before deciding, and the second read below happens only on the retry path.
+    vi.mocked(hosts.redeemAndRegister).mockResolvedValue(None);
     vi.mocked(tokens.findOneByHash).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_003' });
-    expect(hosts.redeemAndRegister).not.toHaveBeenCalled();
   });
 
   it('refuses a public key that is not an Ed25519 key', async () => {
@@ -223,6 +268,6 @@ describe('RegisterHostCommandHandler', () => {
     release.isConfigured = false;
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_004' });
-    expect(tokens.findOneByHash).not.toHaveBeenCalled();
+    expect(hosts.redeemAndRegister).not.toHaveBeenCalled();
   });
 });

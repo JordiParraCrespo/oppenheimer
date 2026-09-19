@@ -180,8 +180,14 @@ describe('Hosts & pairing (integration)', () => {
     };
   }
 
+  /**
+   * The document `apps/runner/internal/host/domain.Facts` marshals — the shared
+   * schema takes that struct verbatim, so this is the payload a real
+   * `runner register` sends, not an API-shaped approximation of it.
+   */
   const FACTS = {
     platform: 'macos',
+    osVersion: '15.2',
     arch: 'arm64',
     hostname: 'devbox.local',
     user: 'jordi',
@@ -190,11 +196,11 @@ describe('Hosts & pairing (integration)', () => {
     tools: [
       { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
       { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
-      { name: 'claude', path: '/opt/homebrew/bin/claude', version: '2.1.0', required: false },
+      { name: 'claude', required: false },
     ],
     workspacePath: '/Users/jordi/oppenheimer-ai',
-    diskFreeBytes: 120_000_000_000,
-    runnerVersion: '0.1.0',
+    diskFreeBytes: 214_748_364_800,
+    runnerVersion: '0.3.1',
   };
 
   function register(secret: string, key: ReturnType<typeof hostKey>, name = 'detected-name') {
@@ -244,8 +250,27 @@ describe('Hosts & pairing (integration)', () => {
       expect(byName.get('ownerUserId')?.is_nullable).toBe('NO');
       expect(byName.get('capabilities')?.data_type).toBe('jsonb');
       expect(byName.get('publicKey')?.data_type).toBe('text');
-      expect(byName.get('previousPublicKeyExpiresAt')?.is_nullable).toBe('YES');
       expect(byName.get('unpairedAt')?.is_nullable).toBe('YES');
+
+      // No rotation columns yet: nothing in this slice can write a retired key,
+      // and three nullable fields with no writer are harder to explain than
+      // adding them when the link can carry a rotation.
+      expect(byName.has('previousPublicKey')).toBe(false);
+      expect(byName.has('previousPublicKeyFingerprint')).toBe(false);
+      expect(byName.has('previousPublicKeyExpiresAt')).toBe(false);
+    });
+
+    it('names the token’s owner column the same as the host’s', async () => {
+      const columns: { column_name: string }[] = await dataSource.query(
+        `SELECT column_name FROM information_schema.columns
+          WHERE table_name = 'host_pairing_token'`,
+      );
+      const names = columns.map((column) => column.column_name);
+
+      // Same person, same column name, same scope rule — which is why the token
+      // repository is scoped by `HostResource` rather than a second declaration.
+      expect(names).toContain('ownerUserId');
+      expect(names).not.toContain('createdByUserId');
     });
 
     it('stores both pairing source addresses as inet', async () => {
@@ -266,29 +291,13 @@ describe('Hosts & pairing (integration)', () => {
       expect(indexes.some((index) => /UNIQUE.*tokenHash/i.test(index.indexdef))).toBe(true);
     });
 
-    it('makes the host key fingerprint unique and indexes the retired one', async () => {
+    it('makes the host key fingerprint unique', async () => {
       const indexes: { indexdef: string }[] = await dataSource.query(
         `SELECT indexdef FROM pg_indexes WHERE tablename = 'host'`,
       );
       expect(indexes.some((index) => /UNIQUE.*publicKeyFingerprint/i.test(index.indexdef))).toBe(
         true,
       );
-      // A boot assertion may arrive under either key during a rotation window.
-      expect(indexes.some((index) => /previousPublicKeyFingerprint/i.test(index.indexdef))).toBe(
-        true,
-      );
-    });
-
-    it('refuses a retired key with no end to its window', async () => {
-      // The check constraint is the last line of defence behind the aggregate's
-      // invariant: a key valid for ever is as bad as none at all.
-      await expect(
-        dataSource.query(
-          `INSERT INTO "host" ("ownerUserId", "name", "publicKey", "publicKeyFingerprint", "previousPublicKey")
-             VALUES ($1, 'bad', 'k', $2, 'old')`,
-          [user.id, 'a'.repeat(64)],
-        ),
-      ).rejects.toThrow();
     });
 
     it('grants the default user role its own hosts', async () => {
@@ -355,12 +364,44 @@ describe('Hosts & pairing (integration)', () => {
         name: 'Named by the console',
         ownerUserId: user.id,
         hostname: 'devbox.local',
-        os: 'macos',
+        // The family the runner installs a service for, plus the release it
+        // reported; the parts stay separate in `capabilities`.
+        os: 'macos 15.2',
         arch: 'arm64',
+        runnerVersion: '0.3.1',
         // Nothing has sent a heartbeat, so it cannot be online.
         online: false,
       });
+      expect(host.body?.capabilities).toEqual(FACTS);
       expect(host.body?.publicKeyFingerprint).toBe(key.fingerprint);
+    });
+
+    it('accepts the document a real runner sends, tools array and all', async () => {
+      // This is the test that would have caught a schema that only the unit
+      // fixtures could satisfy: the body below is `Facts` as Go marshals it,
+      // including a `claude` probe with no path because the tool was not found
+      // and Go omits the empty string.
+      const minted = await mintPairingToken('Real runner');
+      const registered = await register(minted.secret, hostKey());
+
+      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
+    });
+
+    it('refuses a facts document that is not one', async () => {
+      const minted = await mintPairingToken();
+      const refused = await call('/api/v1/hosts/register', {
+        method: 'POST',
+        body: {
+          token: minted.secret,
+          name: 'wrong shape',
+          publicKey: hostKey().base64,
+          facts: { hostname: 'devbox.local', os: 'macos', arch: 'arm64' },
+        },
+      });
+
+      // A validation failure, not a pairing failure: the token is untouched and
+      // can still be spent by a runner that sends what it is specified to send.
+      expect(refused.status).toBe(400);
     });
 
     it('records where the token was spent, beside where it was minted', async () => {

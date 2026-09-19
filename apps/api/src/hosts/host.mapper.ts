@@ -7,6 +7,8 @@ import { HostResponseDto } from './dtos/host.response.dto';
 
 /** What a runner sends when it registers, before anything has been read out of it. */
 export interface HostRegistration {
+  /** The id the redemption statement recorded for this host. */
+  id: string;
   ownerUserId: string;
   /** The name the token carried, or the one the runner detected. */
   name: string;
@@ -27,26 +29,26 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
   /**
    * Registration payload → the props the aggregate is created from.
    *
-   * The three facts worth a column of their own are pulled out — what the machine
-   * calls itself, its platform and its architecture — and the whole inventory is
-   * kept on `capabilities` as it arrived, because what a session wants to know
-   * about a host grows and a jsonb column grows with it.
-   *
-   * `runnerVersion` has no column to read: the facts contract carries the
-   * machine's identity and its tools, not the version of the program reporting
-   * them, so it stays null until the link says otherwise.
+   * The four facts worth a column of their own are pulled out — what the machine
+   * calls itself, its platform, its architecture and the version of the runner
+   * reporting them — and the whole inventory is kept on `capabilities` as it
+   * arrived, because what a session wants to know about a host grows and a jsonb
+   * column grows with it. The probed tools stay in there rather than becoming a
+   * detected-agents column: an agent *is* a probed tool, and deriving the list
+   * by name costs a filter and keeps one source for "what is installed".
    */
   toRegisterProps(registration: HostRegistration): RegisterHostProps {
     const facts = registration.facts;
     return {
+      id: registration.id,
       ownerUserId: registration.ownerUserId,
       name: registration.name,
       publicKey: registration.publicKey,
       publicKeyFingerprint: registration.publicKeyFingerprint,
       hostname: facts?.hostname ?? null,
-      os: facts?.platform ?? null,
+      os: facts ? platformOf(facts) : null,
       arch: facts?.arch ?? null,
-      runnerVersion: null,
+      runnerVersion: facts?.runnerVersion ?? null,
       capabilities: facts ? { ...facts } : null,
       pairingTokenId: registration.pairingTokenId,
     };
@@ -64,9 +66,6 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     record.capabilities = entity.capabilities;
     record.publicKey = entity.publicKey;
     record.publicKeyFingerprint = entity.publicKeyFingerprint;
-    record.previousPublicKey = entity.previousPublicKey;
-    record.previousPublicKeyFingerprint = entity.previousPublicKeyFingerprint;
-    record.previousPublicKeyExpiresAt = entity.previousPublicKeyExpiresAt;
     record.lastSeenAt = entity.lastSeenAt;
     record.unpairedAt = entity.unpairedAt;
     return record;
@@ -87,9 +86,6 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
         capabilities: record.capabilities,
         publicKey: record.publicKey,
         publicKeyFingerprint: record.publicKeyFingerprint,
-        previousPublicKey: record.previousPublicKey,
-        previousPublicKeyFingerprint: record.previousPublicKeyFingerprint,
-        previousPublicKeyExpiresAt: record.previousPublicKeyExpiresAt,
         lastSeenAt: record.lastSeenAt,
         unpairedAt: record.unpairedAt,
       },
@@ -125,4 +121,13 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.updatedAt = entity.updatedAt;
     return dto;
   }
+}
+
+/**
+ * The platform column: the family the runner installs a service for, plus the
+ * release when it could determine one — `macos 15.2` reads better on a host row
+ * than `macos` alone, and the parts stay separate in `capabilities`.
+ */
+function platformOf(facts: HostFactsDto): string {
+  return facts.osVersion ? `${facts.platform} ${facts.osVersion}` : facts.platform;
 }

@@ -17,12 +17,17 @@ import { MintPairingTokenCommand } from './mint-pairing-token.command';
 const LIFETIME_MS = 60 * 60 * 1000;
 
 /**
- * What the caller gets back. Commands normally return only the aggregate id, but
- * the secret exists only inside this handler — the row holds its digest, so no
- * follow-up query could recover it.
+ * What the caller gets back.
+ *
+ * Commands normally return only the aggregate id and the controller re-reads
+ * through a query. Not here, for two reasons: the secret exists only inside this
+ * handler — the row holds its digest, so no follow-up query could ever recover
+ * it — and the row itself was just written by this transaction, so bouncing it
+ * back through the query bus would be a second read of something already in
+ * hand.
  */
 export interface MintPairingTokenResult {
-  tokenId: string;
+  token: HostPairingTokenEntity;
   installCommand: string;
   agentPrompt: string;
 }
@@ -56,7 +61,7 @@ export class MintPairingTokenCommandHandler
 
     const secret = generatePairingTokenSecret();
     const token = HostPairingTokenEntity.mint({
-      createdByUserId: command.userId,
+      ownerUserId: command.userId,
       intendedName: command.name,
       prefix: secret.prefix,
       tokenHash: secret.hash,
@@ -67,7 +72,7 @@ export class MintPairingTokenCommandHandler
     await this.tokens.insert(token);
 
     return {
-      tokenId: token.id,
+      token,
       installCommand: this.release.installCommandFor(secret.secret),
       agentPrompt: this.release.agentPromptFor(secret.secret),
     };

@@ -50,9 +50,6 @@ function bootClaims(hostId: string, overrides: Record<string, unknown> = {}) {
 function hostWith(props: {
   publicKey: string;
   publicKeyFingerprint: string;
-  previousPublicKey?: string | null;
-  previousPublicKeyFingerprint?: string | null;
-  previousPublicKeyExpiresAt?: Date | null;
   unpairedAt?: Date | null;
 }): HostEntity {
   return HostEntity.create({
@@ -65,9 +62,6 @@ function hostWith(props: {
       arch: null,
       runnerVersion: null,
       capabilities: null,
-      previousPublicKey: null,
-      previousPublicKeyFingerprint: null,
-      previousPublicKeyExpiresAt: null,
       lastSeenAt: null,
       unpairedAt: null,
       ...props,
@@ -109,9 +103,11 @@ describe('HostAssertionResolver', () => {
 
   const verify = (token: string) => resolver.verify(token);
 
-  it('accepts an assertion the host signed', async () => {
+  it('accepts an assertion the host signed, and reports its expiry', async () => {
     await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).resolves.toEqual({
       hostId: 'host-1',
+      // The caller bounds what it caches by this rather than guessing.
+      expiresAt: new Date(NOW.getTime() + 300_000),
     });
   });
 
@@ -182,7 +178,7 @@ describe('HostAssertionResolver', () => {
     // are the same deployment.
     const claims = bootClaims('host-1', { aud: `${CONTROL_PLANE}/` });
 
-    await expect(verify(assertion(current.privateKey, claims))).resolves.toEqual({
+    await expect(verify(assertion(current.privateKey, claims))).resolves.toMatchObject({
       hostId: 'host-1',
     });
   });
@@ -218,43 +214,35 @@ describe('HostAssertionResolver', () => {
     await expect(verify('oppenheimer_pat_abc')).rejects.toMatchObject({ code: 'HOSTS_005' });
   });
 
-  describe('a key being rotated out', () => {
-    it('accepts the retired key while its window is open', async () => {
-      const retired = keypair();
-      vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(
-        Some(
-          hostWith({
-            publicKey: current.base64,
-            publicKeyFingerprint: current.fingerprint,
-            previousPublicKey: retired.base64,
-            previousPublicKeyFingerprint: retired.fingerprint,
-            previousPublicKeyExpiresAt: new Date(NOW.getTime() + 60_000),
-          }),
-        ),
-      );
-
-      await expect(verify(assertion(retired.privateKey, bootClaims('host-1')))).resolves.toEqual({
-        hostId: 'host-1',
-      });
+  it('refuses one minted with a longer life than a boot token', async () => {
+    // Claimed life, not remaining life: an assertion issued a week ago with four
+    // minutes left on it was not minted as a boot token, and capping only what is
+    // left would accept it.
+    const issued = Math.floor(NOW.getTime() / 1000) - 7 * 24 * 3600;
+    const claims = bootClaims('host-1', {
+      iat: issued,
+      exp: Math.floor(NOW.getTime() / 1000) + 240,
     });
 
-    it('refuses it once the window has closed', async () => {
-      const retired = keypair();
-      vi.mocked(hosts.findOneByIdForMachine).mockResolvedValue(
-        Some(
-          hostWith({
-            publicKey: current.base64,
-            publicKeyFingerprint: current.fingerprint,
-            previousPublicKey: retired.base64,
-            previousPublicKeyFingerprint: retired.fingerprint,
-            previousPublicKeyExpiresAt: new Date(NOW.getTime() - 1),
-          }),
-        ),
-      );
+    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
+      code: 'HOSTS_005',
+    });
+  });
 
-      await expect(
-        verify(assertion(retired.privateKey, bootClaims('host-1'))),
-      ).rejects.toMatchObject({ code: 'HOSTS_005' });
+  it('refuses one issued in the future', async () => {
+    const claims = bootClaims('host-1', { iat: Math.floor(NOW.getTime() / 1000) + 600 });
+
+    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
+      code: 'HOSTS_005',
+    });
+  });
+
+  it('refuses one with no issued-at to measure its life against', async () => {
+    const { iat, ...claims } = bootClaims('host-1');
+    void iat;
+
+    await expect(verify(assertion(current.privateKey, claims))).rejects.toMatchObject({
+      code: 'HOSTS_005',
     });
   });
 
@@ -273,9 +261,9 @@ describe('HostAssertionResolver', () => {
         ),
       );
 
-      await expect(verify(assertion(current.privateKey, bootClaims('host-1')))).resolves.toEqual({
-        hostId: 'host-1',
-      });
+      await expect(
+        verify(assertion(current.privateKey, bootClaims('host-1'))),
+      ).resolves.toMatchObject({ hostId: 'host-1' });
     });
   });
 
