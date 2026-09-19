@@ -239,15 +239,29 @@ func TestSetChannelAndPinPersist(t *testing.T) {
 	}
 }
 
-func TestUnregisterRevokesAndErasesTheIdentity(t *testing.T) {
+func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T) {
 	svc, store, cp := newService(t)
 	identity := register(t, svc)
+	_, key, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err := svc.Unregister(context.Background()); err != nil {
 		t.Fatalf("unregister: %v", err)
 	}
-	if len(cp.Revoked) != 1 || cp.Revoked[0] != identity.HostID {
-		t.Fatalf("revoked = %v", cp.Revoked)
+	if len(cp.Revoked) != 1 {
+		t.Fatalf("revoked = %v, want exactly one call", cp.Revoked)
+	}
+	// Uninstall authenticates with the boot assertion, and the host names
+	// itself by that token's subject rather than by an id in the path.
+	parsed, err := jwt.Parse(cp.Revoked[0], func(*jwt.Token) (any, error) { return key.Public(), nil },
+		jwt.WithValidMethods([]string{"EdDSA"}), jwt.WithAudience(identity.ControlPlaneURL))
+	if err != nil {
+		t.Fatalf("the revoke call must carry the host assertion: %v", err)
+	}
+	if subject, err := parsed.Claims.GetSubject(); err != nil || subject != identity.HostID {
+		t.Fatalf("assertion subject = %q, want %q", subject, identity.HostID)
 	}
 	if _, err := os.Stat(store.KeyPath()); !os.IsNotExist(err) {
 		t.Fatal("the host key must be gone after unregister")

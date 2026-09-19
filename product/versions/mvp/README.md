@@ -107,3 +107,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
   `AgentMark`); the frames in `design/version1/` remain the visual
   record and 05 is the written one.
+- 2026-09-19: the runner's two ordinary HTTPS calls carry the API's
+  `/api/v1` prefix — `POST /api/v1/hosts/register` and `DELETE
+  /api/v1/hosts/self` — and uninstall no longer puts a host id in the
+  path: the host names itself by the subject of the boot JWT it presents.
+  That JWT stays an `Authorization: Bearer` credential, which the control
+  plane's resolver recognises as a host principal next to session cookies
+  and personal access tokens, rather than a header of its own that would
+  be frozen into every installed runner. **Key rotation leaves the
+  runner** until the link can carry it: the register route redeems
+  registration tokens and cannot rotate a key, and 09 §3 already places
+  rotation on an authenticated link. Recorded in 01, 03 and
+  `apps/runner`'s pairing client.
