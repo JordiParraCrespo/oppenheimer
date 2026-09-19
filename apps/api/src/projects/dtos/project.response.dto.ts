@@ -7,29 +7,27 @@ export class ProjectResponseDto {
   @ApiProperty({ format: 'uuid' })
   organizationId!: string;
 
-  @ApiProperty({ example: 'xrp-mobile' })
+  @ApiProperty({
+    description: 'The GitHub repository’s name, as GitHub spells it. Display only.',
+    example: 'xrp-mobile',
+  })
   name!: string;
 
   @ApiProperty({
     description:
-      'The project’s directory name on every host that holds it. Immutable, and never reused once archived.',
+      'The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.',
     example: 'xrp-mobile',
   })
   slug!: string;
 
   @ApiPropertyOptional({
-    description: 'GitHub id of the repository whose first session created the project.',
+    description:
+      'GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.',
     nullable: true,
-    type: Number,
+    type: String,
+    example: '821374923',
   })
-  originGithubRepoId!: number | null;
-
-  @ApiPropertyOptional({
-    description: 'When the project was archived. Projects are never deleted.',
-    nullable: true,
-    type: Date,
-  })
-  archivedAt!: Date | null;
+  originGithubRepoId!: string | null;
 
   @ApiProperty()
   createdAt!: Date;

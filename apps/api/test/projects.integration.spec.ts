@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import { AddProjectRolePermissions1789000100000 } from '../src/migrations/1789000100000-AddProjectRolePermissions';
 import { ProjectLookupResolver } from '../src/projects/application/project-lookup.resolver';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
@@ -10,16 +10,16 @@ import { ProjectMapper } from '../src/projects/project.mapper';
 import { runAllMigrations } from './run-migrations';
 
 /**
- * The auto-creation race, against a real Postgres.
+ * The auto-creation races, against a real Postgres.
  *
- * The unit tests double the unique constraint; this is the layer that proves
- * Postgres behaves the way the double claims — and that the migration actually
- * created the constraint the `ON CONFLICT` target names. Get either wrong and
- * two concurrent first sessions on one repository quietly produce two projects,
- * two directories and two branches, which is a bug no unit test could catch.
+ * The unit tests double the two unique constraints; this is the layer that
+ * proves Postgres behaves the way the double claims — and that the migration
+ * actually created the constraints the statements name. Get either wrong and two
+ * concurrent first sessions on one repository quietly produce two projects, two
+ * directories and two branches, which is a bug no unit test could catch.
  *
- * The schema is built by running the **whole migration chain**, so a mistake in
- * the migration fails here rather than in production.
+ * The schema is built by running the **whole migration chain**, so a mistake in a
+ * migration fails here rather than in production.
  */
 describe('projects: race-safe auto-creation (integration)', () => {
   let pgContainer: StartedTestContainer;
@@ -35,6 +35,13 @@ describe('projects: race-safe auto-creation (integration)', () => {
     grants: new Map<string, Set<string>>(),
     bypass: false,
   });
+
+  const projectRows = (): Promise<{ id: string; slug: string; name: string }[]> =>
+    dataSource.query(
+      `SELECT "id", "slug", "name", "originGithubRepoId" FROM "project"
+        WHERE "organizationId" = $1 ORDER BY "createdAt"`,
+      [organizationId],
+    );
 
   beforeAll(async () => {
     pgContainer = await new GenericContainer('postgres:16-alpine')
@@ -59,18 +66,18 @@ describe('projects: race-safe auto-creation (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      // No Nest container here on purpose: the race lives in the repository and
+      // No Nest container here on purpose: the races live in the repository and
       // the resolver, and booting the application would only add Redis and
       // Better Auth to the set of things that can make this suite red.
-      entities: [ProjectOrmEntity, OutboxMessageSchema],
+      entities: [ProjectOrmEntity],
       synchronize: false,
+      migrations: [AddProjectRolePermissions1789000100000],
     });
     await dataSource.initialize();
 
     repository = new ProjectRepository(
       dataSource.getRepository(ProjectOrmEntity),
       new ProjectMapper(),
-      new OutboxService(dataSource),
     );
     resolver = new ProjectLookupResolver(repository);
   }, 180000);
@@ -81,8 +88,8 @@ describe('projects: race-safe auto-creation (integration)', () => {
   });
 
   beforeEach(async () => {
-    // A workspace per test: `project.organizationId` has a foreign key, and the
-    // unique slug is per workspace.
+    // A workspace per test: `project.organizationId` has a foreign key, and both
+    // uniqueness rules are per workspace.
     organizationId = randomUUID();
     await dataSource.query(
       `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
@@ -91,7 +98,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
   });
 
   it('resolves two concurrent first sessions on one repository to a single project', async () => {
-    const origin = { githubRepoId: 4242, repositoryName: 'acme/xrp-mobile' };
+    const origin = { githubRepoId: '4242', owner: 'acme', name: 'xrp-mobile' };
     const caller = scope();
 
     const [left, right] = await Promise.all([
@@ -99,114 +106,161 @@ describe('projects: race-safe auto-creation (integration)', () => {
       resolver.ensureForRepository(caller, origin),
     ]);
 
-    expect(left).toBe(right);
-    const rows = await dataSource.query(
-      `SELECT "id", "slug", "name", "originGithubRepoId" FROM "project" WHERE "organizationId" = $1`,
-      [organizationId],
-    );
+    expect(left.id).toBe(right.id);
+    const rows = await projectRows();
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: left, slug: 'xrp-mobile', name: 'xrp-mobile' });
-    // A bigint comes back as a string; the domain holds the number.
-    expect(Number(rows[0].originGithubRepoId)).toBe(4242);
+    expect(rows[0]).toMatchObject({ id: left.id, slug: 'xrp-mobile', name: 'xrp-mobile' });
+    // A bigint comes back as a string, and stays one.
+    expect(rows[0].originGithubRepoId).toBe('4242');
   });
 
-  it('reports a taken slug from the insert itself, never from a second query', async () => {
-    // The statement under test, on its own: the migration's
-    // `UQ_project_organization_slug` is the conflict target, and a losing insert
-    // has to come back as `false` rather than as a thrown unique violation.
+  it('holds the origin unique even when the plain directory name is already taken', async () => {
+    // The race a slug-keyed conflict target cannot win: both callers lose the
+    // plain name to a different repository, both derive `<owner>--<repo>`, and
+    // only the unique origin stops both of them landing.
+    await resolver.ensureForRepository(scope(), {
+      githubRepoId: '1',
+      owner: 'acme',
+      name: 'xrp-mobile',
+    });
+
+    const origin = { githubRepoId: '2', owner: 'other', name: 'xrp-mobile' };
+    const [left, right] = await Promise.all([
+      resolver.ensureForRepository(scope(), origin),
+      resolver.ensureForRepository(scope(), origin),
+    ]);
+
+    expect(left.id).toBe(right.id);
+    expect(left.slug).toBe('other--xrp-mobile');
+    const rows = await projectRows();
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.slug)).toEqual(['xrp-mobile', 'other--xrp-mobile']);
+  });
+
+  it('reports each conflict as what it is, from the statement itself', async () => {
+    // The two outcomes on their own: a second repository wanting a taken
+    // directory name, and a second create for a repository that already has a
+    // project. Both come back from the write rather than as a thrown violation.
     const first = ProjectEntity.createNew({
       organizationId,
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
-      originGithubRepoId: 1,
+      originGithubRepoId: '1',
     });
-    const second = ProjectEntity.createNew({
+    const sameSlug = ProjectEntity.createNew({
       organizationId,
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
-      originGithubRepoId: 2,
+      originGithubRepoId: '2',
     });
-
-    expect(await repository.insertIfSlugAvailable(first)).toBe(true);
-    expect(await repository.insertIfSlugAvailable(second)).toBe(false);
-
-    const rows = await dataSource.query(`SELECT "id" FROM "project" WHERE "organizationId" = $1`, [
+    const sameOrigin = ProjectEntity.createNew({
       organizationId,
-    ]);
-    expect(rows).toEqual([{ id: first.id }]);
-  });
-
-  it('gives the second repository with the same name a suffixed directory', async () => {
-    const caller = scope();
-
-    const first = await resolver.ensureForRepository(caller, {
-      githubRepoId: 1,
-      repositoryName: 'acme/xrp-mobile',
-    });
-    const second = await resolver.ensureForRepository(caller, {
-      githubRepoId: 2,
-      repositoryName: 'other/xrp-mobile',
+      name: 'xrp-mobile',
+      slug: 'acme--xrp-mobile',
+      originGithubRepoId: '1',
     });
 
-    expect(second).not.toBe(first);
-    const rows = await dataSource.query(
-      `SELECT "id", "slug", "name" FROM "project" WHERE "organizationId" = $1 ORDER BY "createdAt"`,
-      [organizationId],
-    );
-    expect(rows.map((row: { slug: string }) => row.slug)).toEqual([
-      'xrp-mobile',
-      expect.stringMatching(/^xrp-mobile-[0-9a-z]{4}$/),
-    ]);
-    // Only the directory differs: the display name is the repository's either way.
-    expect(rows[1].name).toBe('xrp-mobile');
+    expect(await repository.insertIfUnclaimed(first)).toBe('inserted');
+    expect(await repository.insertIfUnclaimed(sameSlug)).toBe('slug-taken');
+    expect(await repository.insertIfUnclaimed(sameOrigin)).toBe('origin-taken');
+    expect(await projectRows()).toHaveLength(1);
   });
 
   it('keeps the same repository’s project across a GitHub rename', async () => {
     const caller = scope();
 
     const first = await resolver.ensureForRepository(caller, {
-      githubRepoId: 7,
-      repositoryName: 'acme/xrp-mobile',
+      githubRepoId: '7',
+      owner: 'acme',
+      name: 'xrp-mobile',
     });
     const again = await resolver.ensureForRepository(caller, {
-      githubRepoId: 7,
-      repositoryName: 'acme/xrp-wallet',
+      githubRepoId: '7',
+      owner: 'acme',
+      name: 'xrp-wallet',
     });
 
-    expect(again).toBe(first);
+    expect(again.id).toBe(first.id);
   });
 
-  it('scopes every read to the workspace, and hides archived projects by default', async () => {
+  it('scopes every read and every rename to the workspace', async () => {
     const caller = scope();
-    const projectId = await resolver.ensureForRepository(caller, {
-      githubRepoId: 11,
-      repositoryName: 'acme/xrp-mobile',
+    const project = await resolver.ensureForRepository(caller, {
+      githubRepoId: '11',
+      owner: 'acme',
+      name: 'xrp-mobile',
     });
 
     const other = { ...caller, organizationId: randomUUID() };
-    expect(await repository.findAll(other, { includeArchived: false })).toEqual([]);
-    expect((await repository.findOneById(other, projectId)).isNone()).toBe(true);
+    expect(await repository.findAll(other)).toEqual([]);
+    expect((await repository.findOneById(other, project.id)).isNone()).toBe(true);
 
-    const found = await repository.findOneById(caller, projectId);
-    const project = found.unwrap();
-    project.archive();
-    await repository.save(project);
+    project.rename('XRP Mobile');
+    expect((await repository.renameIfActive(other, project)).isNone()).toBe(true);
+    expect((await repository.renameIfActive(caller, project)).unwrap().name).toBe('XRP Mobile');
+  });
 
-    expect(await repository.findAll(caller, { includeArchived: false })).toEqual([]);
-    expect(await repository.findAll(caller, { includeArchived: true })).toHaveLength(1);
-    // The slug survives archiving: it is a retired directory name, not a freed one.
+  it('never lets a rename revive a project that was retired meanwhile', async () => {
+    const caller = scope();
+    const project = await resolver.ensureForRepository(caller, {
+      githubRepoId: '12',
+      owner: 'acme',
+      name: 'xrp-mobile',
+    });
+
+    // The column the slice that owns sessions will write. The rename below loaded
+    // before it was set, which is exactly the stale snapshot a whole-aggregate
+    // save would write back over the archive.
+    await dataSource.query(`UPDATE "project" SET "archivedAt" = now() WHERE "id" = $1`, [
+      project.id,
+    ]);
+    project.rename('XRP Mobile');
+
+    expect((await repository.renameIfActive(caller, project)).isNone()).toBe(true);
     const [row] = await dataSource.query(
-      `SELECT "slug", "archivedAt" FROM "project" WHERE "id" = $1`,
-      [projectId],
+      `SELECT "name", "archivedAt" FROM "project" WHERE "id" = $1`,
+      [project.id],
     );
-    expect(row.slug).toBe('xrp-mobile');
     expect(row.archivedAt).not.toBeNull();
-    // Archiving raised a domain event, staged on the outbox in the same
-    // transaction as the write.
-    const staged = await dataSource.query(
-      `SELECT "eventName" FROM "outbox_message" WHERE "aggregateId" = $1`,
-      [projectId],
-    );
-    expect(staged).toEqual([{ eventName: 'ProjectArchivedDomainEvent' }]);
+    expect(row.name).toBe('xrp-mobile');
+    // And the listing leaves a retired project out.
+    expect(await repository.findAll(caller)).toEqual([]);
+  });
+
+  it('grants a workspace owner its projects, and bumps the cached role version', async () => {
+    // Without this migration every project route answers 403 for the person who
+    // owns the workspace: the ability comes from the database role, and `owner`
+    // was seeded before `Project` existed.
+    const rule = {
+      action: 'manage',
+      subject: 'Project',
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: a placeholder the ability builder interpolates
+      conditions: { organizationId: '${activeOrganizationId}' },
+    };
+    const ownerRules = async () => {
+      const [role] = await dataSource.query(
+        `SELECT "permissions" FROM "role" WHERE "name" = 'owner' AND "organizationId" IS NULL`,
+      );
+      return role.permissions as Record<string, unknown>[];
+    };
+    const roleVersion = async () => {
+      const [row] = await dataSource.query(
+        `SELECT "roleVersion" FROM "organization" WHERE "id" = $1`,
+        [organizationId],
+      );
+      return row.roleVersion as number;
+    };
+
+    expect(await ownerRules()).toContainEqual(rule);
+
+    // Reverting and re-running is what proves `down()` removes exactly this rule
+    // and that the version bump reaches workspaces that already exist.
+    await dataSource.undoLastMigration({ transaction: 'all' });
+    expect(await ownerRules()).not.toContainEqual(rule);
+    const before = await roleVersion();
+
+    await dataSource.runMigrations({ transaction: 'all' });
+    expect(await ownerRules()).toContainEqual(rule);
+    expect(await roleVersion()).toBe(before + 1);
   });
 });

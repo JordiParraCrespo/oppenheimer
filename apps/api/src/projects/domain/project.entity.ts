@@ -5,22 +5,29 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { ProjectArchivedDomainEvent } from './events/project-archived.domain-event';
 import { PROJECT_SLUG_MAX_LENGTH, PROJECT_SLUG_PATTERN } from './project-slug.policy';
 
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
   organizationId: string;
-  /** Display name. Free to change, and it is only ever displayed. */
+  /** Display name: the GitHub repository's name as GitHub spells it. Free to change. */
   name: string;
   /**
-   * Directory name under `projects/` on every host holding the project. There
-   * is no setter: see the class comment.
+   * Directory name under `projects/` on every host holding the project. There is
+   * no setter: see the class comment.
    */
   slug: string;
-  /** GitHub repository whose first session created the project, if any. */
-  originGithubRepoId: number | null;
-  /** When the project was retired. Rows are never deleted. */
+  /**
+   * GitHub's repository id, kept as the string the driver exchanges a bigint as.
+   * GitHub's ids are inside the safe integer range today and the column says
+   * they will not stay there, so nothing here converts.
+   */
+  originGithubRepoId: string | null;
+  /**
+   * When the project was retired. Nothing sets it yet — archiving arrives with
+   * the module that owns sessions, because refusing to retire a directory that
+   * still has work in it needs sessions to answer.
+   */
   archivedAt: Date | null;
 }
 
@@ -28,25 +35,28 @@ export interface CreateProjectProps {
   organizationId: string;
   name: string;
   slug: string;
-  originGithubRepoId?: number | null;
+  originGithubRepoId?: string | null;
 }
 
 /**
  * Project aggregate root — a body of work, and the name its directory takes.
  *
+ * A project sits above the repository on disk, because a session may check out
+ * several:
+ * `~/oppenheimer-ai/workspaces/<org.slug>/projects/<project.slug>/`
+ * (`product/11-workspace-layout.md`, `product/versions/mvp/03-control-plane.md`).
+ *
  * **The slug is immutable and the name is free**, and that split is the whole
- * design of this aggregate. `slug` is a directory on every host that holds the
- * project, with live sessions inside it, so a rename that changed it would have
- * to move `projects/<old>/` on every one of those machines; `name` is only ever
+ * design of this aggregate. The slug is a directory on every host that holds the
+ * project, with work inside it, so a rename that changed it would have to move
+ * `projects/<old>/` on every one of those machines; the name is only ever
  * displayed, so renaming is free. The cost is that a project's directory keeps
  * the name of the repository that created it for ever, which is cheap against
- * moving directories under running work
- * (`product/11-workspace-layout.md`).
+ * moving directories under running work.
  *
- * **Archiving never deletes.** `archivedAt` retires the project and leaves the
- * row, so the unique slug per workspace is a permanent tombstone and a later
- * project can never inherit a retired directory — and with it another
- * project's history.
+ * `archivedAt` is the column that keeps a retired slug out of circulation. It is
+ * read here and never written: the aggregate gains its archive method in the
+ * slice that can also answer whether anything is still working in the project.
  */
 export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /** Rehydrate an existing project (used by the mapper). */
@@ -80,7 +90,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return this.props.slug;
   }
 
-  get originGithubRepoId(): number | null {
+  get originGithubRepoId(): string | null {
     return this.props.originGithubRepoId;
   }
 
@@ -99,28 +109,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     this.validate();
   }
 
-  /**
-   * Retire the project, keeping the row and therefore the slug.
-   *
-   * Idempotent: archiving an archived project keeps the first date and raises
-   * nothing, so a retried request does not append a second event.
-   */
-  archive(): void {
-    if (this.isArchived) return;
-
-    this.props.archivedAt = new Date();
-    this.setUpdatedAt(new Date());
-    this.validate();
-    this.addEvent(
-      new ProjectArchivedDomainEvent({
-        aggregateId: this.id,
-        organizationId: this.organizationId,
-        slug: this.slug,
-        reason: 'A project was archived; its directory name is retired for good',
-      }),
-    );
-  }
-
   public validate(): void {
     if (!this.props.organizationId?.trim()) {
       throw new ArgumentNotProvidedException('A project must belong to an organization');
@@ -128,11 +116,11 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (!this.props.name?.trim()) {
       throw new ArgumentNotProvidedException('Project name cannot be empty');
     }
-    // The slug is a directory name, so an invalid one is not a display problem
-    // that a client could work around — it is a path that cannot be created.
+    // The slug is a directory name, so an invalid one is not a display problem a
+    // client could work around — it is a path that cannot be created.
     if (!PROJECT_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(
-        'Project slug must be lower-case letters, digits and single dashes',
+        'Project slug must be lower-case letters, digits and dashes',
       );
     }
     if (this.props.slug.length > PROJECT_SLUG_MAX_LENGTH) {

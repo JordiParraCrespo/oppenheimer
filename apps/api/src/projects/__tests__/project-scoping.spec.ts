@@ -98,8 +98,7 @@ describe('project capabilities (CASL)', () => {
   it('lets a workspace member manage the projects of their own workspace', () => {
     expectAbility(WORKSPACE_PROJECTS, { user: { id: 'member-1' }, scope: scope() })
       .canOn('read', 'Project', { organizationId: 'org-acme' })
-      .canOn('update', 'Project', { organizationId: 'org-acme' })
-      .canOn('delete', 'Project', { organizationId: 'org-acme' });
+      .canOn('update', 'Project', { organizationId: 'org-acme' });
   });
 
   it('does not let them reach another workspace’s project', () => {
@@ -126,13 +125,11 @@ describe('the declaration itself', () => {
     expect(ProjectResource.keys.id).toBe('id');
   });
 
-  it('declares the four actions the routes check', () => {
-    expect(ProjectResource.actions.map((action) => action.name)).toEqual([
-      'read',
-      'create',
-      'update',
-      'delete',
-    ]);
+  it('declares only the actions a route or a credential can exercise', () => {
+    // No `create`: a project is created by the first session that needs one,
+    // through a port inside the process, so a `create Project` permission would
+    // appear in every role builder and token scope with nothing behind it.
+    expect(ProjectResource.actions.map((action) => action.name)).toEqual(['read', 'update']);
   });
 
   it('is reachable by scoped credentials', () => {

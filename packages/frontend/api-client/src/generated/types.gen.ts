@@ -658,19 +658,18 @@ export type SetUserPasswordRequest = {
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
+    /**
+     * The GitHub repository’s name, as GitHub spells it. Display only.
+     */
     name: string;
     /**
-     * The project’s directory name on every host that holds it. Immutable, and never reused once archived.
+     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
      */
     slug: string;
     /**
-     * GitHub id of the repository whose first session created the project.
+     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
      */
-    originGithubRepoId?: number | null;
-    /**
-     * When the project was archived. Projects are never deleted.
-     */
-    archivedAt?: string | null;
+    originGithubRepoId?: string | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -3570,19 +3569,14 @@ export type SetPasswordResponses = {
 
 export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
 
-export type List6Data = {
+export type ListProjectsData = {
     body?: never;
     path?: never;
-    query?: {
-        /**
-         * Include archived projects (default: false).
-         */
-        includeArchived?: 'true' | 'false';
-    };
+    query?: never;
     url: '/api/v1/projects';
 };
 
-export type List6Errors = {
+export type ListProjectsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3593,15 +3587,15 @@ export type List6Errors = {
     403: ProblemDetailsDto;
 };
 
-export type List6Error = List6Errors[keyof List6Errors];
+export type ListProjectsError = ListProjectsErrors[keyof ListProjectsErrors];
 
-export type List6Responses = {
+export type ListProjectsResponses = {
     200: Array<ProjectResponseDto>;
 };
 
-export type List6Response = List6Responses[keyof List6Responses];
+export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
 
-export type ArchiveData = {
+export type GetProjectData = {
     body?: never;
     path: {
         id: string;
@@ -3610,46 +3604,7 @@ export type ArchiveData = {
     url: '/api/v1/projects/{id}';
 };
 
-export type ArchiveErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * PROJECTS_001 — Project not found
-     */
-    404: ProblemDetailsDto;
-    /**
-     * PROJECTS_002 — The project still has open sessions
-     */
-    409: ProblemDetailsDto;
-};
-
-export type ArchiveError = ArchiveErrors[keyof ArchiveErrors];
-
-export type ArchiveResponses = {
-    /**
-     * Project archived
-     */
-    204: void;
-};
-
-export type ArchiveResponse = ArchiveResponses[keyof ArchiveResponses];
-
-export type Get2Data = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/projects/{id}';
-};
-
-export type Get2Errors = {
+export type GetProjectErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3664,15 +3619,15 @@ export type Get2Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Get2Error = Get2Errors[keyof Get2Errors];
+export type GetProjectError = GetProjectErrors[keyof GetProjectErrors];
 
-export type Get2Responses = {
+export type GetProjectResponses = {
     200: ProjectResponseDto;
 };
 
-export type Get2Response = Get2Responses[keyof Get2Responses];
+export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
 
-export type Update5Data = {
+export type UpdateProjectData = {
     body: UpdateProjectRequest;
     path: {
         id: string;
@@ -3681,7 +3636,7 @@ export type Update5Data = {
     url: '/api/v1/projects/{id}';
 };
 
-export type Update5Errors = {
+export type UpdateProjectErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3696,13 +3651,13 @@ export type Update5Errors = {
     404: ProblemDetailsDto;
 };
 
-export type Update5Error = Update5Errors[keyof Update5Errors];
+export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
 
-export type Update5Responses = {
+export type UpdateProjectResponses = {
     200: ProjectResponseDto;
 };
 
-export type Update5Response = Update5Responses[keyof Update5Responses];
+export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
 export type CheckData = {
     body?: never;

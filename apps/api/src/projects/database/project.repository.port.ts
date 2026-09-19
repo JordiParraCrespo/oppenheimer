@@ -2,11 +2,16 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { ProjectEntity } from '../domain/project.entity';
 
-/** What a listing hides unless it is asked for. */
-export interface FindProjectsParams {
-  /** Archived projects are tombstones; a listing leaves them out by default. */
-  includeArchived: boolean;
-}
+/**
+ * What an insert that may lose a race came back with.
+ *
+ * Three outcomes rather than a boolean, because the two failures mean opposite
+ * things: losing on the **origin** means somebody else created this
+ * repository's project and it is the project; losing on the **slug** means a
+ * different repository holds the directory name and this one needs the next
+ * candidate.
+ */
+export type ProjectInsertOutcome = 'inserted' | 'origin-taken' | 'slug-taken';
 
 /**
  * Port for persisting and querying the project aggregate.
@@ -22,25 +27,35 @@ export interface FindProjectsParams {
  */
 export interface ProjectRepositoryPort {
   /**
-   * Insert the project unless its slug is already taken in the workspace,
-   * reporting whether the row landed.
+   * Insert the project, reporting which uniqueness rule stopped it if one did.
    *
-   * One statement — `INSERT … ON CONFLICT (organizationId, slug) DO NOTHING` —
-   * because two concurrent first sessions on the same repository both try it,
-   * and a check-then-insert would have both of them believe they won.
+   * `INSERT … ON CONFLICT ("organizationId", "originGithubRepoId") DO NOTHING`:
+   * the statement itself answers whether this caller created the project, so no
+   * second query has to assume it won. Creation raises **no domain event**, which
+   * is why this is the one write that does not go through the outbox — an insert
+   * that may legitimately not land cannot owe an event either way.
    */
-  insertIfSlugAvailable(entity: ProjectEntity): Promise<boolean>;
-  save(entity: ProjectEntity): Promise<ProjectEntity>;
-  /** Projects the caller can reach, newest first. */
-  findAll(scope: AccessScope, params: FindProjectsParams): Promise<ProjectEntity[]>;
+  insertIfUnclaimed(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
+  /**
+   * Rename a project that is still active, returning the stored row.
+   *
+   * `None` when nothing was updated: the project is gone or archived. A targeted
+   * `UPDATE … WHERE "archivedAt" IS NULL` rather than writing the whole
+   * aggregate back, so a rename that loaded before an archive cannot carry a
+   * stale `archivedAt` over it.
+   */
+  renameIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
+  /** Projects the caller can reach, newest first. Archived rows are left out. */
+  findAll(scope: AccessScope): Promise<ProjectEntity[]>;
   /** `None` both for a missing project and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>>;
   /**
    * The project a repository created, by GitHub's own id.
    *
-   * Archived projects are **included**: the slug is a permanent directory name,
-   * so a second project for the same repository would have to live in a
-   * suffixed directory beside the first one's history rather than replace it.
+   * Archived rows are included, because nothing can archive a project yet. When
+   * the slice that owns sessions adds archiving, this read excludes them and
+   * `ensureForRepository` refuses on an archived origin rather than handing back
+   * a retired directory for new work.
    */
-  findOneByOrigin(scope: AccessScope, githubRepoId: number): Promise<Option<ProjectEntity>>;
+  findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>>;
 }

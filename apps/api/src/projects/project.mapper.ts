@@ -4,7 +4,13 @@ import { ProjectOrmEntity } from './database/project.orm-entity';
 import { ProjectEntity } from './domain/project.entity';
 import { ProjectResponseDto } from './dtos/project.response.dto';
 
-/** Maps the project aggregate between its domain, persistence and response shapes. */
+/**
+ * Maps the project aggregate between its domain, persistence and response shapes.
+ *
+ * `originGithubRepoId` crosses every boundary as the string the driver exchanges
+ * a bigint as. Nothing coerces it: GitHub's ids fit in a JavaScript number today
+ * and the column type says they are not promised to.
+ */
 @Injectable()
 export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, ProjectResponseDto> {
   toPersistence(entity: ProjectEntity): ProjectOrmEntity {
@@ -13,10 +19,7 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     record.organizationId = entity.organizationId;
     record.name = entity.name;
     record.slug = entity.slug;
-    // `originGithubRepoId` is a bigint column, which the driver exchanges as a
-    // string; GitHub's ids are well inside the safe integer range on the way in.
-    record.originGithubRepoId =
-      entity.originGithubRepoId === null ? null : String(entity.originGithubRepoId);
+    record.originGithubRepoId = entity.originGithubRepoId;
     record.archivedAt = entity.archivedAt;
     return record;
   }
@@ -30,8 +33,7 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
         organizationId: record.organizationId,
         name: record.name,
         slug: record.slug,
-        originGithubRepoId:
-          record.originGithubRepoId === null ? null : Number(record.originGithubRepoId),
+        originGithubRepoId: record.originGithubRepoId,
         archivedAt: record.archivedAt,
       },
     });
@@ -44,7 +46,6 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     dto.name = entity.name;
     dto.slug = entity.slug;
     dto.originGithubRepoId = entity.originGithubRepoId;
-    dto.archivedAt = entity.archivedAt;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
     return dto;

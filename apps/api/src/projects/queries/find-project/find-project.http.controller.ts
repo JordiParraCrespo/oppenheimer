@@ -42,7 +42,7 @@ export class FindProjectHttpController {
   @Version('1')
   @CheckPolicies({ action: 'read', subject: 'Project' })
   @RequireScopes('projects:read')
-  @ApiOperation({ summary: 'Get one project' })
+  @ApiOperation({ operationId: 'getProject', summary: 'Get one project' })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
   async get(

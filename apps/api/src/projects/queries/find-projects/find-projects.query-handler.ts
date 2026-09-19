@@ -13,6 +13,6 @@ export class FindProjectsQueryHandler implements IQueryHandler<FindProjectsQuery
   ) {}
 
   async execute(query: FindProjectsQuery): Promise<ProjectEntity[]> {
-    return this.projects.findAll(query.scope, { includeArchived: query.includeArchived });
+    return this.projects.findAll(query.scope);
   }
 }

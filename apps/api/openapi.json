@@ -5851,20 +5851,9 @@
     },
     "/api/v1/projects": {
       "get": {
-        "description": "Newest first. Archived projects are left out unless asked for.",
-        "operationId": "list",
-        "parameters": [
-          {
-            "name": "includeArchived",
-            "required": false,
-            "in": "query",
-            "description": "Include archived projects (default: false).",
-            "schema": {
-              "enum": ["true", "false"],
-              "type": "string"
-            }
-          }
-        ],
+        "description": "Newest first.",
+        "operationId": "listProjects",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -5911,7 +5900,7 @@
     },
     "/api/v1/projects/{id}": {
       "get": {
-        "operationId": "get",
+        "operationId": "getProject",
         "parameters": [
           {
             "name": "id",
@@ -5974,7 +5963,7 @@
       },
       "patch": {
         "description": "The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.",
-        "operationId": "update",
+        "operationId": "updateProject",
         "parameters": [
           {
             "name": "id",
@@ -6043,72 +6032,6 @@
           }
         ],
         "summary": "Rename a project",
-        "tags": ["Projects"]
-      },
-      "delete": {
-        "description": "The row is kept: its slug is a directory name on every host that held the project, and retiring it for good is what stops a later project inheriting that directory. Refused while the project has open sessions.",
-        "operationId": "archive",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Project archived"
-          },
-          "401": {
-            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "PROJECTS_001 — Project not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "PROJECTS_002 — The project still has open sessions",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Archive a project",
         "tags": ["Projects"]
       }
     },
@@ -8490,23 +8413,19 @@
           },
           "name": {
             "type": "string",
+            "description": "The GitHub repository’s name, as GitHub spells it. Display only.",
             "example": "xrp-mobile"
           },
           "slug": {
             "type": "string",
-            "description": "The project’s directory name on every host that holds it. Immutable, and never reused once archived.",
+            "description": "The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.",
             "example": "xrp-mobile"
           },
           "originGithubRepoId": {
-            "type": "number",
-            "description": "GitHub id of the repository whose first session created the project.",
-            "nullable": true
-          },
-          "archivedAt": {
-            "format": "date-time",
             "type": "string",
-            "description": "When the project was archived. Projects are never deleted.",
-            "nullable": true
+            "description": "GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.",
+            "nullable": true,
+            "example": "821374923"
           },
           "createdAt": {
             "format": "date-time",
