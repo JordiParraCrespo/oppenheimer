@@ -21,13 +21,13 @@ whose contract the API serves.
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project` | yes |
 | **Sessions** | `sessions/` → `work_session`, `session_checkout`, `work_session_event` | yes |
-| **Repositories** | `github/` → `github_repository` | yes |
-| **GitHub allowed repositories** | *the same table* — the installation is the allowlist | — |
-| **Coding agents** | a closed catalog in `packages/shared`, plus per-host availability on `host.capabilities` | no table |
+| **Repositories** | `github/` → listed **live from GitHub** through the installation; a `github_repository` row exists only once a checkout uses one | lazily |
+| **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
+| **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
 | **Models** | no table, no column — a field on the shared catalog entry and on the session's launch spec | no table |
 
-Two of these resolve to "not a table" and one to "the same table as
-another noun". Each is argued below; none is an oversight.
+Three of these resolve to "not a table" and one to "a table only for
+what we have on disk". Each is argued below; none is an oversight.
 
 ## Decided
 
@@ -103,8 +103,10 @@ Stating this matters because the generic mechanism silently does not
 apply here, and a handler that assumed it did would be scoping nothing.
 
 **`hosts/`** owns which machines a person has paired, how we prove a
-connecting process is one of them, what each machine can run, and
-whether it is reachable now.
+connecting process is one of them, what the runner last saw on each
+(tools and agents — a hint for the console, never a gate: a session
+opens without `claude` and the install command appears in the
+terminal, as on Orca), and whether it is reachable now.
 
 **A host belongs to a person, and workspaces borrow it.** An earlier
 draft gave `host` an `organizationId` as the tenant boundary and
@@ -136,11 +138,14 @@ host must never be left with zero valid keys, which is why the pair
 lives on the aggregate rather than a child table) and
 `HostPairingTokenEntity`.
 
-**`github/`** owns which App installations belong to the workspace,
-which repositories they cover, and how to turn that into a one-hour
-token narrowed to one repository. One aggregate,
-`GithubInstallationEntity`, holding the installation *and its repository
-set*, because that set is resynced as a whole on every webhook. The vendor name stops at the
+**`github/`** owns which App installations belong to the workspace, how
+to list what they cover **when asked**, and how to turn one repository
+into a one-hour token. One aggregate, `GithubInstallationEntity`. The
+repository list is **not** mirrored: the picker asks GitHub through the
+installation token, cached for a minute in Redis, and a
+`github_repository` row is created lazily the first time a checkout
+uses a repository — it records what we have on disk, not what GitHub
+has. The vendor name stops at the
 directory: the CASL subjects are `Installation` and `Repository`, the
 scope resource is `repositories`, and no Octokit type leaves
 `infrastructure/`.
@@ -604,14 +609,20 @@ The dynamic half, whether *this machine* has `claude` on PATH, is a host
 fact on `host.capabilities`. No vendor credential ever reaches the
 platform (F23).
 
-**Repositories and "GitHub allowed repositories" are one noun.**
-`github_repository` rows *are* the allowlist, because the App
-installation is a boundary GitHub enforces server-side and the
-`installation_repositories` webhook keeps our copy current. A second
-table could only be a subset of a boundary we do not own, would drift on
-every webhook, and would invent the failure mode "the repo is in our
-allowlist but the token mint fails". The cheaper seam for a
-per-workspace filter is a nullable `hiddenAt` column.
+**The repository list, and "GitHub allowed repositories".** Neither is
+a table. The App installation is a boundary GitHub enforces
+server-side, so the allowlist is answered by asking GitHub: the picker
+lists the installation's repositories on demand, and every token mint
+is a live call that fails the moment a repository leaves the
+installation. An earlier draft mirrored the whole set and kept it
+current with three webhooks, a daily resync, a sync endpoint and
+`removedAt`/`hiddenAt` columns — all of it to maintain a copy of a
+list GitHub already serves, with the invented failure mode "in our
+copy but the mint fails". Orca asks git and GitHub directly and stores
+nothing; so do we. What *is* durable is the repository **we have on
+disk**: a `github_repository` row created the first time a checkout
+uses one, carrying the frozen store name and the identity the
+checkout's foreign key needs.
 
 ### The schema follows Better Auth's own shape
 
@@ -634,9 +645,9 @@ tables this codebase already reads every request. Four rules, read off
 
 Applied honestly, those rules delete three tables an earlier draft had:
 a `host_key` table (rule 2), an `attach_ticket` table (rule 4 — it
-cannot outlive the thirty seconds it is valid for), and a
-`github_webhook_delivery` table (the handler is a full resync, so it is
-already idempotent).
+cannot outlive the sixty seconds it is valid for), and a
+`github_webhook_delivery` table (the one webhook left, `installation`,
+writes a status that is idempotent to rewrite).
 
 Uniform across all eight: `id` uuid primary key minted with
 `randomUUID()`, `@CreateDateColumn`/`@UpdateDateColumn`, snake_case name
@@ -690,22 +701,26 @@ on the workspace-owned tables, exactly as `lead` does (all but
 - `github_repository` — `id`, `installationId`, `organizationId`
   (**denormalised** from the installation), `githubRepoId` bigint,
   `fullName`, `owner`, `name`, `storeDirectoryName`, `defaultBranch`,
-  `isPrivate`, `isArchived`, `hiddenAt`, `removedAt`, `syncedAt`,
-  timestamps. Unique `(installationId, githubRepoId)`,
-  `(organizationId, storeDirectoryName)` and `(organizationId, id)`;
-  index `(organizationId, fullName)` — the repo chip is one index scan
-  with no join, which is why `organizationId` is copied down. A
-  repository never moves workspace (you disconnect and reconnect
-  instead), so the copy is an invariant, not a sync.
+  `isPrivate`, `firstUsedAt`, timestamps. Unique
+  `(installationId, githubRepoId)`, `(organizationId, storeDirectoryName)`
+  and `(organizationId, id)`. A repository never moves workspace (you
+  disconnect and reconnect instead), so the copy of `organizationId` is
+  an invariant, not a sync.
 
-  **Rows are never hard-deleted.** A session's checkout references a
-  repository row, so a resync that deleted rows would either break the
-  foreign key or cascade into a live session's checkouts. A repository
-  that leaves the installation gets `removedAt`, and gets it cleared if
-  it comes back; the chip filters `removedAt IS NULL AND hiddenAt IS
-  NULL`; a checkout on a removed repository keeps its row and simply
-  cannot mint a token any more, which git reports as the plain
-  authentication failure it is.
+  **A row is created lazily, on first use, and is never deleted.** The
+  picker does not read this table; it reads GitHub. The row appears
+  when `POST /sessions` or `POST /sessions/{id}/checkouts` names a
+  repository this workspace has not checked out before:
+  `INSERT … ON CONFLICT (installationId, githubRepoId) DO NOTHING`,
+  then reselect — the same race-as-written shape as project
+  auto-creation, and a taken `storeDirectoryName` gets a suffix on
+  retry. `fullName`, `owner`, `name` and `defaultBranch` are the
+  snapshot taken then, refreshed opportunistically whenever a checkout
+  is created, and never relied on for access: access is the token
+  mint, which is live. A repository that leaves the installation keeps
+  its row, because live checkouts point at it, and simply cannot mint
+  a token any more — git reports the plain authentication failure it
+  is.
 
   **`storeDirectoryName` is set once and never changes.** Worktrees
   point at their store by absolute path, so the store cannot move — and
@@ -713,17 +728,16 @@ on the workspace-owned tables, exactly as `lead` does (all but
   `<owner>--<repo>.git` at row creation, then frozen, the same lesson
   as `project.slug`.
 
-No `github_webhook_delivery` table. Every delivery triggers a **full
-resync** of that installation's repository set, which is idempotent by
-construction and immune to `added`/`removed` arriving out of order, so
-de-duplication only saves a redundant GitHub call — a Redis key with a
-24-hour TTL is the right weight. **Three webhooks, not one**, because
-`installation_repositories` never fires for an installation on *all*
-repositories: `installation` (suspend, unsuspend, delete),
-`installation_repositories` (the selected set changed), and
-`repository` (created, deleted, renamed, transferred, archived). A
-24-hour timed resync per installation and `POST
-/installations/{id}/sync` are the belt to those braces.
+**One webhook**, `installation`, for suspend, unsuspend and delete —
+the three facts about an installation that change without us and that
+a token mint must respect. There is no `installation_repositories` or
+`repository` subscription, because nothing here mirrors the repository
+set; a delivery is a status write, idempotent to repeat, so it needs no
+`github_webhook_delivery` table and no de-duplication key. The
+repository list itself is a Redis key per installation with a
+one-minute TTL — long enough that the chip does not hit GitHub on every
+keystroke, short enough that a repository created a minute ago is
+there.
 
 **`projects/`**
 
@@ -902,12 +916,11 @@ GET    /hosts/pairing             read Host          hosts:read    (F5: source I
 GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
-GET    /repositories              read Repository    repositories:read
-GET    /repositories/{id}/branches read Repository   repositories:read
 GET    /installations             read Installation  repositories:read
 POST   /installations             create Installation repositories:write
-POST   /installations/{id}/sync   update Installation repositories:write
 DELETE /installations/{id}        delete Installation repositories:write
+GET    /installations/{id}/repositories            read Repository  repositories:read   live from GitHub, cached 60 s
+GET    /installations/{id}/repositories/{githubRepoId}/branches  read Repository  repositories:read   live from GitHub
 
 GET    /projects                  read Project       projects:read
 GET    /projects/{id}             read Project       projects:read
@@ -944,10 +957,12 @@ authorises one window; `hint` because
 hints (`host-offline`, `runner-update-required`).
 
 `POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
-[{ repositoryId, baseBranch? }], cwdRepositoryId? }`: several
-repositories, each with its base branch, the agent launched in the
-first unless `cwdRepositoryId` says otherwise, and no branch name,
-because the branch is always the session's. `name` is optional and
+[{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
+several repositories named by GitHub's own ids, since the picker is a
+live listing and a row may not exist yet, each with its base branch,
+the agent launched in the first unless `cwdGithubRepoId` says
+otherwise, and no branch name, because the branch is always the
+session's. `name` is optional and
 usually absent; the first prompt names the session.
 
 Unauthenticated by design, and therefore carrying no `@RequireScopes`:
@@ -1037,8 +1052,8 @@ interface SessionDto {
 
 interface CreateSessionInput {
   hostId; agent; projectId?; name?;
-  checkouts: { repositoryId; baseBranch? }[];
-  cwdRepositoryId?;
+  checkouts: { installationId; githubRepoId; baseBranch? }[];
+  cwdGithubRepoId?;
 }
 ```
 
@@ -1046,8 +1061,8 @@ interface CreateSessionInput {
 several checkouts they are per-checkout facts, and
 `CreateSessionInput.repository` — a bare `owner/repo` string today —
 becomes the `checkouts` array, which also closes the review's
-"`owner/repo` is ambiguous across two installations" finding: a
-`repositoryId` is not. `state` on the wire is the **derived group** of
+"`owner/repo` is ambiguous across two installations" finding: an
+installation id plus GitHub's repository id is not. `state` on the wire is the **derived group** of
 the three vocabularies above — `working`, `waiting-on-you`,
 `ready-for-review`, `landing`, `idle`, `resolved` — and
 `waiting-on-you` is what [`00-scope.md`](00-scope.md)'s "blocked" dot
@@ -1065,11 +1080,12 @@ Each step is a vertical slice that can land alone.
 1. `packages/shared`: the four scope resources, the five subjects, the
    agent catalog, the Zod schemas, and the `SYSTEM_ROLE_PERMISSIONS`
    entries.
-2. `github/` — installations, the repository cache, the webhook, the
-   repo chip. It goes first because it is the only module that can be
-   built and tested end to end against a real App installation with no
-   WebSocket surface in existence, and because nothing else can resolve
-   a repository without it.
+2. `github/` — installations, the live repository listing, the lazy
+   repository row, the `installation` webhook, the repo chip. It goes
+   first because it is the only module that can be built and tested end
+   to end against a real App installation with no WebSocket surface in
+   existence, and because nothing else can resolve a repository without
+   it.
 3. `hosts/`, starting with `mint-host-pairing-token` and
    `redeem-host-pairing` — the smallest slice that exercises a new scope
    resource, a new CASL resource, a scoped repository, a single-use
@@ -1138,6 +1154,20 @@ Each step is a vertical slice that can land alone.
 - **Each checkout picks a base branch; the working branch is always
   `oppenheimer/<project>/<session>`**, never the base itself.
 
+- **Repositories are listed live, not mirrored.** The first draft
+  mirrored every installation's repository set and kept it current with
+  three webhooks, a daily resync, a sync endpoint and
+  `removedAt`/`hiddenAt`. All of it maintained a copy of a list GitHub
+  serves in one call. The picker now asks GitHub through the
+  installation token, cached a minute; a `github_repository` row is
+  created lazily on first checkout and records only what we have on
+  disk. The `installation` webhook stays, for suspend and delete.
+
+- **Agents are never required on a host.** `host.capabilities` is what
+  the runner last saw, shown as a hint on the agent chip. A session
+  opens without `claude` and the install command appears in the
+  terminal, as on Orca. The one hard requirement is `tmux`.
+
 ## Open questions
 
 None outstanding in this note. The two that remained are decided above
@@ -1164,7 +1194,8 @@ each at the place it changed:
    `work_session` and `session_checkout`; the host reference is the one
    handler check, and is named as such;
 2. `ON DELETE SET NULL (cwdCheckoutId)` in the column-list form;
-3. resync never deletes — `github_repository.removedAt`;
+3. repository rows are never deleted (superseded: there is no resync
+   any more; the row is created lazily and kept);
 4. redemption and host insert in one transaction, fingerprint-matched
    retry, `previousPublicKeyFingerprint` and the rotation frame;
 5. `session_checkout.removedAt`, never hard-deleted, partial unique on
@@ -1176,8 +1207,9 @@ each at the place it changed:
    one;
 10. gateways live in `relay/infrastructure/`, are unguarded by default,
     and authenticate in the handshake with a spec each;
-11. three webhooks and a timed resync, because
-    `installation_repositories` never fires for *all*.
+11. superseded by the live listing: with no mirror there is nothing for
+    `installation_repositories` to keep current, and only the
+    `installation` webhook remains.
 
 Considered and left: `repositories:write` covering both connect and
 disconnect (one scope, until a second caller wants only one).

@@ -191,3 +191,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   runner keys, the redeem-and-insert transaction with a fingerprint
   retry, gateways in `relay/infrastructure/` that guard themselves in
   the handshake, and three GitHub webhooks instead of one.
+- 2026-09-19: **repositories are listed live, not mirrored; agents are
+  never required on a host.** 10 stops mirroring the installation's
+  repository set: the picker asks GitHub through the installation token
+  (cached a minute in Redis), and a `github_repository` row is created
+  lazily on the first checkout, recording only what is on disk — the
+  frozen store name and the identity the checkout's key needs. Gone with
+  the mirror: the `installation_repositories` and `repository`
+  webhooks, the daily resync, the sync endpoint, `removedAt` and
+  `hiddenAt`. The `installation` webhook stays for suspend and delete.
+  `host.capabilities` is what the runner last saw, a hint on the agent
+  chip and never a gate; a session opens without `claude` and the
+  install command appears in the terminal, as on Orca.

@@ -123,3 +123,8 @@ earlier note:
   layout gains a `workspaces/<org>/` level above `projects/`. Note 06's
   per-account config directories remain the answer to several logins on
   one machine, and remain a later slice.
+- `versions/mvp/10` first mirrored every installation's repository set
+  with webhooks and a resync. It now lists repositories live from GitHub
+  and keeps a row only for repositories a session has checked out. Note
+  09's "the installation is the access control" is unchanged; what
+  changed is that we stopped keeping a copy of the list it controls.
