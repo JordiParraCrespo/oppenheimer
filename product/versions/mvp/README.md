@@ -107,3 +107,21 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
   `AgentMark`); the frames in `design/version1/` remain the visual
   record and 05 is the written one.
+- 2026-09-19: the **shared vocabulary lands in `packages/shared`**, and two of
+  these notes moved to match it. 01's open question 1 is **decided**: Zod is the
+  source of truth for the wire and JSON Schema is emitted from it at build, with
+  the Go structs generated from the committed artifact — one source, two
+  languages. 01's "what rides the link" gains three messages the note had
+  implied without naming: `events.append` with an `events.ack` that acknowledges
+  **by idempotency key** (a WebSocket cannot tell "persisted" from "never
+  arrived", so a batch is kept until every key is accounted for and resent
+  otherwise), `attachment.credit` for the consumed-byte credit the flow-control
+  section already required, and `credentials.grant` as the answer to
+  `credentials.token` rather than an optional field on the ask. The hint
+  vocabulary splits by socket: the link keeps three kinds and the attach ticket
+  adds `host_offline`, which a connected runner could not coherently send about
+  itself. 03's "repositories (cached from GitHub)" becomes **not a table** —
+  listed live through the installation, remembered only by the checkout that
+  took it. In the scope catalog there is no `Repository` CASL subject for the
+  same reason, and no `attach` action: opening a terminal is `update Session`,
+  so the model stays CRUD plus `manage`.

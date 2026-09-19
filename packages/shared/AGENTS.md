@@ -16,6 +16,8 @@ src/
 ├── constants/     # shared constants
 ├── permissions/   # CASL ability helpers + the endpoint policy catalog
 ├── scopes/        # the credential scope catalog
+├── agents/        # the closed coding-agent catalog
+├── protocol/      # the runner link's wire vocabulary, as Zod
 └── index.ts
 ```
 
@@ -37,6 +39,38 @@ src/
   `PaginatedResponse<T>`.
 - **Constants**: `AUTH`, `PAGINATION`, `ROLES`, `SYSTEM_ROLES`,
   `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`.
+- **The coding-agent catalog** (`agents/catalog.ts`): a closed union plus one
+  frozen config record per agent. It is deliberately **not a table** — every
+  entry carries behaviour the runner needs code for anyway, so a row would be a
+  second source of truth. Keep it data; the type guard is the only function.
+- **`hostFactsSchema` is the runner's `Facts` struct, verbatim.** It mirrors
+  `apps/runner/internal/host/domain/facts.go` key for key and json tag for json
+  tag, because the runner marshals that struct whole into `POST /hosts/register`
+  and into the link's `hello` and `heartbeat` — all three parse one schema. The
+  register body is the **runner's** to define: if the struct changes, this
+  schema follows it, never the other way round. Agents are read from `tools`
+  (entries named `claude` / `codex`); there is no agents key. Keep the classic
+  and `zod/v4` copies identical — `src/__tests__/cross-version-primitives.spec.ts`
+  parses a literal sample of the Go output against both.
+- **The wire protocol** (`protocol/`): the runner link's control messages as
+  Zod, with `protocolMessageSchema` the discriminated union over `type`. It is
+  the **only** description of the wire: `pnpm build` emits
+  `protocol-schema/protocol.schema.json` from it and the Go structs are
+  generated from that, so never hand-write a twin in either language. Changing
+  a message means rebuilding and committing the artifact —
+  `src/protocol/__tests__/` fails if you forget. The emitter
+  (`src/protocol/json-schema.ts`) is build-only and deliberately not exported
+  from `src/protocol/index.ts`.
+
+  **The protocol is temporarily on a second Zod entry point.** Only `zod/v4` can
+  emit JSON Schema (`z.toJSONSchema`), so `src/protocol/` imports it while every
+  DTO schema imports classic `zod`. This is a known wart, not a design: it means
+  `hostFactsSchema` exists twice, and `src/__tests__/cross-version-primitives.spec.ts`
+  is what holds the two copies in step. The fix is one Zod line for the package
+  with a build-only converter; it needs a new devDependency, which could not be
+  installed here. Do not add more duplicated schemas in the meantime — shared
+  bounds and tuples live in `src/schemas/primitives.ts` and the protocol builds
+  from those.
 
 ## What does not live here
 

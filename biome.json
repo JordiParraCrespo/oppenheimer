@@ -73,7 +73,8 @@
       "!**/packages/frontend/design-system/*/src/components",
       "!**/product/versions/mvp/design",
       "!**/apps/web-showcase",
-      "!**/apps/mobile-showcase"
+      "!**/apps/mobile-showcase",
+      "!**/packages/shared/protocol-schema"
     ]
   },
   "overrides": [

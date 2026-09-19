@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { defineAbilitiesFromPermissions } from '../../permissions';
+import {
+  defineAbilitiesFromPermissions,
+  KNOWN_ACTIONS,
+  KNOWN_SUBJECTS,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '../../permissions';
 import {
   DEFAULT_OAUTH_SCOPES,
   expandScopes,
@@ -50,6 +55,124 @@ describe('scope catalog', () => {
 
   it('defaults OAuth clients to the narrowest useful grant', () => {
     expect(DEFAULT_OAUTH_SCOPES).toEqual(['profile:read']);
+  });
+
+  it('backs every level with at least one CASL rule, except the caller’s own profile', () => {
+    for (const group of PERMISSION_GROUPS) {
+      for (const level of SCOPE_ACCESS_LEVELS) {
+        const { policies } = group.levels[level];
+        if (group.resource === 'profile') expect(policies).toEqual([]);
+        else expect(policies.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('carries the control plane’s four resources', () => {
+    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
+      expect(SCOPE_RESOURCES).toContain(resource);
+      expect(getPermissionGroup(resource).levels.read.scope).toBe(`${resource}:read`);
+      expect(getPermissionGroup(resource).levels.write.scope).toBe(`${resource}:write`);
+    }
+  });
+});
+
+describe('the control plane’s scopes', () => {
+  it('maps each new route’s CASL rule back to the scope that authorizes it', () => {
+    expect(scopesForPolicy({ action: 'read', subject: 'Host' })).toEqual(['hosts:read']);
+    expect(scopesForPolicy({ action: 'delete', subject: 'Host' })).toEqual(['hosts:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Project' })).toEqual(['projects:read']);
+    expect(scopesForPolicy({ action: 'update', subject: 'Project' })).toEqual(['projects:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Session' })).toEqual(['sessions:read']);
+    expect(scopesForPolicy({ action: 'create', subject: 'Session' })).toEqual(['sessions:write']);
+    expect(scopesForPolicy({ action: 'read', subject: 'Installation' })).toEqual([
+      'repositories:read',
+    ]);
+    expect(scopesForPolicy({ action: 'create', subject: 'Installation' })).toEqual([
+      'repositories:write',
+    ]);
+  });
+
+  it('backs the repositories scope with Installation alone — there is no Repository subject', () => {
+    expect(scopesForPolicy({ action: 'read', subject: 'Repository' })).toEqual([]);
+    for (const level of ['read', 'write'] as const) {
+      for (const policy of getPermissionGroup('repositories').levels[level].policies) {
+        expect(policy.subject).toBe('Installation');
+      }
+    }
+  });
+
+  it('opens a terminal with `update Session`, not a fourth verb', () => {
+    expect(scopesForPolicy({ action: 'attach', subject: 'Session' })).toEqual([]);
+    expect(scopesForPolicy({ action: 'update', subject: 'Session' })).toEqual(['sessions:write']);
+    // What keeps a read-only credential off a PTY is the level, not the verb.
+    expect(hasScope(['sessions:read'], 'sessions:write')).toBe(false);
+    expect(hasScope(['sessions:write'], 'sessions:read')).toBe(true);
+  });
+
+  /**
+   * Scoped to the control plane's four resources on purpose. The same assertion
+   * over the whole catalog fails today on `leads`, whose `Lead` subject was never
+   * added to `KNOWN_SUBJECTS` — a pre-existing gap in a reference module, not
+   * something to fix from here.
+   */
+  it('uses only actions and subjects the seed and the role UI know', () => {
+    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
+      const group = getPermissionGroup(resource);
+      for (const level of SCOPE_ACCESS_LEVELS) {
+        for (const policy of group.levels[level].policies) {
+          expect(KNOWN_ACTIONS).toContain(policy.action);
+          expect(KNOWN_SUBJECTS).toContain(policy.subject);
+        }
+      }
+    }
+  });
+
+  it('lets a workspace owner grant every workspace-owned resource but not hosts', () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.owner, {
+      activeOrganizationId: 'org-1',
+    });
+    const grantable = grantableScopes(ability);
+    expect(grantable).toContain('projects:write');
+    expect(grantable).toContain('sessions:write');
+    expect(grantable).toContain('repositories:write');
+    expect(grantable).not.toContain('hosts:read');
+  });
+
+  it('lets a person grant their own hosts, because a host is theirs and not a workspace’s', () => {
+    const ability = defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, {
+      user: { id: 'me' },
+    });
+    const grantable = grantableScopes(ability);
+    expect(grantable).toContain('hosts:read');
+    expect(grantable).toContain('hosts:write');
+  });
+
+  /**
+   * The seed changes exactly two roles, and this is the whole story rather than
+   * half of it. A plain account can grant its own hosts and nothing else new; an
+   * owner can grant the workspace's work but not a machine. There is **no
+   * `member` entry in `SYSTEM_ROLE_PERMISSIONS` at all**, so a teammate invited
+   * into a workspace is granted nothing by the seed — asserted here so the gap
+   * is a recorded fact and not a discovery.
+   */
+  it('tells the three roles apart, and records that `member` is not seeded', () => {
+    const workspaceScopes = ['projects:read', 'sessions:read', 'repositories:read'] as const;
+
+    const user = grantableScopes(
+      defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.user, { user: { id: 'me' } }),
+    );
+    for (const scope of workspaceScopes) expect(user).not.toContain(scope);
+    expect(user).toContain('hosts:write');
+
+    const owner = grantableScopes(
+      defineAbilitiesFromPermissions(SYSTEM_ROLE_PERMISSIONS.owner, {
+        activeOrganizationId: 'org-1',
+      }),
+    );
+    for (const scope of workspaceScopes) expect(owner).toContain(scope);
+    expect(owner).not.toContain('hosts:write');
+
+    expect(SYSTEM_ROLE_PERMISSIONS.member).toBeUndefined();
   });
 });
 

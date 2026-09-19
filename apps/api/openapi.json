@@ -6832,7 +6832,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6863,7 +6871,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6933,7 +6949,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7027,7 +7051,15 @@
               "billing:read",
               "billing:write",
               "leads:read",
-              "leads:write"
+              "leads:write",
+              "hosts:read",
+              "hosts:write",
+              "projects:read",
+              "projects:write",
+              "sessions:read",
+              "sessions:write",
+              "repositories:read",
+              "repositories:write"
             ],
             "example": "users:read"
           },
@@ -7077,7 +7109,11 @@
               "workspaces",
               "tokens",
               "billing",
-              "leads"
+              "leads",
+              "hosts",
+              "projects",
+              "sessions",
+              "repositories"
             ],
             "example": "users"
           },
@@ -7137,7 +7173,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           }
@@ -7179,7 +7223,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7253,7 +7305,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
