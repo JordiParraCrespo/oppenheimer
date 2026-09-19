@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { HINT_KINDS } from '../hint';
+import { attachTicketHintSchema, HINT_KINDS } from '../hint';
 import { toProtocolJsonSchema } from '../json-schema';
 import {
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
@@ -10,6 +10,7 @@ import {
   type ProtocolMessageType,
   protocolMessageSchema,
 } from '../messages';
+import { sessionSnapshotSchema } from '../primitives';
 import { PROTOCOL_VERSION } from '../version';
 
 const sessionId = '3f0d9e2c-6a4b-4e9a-9c3d-7b1e5a2f8c40';
@@ -25,7 +26,7 @@ const snapshot = {
   windows: [{ index: 0, name: 'agent' }],
   agentSessionId: 'conv-1',
   reportHash: null,
-  loginUrl: null,
+  loginUrl: 'https://claude.ai/oauth/authorize?code=true',
 };
 
 /**
@@ -59,17 +60,24 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   hint: { type: 'hint', kind: 'update_required', detail: 'below min_supported' },
   'events.append': {
     type: 'events.append',
+    batchId: 'run-7f3a-b12',
     sessionId,
     events: [
-      { idempotencyKey: 'run-7f3a:1', kind: 'session.started', payload: {}, occurredAt },
+      { idempotencyKey: 'run-7f3a:1', kind: 'session.started', payload: '{}', occurredAt },
       {
         idempotencyKey: 'run-7f3a:2',
         kind: 'prompt.first',
-        payload: { text: 'fix the repo picker' },
+        payload: '{"text":"fix the repo picker"}',
         occurredAt,
       },
     ],
   },
+  'events.ack': {
+    type: 'events.ack',
+    batchId: 'run-7f3a-b12',
+    accepted: ['run-7f3a:1', 'run-7f3a:2'],
+  },
+  'attachment.credit': { type: 'attachment.credit', attachmentId: 7, bytes: 262_144 },
   'session.create': {
     type: 'session.create',
     commandId,
@@ -127,6 +135,14 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     checkoutId,
     githubRepoId: 42,
   },
+  'credentials.grant': {
+    type: 'credentials.grant',
+    requestId: commandId,
+    sessionId,
+    checkoutId,
+    sealed: 'c2VhbGVkLXRva2Vu',
+    expiresAt: occurredAt,
+  },
   'credentials.revoke': {
     type: 'credentials.revoke',
     requestId: commandId,
@@ -167,12 +183,20 @@ describe('protocol message union', () => {
     expect(parsed).toMatchObject({ acceptUnpushedWork: false });
   });
 
-  it('answers a credentials request on the same type, with the grant sealed to the host', () => {
-    const parsed = protocolMessageSchema.parse({
-      ...SAMPLES['credentials.token'],
-      grant: { sealed: 'c2VhbGVkLXRva2Vu', expiresAt: occurredAt },
-    });
-    expect(parsed).toMatchObject({ type: 'credentials.token' });
+  it('answers a credentials request with its own type, both fields required', () => {
+    const grant = SAMPLES['credentials.grant'];
+    expect(protocolMessageSchema.parse(grant)).toMatchObject({ type: 'credentials.grant' });
+
+    for (const missing of ['sealed', 'expiresAt'] as const) {
+      const { [missing]: _dropped, ...partial } = grant as Record<string, unknown>;
+      expect(protocolMessageSchema.safeParse(partial).success).toBe(false);
+    }
+  });
+
+  it('refuses a grant smuggled onto the ask', () => {
+    const withGrant = { ...SAMPLES['credentials.token'], sealed: 'c2VhbGVk' };
+    const parsed = protocolMessageSchema.parse(withGrant);
+    expect(parsed).not.toHaveProperty('sealed');
   });
 
   it('keeps the hint vocabulary closed', () => {
@@ -180,6 +204,16 @@ describe('protocol message union', () => {
       expect(protocolMessageSchema.safeParse({ type: 'hint', kind }).success).toBe(true);
     }
     expect(protocolMessageSchema.safeParse({ type: 'hint', kind: 'offline' }).success).toBe(false);
+  });
+
+  it('keeps `host_offline` off the link — a runner cannot report itself offline', () => {
+    expect(protocolMessageSchema.safeParse({ type: 'hint', kind: 'host_offline' }).success).toBe(
+      false,
+    );
+    expect(attachTicketHintSchema.safeParse({ kind: 'host_offline' }).success).toBe(true);
+    for (const kind of HINT_KINDS) {
+      expect(attachTicketHintSchema.safeParse({ kind }).success).toBe(true);
+    }
   });
 });
 
@@ -210,21 +244,145 @@ describe('events.append', () => {
   });
 
   it('caps a payload at 8 KB, because it never carries pane text', () => {
-    const tooBig = { text: 'x'.repeat(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES) };
+    const over = 'x'.repeat(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES + 1);
     expect(
       protocolMessageSchema.safeParse({
         ...base,
-        events: [{ idempotencyKey: 'run:1', kind: 'k', payload: tooBig, occurredAt }],
+        events: [{ idempotencyKey: 'run:1', kind: 'k', payload: over, occurredAt }],
       }).success,
     ).toBe(false);
 
-    const fits = { text: 'x'.repeat(100) };
+    const exact = 'x'.repeat(PROTOCOL_MAX_EVENT_PAYLOAD_BYTES);
     expect(
       protocolMessageSchema.safeParse({
         ...base,
-        events: [{ idempotencyKey: 'run:1', kind: 'k', payload: fits, occurredAt }],
+        events: [{ idempotencyKey: 'run:1', kind: 'k', payload: exact, occurredAt }],
       }).success,
     ).toBe(true);
+  });
+
+  it('carries the payload as a string, so the cap survives emission to JSON Schema', () => {
+    expect(
+      protocolMessageSchema.safeParse({
+        ...base,
+        events: [{ idempotencyKey: 'run:1', kind: 'k', payload: { a: 1 }, occurredAt }],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('flow control', () => {
+  it('replenishes one attachment by a positive byte delta', () => {
+    expect(
+      protocolMessageSchema.parse({ type: 'attachment.credit', attachmentId: 0, bytes: 1 }),
+    ).toEqual({ type: 'attachment.credit', attachmentId: 0, bytes: 1 });
+  });
+
+  it('refuses a zero or negative credit — a delta, never a running total', () => {
+    for (const bytes of [0, -1, 1.5]) {
+      expect(
+        protocolMessageSchema.safeParse({ type: 'attachment.credit', attachmentId: 7, bytes })
+          .success,
+      ).toBe(false);
+    }
+  });
+
+  it('keeps the attachment id inside the 4-byte range the binary frame prefix carries', () => {
+    expect(
+      protocolMessageSchema.safeParse({
+        type: 'attachment.credit',
+        attachmentId: 0xffffffff,
+        bytes: 1,
+      }).success,
+    ).toBe(true);
+    expect(
+      protocolMessageSchema.safeParse({
+        type: 'attachment.credit',
+        attachmentId: 0x100000000,
+        bytes: 1,
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('events.ack', () => {
+  it('echoes the batch id, so a runner knows which batch it may drop', () => {
+    const appended = SAMPLES['events.append'];
+    const acked = SAMPLES['events.ack'];
+    if (appended.type !== 'events.append' || acked.type !== 'events.ack') throw new Error('sample');
+    expect(acked.batchId).toBe(appended.batchId);
+    expect(acked.accepted).toEqual(appended.events.map((event) => event.idempotencyKey));
+  });
+
+  it('requires a batch id on the append too — there is nothing to echo otherwise', () => {
+    const { batchId: _batchId, ...withoutBatchId } = SAMPLES['events.append'] as {
+      batchId: string;
+    } & Record<string, unknown>;
+    expect(protocolMessageSchema.safeParse(withoutBatchId).success).toBe(false);
+  });
+
+  it('accepts an empty accepted list: nothing landed, so the runner resends', () => {
+    expect(
+      protocolMessageSchema.safeParse({ type: 'events.ack', batchId: 'b1', accepted: [] }).success,
+    ).toBe(true);
+  });
+
+  it('names refused keys with a reason, which the runner must not resend', () => {
+    const parsed = protocolMessageSchema.parse({
+      type: 'events.ack',
+      batchId: 'b1',
+      accepted: ['run:1'],
+      rejected: [{ idempotencyKey: 'run:2', reason: 'payload too large' }],
+    });
+    expect(parsed).toMatchObject({ type: 'events.ack' });
+  });
+
+  it('holds acknowledged keys to the same `<runId>:<n>` shape the append uses', () => {
+    expect(
+      protocolMessageSchema.safeParse({ type: 'events.ack', batchId: 'b1', accepted: ['nope'] })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe('F3: a login URL on the wire is a vendor login URL', () => {
+  const lookalike = 'https://claude.ai.attacker.test/oauth/authorize';
+
+  it('accepts the reporting agent’s own vendor', () => {
+    expect(protocolMessageSchema.safeParse(SAMPLES.hello).success).toBe(true);
+    expect(
+      sessionSnapshotSchema.safeParse({
+        ...snapshot,
+        agent: 'codex',
+        loginUrl: 'https://auth.openai.com/authorize?x=1',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('refuses a lookalike host in a hello and in a heartbeat', () => {
+    for (const type of ['hello', 'heartbeat'] as const) {
+      const message = SAMPLES[type];
+      expect(
+        protocolMessageSchema.safeParse({
+          ...message,
+          sessions: [{ ...snapshot, loginUrl: lookalike }],
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it('refuses the other vendor’s login URL for this agent', () => {
+    expect(
+      sessionSnapshotSchema.safeParse({
+        ...snapshot,
+        agent: 'claude-code',
+        loginUrl: 'https://auth.openai.com/authorize',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('still allows no login URL at all', () => {
+    expect(sessionSnapshotSchema.safeParse({ ...snapshot, loginUrl: null }).success).toBe(true);
   });
 });
 
@@ -240,6 +398,42 @@ describe('emitted JSON Schema', () => {
 
   it('is versioned by the protocol, not by the package', () => {
     expect(emitted.$id).toContain(`/v${PROTOCOL_VERSION}/`);
+  });
+
+  it('names every reusable definition, so the Go generator does not emit `Schema0`', () => {
+    const defs = emitted.$defs as Record<string, unknown>;
+    expect(Object.keys(defs).filter((name) => name.startsWith('__'))).toEqual([]);
+    expect(defs).toHaveProperty('sessionSnapshot');
+  });
+
+  it('carries the snapshot once and refs it from both hello and heartbeat', () => {
+    const branches = emitted.anyOf as {
+      properties: { type: { const: string }; sessions?: { items: unknown } };
+    }[];
+    for (const type of ['hello', 'heartbeat']) {
+      const branch = branches.find((candidate) => candidate.properties.type.const === type);
+      expect(branch?.properties.sessions?.items).toEqual({ $ref: '#/$defs/sessionSnapshot' });
+    }
+  });
+
+  it('carries the 8 KB payload cap, so the runner cannot disagree about it', () => {
+    const branches = emitted.anyOf as {
+      properties: { type: { const: string }; events?: { items: { properties: unknown } } };
+    }[];
+    const append = branches.find((b) => b.properties.type.const === 'events.append');
+    const eventProperties = append?.properties.events?.items.properties as
+      | Record<string, unknown>
+      | undefined;
+    expect(eventProperties?.payload).toEqual({
+      type: 'string',
+      maxLength: PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
+    });
+  });
+
+  it('carries the vendor-host constraint on loginUrl', () => {
+    const snapshotDef = (emitted.$defs as Record<string, { properties: Record<string, unknown> }>)
+      .sessionSnapshot;
+    expect(JSON.stringify(snapshotDef.properties.loginUrl)).toContain('claude\\\\.ai');
   });
 
   it('matches the committed artifact — a wire change is a reviewable diff', () => {

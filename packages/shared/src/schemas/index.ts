@@ -8,6 +8,7 @@ export * from './host.schema';
 export * from './lead.schema';
 export * from './organization.schema';
 export * from './pagination.schema';
+export * from './primitives';
 export * from './profile.schema';
 export * from './project.schema';
 export * from './role.schema';
