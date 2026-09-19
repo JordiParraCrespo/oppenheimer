@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -10,27 +11,32 @@ import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tok
 import { CloseSessionCommand } from './close-session.command';
 
 /**
- * Closes a session: push each checkout's branch, then remove the worktrees and
- * prune. **Nothing is deleted here.**
+ * Asks to close a session: push each checkout's branch, then remove the worktrees
+ * and prune. **It records a request, not an outcome.**
  *
- * The row stays for ever, `state` folds to `resolved`, and `uq (projectId, slug)`
- * becomes a permanent tombstone — which is the whole reason closing is a state and
- * not a `DELETE`. Claude Code and Codex key their conversation state by working
- * directory, so a new session landing on a retired session's directory name would
- * inherit a stranger's history: a bug that is near-impossible to diagnose from the
- * symptom, and free to rule out by never reissuing the name.
+ * That is the difference from stopping, and it is the whole reason this handler is
+ * shaped like restart rather than like stop. Closing has to do work on the host
+ * that can legitimately refuse — a checkout with unpushed work is not removed
+ * unless the caller accepted the loss, `--force` is never passed, and git's own
+ * words are relayed rather than paraphrased. Only the host can say that work
+ * happened, so `session.closed` arrives from the host and the fold moves the row to
+ * `resolved` then. A control plane that resolved the row here would make the
+ * tombstone permanent before anybody had looked at the worktrees, and `resolved` is
+ * terminal.
  *
- * The host's refusal is the host's. Closing refuses when a checkout has unpushed
- * work unless the caller accepts the loss, never passes `--force`, and relays git's
- * own words rather than paraphrasing them — so that refusal belongs to the
- * dispatcher and the runner, not to this handler.
+ * `acceptUnpushedWork` rides in the payload because the runner is its reader: it is
+ * what tells a host it may remove a dirty worktree.
  *
- * Closing twice is closing once: the aggregate is already resolved, and a retried
- * request after a lost response is not a conflict.
+ * Until the relay exists, that means a close leaves the session `open` with a
+ * request on its log. That is the honest state — nothing has been pushed or
+ * removed — and it is what the `host_offline` hint on the response says.
+ *
+ * Asking twice is asking once for a session already resolved: a retried request
+ * after a lost response is not a conflict.
  */
 @CommandHandler(CloseSessionCommand)
 export class CloseSessionCommandHandler
-  implements ICommandHandler<CloseSessionCommand, WorkSessionEntity>
+  implements ICommandHandler<CloseSessionCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -39,7 +45,7 @@ export class CloseSessionCommandHandler
     private readonly dispatch: SessionDispatchPort,
   ) {}
 
-  async execute(command: CloseSessionCommand): Promise<WorkSessionEntity> {
+  async execute(command: CloseSessionCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -47,17 +53,22 @@ export class CloseSessionCommandHandler
       });
     }
     const session = found.unwrap();
-    if (session.isResolved) return session;
+    if (session.isResolved) return { session, hints: [] };
 
-    await this.dispatch.close(session, { acceptUnpushedWork: command.acceptUnpushedWork });
     await this.sessions.appendEvents(session, [
       {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(command.id, SESSION_EVENT_KINDS.CLOSED),
+        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+          command.id,
+          SESSION_EVENT_KINDS.CLOSE_REQUESTED,
+        ),
         source: 'api',
-        kind: SESSION_EVENT_KINDS.CLOSED,
+        kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED,
         payload: { acceptUnpushedWork: command.acceptUnpushedWork },
       },
     ]);
-    return session;
+    const { hints } = await this.dispatch.close(session, {
+      acceptUnpushedWork: command.acceptUnpushedWork,
+    });
+    return { session, hints };
   }
 }

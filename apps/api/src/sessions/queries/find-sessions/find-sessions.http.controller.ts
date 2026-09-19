@@ -71,7 +71,7 @@ export class FindSessionsHttpController {
     );
     const now = new Date();
     return {
-      data: result.data.map((session) => this.mapper.toResponse(session, now)),
+      data: result.data.map((session) => this.mapper.toResponse(session, { now })),
       meta: {
         total: result.count,
         page: result.page,

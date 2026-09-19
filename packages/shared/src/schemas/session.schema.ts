@@ -70,12 +70,25 @@ const createSessionFields = z.object({
  * pointing at a repository this session is not checking out is not a policy
  * question, it is an unsatisfiable body.
  */
-export const createSessionSchema = createSessionFields.refine(
-  (value) =>
-    value.cwdGithubRepoId === undefined ||
-    value.checkouts.some((checkout) => checkout.githubRepoId === value.cwdGithubRepoId),
-  { path: ['cwdGithubRepoId'] },
-);
+export const createSessionSchema = createSessionFields
+  .refine(
+    (value) =>
+      value.cwdGithubRepoId === undefined ||
+      value.checkouts.some((checkout) => checkout.githubRepoId === value.cwdGithubRepoId),
+    { path: ['cwdGithubRepoId'] },
+  )
+  /**
+   * One checkout per repository. A directory name is never reused inside a session,
+   * so the same repository twice is a body that cannot be satisfied — and refusing
+   * it here is what keeps it a validation error rather than a unique violation
+   * surfacing from the insert.
+   */
+  .refine(
+    (value) =>
+      new Set(value.checkouts.map((checkout) => checkout.githubRepoId)).size ===
+      value.checkouts.length,
+    { path: ['checkouts'] },
+  );
 
 export type CreateSessionDto = z.infer<typeof createSessionSchema>;
 
@@ -165,9 +178,22 @@ export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
  * is accepted. The flag is on the route rather than implied by a second endpoint
  * because the refusal is the default and accepting the loss has to be a
  * deliberate sentence somebody typed.
+ *
+ * Its reader is the **runner**: the request is recorded as
+ * `session.close_requested` carrying this flag, and the host is what decides
+ * whether a dirty worktree may go.
  */
 export const closeSessionSchema = z.object({
-  acceptUnpushedWork: z.coerce.boolean().optional(),
+  /**
+   * The two literals, parsed as themselves. `z.coerce.boolean()` would apply
+   * JavaScript truthiness to a query string, so `?acceptUnpushedWork=false` — a
+   * caller saying no in the clearest way available — would arrive as `true` and
+   * tell the runner it may throw away work.
+   */
+  acceptUnpushedWork: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 export type CloseSessionDto = z.infer<typeof closeSessionSchema>;

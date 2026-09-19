@@ -91,7 +91,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_GROUPS,
     description:
-      'The derived group — what the sidebar dot shows, computed on read and organised by what needs you. `waiting-on-you` has four sources: the session failed, the agent has been blocked for 30 s, a launch has sat unready for 60 s, or the pane is gone with no report.',
+      'The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).',
   })
   state!: (typeof SESSION_GROUPS)[number];
 
@@ -126,6 +126,15 @@ export class SessionResponseDto {
 
   @ApiProperty({ type: [SessionCheckoutResponseDto] })
   checkouts!: SessionCheckoutResponseDto[];
+
+  @ApiProperty({
+    isArray: true,
+    type: String,
+    description:
+      'What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.',
+    example: [],
+  })
+  hints!: string[];
 
   @ApiProperty()
   createdAt!: Date;
@@ -186,13 +195,4 @@ export class AttachTicketResponseDto {
     example: 0,
   })
   window!: number;
-
-  @ApiProperty({
-    isArray: true,
-    type: String,
-    description:
-      'Structured hints for the console. `host_offline` means the host holds no link right now, so the socket will not reach a terminal — a hint the ticket carries and a runner cannot send about itself.',
-    example: ['host_offline'],
-  })
-  hints!: string[];
 }

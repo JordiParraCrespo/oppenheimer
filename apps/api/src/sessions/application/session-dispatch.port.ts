@@ -10,10 +10,12 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
  * promises delivery. An implementation says whether it got the job onto a link, and
  * the session's log is where that answer is written down.
  *
- * Until the relay exists this is bound to an adapter that records
- * `session.dispatch_pending` and nothing else, which is why every method returns the
- * same small outcome rather than a job id: the slice is complete without a host
- * because every read, write and state rule is testable without one.
+ * **An implementation never writes the log.** One user action is one entry,
+ * appended by the command handler in the same transaction as the row change it
+ * implies. A dispatcher that also appended would make a click two entries in two
+ * transactions. Until the relay exists this is bound to an adapter that answers
+ * `{ delivered: false, hints: ['host_offline'] }` and does nothing else, which is
+ * why every method returns the same small outcome rather than a job id.
  */
 export interface SessionDispatchOutcome {
   /** Whether the job reached a live link to the host. */

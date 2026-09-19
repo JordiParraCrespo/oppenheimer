@@ -9,17 +9,13 @@ import type { SessionGroup, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
 import { SessionStateChangedDomainEvent } from './events/session-state-changed.domain-event';
 import type { SessionCheckoutEntity } from './session-checkout.entity';
-import {
-  type AgentObservation,
-  foldAgentObservation,
-  type SessionReview,
-  sessionGroup,
-} from './session-group.policy';
+import { sessionGroup } from './session-group.policy';
 import { SESSION_SLUG_PATTERN } from './session-slug.policy';
-import type { SessionAgent } from './session-state.policy';
 import {
   foldSessionEvent,
   INITIAL_SESSION_FOLD,
+  SESSION_EVENT_KINDS,
+  type SessionAgent,
   type SessionFold,
   type SessionLogEntry,
   type SessionNameSource,
@@ -38,8 +34,6 @@ export interface WorkSessionProps extends SessionFold {
   hostId: string;
   slug: string;
   agent: SessionAgent;
-  /** Where the agent is launched. Null means the session directory itself. */
-  cwdCheckoutId: string | null;
   /** The caller's `Idempotency-Key`, stored so a retry returns this session. */
   idempotencyKey: string | null;
   /** Members of the aggregate, including retired ones. */
@@ -60,14 +54,18 @@ export interface CreateWorkSessionProps {
 /**
  * Work-session aggregate root — a terminal, an agent, and a set of checkouts.
  *
- * **`recordEvent` is the only way the fold moves.** There is no `setState`, no
- * `markStopped` and no `setName`: `work_session.state` is a projection of the
- * append-only log, so writing it directly would create a second truth that a
- * replay would then disagree with (`product/versions/mvp/03-control-plane.md`).
- * The checkouts are the aggregate's other half and are added and retired through
- * it, because a checkout row's columns are not a fold of anything — but every one
- * of those changes is accompanied by a log entry, so the log still explains the
- * row.
+ * **`recordEvent` is the only mutator.** There is no `setState`, no `setName` and
+ * no `setCwdCheckout`: every column of `work_session` is a projection of the
+ * append-only log, so writing one directly would create a second truth that a
+ * replay then disagrees with (`product/versions/mvp/03-control-plane.md`). That
+ * includes which checkout the agent was launched in, and it includes the inputs
+ * the sidebar's dot is computed from.
+ *
+ * The one thing that is not a fold is **adding a member**: a checkout is a row in
+ * another table with its own unique constraints, and inserting it is not a
+ * projection of anything. Retiring one is, because it is a consequence of an
+ * event, so `session.checkout_removed` is what marks the child and steps the agent
+ * out of it.
  *
  * Rows are never hard-deleted. Closing records `session.closed`, the state folds
  * to `resolved` and the row stays for ever: `uq (projectId, slug)` is the
@@ -75,15 +73,6 @@ export interface CreateWorkSessionProps {
  * name, and therefore a stranger's agent conversation state.
  */
 export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
-  /**
-   * What the log last observed the agent doing, and what GitHub says about the
-   * branch. Neither is a column: both are folded from the log by whoever is
-   * holding it, which is why they are null on an aggregate rehydrated from a row.
-   */
-  private observation: AgentObservation | null = null;
-  private review: SessionReview | null = null;
-  private paneMissing = false;
-
   static create(create: CreateEntityProps<WorkSessionProps>): WorkSessionEntity {
     return new WorkSessionEntity(create);
   }
@@ -106,7 +95,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         hostId: props.hostId,
         slug: props.slug,
         agent: props.agent,
-        cwdCheckoutId: null,
         idempotencyKey: props.idempotencyKey ?? null,
         checkouts: [],
         name: props.name ?? props.slug,
@@ -208,20 +196,15 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.checkouts.map((checkout) => checkout.directoryName);
   }
 
-  /** The derived group, for the wire. Absent observations read as "nothing reported". */
+  /**
+   * The derived group, for the wire — a function of the row, because every input
+   * it reads is a folded column.
+   */
   group(now: Date = new Date()): SessionGroup {
-    return sessionGroup(
-      {
-        fold: this.fold,
-        observation: this.observation,
-        review: this.review,
-        paneMissing: this.paneMissing,
-      },
-      now,
-    );
+    return sessionGroup(this.fold, now);
   }
 
-  /** The fold as a value, for a policy that wants it without the aggregate. */
+  /** The fold as a value, for a policy or a mapper that wants it without the aggregate. */
   get fold(): SessionFold {
     return {
       state: this.props.state,
@@ -231,7 +214,36 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       stoppedAt: this.props.stoppedAt,
       name: this.props.name,
       nameSource: this.props.nameSource,
+      cwdCheckoutId: this.props.cwdCheckoutId,
+      lastObservedState: this.props.lastObservedState,
+      observedSince: this.props.observedSince,
+      reportHash: this.props.reportHash,
+      ackedReportHash: this.props.ackedReportHash,
     };
+  }
+
+  /**
+   * Re-seat the projection on what the database says it is.
+   *
+   * The repository calls this **inside the row lock**, before folding a new batch:
+   * an instance loaded before the lock may have been overtaken — a close can commit
+   * while a stop is waiting — and folding onto the stale copy would write a
+   * projection the log does not support. It is not a setter in the mutator sense;
+   * it is the same load `toDomain` does, repeated once the row can no longer move.
+   */
+  reseatFold(fold: SessionFold): void {
+    this.props.state = fold.state;
+    this.props.stateSeq = fold.stateSeq;
+    this.props.agentSessionId = fold.agentSessionId;
+    this.props.lastEventAt = fold.lastEventAt;
+    this.props.stoppedAt = fold.stoppedAt;
+    this.props.name = fold.name;
+    this.props.nameSource = fold.nameSource;
+    this.props.cwdCheckoutId = fold.cwdCheckoutId;
+    this.props.lastObservedState = fold.lastObservedState;
+    this.props.observedSince = fold.observedSince;
+    this.props.reportHash = fold.reportHash;
+    this.props.ackedReportHash = fold.ackedReportHash;
   }
 
   /**
@@ -243,15 +255,16 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    */
   recordEvent(entry: SessionLogEntry): void {
     const before = this.props.state;
-    const folded = foldSessionEvent(this.fold, entry);
-    this.props.state = folded.state;
-    this.props.stateSeq = folded.stateSeq;
-    this.props.agentSessionId = folded.agentSessionId;
-    this.props.lastEventAt = folded.lastEventAt;
-    this.props.stoppedAt = folded.stoppedAt;
-    this.props.name = folded.name;
-    this.props.nameSource = folded.nameSource;
-    this.observation = foldAgentObservation(this.observation, entry);
+    this.reseatFold(foldSessionEvent(this.fold, entry));
+    // A retired checkout is a row in another table, so the fold cannot reach it —
+    // but its retirement is a consequence of this event, so it happens here rather
+    // than in a setter somebody could call without one.
+    if (entry.kind === SESSION_EVENT_KINDS.CHECKOUT_REMOVED) {
+      const checkoutId = checkoutIdOf(entry.payload);
+      const checkout = this.props.checkouts.find((candidate) => candidate.id === checkoutId);
+      checkout?.remove(entry.occurredAt);
+    }
+    const folded = this.fold;
     this.setUpdatedAt(new Date());
     this.validate();
 
@@ -282,9 +295,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   }
 
   /**
-   * Add a checkout. The caller derives its directory name from
+   * Hold a checkout the caller has built — a **new row**, not a projection, which
+   * is why it is not a fold. The caller derives its directory name from
    * `checkoutDirectoryName` over {@link usedDirectoryNames}, so a name is never
-   * reissued inside a session.
+   * reissued inside a session; where the agent then runs is `session.cwd_set`,
+   * which is.
    */
   attachCheckout(checkout: SessionCheckoutEntity): void {
     if (this.props.checkouts.some((existing) => existing.id === checkout.id)) return;
@@ -292,50 +307,9 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.setUpdatedAt(new Date());
   }
 
-  /**
-   * Retire a checkout, and step the agent out of it if that is where it was.
-   *
-   * Nulling `cwdCheckoutId` here rather than relying on the foreign key's
-   * `ON DELETE SET NULL` is the point: checkout rows are never deleted, so that
-   * clause never fires. The session degrades to its own directory instead of
-   * pointing at a checkout that is no longer on disk.
-   */
-  retireCheckout(checkoutId: string, at: Date): SessionCheckoutEntity | null {
-    const checkout = this.props.checkouts.find((candidate) => candidate.id === checkoutId);
-    if (!checkout) return null;
-    checkout.remove(at);
-    if (this.props.cwdCheckoutId === checkoutId) this.props.cwdCheckoutId = null;
-    this.setUpdatedAt(new Date());
-    return checkout;
-  }
-
-  /** Where the agent is launched. Must name a checkout of this session. */
-  setCwdCheckout(checkoutId: string | null): void {
-    if (
-      checkoutId !== null &&
-      !this.props.checkouts.some((checkout) => checkout.id === checkoutId)
-    ) {
-      throw new ArgumentInvalidException(
-        'A session can only be launched inside one of its own checkouts',
-      );
-    }
-    this.props.cwdCheckoutId = checkoutId;
-    this.setUpdatedAt(new Date());
-  }
-
-  /**
-   * Hand the aggregate what the log says about the agent and the branch. Used by
-   * whoever holds the log — the relay's read path — so the group it reports is the
-   * group the sidebar should show.
-   */
-  observe(input: {
-    observation?: AgentObservation | null;
-    review?: SessionReview | null;
-    paneMissing?: boolean;
-  }): void {
-    if (input.observation !== undefined) this.observation = input.observation;
-    if (input.review !== undefined) this.review = input.review;
-    if (input.paneMissing !== undefined) this.paneMissing = input.paneMissing;
+  /** A checkout of this session, live or retired. */
+  checkoutById(checkoutId: string): SessionCheckoutEntity | undefined {
+    return this.props.checkouts.find((checkout) => checkout.id === checkoutId);
   }
 
   /** The key the API uses for its own log entries: the command that caused them. */
@@ -362,4 +336,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       );
     }
   }
+}
+
+/** The checkout an event names, narrowed once so the aggregate does not cast. */
+function checkoutIdOf(payload: unknown): string | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const value = (payload as { checkoutId?: unknown }).checkoutId;
+  return typeof value === 'string' ? value : null;
 }

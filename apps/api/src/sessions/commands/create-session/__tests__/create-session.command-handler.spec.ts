@@ -48,9 +48,11 @@ describe('CreateSessionCommandHandler', () => {
   beforeEach(() => {
     sessions = {
       findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
-      createIfUnclaimed: vi
-        .fn()
-        .mockImplementation(async (session: WorkSessionEntity) => ({ session, created: true })),
+      createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
+        session,
+        created: true,
+        projectArchived: false,
+      })),
     } as unknown as WorkSessionRepositoryPort;
     hosts = { assertUsable: vi.fn().mockResolvedValue(undefined) };
     dispatch = {
@@ -59,6 +61,7 @@ describe('CreateSessionCommandHandler', () => {
     plan = {
       resolveProject: vi.fn().mockResolvedValue(project()),
       attachCheckout: vi.fn().mockResolvedValue(undefined),
+      cwdCheckoutIdFor: vi.fn().mockReturnValue(null),
     } as unknown as SessionPlanFactory;
 
     handler = new CreateSessionCommandHandler(sessions, hosts, dispatch, plan);
@@ -75,15 +78,49 @@ describe('CreateSessionCommandHandler', () => {
       ...overrides,
     });
 
-  it('mints a slug, records the request and dispatches the job', async () => {
-    const session = await handler.execute(command());
+  it('mints a slug, records the request and the cwd, and dispatches the job', async () => {
+    const { session, hints } = await handler.execute(command());
 
     expect(session.slug).toMatch(/^[a-z]+-[a-z]+-[0-9a-z]{6}$/);
     expect(session.state).toBe('starting');
+    // Two entries, one transaction, one action: the request and where the agent
+    // runs. The second is an event because `cwdCheckoutId` is part of the fold.
     const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
-    expect(events[0].kind).toBe('session.requested');
-    expect(events[0].source).toBe('api');
+    expect(events.map((event) => event.kind)).toEqual(['session.requested', 'session.cwd_set']);
+    expect(events.every((event) => event.source === 'api')).toBe(true);
     expect(dispatch.create).toHaveBeenCalledOnce();
+    // Nothing reached a host, and the response says so rather than a second log
+    // entry saying it.
+    expect(hints).toEqual([]);
+  });
+
+  it('carries the dispatcher’s hints back on the response', async () => {
+    vi.mocked(dispatch.create).mockResolvedValue({ delivered: false, hints: ['host_offline'] });
+
+    await expect(handler.execute(command())).resolves.toMatchObject({ hints: ['host_offline'] });
+    // And appends nothing for it: one action is one entry, and "we could not reach
+    // the host just now" is about this request, not about the session's history.
+    expect(vi.mocked(sessions.createIfUnclaimed).mock.calls[0][1]).toHaveLength(2);
+  });
+
+  it('refuses when the project was archived while it was being planned', async () => {
+    // The project row is locked inside the insert transaction, so this is the race
+    // decided rather than detected afterwards.
+    vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
+      session: WorkSessionEntity.request({
+        organizationId: 'org-acme',
+        projectId: 'project-1',
+        createdByUserId: 'user-1',
+        hostId: 'host-1',
+        slug: 'bold-otter-3f9a7k',
+        agent: 'claude-code',
+      }),
+      created: false,
+      projectArchived: true,
+    });
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_006' });
+    expect(dispatch.create).not.toHaveBeenCalled();
   });
 
   it('returns the session a retry already created, and asks nobody anything', async () => {
@@ -98,7 +135,7 @@ describe('CreateSessionCommandHandler', () => {
     });
     vi.mocked(sessions.findOneByIdempotencyKey).mockResolvedValue(Some(existing));
 
-    await expect(handler.execute(command())).resolves.toBe(existing);
+    await expect(handler.execute(command())).resolves.toMatchObject({ session: existing });
     // The point of the key: no second directory, no second branch, and no second
     // trip to GitHub or to the host.
     expect(hosts.assertUsable).not.toHaveBeenCalled();
@@ -116,9 +153,13 @@ describe('CreateSessionCommandHandler', () => {
       agent: 'claude-code',
       idempotencyKey: 'key-1',
     });
-    vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({ session: other, created: false });
+    vi.mocked(sessions.createIfUnclaimed).mockResolvedValue({
+      session: other,
+      created: false,
+      projectArchived: false,
+    });
 
-    await expect(handler.execute(command())).resolves.toBe(other);
+    await expect(handler.execute(command())).resolves.toMatchObject({ session: other });
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 

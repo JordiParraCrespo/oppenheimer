@@ -2,6 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -18,14 +19,14 @@ import { RenameSessionCommand } from './rename-session.command';
  */
 @CommandHandler(RenameSessionCommand)
 export class RenameSessionCommandHandler
-  implements ICommandHandler<RenameSessionCommand, WorkSessionEntity>
+  implements ICommandHandler<RenameSessionCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
   ) {}
 
-  async execute(command: RenameSessionCommand): Promise<WorkSessionEntity> {
+  async execute(command: RenameSessionCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -47,6 +48,8 @@ export class RenameSessionCommandHandler
         payload: { name: command.name, source: 'user' },
       },
     ]);
-    return session;
+    // Renaming tells no host anything: the name is display only, and the slug the
+    // runner keys every path on does not change.
+    return { session, hints: [] };
   }
 }

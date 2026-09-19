@@ -3,6 +3,9 @@ import { OutboxService } from '@oppenheimer/backend-ddd';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { AddSessionRolePermissions1789100100000 } from '../src/migrations/1789100100000-AddSessionRolePermissions';
+import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
+import { ProjectRepository } from '../src/projects/database/project.repository';
+import { ProjectMapper } from '../src/projects/project.mapper';
 import { SessionCheckoutOrmEntity } from '../src/sessions/database/session-checkout.orm-entity';
 import { WorkSessionOrmEntity } from '../src/sessions/database/work-session.orm-entity';
 import { WorkSessionRepository } from '../src/sessions/database/work-session.repository';
@@ -121,7 +124,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      entities: [WorkSessionOrmEntity, SessionCheckoutOrmEntity, WorkSessionEventOrmEntity],
+      entities: [
+        WorkSessionOrmEntity,
+        SessionCheckoutOrmEntity,
+        WorkSessionEventOrmEntity,
+        ProjectOrmEntity,
+      ],
       synchronize: false,
     });
     await dataSource.initialize();
@@ -206,9 +214,16 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const work = session();
       const first = checkout(work);
       work.attachCheckout(first);
-      work.setCwdCheckout(first.id);
 
-      const { created } = await repository.createIfUnclaimed(work, requested());
+      const { created } = await repository.createIfUnclaimed(work, [
+        ...requested(),
+        {
+          idempotencyKey: `cwd:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.CWD_SET,
+          payload: { checkoutId: first.id },
+        },
+      ]);
 
       expect(created).toBe(true);
       const [row] = await dataSource.query(`SELECT * FROM "work_session" WHERE "id" = $1`, [
@@ -219,7 +234,10 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       // eventually-consistent with its own log.
       expect(row.lastEventAt).not.toBeNull();
       expect(row.cwdCheckoutId).toBe(first.id);
-      expect(await events(work.id)).toHaveLength(1);
+      expect((await events(work.id)).map((entry) => entry.kind)).toEqual([
+        'session.requested',
+        'session.cwd_set',
+      ]);
     });
 
     it('returns the session a retry already created, and mints nothing new', async () => {
@@ -406,7 +424,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   });
 
   describe('nothing is ever hard-deleted', () => {
-    it('keeps the row and its slug when a session is closed', async () => {
+    it('keeps the row and its slug when the host reports a close', async () => {
       const work = session({ slug: 'bold-otter-abc123' });
       await repository.createIfUnclaimed(work, requested());
 
@@ -441,17 +459,29 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       const work = session();
       const first = checkout(work);
       work.attachCheckout(first);
-      work.setCwdCheckout(first.id);
-      await repository.createIfUnclaimed(work, requested());
+      await repository.createIfUnclaimed(work, [
+        ...requested(),
+        {
+          idempotencyKey: `cwd:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.CWD_SET,
+          payload: { checkoutId: first.id },
+        },
+      ]);
+      const [created] = await dataSource.query(
+        `SELECT "cwdCheckoutId" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(created.cwdCheckoutId).toBe(first.id);
 
-      const retired = work.retireCheckout(first.id, new Date());
-      expect(retired).not.toBeNull();
-      await repository.retireCheckout(work, retired as SessionCheckoutEntity, [
+      // The event is what retires it: folding `session.checkout_removed` nulls the
+      // column and marks the child, so the row and the log cannot disagree.
+      await repository.retireCheckout(work, first, [
         {
           idempotencyKey: 'remove:1',
           source: 'api',
           kind: SESSION_EVENT_KINDS.CHECKOUT_REMOVED,
-          payload: {},
+          payload: { checkoutId: first.id },
         },
       ]);
 
@@ -472,8 +502,14 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       work.attachCheckout(first);
       await repository.createIfUnclaimed(work, requested());
 
-      const retired = work.retireCheckout(first.id, new Date());
-      await repository.retireCheckout(work, retired as SessionCheckoutEntity, []);
+      await repository.retireCheckout(work, first, [
+        {
+          idempotencyKey: `remove:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.CHECKOUT_REMOVED,
+          payload: { checkoutId: first.id },
+        },
+      ]);
 
       // The repository unique is partial on `removedAt IS NULL`, so the same
       // repository may come back — but the directory unique is not, so it comes back
@@ -527,13 +563,78 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         })),
       );
 
-      const first = await repository.findEvents(work.id, undefined, 2);
+      const first = await repository.findEvents(work, undefined, 2);
       expect(first.events.map((event) => event.seq)).toEqual([1, 2]);
       expect(first.nextSeq).toBe(2);
 
-      const last = await repository.findEvents(work.id, 3, 10);
+      const last = await repository.findEvents(work, 3, 10);
       expect(last.events.map((event) => event.seq)).toEqual([4, 5]);
       expect(last.nextSeq).toBeNull();
+    });
+  });
+
+  describe('concurrency the row lock decides', () => {
+    it('keeps resolved when a stop lands on a stale instance', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      // Two requests, two aggregates, both loaded before either wrote. Without
+      // re-seating the fold from the locked row, the stop would fold onto its own
+      // `open` copy and write the projection back over a terminal log.
+      const closing = (await repository.findOneById(scope(), work.id)).unwrap();
+      const stopping = (await repository.findOneById(scope(), work.id)).unwrap();
+
+      await repository.appendEvents(closing, [
+        { idempotencyKey: 'close:1', source: 'api', kind: SESSION_EVENT_KINDS.CLOSED, payload: {} },
+      ]);
+      await repository.appendEvents(stopping, [
+        { idempotencyKey: 'stop:1', source: 'api', kind: SESSION_EVENT_KINDS.STOPPED, payload: {} },
+      ]);
+
+      const [row] = await dataSource.query(`SELECT "state" FROM "work_session" WHERE "id" = $1`, [
+        work.id,
+      ]);
+      expect(row.state).toBe('resolved');
+      // And the aggregate the caller is holding agrees, because it was re-seated.
+      expect(stopping.state).toBe('resolved');
+    });
+
+    it('lets an archive and a create race to one winner, never both', async () => {
+      // The archive locks the project row, asks the question inside that lock and
+      // writes `archivedAt` before releasing it; the create takes a share lock on
+      // the same row inside its insert transaction. Whichever waits sees the other's
+      // committed work.
+      const projects = new ProjectRepository(
+        dataSource.getRepository(ProjectOrmEntity),
+        new ProjectMapper(),
+      );
+      const work = session();
+
+      const [archive, create] = await Promise.allSettled([
+        projects.archiveIfUnused(scope(), projectId, () =>
+          repository.countUnresolvedForProject(scope(), projectId).then((open) => open > 0),
+        ),
+        repository.createIfUnclaimed(work, requested()),
+      ]);
+
+      expect(archive.status).toBe('fulfilled');
+      expect(create.status).toBe('fulfilled');
+      const archived = archive.status === 'fulfilled' && archive.value.result === 'archived';
+      const inserted = create.status === 'fulfilled' && create.value.created;
+
+      // Exactly one of them won: either the project is archived and no session was
+      // inserted, or the session exists and the archive refused.
+      expect(archived).not.toBe(inserted);
+      const [{ count }] = await dataSource.query(
+        `SELECT count(*)::int FROM "work_session" WHERE "projectId" = $1 AND "state" <> 'resolved'`,
+        [projectId],
+      );
+      const [row] = await dataSource.query(`SELECT "archivedAt" FROM "project" WHERE "id" = $1`, [
+        projectId,
+      ]);
+      // The invariant the pair exists to hold: never an archived project with
+      // unresolved work in it.
+      expect(row.archivedAt === null || count === 0).toBe(true);
     });
   });
 

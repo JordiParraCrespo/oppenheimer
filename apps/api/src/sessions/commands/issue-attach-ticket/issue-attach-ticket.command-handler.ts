@@ -38,7 +38,6 @@ export interface IssuedAttachTicket {
   url: string;
   expiresAt: Date;
   window: number;
-  hints: string[];
 }
 
 /**
@@ -96,14 +95,14 @@ export class IssueAttachTicketCommandHandler
     );
     if (!claimed) throw new AppError(SessionErrors.ATTACH_TICKET_UNAVAILABLE);
 
+    // No hint here, deliberately: this handler never asks a dispatcher, so any
+    // hint it invented would be a guess about a link it cannot see. Whether the
+    // host is reachable is the relay's answer, on the socket that tries.
     return {
       ticket,
       url: ATTACH_URL,
       expiresAt: new Date(Date.now() + ATTACH_TICKET_TTL_SECONDS * 1000),
       window: command.window,
-      // Until there is a relay, no host holds a link — so every host is offline and
-      // the hint says so rather than letting a socket fail without explanation.
-      hints: ['host_offline'],
     };
   }
 }

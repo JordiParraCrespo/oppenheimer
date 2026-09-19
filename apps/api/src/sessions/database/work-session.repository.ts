@@ -64,10 +64,28 @@ export class WorkSessionRepository
   async createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean }> {
+  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }> {
     const record = this.mapper.toPersistence(session);
 
     const created = await this.dataSource.transaction(async (manager) => {
+      // The project is locked **in this transaction**, before the insert, and the
+      // archive command takes `FOR UPDATE` on the same row. That is what makes
+      // "an archived project holds no unresolved session" true rather than
+      // probable: an archive that commits first turns this into zero rows (a
+      // locking read re-checks its qualification against the updated row), and an
+      // archive that arrives second waits here and then sees the session.
+      //
+      // The statement names another module's table, which the composite foreign
+      // key already does; the lock has to sit in the transaction that inserts, and
+      // that transaction is here.
+      const active: { id: string }[] = await manager.query(
+        `SELECT "id" FROM "project"
+          WHERE "id" = $1 AND "organizationId" = $2 AND "archivedAt" IS NULL
+          FOR SHARE`,
+        [record.projectId, record.organizationId],
+      );
+      if (active.length === 0) return 'project-archived' as const;
+
       // The conflict target is the client's own key, so the statement itself
       // answers whether this request created the session — no second query that
       // assumes it won, and no second directory and branch on a retry.
@@ -106,7 +124,7 @@ export class WorkSessionRepository
           record.stoppedAt,
         ],
       );
-      if (inserted.length === 0) return false;
+      if (inserted.length === 0) return 'taken' as const;
 
       const checkouts = manager.getRepository(SessionCheckoutOrmEntity);
       for (const checkout of session.checkouts) {
@@ -116,14 +134,17 @@ export class WorkSessionRepository
       // transaction: the session's first log entries and the columns they produce
       // commit together or not at all.
       await this.appendWithin(manager, session, events);
-      return true;
+      return 'created' as const;
     });
 
-    if (!created) {
+    if (created === 'project-archived') return { session, created: false, projectArchived: true };
+    if (created === 'taken') {
       const existing: Option<WorkSessionEntity> = session.idempotencyKey
         ? await this.findOneByKeyUnscoped(session.organizationId, session.idempotencyKey)
         : None;
-      if (existing.isSome()) return { session: existing.unwrap(), created: false };
+      if (existing.isSome()) {
+        return { session: existing.unwrap(), created: false, projectArchived: false };
+      }
       // No key to read back by: the insert cannot have been refused for any other
       // reason, so this is a fault rather than a retry.
       throw new Error(`Session ${session.id} was neither inserted nor already present`);
@@ -131,7 +152,7 @@ export class WorkSessionRepository
 
     session.clearEvents();
     await this.outbox.wake();
-    return { session, created: true };
+    return { session, created: true, projectArchived: false };
   }
 
   async appendEvents(
@@ -166,10 +187,14 @@ export class WorkSessionRepository
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome> {
     const outcome = await this.dataSource.transaction(async (manager) => {
+      // The append runs first: folding `session.checkout_removed` is what marks the
+      // child and steps the agent out of it, so `removedAt` below is written from
+      // what the log said rather than from a value the caller set beside it.
+      const appended = await this.appendWithin(manager, session, events);
       await manager
         .getRepository(SessionCheckoutOrmEntity)
-        .update({ id: checkout.id }, { removedAt: checkout.removedAt });
-      return this.appendWithin(manager, session, events);
+        .update({ id: checkout.id }, { removedAt: checkout.removedAt ?? new Date() });
+      return appended;
     });
     await this.flushEvents(session);
     return outcome;
@@ -224,10 +249,11 @@ export class WorkSessionRepository
   }
 
   async findEvents(
-    sessionId: string,
+    session: WorkSessionEntity,
     afterSeq: number | undefined,
     limit: number,
   ): Promise<SessionEventPage> {
+    const sessionId = session.id;
     const query = this.repository.manager
       .getRepository(WorkSessionEventOrmEntity)
       .createQueryBuilder('event')
@@ -270,13 +296,19 @@ export class WorkSessionRepository
     const rejected: SessionAppendOutcome['rejected'] = [];
     const appended: WorkSessionEventEntity[] = [];
 
-    const locked: { id: string }[] = await manager.query(
-      `SELECT "id" FROM "work_session" WHERE "id" = $1 FOR UPDATE`,
+    const locked: WorkSessionOrmEntity[] = await manager.query(
+      `SELECT * FROM "work_session" WHERE "id" = $1 FOR UPDATE`,
       [session.id],
     );
     if (locked.length === 0) {
       throw new Error(`Session ${session.id} disappeared while appending to its log`);
     }
+    // Fold onto what the **locked row** says, not onto the instance the caller
+    // loaded. Two requests can hold separate aggregates: a close commits
+    // `resolved` while a stop waits here, and folding onto the stop's stale `open`
+    // would write a projection the log does not support. The lock is what makes
+    // this read final.
+    session.reseatFold(this.mapper.foldOf(locked[0]));
 
     // A **second** statement, deliberately. Under READ COMMITTED a statement's
     // snapshot is taken before it blocks on a row lock, so reading the maximum in

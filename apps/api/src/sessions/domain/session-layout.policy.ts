@@ -54,15 +54,22 @@ export function checkoutDirectoryCandidates(repositoryFullName: string, githubRe
 /**
  * Pick the first candidate no name in `taken` holds. `taken` is every directory
  * name the session has ever used, including retired ones.
+ *
+ * `null` when all three are taken, and the caller refuses. **It never reissues the
+ * last one.** A session that added, retired and re-added the same repository through
+ * all three names would otherwise land on a retired directory, which is exactly the
+ * inherited-conversation bug the tombstone exists to prevent — and the caller
+ * refusing is a sentence somebody can read, where a silent reuse is a stranger's
+ * history in a fresh agent.
  */
 export function checkoutDirectoryName(
   repositoryFullName: string,
   githubRepoId: string,
   taken: Iterable<string>,
-): string {
+): string | null {
   const used = new Set(taken);
   const candidates = checkoutDirectoryCandidates(repositoryFullName, githubRepoId);
-  return candidates.find((candidate) => !used.has(candidate)) ?? candidates[candidates.length - 1];
+  return candidates.find((candidate) => !used.has(candidate)) ?? null;
 }
 
 /** `owner/repo` as GitHub spells it, tolerant of a name with no owner in it. */

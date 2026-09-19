@@ -1,4 +1,5 @@
-import { PATH_METADATA } from '@nestjs/common/constants';
+import { RequestMethod } from '@nestjs/common';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '@oppenheimer/backend-authz';
 import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
@@ -6,11 +7,14 @@ import { AdminController } from '../../admin/admin.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
 import { FindSubscriptionsHttpController } from '../../billing/queries/find-subscriptions/find-subscriptions.http.controller';
 import { MembersController } from '../../organizations/members.controller';
+import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
 import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
 import { AddCheckoutHttpController } from '../../sessions/commands/add-checkout/add-checkout.http.controller';
+import { CloseSessionHttpController } from '../../sessions/commands/close-session/close-session.http.controller';
 import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
 import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
 import { FindSessionHttpController } from '../../sessions/queries/find-session/find-session.http.controller';
@@ -36,23 +40,26 @@ import { FindSessionsHttpController } from '../../sessions/queries/find-sessions
 
 /** The handler each guarded endpoint's data actually comes from. */
 const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }> = {
-  '/organizations/:orgId/members': { controller: MembersController, handler: 'list' },
-  '/roles': { controller: FindRolesHttpController, handler: 'findAll' },
-  '/tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
-  '/admin/users': { controller: AdminController, handler: 'listUsers' },
-  '/billing/subscriptions': { controller: FindSubscriptionsHttpController, handler: 'findAll' },
-  '/projects': { controller: FindProjectsHttpController, handler: 'list' },
-  '/projects/:id': { controller: FindProjectHttpController, handler: 'get' },
-  '/sessions': { controller: FindSessionsHttpController, handler: 'list' },
-  '/sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
-  '/sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
-  // The four write paths whose whole purpose is one action, so the path is the
-  // rule. `POST /sessions` is deliberately absent: it shares the listing's path,
-  // exactly as renaming a project shares the project read's.
-  '/sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
-  '/sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
-  '/sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
-  '/sessions/:id/attach-ticket': {
+  'GET /organizations/:orgId/members': { controller: MembersController, handler: 'list' },
+  'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
+  'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
+  'GET /admin/users': { controller: AdminController, handler: 'listUsers' },
+  'GET /billing/subscriptions': { controller: FindSubscriptionsHttpController, handler: 'findAll' },
+  'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
+  'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
+  'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
+  'GET /sessions': { controller: FindSessionsHttpController, handler: 'list' },
+  'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
+  'GET /sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
+  'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
+  'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
+  'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
+  'POST /sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
+  'DELETE /sessions/:id/checkouts/:checkoutId': {
+    controller: RemoveCheckoutHttpController,
+    handler: 'remove',
+  },
+  'POST /sessions/:id/attach-ticket': {
     controller: IssueAttachTicketHttpController,
     handler: 'issue',
   },
@@ -71,11 +78,17 @@ function policiesOn(controller: object, handler: string): string[] {
   return rules.map((rule) => `${rule.action} ${rule.subject}`).sort();
 }
 
-/** The path Nest mounts a handler at, less the global `/api/v{n}` prefix. */
-function pathOf(controller: object, handler: string): string {
+/**
+ * The endpoint Nest mounts a handler at — method and path, less the global
+ * `/api/v{n}` prefix. The method is part of it because the catalog is keyed by it:
+ * reading a session and closing one share a route and are not the same endpoint.
+ */
+function endpointOf(controller: object, handler: string): string {
   const base = Reflect.getMetadata(PATH_METADATA, controller) as string;
-  const own = Reflect.getMetadata(PATH_METADATA, methodOn(controller, handler)) as string;
-  return `/${[base, own].filter((segment) => segment && segment !== '/').join('/')}`;
+  const method = Reflect.getMetadata(PATH_METADATA, methodOn(controller, handler)) as string;
+  const verb = Reflect.getMetadata(METHOD_METADATA, methodOn(controller, handler)) as RequestMethod;
+  const path = `/${[base, method].filter((segment) => segment && segment !== '/').join('/')}`;
+  return `${RequestMethod[verb]} ${path}`;
 }
 
 describe('the endpoint policy catalog and the handlers behind it', () => {
@@ -93,7 +106,7 @@ describe('the endpoint policy catalog and the handlers behind it', () => {
     // Without this, pointing an entry at the wrong controller would leave the
     // check above passing about an endpoint it is not looking at.
     it(`${endpoint} is served by the handler the catalog names`, () => {
-      expect(pathOf(controller, handler)).toBe(endpoint);
+      expect(endpointOf(controller, handler)).toBe(endpoint);
     });
   }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { sessionNamerIsConfigured } from '../../config/sessions.config';
 
 /** The providers a deployment can name sessions with. `none` is the default. */
 export type SessionNamerProvider = 'none' | 'anthropic';
@@ -35,9 +36,13 @@ export class SessionNamerConfig {
     return this.configService.get<string>('sessions.anthropicApiKey');
   }
 
-  /** Whether the configured provider has everything it needs. */
+  /**
+   * Whether the configured provider has everything it needs — the **same**
+   * predicate the capability and the module's factory call, not a third copy of
+   * it. A capability that says yes while the factory binds the no-op is the second
+   * source of truth `hosts` already learned to avoid.
+   */
   get isConfigured(): boolean {
-    if (this.provider === 'anthropic') return Boolean(this.anthropicApiKey && this.model);
-    return false;
+    return sessionNamerIsConfigured(this.configService);
   }
 }

@@ -4,7 +4,7 @@ import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
-import type { SessionAgent } from './domain/session-state.policy';
+import type { SessionAgent, SessionFold } from './domain/session-state.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { SessionCheckoutResponseDto, SessionResponseDto } from './dtos/session.response.dto';
@@ -21,8 +21,10 @@ import { SessionEventResponseDto } from './dtos/session-event.response.dto';
  * column says they are not promised to.
  *
  * `state` on the wire is the **derived group**, not the stored lifecycle. That is
- * the committed client contract: the sidebar shows what needs you, and the mapping
- * from the runner's five observations lives in the fold rather than in the client.
+ * the committed client contract: the sidebar shows what needs you. It is computed
+ * from the row and nothing else — every input the group reads is a column the fold
+ * projects — so a listing answers it without walking a log, and a mapper cannot be
+ * handed an observation the log never recorded.
  */
 @Injectable()
 export class WorkSessionMapper
@@ -39,13 +41,18 @@ export class WorkSessionMapper
     record.nameSource = entity.nameSource;
     record.slug = entity.slug;
     record.agent = entity.agent;
-    record.cwdCheckoutId = entity.cwdCheckoutId;
     record.idempotencyKey = entity.idempotencyKey;
-    record.state = entity.state;
-    record.stateSeq = entity.stateSeq;
-    record.agentSessionId = entity.agentSessionId;
-    record.lastEventAt = entity.lastEventAt;
-    record.stoppedAt = entity.stoppedAt;
+    const fold = entity.fold;
+    record.state = fold.state;
+    record.stateSeq = fold.stateSeq;
+    record.agentSessionId = fold.agentSessionId;
+    record.lastEventAt = fold.lastEventAt;
+    record.stoppedAt = fold.stoppedAt;
+    record.cwdCheckoutId = fold.cwdCheckoutId;
+    record.lastObservedState = fold.lastObservedState;
+    record.observedSince = fold.observedSince;
+    record.reportHash = fold.reportHash;
+    record.ackedReportHash = fold.ackedReportHash;
     return record;
   }
 
@@ -62,22 +69,37 @@ export class WorkSessionMapper
         projectId: record.projectId,
         createdByUserId: record.createdByUserId,
         hostId: record.hostId,
-        name: record.name,
-        nameSource: record.nameSource,
         slug: record.slug,
         agent: record.agent as SessionAgent,
-        cwdCheckoutId: record.cwdCheckoutId,
         idempotencyKey: record.idempotencyKey,
-        state: record.state,
-        stateSeq: record.stateSeq,
-        agentSessionId: record.agentSessionId,
-        lastEventAt: record.lastEventAt,
-        stoppedAt: record.stoppedAt,
         checkouts: [],
+        ...this.foldOf(record),
       },
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
     return session;
+  }
+
+  /**
+   * The projection as a value. It is read back whole rather than column by column
+   * because the repository re-seats an aggregate on it inside the row lock, and a
+   * field missing there would be a column the fold silently stops maintaining.
+   */
+  foldOf(record: WorkSessionOrmEntity): SessionFold {
+    return {
+      state: record.state,
+      stateSeq: record.stateSeq,
+      agentSessionId: record.agentSessionId,
+      lastEventAt: record.lastEventAt,
+      stoppedAt: record.stoppedAt,
+      name: record.name,
+      nameSource: record.nameSource,
+      cwdCheckoutId: record.cwdCheckoutId,
+      lastObservedState: record.lastObservedState,
+      observedSince: record.observedSince,
+      reportHash: record.reportHash,
+      ackedReportHash: record.ackedReportHash,
+    };
   }
 
   checkoutToPersistence(entity: SessionCheckoutEntity): SessionCheckoutOrmEntity {
@@ -154,7 +176,17 @@ export class WorkSessionMapper
     });
   }
 
-  toResponse(entity: WorkSessionEntity, now: Date = new Date()): SessionResponseDto {
+  /**
+   * `hints` is what the control plane could not do for *this request* — it is
+   * empty on every read and carries `host_offline` when a command could not reach
+   * the host. It rides the session rather than a second envelope because the
+   * console renders the row it just changed.
+   */
+  toResponse(
+    entity: WorkSessionEntity,
+    options: { now?: Date; hints?: string[] } = {},
+  ): SessionResponseDto {
+    const now = options.now ?? new Date();
     const dto = new SessionResponseDto();
     dto.id = entity.id;
     dto.organizationId = entity.organizationId;
@@ -171,6 +203,7 @@ export class WorkSessionMapper
     dto.stoppedAt = entity.stoppedAt;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
+    dto.hints = options.hints ?? [];
     // Retired checkouts are left out: the console renders what is on disk, and the
     // row survives only so its directory name is never reissued.
     dto.checkouts = entity.liveCheckouts.map((checkout) => this.checkoutToResponse(checkout));

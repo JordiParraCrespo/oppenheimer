@@ -3,9 +3,11 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
+import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -19,11 +21,12 @@ import { AddCheckoutCommand } from './add-checkout.command';
  * confining a second repository to the create screen would be a needless limit.
  * The new checkout takes the **same branch** as the session's others — the working
  * branch is the session's, always — and a directory name no checkout of this session
- * has ever used.
+ * has ever used. One append: the row and its entry commit together, and what could
+ * not be delivered to the host is a hint on the response.
  */
 @CommandHandler(AddCheckoutCommand)
 export class AddCheckoutCommandHandler
-  implements ICommandHandler<AddCheckoutCommand, WorkSessionEntity>
+  implements ICommandHandler<AddCheckoutCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -35,7 +38,7 @@ export class AddCheckoutCommandHandler
     private readonly plan: SessionPlanFactory,
   ) {}
 
-  async execute(command: AddCheckoutCommand): Promise<WorkSessionEntity> {
+  async execute(command: AddCheckoutCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -61,19 +64,9 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    const project = await this.projects.findOneById(command.scope, session.projectId);
-    if (project.isNone()) {
-      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
-        detail: `The project holding session ${session.slug} is archived`,
-      });
-    }
+    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
 
-    const checkout = await this.plan.attachCheckout(
-      command.scope,
-      session,
-      project.unwrap(),
-      command.input,
-    );
+    const checkout = await this.plan.attachCheckout(command.scope, session, project, command.input);
     await this.sessions.insertCheckout(session, checkout, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -89,10 +82,10 @@ export class AddCheckoutCommandHandler
         },
       },
     ]);
-    await this.dispatch.addCheckout(session, checkout, {
-      projectSlug: project.unwrap().slug,
+    const { hints } = await this.dispatch.addCheckout(session, checkout, {
+      projectSlug: project.slug,
       branch: checkout.branch,
     });
-    return session;
+    return { session, hints };
   }
 }

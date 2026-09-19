@@ -65,15 +65,19 @@ export interface SessionEventPage {
 export interface WorkSessionRepositoryPort {
   /**
    * Insert the session, its checkouts and the first entries of its log in one
-   * transaction, unless the caller's `Idempotency-Key` already created it.
+   * transaction, unless the caller's `Idempotency-Key` already created it — or the
+   * project was archived out from under it.
    *
-   * `created: false` is the retry-after-a-lost-response case and returns the
-   * session that already exists — never a second directory and a second branch.
+   * `created: false` with `projectArchived: false` is the
+   * retry-after-a-lost-response case and returns the session that already exists,
+   * never a second directory and a second branch. `projectArchived: true` is the
+   * race the project row lock decides: the archive committed first, so there is
+   * nothing to insert into.
    */
   createIfUnclaimed(
     session: WorkSessionEntity,
     events: NewSessionEvent[],
-  ): Promise<{ session: WorkSessionEntity; created: boolean }>;
+  ): Promise<{ session: WorkSessionEntity; created: boolean; projectArchived: boolean }>;
 
   /**
    * Append to the log and fold onto the row, in one transaction.
@@ -128,7 +132,7 @@ export interface WorkSessionRepositoryPort {
 
   /** A page of the log, by `seq`. The session is the authorization. */
   findEvents(
-    sessionId: string,
+    session: WorkSessionEntity,
     afterSeq: number | undefined,
     limit: number,
   ): Promise<SessionEventPage>;

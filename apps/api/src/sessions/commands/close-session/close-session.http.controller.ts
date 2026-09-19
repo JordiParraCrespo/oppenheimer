@@ -18,7 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { CloseSessionCommand } from './close-session.command';
@@ -59,13 +59,16 @@ export class CloseSessionHttpController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query() query: CloseSessionRequest,
   ): Promise<SessionResponseDto> {
-    const session = await this.commandBus.execute<CloseSessionCommand, WorkSessionEntity>(
+    const { session, hints } = await this.commandBus.execute<
+      CloseSessionCommand,
+      SessionCommandResult
+    >(
       new CloseSessionCommand({
         scope,
         sessionId: id,
         acceptUnpushedWork: query.acceptUnpushedWork ?? false,
       }),
     );
-    return this.mapper.toResponse(session);
+    return this.mapper.toResponse(session, { hints });
   }
 }

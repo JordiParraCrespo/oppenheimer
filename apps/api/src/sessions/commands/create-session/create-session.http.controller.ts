@@ -19,7 +19,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
@@ -79,7 +79,10 @@ export class CreateSessionHttpController {
     @Body() body: CreateSessionRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
   ): Promise<SessionResponseDto> {
-    const session = await this.commandBus.execute<CreateSessionCommand, WorkSessionEntity>(
+    const { session, hints } = await this.commandBus.execute<
+      CreateSessionCommand,
+      SessionCommandResult
+    >(
       new CreateSessionCommand({
         scope,
         userId,
@@ -87,6 +90,6 @@ export class CreateSessionHttpController {
         idempotencyKey: idempotencyKey?.trim() || null,
       }),
     );
-    return this.mapper.toResponse(session);
+    return this.mapper.toResponse(session, { hints });
   }
 }

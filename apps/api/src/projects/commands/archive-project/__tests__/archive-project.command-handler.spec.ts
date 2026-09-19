@@ -1,6 +1,5 @@
-import { QueryHandlerNotFoundException } from '@nestjs/cqrs/dist/exceptions';
-import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProjectUsageResolver } from '../../../application/project-usage.resolver';
 import type { ProjectRepositoryPort } from '../../../database/project.repository.port';
 import { ProjectEntity } from '../../../domain/project.entity';
 import { ArchiveProjectCommand } from '../archive-project.command';
@@ -10,8 +9,12 @@ import { ArchiveProjectCommandHandler } from '../archive-project.command-handler
  * Archiving is the destructive path in this module, and the whole of its design is
  * that it **fails closed**: it asks the module that owns sessions whether any work
  * is still going on inside the project's directory, and refuses if nothing can
- * answer. A placeholder answering "no sessions" would be fail-open, which is why
- * archiving ships with the sessions slice rather than with this one.
+ * answer. That refusal is a DI fact — no contribution, no implementation — rather
+ * than a caught exception, which is what these tests pin.
+ *
+ * The lock that serialises this against creating a session lives in the repository,
+ * where the transaction is; this is the layer that proves the handler asks the
+ * question inside it and reports each outcome as itself.
  */
 
 const SCOPE = {
@@ -35,65 +38,77 @@ function project(archivedAt: Date | null = null) {
 
 describe('ArchiveProjectCommandHandler', () => {
   let projects: ProjectRepositoryPort;
-  let queryBus: { execute: ReturnType<typeof vi.fn> };
+  let usage: ProjectUsageResolver;
+  let hasUnresolvedSessions: ReturnType<typeof vi.fn>;
   let handler: ArchiveProjectCommandHandler;
 
   beforeEach(() => {
+    // The repository's contract is "lock, ask, write": the double honours it by
+    // calling the question the handler passed in, so a handler that stopped asking
+    // would fail here.
     projects = {
-      findOneById: vi.fn().mockResolvedValue(Some(project())),
-      archiveIfActive: vi
+      archiveIfUnused: vi
         .fn()
-        .mockImplementation(async (_scope, entity: ProjectEntity) => Some(entity)),
+        .mockImplementation(async (_scope, _id, stillInUse: () => Promise<boolean>) => {
+          const entity = project();
+          if (await stillInUse()) return { result: 'in-use', project: entity };
+          entity.archive(new Date());
+          return { result: 'archived', project: entity };
+        }),
     } as unknown as ProjectRepositoryPort;
-    queryBus = { execute: vi.fn().mockResolvedValue(false) };
-    handler = new ArchiveProjectCommandHandler(
-      projects,
-      queryBus as unknown as ConstructorParameters<typeof ArchiveProjectCommandHandler>[1],
-    );
+
+    hasUnresolvedSessions = vi.fn().mockResolvedValue(false);
+    usage = new ProjectUsageResolver();
+    usage.register({ hasUnresolvedSessions });
+    handler = new ArchiveProjectCommandHandler(projects, usage);
   });
 
   const command = () => new ArchiveProjectCommand({ scope: SCOPE, projectId: 'project-1' });
 
   it('retires a project nothing is still working in', async () => {
     const archived = await handler.execute(command());
+
     expect(archived.isArchived).toBe(true);
-    expect(projects.archiveIfActive).toHaveBeenCalledOnce();
+    expect(hasUnresolvedSessions).toHaveBeenCalledWith(SCOPE, 'project-1');
   });
 
   it('refuses while the project still has open sessions', async () => {
-    queryBus.execute.mockResolvedValue(true);
+    hasUnresolvedSessions.mockResolvedValue(true);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_005' });
-    expect(projects.archiveIfActive).not.toHaveBeenCalled();
   });
 
-  it('refuses when nothing can answer the question', async () => {
-    // A build without the sessions module: the bus throws, and the archive refuses
-    // rather than assuming the answer it would prefer.
-    queryBus.execute.mockRejectedValue(new QueryHandlerNotFoundException('HasOpenSessionsQuery'));
+  it('refuses when nothing has contributed an answer', async () => {
+    // A deployment built without the module that owns sessions. Nothing is
+    // registered, so there is no implementation and the archive refuses — rather
+    // than assuming the answer it would prefer on a destructive path.
+    handler = new ArchiveProjectCommandHandler(projects, new ProjectUsageResolver());
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_003' });
-    expect(projects.archiveIfActive).not.toHaveBeenCalled();
+    expect(projects.archiveIfUnused).not.toHaveBeenCalled();
   });
 
-  it('lets any other failure through rather than reporting it as unavailable', async () => {
-    queryBus.execute.mockRejectedValue(new Error('the database fell over'));
+  it('lets a failure answering the question through rather than reporting it as unavailable', async () => {
+    // "Nothing can answer" and "answering broke" are different faults, and only the
+    // first is `PROJECTS_003`.
+    hasUnresolvedSessions.mockRejectedValue(new Error('the database fell over'));
+
     await expect(handler.execute(command())).rejects.toThrow('the database fell over');
   });
 
   it('archives twice with the same outcome', async () => {
-    vi.mocked(projects.findOneById).mockResolvedValue(Some(project(new Date())));
+    vi.mocked(projects.archiveIfUnused).mockResolvedValue({
+      result: 'archived',
+      project: project(new Date()),
+    });
 
     const archived = await handler.execute(command());
     expect(archived.isArchived).toBe(true);
-    // Already retired: nothing to ask and nothing to write, and a retried request
-    // after a lost response is not a conflict.
-    expect(queryBus.execute).not.toHaveBeenCalled();
-    expect(projects.archiveIfActive).not.toHaveBeenCalled();
   });
 
   it('reports a project it cannot see as missing', async () => {
-    vi.mocked(projects.findOneById).mockResolvedValue(None);
+    vi.mocked(projects.archiveIfUnused).mockResolvedValue({ result: 'not-found' });
+
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
   });
 });

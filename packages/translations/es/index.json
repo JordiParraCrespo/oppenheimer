@@ -138,7 +138,7 @@
       "SESSIONS_004": "Ese repositorio ya está en esta sesión.",
       "SESSIONS_005": "Esa sesión está cerrada.",
       "SESSIONS_006": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
-      "SESSIONS_007": "Ese evento de sesión ocupa demasiado para guardarlo.",
+      "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
       "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
       "HOSTS_001": "No se ha encontrado ese equipo.",

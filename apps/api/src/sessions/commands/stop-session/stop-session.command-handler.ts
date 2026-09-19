@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -17,14 +18,15 @@ import { StopSessionCommand } from './stop-session.command';
  * whether the work is finished, and a stopped session is exactly as unfinished as
  * it was. `stoppedAt` is the whole of what changes.
  *
- * The host is told first and the log records it either way. With no link to the
- * host — which is every host until the relay exists — the dispatcher records that
- * the command is owed, and the session is stopped as far as the control plane is
- * concerned.
+ * **One append.** Stopping is a control-plane decision, not an outcome a host
+ * reports: the session will not be dispatched again, so it is stopped whether or
+ * not anything is listening. The entry is the decision, the host is told after it,
+ * and what could not be delivered comes back as a hint on the response rather than
+ * as a second entry in a second transaction.
  */
 @CommandHandler(StopSessionCommand)
 export class StopSessionCommandHandler
-  implements ICommandHandler<StopSessionCommand, WorkSessionEntity>
+  implements ICommandHandler<StopSessionCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -33,7 +35,7 @@ export class StopSessionCommandHandler
     private readonly dispatch: SessionDispatchPort,
   ) {}
 
-  async execute(command: StopSessionCommand): Promise<WorkSessionEntity> {
+  async execute(command: StopSessionCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -47,7 +49,6 @@ export class StopSessionCommandHandler
       });
     }
 
-    await this.dispatch.stop(session);
     await this.sessions.appendEvents(session, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -59,6 +60,7 @@ export class StopSessionCommandHandler
         payload: { requestedBy: 'api' },
       },
     ]);
-    return session;
+    const { hints } = await this.dispatch.stop(session);
+    return { session, hints };
   }
 }

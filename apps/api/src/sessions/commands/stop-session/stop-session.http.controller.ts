@@ -17,7 +17,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { StopSessionCommand } from './stop-session.command';
@@ -53,9 +53,10 @@ export class StopSessionHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SessionResponseDto> {
-    const session = await this.commandBus.execute<StopSessionCommand, WorkSessionEntity>(
-      new StopSessionCommand({ scope, sessionId: id }),
-    );
-    return this.mapper.toResponse(session);
+    const { session, hints } = await this.commandBus.execute<
+      StopSessionCommand,
+      SessionCommandResult
+    >(new StopSessionCommand({ scope, sessionId: id }));
+    return this.mapper.toResponse(session, { hints });
   }
 }

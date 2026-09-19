@@ -7,7 +7,11 @@ import type { ProjectEntity } from '../domain/project.entity';
 import { ProjectMapper } from '../project.mapper';
 import { ProjectResource } from '../projects.resource';
 import { ProjectOrmEntity } from './project.orm-entity';
-import type { ProjectInsertOutcome, ProjectRepositoryPort } from './project.repository.port';
+import type {
+  ArchiveOutcome,
+  ProjectInsertOutcome,
+  ProjectRepositoryPort,
+} from './project.repository.port';
 
 /** Postgres' unique-violation class, and the constraint that guards a directory name. */
 const UNIQUE_VIOLATION = '23505';
@@ -92,25 +96,53 @@ export class ProjectRepository
   }
 
   /**
-   * Retiring is the same targeted write as renaming, for the same reason: the row
-   * decides whether the project is still active, so an archive that loaded before
-   * another one committed simply updates nothing.
+   * The lock, the question and the write, in that order and in one transaction.
+   *
+   * `FOR UPDATE` on the project row is what serialises this against creating a
+   * session, whose insert transaction takes `FOR SHARE` on the same row: an archive
+   * that commits first turns that read into zero rows, and one that arrives second
+   * waits here and then sees the session it would have stranded. Asking the
+   * question between the lock and the write is the whole point — a check that ran
+   * before the lock could be true and stale by the time `archivedAt` lands.
+   *
+   * The scope's own predicate is reused verbatim as a sub-query, so a project in
+   * another workspace is `not-found` here exactly as it is on every read.
    */
-  async archiveIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>> {
+  async archiveIfUnused(
+    scope: AccessScope,
+    projectId: string,
+    stillInUse: () => Promise<boolean>,
+  ): Promise<ArchiveOutcome> {
     const [reachable, parameters] = this.scopedQuery(scope)
       .select(`${this.alias}.id`)
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
-    const [updated]: [ProjectOrmEntity[], number] = await this.repository.manager.query(
-      `UPDATE "${table}"
-          SET "archivedAt" = $${parameters.length + 1}, "updatedAt" = now()
-        WHERE "id" = $${parameters.length + 2}
-          AND "archivedAt" IS NULL
-          AND "id" IN (${reachable})
+
+    return this.repository.manager.transaction(async (manager) => {
+      const locked: ProjectOrmEntity[] = await manager.query(
+        `SELECT * FROM "${table}"
+          WHERE "id" = $${parameters.length + 1} AND "id" IN (${reachable})
+          FOR UPDATE`,
+        [...parameters, projectId],
+      );
+      if (locked.length === 0) return { result: 'not-found' as const };
+
+      const project = this.mapper.toDomain(locked[0]);
+      // Already retired: nothing to ask and nothing to write, and a retried request
+      // after a lost response is not a conflict.
+      if (project.isArchived) return { result: 'archived' as const, project };
+
+      if (await stillInUse()) return { result: 'in-use' as const, project };
+
+      project.archive(new Date());
+      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
+        `UPDATE "${table}" SET "archivedAt" = $2, "updatedAt" = now()
+          WHERE "id" = $1
         RETURNING *`,
-      [...parameters, entity.archivedAt, entity.id],
-    );
-    return updated.length > 0 ? Some(this.mapper.toDomain(updated[0])) : None;
+        [projectId, project.archivedAt],
+      );
+      return { result: 'archived' as const, project: this.mapper.toDomain(updated[0]) };
+    });
   }
 
   async findAll(

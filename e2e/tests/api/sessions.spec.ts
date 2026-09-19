@@ -122,13 +122,23 @@ test.describe('Sessions', () => {
     );
     expect(entries[0].kind).toBe('session.requested');
     expect(entries.some((entry) => entry.kind === 'session.stopped')).toBe(true);
+    // One entry per action: a dispatcher that could not reach a host does not write
+    // a second one beside it.
+    expect(entries.filter((entry) => entry.kind === 'session.stopped')).toHaveLength(1);
 
+    // Closing is a **request**: it has to push branches and remove worktrees, and
+    // only the host can say that happened. With no relay the session stays open with
+    // the request on its log, which is the honest state.
     const closed = await api.delete(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect(closed.status()).toBe(200);
-    // Never deleted: the row stays so its directory name is never reissued.
-    const after = await api.get(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
-    expect(after.status()).toBe(200);
-    expect((await after.json()).lifecycle).toBe('resolved');
+    expect((await closed.json()).lifecycle).toBe('open');
+
+    const afterClose = await api.get(`/api/v1/sessions/${session.id}/events`, {
+      failOnStatusCode: false,
+    });
+    const closing = (await afterClose.json()).data as { kind: string }[];
+    expect(closing.some((entry) => entry.kind === 'session.close_requested')).toBe(true);
+    expect(closing.some((entry) => entry.kind === 'session.closed')).toBe(false);
   });
 
   test('an anonymous caller cannot list or create sessions', async () => {
@@ -177,6 +187,27 @@ test.describe('Sessions', () => {
       failOnStatusCode: false,
     });
 
+    expect(created.status()).toBe(400);
+  });
+
+  test('the same repository twice is refused by the schema', async () => {
+    const { api } = await signedUpContext('sessiondupes');
+
+    const created = await api.post('/api/v1/sessions', {
+      data: {
+        hostId: crypto.randomUUID(),
+        agent: 'claude-code',
+        checkouts: [
+          { installationId: crypto.randomUUID(), githubRepoId: 1 },
+          { installationId: crypto.randomUUID(), githubRepoId: 1 },
+        ],
+      },
+      failOnStatusCode: false,
+    });
+
+    // A directory name is never reused inside a session, so one repository twice is
+    // a body that cannot be satisfied — and it is a validation error rather than a
+    // unique violation surfacing from the insert.
     expect(created.status()).toBe(400);
   });
 });

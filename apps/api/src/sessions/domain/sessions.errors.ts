@@ -58,20 +58,26 @@ export const SessionErrors = {
     httpStatus: 409,
   },
   /**
-   * The event's payload is over the wire cap. The limit is the protocol's, so a
-   * runner generated from the same schema refuses it before sending — this is the
-   * control plane holding the same line for anything that does not.
+   * Every directory name this repository can take inside this session is spent.
+   * The three candidates are derived from the repository and a spent name is never
+   * reissued, so the honest answer is a refusal: reusing one would put a fresh
+   * agent in a retired agent's working directory.
    */
-  EVENT_PAYLOAD_TOO_LARGE: {
+  CHECKOUT_NAMES_EXHAUSTED: {
     code: 'SESSIONS_007',
-    message: 'That session event payload is too large',
-    httpStatus: 400,
+    message: 'That repository has used every directory name it can take here',
+    httpStatus: 409,
   },
   /**
    * The attach ticket could not be claimed. A ticket is a single-use key in a
    * shared cache; a collision means the random id was already taken, which is a
    * server fault rather than a caller's.
    */
+  ATTACH_TICKET_UNAVAILABLE: {
+    code: 'SESSIONS_008',
+    message: 'A terminal ticket could not be issued',
+    httpStatus: 503,
+  },
   /**
    * A session with no checkouts and no project named. Zero checkouts is a real
    * session — a project of notes and documents needs no git at all — but then
@@ -82,10 +88,5 @@ export const SessionErrors = {
     code: 'SESSIONS_009',
     message: 'A session with no repositories must name its project',
     httpStatus: 400,
-  },
-  ATTACH_TICKET_UNAVAILABLE: {
-    code: 'SESSIONS_008',
-    message: 'A terminal ticket could not be issued',
-    httpStatus: 503,
   },
 } as const satisfies Record<string, ErrorDefinition>;

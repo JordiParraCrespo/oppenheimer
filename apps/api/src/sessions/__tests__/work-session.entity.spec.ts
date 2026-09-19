@@ -115,20 +115,45 @@ describe('the checkouts the aggregate holds', () => {
     expect(() => work.setCwdCheckout('somebody-elses-checkout')).toThrow();
   });
 
-  it('steps the agent out of a checkout it retires', () => {
-    // The foreign key's `ON DELETE SET NULL` never fires, because checkout rows are
-    // not deleted. The aggregate is what nulls the column.
+  it('takes its working directory from the log, not from a setter', () => {
     const work = session();
     const first = checkout(work, 'xrp-mobile', '1');
     work.attachCheckout(first);
-    work.setCwdCheckout(first.id);
 
-    work.retireCheckout(first.id, new Date());
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CWD_SET, { checkoutId: first.id }));
+    expect(work.cwdCheckoutId).toBe(first.id);
+    expect((work as unknown as { setCwdCheckout?: unknown }).setCwdCheckout).toBeUndefined();
+  });
+
+  it('steps the agent out of a checkout the log retires', () => {
+    // The foreign key's `ON DELETE SET NULL` never fires, because checkout rows are
+    // not deleted. Folding the event is what nulls the column and marks the child,
+    // so a replay rebuilds both.
+    const work = session();
+    const first = checkout(work, 'xrp-mobile', '1');
+    work.attachCheckout(first);
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CWD_SET, { checkoutId: first.id }));
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CHECKOUT_REMOVED, { checkoutId: first.id }));
+
     expect(work.cwdCheckoutId).toBeNull();
     expect(work.liveCheckouts).toHaveLength(0);
     // The row stays, which is what keeps the directory name out of circulation.
     expect(work.checkouts).toHaveLength(1);
     expect(work.usedDirectoryNames).toEqual(['xrp-mobile']);
+  });
+
+  it('leaves the agent where it is when another checkout is retired', () => {
+    const work = session();
+    const first = checkout(work, 'xrp-mobile', '1');
+    const second = checkout(work, 'design-system', '2');
+    work.attachCheckout(first);
+    work.attachCheckout(second);
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CWD_SET, { checkoutId: first.id }));
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CHECKOUT_REMOVED, { checkoutId: second.id }));
+
+    expect(work.cwdCheckoutId).toBe(first.id);
   });
 });
 
@@ -158,6 +183,20 @@ describe('the two derived names', () => {
     expect(
       checkoutDirectoryName('other/xrp-mobile', '99', ['xrp-mobile', 'other--xrp-mobile']),
     ).toBe('other--xrp-mobile-99');
+  });
+
+  it('runs out rather than recycling the last candidate', () => {
+    // A session that added, retired and re-added the same repository through all
+    // three names has no name left. Reissuing one would put a fresh agent in a
+    // retired agent's working directory, which is the whole bug the tombstone
+    // exists to prevent, so the answer is `null` and the caller refuses.
+    expect(
+      checkoutDirectoryName('other/xrp-mobile', '99', [
+        'xrp-mobile',
+        'other--xrp-mobile',
+        'other--xrp-mobile-99',
+      ]),
+    ).toBeNull();
   });
 });
 

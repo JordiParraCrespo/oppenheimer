@@ -14,6 +14,15 @@ import type { ProjectEntity } from '../domain/project.entity';
 export type ProjectInsertOutcome = 'inserted' | 'origin-taken' | 'slug-taken';
 
 /**
+ * What archiving came back with. `in-use` and `archived` both carry the project,
+ * because the caller reports on it either way; `not-found` covers a project that is
+ * missing and one in another workspace alike.
+ */
+export type ArchiveOutcome =
+  | { result: 'archived' | 'in-use'; project: ProjectEntity }
+  | { result: 'not-found' };
+
+/**
  * Port for persisting and querying the project aggregate.
  *
  * Every read takes an {@link AccessScope}, which is what turns "this query is
@@ -46,13 +55,21 @@ export interface ProjectRepositoryPort {
    */
   renameIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
   /**
-   * Retire a project that is still active, returning the stored row.
+   * Retire a project, in one transaction with the question that decides it.
    *
-   * `None` when nothing was updated, for the same reason as the rename above: the
-   * row is the authority on whether the project is still active, and a targeted
-   * `UPDATE … WHERE "archivedAt" IS NULL` cannot race with one that already ran.
+   * The row is locked with `SELECT … FOR UPDATE` **before** `stillInUse` is asked
+   * and stays locked until `archivedAt` is written, while creating a session takes
+   * a share lock on the same row inside its own insert transaction. That is what
+   * makes "an archived project holds no unresolved session" a fact rather than a
+   * probability: whichever of the two waits sees the other's committed work and
+   * refuses. A boolean callback rather than a value, because the answer has to be
+   * read inside the lock.
    */
-  archiveIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
+  archiveIfUnused(
+    scope: AccessScope,
+    projectId: string,
+    stillInUse: () => Promise<boolean>,
+  ): Promise<ArchiveOutcome>;
   /**
    * Projects the caller can reach, newest first. Archived rows are left out unless
    * asked for: a retired project keeps its slug for ever, so the listing would

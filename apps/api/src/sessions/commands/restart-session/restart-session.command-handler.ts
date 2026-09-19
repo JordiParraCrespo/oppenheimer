@@ -3,8 +3,10 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
+import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { sessionBranchName } from '../../domain/session-layout.policy';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
@@ -23,11 +25,12 @@ import { RestartSessionCommand } from './restart-session.command';
  *
  * What it records is a **request**, not an outcome: the session becomes `open` when
  * the host says it did, not when somebody asked. That is the difference from
- * stopping, where the control plane's decision is itself the fact.
+ * stopping, where the control plane's decision is itself the fact. One append, and
+ * what could not be delivered is a hint on the response.
  */
 @CommandHandler(RestartSessionCommand)
 export class RestartSessionCommandHandler
-  implements ICommandHandler<RestartSessionCommand, WorkSessionEntity>
+  implements ICommandHandler<RestartSessionCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -38,7 +41,7 @@ export class RestartSessionCommandHandler
     private readonly dispatch: SessionDispatchPort,
   ) {}
 
-  async execute(command: RestartSessionCommand): Promise<WorkSessionEntity> {
+  async execute(command: RestartSessionCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -52,18 +55,9 @@ export class RestartSessionCommandHandler
       });
     }
 
-    const project = await this.projects.findOneById(command.scope, session.projectId);
-    if (project.isNone()) {
-      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
-        detail: `The project holding session ${session.slug} is archived`,
-      });
-    }
-    const projectSlug = project.unwrap().slug;
+    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
+    const projectSlug = project.slug;
 
-    await this.dispatch.restart(session, {
-      projectSlug,
-      branch: sessionBranchName(projectSlug, session.slug),
-    });
     await this.sessions.appendEvents(session, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -75,6 +69,10 @@ export class RestartSessionCommandHandler
         payload: { requestedBy: 'api' },
       },
     ]);
-    return session;
+    const { hints } = await this.dispatch.restart(session, {
+      projectSlug,
+      branch: sessionBranchName(projectSlug, session.slug),
+    });
+    return { session, hints };
   }
 }

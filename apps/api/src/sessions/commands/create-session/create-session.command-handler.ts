@@ -6,6 +6,7 @@ import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { sessionBranchName } from '../../domain/session-layout.policy';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
@@ -28,7 +29,7 @@ import { CreateSessionCommand } from './create-session.command';
  */
 @CommandHandler(CreateSessionCommand)
 export class CreateSessionCommandHandler
-  implements ICommandHandler<CreateSessionCommand, WorkSessionEntity>
+  implements ICommandHandler<CreateSessionCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -40,7 +41,7 @@ export class CreateSessionCommandHandler
     private readonly plan: SessionPlanFactory,
   ) {}
 
-  async execute(command: CreateSessionCommand): Promise<WorkSessionEntity> {
+  async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
     const { scope, input } = command;
     if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
 
@@ -48,7 +49,7 @@ export class CreateSessionCommandHandler
     // GitHub, the project or the host.
     if (command.idempotencyKey) {
       const existing = await this.sessions.findOneByIdempotencyKey(scope, command.idempotencyKey);
-      if (existing.isSome()) return existing.unwrap();
+      if (existing.isSome()) return { session: existing.unwrap(), hints: [] };
     }
 
     await this.hosts.assertUsable(scope, input.hostId);
@@ -68,8 +69,11 @@ export class CreateSessionCommandHandler
     for (const checkout of input.checkouts) {
       await this.plan.attachCheckout(scope, session, project, checkout);
     }
-    session.setCwdCheckout(this.cwdOf(session, input.cwdGithubRepoId));
 
+    // Two entries, one transaction, one action: the request, and where the agent
+    // runs. The second is an event rather than a column write because
+    // `cwdCheckoutId` is part of the fold — a later "work in this checkout instead"
+    // is the same entry, and a replay rebuilds it.
     const created = await this.sessions.createIfUnclaimed(session, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -85,24 +89,30 @@ export class CreateSessionCommandHandler
           requestedByUserId: command.userId,
         },
       },
+      {
+        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
+          command.id,
+          SESSION_EVENT_KINDS.CWD_SET,
+        ),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.CWD_SET,
+        payload: { checkoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId) },
+      },
     ]);
-    if (!created.created) return created.session;
+    // The project was retired between the lookup and the insert. The project row is
+    // locked inside that transaction, so this is the race decided rather than
+    // detected afterwards.
+    if (created.projectArchived) {
+      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
+        detail: `Project ${project.slug} is archived`,
+      });
+    }
+    if (!created.created) return { session: created.session, hints: [] };
 
-    await this.dispatch.create(created.session, {
+    const { hints } = await this.dispatch.create(created.session, {
       projectSlug: project.slug,
       branch: sessionBranchName(project.slug, session.slug),
     });
-    return created.session;
-  }
-
-  /**
-   * Where the agent starts: the checkout the caller named, or the first one. Null
-   * when there are none, which starts it in the session directory itself.
-   */
-  private cwdOf(session: WorkSessionEntity, cwdGithubRepoId: number | undefined): string | null {
-    const checkouts = session.liveCheckouts;
-    if (cwdGithubRepoId === undefined) return checkouts[0]?.id ?? null;
-    const named = checkouts.find((checkout) => checkout.githubRepoId === String(cwdGithubRepoId));
-    return named?.id ?? checkouts[0]?.id ?? null;
+    return { session: created.session, hints };
   }
 }

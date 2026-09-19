@@ -135,70 +135,31 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   again by GitHub's repository id (unique per workspace, and the conflict target
   of the create), and its slug is immutable because it is a directory name on
   every host holding it.
-- 2026-09-19: the **`sessions/` module is built**, and with it the shape the
-  whole control plane turns on: a session holds checkouts, and its append-only
-  log is the truth while the row is a fold of that log. 03 gains the section
-  that says so — three tables, eleven routes, and the two ports the relay will
-  bind. Four decisions were sharpened while writing it. **The stored lifecycle
-  answers "is this work finished", not "is a process running"**, so stopping a
-  session leaves it `open` with a `stoppedAt` and `resolved` is terminal — a
-  late `session.started` from a runner that has not heard about the close cannot
-  bring a session back. **A restart records a request, not an outcome**: the
-  control plane must not claim `open` before a host has built anything, whereas
-  a stop *is* the decision and is recorded as the fact it is. **The name is part
-  of the fold**, so "a model-derived title never overwrites a name a person
-  typed" is a rule a replay goes through rather than a check somebody has to
-  remember. And **`seq` is allocated in a second statement after the row lock**,
-  because under READ COMMITTED a statement's snapshot is taken before it blocks,
-  so reading the maximum in the same statement as the `FOR UPDATE` hands every
-  waiter the same numbers — the concurrency test is what found it. 11's §1 note
-  gains the two names below the project (the session's minted slug and the
-  checkout's directory) and the rule that neither is ever reissued.
-- 2026-09-19: **archiving a project ships with the sessions slice**, and it
-  fails closed. "Is any session still open in this project" is a question only
-  the module that owns sessions can answer, so `DELETE /projects/{id}` asks it
-  over the query bus and refuses with `PROJECTS_003` when nothing answers —
-  assuming "no sessions" on a destructive path is the fail-open this shape
-  exists to rule out. Archiving is also a tombstone on the create path: a
-  session cannot be started in a retired project, including the first session of
-  a repository whose project was archived, because the origin is unique per
-  workspace and reopening it would put new work inside a retired directory.
-- 2026-09-19: **naming a session is configuration, and the default is to name
-  nothing.** `SESSION_NAMER_PROVIDER`, `SESSION_NAMER_MODEL` and
-  `ANTHROPIC_API_KEY` choose the namer behind a port; with none set every
-  session keeps its minted slug, which reads fine and costs nothing. It is a
-  deployment capability rather than a silent default so that "why is nothing
-  here ever named" is answered by the startup log. The one line that leaves the
-  host is the person's own first prompt — the agent transcript it was read from
-  does not — which is a sentence the privacy note owes.
-- 2026-09-19: the runner's two ordinary HTTPS calls carry the API's
-  `/api/v1` prefix — `POST /api/v1/hosts/register` and `DELETE
-  /api/v1/hosts/self` — and uninstall no longer puts a host id in the
-  path: the host names itself by the subject of the boot JWT it presents.
-  That JWT stays an `Authorization: Bearer` credential, which the control
-  plane's resolver recognises as a host principal next to session cookies
-  and personal access tokens, rather than a header of its own that would
-  be frozen into every installed runner. **Key rotation leaves the
-  runner** until the link can carry it: the register route redeems
-  registration tokens and cannot rotate a key, and 09 §3 already places
-  rotation on an authenticated link. Recorded in 01, 03 and
-  `apps/runner`'s pairing client.
-- 2026-09-19: **a host belongs to a person, and workspaces borrow it.**
-  08 said a host row carries the workspace id; it now carries
-  `ownerUserId` and no workspace id, the way Better Auth hangs `session`
-  and `account` off `user`. The case that decides it is one person with a
-  personal and a company workspace on one laptop: per-workspace, that
-  machine is paired twice, runs two runners with two keys, and the second
-  install has to invent a second `~/oppenheimer-ai`; per-person it is
-  paired once and either workspace runs sessions on it. It is also the
-  honest reading of the machine: a session there has full access to it
-  (F10), runs under its owner's Unix account, and spends the agent login
-  in that person's home directory. The tenant boundary does not
-  disappear, it moves down: a session carries the workspace, and the host
-  it names must be one its creator owns or holds a grant on. 08's open
-  question 2 is **decided** with it — the pairing token is bound to the
-  user who minted it, and the host it creates is theirs. Recorded in 08,
-  03, 09 and `apps/api/src/hosts/`. A host's key is a **column on the host
-  row** rather than a `host_keys` table, and the retired key joins it as a
-  second column when rotation arrives on the link: rotation needs exactly
-  two keys, never N, and every runner boot reads them.
+- 2026-09-19: **the stored lifecycle answers "is this work finished", not "is a
+  process running".** `starting | open | failed | resolved` is the fold of a
+  session's log; stopping a session leaves it `open` with a `stoppedAt`, and
+  `resolved` is terminal. The derived group the sidebar shows is a **function of
+  the row** — the agent's last observation, when it entered that state and the
+  report hashes are folded columns, like `state` — because a listing cannot walk a
+  log per row, and because a group computed from inputs the log never recorded is a
+  group a caller can fake.
+- 2026-09-19: **stopping is a decision, restarting and closing are requests.** The
+  control plane will not dispatch a stopped session again, so the stop is the fact.
+  Restarting and closing need work on the host that can refuse — closing pushes
+  every branch and will not remove a dirty worktree unless the caller accepted the
+  loss — so the API records the request and the host's own `session.restarted` or
+  `session.closed` is what moves the row. A control plane that resolved a session
+  itself would make the tombstone permanent before anybody had looked at the
+  worktrees.
+- 2026-09-19: **a session's name is part of the fold**, which is what makes "a
+  model-derived title never overwrites a name a person typed" a rule a replay goes
+  through rather than a check somebody has to remember. Naming is a **capability**,
+  defaulting to `none`: with no provider configured a session keeps its minted slug,
+  and the startup log is what says so.
+- 2026-09-19: **archiving a project fails closed.** "Is any session still open in
+  this project" is a question only the module that owns sessions can answer, so it
+  answers it through a port that module registers; with nothing registered the
+  archive refuses rather than assuming the answer it would prefer on a destructive
+  path. An archived project is a tombstone on the create path too — no session can
+  be started in one — and the archive and a create serialise on the project row, so
+  they cannot both win.

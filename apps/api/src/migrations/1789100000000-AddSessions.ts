@@ -28,6 +28,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *    also `DEFERRABLE INITIALLY DEFERRED`, because a create inserts the session
  *    before the checkout it points at. In practice the clause never fires: checkout
  *    rows are not deleted, and the remove-checkout command nulls the column itself.
+ *  - **The group is a column, not a log walk.** `lastObservedState`,
+ *    `observedSince` and the two report hashes are folded from `agent.observed`
+ *    and the report events exactly as `state` is folded from the lifecycle ones,
+ *    because the sidebar's dot has to be answerable from a listing query.
+ *    `cwdCheckoutId` is in that block for the same reason: it is folded from
+ *    `session.cwd_set` and `session.checkout_removed`, so nothing writes it
+ *    out-of-band.
  *  - **Nothing is ever hard-deleted.** `work_session` rows stay for ever, so
  *    `uq (projectId, slug)` is a permanent tombstone for a directory name — the
  *    coding agents key their conversation state by working directory, so a new
@@ -62,13 +69,20 @@ export class AddSessions1789100000000 implements MigrationInterface {
         "nameSource"      character varying,
         "slug"            character varying NOT NULL,
         "agent"           character varying NOT NULL,
-        "cwdCheckoutId"   uuid,
         "idempotencyKey"  character varying,
+        -- The fold of the log, from here down. It is longer than the lifecycle
+        -- because the derived group is a function of the row: a sidebar cannot
+        -- walk a log per listing row.
         "state"           character varying NOT NULL DEFAULT 'starting',
         "stateSeq"        integer NOT NULL DEFAULT 0,
         "agentSessionId"  character varying,
         "lastEventAt"     TIMESTAMP,
         "stoppedAt"       TIMESTAMP,
+        "cwdCheckoutId"   uuid,
+        "lastObservedState" character varying,
+        "observedSince"   TIMESTAMP,
+        "reportHash"      character varying,
+        "ackedReportHash" character varying,
         "createdAt"       TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt"       TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "PK_work_session" PRIMARY KEY ("id"),
@@ -76,6 +90,9 @@ export class AddSessions1789100000000 implements MigrationInterface {
         CONSTRAINT "UQ_work_session_organization_id" UNIQUE ("organizationId", "id"),
         CONSTRAINT "CHK_work_session_state"
           CHECK ("state" IN ('starting', 'open', 'failed', 'resolved')),
+        CONSTRAINT "CHK_work_session_observed_state"
+          CHECK ("lastObservedState" IS NULL OR "lastObservedState" IN
+                 ('working', 'blocked', 'idle', 'done', 'unknown')),
         CONSTRAINT "FK_work_session_organization"
           FOREIGN KEY ("organizationId") REFERENCES "organization"("id")
           ON DELETE RESTRICT ON UPDATE NO ACTION,

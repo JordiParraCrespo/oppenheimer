@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 import { parseEnv } from './env';
@@ -20,6 +21,22 @@ const schema = z.object({
   namerModel: z.string().min(1).optional(),
   anthropicApiKey: z.string().min(1).optional(),
 });
+
+/**
+ * Whether this deployment can actually name a session.
+ *
+ * One function, called by the capability, by the module's factory and by the
+ * adapter's config class — the shape `hostsAreConfigured` already set. A provider
+ * switched on without its key or its model is **not configured** rather than
+ * half-configured: the no-op namer is bound, every session keeps its slug, and the
+ * startup log says so.
+ */
+export function sessionNamerIsConfigured(configService: ConfigService): boolean {
+  if (configService.get<string>('sessions.namerProvider') !== 'anthropic') return false;
+  return Boolean(
+    configService.get('sessions.anthropicApiKey') && configService.get('sessions.namerModel'),
+  );
+}
 
 export const sessionsConfig = registerAs('sessions', () =>
   parseEnv('sessions', schema, {

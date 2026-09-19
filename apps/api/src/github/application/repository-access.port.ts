@@ -1,11 +1,14 @@
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import type { GithubRepository } from '../infrastructure/github-app.port';
+
 /**
  * What `sessions/` and `relay/` inject to exercise a workspace's GitHub access.
  *
- * It is the one door out of this module for that purpose, and it is deliberately
- * one method: a caller names a connected installation and one repository, and
- * gets a credential for exactly that repository. There is nothing to ask for
- * "the repositories I may use", because the installation is the access control
- * and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
+ * It is the one door out of this module for that purpose: a caller names a
+ * connected installation and one repository, and gets either a credential for
+ * exactly that repository or what GitHub currently calls it. There is nothing to
+ * ask for "the repositories I may use", because the installation is the access
+ * control and GitHub answers it (`product/versions/mvp/03-control-plane.md`).
  */
 export interface RepositoryToken {
   /** The installation access token. Never logged, never stored in a row. */
@@ -17,6 +20,22 @@ export interface RepositoryToken {
 }
 
 export interface RepositoryAccessPort {
+  /**
+   * One repository of one connected installation, as GitHub describes it right
+   * now: its name, its full name and its default branch.
+   *
+   * This one **does** take an access scope, because it answers a person's request
+   * — naming the checkout a session is about to take — rather than running for a
+   * host. The installation is read under that scope, so a checkout through another
+   * workspace's installation is refused here as well as being unrepresentable in
+   * the schema, and whether the installation covers the repository is GitHub's to
+   * say: its 404 is `GITHUB_010`.
+   */
+  repositoryOf(
+    scope: AccessScope,
+    installationId: string,
+    githubRepoId: number,
+  ): Promise<GithubRepository>;
   /**
    * Mint a token for one repository of one connected installation.
    *

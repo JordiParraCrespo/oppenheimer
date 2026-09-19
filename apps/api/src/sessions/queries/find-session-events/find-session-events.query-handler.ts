@@ -30,6 +30,6 @@ export class FindSessionEventsQueryHandler
         detail: `No session with id ${query.sessionId}`,
       });
     }
-    return this.sessions.findEvents(found.unwrap().id, query.afterSeq, query.limit);
+    return this.sessions.findEvents(found.unwrap(), query.afterSeq, query.limit);
   }
 }

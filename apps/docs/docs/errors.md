@@ -369,7 +369,7 @@ are never reissued.
 | `SESSIONS_004` <a id="sessions_004" /> | That repository is already checked out for this session | 409 |
 | `SESSIONS_005` <a id="sessions_005" /> | That session is closed                          | 409  |
 | `SESSIONS_006` <a id="sessions_006" /> | That project is archived                        | 409  |
-| `SESSIONS_007` <a id="sessions_007" /> | That session event payload is too large         | 400  |
+| `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
 
@@ -381,9 +381,15 @@ stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
 already keys conversation state by.
 
-`SESSIONS_007` is the protocol's own 8 KB cap on an event payload, held here for
-anything that did not arrive over the link. An event never carries pane text: PTY
-bytes go to the browser and the runner's ring buffer, never to Postgres.
+`SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
+named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a
+name is never reissued inside a session — so a session that has added, retired and
+re-added one repository through all three has no name left for it. Reusing one would
+put a fresh agent in a retired agent's working directory, which is the bug the
+tombstone exists to prevent, so the answer is a refusal.
+
+An oversized event payload is **not** an error code: the append reports it per row,
+in the acknowledgement the runner reads, so one bad entry does not refuse a batch.
 
 <!-- oppenheimer:begin runner -->
 ## Runner service

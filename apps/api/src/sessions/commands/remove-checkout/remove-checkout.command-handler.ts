@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -17,14 +18,15 @@ import { RemoveCheckoutCommand } from './remove-checkout.command';
  * tombstone: the repository may be added again later, and it will take the next
  * directory name rather than the one it had.
  *
- * If the agent was launched inside this checkout, the session steps out of it here
- * rather than relying on the foreign key's `ON DELETE SET NULL` — that clause never
- * fires, because nothing is deleted. The session degrades to its own directory
- * instead of pointing at a checkout that is no longer on disk.
+ * If the agent was launched inside this checkout, the session steps out of it — but
+ * the fold is what does that, from `session.checkout_removed`, rather than a setter
+ * beside the write. The foreign key's `ON DELETE SET NULL` never fires, because
+ * nothing is deleted; the session degrades to its own directory, and a replay of
+ * the log rebuilds that too.
  */
 @CommandHandler(RemoveCheckoutCommand)
 export class RemoveCheckoutCommandHandler
-  implements ICommandHandler<RemoveCheckoutCommand, WorkSessionEntity>
+  implements ICommandHandler<RemoveCheckoutCommand, SessionCommandResult>
 {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
@@ -33,7 +35,7 @@ export class RemoveCheckoutCommandHandler
     private readonly dispatch: SessionDispatchPort,
   ) {}
 
-  async execute(command: RemoveCheckoutCommand): Promise<WorkSessionEntity> {
+  async execute(command: RemoveCheckoutCommand): Promise<SessionCommandResult> {
     const found = await this.sessions.findOneById(command.scope, command.sessionId);
     if (found.isNone()) {
       throw new AppError(SessionErrors.NOT_FOUND, {
@@ -48,15 +50,10 @@ export class RemoveCheckoutCommandHandler
       });
     }
 
-    await this.dispatch.removeCheckout(session, target);
-    const checkout = session.retireCheckout(command.checkoutId, new Date());
-    if (!checkout) {
-      throw new AppError(SessionErrors.CHECKOUT_NOT_FOUND, {
-        detail: `No checkout with id ${command.checkoutId} on session ${session.slug}`,
-      });
-    }
-
-    await this.sessions.retireCheckout(session, checkout, [
+    // The event is what retires the checkout: folding it marks the child row and
+    // steps the agent out of it, so the `removedAt` the repository writes and the
+    // log that explains it cannot disagree.
+    await this.sessions.retireCheckout(session, target, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
           command.id,
@@ -64,9 +61,10 @@ export class RemoveCheckoutCommandHandler
         ),
         source: 'api',
         kind: SESSION_EVENT_KINDS.CHECKOUT_REMOVED,
-        payload: { checkoutId: checkout.id, directoryName: checkout.directoryName },
+        payload: { checkoutId: target.id, directoryName: target.directoryName },
       },
     ]);
-    return session;
+    const { hints } = await this.dispatch.removeCheckout(session, target);
+    return { session, hints };
   }
 }

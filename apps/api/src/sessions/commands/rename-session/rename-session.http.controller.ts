@@ -18,7 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { RenameSessionCommand } from './rename-session.command';
@@ -54,9 +54,10 @@ export class RenameSessionHttpController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: RenameSessionRequest,
   ): Promise<SessionResponseDto> {
-    const session = await this.commandBus.execute<RenameSessionCommand, WorkSessionEntity>(
-      new RenameSessionCommand({ scope, sessionId: id, name: body.name }),
-    );
-    return this.mapper.toResponse(session);
+    const { session, hints } = await this.commandBus.execute<
+      RenameSessionCommand,
+      SessionCommandResult
+    >(new RenameSessionCommand({ scope, sessionId: id, name: body.name }));
+    return this.mapper.toResponse(session, { hints });
   }
 }

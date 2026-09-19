@@ -8,7 +8,7 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import type { SessionNameSource } from '../domain/session-state.policy';
+import type { AgentObservedState, SessionNameSource } from '../domain/session-state.policy';
 
 /**
  * A session: one piece of work inside a project, and the fold of its own log.
@@ -75,14 +75,6 @@ export class WorkSessionOrmEntity {
   agent!: string;
 
   /**
-   * Where the agent is launched: inside that checkout, with the others as
-   * siblings. Null starts it in the session directory with every checkout a peer.
-   * A boolean on the checkout row could only express the first.
-   */
-  @Column({ type: 'uuid', nullable: true })
-  cwdCheckoutId!: string | null;
-
-  /**
    * The client's `Idempotency-Key`, so a retry after a lost response returns the
    * session already created rather than minting a second directory and a second
    * branch. Absent header, absent protection; the console always sends one.
@@ -90,7 +82,14 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   idempotencyKey!: string | null;
 
-  /** The fold of the log, from here down. Never written except by that fold. */
+  /**
+   * The fold of the log, from here down. Never written except by that fold.
+   *
+   * The block is longer than the lifecycle because the **derived group** is a
+   * function of the row: a sidebar cannot walk a log per listing row, so what the
+   * agent was last observed doing, when it entered that state, and the two report
+   * hashes are columns the fold projects exactly as it projects `state`.
+   */
   @Column({ type: 'varchar', default: 'starting' })
   state!: SessionState;
 
@@ -108,6 +107,33 @@ export class WorkSessionOrmEntity {
   /** When the agent and the tmux session last ended. The checkouts stay on disk. */
   @Column({ type: 'timestamp', nullable: true })
   stoppedAt!: Date | null;
+
+  /**
+   * Where the agent is launched: inside that checkout, with the others as
+   * siblings. Null starts it in the session directory with every checkout a peer.
+   * A boolean on the checkout row could only express the first.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  cwdCheckoutId!: string | null;
+
+  /** What the screen manifest last reported. An input to the group, never a state. */
+  @Column({ type: 'varchar', nullable: true })
+  lastObservedState!: AgentObservedState | null;
+
+  /**
+   * When the transition **into** that state was recorded. Null after a single
+   * report, which is what makes the group's debounce unfakeable: one sighting is
+   * not evidence of having been stuck.
+   */
+  @Column({ type: 'timestamp', nullable: true })
+  observedSince!: Date | null;
+
+  /** The agent's last report and the last one somebody read. Equal means "seen". */
+  @Column({ type: 'varchar', nullable: true })
+  reportHash!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  ackedReportHash!: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;

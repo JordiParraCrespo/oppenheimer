@@ -17,7 +17,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { WorkSessionEntity } from '../../domain/work-session.entity';
+import type { SessionCommandResult } from '../../domain/session-command.types';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { RemoveCheckoutCommand } from './remove-checkout.command';
@@ -56,9 +56,10 @@ export class RemoveCheckoutHttpController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('checkoutId', ParseUUIDPipe) checkoutId: string,
   ): Promise<SessionResponseDto> {
-    const session = await this.commandBus.execute<RemoveCheckoutCommand, WorkSessionEntity>(
-      new RemoveCheckoutCommand({ scope, sessionId: id, checkoutId }),
-    );
-    return this.mapper.toResponse(session);
+    const { session, hints } = await this.commandBus.execute<
+      RemoveCheckoutCommand,
+      SessionCommandResult
+    >(new RemoveCheckoutCommand({ scope, sessionId: id, checkoutId }));
+    return this.mapper.toResponse(session, { hints });
   }
 }
