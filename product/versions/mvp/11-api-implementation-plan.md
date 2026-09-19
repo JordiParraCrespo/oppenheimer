@@ -56,8 +56,10 @@ No API code. Everything the API slices import.
   (`read`/`write`, backing policies). `scopes.spec.ts` enforces the
   pairing, so the tuple and the groups land together.
 - `src/permissions/abilities.ts`: `SYSTEM_ROLE_PERMISSIONS.owner` gains
-  `manage` on `Project`, `Session`, `Installation` and `Repository`
-  conditioned on `${activeOrganizationId}`; **`SYSTEM_ROLE_PERMISSIONS.user`**
+  `manage` on `Project`, `Session` and `Installation` conditioned on
+  `${activeOrganizationId}` (no `Repository`: a subject with no row is a
+  fiction; listing routes sit on `read Installation`), `member` gains
+  `read` on the same three; **`SYSTEM_ROLE_PERMISSIONS.user`**
   gains `manage Host` conditioned on `{ ownerUserId: '${user.id}' }`,
   because a host is the person's and belongs on the person's role, the
   way `ApiToken` already does. `KNOWN_SUBJECTS` gains the five.
@@ -73,13 +75,17 @@ No API code. Everything the API slices import.
   its config record (launch command, login-URL pattern, transcript
   location), imported by the console through a subpath and by the API.
 - `src/protocol/`: **decided here, the 01 open question 1** — the wire
-  vocabulary is Zod (`hello`, `heartbeat`, `hint`, the commands,
-  `events.append`, `credentials.token`), the source of truth this repo
-  already uses for DTOs; JSON Schema is emitted from it at build
-  (`pnpm --filter @oppenheimer/shared build:protocol`) and Go structs
+  vocabulary is Zod (`hello`, `heartbeat`, the link hints, the
+  commands, `events.append` / `events.ack`, `attachment.credit`,
+  `credentials.token` / `credentials.grant`), the source of truth this
+  repo already uses for DTOs, on the **same Zod line** as the DTO
+  schemas; JSON Schema is emitted by the package's `build` from a
+  build-only module that is not on the runtime surface, and Go structs
   are generated into `packages/go/protocol` from that JSON Schema. One
-  source, two languages, no hand-written twin. Slice 6 is the first
-  consumer; the package lands here so the runner slices can start.
+  source, two languages, no hand-written twin. Every addition to the
+  link is written into 01 in the same pull request, because 01 owns the
+  wire. Slice 6 is the first consumer; the package lands here so the
+  runner slices can start.
 
 Done when `pnpm --filter @oppenheimer/shared test` is green and
 `@RequireScopes('hosts:read')` compiles in `apps/api`.
@@ -207,7 +213,7 @@ creates on a fresh repository.
 
 ```
 apps/api/src/sessions/
-  sessions.module.ts  sessions.resource.ts (actions read/create/update/delete + attach{sensitive})
+  sessions.module.ts  sessions.resource.ts (actions read/create/update/delete; attaching is `update` behind `sessions:write`)
   sessions.di-tokens.ts  work-session.mapper.ts
   domain/work-session.entity.ts                 # recordEvent() is the only mutator; holds checkouts
   domain/session-checkout.entity.ts  domain/work-session-event.entity.ts
@@ -292,9 +298,8 @@ apps/api/src/relay/
 - The gateways are the guard: the two specs above are the coverage test
   the HTTP surface gets from `route-policy-coverage.spec.ts`, and they
   are required, not nice-to-have.
-- Hint vocabulary on tickets and heartbeat replies is 01's closed set
-  plus `host_offline`: `update_available`, `update_required`, `blocked`,
-  `host_offline`.
+- Two hint schemas: the link's is 01's closed set (`update_available`,
+  `update_required`, `blocked`); the attach ticket's adds `host_offline`.
 - **Acceptance is the step-one spike gate**
   ([`06-step-one-spike.md`](06-step-one-spike.md)): keystroke echo under
   50 ms median from Barcelona on wifi with the relay in the host's
@@ -340,7 +345,12 @@ apps/api/src/relay/
   It keeps the runner's five-minute lifetime; the `jti` is burned for
   that lifetime rather than shortening the token, so a replay is refused
   either way and a slow dial is not.
-- Hints are one closed vocabulary across 01 and 10: `update_available`,
-  `update_required`, `blocked`, `host_offline`.
+- Hints are 01's closed set on the link, plus `host_offline` on the
+  attach ticket only; two schemas, not one.
 - The wire schema is Zod first, JSON Schema emitted, Go generated (01
-  open question 1).
+  open question 1), and `events.append` / `events.ack`,
+  `attachment.credit` and `credentials.grant` are written into 01's
+  "what rides the link" because 01 owns the wire.
+- No `Repository` subject and no `attach` verb: the owner's review of
+  the shared package caught both as vocabularies that lived only in one
+  place, and the hosts, GitHub and sessions slices were re-briefed.

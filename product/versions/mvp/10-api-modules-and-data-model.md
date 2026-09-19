@@ -146,9 +146,11 @@ through the installation token, cached for a minute in Redis, and a
 checkout remembers the repository it took as three columns of its own
 (`installationId`, `githubRepoId`, a `repositoryFullName` snapshot).
 There is no repository table. The vendor name stops at the
-directory: the CASL subjects are `Installation` and `Repository`, the
-scope resource is `repositories`, and no Octokit type leaves
-`infrastructure/`.
+directory: the one CASL subject is `Installation` — a `Repository`
+subject with no row would be a type-level fiction, so the listing
+routes check `read Installation` — the scope resource is still called
+`repositories`, because that is what a token holder thinks in, and no
+Octokit type leaves `infrastructure/`.
 
 **`projects/`** owns the bodies of work and — load-bearing — **the
 names their directories take**. `project.slug` is a directory name on
@@ -338,9 +340,12 @@ a **projection**, not a second truth:
   row, with `seq` assigned to the rows that actually land, so a batch
   replayed after a dropped ack, or half-applied before a crash, appends
   only what was not yet seen and the fold runs over exactly that.
-- `payload` is capped at 8 KB and **never carries pane text**. The
-  screen manifest reports a *state*; PTY bytes go to the browser and
-  the runner's ring buffer, never to Postgres (F12).
+- `payload` is capped at 8 KB and **never carries pane text**. On the
+  wire it is a JSON *string* with `maxLength 8192`, so the cap is
+  enforceable in TypeScript and in the Go generated from the same
+  schema; the control plane parses it and stores jsonb. The screen
+  manifest reports a *state*; PTY bytes go to the browser and the
+  runner's ring buffer, never to Postgres (F12).
 - The append and the fold happen in **one transaction**, so the sidebar
   is never eventually-consistent with its own log.
 
@@ -942,14 +947,17 @@ POST   /sessions/{id}/stop        update Session     sessions:write
 POST   /sessions/{id}/restart     update Session     sessions:write
 DELETE /sessions/{id}             delete Session     sessions:write
 GET    /sessions/{id}/events      read Session       sessions:read
-POST   /sessions/{id}/attach-ticket  attach Session  sessions:write
+POST   /sessions/{id}/attach-ticket  update Session  sessions:write
 POST   /sessions/{id}/checkouts   update Session     sessions:write
 DELETE /sessions/{id}/checkouts/{checkoutId}  update Session  sessions:write
 ```
 
-`attach` is a **distinct CASL action**, so a read-only credential can
-list sessions without opening a PTY on one (`leads`' `export` action is
-the precedent). `restart` is required by
+Attaching is `update Session` behind `sessions:write`, not a fourth
+verb: the scope split is what keeps a read-only token from opening a
+PTY, and the CASL model stays CRUD plus `manage` (an earlier draft
+minted an `attach` action the way `leads` minted `export`; the owner's
+review of the shared package sent both back — a verb that lives only in
+the token picker is a second unofficial vocabulary). `restart` is required by
 [`02-runner.md`](02-runner.md): a host reboot shows every session as
 stopped with a Restart button that recreates window 0 in the same
 worktree. `POST /sessions/{id}/checkouts` exists because adding a
@@ -962,8 +970,10 @@ window, hint}`; the client presents `ticket` as a WebSocket subprotocol,
 not a query parameter. `window` because tabs are tmux windows, so a ticket
 authorises one window; `hint` because
 [`01-protocol.md`](01-protocol.md) decided tickets can carry structured
-hints; the vocabulary is 01's closed set plus `host_offline`:
-`update_available`, `update_required`, `blocked`, `host_offline`.
+hints. The **link's** vocabulary is 01's closed set,
+`update_available`, `update_required`, `blocked`; the **ticket's** adds
+`host_offline`, which only the console has a use for — a runner must
+not be able to say it about itself, so the two are two schemas.
 
 `POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
 [{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
@@ -1013,10 +1023,11 @@ code execution on a host.
    nothing validates today.
 4. **The owner role, in two places that must agree.** A data migration
    granting the org-scoped `owner` role `manage` on `Project`,
-   `Session`, `Installation` and `Repository` within
-   `${activeOrganizationId}`, and on `Host` where
-   `ownerUserId = ${userId}` — the host condition is the person, not
-   the workspace — **and bumping `organization.roleVersion`**
+   `Session` and `Installation` within `${activeOrganizationId}`, the
+   `member` role `read` on the same three, and the default `user` role
+   `manage` on `Host` where `ownerUserId = ${user.id}` — the host
+   condition is the person, not the workspace — **and bumping
+   `organization.roleVersion`**
    so cached abilities refresh. Precisely: `ScopeResolver` itself caches
    nothing ("Nothing here is cached", `authz/application/scope.resolver.ts`)
    because team membership is written by Better Auth outside any app
@@ -1087,9 +1098,11 @@ repository, so it shows the cwd checkout's `repo · branch` plus a count.
 
 Each step is a vertical slice that can land alone.
 
-1. `packages/shared`: the four scope resources, the five subjects, the
-   agent catalog, the Zod schemas, and the `SYSTEM_ROLE_PERMISSIONS`
-   entries.
+1. `packages/shared`: the four scope resources, the four subjects
+   (`Host`, `Project`, `Session`, `Installation`), the agent catalog,
+   the Zod schemas, the wire protocol, and the `SYSTEM_ROLE_PERMISSIONS`
+   entries — one Zod line for the whole package, with JSON Schema
+   emission a build-only step outside the runtime graph.
 2. `github/` — installations, the live repository listing, the
    `installation` webhook, the repo chip. It goes
    first because it is the only module that can be built and tested end
