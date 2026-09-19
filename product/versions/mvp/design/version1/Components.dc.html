@@ -211,28 +211,39 @@ a:hover{text-decoration:underline}
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
 <h3 style="margin:0;font-size:17px;font-weight:600">Chip select</h3>
-<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-chipselect · op-listbox · op-option · data-open · data-selected</code>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-chipselect · op-listbox · op-option · search row · footer action</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">How every scope choice is made in the console — a pill trigger that opens a listbox. Options carry a second muted line when the value alone is not enough.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">How every scope choice is made in the console — a pill trigger over a 248px listbox. Every one of them filters: a sticky search row on top, a muted second line where the value alone is not enough, and a pinned action at the foot for adding what is not in the list yet.</p>
 </div>
 <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;min-height:200px">
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ true }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><span>xrp-mobile</span><span class="op-chipselect__chev">⌄</span>
 </button>
-<div class="op-listbox" role="listbox">
-<button class="op-option" type="button" role="option" data-selected="{{ true }}">
-<span class="op-option__stack"><span>xrp-mobile</span><span class="op-option__desc">JordiParraCrespo · main</span></span>
+<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search repositories…" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
+<button class="op-option" type="button" role="option" data-selected="{{ true }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<span class="op-option__stack"><span>xrp-mobile</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">JordiParraCrespo · main</span></span>
 <span class="op-option__check">✓</span>
 </button>
-<button class="op-option" type="button" role="option">
-<span class="op-option__stack"><span>orchestrator</span><span class="op-option__desc">versio · main</span></span>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<span class="op-option__stack"><span>orchestrator</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">versio · main</span></span>
 <span class="op-option__check">✓</span>
 </button>
-<button class="op-option" type="button" role="option">
-<span class="op-option__stack"><span>ledger-svc</span><span class="op-option__desc">versio · release</span></span>
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<span class="op-option__stack"><span>ledger-svc</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">versio · release</span></span>
 <span class="op-option__check">✓</span>
 </button>
+<div style="margin:3px -4px -4px;padding:3px 4px 3px;border-top:1px solid var(--border-subtle)">
+<button class="op-option" type="button" role="option" style="padding:6px 10px;gap:10px;font-size:13px">
+<span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+<span class="op-option__stack"><span>Add repository…</span></span>
+<span style="display:flex;align-items:center;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+</button>
+</div>
 </div>
 </div>
 <div class="op-chipselect">
@@ -359,34 +370,61 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Welcome modal</h3>
-<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">28px radius · scrim + 3px blur · close · three facts · one action</code>
+<h3 style="margin:0;font-size:17px;font-weight:600">Dialog</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · __head · __body · __foot · op-scrim</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Shown once, after onboarding. No hero image — the system ships none — so it earns its place on type and three facts a new operator actually needs. One primary; × dismisses to the same place.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">440px, 28px radius, on the popover tier — one of the three layers allowed a shadow. Add host is the only dialog in v1: one instruction, two ways to read it, and a status line that resolves in place so nothing below it moves.</p>
 </div>
-<div style="max-width:440px;display:flex;flex-direction:column;gap:20px;padding:32px;background:var(--card);border:1px solid var(--border-subtle);border-radius:28px;position:relative">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" style="position:absolute;top:16px;right:16px">
+<div class="op-dialog" style="margin:0;animation:none">
+
+<div class="op-dialog__head">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h4 class="op-dialog__title" style="flex:none;margin:0">Add a host</h4>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;letter-spacing:-0.008em;text-wrap:pretty">A server you control — a cloud VM, a build box, or your own workstation.</p>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" style="flex:none;border-radius:980px">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 </button>
+</div>
+
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
 <div style="display:flex;flex-direction:column;gap:8px">
-<h4 style="margin:0;font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.018em">You're set up</h4>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Three things worth knowing before your first session.</p>
-</div>
-<div style="display:flex;flex-direction:column;gap:14px">
-<div style="display:flex;gap:12px;align-items:flex-start">
-<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Sessions run on <span style="color:var(--fg)">your own hosts</span>, in a git worktree per session.</p>
-</div>
-<div style="display:flex;gap:12px;align-items:flex-start">
-<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg></span>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Every step is <span style="color:var(--fg)">visible and interruptible</span>.</p>
-</div>
-<div style="display:flex;gap:12px;align-items:flex-start">
-<span style="flex:none;color:var(--fg-muted);padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg></span>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5">Scope comes first: <span style="color:var(--fg)">host, repository, branch, agent</span>.</p>
+<div style="display:flex;align-items:center;gap:10px">
+<span class="op-label" style="flex:1;margin:0">Run this on it, once</span>
+<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
+<button type="button" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:var(--card);color:var(--fg)">Command</button>
+<button type="button" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:none;color:var(--fg-muted)">Agent prompt</button>
 </div>
 </div>
-<button class="op-btn op-btn--primary op-btn--lg op-btn--block" type="button">Start your first session</button>
+<div style="position:relative;border-radius:10px;background:var(--hover-surface)">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy" style="position:absolute;top:6px;right:6px">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>
+</button>
+<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+  | sh -s -- --token opk_7f3a9c</pre>
+</div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in 59:41 · single use</span>
+<a href="#new-token" style="font-size:11.5px;white-space:nowrap">New token</a>
+</div>
+</div>
+
+<div style="height:1px;background:var(--border-subtle)"></div>
+
+<div style="min-height:52px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
+<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</div>
+
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--secondary op-btn--md" type="button">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button">Use this host</button>
+</div>
+
 </div>
 </div>
 </section>

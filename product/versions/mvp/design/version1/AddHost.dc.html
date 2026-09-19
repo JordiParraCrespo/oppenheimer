@@ -22,7 +22,11 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div style="width:100%;max-width:620px;display:flex;flex-direction:column;gap:20px">
 
 <div>
-<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">3 of 4</span>
+<div style="display:flex;align-items:center;gap:14px">
+<a href="./ConnectGitHub.dc.html" style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</a>
+<span style="width:1px;height:12px;background:var(--border-subtle)"></span>
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">4 of 4</span>
+</div>
 <h1 style="margin-top:10px;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Add your first host</h1>
 <p style="margin-top:10px;font-size:15px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.</p>
 </div>
@@ -34,7 +38,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <span style="font-size:13px;font-weight:500">Install command</span>
 <button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ copyCmd }}">{{ copyCmdLabel }}</button>
 </div>
-<pre style="margin:0;padding:0 16px 16px;font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;word-break:break-all">curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c</pre>
+<pre style="margin:0;padding:0 16px 16px;font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--fg-muted);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c</pre>
 </div>
 
 <div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden">
@@ -86,8 +90,7 @@ Waiting for the host to connect…
 </div>
 
 <div style="display:flex;gap:12px;align-items:center">
-<a class="op-btn op-btn--primary op-btn--lg" href="./FirstSession.dc.html" style="text-decoration:none;pointer-events:{{ continuePointer }};opacity:{{ continueOpacity }}">Continue</a>
-<a href="./ConnectGitHub.dc.html" style="font-size:13px">Back</a>
+<a class="op-btn op-btn--primary op-btn--lg" href="./Ready.dc.html" style="text-decoration:none;pointer-events:{{ continuePointer }};opacity:{{ continueOpacity }}">Continue</a>
 </div>
 
 </div>
@@ -134,12 +137,42 @@ class Component extends DCLogic {
   }
   componentWillUnmount() { clearInterval(this._tick); clearInterval(this._c); clearTimeout(this._reg); clearTimeout(this._copy); }
 
+  // The two strings live here so the panes and the clipboard can never drift.
+  text(which) {
+    const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
+    if (which === 'cmd') return cmd;
+    return [
+      'Install the oppenheimer runner on this machine.',
+      'Run: ' + cmd,
+      'Then confirm the service is running with: oppenheimer-runner status',
+      'Report the hostname and OS version back to me.'
+    ].join('\n');
+  }
+
   copy(which) {
     return () => {
+      const text = this.text(which);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => this.fallbackCopy(text));
+      } else {
+        this.fallbackCopy(text);
+      }
       this.setState({ copied: which });
       clearTimeout(this._copy);
       this._copy = setTimeout(() => this.setState({ copied: null }), 1600);
     };
+  }
+
+  fallbackCopy(text) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el);
   }
 
   renderVals() {
@@ -178,7 +211,6 @@ class Component extends DCLogic {
       copyCmd: this.copy('cmd'),
       copyPrompt: this.copy('prompt'),
       simulate: () => this.setState({ registered: true }),
-      recheck: (e) => { e.preventDefault(); },
       regenerate: (e) => { e.preventDefault(); this.setState({ secs: 3600 }); }
     };
   }

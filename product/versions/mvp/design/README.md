@@ -20,14 +20,21 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ForgotPassword`](version1/ForgotPassword.dc.html) | Reset your password |
 | [`CheckEmail`](version1/CheckEmail.dc.html) | Check your email |
 | [`SetPassword`](version1/SetPassword.dc.html) | Set a new password |
-| [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 2 — connect GitHub |
-| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 3 — add your first host |
-| [`FirstSession`](version1/FirstSession.dc.html) | Onboarding step 4 — New session |
+| [`CreateWorkspace`](version1/CreateWorkspace.dc.html) | Onboarding step 2 — name your workspace and pick its address |
+| [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
+| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host |
+| [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: sidebar, terminal, composer |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
-States inside the onboarding screens are live: GitHub flips to connected, the
-host registers after a few seconds, the pairing token counts down.
+States inside the onboarding screens are live: the workspace address checks
+availability as you type, GitHub flips to connected, the host registers after a
+few seconds, the pairing token counts down. Onboarding steps carry a Back link
+beside the step counter.
+
+`version1/assets/agents/` holds the coding-agent marks (Claude Code and OpenCode
+are wired into the console's agent picker; Copilot, Gemini and Cursor are held
+in reserve), copied from the Orca repository.
 
 ## Design system
 
