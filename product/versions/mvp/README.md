@@ -90,3 +90,13 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   gains F26a: first install is trust-on-first-use, so F26 begins at the
   first self-update, not at install. The link is a **port**, not a
   bounded context.
+- 2026-09-19: **credential kinds are contributions to the auth kernel**
+  (08). `apps/api/src/auth` imported `api-tokens` and `users` to resolve
+  a request's credential, so the layer everything is built on depended
+  on two of the things built on it — and the hosts slice was about to
+  add a third the same way. The kernel now recognises only what it
+  issues (session, OAuth grant) and takes every other kind from a
+  registry a module contributes to with `AuthModule.forFeature`, the
+  same shape `AuthzModule.forFeature` uses for resources. Nothing about
+  what a credential authorizes changed, and no error code moved that a
+  client can see.

@@ -1,9 +1,9 @@
-import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { AuthzErrors } from '../../authz/domain/authz.errors';
-import { AbilityFactory } from '../../roles/application/ability.factory';
+import type { AbilityPort } from '../application/ability.port';
+import { ABILITY } from '../auth.di-tokens';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policies.decorator';
 import { AuthErrors } from '../domain/auth.errors';
 
@@ -24,7 +24,8 @@ import { AuthErrors } from '../domain/auth.errors';
 export class PoliciesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly abilityFactory: AbilityFactory,
+    @Inject(ABILITY)
+    private readonly abilities: AbilityPort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -42,7 +43,7 @@ export class PoliciesGuard implements CanActivate {
       if (exemption) return true;
       // A programming error, not a client one: the route reached production
       // without saying what it requires.
-      throw new AppError(AuthzErrors.ROUTE_HAS_NO_POLICY);
+      throw new AppError(AuthErrors.ROUTE_HAS_NO_POLICY);
     }
 
     const request = context.switchToHttp().getRequest();
@@ -59,7 +60,7 @@ export class PoliciesGuard implements CanActivate {
 
     // Memoized on the request: four call sites resolve the ability during a
     // single request, and `forRequest` also attaches it to `request.ability`.
-    const ability = await this.abilityFactory.forRequest(request);
+    const ability = await this.abilities.forRequest(request);
 
     // Returning `false` would hand back Nest's own codeless 403; throw the
     // catalog error instead so the response carries `AUTH_002` like every other

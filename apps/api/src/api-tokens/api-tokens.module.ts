@@ -1,9 +1,12 @@
 import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '../auth/auth.module';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from './api-tokens.di-tokens';
 import { ApiTokenMapper } from './api-tokens.mapper';
+import { ApiTokenCredentialResolver } from './application/api-token-credential.resolver';
+import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
 import { CreateApiTokenCommandHandler } from './commands/create-api-token/create-api-token.command-handler';
 import { CreateApiTokenHttpController } from './commands/create-api-token/create-api-token.http.controller';
 import { RevokeApiTokenCommandHandler } from './commands/revoke-api-token/revoke-api-token.command-handler';
@@ -48,15 +51,31 @@ const repositories: Provider[] = [
 /**
  * API tokens module.
  *
- * Marked `@Global` because the auth layer's credential resolver — used by the
- * globally registered `ScopesGuard` — depends on the token repository, and
- * that guard is instantiated outside any feature module's injector.
+ * It owns a credential kind, so it registers a resolver with the auth kernel
+ * rather than the kernel knowing what an `oppenheimer_pat_…` secret is —
+ * `AuthModule.forFeature` below is the whole of that contribution.
+ *
+ * Marked `@Global` because the resolver it contributes is constructed by the
+ * kernel, for a guard registered as an `APP_GUARD`: the token repository it
+ * asks has to be resolvable outside any feature module's injector.
  */
 @Global()
 @Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([ApiTokenOrmEntity, MemberOrmEntity])],
+  imports: [
+    CqrsModule,
+    TypeOrmModule.forFeature([ApiTokenOrmEntity, MemberOrmEntity]),
+    AuthModule.forFeature([ApiTokenCredentialResolver]),
+  ],
   controllers: [...httpControllers],
-  providers: [...commandHandlers, ...queryHandlers, ...repositories, ApiTokenMapper],
+  providers: [
+    ...commandHandlers,
+    ...queryHandlers,
+    ...repositories,
+    ApiTokenMapper,
+    // Revoking a token has to reach the session cached for it; the kernel
+    // publishes the port, this module knows when to call it.
+    ApiTokenRevokedDomainEventHandler,
+  ],
   exports: [API_TOKEN_REPOSITORY, ApiTokenMapper, TypeOrmModule],
 })
 export class ApiTokensModule {}
