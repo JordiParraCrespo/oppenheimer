@@ -64,7 +64,7 @@ holding only the file names that layer admits:
 | `infrastructure/`             | `*.port.ts`, `*.adapter.ts`, `*.gateway.ts`, `*.processor.ts`, `*.config.ts`, `*.util.ts`, `*.types.ts` |
 | `commands/<use-case>/`        | `<use-case>.command.ts`, `.command-handler.ts`, `.http.controller.ts`, `.request.dto.ts`   |
 | `queries/<use-case>/`         | `<use-case>.query.ts`, `.query-handler.ts`, `.http.controller.ts`, `.request.dto.ts`       |
-| `application/`                | `*.factory.ts`, `*.policy.ts`, `*.resolver.ts`, `*.port.ts`, and `event-handlers/*.domain-event-handler.ts` |
+| `application/`                | `*.factory.ts`, `*.policy.ts`, `*.resolver.ts`, `*.registry.ts`, `*.port.ts`, and `event-handlers/*.domain-event-handler.ts` |
 | `dtos/`                       | `*.response.dto.ts`                                                                        |
 | `guards/`                     | `*.guard.ts`                                                                               |
 | `decorators/`                 | `*.decorator.ts`                                                                           |
@@ -80,8 +80,8 @@ they are the ones that decay first:
    are `domain/*.policy.ts` or `*.factory.ts`. Something that calls out of the
    process is a port plus an adapter. Something a route reaches is a use case.
    Work that needs ports but is not a use case — building an ability, asserting
-   a grant is permitted, resolving which organization a request acts in — is
-   `application/`. The same goes for `entities/`, `utils/`, `common/`,
+   a grant is permitted, resolving which organization a request acts in,
+   collecting what other modules contribute to a kernel — is `application/`. The same goes for `entities/`, `utils/`, `common/`,
    `types/`, `interfaces/` and every other bucket named after nothing.
 2. **A use case is a directory, and every file in it carries its name.**
    `commands/update-user/` holds `update-user.command.ts` and
@@ -300,6 +300,7 @@ Read:   HTTP → Controller → new Query → QueryBus → QueryHandler
 | Adapter for a SaaS | `<name>.gateway.ts`             |
 | Queue worker       | `<name>.processor.ts`           |
 | Application resolver | `<name>.resolver.ts`          |
+| Contribution registry | `<name>.registry.ts`         |
 
 ## Adding a new module
 
