@@ -135,6 +135,42 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   again by GitHub's repository id (unique per workspace, and the conflict target
   of the create), and its slug is immutable because it is a directory name on
   every host holding it.
+- 2026-09-19: the **`sessions/` module is built**, and with it the shape the
+  whole control plane turns on: a session holds checkouts, and its append-only
+  log is the truth while the row is a fold of that log. 03 gains the section
+  that says so — three tables, eleven routes, and the two ports the relay will
+  bind. Four decisions were sharpened while writing it. **The stored lifecycle
+  answers "is this work finished", not "is a process running"**, so stopping a
+  session leaves it `open` with a `stoppedAt` and `resolved` is terminal — a
+  late `session.started` from a runner that has not heard about the close cannot
+  bring a session back. **A restart records a request, not an outcome**: the
+  control plane must not claim `open` before a host has built anything, whereas
+  a stop *is* the decision and is recorded as the fact it is. **The name is part
+  of the fold**, so "a model-derived title never overwrites a name a person
+  typed" is a rule a replay goes through rather than a check somebody has to
+  remember. And **`seq` is allocated in a second statement after the row lock**,
+  because under READ COMMITTED a statement's snapshot is taken before it blocks,
+  so reading the maximum in the same statement as the `FOR UPDATE` hands every
+  waiter the same numbers — the concurrency test is what found it. 11's §1 note
+  gains the two names below the project (the session's minted slug and the
+  checkout's directory) and the rule that neither is ever reissued.
+- 2026-09-19: **archiving a project ships with the sessions slice**, and it
+  fails closed. "Is any session still open in this project" is a question only
+  the module that owns sessions can answer, so `DELETE /projects/{id}` asks it
+  over the query bus and refuses with `PROJECTS_003` when nothing answers —
+  assuming "no sessions" on a destructive path is the fail-open this shape
+  exists to rule out. Archiving is also a tombstone on the create path: a
+  session cannot be started in a retired project, including the first session of
+  a repository whose project was archived, because the origin is unique per
+  workspace and reopening it would put new work inside a retired directory.
+- 2026-09-19: **naming a session is configuration, and the default is to name
+  nothing.** `SESSION_NAMER_PROVIDER`, `SESSION_NAMER_MODEL` and
+  `ANTHROPIC_API_KEY` choose the namer behind a port; with none set every
+  session keeps its minted slug, which reads fine and costs nothing. It is a
+  deployment capability rather than a silent default so that "why is nothing
+  here ever named" is answered by the startup log. The one line that leaves the
+  host is the person's own first prompt — the agent transcript it was read from
+  does not — which is a sentence the privacy note owes.
 - 2026-09-19: the runner's two ordinary HTTPS calls carry the API's
   `/api/v1` prefix — `POST /api/v1/hosts/register` and `DELETE
   /api/v1/hosts/self` — and uninstall no longer puts a host id in the

@@ -3,6 +3,8 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
+import { ArchiveProjectCommandHandler } from './commands/archive-project/archive-project.command-handler';
+import { ArchiveProjectHttpController } from './commands/archive-project/archive-project.http.controller';
 import { UpdateProjectCommandHandler } from './commands/update-project/update-project.command-handler';
 import { UpdateProjectHttpController } from './commands/update-project/update-project.http.controller';
 import { ProjectOrmEntity } from './database/project.orm-entity';
@@ -21,9 +23,10 @@ const httpControllers = [
   FindProjectsHttpController,
   FindProjectHttpController,
   UpdateProjectHttpController,
+  ArchiveProjectHttpController,
 ];
 
-const commandHandlers: Provider[] = [UpdateProjectCommandHandler];
+const commandHandlers: Provider[] = [UpdateProjectCommandHandler, ArchiveProjectCommandHandler];
 const queryHandlers: Provider[] = [FindProjectsQueryHandler, FindProjectQueryHandler];
 const mappers: Provider[] = [ProjectMapper];
 const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: ProjectRepository }];

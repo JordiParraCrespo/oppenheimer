@@ -45,17 +45,29 @@ export interface ProjectRepositoryPort {
    * stale `archivedAt` over it.
    */
   renameIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
-  /** Projects the caller can reach, newest first. Archived rows are left out. */
-  findAll(scope: AccessScope): Promise<ProjectEntity[]>;
+  /**
+   * Retire a project that is still active, returning the stored row.
+   *
+   * `None` when nothing was updated, for the same reason as the rename above: the
+   * row is the authority on whether the project is still active, and a targeted
+   * `UPDATE … WHERE "archivedAt" IS NULL` cannot race with one that already ran.
+   */
+  archiveIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
+  /**
+   * Projects the caller can reach, newest first. Archived rows are left out unless
+   * asked for: a retired project keeps its slug for ever, so the listing would
+   * otherwise fill with rows nobody can put work in.
+   */
+  findAll(scope: AccessScope, options?: { includeArchived?: boolean }): Promise<ProjectEntity[]>;
   /** `None` both for a missing project and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>>;
   /**
    * The project a repository created, by GitHub's own id.
    *
-   * Archived rows are included, because nothing can archive a project yet. When
-   * the slice that owns sessions adds archiving, this read excludes them and
-   * `ensureForRepository` refuses on an archived origin rather than handing back
-   * a retired directory for new work.
+   * Archived rows are **included**, because the origin is unique per workspace and
+   * the caller has to be able to tell "no project yet" from "the project for this
+   * repository is retired". `ProjectLookupResolver` is what turns the second into a
+   * refusal rather than a new project the constraint would reject anyway.
    */
   findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>>;
 }

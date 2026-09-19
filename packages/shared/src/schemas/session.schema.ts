@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { PAGINATION } from '../constants';
+import { paginationSchema } from './pagination.schema';
 import {
   codingAgentSchema,
   displayNameSchema,
@@ -130,3 +132,69 @@ export const SESSION_GROUPS = [
 export const sessionGroupSchema = z.enum(SESSION_GROUPS);
 
 export type SessionGroup = z.infer<typeof sessionGroupSchema>;
+
+/**
+ * A tmux window index — tabs are tmux windows, so an attach ticket authorises
+ * one window.
+ *
+ * Written out rather than imported from `../protocol`, which the root barrel
+ * deliberately does not re-export: pulling the wire vocabulary in here would put
+ * it in every browser bundle that imports a session schema. Keep the two in
+ * step; there is one number to keep.
+ */
+const sessionWindowSchema = z.number().int().min(0);
+
+/**
+ * `POST /sessions/{id}/attach-ticket`.
+ *
+ * A ticket authorises one window, so the window is what the body names; absent,
+ * it is the first one, which is the only window a session has until somebody
+ * opens a tab.
+ */
+export const issueAttachTicketSchema = z.object({
+  window: sessionWindowSchema.optional(),
+});
+
+export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
+
+/**
+ * `DELETE /sessions/{id}` — the close.
+ *
+ * Closing pushes each checkout's branch and then removes the worktrees, and it
+ * **refuses when a checkout has unpushed work** unless the caller says the loss
+ * is accepted. The flag is on the route rather than implied by a second endpoint
+ * because the refusal is the default and accepting the loss has to be a
+ * deliberate sentence somebody typed.
+ */
+export const closeSessionSchema = z.object({
+  acceptUnpushedWork: z.coerce.boolean().optional(),
+});
+
+export type CloseSessionDto = z.infer<typeof closeSessionSchema>;
+
+/**
+ * `GET /sessions`. The three filters the sidebar and the project screen need,
+ * and nothing else: `state` is the **stored lifecycle**, not the derived group,
+ * because a group is computed on read and cannot be an index.
+ */
+export const listSessionsQuerySchema = paginationSchema.extend({
+  projectId: z.string().uuid().optional(),
+  hostId: z.string().uuid().optional(),
+  state: sessionStateSchema.optional(),
+});
+
+export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;
+
+/**
+ * `GET /sessions/{id}/events`, paginated by `seq` rather than by page.
+ *
+ * The log is append-only and `seq` is dense, so a cursor is both cheaper and
+ * stable: a page number over a growing log re-reads rows it has already shown
+ * the moment anything is appended.
+ */
+export const listSessionEventsQuerySchema = z.object({
+  afterSeq: z.coerce.number().int().min(0).optional(),
+  limit: z.coerce.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
+});
+
+export type ListSessionEventsQueryDto = z.infer<typeof listSessionEventsQuerySchema>;

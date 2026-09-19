@@ -71,7 +71,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
       // Better Auth to the set of things that can make this suite red.
       entities: [ProjectOrmEntity],
       synchronize: false,
-      migrations: [AddProjectRolePermissions1789000100000],
     });
     await dataSource.initialize();
 
@@ -254,12 +253,18 @@ describe('projects: race-safe auto-creation (integration)', () => {
     expect(await ownerRules()).toContainEqual(rule);
 
     // Reverting and re-running is what proves `down()` removes exactly this rule
-    // and that the version bump reaches workspaces that already exist.
-    await dataSource.undoLastMigration({ transaction: 'all' });
+    // and that the version bump reaches workspaces that already exist. The
+    // migration is driven directly rather than through `undoLastMigration`, which
+    // would revert whatever migration happens to be last in the chain — and that is
+    // a different one every time a slice lands.
+    const migration = new AddProjectRolePermissions1789000100000();
+    const runner = dataSource.createQueryRunner();
+    await migration.down(runner);
     expect(await ownerRules()).not.toContainEqual(rule);
     const before = await roleVersion();
 
-    await dataSource.runMigrations({ transaction: 'all' });
+    await migration.up(runner);
+    await runner.release();
     expect(await ownerRules()).toContainEqual(rule);
     expect(await roleVersion()).toBe(before + 1);
   });

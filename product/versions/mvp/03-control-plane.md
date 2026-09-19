@@ -119,6 +119,124 @@ The App's six settings (`GITHUB_APP_*`, the slug included) are the
 connected yet" from "this deployment has no App". Without them the module
 boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 
+## The `sessions/` module, as built
+
+The work itself, implemented: the row, its checkouts, its append-only log,
+and the fold of that log. Eleven routes and three tables, with no relay —
+every read, write and state rule is testable without a host.
+
+```
+GET    /api/v1/sessions                                 read Session    sessions:read
+GET    /api/v1/sessions/{id}                            read Session    sessions:read
+GET    /api/v1/sessions/{id}/events                     read Session    sessions:read
+POST   /api/v1/sessions                                 create Session  sessions:write   Idempotency-Key
+PATCH  /api/v1/sessions/{id}                            update Session  sessions:write
+POST   /api/v1/sessions/{id}/stop                       update Session  sessions:write
+POST   /api/v1/sessions/{id}/restart                    update Session  sessions:write
+POST   /api/v1/sessions/{id}/attach-ticket              update Session  sessions:write
+POST   /api/v1/sessions/{id}/checkouts                  update Session  sessions:write
+DELETE /api/v1/sessions/{id}/checkouts/{checkoutId}     update Session  sessions:write
+DELETE /api/v1/sessions/{id}                            delete Session  sessions:write
+DELETE /api/v1/projects/{id}                            update Project  projects:write
+```
+
+**Three tables.** `work_session` is the session: its workspace, its project,
+the host it runs on, the agent, the slug, which checkout the agent was
+launched in, and then the fold — `state`, `stateSeq`, `agentSessionId`,
+`lastEventAt`, `stoppedAt`. `session_checkout` is one repository checked out
+for one session, and is also **where a repository is remembered**: the
+installation, GitHub's repository id, a name snapshot, the directory the
+runner made and the store it found, the base branch and the session's own
+branch. `work_session_event` is the log: `seq`, the writer's idempotency key,
+`source`, `kind`, an 8 KB payload and two clocks.
+
+**The log is the truth and the row is the fold.** `WorkSessionEntity` has no
+`setState`; its only mutator is `recordEvent`, which runs a pure fold and
+advances the projection, so replaying any log rebuilds the row. `seq` is
+assigned by the control plane under `SELECT … FOR UPDATE` on the session row
+— never by the writer — so a buggy or hostile host cannot create gaps or
+regress the log, and the append and the fold commit in one transaction so the
+sidebar is never eventually-consistent with its own log. Idempotency is per
+row: one `INSERT … ON CONFLICT ("sessionId", "idempotencyKey") DO NOTHING`
+each, `<runId>:<n>` from a runner and `<kind>:<commandId>` from the API.
+
+**Three state vocabularies, not one.** The stored lifecycle is
+`starting | open | failed | resolved` and answers *is this work finished* —
+which is why stopping a session does not move it, and why `resolved` is
+terminal. The agent's own observations (`working`, `blocked`, `idle`, `done`,
+`unknown`) are inputs, never states. The **derived group** is what the sidebar
+dot shows and is computed on read: `waiting-on-you` has four sources — the
+session failed, the agent has been blocked for 30 s, a launch has sat unready
+for 60 s, or the pane is gone with no report. The debounce is measured from a
+**recorded transition**, so a caller with no history cannot claim a session
+has been stuck for five minutes; and precedence ("a block beats an approved
+pull request") is a different function from display order ("ready-for-review
+sorts first").
+
+**Cross-tenant references are unrepresentable, not merely unchecked.**
+`(organizationId, projectId) → project` and
+`(organizationId, installationId) → github_installation` are composite keys,
+so a session in another workspace's project and a checkout through another
+workspace's installation are both impossible whatever a handler forgets.
+`hostId` is the one reference a check guards instead — a host belongs to a
+person and carries no workspace column — so the create command loads it
+through the own-or-grant-scoped repository and refuses on a miss. The host's
+own foreign key is `ON DELETE RESTRICT`: a machine with sessions on it cannot
+be unpaired out from under them.
+
+**Nothing is ever hard-deleted.** Closing a session records `session.closed`,
+the fold moves it to `resolved`, and the row stays for ever, so
+`uq (projectId, slug)` is a permanent tombstone for a directory name — the
+coding agents key their conversation state by working directory, and a new
+session on a retired name would inherit a stranger's history. A checkout is
+retired with `removedAt`, with the repository unique made partial so the
+repository may come back while its old directory name never does. And when
+the retired checkout was the agent's working directory, the session steps out
+of it rather than dangling.
+
+**`POST /sessions` is idempotent by header.** The client's `Idempotency-Key`
+is a column with a partial unique per workspace, and the create statement's
+conflict target is that key, so a retry after a lost response returns the
+session already created instead of minting a second directory and a second
+branch. The console always sends one.
+
+**The attach ticket is a Redis key, not a table**: `attach:<random>` →
+`{sessionId, organizationId, window, userId}`, claimed with `SET … NX` and
+expiring in **60 seconds**. Single use is the real control, so the lifetime
+buys reliability — mint, DNS, TLS and upgrade on a cold radio take five to ten
+seconds — and the ticket travels in `Sec-WebSocket-Protocol`, never in the
+query string, because proxies and CDNs log request lines and this ticket buys
+an interactive shell. Opening a terminal is `update Session` behind
+`sessions:write`: there is no `attach` verb. Until the relay exists the
+response carries the hint `host_offline`, which is simply true — no host
+holds a link.
+
+**Archiving a project lands here**, because "is any session still open in
+this directory" is the one question the archive command must ask and only this
+module can answer it. It asks over the query bus and **fails closed**: if
+nothing answers, the archive refuses (`PROJECTS_003`) rather than assuming the
+answer it would prefer. An archived project is a tombstone on the create path
+too — a session cannot be started in one, including the first session of a
+repository whose project was archived.
+
+**Naming is configuration.** A session is named by its minted slug until the
+runner reports the first prompt, at which point a port in
+`sessions/infrastructure/` asks a model for a title of at most forty
+characters. `SESSION_NAMER_PROVIDER` (`none` by default),
+`SESSION_NAMER_MODEL` and `ANTHROPIC_API_KEY` choose it, and with none
+configured every session simply keeps its slug — which reads fine and costs
+nothing. A title a model derived **never overwrites a name a person typed**,
+and that rule lives in the fold, so a replay cannot break it. The one line
+that leaves the host is the person's own prompt; the transcript it came from
+does not.
+
+**Two ports wait for the relay.** `SESSION_DISPATCH` sends a session's work to
+a host and is bound, until then, to an adapter that records
+`session.dispatch_pending` on the log — so "this was owed and never delivered"
+is a durable fact with a timestamp. `RECORD_SESSION_EVENTS` is the other
+direction: it takes a runner's batch and returns the acknowledgement that lets
+the runner drop it from memory.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from
@@ -127,9 +245,15 @@ checkout that took it, as GitHub's own id plus the installation and a
 name snapshot), hosts, host pairing tokens, projects (the body of work a
 session belongs to; auto-created from the first repository a session checks
 out, and found again by that repository's GitHub id; its slug is a directory
-name on every host and is never reissued), sessions (host, **project**,
-repo, base branch, branch, worktree path, agent, state, name) — a session
-belongs to a project —, session_events, attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
+name on every host and is never reissued), **work_session**
+(workspace, project, host, agent, slug, name, the checkout the agent runs
+in, and the fold of its log) — a session belongs to a project —,
+**session_checkout** (one repository per session, on the session's own
+branch, and where a repository is remembered), **work_session_event** (the
+append-only log the row is a fold of). Attach tickets are **not a table**: a
+Redis key with a 60-second expiry, which is shorter than any row's life. There
+is no `jobs` table either — the desired state is the session row and the
+outbox is already a durable queue. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
 

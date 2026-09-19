@@ -336,9 +336,54 @@ and never renamed.
 | -------------------------------------- | ---------------------------------- | ---- |
 | `PROJECTS_001` <a id="projects_001" /> | Project not found                  | 404  |
 | `PROJECTS_002` <a id="projects_002" /> | Projects belong to an organization  | 400  |
+| `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
+| `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
+| `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
+
+`PROJECTS_003` is archiving failing closed. "Is any session still open in this
+project" is a question only the module that owns sessions can answer, asked over the
+query bus; if nothing answers it, the archive refuses rather than assuming the answer
+it would prefer.
+
+`PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
+name on every host that held it and is never reissued, so a session cannot be started
+in a retired project — including the first session of a repository whose project was
+archived.
+
+## Sessions
+
+A session is one piece of work inside a project: a terminal, an agent, and a set of
+checkouts. Its append-only log is the truth per session and the row is a fold of it,
+so nothing here reports a state the log does not explain. Rows are never
+hard-deleted — closing a session keeps it for ever so its directory name and branch
+are never reissued.
+
+| Code                                   | Title                                           | HTTP |
+| -------------------------------------- | ----------------------------------------------- | ---- |
+| `SESSIONS_001` <a id="sessions_001" /> | Session not found                               | 404  |
+| `SESSIONS_002` <a id="sessions_002" /> | Sessions belong to an organization              | 400  |
+| `SESSIONS_003` <a id="sessions_003" /> | Checkout not found on this session              | 404  |
+| `SESSIONS_004` <a id="sessions_004" /> | That repository is already checked out for this session | 409 |
+| `SESSIONS_005` <a id="sessions_005" /> | That session is closed                          | 409  |
+| `SESSIONS_006` <a id="sessions_006" /> | That project is archived                        | 409  |
+| `SESSIONS_007` <a id="sessions_007" /> | That session event payload is too large         | 400  |
+| `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
+| `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
+
+`SESSIONS_001` is also returned for a session that exists in another workspace: the
+scoped read cannot see it, and distinguishing the two would confirm the id.
+
+`SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
+stopped, restarted or given another checkout — the row is a tombstone for its
+directory name, and reopening one would put new work into a directory a coding agent
+already keys conversation state by.
+
+`SESSIONS_007` is the protocol's own 8 KB cap on an event payload, held here for
+anything that did not arrive over the link. An event never carries pane text: PTY
+bytes go to the browser and the runner's ring buffer, never to Postgres.
 
 <!-- oppenheimer:begin runner -->
 ## Runner service

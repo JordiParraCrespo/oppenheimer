@@ -41,4 +41,14 @@ export interface ProjectLookupPort {
   ensureForRepository(scope: AccessScope, origin: ProjectOrigin): Promise<ProjectEntity>;
   /** The project a repository already has, if any. Creates nothing. */
   findForRepository(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>>;
+  /**
+   * The project a caller named outright, for the case where a session says which
+   * project it belongs in rather than bringing a repository to derive one from — a
+   * session with no checkouts at all has nothing to derive from.
+   *
+   * `None` for a project that is missing, archived or in another workspace: a
+   * retired project's directory is out of use, and its slug is a path segment on
+   * every host that holds it.
+   */
+  findOneById(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>>;
 }

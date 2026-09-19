@@ -9,6 +9,13 @@ import { MembersController } from '../../organizations/members.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
 import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
+import { AddCheckoutHttpController } from '../../sessions/commands/add-checkout/add-checkout.http.controller';
+import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
+import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
+import { FindSessionHttpController } from '../../sessions/queries/find-session/find-session.http.controller';
+import { FindSessionEventsHttpController } from '../../sessions/queries/find-session-events/find-session-events.http.controller';
+import { FindSessionsHttpController } from '../../sessions/queries/find-sessions/find-sessions.http.controller';
 
 /**
  * The clients and the guards must not drift.
@@ -36,6 +43,19 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   '/billing/subscriptions': { controller: FindSubscriptionsHttpController, handler: 'findAll' },
   '/projects': { controller: FindProjectsHttpController, handler: 'list' },
   '/projects/:id': { controller: FindProjectHttpController, handler: 'get' },
+  '/sessions': { controller: FindSessionsHttpController, handler: 'list' },
+  '/sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
+  '/sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
+  // The four write paths whose whole purpose is one action, so the path is the
+  // rule. `POST /sessions` is deliberately absent: it shares the listing's path,
+  // exactly as renaming a project shares the project read's.
+  '/sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
+  '/sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
+  '/sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
+  '/sessions/:id/attach-ticket': {
+    controller: IssueAttachTicketHttpController,
+    handler: 'issue',
+  },
 };
 
 function methodOn(controller: object, handler: string): object {

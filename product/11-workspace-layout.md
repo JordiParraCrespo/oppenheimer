@@ -16,6 +16,27 @@ session, exactly like Orca's worktree model, so the UX is the same.
 > `project.slug` is that directory name, it is immutable, and an archived
 > project keeps its row so the name is never reissued. The original layout is
 > kept below as the decision it came from.
+>
+> **The two names below the project are columns too (2026-09-19).** A session's
+> directory is `work_session.slug`, minted as `<adjective>-<noun>-<6 base36>`
+> before anything has been typed, because the directory and the branch have to
+> exist first. A checkout's directory is `session_checkout.directoryName`: the
+> repository's own name, then `<owner>--<repo>`, then
+> `<owner>--<repo>-<githubRepoId>` — the same deterministic candidates the
+> project uses, picked against every name **this session has ever used**, retired
+> ones included. And the branch is always the session's own,
+> `oppenheimer/<project.slug>/<work_session.slug>`, created from each checkout's
+> base branch and never the base itself: both segments are unique-constrained, so
+> a branch name is self-identifying and collision-free by construction, and git
+> refuses a worktree on a branch another worktree already holds.
+>
+> **Neither name is ever reissued.** `uq (projectId, slug)` and
+> `uq (sessionId, directoryName)` are permanent tombstones, because Claude Code
+> and Codex key their conversation state by working directory: a new session or
+> checkout landing on a retired name would inherit a stranger's history, which is
+> near-impossible to diagnose from the symptom and free to rule out. So nothing
+> is hard-deleted — closing a session sets its state to `resolved` and retiring a
+> checkout sets `removedAt`; both rows stay.
 
 ```
 ~/oppenheimer-ai/

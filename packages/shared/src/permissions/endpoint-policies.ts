@@ -43,6 +43,23 @@ export const ENDPOINT_POLICIES = {
   // destination a client gates a row on.
   '/projects': [{ action: 'read', subject: 'Project' }],
   '/projects/:id': [{ action: 'read', subject: 'Project' }],
+  // The control plane's sessions. `/sessions` and `/sessions/:id` are the two
+  // destinations a client gates a row on; `POST /sessions` has no entry of its
+  // own because it shares the listing's path, exactly as renaming a project
+  // shares the project read's.
+  //
+  // The four below are here for a different reason: their whole path is one
+  // action, so the path *is* the rule and the catalog can state it without
+  // ambiguity. Opening a terminal is `update Session` — there is no `attach`
+  // verb, and the scope split (`sessions:write`) is what keeps a read-only
+  // credential from getting a PTY.
+  '/sessions': [{ action: 'read', subject: 'Session' }],
+  '/sessions/:id': [{ action: 'read', subject: 'Session' }],
+  '/sessions/:id/events': [{ action: 'read', subject: 'Session' }],
+  '/sessions/:id/stop': [{ action: 'update', subject: 'Session' }],
+  '/sessions/:id/restart': [{ action: 'update', subject: 'Session' }],
+  '/sessions/:id/checkouts': [{ action: 'update', subject: 'Session' }],
+  '/sessions/:id/attach-ticket': [{ action: 'update', subject: 'Session' }],
 } satisfies Record<string, readonly [EndpointPolicy, ...EndpointPolicy[]]>;
 
 /** An endpoint whose rules are declared in {@link ENDPOINT_POLICIES}. */

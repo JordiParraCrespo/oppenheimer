@@ -58,6 +58,14 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
+    // With no provider, or one whose key or model is missing, a session keeps the
+    // slug it was minted with. That is a supported configuration, so this exists to
+    // answer "why is nothing here ever named" from the startup log.
+    session_namer:
+      configService.get('sessions.namerProvider') === 'anthropic' &&
+      Boolean(
+        configService.get('sessions.anthropicApiKey') && configService.get('sessions.namerModel'),
+      ),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

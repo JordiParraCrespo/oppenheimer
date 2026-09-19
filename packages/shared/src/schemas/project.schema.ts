@@ -23,3 +23,17 @@ export const updateProjectSchema = z.object({
 });
 
 export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
+
+/**
+ * `GET /projects`.
+ *
+ * Archived projects are left out by default: a retired project's slug stays
+ * claimed for ever so its directory name is never reissued, which means the
+ * listing would otherwise grow monotonically with rows nobody can put work in.
+ * `includeArchived` is what the settings screen passes to show the history.
+ */
+export const listProjectsQuerySchema = z.object({
+  includeArchived: z.coerce.boolean().optional(),
+});
+
+export type ListProjectsQueryDto = z.infer<typeof listProjectsQuerySchema>;

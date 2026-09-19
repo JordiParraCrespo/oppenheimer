@@ -91,11 +91,35 @@ export class ProjectRepository
     return updated.length > 0 ? Some(this.mapper.toDomain(updated[0])) : None;
   }
 
-  async findAll(scope: AccessScope): Promise<ProjectEntity[]> {
-    const records = await this.scopedQuery(scope)
-      .andWhere('project.archivedAt IS NULL')
-      .orderBy('project.createdAt', 'DESC')
-      .getMany();
+  /**
+   * Retiring is the same targeted write as renaming, for the same reason: the row
+   * decides whether the project is still active, so an archive that loaded before
+   * another one committed simply updates nothing.
+   */
+  async archiveIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>> {
+    const [reachable, parameters] = this.scopedQuery(scope)
+      .select(`${this.alias}.id`)
+      .getQueryAndParameters();
+    const table = this.repository.metadata.tableName;
+    const [updated]: [ProjectOrmEntity[], number] = await this.repository.manager.query(
+      `UPDATE "${table}"
+          SET "archivedAt" = $${parameters.length + 1}, "updatedAt" = now()
+        WHERE "id" = $${parameters.length + 2}
+          AND "archivedAt" IS NULL
+          AND "id" IN (${reachable})
+        RETURNING *`,
+      [...parameters, entity.archivedAt, entity.id],
+    );
+    return updated.length > 0 ? Some(this.mapper.toDomain(updated[0])) : None;
+  }
+
+  async findAll(
+    scope: AccessScope,
+    options: { includeArchived?: boolean } = {},
+  ): Promise<ProjectEntity[]> {
+    const query = this.scopedQuery(scope).orderBy('project.createdAt', 'DESC');
+    if (!options.includeArchived) query.andWhere('project.archivedAt IS NULL');
+    const records = await query.getMany();
     return records.map((record) => this.mapper.toDomain(record));
   }
 
