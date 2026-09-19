@@ -108,3 +108,17 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   took it. In the scope catalog there is no `Repository` CASL subject for the
   same reason, and no `attach` action: opening a terminal is `update Session`,
   so the model stays CRUD plus `manage`.
+- 2026-09-19: **a project is the body of work a session belongs to**, and the
+  layout gains a level. 03's data model lists `projects` and says a session
+  belongs to one; 11's §1 is superseded at the top by
+  `workspaces/<organization.slug>/projects/<project.slug>/{repos,sessions}`,
+  because a session may check out several repositories and the old tree had
+  nowhere to put the second one. 11's collision rule is unchanged and now names
+  the project's directory: the repository's own name, or `<owner>--<repo>` when
+  another repository already holds it, then `<owner>--<repo>-<githubRepoId>`,
+  which is where a rejected random suffix used to be — every candidate is
+  derived from the repository, so a directory can always be read back to what
+  created it. A project is created by the first session that needs one, found
+  again by GitHub's repository id (unique per workspace, and the conflict target
+  of the create), and its slug is immutable because it is a directory name on
+  every host holding it.

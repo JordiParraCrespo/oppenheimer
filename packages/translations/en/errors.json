@@ -77,6 +77,8 @@
     "GRANT_004": "Choose an organization before managing access grants.",
     "LEAD_001": "That lead could not be found.",
     "LEAD_002": "Choose an organization before creating leads.",
+    "PROJECTS_001": "That project could not be found.",
+    "PROJECTS_002": "Choose a workspace before working with projects.",
     "ADMIN_009": "That session no longer exists for this user.",
     "PROFILE_001": "We could not find your profile.",
     "PROFILE_002": "That current password is not right.",

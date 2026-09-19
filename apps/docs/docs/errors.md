@@ -248,6 +248,21 @@ operation, its code is folded onto the catalog, and the original survives as
 | `ADMIN_008` <a id="admin_008" /> | The admin service failed to handle this request                   | 502  |
 | `ADMIN_009` <a id="admin_009" /> | No such session for that user                                     | 404  |
 
+## Projects
+
+A project is a body of work sessions belong to, and its `slug` is the name of its
+directory on every host that holds it — derived from the GitHub repository
+(`<repo>`, or `<owner>--<repo>` when another repository already holds that name)
+and never renamed.
+
+| Code                                   | Title                              | HTTP |
+| -------------------------------------- | ---------------------------------- | ---- |
+| `PROJECTS_001` <a id="projects_001" /> | Project not found                  | 404  |
+| `PROJECTS_002` <a id="projects_002" /> | Projects belong to an organization  | 400  |
+
+`PROJECTS_001` is also returned for a project that exists in another workspace:
+the scoped read cannot see it, and distinguishing the two would confirm the id.
+
 <!-- oppenheimer:begin runner -->
 ## Runner service
 

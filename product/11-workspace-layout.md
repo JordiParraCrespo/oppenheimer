@@ -6,6 +6,17 @@ session, exactly like Orca's worktree model, so the UX is the same.
 
 ## 1. The layout
 
+> **Superseded (2026-09-19).** A session may check out several repositories, so
+> a **project** level sits above the repository and the tree is
+> `~/oppenheimer-ai/workspaces/<organization.slug>/projects/<project.slug>/`,
+> holding `repos/<owner>--<repo>.git` (bare stores, nobody works there) beside
+> `sessions/<session.slug>/<checkout>/` (the worktrees). The collision rule
+> below is unchanged and now names the **project's** directory: the repository's
+> own name, or `<owner>--<repo>` when another repository already holds it.
+> `project.slug` is that directory name, it is immutable, and an archived
+> project keeps its row so the name is never reissued. The original layout is
+> kept below as the decision it came from.
+
 ```
 ~/oppenheimer-ai/
   workspaces/
