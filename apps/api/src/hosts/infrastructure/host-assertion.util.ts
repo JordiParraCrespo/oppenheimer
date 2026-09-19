@@ -1,10 +1,4 @@
-import {
-  createHash,
-  createPrivateKey,
-  createPublicKey,
-  type KeyObject,
-  verify,
-} from 'node:crypto';
+import { createHash, createPrivateKey, createPublicKey, type KeyObject, verify } from 'node:crypto';
 
 /**
  * The Ed25519 half of the host credential, in `node:crypto` alone.

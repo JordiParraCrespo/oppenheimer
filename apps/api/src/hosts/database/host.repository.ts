@@ -107,7 +107,10 @@ export class HostRepository
     const record = this.mapper.toPersistence(input.host);
 
     const registered = await this.dataSource.transaction(async (manager) => {
-      const burned: { id: string }[] = await manager.query(
+      // TypeORM answers an `UPDATE … RETURNING` with `[rows, affectedCount]`,
+      // not with the rows alone — reading it as an array of rows would make
+      // every redemption look successful.
+      const [burned] = (await manager.query(
         `UPDATE "host_pairing_token"
             SET "redeemedAt" = $2, "redeemedHostId" = $3, "redeemedFromIp" = $4, "updatedAt" = $2
           WHERE "tokenHash" = $1
@@ -116,7 +119,7 @@ export class HostRepository
             AND "expiresAt" > $2
         RETURNING "id"`,
         [input.tokenHash, input.now, record.id, input.redeemedFromIp],
-      );
+      )) as [{ id: string }[], number];
 
       if (burned.length === 0) return false;
 

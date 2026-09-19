@@ -4452,6 +4452,499 @@
         "tags": ["Workspaces"]
       }
     },
+    "/api/v1/hosts": {
+      "get": {
+        "description": "The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HostResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the hosts the caller can reach",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/pairing": {
+      "get": {
+        "description": "Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PairingTokenResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the caller’s pairing tokens",
+        "tags": ["Hosts"]
+      },
+      "post": {
+        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.",
+        "operationId": "mint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MintPairingTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MintedPairingTokenResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_004 — This deployment has no runner release configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a pairing token for a new host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/pairing/{id}": {
+      "delete": {
+        "description": "Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.",
+        "operationId": "revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pairing token revoked"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — Pairing token not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a pairing token",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/register": {
+      "post": {
+        "description": "Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.",
+        "operationId": "register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_004 — This deployment has no runner release configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Redeem a registration token and become a host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/self": {
+      "delete": {
+        "description": "Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.",
+        "operationId": "uninstall",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The calling host is unpaired"
+          },
+          "401": {
+            "description": "HOSTS_005 — No valid host assertion was presented",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair the calling host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/{id}": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one host",
+        "tags": ["Hosts"]
+      },
+      "patch": {
+        "description": "Display only — nothing on the machine is named after this.",
+        "operationId": "rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a host",
+        "tags": ["Hosts"]
+      },
+      "delete": {
+        "description": "Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.",
+        "operationId": "unpair",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -7999,6 +8492,326 @@
           }
         },
         "required": ["userId"]
+      },
+      "HostResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The person who paired this machine. A host has no workspace."
+          },
+          "name": {
+            "type": "string",
+            "example": "Dev box"
+          },
+          "hostname": {
+            "type": "string",
+            "nullable": true,
+            "example": "jordis-macbook.local"
+          },
+          "os": {
+            "type": "string",
+            "nullable": true,
+            "example": "macos"
+          },
+          "arch": {
+            "type": "string",
+            "nullable": true,
+            "example": "arm64"
+          },
+          "runnerVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": "0.3.1"
+          },
+          "capabilities": {
+            "type": "object",
+            "description": "What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.",
+            "nullable": true
+          },
+          "publicKeyFingerprint": {
+            "type": "string",
+            "description": "SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.",
+            "example": "9f2c…"
+          },
+          "online": {
+            "type": "boolean",
+            "description": "Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored."
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "unpairedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the host was unpaired. The row is kept so its history survives."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ownerUserId",
+          "name",
+          "publicKeyFingerprint",
+          "online",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PairingTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+      },
+      "MintPairingTokenRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": ["name"]
+      },
+      "MintedPairingTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "installCommand": {
+            "type": "string",
+            "description": "The one-line command that installs and registers the runner on the machine.",
+            "example": "curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- --token opr_reg_…"
+          },
+          "agentPrompt": {
+            "type": "string",
+            "description": "The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "expiresAt",
+          "createdAt",
+          "installCommand",
+          "agentPrompt"
+        ]
+      },
+      "RegisterHostRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "publicKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "facts": {
+            "type": "object",
+            "properties": {
+              "hostname": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "os": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "arch": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "tools": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "nullable": true
+                }
+              },
+              "agents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "enum": ["claude-code", "codex"]
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64,
+                      "nullable": true
+                    }
+                  },
+                  "required": ["id", "version"]
+                }
+              }
+            },
+            "required": ["hostname", "os", "arch", "tools", "agents"]
+          }
+        },
+        "required": ["token", "name", "publicKey"]
+      },
+      "HostRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "hostId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The host this machine now is."
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it."
+          },
+          "channel": {
+            "type": "string",
+            "description": "The release channel this host follows.",
+            "example": "stable"
+          },
+          "releaseBaseUrl": {
+            "type": "string",
+            "description": "Where the runner fetches signed release artifacts from.",
+            "example": "https://releases.oppenheimer.dev"
+          }
+        },
+        "required": ["hostId", "fingerprint"]
+      },
+      "RenameHostRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": ["name"]
       },
       "AdminUserResponseDto": {
         "type": "object",

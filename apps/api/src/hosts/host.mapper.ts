@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostEntity, type RegisterHostProps } from './domain/host.entity';
 import { HostResponseDto } from './dtos/host.response.dto';
@@ -11,7 +12,12 @@ export interface HostRegistration {
   name: string;
   publicKey: string;
   publicKeyFingerprint: string;
-  facts: unknown;
+  /**
+   * The machine's facts, already validated against `hostFactsSchema` — the same
+   * shape the link's `hello` and `heartbeat` carry, so pairing and the link
+   * describe one machine.
+   */
+  facts: HostFactsDto | undefined;
   pairingTokenId: string;
 }
 
@@ -21,32 +27,27 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
   /**
    * Registration payload → the props the aggregate is created from.
    *
-   * The runner sends one inventory of the machine and this pulls the four
-   * columns worth querying out of it — the platform family, the architecture,
-   * the machine's own name and the runner's version — while keeping the whole
-   * thing on `capabilities`, because what a session needs to know about a host
-   * grows and a jsonb column grows with it.
+   * The three facts worth a column of their own are pulled out — what the machine
+   * calls itself, its platform and its architecture — and the whole inventory is
+   * kept on `capabilities` as it arrived, because what a session wants to know
+   * about a host grows and a jsonb column grows with it.
    *
-   * Everything is read defensively. The inventory is validated by the request
-   * schema before it reaches here, but it is written by a program on someone
-   * else's laptop and a field that is missing or of the wrong type is a column
-   * left null, never a failed registration.
+   * `runnerVersion` has no column to read: the facts contract carries the
+   * machine's identity and its tools, not the version of the program reporting
+   * them, so it stays null until the link says otherwise.
    */
   toRegisterProps(registration: HostRegistration): RegisterHostProps {
-    const facts = asRecord(registration.facts);
+    const facts = registration.facts;
     return {
       ownerUserId: registration.ownerUserId,
       name: registration.name,
       publicKey: registration.publicKey,
       publicKeyFingerprint: registration.publicKeyFingerprint,
-      hostname: text(facts.hostname),
-      // The runner reports the host family it installs a service for
-      // (`macos`, `debian`, `ubuntu`, `linux`); the release of that family is
-      // kept with the rest of the inventory.
-      os: text(facts.platform),
-      arch: text(facts.arch),
-      runnerVersion: text(facts.runnerVersion),
-      capabilities: Object.keys(facts).length > 0 ? facts : null,
+      hostname: facts?.hostname ?? null,
+      os: facts?.os ?? null,
+      arch: facts?.arch ?? null,
+      runnerVersion: null,
+      capabilities: facts ? { ...facts } : null,
       pairingTokenId: registration.pairingTokenId,
     };
   }
@@ -124,13 +125,4 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.updatedAt = entity.updatedAt;
     return dto;
   }
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return value as Record<string, unknown>;
-}
-
-function text(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() ? value : null;
 }

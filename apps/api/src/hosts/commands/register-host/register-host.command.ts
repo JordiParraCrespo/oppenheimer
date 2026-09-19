@@ -1,4 +1,5 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { HostFactsDto } from '@oppenheimer/shared';
 
 /**
  * A machine redeeming its registration token. There is no caller identity on
@@ -12,8 +13,11 @@ export class RegisterHostCommand extends CommandBase {
   readonly name: string;
   /** Base64 of the machine's raw Ed25519 public key. */
   readonly publicKey: string;
-  /** The machine inventory, stored as it arrived. */
-  readonly facts: unknown;
+  /**
+   * The machine's facts, validated against the one `hostFactsSchema` that the
+   * link's `hello` and `heartbeat` also carry, and stored as they arrived.
+   */
+  readonly facts: HostFactsDto | undefined;
   /** Where the redemption came from, recorded beside where it was minted (F5). */
   readonly redeemedFromIp: string | null;
 

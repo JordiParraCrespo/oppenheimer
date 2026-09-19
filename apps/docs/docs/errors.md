@@ -171,6 +171,41 @@ wrong place.
 Also returned for a lead that exists but sits outside the caller's access
 scope. Distinguishing the two would confirm the id.
 
+## Hosts
+
+A host is a machine someone paired with this control plane. It belongs to the
+**person** who paired it, not to a workspace, so a host they cannot reach reads
+as missing rather than forbidden — the scoped query cannot see it, and saying so
+would confirm the id.
+
+| Code                             | Title                                       | HTTP |
+| -------------------------------- | ------------------------------------------- | ---- |
+| `HOSTS_001` <a id="hosts_001" /> | Host not found                              | 404  |
+| `HOSTS_002` <a id="hosts_002" /> | Pairing token not found                     | 404  |
+| `HOSTS_003` <a id="hosts_003" /> | The registration token was rejected          | 401  |
+| `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
+| `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
+
+Two of these are deliberately opaque, and both would otherwise be an oracle for
+guessing a credential:
+
+- `HOSTS_003` does not distinguish a token that was already used, one that
+  expired, one that was revoked and one that never existed. `detail` names all
+  four and the runner prints it verbatim. The one case it *does* tell apart is a
+  machine retrying after a lost response: presenting the key the spent token
+  already paired returns the same host, so a dropped answer never pairs a machine
+  twice.
+- `HOSTS_005` does not say whether the signature, the audience, the expiry or the
+  replay guard refused a host's boot assertion.
+
+`HOSTS_004` is the optional-capability answer: without the runner release
+settings and the control plane's own signing key there is nothing to hand a
+machine that wants to pair, so the host routes say so and the rest of the API is
+unaffected.
+
+Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
+and a code may only be claimed once.
+
 ## Billing
 
 | Code                                 | Title                                        | HTTP |

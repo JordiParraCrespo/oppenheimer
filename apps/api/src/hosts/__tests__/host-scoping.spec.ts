@@ -167,9 +167,9 @@ describe('the declarations themselves', () => {
     // `defineResource` enforces this at boot; asserting it here means an edit
     // that drops a key fails in CI rather than at deploy.
     for (const dimension of HostResource.scopes) {
-      const key = ({ organization: 'organization', team: 'team', own: 'owner', grant: 'id' } as const)[
-        dimension
-      ];
+      const key = (
+        { organization: 'organization', team: 'team', own: 'owner', grant: 'id' } as const
+      )[dimension];
       expect(HostResource.keys[key]).toBeTruthy();
     }
   });

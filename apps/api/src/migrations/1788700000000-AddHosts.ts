@@ -80,9 +80,15 @@ export class AddHosts1788700000000 implements MigrationInterface {
         CONSTRAINT "FK_host_pairing_token_creator"
           FOREIGN KEY ("createdByUserId") REFERENCES "user"("id")
           ON DELETE CASCADE ON UPDATE NO ACTION,
+        -- Deferred, because redemption writes this column in the same statement
+        -- that claims the token and the host it names is inserted later in the
+        -- same transaction. Checking it immediately would force the insert to
+        -- come first, which would mean creating a host before knowing whether
+        -- the token could be spent at all.
         CONSTRAINT "FK_host_pairing_token_host"
           FOREIGN KEY ("redeemedHostId") REFERENCES "host"("id")
-          ON DELETE SET NULL ON UPDATE NO ACTION,
+          ON DELETE SET NULL ON UPDATE NO ACTION
+          DEFERRABLE INITIALLY DEFERRED,
         -- The host and the moment are written by the same statement, so one
         -- without the other means the redemption was not atomic after all.
         CONSTRAINT "CHK_host_pairing_token_redemption"

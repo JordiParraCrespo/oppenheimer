@@ -66,8 +66,9 @@ export class RegisterHostCommandHandler
     const host = HostEntity.register(
       this.mapper.toRegisterProps({
         ownerUserId: token.createdByUserId,
-        // The token named the machine before it existed; the runner's own name
-        // is the fallback for a token that named nothing.
+        // The token named the machine before it existed, which is the whole
+        // point of naming it there; the runner's own detected name is the
+        // fallback for a token that carries none.
         name: token.intendedName || command.name,
         publicKey: command.publicKey,
         publicKeyFingerprint: fingerprint,
