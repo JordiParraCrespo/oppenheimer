@@ -124,9 +124,7 @@ describe('GitHub installations schema (integration)', () => {
 
       // This is the constraint behind the 409: without it two workspaces would
       // both mint tokens for the same repositories.
-      await expect(connect(ORG_TWO, 10000001)).rejects.toThrow(
-        /UQ_github_installation_github_id/,
-      );
+      await expect(connect(ORG_TWO, 10000001)).rejects.toThrow(/UQ_github_installation_github_id/);
     });
 
     it('carries the composite unique a checkout’s foreign key will need', async () => {
@@ -166,72 +164,69 @@ describe('GitHub installations schema (integration)', () => {
 
   // --- the role edit ---------------------------------------------------------
 
-  describe('product role permissions', () => {
-    it('gives the workspace roles the control plane’s subjects', async () => {
-      const [owner]: { permissions: { action: string; subject: string }[] }[] =
+  describe('installation role permissions', () => {
+    it('gives the workspace owner role its installations, and no repository rule', async () => {
+      const [owner]: {
+        permissions: { action: string; subject: string; conditions?: unknown }[];
+      }[] = await dataSource.query(
+        `SELECT "permissions" FROM "role" WHERE "name" = 'owner' AND "organizationId" IS NULL`,
+      );
+
+      expect(owner.permissions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ action: 'manage', subject: 'Installation' }),
+        ]),
+      );
+      // There is no repository row anywhere, so there is no subject for one: the
+      // listing routes sit on `read Installation`.
+      expect(owner.permissions.some((rule) => rule.subject === 'Repository')).toBe(false);
+    });
+
+    it('narrows the rule to the active workspace', async () => {
+      const [owner]: { permissions: { subject: string; conditions?: Record<string, string> }[] }[] =
         await dataSource.query(
           `SELECT "permissions" FROM "role" WHERE "name" = 'owner' AND "organizationId" IS NULL`,
         );
 
-      const subjects = owner.permissions
-        .filter((rule) => rule.action === 'manage')
-        .map((rule) => rule.subject);
-      expect(subjects).toContain('Installation');
-      expect(subjects).toContain('Project');
-      expect(subjects).toContain('Session');
-      // There is no repository row anywhere, so there is no subject for one.
-      expect(subjects).not.toContain('Repository');
+      const rule = owner.permissions.find((candidate) => candidate.subject === 'Installation');
+      // Unconditional, this rule would let anyone who created a workspace reach
+      // every other workspace's installations while that one was selected.
+      expect(rule?.conditions).toEqual({
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: the stored placeholder, interpolated when the ability is built
+        organizationId: '${activeOrganizationId}',
+      });
     });
 
-    it('gives the default user role its own hosts', async () => {
-      const [user]: { permissions: { action: string; subject: string; conditions?: unknown }[] }[] =
-        await dataSource.query(`SELECT "permissions" FROM "role" WHERE "name" = 'user'`);
-
-      // A host is the person's machine, not a workspace's, so it sits on the
-      // person's role the way ApiToken does.
-      expect(user.permissions).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ action: 'manage', subject: 'Host' }),
-        ]),
-      );
-    });
-
-    it('bumps every workspace’s roleVersion, and appends each rule only once', async () => {
+    it('bumps every workspace’s roleVersion, and appends the rule only once', async () => {
       // The chain runs before any workspace exists here, so the bump is asserted
       // by applying the migration again to a workspace that does: re-running it
       // must raise the version and must *not* duplicate a rule it already added.
       // That second half is what keeps an administrator's narrowed rule safe.
-      const { AddProductRolePermissions1788800000000 } = await import(
-        '../src/migrations/1788800000000-AddProductRolePermissions'
+      const { AddInstallationRolePermissions1788800000000 } = await import(
+        '../src/migrations/1788800000000-AddInstallationRolePermissions'
       );
 
       const [before]: { roleVersion: number }[] = await dataSource.query(
         'SELECT "roleVersion" FROM "organization" WHERE "id" = $1',
         [ORG_ONE],
       );
-      const [ownerBefore]: { count: string }[] = await dataSource.query(
-        `SELECT count(*) FROM "role", jsonb_array_elements("permissions") AS r
-          WHERE "name" = 'owner' AND "organizationId" IS NULL
-            AND r->>'subject' = 'Installation'`,
-      );
 
       const runner = dataSource.createQueryRunner();
-      await new AddProductRolePermissions1788800000000().up(runner);
+      await new AddInstallationRolePermissions1788800000000().up(runner);
       await runner.release();
 
       const [after]: { roleVersion: number }[] = await dataSource.query(
         'SELECT "roleVersion" FROM "organization" WHERE "id" = $1',
         [ORG_ONE],
       );
-      const [ownerAfter]: { count: string }[] = await dataSource.query(
+      const [rules]: { count: string }[] = await dataSource.query(
         `SELECT count(*) FROM "role", jsonb_array_elements("permissions") AS r
           WHERE "name" = 'owner' AND "organizationId" IS NULL
             AND r->>'subject' = 'Installation'`,
       );
 
       expect(Number(after.roleVersion)).toBe(Number(before.roleVersion) + 1);
-      expect(Number(ownerAfter.count)).toBe(Number(ownerBefore.count));
-      expect(Number(ownerAfter.count)).toBe(1);
+      expect(Number(rules.count)).toBe(1);
     });
   });
 });

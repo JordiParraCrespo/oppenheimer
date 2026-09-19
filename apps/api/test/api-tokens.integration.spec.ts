@@ -253,7 +253,7 @@ describe('API tokens & scopes (integration)', () => {
       expect(tokenRules.map((rule) => rule.action).sort()).toEqual(['create', 'delete', 'read']);
     });
 
-    it('leaves the user role holding its own tokens, workspaces and hosts, and nothing else', async () => {
+    it('leaves the user role holding its own tokens and its workspaces, and nothing else', async () => {
       // This used to assert that `Article` survived `AddApiTokenPermissions`,
       // as the marker that the migration added its rules without clobbering
       // what was already there. `Article` has since been removed on purpose —
@@ -269,20 +269,15 @@ describe('API tokens & scopes (integration)', () => {
         'create:ApiToken',
         'create:Organization',
         'delete:ApiToken',
-        'manage:Host',
         'read:ApiToken',
         'read:Organization',
       ]);
 
-      // The token and host rules stay scoped to the caller's own rows — a host
-      // is the person's machine that workspaces borrow, so it sits here rather
-      // than on a workspace role, exactly as `ApiToken` does. The workspace
+      // The token rules stay scoped to the caller's own rows. The workspace
       // rules need no condition: Better Auth answers the read from the
       // caller's own memberships, and `create` is what lets a self-service
       // sign-up make its first workspace from onboarding.
-      for (const rule of role.permissions.filter((rule) =>
-        ['ApiToken', 'Host'].includes(rule.subject),
-      )) {
+      for (const rule of role.permissions.filter((rule) => rule.subject === 'ApiToken')) {
         expect(rule.conditions).toBeTruthy();
       }
       expect(role.permissions.some((rule) => rule.subject === 'Article')).toBe(false);
