@@ -18,7 +18,9 @@ type ControlPlane struct {
 	Response app.RegisterResponse
 	Err      error
 	Requests []app.RegisterRequest
-	Revoked  []string
+	// Revoked records the assertion each uninstall presented: the host names
+	// itself by the subject of that token, so there is no id to record.
+	Revoked []string
 }
 
 // New returns a control plane that accepts one registration.
@@ -42,9 +44,9 @@ func (c *ControlPlane) Register(_ context.Context, _ string, req app.RegisterReq
 }
 
 // Revoke implements app.ControlPlane.
-func (c *ControlPlane) Revoke(_ context.Context, _, _, hostID string) error {
+func (c *ControlPlane) Revoke(_ context.Context, _, assertion string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.Revoked = append(c.Revoked, hostID)
+	c.Revoked = append(c.Revoked, assertion)
 	return nil
 }

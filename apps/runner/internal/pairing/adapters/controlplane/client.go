@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -20,11 +19,20 @@ import (
 
 var _ app.ControlPlane = (*Client)(nil)
 
-// Paths on the control plane.
+// Paths on the control plane. The API mounts every route under `/api/v1`, so
+// the `--url` flag stays the bare origin (`https://app.oppenheimer.dev`) and
+// the prefix lives here.
 const (
-	registerPath = "/v1/hosts/register"
-	revokePath   = "/v1/hosts/%s"
+	registerPath = "/api/v1/hosts/register"
+	revokePath   = "/api/v1/hosts/self"
 )
+
+// hostAssertionHeader carries the boot JWT. It is deliberately not
+// `Authorization: Bearer`: the API's global scopes guard resolves every bearer
+// value it sees and treats anything that is not one of its own credentials as
+// a forgery, so a host JWT sent that way would 401 before the route ran
+// (product/versions/mvp/10-api-modules-and-data-model.md).
+const hostAssertionHeader = "X-Oppenheimer-Host-Assertion"
 
 // maxResponse caps a reply body; registration answers are a few hundred bytes.
 const maxResponse = 1 << 20
@@ -88,13 +96,16 @@ func (c *Client) Register(ctx context.Context, baseURL string, req app.RegisterR
 	return out, nil
 }
 
-// Revoke tells the control plane this host is gone.
-func (c *Client) Revoke(ctx context.Context, baseURL, bearer, hostID string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL+fmt.Sprintf(revokePath, hostID), nil)
+// Revoke tells the control plane this host is gone. The host names itself by
+// the subject of its assertion, which is why the route is `self` and carries
+// no id, and a 404 means another actor already removed it — the same outcome
+// the caller asked for.
+func (c *Client) Revoke(ctx context.Context, baseURL, assertion string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL+revokePath, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+bearer)
+	req.Header.Set(hostAssertionHeader, assertion)
 	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.http.Do(req)
 	if err != nil {
