@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/api-client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "sideEffects": false,
   "private": true,
   "//": "The generated SDK uses platform fetch through @hey-api/client-fetch. Do not add axios or another HTTP library.",

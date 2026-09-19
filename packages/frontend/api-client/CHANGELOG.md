@@ -1,5 +1,20 @@
 # @oppenheimer/api-client
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Add `HealthApi.deploymentCapabilities()`.
+- 1a51afc: Generate the client with hey-api.
+- f099524: Regenerated: the problem-document schema now reaches the generated client.
+- f099524: Regenerated against the tightened user endpoints.
+- f099524: Scope arrays carry the `SCOPES` union, the permission catalog carries real DTOs and `GET /v1/users` carries `PaginatedUsersResponseDto` — previously `string[]`, `Record<string, any>[]` and `any`.
+
+### Patch Changes
+
+- f099524: Regenerated: the documented 401/403 failures now reach the OpenAPI document.
+- 1a51afc: Declare `sideEffects`.
+
 ## 0.2.0
 
 ### Minor Changes
@@ -42,7 +57,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

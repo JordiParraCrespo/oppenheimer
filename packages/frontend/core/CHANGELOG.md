@@ -1,5 +1,36 @@
 # @oppenheimer/frontend-core
 
+## 0.3.0
+
+### Minor Changes
+
+- f099524: Add a pluggable `analytics` module with feature flags: an adapter implements `getFeatureFlags()`, and `NoopAnalyticsClient` stands in whenever no provider is configured.
+- f099524: Add `useDeploymentCapabilities()`, so a consumer renders only the social providers a deployment has configured.
+- f099524: Add `createErrorMessageResolver`, which translates a failure from its problem `code`.
+- 1a51afc: Add `ConfigManager` under `@oppenheimer/frontend-core/config`.
+- f099524: Add a shared TanStack Query cache-persistence policy, and reconcile a restored cache against the signed-in user so it cannot outlive its session on a shared browser or device.
+- f099524: Expose `toAppError` and the `@MapApiError` decorator, so screens can show the server's `detail` and per-field errors.
+- f099524: Add a `/validation` entrypoint exporting `createZodErrorMap`, which resolves a Zod issue to a `validation.*` translation key.
+- f099524: `UsersRepository.findAll` / `UsersService.findAll` widen their `role` filter to `Role`, matching the database-backed roles the API accepts.
+
+### Patch Changes
+
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+  - @oppenheimer/shared@0.3.0
+  - @oppenheimer/api-client@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -42,7 +73,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no

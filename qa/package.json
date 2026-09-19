@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/qa",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Scenario-driven QA pack: declarative scenarios, seeded fixtures and a browser-driven runner that screenshots every verdict.",

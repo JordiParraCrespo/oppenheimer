@@ -1,5 +1,65 @@
 # @oppenheimer/web
 
+## 0.3.0
+
+### Minor Changes
+
+- 1ad71b4: The create-key dialog takes the per-row permission picker, so a click no longer re-renders every toggle, and the search field keeps the half-typed word while the settled query drives the filter.
+- 1a51afc: Serve the built SPAs with gzip, `immutable` caching on hashed assets and a real CSP; prefetch route chunks on intent, issue the session lookup from `<head>`, split vendor chunks per library, and fail `pnpm check:bundle` past a committed budget.
+
+### Patch Changes
+
+- f099524: Auth forms run through React Hook Form: per-field errors inline, and no submit until the whole form parses.
+- f099524: Read the root `.env` via Vite's `envDir`; a `.env` inside the app directory is no longer read.
+- f099524: Take the Better Auth configuration from `@oppenheimer/auth` instead of a local copy.
+- f099524: Follow the `@oppenheimer/config` → `@oppenheimer/tsconfig` rename.
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1ad71b4]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+  - @oppenheimer/design-system-web@0.2.0
+  - @oppenheimer/frontend-core@0.3.0
+  - @oppenheimer/frontend-web@0.2.0
+  - @oppenheimer/shared@0.3.0
+  - @oppenheimer/api-client@0.3.0
+  - @oppenheimer/translations@0.3.0
+  - @oppenheimer/frontend-consumer@0.3.0
+  - @oppenheimer/auth@0.2.0
+
 ## 0.2.0
 
 ### Minor Changes
