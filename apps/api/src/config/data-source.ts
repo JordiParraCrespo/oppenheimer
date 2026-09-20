@@ -22,6 +22,9 @@ import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-ent
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
+import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
+import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 /**
@@ -51,10 +54,13 @@ export default new DataSource({
     RoleOrmEntity,
     AccessGrantOrmEntity,
     LeadOrmEntity,
-    HostOrmEntity,
-    HostPairingTokenOrmEntity,
     GithubInstallationOrmEntity,
     ProjectOrmEntity,
+    HostOrmEntity,
+    HostPairingTokenOrmEntity,
+    WorkSessionOrmEntity,
+    SessionCheckoutOrmEntity,
+    WorkSessionEventOrmEntity,
     UserRoleOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,

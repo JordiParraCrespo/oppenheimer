@@ -36,6 +36,7 @@ import {
   hostsConfig,
   oauthConfig,
   redisConfig,
+  sessionsConfig,
   storageConfig,
   stripeConfig,
 } from './config';
@@ -49,6 +50,7 @@ import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { QueueModule } from './queue/queue.module';
 import { RolesModule } from './roles/roles.module';
+import { SessionsModule } from './sessions/sessions.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
 import { RedisThrottlerStorage } from './throttling/infrastructure/redis-throttler.adapter';
 import { ThrottlingModule } from './throttling/throttling.module';
@@ -66,8 +68,9 @@ import { UsersModule } from './users/user.module';
         storageConfig,
         oauthConfig,
         stripeConfig,
-        hostsConfig,
         githubAppConfig,
+        hostsConfig,
+        sessionsConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -186,15 +189,18 @@ import { UsersModule } from './users/user.module';
     // MVP and the product contexts (hosts, installations, projects, sessions,
     // relay) take their place here as they land.
     OrganizationsModule,
-    // The control plane's own modules. `hosts` is first of them: the machines a
-    // person paired, and the credential a runner authenticates with.
-    HostsModule,
     // What GitHub grants a workspace, and how the platform exercises it. The
     // first of the product contexts named above.
     GithubModule,
+    // The control plane's own modules. `hosts` is first of them: the machines a
+    // person paired, and the credential a runner authenticates with.
+    HostsModule,
     AdminModule,
     // The control plane's own modules, in the order their slices land.
     ProjectsModule,
+    // The module the other three feed into: the sessions themselves, their
+    // checkouts, and the append-only log the row is a fold of.
+    SessionsModule,
     HealthModule,
     QueueModule,
   ],

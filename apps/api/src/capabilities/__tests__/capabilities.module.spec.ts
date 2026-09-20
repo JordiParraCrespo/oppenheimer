@@ -14,9 +14,25 @@ describe('resolveCapabilities', () => {
       stripe_billing: false,
       s3_storage: false,
       email_delivery: false,
-      hosts: false,
       github_app: false,
+      hosts: false,
+      session_namer: false,
     });
+  });
+
+  it('only reports a session namer once one can actually be called', () => {
+    // A provider switched on without its key or its model is not configured: the
+    // no-op namer is bound and every session keeps its slug, which is a supported
+    // outcome. The capability is how that shows up in the startup log.
+    const partial = configWith({ 'sessions.namerProvider': 'anthropic' });
+    expect(resolveCapabilities(partial).session_namer).toBe(false);
+
+    const configured = configWith({
+      'sessions.namerProvider': 'anthropic',
+      'sessions.anthropicApiKey': 'sk-test',
+      'sessions.namerModel': 'a-model-id',
+    });
+    expect(resolveCapabilities(configured).session_namer).toBe(true);
   });
 
   it('reports hosts from the same predicate the host routes refuse on', () => {

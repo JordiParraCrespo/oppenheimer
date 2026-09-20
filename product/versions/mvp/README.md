@@ -204,3 +204,31 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `ScopeContext` gains a `host` variant with no owner and no scopes, because the
   guards read it — and nothing about what a host may do changed. Recorded in 08
   and `apps/api/src/hosts/application/host-credential.resolver.ts`.
+- 2026-09-19: **the stored lifecycle answers "is this work finished", not "is a
+  process running".** `starting | open | failed | resolved` is the fold of a
+  session's log; stopping a session leaves it `open` with a `stoppedAt`, and
+  `resolved` is terminal. The derived group the sidebar shows is a **function of
+  the row** — the agent's last observation, when it entered that state and the
+  report hashes are folded columns, like `state` — because a listing cannot walk a
+  log per row, and because a group computed from inputs the log never recorded is a
+  group a caller can fake.
+- 2026-09-19: **stopping is a decision, restarting and closing are requests.** The
+  control plane will not dispatch a stopped session again, so the stop is the fact.
+  Restarting and closing need work on the host that can refuse — closing pushes
+  every branch and will not remove a dirty worktree unless the caller accepted the
+  loss — so the API records the request and the host's own `session.restarted` or
+  `session.closed` is what moves the row. A control plane that resolved a session
+  itself would make the tombstone permanent before anybody had looked at the
+  worktrees.
+- 2026-09-19: **a session's name is part of the fold**, which is what makes "a
+  model-derived title never overwrites a name a person typed" a rule a replay goes
+  through rather than a check somebody has to remember. Naming is a **capability**,
+  defaulting to `none`: with no provider configured a session keeps its minted slug,
+  and the startup log is what says so.
+- 2026-09-19: **archiving a project fails closed.** "Is any session still open in
+  this project" is a question only the module that owns sessions can answer, so it
+  answers it through a port that module registers; with nothing registered the
+  archive refuses rather than assuming the answer it would prefer on a destructive
+  path. An archived project is a tombstone on the create path too — no session can
+  be started in one — and the archive and a create serialise on the project row, so
+  they cannot both win.

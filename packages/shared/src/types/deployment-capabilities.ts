@@ -9,6 +9,11 @@
  * `hosts` is the control plane's: without the runner release settings and the
  * signing key there is nothing to hand a machine that wants to pair, so the
  * host routes answer "not configured" and the rest of the API is unaffected.
+ *
+ * `session_namer` is the smallest of them: with no provider configured a session
+ * keeps its minted slug as its name, which reads fine and costs nothing. It is a
+ * capability so that "nothing here is ever named" is answered by the startup log
+ * rather than by somebody reading the naming code.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -16,8 +21,9 @@ export const DEPLOYMENT_CAPABILITIES = [
   'stripe_billing',
   's3_storage',
   'email_delivery',
-  'hosts',
   'github_app',
+  'hosts',
+  'session_namer',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];

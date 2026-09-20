@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import type { Option } from 'oxide.ts';
+import { None, type Option } from 'oxide.ts';
 import type { ProjectRepositoryPort } from '../database/project.repository.port';
 import { ProjectEntity } from '../domain/project.entity';
 import { projectSlugCandidates } from '../domain/project-slug.policy';
@@ -39,7 +39,11 @@ export class ProjectLookupResolver implements ProjectLookupPort {
     scope: AccessScope,
     githubRepoId: string,
   ): Promise<Option<ProjectEntity>> {
-    return this.projects.findOneByOrigin(scope, githubRepoId);
+    return active(await this.projects.findOneByOrigin(scope, githubRepoId));
+  }
+
+  async findOneById(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>> {
+    return active(await this.projects.findOneById(scope, projectId));
   }
 
   async ensureForRepository(scope: AccessScope, origin: ProjectOrigin): Promise<ProjectEntity> {
@@ -50,7 +54,19 @@ export class ProjectLookupResolver implements ProjectLookupPort {
 
     // The common case by a wide margin: every session after the first.
     const existing = await this.projects.findOneByOrigin(scope, origin.githubRepoId);
-    if (existing.isSome()) return existing.unwrap();
+    if (existing.isSome()) {
+      // A tombstone is a tombstone on the create path too. The origin is unique per
+      // workspace, so an archived project is the *only* project this repository can
+      // have — reopening it would put new work inside a retired directory, and
+      // creating a second one is what the constraint exists to prevent. Refuse and
+      // say so.
+      if (existing.unwrap().isArchived) {
+        throw new AppError(ProjectErrors.ARCHIVED, {
+          detail: `The project for GitHub repository ${origin.githubRepoId} is archived`,
+        });
+      }
+      return existing.unwrap();
+    }
 
     for (const slug of projectSlugCandidates(origin)) {
       const project = ProjectEntity.createNew({
@@ -86,4 +102,9 @@ export class ProjectLookupResolver implements ProjectLookupPort {
     }
     return winner.unwrap();
   }
+}
+
+/** An archived project is not one new work can be put in, so it reads as absent. */
+function active(found: Option<ProjectEntity>): Option<ProjectEntity> {
+  return found.isSome() && found.unwrap().isArchived ? None : found;
 }

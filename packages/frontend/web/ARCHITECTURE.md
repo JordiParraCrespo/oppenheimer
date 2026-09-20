@@ -77,9 +77,10 @@ what the shell shows — `apps/web/src/routes/_authenticated.tsx`:
 carries a route, an icon, a `nav.*` label key and the CASL `policies` its
 destination needs, and `useAuthorizedNav` hides the rows the signed-in
 ability does not satisfy. A gated row takes those `policies` from
-`ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint its
-screen reads, rather than writing the rules out — the API's own
-`endpoint-policies.spec.ts` pins its controllers to that same entry. The kit
+`ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the method and
+route its screen reads (`ENDPOINT_POLICIES['GET /tokens']`), rather than writing the
+rules out — the API's own `endpoint-policies.spec.ts` pins its controllers to that
+same entry. The kit
 holds no route list: the URLs belong to each app, and the two Vite apps do not
 share them. `userMenuLinks` are the account-menu rows above the
 language list, and `workspace` is what the sidebar header names.

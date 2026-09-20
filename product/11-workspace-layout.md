@@ -1,50 +1,103 @@
-# 11 — Workspace layout: one place per repo, main plus worktrees
+# 11 — Workspace layout: one place per project, bare stores plus worktrees
 
-Decision from discussion: no free-form filesystem freedom. Every repo
-lives in one fixed place with one main checkout and one worktree per
-session, exactly like Orca's worktree model, so the UX is the same.
+Decision from discussion: no free-form filesystem freedom. Every project
+lives in one fixed place, every repository it uses has one bare store there,
+and every session is a directory of worktrees beside them — Orca's worktree
+model, with a project level above it because a session may check out several
+repositories.
+
+This note owns the tree and the on-disk lifetime.
+`product/versions/mvp/03-control-plane.md` owns the tables the names come from.
 
 ## 1. The layout
 
-> **Superseded (2026-09-19).** A session may check out several repositories, so
-> a **project** level sits above the repository and the tree is
-> `~/oppenheimer-ai/workspaces/<organization.slug>/projects/<project.slug>/`,
-> holding `repos/<owner>--<repo>.git` (bare stores, nobody works there) beside
-> `sessions/<session.slug>/<checkout>/` (the worktrees). The collision rule
-> below is unchanged and now names the **project's** directory: the repository's
-> own name, or `<owner>--<repo>` when another repository already holds it.
-> `project.slug` is that directory name, it is immutable, and an archived
-> project keeps its row so the name is never reissued. The original layout is
-> kept below as the decision it came from.
-
 ```
 ~/oppenheimer-ai/
-  workspaces/
-    <repo-name>/
-      main/                 the main checkout, always on the default branch, never edited directly
-      worktrees/
-        <session-slug>/     one git worktree per session, on that session's branch
-        <session-slug>/
-    <another-repo>/
-      main/
-      worktrees/
-  accounts/                 per-provider config dirs, mounted from the account volumes
+│
+├── workspaces/
+│   └── jordi/                             ← organization.slug
+│       └── projects/
+│           └── xrp-mobile/                ← project.slug
+│               │
+│               ├── repos/                 ← bare stores. Nobody works here.
+│               │   ├── acme--xrp-mobile.git/
+│               │   └── acme--design-system.git/
+│               │
+│               └── sessions/
+│                   ├── bold-otter-3f9a7k/     ← work_session.slug
+│                   │   ├── .oppenheimer       ← provenance marker
+│                   │   ├── xrp-mobile/        ← checkout, the agent's cwd
+│                   │   └── design-system/     ← second checkout, a sibling
+│                   └── quiet-heron-b210c4/
+│                       └── xrp-mobile/
+│
+└── accounts/                              ← per-provider config dirs (note 06)
 ```
 
-- `main/` is the fetch source and the base for every worktree. The
-  runner keeps it up to date (`git fetch` on session create, fast-forward
-  of the default branch). Nobody works in it.
-- `worktrees/<session-slug>/` is created with `git worktree add` from
-  `main/`, on a branch named after the session. That takes under a
-  second and shares the object store, so ten sessions on one repo cost
-  one clone plus ten working trees.
-- The session's terminal opens in its worktree. The status line shows
-  `repo · worktree · branch`. Nothing else is offered.
-- Closing a session removes its worktree (`git worktree remove`) after
-  the branch is pushed. `main/` stays.
+A **project** sits above the repository because a session may check out several,
+and a workspace sits above the project because the host belongs to the person:
+one machine serves every workspace its owner is in, and `project.slug` is unique
+only per workspace.
 
-Repo name is the GitHub repository name; if two installations expose
-the same name, the second gets `<owner>--<repo>`.
+`repos/` and `sessions/` are peers, never nested — a worktree inside its own
+repository means `git status` sees it and file watchers recurse into it — and the
+store is **bare**, so "never edited" is structurally true rather than a rule in a
+document. `git worktree add` works from a bare repo; one gotcha is that
+`git clone --bare` sets no fetch refspec, so the runner adds
+`+refs/heads/*:refs/remotes/origin/*` or `git fetch` never updates
+remote-tracking refs.
+
+### Every name here is a column, and none is derived from a path
+
+| Level | Name | Where it comes from |
+|---|---|---|
+| `workspaces/<slug>` | `organization.slug` | already unique, and the console exposes no way to change it |
+| `projects/<slug>` | `project.slug` | the repository that created the project: `<repo>`, or `<owner>--<repo>` when another repository already holds that name, then `<owner>--<repo>-<githubRepoId>` |
+| `repos/<name>.git` | reported by the runner | it names the store `<owner>--<repo>.git`, writes the GitHub id into the bare repo (`git config oppenheimer.repo-id`) and thereafter finds it **by id**; the name is recorded on the checkout as a fact, because a worktree's `.git` file points at its store by absolute path and `fullName` moves on every GitHub rename |
+| `sessions/<slug>` | `work_session.slug` | minted at create as `<adjective>-<noun>-<6 base36>`, because the directory and the branch exist before anything has been typed |
+| `sessions/<slug>/<dir>` | `session_checkout.directoryName` | the same three candidates as the project, picked against every name this session has **ever** used |
+
+Paths are then fully derived, every segment a unique-constrained column:
+
+```
+store     workspaces/{organization.slug}/projects/{project.slug}/repos/{session_checkout.storeDirectoryName}
+checkout  workspaces/{organization.slug}/projects/{project.slug}/sessions/{work_session.slug}/{session_checkout.directoryName}
+branch    oppenheimer/{project.slug}/{work_session.slug}
+```
+
+Identity is the UUID and the path is a derived attribute, never the other way
+round. The branch is always the session's own, created from each checkout's base
+branch and never the base itself: both segments are unique-constrained, so a
+branch name is collision-free by construction, and git refuses a worktree on a
+branch another worktree already holds — so two sessions "on `main`" would fail at
+the second.
+
+### What lives on disk, and for how long
+
+**A name is never reissued.** Claude Code and Codex key their conversation state
+by working directory, so a new session or checkout landing on a retired name
+inherits a stranger's history — a bug that is near-impossible to diagnose from
+the symptom and free to rule out. `uq (projectId, slug)` and
+`uq (sessionId, directoryName)` are the permanent tombstones that rule it out,
+which is why **no row is ever hard-deleted**: closing a session moves its state
+to `resolved`, retiring a checkout sets `removedAt`, archiving a project sets
+`archivedAt`, and all three rows stay.
+
+**The runner removes a worktree only when the control plane says the session is
+closed, and only when it carries `.oppenheimer`.** Stopping a session ends the
+agent and the tmux session and leaves every checkout exactly where it is, so a
+restart recreates window 0 in the same worktrees after a host reboot. Closing is
+what removes them: push each checkout's branch, then `git worktree remove` and a
+prune — and it **refuses when a checkout has unpushed work** unless the caller
+accepted the loss, never passes `--force`, and relays git's own refusal verbatim.
+Because only the host can do that work, closing is a *request* the control plane
+records and `session.closed` is what comes back
+(`product/versions/mvp/03-control-plane.md`).
+
+Ownership is proven by that marker rather than by where a directory sits: a person
+can run `git worktree add` by hand under `~/oppenheimer-ai/`, and path shape alone
+is not authority. A session directory the control plane does not know about is
+**reported, never reaped**.
 
 ## 2. What this changes: Keep sessions share a workspace VM
 
@@ -52,7 +105,7 @@ Note 07 said "a VM per session". With a worktree model that becomes:
 
 | Lifetime | Where it runs | Isolation |
 |----------|---------------|-----------|
-| **Keep** | a **workspace VM per repo per host**, long-lived, holding that repo's `main/` and all its worktrees. Each Keep session is a worktree plus a tmux session inside that VM. | between repos: the VM. Between sessions of the same repo: processes and directories, as in Orca. |
+| **Keep** | a **workspace VM per project per host**, long-lived, holding that project's bare stores and all its sessions. Each Keep session is a directory of worktrees plus a tmux session inside that VM. | between projects: the VM. Between sessions of the same project: processes and directories, as in Orca. |
 | **Ephemeral** | its own disposable VM, with the same layout but a single worktree. | the VM. |
 
 Why this is better for Keep:
@@ -76,11 +129,11 @@ VM is the boundary, unchanged.
 
 The chips stay: host, repo, branch, agent, lifetime. What they do:
 
-1. **host + repo** pick (or boot) the workspace VM for that repo on that
-   host. First time: boot, clone into `main/`, run the repo's setup
-   script once, cached for the VM's life.
-2. **branch** is the base: the worktree is created from
-   `main/` at `origin/<branch>`, on a new branch `<session-slug>`.
+1. **host + repo** pick (or boot) the workspace VM for that project on that
+   host. First time: boot, create the bare store under `repos/`, run the
+   repository's setup script once, cached for the VM's life.
+2. **branch** is the base: each worktree is created from the store at
+   `origin/<branch>`, on the session's own branch.
    Starting from an existing feature branch checks out that branch in
    the worktree instead.
 3. **agent** is launched in the worktree with the account's config dir.
@@ -92,12 +145,12 @@ worktree is fast.
 
 ## 4. What stays fixed
 
-No custom paths, no cloning elsewhere, no editing `main/`. The terminal
-is a real shell and the agent can `cd` anywhere inside the VM, but the
-platform only creates, lists, and removes things under
-`~/oppenheimer-ai/workspaces`, and the sidebar only knows worktrees. If
-someone wants a different layout they are using the wrong product,
-which is the point.
+No custom paths and no cloning elsewhere. The terminal is a real shell and
+the agent can `cd` anywhere on the machine, but the platform only creates,
+lists and removes things under `~/oppenheimer-ai/workspaces`, it only removes
+what carries `.oppenheimer`, and the sidebar only knows sessions and their
+checkouts. If someone wants a different layout they are using the wrong
+product, which is the point.
 
 ## 5. Three runtimes, one layout
 

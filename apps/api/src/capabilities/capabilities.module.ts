@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
 import { hostsAreConfigured } from '../config/hosts.config';
+import { sessionNamerIsConfigured } from '../config/sessions.config';
 
 /**
  * Whether the sessions GitHub App is usable on this deployment.
@@ -58,6 +59,11 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
+    // The same predicate the namer factory binds on, called rather than
+    // re-derived. With no provider, or one whose key or model is missing, a session
+    // keeps the slug it was minted with — a supported configuration, which is why
+    // this exists to answer "why is nothing here ever named" from the startup log.
+    session_namer: sessionNamerIsConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||
