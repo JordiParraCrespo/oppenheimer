@@ -181,8 +181,24 @@ test.describe('Hosts', () => {
   });
 
   test('a made-up registration token is refused, and says no more than that', async () => {
-    const anonymous = await newContext();
+    // The guard every other pairing test here carries, asked the same way.
+    // Whether a deployment can pair is not something an anonymous caller can
+    // read — `hosts` is a server-internal capability and `GET
+    // /health/capabilities` does not report it — so it is read from minting,
+    // which answers `HOSTS_004` when there is no runner release, signing key or
+    // install URL. Registration refuses on that same configuration before it
+    // ever looks at a token, and a red test there would be reporting the
+    // deployment rather than the code.
+    const { api } = await signedUpContext('hostbogus');
+    const minted = await mintPairingToken(api);
+    test.skip(
+      minted.status === 503,
+      'this deployment has no runner release configured (HOSTS_004)',
+    );
 
+    // The token is invented, and nothing else about the call is: a real runner
+    // redeeming a real token makes exactly this request.
+    const anonymous = await newContext();
     const registered = await anonymous.post('/api/v1/hosts/register', {
       data: {
         token: 'opr_reg_totally-made-up-secret-0123456789',
