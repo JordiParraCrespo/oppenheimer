@@ -32,9 +32,9 @@ availability as you type, GitHub flips to connected, the host registers after a
 few seconds, the pairing token counts down. Onboarding steps carry a Back link
 beside the step counter.
 
-`version1/assets/agents/` holds the coding-agent marks (Claude Code and OpenCode
-are wired into the console's agent picker; Copilot, Gemini and Cursor are held
-in reserve), copied from the Orca repository.
+`version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
+Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
+are held in reserve), copied from the Orca repository.
 
 ## Design system
 
