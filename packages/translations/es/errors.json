@@ -87,6 +87,8 @@
     "GITHUB_008": "Esa instalación de GitHub está suspendida o ya no está instalada.",
     "GITHUB_009": "GitHub no ha respondido. Inténtalo de nuevo en un momento.",
     "GITHUB_010": "Ese repositorio no está cubierto por esta instalación de GitHub.",
+    "PROJECTS_001": "No se ha encontrado ese proyecto.",
+    "PROJECTS_002": "Elige un espacio de trabajo antes de trabajar con proyectos.",
     "ADMIN_009": "Esa sesión ya no existe para este usuario.",
     "PROFILE_001": "No hemos encontrado tu perfil.",
     "PROFILE_002": "La contraseña actual no es correcta.",

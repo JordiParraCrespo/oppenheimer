@@ -37,6 +37,12 @@ export const ENDPOINT_POLICIES = {
   '/tokens': [{ action: 'read', subject: 'ApiToken' }],
   '/admin/users': [{ action: 'manage', subject: 'User' }],
   '/billing/subscriptions': [{ action: 'read', subject: 'Billing' }],
+  // The control plane's projects. Keyed by path, which is why renaming a
+  // project has no entry: `PATCH /projects/:id` shares its path with the read
+  // below, and a rename is an action taken on a screen rather than a
+  // destination a client gates a row on.
+  '/projects': [{ action: 'read', subject: 'Project' }],
+  '/projects/:id': [{ action: 'read', subject: 'Project' }],
 } satisfies Record<string, readonly [EndpointPolicy, ...EndpointPolicy[]]>;
 
 /** An endpoint whose rules are declared in {@link ENDPOINT_POLICIES}. */
