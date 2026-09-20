@@ -552,7 +552,7 @@ export function ComposerDemo({ full }: { full?: boolean }) {
   const [value, setValue] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [files, setFiles] = React.useState<{ id: string; name: string }[]>(
-    full ? [{ id: '1', name: 'api-config.md' }] : [],
+    full ? [{ id: '1', name: 'Screenshot from 2026-09-20 11-42-07.png' }] : [],
   );
   const [recording, setRecording] = React.useState(false);
   return (

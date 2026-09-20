@@ -80,8 +80,9 @@ function Composer({
   return (
     <div
       data-slot="composer"
+      data-disabled={disabled || undefined}
       className={cn(
-        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring has-disabled:opacity-50',
+        'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
         className,
       )}
       {...props}
@@ -101,7 +102,7 @@ function Composer({
           {attachments.map((file) => (
             <span
               key={file.id}
-              className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.5 text-xs text-fg-muted"
+              className="flex h-[26px] max-w-[220px] items-center gap-1.5 rounded-sm bg-control pr-1 pl-2.25 text-xs text-fg-muted"
             >
               <span className="truncate">{file.name}</span>
               <button
