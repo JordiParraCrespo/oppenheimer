@@ -4452,6 +4452,894 @@
         "tags": ["Workspaces"]
       }
     },
+    "/api/v1/installations": {
+      "get": {
+        "description": "A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.",
+        "operationId": "listInstallations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InstallationResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s connected GitHub installations",
+        "tags": ["GitHub installations"]
+      },
+      "post": {
+        "description": "Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.",
+        "operationId": "connectInstallation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectInstallationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GITHUB_004 — GitHub does not list that installation for the authorizing account",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_003 — Another workspace already holds that installation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a GitHub App installation to the workspace",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}/repositories": {
+      "get": {
+        "description": "Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.",
+        "operationId": "listInstallationRepositories",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 — GitHub installation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the repositories an installation covers",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}/repositories/{githubRepoId}/branches": {
+      "get": {
+        "description": "Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.",
+        "operationId": "listRepositoryBranches",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryBranchResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 — The installation is not connected, or does not cover that repository",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a repository’s branches",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}": {
+      "delete": {
+        "description": "The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.",
+        "operationId": "disconnectInstallation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The installation is no longer connected."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 — GitHub installation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a GitHub App installation",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/hosts": {
+      "get": {
+        "description": "The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HostResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the hosts the caller can reach",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/pairing": {
+      "get": {
+        "description": "Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.",
+        "operationId": "list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PairingTokenResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the caller’s pairing tokens",
+        "tags": ["Hosts"]
+      },
+      "post": {
+        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.",
+        "operationId": "mint",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MintPairingTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MintedPairingTokenResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_004 — This deployment has no runner release configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a pairing token for a new host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/pairing/{id}": {
+      "delete": {
+        "description": "Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.",
+        "operationId": "revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pairing token revoked"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — Pairing token not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a pairing token",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/register": {
+      "post": {
+        "description": "Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.",
+        "operationId": "register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostRegistrationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "HOSTS_004 — This deployment has no runner release configured",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Redeem a registration token and become a host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/self": {
+      "delete": {
+        "description": "Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.",
+        "operationId": "uninstall",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The calling host is unpaired"
+          },
+          "401": {
+            "description": "HOSTS_005 — No valid host assertion was presented",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair the calling host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/{id}": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one host",
+        "tags": ["Hosts"]
+      },
+      "patch": {
+        "description": "Display only — nothing on the machine is named after this.",
+        "operationId": "rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameHostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a host",
+        "tags": ["Hosts"]
+      },
+      "delete": {
+        "description": "Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.",
+        "operationId": "unpair",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Host unpaired"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpair a host",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -5849,6 +6737,1186 @@
         "tags": ["Admin"]
       }
     },
+    "/api/v1/projects": {
+      "get": {
+        "description": "Newest first. Archived projects are left out unless asked for.",
+        "operationId": "listProjects",
+        "parameters": [
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "description": "Include retired projects. They are left out by default: a retired project keeps its slug for ever, so the listing would otherwise fill with rows nobody can put work in.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the projects in the caller’s workspace",
+        "tags": ["Projects"]
+      }
+    },
+    "/api/v1/projects/{id}": {
+      "get": {
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one project",
+        "tags": ["Projects"]
+      },
+      "patch": {
+        "description": "The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.",
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a project",
+        "tags": ["Projects"]
+      },
+      "delete": {
+        "description": "Retires the project so no new session can be started in it. The row is kept for ever: its slug is a directory name on every host that held it, and a retired name is never reissued. Refuses while the project still has sessions that are not closed.",
+        "operationId": "archiveProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PROJECTS_005 — The project still has open sessions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "PROJECTS_003 — Nothing can answer whether the project still has open sessions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive a project",
+        "tags": ["Projects"]
+      }
+    },
+    "/api/v1/sessions": {
+      "get": {
+        "description": "Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
+        "operationId": "listSessions",
+        "parameters": [
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "The stored lifecycle, not the derived group.",
+            "schema": {
+              "enum": ["starting", "open", "failed", "resolved"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "hostId",
+            "required": false,
+            "in": "query",
+            "description": "One host’s sessions",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "description": "One project’s sessions",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Sessions per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedSessionsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the sessions in the caller’s workspace",
+        "tags": ["Sessions"]
+      },
+      "post": {
+        "description": "Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.",
+        "operationId": "createSession",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Send one. A retry after a lost response returns the session already created instead of minting a second directory and a second branch.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SESSIONS_009 — No project to put the session in",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_010 — That repository is not one this GitHub installation covers\n\nHOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_006 — That project is archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/events": {
+      "get": {
+        "description": "The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.",
+        "operationId": "listSessionEvents",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Entries per page",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "afterSeq",
+            "required": false,
+            "in": "query",
+            "description": "Read on from this `seq`. Omit for the start of the log.",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEventPageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a session’s log",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/attach-ticket": {
+      "post": {
+        "description": "Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.",
+        "operationId": "issueAttachTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssueAttachTicketRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachTicketResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_008 — A terminal ticket could not be issued",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mint a ticket for a terminal on this session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/stop": {
+      "post": {
+        "description": "Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.",
+        "operationId": "stopSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/restart": {
+      "post": {
+        "description": "Recreates window 0 in the worktrees the session already has — what a host reboot needs. It records a request: the session becomes open when the host says it did.",
+        "operationId": "restartSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restart a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/checkouts": {
+      "post": {
+        "description": "The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.",
+        "operationId": "addSessionCheckout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCheckoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_010 — That repository is not one this GitHub installation covers\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a repository to a running session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/checkouts/{checkoutId}": {
+      "delete": {
+        "description": "Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.",
+        "operationId": "removeSessionCheckout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "checkoutId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_003 — No such checkout on this session\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a repository from a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}": {
+      "get": {
+        "description": "With its live checkouts. Retired checkouts are left out.",
+        "operationId": "getSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one session",
+        "tags": ["Sessions"]
+      },
+      "patch": {
+        "description": "Display only. The slug is the session’s directory name and the last segment of its branch, and it never changes. A name typed here is never overwritten by the title derived from the first prompt.",
+        "operationId": "renameSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a session",
+        "tags": ["Sessions"]
+      },
+      "delete": {
+        "description": "Pushes each checkout’s branch, then removes the worktrees and prunes. The row is never deleted: its slug is the session’s directory name on the host and a retired name is never reissued, because the coding agents key their conversation state by working directory. Refuses when a checkout has unpushed work unless the loss is accepted.",
+        "operationId": "closeSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "acceptUnpushedWork",
+            "required": false,
+            "in": "query",
+            "description": "Accept losing work that is not pushed. The refusal is the default.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Close a session",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "check",
@@ -6832,7 +8900,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6863,7 +8939,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -6933,7 +9017,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7027,7 +9119,15 @@
               "billing:read",
               "billing:write",
               "leads:read",
-              "leads:write"
+              "leads:write",
+              "hosts:read",
+              "hosts:write",
+              "projects:read",
+              "projects:write",
+              "sessions:read",
+              "sessions:write",
+              "repositories:read",
+              "repositories:write"
             ],
             "example": "users:read"
           },
@@ -7077,7 +9177,11 @@
               "workspaces",
               "tokens",
               "billing",
-              "leads"
+              "leads",
+              "hosts",
+              "projects",
+              "sessions",
+              "repositories"
             ],
             "example": "users"
           },
@@ -7137,7 +9241,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           }
@@ -7179,7 +9291,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7253,7 +9373,15 @@
                 "billing:read",
                 "billing:write",
                 "leads:read",
-                "leads:write"
+                "leads:write",
+                "hosts:read",
+                "hosts:write",
+                "projects:read",
+                "projects:write",
+                "sessions:read",
+                "sessions:write",
+                "repositories:read",
+                "repositories:write"
               ]
             }
           },
@@ -7940,6 +10068,495 @@
         },
         "required": ["userId"]
       },
+      "InstallationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The control-plane id. Everything but the connect body uses this."
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "githubInstallationId": {
+            "type": "number",
+            "description": "GitHub’s own installation id.",
+            "example": 45678901
+          },
+          "accountLogin": {
+            "type": "string",
+            "example": "acme-labs",
+            "description": "The account the App is installed on."
+          },
+          "accountType": {
+            "type": "string",
+            "example": "Organization",
+            "enum": ["User", "Organization"]
+          },
+          "repositorySelection": {
+            "type": "string",
+            "enum": ["all", "selected"],
+            "description": "What the installation dialog granted. GitHub enforces it, not us."
+          },
+          "installedByUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account that connected it."
+          },
+          "suspendedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Set while GitHub reports the installation suspended; nothing resolves until it clears."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "githubInstallationId",
+          "accountLogin",
+          "accountType",
+          "repositorySelection",
+          "installedByUserId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConnectInstallationRequest": {
+        "type": "object",
+        "properties": {
+          "githubInstallationId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["githubInstallationId", "code"]
+      },
+      "RepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "githubRepoId": {
+            "type": "number",
+            "description": "GitHub’s own repository id.",
+            "example": 831004242
+          },
+          "name": {
+            "type": "string",
+            "example": "oppenheimer"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/oppenheimer"
+          },
+          "defaultBranch": {
+            "type": "string",
+            "example": "main",
+            "description": "Offered as the default base branch."
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Archived on GitHub: readable, but pushes are refused."
+          },
+          "pushedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When GitHub last saw a push, for ordering the picker."
+          }
+        },
+        "required": [
+          "githubRepoId",
+          "name",
+          "fullName",
+          "defaultBranch",
+          "private",
+          "archived",
+          "pushedAt"
+        ]
+      },
+      "RepositoryBranchResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "main"
+          },
+          "commitSha": {
+            "type": "string",
+            "example": "d6cd1e2bd19e03a81132a23b2025920577f84e37"
+          },
+          "protected": {
+            "type": "boolean",
+            "description": "Whether a branch protection rule applies."
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether this is the repository’s default branch."
+          }
+        },
+        "required": ["name", "commitSha", "protected", "isDefault"]
+      },
+      "HostResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The person who paired this machine. A host has no workspace."
+          },
+          "name": {
+            "type": "string",
+            "example": "Dev box"
+          },
+          "hostname": {
+            "type": "string",
+            "nullable": true,
+            "example": "jordis-macbook.local"
+          },
+          "os": {
+            "type": "string",
+            "nullable": true,
+            "example": "macos"
+          },
+          "arch": {
+            "type": "string",
+            "nullable": true,
+            "example": "arm64"
+          },
+          "runnerVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": "0.3.1"
+          },
+          "capabilities": {
+            "type": "object",
+            "description": "What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.",
+            "nullable": true
+          },
+          "publicKeyFingerprint": {
+            "type": "string",
+            "description": "SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.",
+            "example": "9f2c…"
+          },
+          "online": {
+            "type": "boolean",
+            "description": "Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored."
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "unpairedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the host was unpaired. The row is kept so its history survives."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ownerUserId",
+          "name",
+          "publicKeyFingerprint",
+          "online",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PairingTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+      },
+      "MintPairingTokenRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": ["name"]
+      },
+      "MintedPairingTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "installCommand": {
+            "type": "string",
+            "description": "The one-line command that installs and registers the runner on the machine.",
+            "example": "curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- --token opr_reg_…"
+          },
+          "agentPrompt": {
+            "type": "string",
+            "description": "The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "expiresAt",
+          "createdAt",
+          "installCommand",
+          "agentPrompt"
+        ]
+      },
+      "RegisterHostRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "publicKey": {
+            "type": "string",
+            "minLength": 1
+          },
+          "facts": {
+            "type": "object",
+            "properties": {
+              "platform": {
+                "type": "string",
+                "enum": ["macos", "debian", "ubuntu", "linux", "unsupported"]
+              },
+              "osVersion": {
+                "type": "string"
+              },
+              "arch": {
+                "type": "string"
+              },
+              "hostname": {
+                "type": "string"
+              },
+              "user": {
+                "type": "string"
+              },
+              "home": {
+                "type": "string"
+              },
+              "root": {
+                "type": "boolean"
+              },
+              "tools": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "required": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["name", "required"]
+                },
+                "nullable": true
+              },
+              "workspacePath": {
+                "type": "string"
+              },
+              "diskFreeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": false
+              },
+              "runnerVersion": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "platform",
+              "arch",
+              "hostname",
+              "user",
+              "home",
+              "root",
+              "tools",
+              "workspacePath",
+              "diskFreeBytes",
+              "runnerVersion"
+            ]
+          }
+        },
+        "required": ["token", "name", "publicKey"]
+      },
+      "HostRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "hostId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The host this machine now is."
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it."
+          },
+          "channel": {
+            "type": "string",
+            "description": "The release channel this host follows.",
+            "example": "stable"
+          },
+          "releaseBaseUrl": {
+            "type": "string",
+            "description": "Where the runner fetches signed release artifacts from.",
+            "example": "https://releases.oppenheimer.dev"
+          }
+        },
+        "required": ["hostId", "fingerprint"]
+      },
+      "RenameHostRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": ["name"]
+      },
       "AdminUserResponseDto": {
         "type": "object",
         "properties": {
@@ -8154,6 +10771,451 @@
         },
         "required": ["newPassword"]
       },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The GitHub repository’s name, as GitHub spells it. Display only.",
+            "example": "xrp-mobile"
+          },
+          "slug": {
+            "type": "string",
+            "description": "The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.",
+            "example": "xrp-mobile"
+          },
+          "originGithubRepoId": {
+            "type": "string",
+            "description": "GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.",
+            "nullable": true,
+            "example": "821374923"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "organizationId", "name", "slug", "createdAt", "updatedAt"]
+      },
+      "UpdateProjectRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": ["name"]
+      },
+      "SessionCheckoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The GitHub installation this repository’s tokens are minted through."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub’s repository id, as a string because the column is a bigint.",
+            "example": "821374923"
+          },
+          "repositoryFullName": {
+            "type": "string",
+            "description": "A display snapshot of `owner/repo`, refreshed whenever a checkout is created.",
+            "example": "acme/xrp-mobile"
+          },
+          "directoryName": {
+            "type": "string",
+            "description": "The directory inside the session. Never reused, even after removal.",
+            "example": "xrp-mobile"
+          },
+          "storeDirectoryName": {
+            "type": "string",
+            "description": "What the runner named the bare store under `repos/`. Null until it reports.",
+            "nullable": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["worktree", "clone"],
+            "description": "Recorded rather than guessed: cleanup differs between the two."
+          },
+          "baseBranch": {
+            "type": "string",
+            "description": "What the session’s branch was created from.",
+            "example": "main"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Always the session’s own branch, never the base.",
+            "example": "oppenheimer/xrp-mobile/bold-otter-3f9a7k"
+          }
+        },
+        "required": [
+          "id",
+          "installationId",
+          "githubRepoId",
+          "repositoryFullName",
+          "directoryName",
+          "mode",
+          "baseBranch",
+          "branch"
+        ]
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name. It starts equal to the slug, then the first prompt names it.",
+            "example": "Fix the wallet list empty state"
+          },
+          "slug": {
+            "type": "string",
+            "description": "The session’s directory name and the last segment of its branch. Immutable, and never reissued.",
+            "example": "bold-otter-3f9a7k"
+          },
+          "agent": {
+            "type": "string",
+            "description": "The coding agent this session runs.",
+            "example": "claude-code"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "working",
+              "waiting-on-you",
+              "ready-for-review",
+              "landing",
+              "idle",
+              "resolved"
+            ],
+            "description": "The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report)."
+          },
+          "lifecycle": {
+            "type": "string",
+            "enum": ["starting", "open", "failed", "resolved"],
+            "description": "The stored lifecycle: the fold of the session’s append-only log. It answers whether the work is finished, not whether a process is running — stopping a session does not move it."
+          },
+          "cwdCheckoutId": {
+            "type": "string",
+            "description": "Which checkout the agent was launched inside. Null starts it in the session directory with every checkout a peer.",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "agentSessionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastEventAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "stoppedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the agent and the tmux session last ended. The checkouts stay on disk.",
+            "nullable": true
+          },
+          "checkouts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionCheckoutResponseDto"
+            }
+          },
+          "hints": {
+            "description": "What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.",
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "projectId",
+          "hostId",
+          "name",
+          "slug",
+          "agent",
+          "state",
+          "lifecycle",
+          "checkouts",
+          "hints",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SessionPageMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number",
+            "description": "Total matching sessions, across all pages.",
+            "example": 42
+          },
+          "page": {
+            "type": "number",
+            "description": "1-based page number.",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "description": "Sessions per page.",
+            "example": 20
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": ["total", "page", "limit", "totalPages"]
+      },
+      "PaginatedSessionsResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionResponseDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/SessionPageMetaDto"
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "CreateSessionRequest": {
+        "type": "object",
+        "properties": {
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent": {
+            "type": "string",
+            "enum": ["claude-code", "codex"]
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "checkouts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                },
+                "baseBranch": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                }
+              },
+              "required": ["installationId", "githubRepoId"]
+            }
+          },
+          "cwdGithubRepoId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          }
+        },
+        "required": ["hostId", "agent", "checkouts"]
+      },
+      "SessionEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Dense and monotonic per session. Assigned by the control plane, never on the wire.",
+            "example": 4
+          },
+          "source": {
+            "type": "string",
+            "enum": ["runner", "api"],
+            "description": "Who wrote the entry."
+          },
+          "kind": {
+            "type": "string",
+            "description": "What happened. Free-form on purpose: a runner newer than this control plane may log a kind it has never heard of, and the log keeps it.",
+            "example": "session.started"
+          },
+          "payload": {
+            "type": "object",
+            "description": "At most 8 KB, and never pane text: PTY bytes go to the browser and the runner’s ring buffer, never to Postgres."
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "The writer’s clock."
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Ours."
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "seq",
+          "source",
+          "kind",
+          "payload",
+          "occurredAt",
+          "recordedAt"
+        ]
+      },
+      "SessionEventPageResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionEventResponseDto"
+            }
+          },
+          "nextSeq": {
+            "type": "number",
+            "description": "Pass as `afterSeq` to read on, or null at the end of the log.",
+            "nullable": true,
+            "example": 24
+          }
+        },
+        "required": ["data", "nextSeq"]
+      },
+      "IssueAttachTicketRequest": {
+        "type": "object",
+        "properties": {
+          "window": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false
+          }
+        }
+      },
+      "AttachTicketResponseDto": {
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the relay socket — never in the URL."
+          },
+          "url": {
+            "type": "string",
+            "description": "The path to open the WebSocket on, on this API’s own origin.",
+            "example": "/api/v1/relay/attach"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "window": {
+            "type": "number",
+            "description": "The tmux window this ticket authorises. Tabs are tmux windows.",
+            "example": 0
+          }
+        },
+        "required": ["ticket", "url", "expiresAt", "window"]
+      },
+      "AddCheckoutRequest": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "githubRepoId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "baseBranch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        },
+        "required": ["installationId", "githubRepoId"]
+      },
+      "RenameSessionRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": ["name"]
+      },
       "CapabilitiesResponseDto": {
         "type": "object",
         "properties": {
@@ -8168,9 +11230,13 @@
           "stripe_billing": {
             "type": "boolean",
             "description": "Stripe billing is configured."
+          },
+          "github_app": {
+            "type": "boolean",
+            "description": "The sessions GitHub App is configured."
           }
         },
-        "required": ["google_oauth", "github_oauth", "stripe_billing"]
+        "required": ["google_oauth", "github_oauth", "stripe_billing", "github_app"]
       }
     }
   }

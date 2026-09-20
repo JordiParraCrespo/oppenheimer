@@ -5,6 +5,15 @@
  * a missing key removes the capability — it never prevents the app from
  * booting. Required settings (database, `BETTER_AUTH_SECRET`) are the
  * opposite: they fail fast at boot and are not capabilities.
+ *
+ * `hosts` is the control plane's: without the runner release settings and the
+ * signing key there is nothing to hand a machine that wants to pair, so the
+ * host routes answer "not configured" and the rest of the API is unaffected.
+ *
+ * `session_namer` is the smallest of them: with no provider configured a session
+ * keeps its minted slug as its name, which reads fine and costs nothing. It is a
+ * capability so that "nothing here is ever named" is answered by the startup log
+ * rather than by somebody reading the naming code.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -12,6 +21,9 @@ export const DEPLOYMENT_CAPABILITIES = [
   'stripe_billing',
   's3_storage',
   'email_delivery',
+  'github_app',
+  'hosts',
+  'session_namer',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];
@@ -35,6 +47,11 @@ export const CLIENT_CAPABILITIES = [
   'google_oauth',
   'github_oauth',
   'stripe_billing',
+  // The sessions GitHub App. A console cannot read this off anything else: an
+  // empty installation list says "you have not connected yet", never "this
+  // deployment has no App, so Connect GitHub will fail" — and the App slug the
+  // install link is built from only exists when the capability is on.
+  'github_app',
 ] as const satisfies readonly DeploymentCapability[];
 
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];

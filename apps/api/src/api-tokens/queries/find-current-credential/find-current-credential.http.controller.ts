@@ -41,6 +41,12 @@ export class FindCurrentCredentialHttpController {
       activeOrganizationId?: string | null;
     } | null;
 
+    // This route describes a *person's* credential. A host's assertion is a
+    // credential with no person behind it and never reaches here — `ApiAuthGuard`
+    // refuses it before the handler runs — so narrowing it away keeps the
+    // mapping below total without inventing a kind the response can return.
+    const credential = scope?.kind === 'host' ? null : scope;
+
     const { grantedScopes, effectiveScopes } = await this.queryBus.execute<
       FindCurrentCredentialQuery,
       CurrentCredentialScopes
@@ -49,18 +55,18 @@ export class FindCurrentCredentialHttpController {
         userId: user.id,
         role: user.role,
         activeOrganizationId: session?.activeOrganizationId ?? null,
-        grantedScopes: scope?.scopes ?? null,
+        grantedScopes: credential?.scopes ?? null,
       }),
     );
 
     return {
-      kind: scope?.kind ?? 'session',
+      kind: credential?.kind ?? 'session',
       userId: user.id,
       email: user.email,
       grantedScopes,
       effectiveScopes,
-      organizationIds: scope?.resourceScope.organizationIds ?? null,
-      expiresAt: scope?.expiresAt ?? null,
+      organizationIds: credential?.resourceScope.organizationIds ?? null,
+      expiresAt: credential?.expiresAt ?? null,
     };
   }
 }

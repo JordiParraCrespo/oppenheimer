@@ -19,4 +19,7 @@ export class CapabilitiesResponseDto implements ClientCapabilities {
 
   @ApiProperty({ description: 'Stripe billing is configured.' })
   stripe_billing!: boolean;
+
+  @ApiProperty({ description: 'The sessions GitHub App is configured.' })
+  github_app!: boolean;
 }

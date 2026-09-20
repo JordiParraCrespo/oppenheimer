@@ -171,6 +171,43 @@ wrong place.
 Also returned for a lead that exists but sits outside the caller's access
 scope. Distinguishing the two would confirm the id.
 
+## Hosts
+
+A host is a machine someone paired with this control plane. It belongs to the
+**person** who paired it, not to a workspace, so a host they cannot reach reads
+as missing rather than forbidden — the scoped query cannot see it, and saying so
+would confirm the id.
+
+| Code                             | Title                                       | HTTP |
+| -------------------------------- | ------------------------------------------- | ---- |
+| `HOSTS_001` <a id="hosts_001" /> | Host not found                              | 404  |
+| `HOSTS_002` <a id="hosts_002" /> | Pairing token not found                     | 404  |
+| `HOSTS_003` <a id="hosts_003" /> | The registration token was rejected          | 401  |
+| `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
+| `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
+
+Two of these are deliberately opaque, and both would otherwise be an oracle for
+guessing a credential:
+
+- `HOSTS_003` does not distinguish a token that was already used, one that
+  expired, one that was revoked and one that never existed. Its `detail` names
+  all four at once and the runner prints that sentence verbatim. The one case it
+  *does* tell apart is a machine retrying after a lost response: presenting the
+  key the spent token already paired returns the same host, so a dropped answer
+  never pairs a machine twice.
+- `HOSTS_005` refuses a host's boot assertion without saying which check refused
+  it. Its `detail` is a line for the operator's log, not a branch a client can
+  take, and this page does not enumerate the reasons — a catalog that listed them
+  would make the endpoint the oracle the single code exists to avoid.
+
+`HOSTS_004` is the optional-capability answer: without the runner release
+settings and the control plane's own signing key there is nothing to hand a
+machine that wants to pair, so the host routes say so and the rest of the API is
+unaffected.
+
+Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
+and a code may only be claimed once.
+
 ## Billing
 
 | Code                                 | Title                                        | HTTP |
@@ -247,6 +284,112 @@ operation, its code is folded onto the catalog, and the original survives as
 | `ADMIN_007` <a id="admin_007" /> | The admin service rejected this request                           | 400  |
 | `ADMIN_008` <a id="admin_008" /> | The admin service failed to handle this request                   | 502  |
 | `ADMIN_009` <a id="admin_009" /> | No such session for that user                                     | 404  |
+
+## GitHub installations
+
+A GitHub App installation is the whole of what a workspace may reach on GitHub:
+the installation is the access control and GitHub enforces it, so there is no
+repository table and no mirror. A repository that leaves an installation is not
+a state change here — it is simply absent from the next listing, and the next
+token mint fails. Mints are never cached, so "the next mint" is the next time a
+session asks.
+
+| Code                                 | Title                                                          | HTTP |
+| ------------------------------------ | -------------------------------------------------------------- | ---- |
+| `GITHUB_001` <a id="github_001" /> | GitHub installation not found                                  | 404  |
+| `GITHUB_002` <a id="github_002" /> | The GitHub App is not configured on this server                | 503  |
+| `GITHUB_003` <a id="github_003" /> | That GitHub installation is already connected to another workspace | 409 |
+| `GITHUB_004` <a id="github_004" /> | GitHub does not list that installation for your account         | 403  |
+| `GITHUB_005` <a id="github_005" /> | GitHub rejected the authorization code                         | 400  |
+| `GITHUB_006` <a id="github_006" /> | GitHub installations are connected inside an organization      | 400  |
+| `GITHUB_007` <a id="github_007" /> | Invalid GitHub webhook signature                               | 400  |
+| `GITHUB_008` <a id="github_008" /> | That GitHub installation is suspended or no longer installed   | 409  |
+| `GITHUB_009` <a id="github_009" /> | GitHub could not be reached or rejected the request            | 502  |
+| `GITHUB_010` <a id="github_010" /> | That repository is not covered by this GitHub installation     | 404  |
+
+`GITHUB_001` is also returned for an installation that exists but belongs to
+another workspace; distinguishing the two would confirm the id.
+
+`GITHUB_003` means another workspace **holds** the installation right now, not
+that one once did. A workspace that disconnects, or an App uninstalled on
+GitHub, frees the installation for anyone to connect: the id is unique among
+live rows only, and the disconnected row is kept as history.
+
+`GITHUB_004` is the claim proof, and it has no fallback. `POST /installations`
+exchanges the OAuth code GitHub attaches to the install redirect and asks GitHub
+which installations the authorizing account can see. Matching the installation's
+account login against a linked GitHub account instead would refuse every
+organization installation, where that login is the organization and not a user.
+
+`GITHUB_002` also covers a credential GitHub itself rejected: a `401` from the
+App's own JWT is a deployment problem, not a caller's, and reporting it as one
+sends whoever hit it to the right place.
+
+## Projects
+
+A project is a body of work sessions belong to, and its `slug` is the name of its
+directory on every host that holds it — derived from the GitHub repository
+(`<repo>`, or `<owner>--<repo>` when another repository already holds that name)
+and never renamed.
+
+| Code                                   | Title                              | HTTP |
+| -------------------------------------- | ---------------------------------- | ---- |
+| `PROJECTS_001` <a id="projects_001" /> | Project not found                  | 404  |
+| `PROJECTS_002` <a id="projects_002" /> | Projects belong to an organization  | 400  |
+| `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
+| `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
+| `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
+
+`PROJECTS_001` is also returned for a project that exists in another workspace:
+the scoped read cannot see it, and distinguishing the two would confirm the id.
+
+`PROJECTS_003` is archiving failing closed. "Is any session still open in this
+project" is a question only the module that owns sessions can answer, asked over the
+query bus; if nothing answers it, the archive refuses rather than assuming the answer
+it would prefer.
+
+`PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
+name on every host that held it and is never reissued, so a session cannot be started
+in a retired project — including the first session of a repository whose project was
+archived.
+
+## Sessions
+
+A session is one piece of work inside a project: a terminal, an agent, and a set of
+checkouts. Its append-only log is the truth per session and the row is a fold of it,
+so nothing here reports a state the log does not explain. Rows are never
+hard-deleted — closing a session keeps it for ever so its directory name and branch
+are never reissued.
+
+| Code                                   | Title                                           | HTTP |
+| -------------------------------------- | ----------------------------------------------- | ---- |
+| `SESSIONS_001` <a id="sessions_001" /> | Session not found                               | 404  |
+| `SESSIONS_002` <a id="sessions_002" /> | Sessions belong to an organization              | 400  |
+| `SESSIONS_003` <a id="sessions_003" /> | Checkout not found on this session              | 404  |
+| `SESSIONS_004` <a id="sessions_004" /> | That repository is already checked out for this session | 409 |
+| `SESSIONS_005` <a id="sessions_005" /> | That session is closed                          | 409  |
+| `SESSIONS_006` <a id="sessions_006" /> | That project is archived                        | 409  |
+| `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
+| `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
+| `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
+
+`SESSIONS_001` is also returned for a session that exists in another workspace: the
+scoped read cannot see it, and distinguishing the two would confirm the id.
+
+`SESSIONS_005` is what closing makes final. A closed session cannot be renamed,
+stopped, restarted or given another checkout — the row is a tombstone for its
+directory name, and reopening one would put new work into a directory a coding agent
+already keys conversation state by.
+
+`SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
+named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a
+name is never reissued inside a session — so a session that has added, retired and
+re-added one repository through all three has no name left for it. Reusing one would
+put a fresh agent in a retired agent's working directory, which is the bug the
+tombstone exists to prevent, so the answer is a refusal.
+
+An oversized event payload is **not** an error code: the append reports it per row,
+in the acknowledgement the runner reads, so one bad entry does not refuse a batch.
 
 <!-- oppenheimer:begin runner -->
 ## Runner service

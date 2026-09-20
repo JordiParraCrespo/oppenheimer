@@ -17,7 +17,7 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo, `main/` plus one worktree per session, as in Orca; three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
@@ -99,3 +99,41 @@ earlier note:
   lifecycle hooks are authoritative where an agent has them, screen reading
   is the fallback, and rules carry a priority and negative guards rather than
   being a chain of ifs (`versions/mvp/02-runner.md` §9).
+- The control-plane modules and data model *have* now changed, where the
+  line above said only the framework had. `versions/mvp/10-api-modules-and-data-model.md`
+  replaces note 03's seven modules and its first-cut table list with
+  five modules — `hosts`, `github`, `projects`, `sessions`, `relay` —
+  and eight tables, held to the shape of the starter's own Better Auth
+  schema —
+  flat rows, credentials inline with their subject, a table only where
+  the lifetime is independent. `installations` and `repositories` merge
+  into one aggregate;
+  `tokens` becomes a port rather than a module because an installation
+  token is never stored; `events` is a table inside `sessions`; `jobs`
+  disappears because the outbox already is one. Models and coding agents
+  get no table at all, and "GitHub allowed repositories" turns out to be
+  the same noun as "repositories" — the App installation is a boundary
+  GitHub already enforces.
+- Note 11 said one worktree per session under
+  `workspaces/<repo>/main`. `versions/mvp/10-api-modules-and-data-model.md`
+  supersedes its §1: a **project** level sits above the repository, a
+  session may check out **several** repositories, and those checkouts
+  live under the session rather than under the repo. The store is a
+  bare clone, always owner-prefixed, and every directory name is a
+  database constraint instead of a convention. Note 11 §2 onward still
+  stands.
+- `versions/mvp/08-auth.md` said hosts belong to the workspace that
+  paired them, then to a workspace and an owner. `versions/mvp/10` now
+  makes a host the person's, borrowed by every workspace they are in,
+  the way Better Auth hangs devices and logins off `user`; the on-disk
+  layout gains a `workspaces/<org>/` level above `projects/`. Note 06's
+  per-account config directories remain the answer to several logins on
+  one machine, and remain a later slice.
+- `versions/mvp/10` first mirrored every installation's repository set
+  with webhooks and a resync. It now lists repositories live from GitHub
+  and keeps a row only for repositories a session has checked out. Note
+  09's "the installation is the access control" is unchanged; what
+  changed is that we stopped keeping a copy of the list it controls.
+- The same note then dropped the repository table entirely: a checkout
+  carries GitHub's ids inline and the runner owns the store on disk.
+  Seven new tables, not eight.

@@ -42,9 +42,9 @@ func (c *ControlPlane) Register(_ context.Context, _ string, req app.RegisterReq
 }
 
 // Revoke implements app.ControlPlane.
-func (c *ControlPlane) Revoke(_ context.Context, _, _, hostID string) error {
+func (c *ControlPlane) Revoke(_ context.Context, _, assertion string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.Revoked = append(c.Revoked, hostID)
+	c.Revoked = append(c.Revoked, assertion)
 	return nil
 }
