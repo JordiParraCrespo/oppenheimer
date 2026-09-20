@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
+import { ArrowUpIcon, ChevronDownIcon, MicIcon, PaperclipIcon, SquareIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -13,9 +13,12 @@ import { IconButton } from './icon-button';
  * inserts a newline; while `busy` the send button becomes a stop button in the
  * same corner.
  *
- * Foot row, left to right: attach, `tools` (the model picker on the console),
- * a spacer, mic, and the round primary send. Attachments list under the
- * textarea as removable chips; they are never silently dropped.
+ * The foot row reads left to right as scope of action, then engine: attach
+ * and `tools` (the permission level) on the left; a spacer; `engine` (the
+ * agent and model, the effort) on the right; then mic and the round primary
+ * send. Both slots take `ComposerToolButton`s, the 30px text triggers the
+ * console's menus hang from. Attachments list under the textarea as
+ * removable chips; they are never silently dropped.
  *
  * Controlled — own `value`, handle `onSubmit`.
  */
@@ -35,6 +38,7 @@ function Composer({
   onRecord,
   recording = false,
   tools,
+  engine,
   minRows = 3,
   className,
   ...props
@@ -53,8 +57,10 @@ function Composer({
   /** Present: shows the mic button. */
   onRecord?: () => void;
   recording?: boolean;
-  /** Extra controls in the foot row, e.g. the model picker. */
+  /** Controls after attach: what the run may touch (the permission level). */
   tools?: React.ReactNode;
+  /** Controls before the mic: who drives it and how hard it thinks (agent, model, effort). */
+  engine?: React.ReactNode;
   minRows?: number;
 }) {
   const canSend = value.trim().length > 0 && !disabled;
@@ -118,6 +124,7 @@ function Composer({
         ) : null}
         {tools}
         <span className="flex-1" />
+        {engine}
         {onRecord ? (
           <IconButton
             aria-label={recording ? 'Stop recording' : 'Dictate'}
@@ -145,5 +152,56 @@ function Composer({
   );
 }
 
-export { Composer };
+/**
+ * ComposerToolButton — the 30px text trigger in the composer's foot row: an
+ * optional 14px leading mark, the label, a 12px chevron when it opens a menu.
+ * Transparent at rest, the hover wash on hover and while its menu is open.
+ * `tone="muted"` for a setting (permission level, effort) so the model, which
+ * is the engine, reads darkest; `tone="warning"` for the one setting that
+ * can change a machine unattended.
+ */
+function ComposerToolButton({
+  icon,
+  tone = 'default',
+  chevron = true,
+  open,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'button'> & {
+  icon?: React.ReactNode;
+  tone?: 'default' | 'muted' | 'warning';
+  chevron?: boolean;
+  open?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      data-slot="composer-tool-button"
+      data-tone={tone}
+      data-popup-open={open ? '' : undefined}
+      aria-expanded={open}
+      className={cn(
+        'flex h-[30px] shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
+        tone === 'default' && 'text-fg',
+        tone === 'muted' && 'text-fg-muted',
+        tone === 'warning' && 'text-warning',
+        className,
+      )}
+      {...props}
+    >
+      {icon ? (
+        <span className="flex [&_svg:not([class*=size-])]:size-3.5 [&>[data-slot=agent-mark]]:text-inherit">
+          {icon}
+        </span>
+      ) : null}
+      <span className="truncate">{children}</span>
+      {chevron ? (
+        <ChevronDownIcon className="size-3 opacity-60" strokeWidth={2.2} aria-hidden />
+      ) : null}
+    </button>
+  );
+}
+
+export { Composer, ComposerToolButton };
 export type { ComposerAttachment };

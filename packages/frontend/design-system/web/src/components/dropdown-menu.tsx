@@ -211,27 +211,47 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
 }
 
 /**
- * A choice row. With `description` it becomes the two-line model option
- * (name, then a muted line), the check aligned to the first line.
+ * A choice row. With `description` it becomes the two-line option (name,
+ * then a muted line), the check aligned to the first line. `icon` is a 16px
+ * mark before the text; `tone="warning"` colours the whole row, label and
+ * description, for the one choice that changes a machine unattended.
  */
 function DropdownMenuRadioItem({
   className,
   children,
   description,
+  icon,
+  tone,
   inset,
   ...props
-}: MenuPrimitive.RadioItem.Props & { inset?: boolean; description?: React.ReactNode }) {
+}: MenuPrimitive.RadioItem.Props & {
+  inset?: boolean;
+  description?: React.ReactNode;
+  icon?: React.ReactNode;
+  tone?: 'default' | 'warning';
+}) {
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
-      className={cn(ITEM_CLASSES, 'items-start pr-8 data-inset:pl-9.5', className)}
+      data-tone={tone}
+      className={cn(
+        ITEM_CLASSES,
+        'items-start pr-8 data-inset:pl-9.5',
+        tone === 'warning' && 'text-warning [&_[data-slot=radio-description]]:text-warning',
+        className,
+      )}
       {...props}
     >
+      {icon ? (
+        <span className="flex shrink-0 pt-px [&_svg:not([class*=size-])]:size-4">{icon}</span>
+      ) : null}
       <span className="flex min-w-0 flex-1 flex-col gap-px text-left">
         <span className="truncate">{children}</span>
         {description ? (
-          <span className="text-[12.5px] leading-snug text-fg-muted">{description}</span>
+          <span data-slot="radio-description" className="text-[12.5px] leading-snug text-fg-muted">
+            {description}
+          </span>
         ) : null}
       </span>
       <span className="pointer-events-none absolute top-2 right-2.5 flex h-[1.4em] items-center text-link">

@@ -29,9 +29,15 @@
   agent, host, sort) with the active filters as chips under the header;
   the account menu at the bottom with appearance and language; hosts in
   a settings drawer.
-- New session: chips for host, repository, branch, agent; a composer
-  for the first task with attach, the model menu and dictation; chips
-  remember last choice. Every chip filters (a search row, an empty
+- New session: chips for host, repository, branch; a composer for the
+  first task whose foot row reads scope of action, then engine: attach
+  and the permission level on the left (ask for approval, approve for
+  me, full access, the last in a warning tone because it changes a
+  machine unattended); the agent and model, the effort and dictation on
+  the right. The agent lives in the engine button, not a chip: opening it
+  lists the harnesses, choosing one slides to its models with a search,
+  and a blank terminal is picked outright. Effort is a five-stop slider
+  (Minimal to Max) in a popover, not a list. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip multi-selects; each selected row carries
   its branch, which opens a branch pane for that repository; the branch
   chip shows only while one repository is selected. The host chip's
@@ -39,9 +45,8 @@
   two forms behind a Command / Agent prompt switch, a copyable panel,
   the token line, and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
-  enabled then. The model menu is scoped to the agent (each harness
-  lists only the models it drives; changing the agent resets the model
-  to that harness's default; a blank terminal has no model). Runtime
+  enabled then. The model list is the harness's own (a blank
+  terminal has no model). Runtime
   and lifetime chips arrive with the VM slice.
 - Provisioning: named steps with a ring, a check and a mono meta line
   (container or host, clone, checkout, start the agent), an elapsed
