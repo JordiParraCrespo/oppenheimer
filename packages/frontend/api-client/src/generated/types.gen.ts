@@ -804,6 +804,29 @@ export type SetUserPasswordRequest = {
     newPassword: string;
 };
 
+export type ProjectResponseDto = {
+    id: string;
+    organizationId: string;
+    /**
+     * The GitHub repository’s name, as GitHub spells it. Display only.
+     */
+    name: string;
+    /**
+     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
+     */
+    slug: string;
+    /**
+     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
+     */
+    originGithubRepoId?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UpdateProjectRequest = {
+    name: string;
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -3961,6 +3984,96 @@ export type SetPasswordResponses = {
 };
 
 export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+
+export type ListProjectsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/projects';
+};
+
+export type ListProjectsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListProjectsError = ListProjectsErrors[keyof ListProjectsErrors];
+
+export type ListProjectsResponses = {
+    200: Array<ProjectResponseDto>;
+};
+
+export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
+
+export type GetProjectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type GetProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetProjectError = GetProjectErrors[keyof GetProjectErrors];
+
+export type GetProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
+
+export type UpdateProjectData = {
+    body: UpdateProjectRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type UpdateProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
+
+export type UpdateProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
 export type CheckData = {
     body?: never;

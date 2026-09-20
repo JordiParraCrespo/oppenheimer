@@ -44,6 +44,7 @@ import { HostsModule } from './hosts/hosts.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
+import { ProjectsModule } from './projects/projects.module';
 import { QueueModule } from './queue/queue.module';
 import { RolesModule } from './roles/roles.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
@@ -179,13 +180,15 @@ import { UsersModule } from './users/user.module';
     // (`product/versions/mvp/00-scope.md`); the roster and invitation routes
     // it ships stay until the teams slice needs them. The starter's `leads`
     // reference module and `billing` are not composed: they are not in the
-    // MVP and the product contexts (hosts, installations, sessions, relay)
-    // take their place here as they land.
+    // MVP and the product contexts (hosts, installations, projects, sessions,
+    // relay) take their place here as they land.
     OrganizationsModule,
     // The control plane's own modules. `hosts` is first of them: the machines a
     // person paired, and the credential a runner authenticates with.
     HostsModule,
     AdminModule,
+    // The control plane's own modules, in the order their slices land.
+    ProjectsModule,
     HealthModule,
     QueueModule,
   ],

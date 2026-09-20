@@ -18,6 +18,7 @@ import { OrganizationOrmEntity } from '../organizations/database/organization.or
 import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
+import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
@@ -51,6 +52,7 @@ export default new DataSource({
     LeadOrmEntity,
     HostOrmEntity,
     HostPairingTokenOrmEntity,
+    ProjectOrmEntity,
     UserRoleOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
