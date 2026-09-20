@@ -28,8 +28,10 @@ const TESTS = ['\\.spec\\.ts$', '^src/[^/]+/__tests__/', '^src/__tests__/'];
 const CROSS_MODULE_PUBLIC_SURFACE = [
   '^src/config/', // not a module: the composition root's configuration
   // `roles` is @Global precisely so its AbilityFactory is the app's one
-  // answer to "what may this principal do". Guards in `auth` and handlers
-  // that check grantability ask it by design; it is published surface.
+  // answer to "what may this principal do". Handlers that check grantability
+  // ask it by design; it is published surface. The auth kernel is the one
+  // caller that may not name it — it asks through its own `ABILITY` port,
+  // which this module binds to the same factory (see `auth-is-a-kernel`).
   '^src/roles/application/ability\\.factory\\.ts$',
   // The one way to report a system role the database does not have. Three
   // paths raise it — sign-up's default `user` grant, the personal workspace's
@@ -187,6 +189,30 @@ module.exports = {
           // library directly, everything imports `auth` from here.
           '^src/auth/infrastructure/better-auth\\.config\\.ts$',
         ],
+      },
+    },
+    {
+      name: 'auth-is-a-kernel',
+      comment:
+        'src/auth is the kernel every other module is built on: it authenticates a request, resolves what its credential authorizes and applies the route’s policy. It must therefore know nothing of the features built on it — a credential kind is contributed with AuthModule.contributeCredentials, what a principal may do is asked through the ABILITY port, and who a credential belongs to through CREDENTIAL_OWNER. An import here is the kernel depending on one of its dependents, which is how the credential resolver came to hard-code API tokens.',
+      severity: 'error',
+      from: {
+        path: '^src/auth/',
+        pathNot: [
+          ...TESTS,
+          // The one accepted exception, and it is a dispatch, not a
+          // dependency: this handler is where sign-up’s side effects are named,
+          // and naming them means importing the command classes it puts on the
+          // bus (roles’ default grant, organizations’ personal workspace). The
+          // Better Auth hook that raises `CompleteSignUpCommand` can inject
+          // nothing, which is why the orchestration is a handler here at all.
+          '^src/auth/commands/complete-sign-up/complete-sign-up\\.command-handler\\.ts$',
+        ],
+      },
+      to: {
+        // `src/config` is not a module — it is the composition root’s
+        // configuration, which every layer including this one may read.
+        path: '^src/(?!auth/|config/)',
       },
     },
     {

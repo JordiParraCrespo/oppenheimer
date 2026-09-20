@@ -1,6 +1,7 @@
 import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ABILITY } from '../auth/auth.di-tokens';
 import { UsersModule } from '../users/user.module';
 import { AbilityFactory } from './application/ability.factory';
 import { RoleGrantPolicy } from './application/role-grant.policy';
@@ -66,6 +67,10 @@ const repositories: Provider[] = [
  * Roles / RBAC module. Marked `@Global` so the {@link AbilityFactory} (used by
  * the auth `PoliciesGuard` from every feature module) and the repository ports
  * are available application-wide without circular module imports.
+ *
+ * The same factory is bound to the auth kernel's `ABILITY` token: the guard
+ * asks "what may this principal do" through a port so that `auth` names no
+ * feature module, and this module is the one that answers.
  */
 @Global()
 @Module({
@@ -77,12 +82,14 @@ const repositories: Provider[] = [
     ...mappers,
     ...repositories,
     AbilityFactory,
+    { provide: ABILITY, useExisting: AbilityFactory },
     RoleGrantPolicy,
   ],
   exports: [
     ROLE_REPOSITORY,
     USER_ROLE_REPOSITORY,
     AbilityFactory,
+    ABILITY,
     RoleGrantPolicy,
     RoleMapper,
     TypeOrmModule,
