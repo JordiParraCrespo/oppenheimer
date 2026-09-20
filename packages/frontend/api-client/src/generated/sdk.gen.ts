@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, ListData, ListErrors, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, UnbanData, UnbanErrors, UnbanResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessions2Data, ListSessions2Errors, ListSessions2Responses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -686,6 +686,173 @@ export const removeMember = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
+ * List the workspace’s connected GitHub installations
+ *
+ * A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.
+ */
+export const listInstallations = <ThrowOnError extends boolean = false>(options?: Options<ListInstallationsData, ThrowOnError>): RequestResult<ListInstallationsResponses, ListInstallationsErrors, ThrowOnError> => (options?.client ?? client).get<ListInstallationsResponses, ListInstallationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations',
+    ...options
+});
+
+/**
+ * Connect a GitHub App installation to the workspace
+ *
+ * Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.
+ */
+export const connectInstallation = <ThrowOnError extends boolean = false>(options: Options<ConnectInstallationData, ThrowOnError>): RequestResult<ConnectInstallationResponses, ConnectInstallationErrors, ThrowOnError> => (options.client ?? client).post<ConnectInstallationResponses, ConnectInstallationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the repositories an installation covers
+ *
+ * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
+ */
+export const listInstallationRepositories = <ThrowOnError extends boolean = false>(options: Options<ListInstallationRepositoriesData, ThrowOnError>): RequestResult<ListInstallationRepositoriesResponses, ListInstallationRepositoriesErrors, ThrowOnError> => (options.client ?? client).get<ListInstallationRepositoriesResponses, ListInstallationRepositoriesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}/repositories',
+    ...options
+});
+
+/**
+ * List a repository’s branches
+ *
+ * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
+ */
+export const listRepositoryBranches = <ThrowOnError extends boolean = false>(options: Options<ListRepositoryBranchesData, ThrowOnError>): RequestResult<ListRepositoryBranchesResponses, ListRepositoryBranchesErrors, ThrowOnError> => (options.client ?? client).get<ListRepositoryBranchesResponses, ListRepositoryBranchesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches',
+    ...options
+});
+
+/**
+ * Disconnect a GitHub App installation
+ *
+ * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
+ */
+export const disconnectInstallation = <ThrowOnError extends boolean = false>(options: Options<DisconnectInstallationData, ThrowOnError>): RequestResult<DisconnectInstallationResponses, DisconnectInstallationErrors, ThrowOnError> => (options.client ?? client).delete<DisconnectInstallationResponses, DisconnectInstallationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/installations/{id}',
+    ...options
+});
+
+/**
+ * List the hosts the caller can reach
+ *
+ * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
+ */
+export const list6 = <ThrowOnError extends boolean = false>(options?: Options<List6Data, ThrowOnError>): RequestResult<List6Responses, List6Errors, ThrowOnError> => (options?.client ?? client).get<List6Responses, List6Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts',
+    ...options
+});
+
+/**
+ * List the caller’s pairing tokens
+ *
+ * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
+ */
+export const list7 = <ThrowOnError extends boolean = false>(options?: Options<List7Data, ThrowOnError>): RequestResult<List7Responses, List7Errors, ThrowOnError> => (options?.client ?? client).get<List7Responses, List7Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/pairing',
+    ...options
+});
+
+/**
+ * Mint a pairing token for a new host
+ *
+ * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.
+ */
+export const mint = <ThrowOnError extends boolean = false>(options: Options<MintData, ThrowOnError>): RequestResult<MintResponses, MintErrors, ThrowOnError> => (options.client ?? client).post<MintResponses, MintErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/pairing',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke a pairing token
+ *
+ * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
+ */
+export const revoke3 = <ThrowOnError extends boolean = false>(options: Options<Revoke3Data, ThrowOnError>): RequestResult<Revoke3Responses, Revoke3Errors, ThrowOnError> => (options.client ?? client).delete<Revoke3Responses, Revoke3Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/pairing/{id}',
+    ...options
+});
+
+/**
+ * Redeem a registration token and become a host
+ *
+ * Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.
+ */
+export const register = <ThrowOnError extends boolean = false>(options: Options<RegisterData, ThrowOnError>): RequestResult<RegisterResponses, RegisterErrors, ThrowOnError> => (options.client ?? client).post<RegisterResponses, RegisterErrors, ThrowOnError>({
+    url: '/api/v1/hosts/register',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unpair the calling host
+ *
+ * Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.
+ */
+export const uninstall = <ThrowOnError extends boolean = false>(options?: Options<UninstallData, ThrowOnError>): RequestResult<UninstallResponses, UninstallErrors, ThrowOnError> => (options?.client ?? client).delete<UninstallResponses, UninstallErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/self',
+    ...options
+});
+
+/**
+ * Unpair a host
+ *
+ * Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.
+ */
+export const unpair = <ThrowOnError extends boolean = false>(options: Options<UnpairData, ThrowOnError>): RequestResult<UnpairResponses, UnpairErrors, ThrowOnError> => (options.client ?? client).delete<UnpairResponses, UnpairErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/{id}',
+    ...options
+});
+
+/**
+ * Get one host
+ */
+export const get2 = <ThrowOnError extends boolean = false>(options: Options<Get2Data, ThrowOnError>): RequestResult<Get2Responses, Get2Errors, ThrowOnError> => (options.client ?? client).get<Get2Responses, Get2Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/{id}',
+    ...options
+});
+
+/**
+ * Rename a host
+ *
+ * Display only — nothing on the machine is named after this.
+ */
+export const rename = <ThrowOnError extends boolean = false>(options: Options<RenameData, ThrowOnError>): RequestResult<RenameResponses, RenameErrors, ThrowOnError> => (options.client ?? client).patch<RenameResponses, RenameErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List users
  */
 export const listUsers = <ThrowOnError extends boolean = false>(options?: Options<ListUsersData, ThrowOnError>): RequestResult<ListUsersResponses, ListUsersErrors, ThrowOnError> => (options?.client ?? client).get<ListUsersResponses, ListUsersErrors, ThrowOnError>({
@@ -828,6 +995,189 @@ export const revokeSessions = <ThrowOnError extends boolean = false>(options: Op
 export const setPassword = <ThrowOnError extends boolean = false>(options: Options<SetPasswordData, ThrowOnError>): RequestResult<SetPasswordResponses, SetPasswordErrors, ThrowOnError> => (options.client ?? client).post<SetPasswordResponses, SetPasswordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/admin/users/{id}/set-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the projects in the caller’s workspace
+ *
+ * Newest first. Archived projects are left out unless asked for.
+ */
+export const listProjects = <ThrowOnError extends boolean = false>(options?: Options<ListProjectsData, ThrowOnError>): RequestResult<ListProjectsResponses, ListProjectsErrors, ThrowOnError> => (options?.client ?? client).get<ListProjectsResponses, ListProjectsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/projects',
+    ...options
+});
+
+/**
+ * Archive a project
+ *
+ * Retires the project so no new session can be started in it. The row is kept for ever: its slug is a directory name on every host that held it, and a retired name is never reissued. Refuses while the project still has sessions that are not closed.
+ */
+export const archiveProject = <ThrowOnError extends boolean = false>(options: Options<ArchiveProjectData, ThrowOnError>): RequestResult<ArchiveProjectResponses, ArchiveProjectErrors, ThrowOnError> => (options.client ?? client).delete<ArchiveProjectResponses, ArchiveProjectErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/projects/{id}',
+    ...options
+});
+
+/**
+ * Get one project
+ */
+export const getProject = <ThrowOnError extends boolean = false>(options: Options<GetProjectData, ThrowOnError>): RequestResult<GetProjectResponses, GetProjectErrors, ThrowOnError> => (options.client ?? client).get<GetProjectResponses, GetProjectErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/projects/{id}',
+    ...options
+});
+
+/**
+ * Rename a project
+ *
+ * The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.
+ */
+export const updateProject = <ThrowOnError extends boolean = false>(options: Options<UpdateProjectData, ThrowOnError>): RequestResult<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError> => (options.client ?? client).patch<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/projects/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List the sessions in the caller’s workspace
+ *
+ * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
+ */
+export const listSessions2 = <ThrowOnError extends boolean = false>(options?: Options<ListSessions2Data, ThrowOnError>): RequestResult<ListSessions2Responses, ListSessions2Errors, ThrowOnError> => (options?.client ?? client).get<ListSessions2Responses, ListSessions2Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions',
+    ...options
+});
+
+/**
+ * Start a session
+ *
+ * Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.
+ */
+export const createSession = <ThrowOnError extends boolean = false>(options: Options<CreateSessionData, ThrowOnError>): RequestResult<CreateSessionResponses, CreateSessionErrors, ThrowOnError> => (options.client ?? client).post<CreateSessionResponses, CreateSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read a session’s log
+ *
+ * The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.
+ */
+export const listSessionEvents = <ThrowOnError extends boolean = false>(options: Options<ListSessionEventsData, ThrowOnError>): RequestResult<ListSessionEventsResponses, ListSessionEventsErrors, ThrowOnError> => (options.client ?? client).get<ListSessionEventsResponses, ListSessionEventsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/events',
+    ...options
+});
+
+/**
+ * Mint a ticket for a terminal on this session
+ *
+ * Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.
+ */
+export const issueAttachTicket = <ThrowOnError extends boolean = false>(options: Options<IssueAttachTicketData, ThrowOnError>): RequestResult<IssueAttachTicketResponses, IssueAttachTicketErrors, ThrowOnError> => (options.client ?? client).post<IssueAttachTicketResponses, IssueAttachTicketErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/attach-ticket',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Stop a session
+ *
+ * Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.
+ */
+export const stopSession = <ThrowOnError extends boolean = false>(options: Options<StopSessionData, ThrowOnError>): RequestResult<StopSessionResponses, StopSessionErrors, ThrowOnError> => (options.client ?? client).post<StopSessionResponses, StopSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/stop',
+    ...options
+});
+
+/**
+ * Restart a session
+ *
+ * Recreates window 0 in the worktrees the session already has — what a host reboot needs. It records a request: the session becomes open when the host says it did.
+ */
+export const restartSession = <ThrowOnError extends boolean = false>(options: Options<RestartSessionData, ThrowOnError>): RequestResult<RestartSessionResponses, RestartSessionErrors, ThrowOnError> => (options.client ?? client).post<RestartSessionResponses, RestartSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/restart',
+    ...options
+});
+
+/**
+ * Add a repository to a running session
+ *
+ * The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.
+ */
+export const addSessionCheckout = <ThrowOnError extends boolean = false>(options: Options<AddSessionCheckoutData, ThrowOnError>): RequestResult<AddSessionCheckoutResponses, AddSessionCheckoutErrors, ThrowOnError> => (options.client ?? client).post<AddSessionCheckoutResponses, AddSessionCheckoutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/checkouts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Remove a repository from a session
+ *
+ * Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.
+ */
+export const removeSessionCheckout = <ThrowOnError extends boolean = false>(options: Options<RemoveSessionCheckoutData, ThrowOnError>): RequestResult<RemoveSessionCheckoutResponses, RemoveSessionCheckoutErrors, ThrowOnError> => (options.client ?? client).delete<RemoveSessionCheckoutResponses, RemoveSessionCheckoutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}/checkouts/{checkoutId}',
+    ...options
+});
+
+/**
+ * Close a session
+ *
+ * Pushes each checkout’s branch, then removes the worktrees and prunes. The row is never deleted: its slug is the session’s directory name on the host and a retired name is never reissued, because the coding agents key their conversation state by working directory. Refuses when a checkout has unpushed work unless the loss is accepted.
+ */
+export const closeSession = <ThrowOnError extends boolean = false>(options: Options<CloseSessionData, ThrowOnError>): RequestResult<CloseSessionResponses, CloseSessionErrors, ThrowOnError> => (options.client ?? client).delete<CloseSessionResponses, CloseSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}',
+    ...options
+});
+
+/**
+ * Read one session
+ *
+ * With its live checkouts. Retired checkouts are left out.
+ */
+export const getSession = <ThrowOnError extends boolean = false>(options: Options<GetSessionData, ThrowOnError>): RequestResult<GetSessionResponses, GetSessionErrors, ThrowOnError> => (options.client ?? client).get<GetSessionResponses, GetSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}',
+    ...options
+});
+
+/**
+ * Rename a session
+ *
+ * Display only. The slug is the session’s directory name and the last segment of its branch, and it never changes. A name typed here is never overwritten by the title derived from the first prompt.
+ */
+export const renameSession = <ThrowOnError extends boolean = false>(options: Options<RenameSessionData, ThrowOnError>): RequestResult<RenameSessionResponses, RenameSessionErrors, ThrowOnError> => (options.client ?? client).patch<RenameSessionResponses, RenameSessionErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/sessions/{id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

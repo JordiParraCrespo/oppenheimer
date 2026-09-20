@@ -4,23 +4,50 @@
 
 - Sign-in: GitHub, Google, or email and password. Connect GitHub (the
   App install) is its own step after sign-in.
-- Onboarding, four screens, shown once: sign in; connect GitHub, all
-  or selected repos, skippable but the repo chip stays empty until
-  done; add a host, with two buttons, Copy install command and Copy
-  prompt for an AI agent, both carrying the same one-hour token, the
-  screen flipping to online when the runner registers; create your
-  first session, which is the real New session screen with chips
-  prefilled (the host just added, the first repo of the installation,
-  its default branch, Claude Code) and a box for a name or first task.
-  Missing pieces are handled inline afterwards: no `claude` login
-  becomes the login URL button in the terminal; no `tmux` is caught at
-  the add-host step.
-- Sidebar: sessions with a state dot, name, age; New session on top;
-  user at the bottom; hosts and accounts in a settings drawer.
-- New session: chips for host, repositories (several, each with its
-  base branch), agent; an optional name box — the first prompt names
-  the session otherwise; chips remember last choice. Runtime and lifetime chips
-  arrive with the VM slice.
+- Onboarding, four numbered steps and a landing, shown once. Each step
+  opens with a Back link, a hairline and the mono counter ("2 of 4"),
+  then the display title and a lead; the right half is the photo
+  carousel. (1) Sign in. (2) Name your workspace: the name, and the
+  permanent address under `oppenheimer.dev/`, checked for availability
+  as you type with a spinner, a green check or a red cross and a hint
+  in the same tone; Continue waits for an available address. (3)
+  Connect GitHub, all or selected repos, skippable but the repo chip
+  stays empty until done. (4) Add a host, with two copyable blocks, the
+  install command and the prompt for an AI agent, both carrying the
+  same one-hour token, the screen flipping to the registered host when
+  the runner registers. Then Ready: a success ring, "You're all set", a
+  summary card of workspace address, code and host, and one button into
+  the console, where New session has its chips prefilled (the host just
+  added, the first repo of the installation, its default branch, Claude
+  Code). Missing pieces are handled inline afterwards: no `claude`
+  login becomes the login URL button in the terminal; no `tmux` is
+  caught at the add-host step. (Replaces the earlier "four screens
+  ending on New session"; decided 2026-09-19 with the version-1 frames.)
+- Sidebar: sessions as a branch glyph coloured by state, name, age on
+  hover; a session still provisioning joins the list at once with a
+  pulsing grey glyph; New session on top; a filter menu (repository,
+  agent, host, sort) with the active filters as chips under the header;
+  the account menu at the bottom with appearance and language; hosts in
+  a settings drawer.
+- New session: chips for host, repository, branch, agent; a composer
+  for the first task with attach, the model menu and dictation; chips
+  remember last choice. Every chip filters (a search row, an empty
+  line). The repository chip multi-selects; each selected row carries
+  its branch, which opens a branch pane for that repository; the branch
+  chip shows only while one repository is selected. The host chip's
+  foot action opens the **Add host dialog**: the same instruction in
+  two forms behind a Command / Agent prompt switch, a copyable panel,
+  the token line, and a status line that resolves in place from
+  "Listening for this host…" to the registered host, with Use this host
+  enabled then. The model menu is scoped to the agent (each harness
+  lists only the models it drives; changing the agent resets the model
+  to that harness's default; a blank terminal has no model). Runtime
+  and lifetime chips arrive with the VM slice.
+- Provisioning: named steps with a ring, a check and a mono meta line
+  (container or host, clone, checkout, start the agent), an elapsed
+  clock and a status word, so a slow step is diagnosable. With several
+  repositories the steps read "Clone N repositories" and "Check out
+  branches".
 - Session: terminal full-bleed, tabs (tmux windows, window 0 the
   agent, the rest shells in the same worktree), thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
@@ -48,4 +75,5 @@
 3. Phone key bar contents: Esc, Tab, Ctrl, arrows, paste. Anything
    else?
 4. Where do usage meters go later, so the status line leaves room?
-5. Dark only, like the mockups, or both themes?
+5. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
+   frames and the design system carry both, "Match system" the default.

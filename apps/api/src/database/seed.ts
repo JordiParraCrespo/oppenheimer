@@ -11,6 +11,9 @@ import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
+import { HostOrmEntity } from '../hosts/database/host.orm-entity';
+import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -18,6 +21,7 @@ import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
+import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -25,6 +29,9 @@ import { RoleRepository } from '../roles/database/role.repository';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { RoleMapper } from '../roles/roles.mapper';
+import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
+import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 const dataSource = new DataSource({
@@ -46,10 +53,17 @@ const dataSource = new DataSource({
     OAuthConsentOrmEntity,
     RoleOrmEntity,
     AccessGrantOrmEntity,
+    HostOrmEntity,
+    HostPairingTokenOrmEntity,
     UserRoleOrmEntity,
+    GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
     InvitationOrmEntity,
+    ProjectOrmEntity,
+    WorkSessionOrmEntity,
+    SessionCheckoutOrmEntity,
+    WorkSessionEventOrmEntity,
     OutboxMessageSchema,
   ],
 });

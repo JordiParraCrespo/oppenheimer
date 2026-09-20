@@ -252,11 +252,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -274,7 +274,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -295,7 +295,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write';
     label: string;
     description: string;
     /**
@@ -310,7 +310,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'billing' | 'leads';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'billing' | 'leads' | 'hosts' | 'projects' | 'sessions' | 'repositories';
     label: string;
     description: string;
     /**
@@ -328,12 +328,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -349,7 +349,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -589,6 +589,226 @@ export type AddWorkspaceMemberRequest = {
     userId: string;
 };
 
+export type InstallationResponseDto = {
+    /**
+     * The control-plane id. Everything but the connect body uses this.
+     */
+    id: string;
+    organizationId: string;
+    /**
+     * GitHub’s own installation id.
+     */
+    githubInstallationId: number;
+    /**
+     * The account the App is installed on.
+     */
+    accountLogin: string;
+    accountType: 'User' | 'Organization';
+    /**
+     * What the installation dialog granted. GitHub enforces it, not us.
+     */
+    repositorySelection: 'all' | 'selected';
+    /**
+     * The account that connected it.
+     */
+    installedByUserId: string;
+    /**
+     * Set while GitHub reports the installation suspended; nothing resolves until it clears.
+     */
+    suspendedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ConnectInstallationRequest = {
+    githubInstallationId: number;
+    code: string;
+};
+
+export type RepositoryResponseDto = {
+    /**
+     * GitHub’s own repository id.
+     */
+    githubRepoId: number;
+    name: string;
+    fullName: string;
+    /**
+     * Offered as the default base branch.
+     */
+    defaultBranch: string;
+    private: boolean;
+    /**
+     * Archived on GitHub: readable, but pushes are refused.
+     */
+    archived: boolean;
+    /**
+     * When GitHub last saw a push, for ordering the picker.
+     */
+    pushedAt: string | null;
+};
+
+export type RepositoryBranchResponseDto = {
+    name: string;
+    commitSha: string;
+    /**
+     * Whether a branch protection rule applies.
+     */
+    protected: boolean;
+    /**
+     * Whether this is the repository’s default branch.
+     */
+    isDefault: boolean;
+};
+
+export type HostResponseDto = {
+    id: string;
+    /**
+     * The person who paired this machine. A host has no workspace.
+     */
+    ownerUserId: string;
+    name: string;
+    hostname?: string | null;
+    os?: string | null;
+    arch?: string | null;
+    runnerVersion?: string | null;
+    /**
+     * What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.
+     */
+    capabilities?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.
+     */
+    publicKeyFingerprint: string;
+    /**
+     * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
+     */
+    online: boolean;
+    lastSeenAt?: string | null;
+    /**
+     * When the host was unpaired. The row is kept so its history survives.
+     */
+    unpairedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type PairingTokenResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+};
+
+export type MintPairingTokenRequest = {
+    name: string;
+};
+
+export type MintedPairingTokenResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+    /**
+     * The one-line command that installs and registers the runner on the machine.
+     */
+    installCommand: string;
+    /**
+     * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
+     */
+    agentPrompt: string;
+};
+
+export type RegisterHostRequest = {
+    token: string;
+    name: string;
+    publicKey: string;
+    facts?: {
+        platform: 'macos' | 'debian' | 'ubuntu' | 'linux' | 'unsupported';
+        osVersion?: string;
+        arch: string;
+        hostname: string;
+        user: string;
+        home: string;
+        root: boolean;
+        tools: Array<{
+            name: string;
+            path?: string;
+            version?: string;
+            required: boolean;
+        }> | null;
+        workspacePath: string;
+        diskFreeBytes: number;
+        runnerVersion: string;
+    };
+};
+
+export type HostRegistrationResponseDto = {
+    /**
+     * The host this machine now is.
+     */
+    hostId: string;
+    /**
+     * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
+     */
+    fingerprint: string;
+    /**
+     * The release channel this host follows.
+     */
+    channel?: string;
+    /**
+     * Where the runner fetches signed release artifacts from.
+     */
+    releaseBaseUrl?: string;
+};
+
+export type RenameHostRequest = {
+    name: string;
+};
+
 export type AdminUserResponseDto = {
     id: string;
     email: string;
@@ -655,6 +875,212 @@ export type SetUserPasswordRequest = {
     newPassword: string;
 };
 
+export type ProjectResponseDto = {
+    id: string;
+    organizationId: string;
+    /**
+     * The GitHub repository’s name, as GitHub spells it. Display only.
+     */
+    name: string;
+    /**
+     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
+     */
+    slug: string;
+    /**
+     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
+     */
+    originGithubRepoId?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UpdateProjectRequest = {
+    name: string;
+};
+
+export type SessionCheckoutResponseDto = {
+    id: string;
+    /**
+     * The GitHub installation this repository’s tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string because the column is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * A display snapshot of `owner/repo`, refreshed whenever a checkout is created.
+     */
+    repositoryFullName: string;
+    /**
+     * The directory inside the session. Never reused, even after removal.
+     */
+    directoryName: string;
+    /**
+     * What the runner named the bare store under `repos/`. Null until it reports.
+     */
+    storeDirectoryName?: string | null;
+    /**
+     * Recorded rather than guessed: cleanup differs between the two.
+     */
+    mode: 'worktree' | 'clone';
+    /**
+     * What the session’s branch was created from.
+     */
+    baseBranch: string;
+    /**
+     * Always the session’s own branch, never the base.
+     */
+    branch: string;
+};
+
+export type SessionResponseDto = {
+    id: string;
+    organizationId: string;
+    projectId: string;
+    hostId: string;
+    /**
+     * Display name. It starts equal to the slug, then the first prompt names it.
+     */
+    name: string;
+    /**
+     * The session’s directory name and the last segment of its branch. Immutable, and never reissued.
+     */
+    slug: string;
+    /**
+     * The coding agent this session runs.
+     */
+    agent: string;
+    /**
+     * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
+     */
+    state: 'working' | 'waiting-on-you' | 'ready-for-review' | 'landing' | 'idle' | 'resolved';
+    /**
+     * The stored lifecycle: the fold of the session’s append-only log. It answers whether the work is finished, not whether a process is running — stopping a session does not move it.
+     */
+    lifecycle: 'starting' | 'open' | 'failed' | 'resolved';
+    /**
+     * Which checkout the agent was launched inside. Null starts it in the session directory with every checkout a peer.
+     */
+    cwdCheckoutId?: string | null;
+    agentSessionId?: string | null;
+    lastEventAt?: string | null;
+    /**
+     * When the agent and the tmux session last ended. The checkouts stay on disk.
+     */
+    stoppedAt?: string | null;
+    checkouts: Array<SessionCheckoutResponseDto>;
+    /**
+     * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
+     */
+    hints: Array<string>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type SessionPageMetaDto = {
+    /**
+     * Total matching sessions, across all pages.
+     */
+    total: number;
+    /**
+     * 1-based page number.
+     */
+    page: number;
+    /**
+     * Sessions per page.
+     */
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedSessionsResponseDto = {
+    data: Array<SessionResponseDto>;
+    meta: SessionPageMetaDto;
+};
+
+export type CreateSessionRequest = {
+    hostId: string;
+    agent: 'claude-code' | 'codex';
+    projectId?: string;
+    name?: string;
+    checkouts: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch?: string;
+    }>;
+    cwdGithubRepoId?: number;
+};
+
+export type SessionEventResponseDto = {
+    id: string;
+    sessionId: string;
+    /**
+     * Dense and monotonic per session. Assigned by the control plane, never on the wire.
+     */
+    seq: number;
+    /**
+     * Who wrote the entry.
+     */
+    source: 'runner' | 'api';
+    /**
+     * What happened. Free-form on purpose: a runner newer than this control plane may log a kind it has never heard of, and the log keeps it.
+     */
+    kind: string;
+    /**
+     * At most 8 KB, and never pane text: PTY bytes go to the browser and the runner’s ring buffer, never to Postgres.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * The writer’s clock.
+     */
+    occurredAt: string;
+    /**
+     * Ours.
+     */
+    recordedAt: string;
+};
+
+export type SessionEventPageResponseDto = {
+    data: Array<SessionEventResponseDto>;
+    /**
+     * Pass as `afterSeq` to read on, or null at the end of the log.
+     */
+    nextSeq: number | null;
+};
+
+export type IssueAttachTicketRequest = {
+    window?: number;
+};
+
+export type AttachTicketResponseDto = {
+    /**
+     * Single-use, 60 seconds. Present it in `Sec-WebSocket-Protocol` when opening the relay socket — never in the URL.
+     */
+    ticket: string;
+    /**
+     * The path to open the WebSocket on, on this API’s own origin.
+     */
+    url: string;
+    expiresAt: string;
+    /**
+     * The tmux window this ticket authorises. Tabs are tmux windows.
+     */
+    window: number;
+};
+
+export type AddCheckoutRequest = {
+    installationId: string;
+    githubRepoId: number;
+    baseBranch?: string;
+};
+
+export type RenameSessionRequest = {
+    name: string;
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -668,6 +1094,10 @@ export type CapabilitiesResponseDto = {
      * Stripe billing is configured.
      */
     stripe_billing: boolean;
+    /**
+     * The sessions GitHub App is configured.
+     */
+    github_app: boolean;
 };
 
 export type GetSettingsData = {
@@ -2901,6 +3331,461 @@ export type RemoveMemberResponses = {
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
 
+export type ListInstallationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations';
+};
+
+export type ListInstallationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
+
+export type ListInstallationsResponses = {
+    200: Array<InstallationResponseDto>;
+};
+
+export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
+
+export type ConnectInstallationData = {
+    body: ConnectInstallationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations';
+};
+
+export type ConnectInstallationErrors = {
+    /**
+     * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * GITHUB_004 — GitHub does not list that installation for the authorizing account
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_003 — Another workspace already holds that installation
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectInstallationError = ConnectInstallationErrors[keyof ConnectInstallationErrors];
+
+export type ConnectInstallationResponses = {
+    201: InstallationResponseDto;
+};
+
+export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
+
+export type ListInstallationRepositoriesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}/repositories';
+};
+
+export type ListInstallationRepositoriesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ListInstallationRepositoriesError = ListInstallationRepositoriesErrors[keyof ListInstallationRepositoriesErrors];
+
+export type ListInstallationRepositoriesResponses = {
+    200: Array<RepositoryResponseDto>;
+};
+
+export type ListInstallationRepositoriesResponse = ListInstallationRepositoriesResponses[keyof ListInstallationRepositoriesResponses];
+
+export type ListRepositoryBranchesData = {
+    body?: never;
+    path: {
+        id: string;
+        githubRepoId: number;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches';
+};
+
+export type ListRepositoryBranchesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 — The installation is not connected, or does not cover that repository
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ListRepositoryBranchesError = ListRepositoryBranchesErrors[keyof ListRepositoryBranchesErrors];
+
+export type ListRepositoryBranchesResponses = {
+    200: Array<RepositoryBranchResponseDto>;
+};
+
+export type ListRepositoryBranchesResponse = ListRepositoryBranchesResponses[keyof ListRepositoryBranchesResponses];
+
+export type DisconnectInstallationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}';
+};
+
+export type DisconnectInstallationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DisconnectInstallationError = DisconnectInstallationErrors[keyof DisconnectInstallationErrors];
+
+export type DisconnectInstallationResponses = {
+    /**
+     * The installation is no longer connected.
+     */
+    204: void;
+};
+
+export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
+
+export type List6Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts';
+};
+
+export type List6Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type List6Error = List6Errors[keyof List6Errors];
+
+export type List6Responses = {
+    200: Array<HostResponseDto>;
+};
+
+export type List6Response = List6Responses[keyof List6Responses];
+
+export type List7Data = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
+};
+
+export type List7Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type List7Error = List7Errors[keyof List7Errors];
+
+export type List7Responses = {
+    200: Array<PairingTokenResponseDto>;
+};
+
+export type List7Response = List7Responses[keyof List7Responses];
+
+export type MintData = {
+    body: MintPairingTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/pairing';
+};
+
+export type MintErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_004 — This deployment has no runner release configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type MintError = MintErrors[keyof MintErrors];
+
+export type MintResponses = {
+    201: MintedPairingTokenResponseDto;
+};
+
+export type MintResponse = MintResponses[keyof MintResponses];
+
+export type Revoke3Data = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/pairing/{id}';
+};
+
+export type Revoke3Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_002 — Pairing token not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type Revoke3Error = Revoke3Errors[keyof Revoke3Errors];
+
+export type Revoke3Responses = {
+    /**
+     * Pairing token revoked
+     */
+    204: void;
+};
+
+export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
+
+export type RegisterData = {
+    body: RegisterHostRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/register';
+};
+
+export type RegisterErrors = {
+    /**
+     * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
+     */
+    401: ProblemDetailsDto;
+    /**
+     * HOSTS_004 — This deployment has no runner release configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type RegisterError = RegisterErrors[keyof RegisterErrors];
+
+export type RegisterResponses = {
+    201: HostRegistrationResponseDto;
+};
+
+export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+
+export type UninstallData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/hosts/self';
+};
+
+export type UninstallErrors = {
+    /**
+     * HOSTS_005 — No valid host assertion was presented
+     */
+    401: ProblemDetailsDto;
+};
+
+export type UninstallError = UninstallErrors[keyof UninstallErrors];
+
+export type UninstallResponses = {
+    /**
+     * The calling host is unpaired
+     */
+    204: void;
+};
+
+export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
+
+export type UnpairData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type UnpairErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UnpairError = UnpairErrors[keyof UnpairErrors];
+
+export type UnpairResponses = {
+    /**
+     * Host unpaired
+     */
+    204: void;
+};
+
+export type UnpairResponse = UnpairResponses[keyof UnpairResponses];
+
+export type Get2Data = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type Get2Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type Get2Error = Get2Errors[keyof Get2Errors];
+
+export type Get2Responses = {
+    200: HostResponseDto;
+};
+
+export type Get2Response = Get2Responses[keyof Get2Responses];
+
+export type RenameData = {
+    body: RenameHostRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}';
+};
+
+export type RenameErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RenameError = RenameErrors[keyof RenameErrors];
+
+export type RenameResponses = {
+    200: HostResponseDto;
+};
+
+export type RenameResponse = RenameResponses[keyof RenameResponses];
+
 export type ListUsersData = {
     body?: never;
     path?: never;
@@ -3545,6 +4430,567 @@ export type SetPasswordResponses = {
 };
 
 export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
+
+export type ListProjectsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Include retired projects. They are left out by default: a retired project keeps its slug for ever, so the listing would otherwise fill with rows nobody can put work in.
+         */
+        includeArchived?: boolean;
+    };
+    url: '/api/v1/projects';
+};
+
+export type ListProjectsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListProjectsError = ListProjectsErrors[keyof ListProjectsErrors];
+
+export type ListProjectsResponses = {
+    200: Array<ProjectResponseDto>;
+};
+
+export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
+
+export type ArchiveProjectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type ArchiveProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PROJECTS_005 — The project still has open sessions
+     */
+    409: ProblemDetailsDto;
+    /**
+     * PROJECTS_003 — Nothing can answer whether the project still has open sessions
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ArchiveProjectError = ArchiveProjectErrors[keyof ArchiveProjectErrors];
+
+export type ArchiveProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
+
+export type GetProjectData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type GetProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetProjectError = GetProjectErrors[keyof GetProjectErrors];
+
+export type GetProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
+
+export type UpdateProjectData = {
+    body: UpdateProjectRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{id}';
+};
+
+export type UpdateProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
+
+export type UpdateProjectResponses = {
+    200: ProjectResponseDto;
+};
+
+export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type ListSessions2Data = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * The stored lifecycle, not the derived group.
+         */
+        state?: 'starting' | 'open' | 'failed' | 'resolved';
+        /**
+         * One host’s sessions
+         */
+        hostId?: string;
+        /**
+         * One project’s sessions
+         */
+        projectId?: string;
+        /**
+         * Sessions per page
+         */
+        limit?: number;
+        /**
+         * Page number (default: 1)
+         */
+        page?: number;
+    };
+    url: '/api/v1/sessions';
+};
+
+export type ListSessions2Errors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListSessions2Error = ListSessions2Errors[keyof ListSessions2Errors];
+
+export type ListSessions2Responses = {
+    200: PaginatedSessionsResponseDto;
+};
+
+export type ListSessions2Response = ListSessions2Responses[keyof ListSessions2Responses];
+
+export type CreateSessionData = {
+    body: CreateSessionRequest;
+    headers?: {
+        /**
+         * Send one. A retry after a lost response returns the session already created instead of minting a second directory and a second branch.
+         */
+        'Idempotency-Key'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions';
+};
+
+export type CreateSessionErrors = {
+    /**
+     * SESSIONS_009 — No project to put the session in
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_006 — That project is archived
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
+
+export type CreateSessionResponses = {
+    201: SessionResponseDto;
+};
+
+export type CreateSessionResponse = CreateSessionResponses[keyof CreateSessionResponses];
+
+export type ListSessionEventsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Entries per page
+         */
+        limit?: number;
+        /**
+         * Read on from this `seq`. Omit for the start of the log.
+         */
+        afterSeq?: number;
+    };
+    url: '/api/v1/sessions/{id}/events';
+};
+
+export type ListSessionEventsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ListSessionEventsError = ListSessionEventsErrors[keyof ListSessionEventsErrors];
+
+export type ListSessionEventsResponses = {
+    200: SessionEventPageResponseDto;
+};
+
+export type ListSessionEventsResponse = ListSessionEventsResponses[keyof ListSessionEventsResponses];
+
+export type IssueAttachTicketData = {
+    body: IssueAttachTicketRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/attach-ticket';
+};
+
+export type IssueAttachTicketErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_008 — A terminal ticket could not be issued
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueAttachTicketError = IssueAttachTicketErrors[keyof IssueAttachTicketErrors];
+
+export type IssueAttachTicketResponses = {
+    201: AttachTicketResponseDto;
+};
+
+export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
+
+export type StopSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/stop';
+};
+
+export type StopSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type StopSessionError = StopSessionErrors[keyof StopSessionErrors];
+
+export type StopSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type StopSessionResponse = StopSessionResponses[keyof StopSessionResponses];
+
+export type RestartSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/restart';
+};
+
+export type RestartSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RestartSessionError = RestartSessionErrors[keyof RestartSessionErrors];
+
+export type RestartSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RestartSessionResponse = RestartSessionResponses[keyof RestartSessionResponses];
+
+export type AddSessionCheckoutData = {
+    body: AddCheckoutRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/checkouts';
+};
+
+export type AddSessionCheckoutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     *
+     * SESSIONS_004 — That repository is already checked out here
+     */
+    409: ProblemDetailsDto;
+};
+
+export type AddSessionCheckoutError = AddSessionCheckoutErrors[keyof AddSessionCheckoutErrors];
+
+export type AddSessionCheckoutResponses = {
+    201: SessionResponseDto;
+};
+
+export type AddSessionCheckoutResponse = AddSessionCheckoutResponses[keyof AddSessionCheckoutResponses];
+
+export type RemoveSessionCheckoutData = {
+    body?: never;
+    path: {
+        id: string;
+        checkoutId: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/checkouts/{checkoutId}';
+};
+
+export type RemoveSessionCheckoutErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_003 — No such checkout on this session
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RemoveSessionCheckoutError = RemoveSessionCheckoutErrors[keyof RemoveSessionCheckoutErrors];
+
+export type RemoveSessionCheckoutResponses = {
+    200: SessionResponseDto;
+};
+
+export type RemoveSessionCheckoutResponse = RemoveSessionCheckoutResponses[keyof RemoveSessionCheckoutResponses];
+
+export type CloseSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * Accept losing work that is not pushed. The refusal is the default.
+         */
+        acceptUnpushedWork?: boolean;
+    };
+    url: '/api/v1/sessions/{id}';
+};
+
+export type CloseSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CloseSessionError = CloseSessionErrors[keyof CloseSessionErrors];
+
+export type CloseSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type CloseSessionResponse = CloseSessionResponses[keyof CloseSessionResponses];
+
+export type GetSessionData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}';
+};
+
+export type GetSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetSessionError = GetSessionErrors[keyof GetSessionErrors];
+
+export type GetSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type GetSessionResponse = GetSessionResponses[keyof GetSessionResponses];
+
+export type RenameSessionData = {
+    body: RenameSessionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}';
+};
+
+export type RenameSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type RenameSessionError = RenameSessionErrors[keyof RenameSessionErrors];
+
+export type RenameSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
 
 export type CheckData = {
     body?: never;

@@ -22,16 +22,23 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 - **A session is a worktree plus a terminal on a host.** No VM, no
   container. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
-  to the browser.
+  to the browser. A session may span **several repositories**: one
+  worktree per repository, each on its own branch, the tmux session
+  rooted in the primary one (decided 2026-09-19; the console shows the
+  extra repositories as a count on the chip and the boot trace clones
+  them one by one).
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
-  (one per session) — superseded by 10: the layout is now
-  `workspaces/<org>/projects/<project>/{repos,sessions}`. Agent
-  personalities and the like come later.
-- **Create session chips:** host, repositories (several, each with its
-  base branch), agent. Agent is Claude Code in the MVP; Codex is the
-  next entry.
+  (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
+  personalities and the like come later (note 11 §1).
+- **Create session chips:** host, repository, branch, agent, every one
+  of them searchable. The repository chip multi-selects and carries a
+  branch per selected repository; the branch chip shows only while one
+  repository is selected. The agent chip lists Claude Code, Codex,
+  OpenCode and a blank terminal with the vendors' marks where they
+  exist; Claude Code is the one wired end to end in the MVP, the others
+  are pickable so the flow is honest about where they go next.
 - **Agent login is the host's own.** The runner launches `claude` with
   the host's existing config; you log in once per host by typing it in
   the terminal, and the login URL becomes a button. No account objects,
@@ -49,10 +56,11 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   WebSocket to the control plane; the browser connects to the control
   plane; the control plane relays. Tailscale is an optional fast path
   later, never a requirement.
-- **Onboarding is four screens**: sign in, connect GitHub, add a host
-  (paste one command or hand an agent the install prompt), create the
-  first session on the real New session screen with chips prefilled
-  (05 §onboarding).
+- **Onboarding is four numbered steps and a landing**: sign in; name
+  your workspace and pick its address; connect GitHub; add a host
+  (paste one command or hand an agent the install prompt); then a
+  "You're all set" summary that leads into the console, where New
+  session has its chips prefilled (05 §onboarding).
 - **Sleep is not a platform concern.** The host is always on; tmux
   keeps sessions alive; the browser reattaches. Closing a session
   pushes the branch and removes the worktree.
@@ -103,11 +111,10 @@ more and switch in the sidebar.
 
 1. ~~Tabs~~: decided, tmux windows in one tmux session per session
    (02 §tmux).
-2. ~~Session naming~~: decided, derived from the first prompt by a fast
-   model, with an opaque minted slug as the fallback and an optional
-   typed name (10).
-3. ~~Branch chip~~: decided, the base for a new session-named branch,
-   chosen per repository; never an existing branch directly (10).
+2. Session naming: typed by the user, derived from the first task, or
+   from the branch?
+3. Branch chip: base for a new session-named branch, or check out an
+   existing branch directly? Both, with new-branch as default?
 4. Should the runner refuse to start a session if the host has no
    `claude` login, or start it and let the login prompt appear? Let it
    appear; that is the flow.

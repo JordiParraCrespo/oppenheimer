@@ -31,6 +31,10 @@ import { PasswordInput } from '@oppenheimer/design-system-web/password-input';
 import { Separator } from '@oppenheimer/design-system-web/separator';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
+import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
+import { StepHeader } from '@oppenheimer/design-system-web/step-header';
+import { SuccessMark } from '@oppenheimer/design-system-web/success-mark';
+import { SummaryCard, SummaryRow } from '@oppenheimer/design-system-web/summary-card';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import {
   ArrowUpIcon,
@@ -48,8 +52,10 @@ import {
   AccountMenuDemo,
   CarouselDemo,
   ComposerDemo,
+  AddHostDialogDemo,
   DestructiveDialogDemo,
-  DialogDemo,
+  SegmentedDemo,
+  SlugFieldDemo,
   FilterMenuDemo,
   ModelMenu,
   ScopeChips,
@@ -488,8 +494,9 @@ export default function Page() {
         id="codeblock"
         title="CodeBlock"
         meta="code-block.tsx"
-        desc="A command a person copies, in 12.5px mono with a small Copy that reads Copied for a moment. Two sit in Cards on Add host; dim fades the trailing token without changing what is copied."
-        code={`<CodeBlock title="Install command" code="curl -fsSL … --token opk_7f3a9c" dim="opk_7f3a9c" />`}
+        desc="A command a person copies. The card layout is 12.5px mono with a labelled Copy that reads Copied for a moment: two sit in Cards on Add host, and dim fades the trailing token without changing what is copied. The panel layout is the Add host dialog's: a tonal 10px panel at 11.5px with an icon-only copy in the corner that flips to a green check. Long lines wrap anywhere rather than breaking mid-token."
+        code={`<CodeBlock title="Install command" code="curl -fsSL … --token opk_7f3a9c" dim="opk_7f3a9c" />
+<CodeBlock layout="panel" code={installCommand} />`}
       >
         <div className="grid w-full gap-3 md:grid-cols-2">
           <Card padded>
@@ -507,6 +514,89 @@ export default function Page() {
             />
           </Card>
         </div>
+        <div className="w-full max-w-[384px]">
+          <CodeBlock
+            layout="panel"
+            code={`curl -fsSL https://app.oppenheimer.dev/install.sh \\\n  | sh -s -- --token opk_7f3a9c`}
+          />
+        </div>
+      </Spec>
+
+      <Spec
+        id="summarycard"
+        title="SummaryCard"
+        meta="summary-card.tsx"
+        desc="Facts a person checks before moving on: the Ready screen's workspace, code and host. A Card of rows with hairlines between them, a muted 13px label on the left and a mono value on the right. Values are mono because they are things, not prose."
+        code={`<SummaryCard><SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>…</SummaryCard>`}
+      >
+        <SummaryCard className="w-full max-w-[400px]">
+          <SummaryRow label="Workspace">oppenheimer.dev/versio</SummaryRow>
+          <SummaryRow label="Code">JordiParraCrespo · 12 repos</SummaryRow>
+          <SummaryRow label="Host">mac-studio · macOS 15</SummaryRow>
+        </SummaryCard>
+      </Spec>
+
+      <Spec
+        id="successmark"
+        title="SuccessMark"
+        meta="success-mark.tsx"
+        desc="The ring at the top of Ready: 52px, a 1.5px primary border on the selected tint, a primary check. It enters with a 320ms scale-and-fade and holds still under reduced motion. The one place the action blue is decorative, because the action is done."
+        code={`<SuccessMark />`}
+      >
+        <Swatch label="md · 52">
+          <SuccessMark />
+        </Swatch>
+        <Swatch label="sm · 36">
+          <SuccessMark size="sm" />
+        </Swatch>
+        <div className="flex max-w-[400px] flex-col gap-3.5">
+          <SuccessMark />
+          <StepHeader title="You're all set">
+            Versio Platform is ready. Start a session and watch every step it takes.
+          </StepHeader>
+        </div>
+      </Spec>
+
+      <Spec
+        id="stepheader"
+        title="StepHeader"
+        meta="step-header.tsx"
+        desc="The opening of every onboarding step: an eyebrow row with a Back link, a 12px hairline and the mono counter, then the 38px display title and the 15px muted lead. CreateWorkspace, ConnectGitHub and AddHost render it identically; Ready takes the title and lead alone."
+        code={`<StepHeader step={2} total={4} back={{ href: '/sign-in' }} title="Name your workspace">A workspace holds your hosts, repositories and run history.</StepHeader>`}
+      >
+        <StepHeader
+          className="max-w-[400px]"
+          step={2}
+          total={4}
+          back={{ href: '#stepheader' }}
+          title="Name your workspace"
+        >
+          A workspace holds your hosts, repositories and run history. You can rename it later; the
+          address is permanent.
+        </StepHeader>
+      </Spec>
+
+      <Spec
+        id="agentmark"
+        title="AgentMark"
+        meta="agent-mark.tsx"
+        desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, OpenCode its square in the current ink. Codex takes the neutral bot glyph on purpose, since no OpenAI mark ships with this system, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
+        code={`<AgentMark agent="claude-code" />`}
+      >
+        {(['claude-code', 'codex', 'opencode', 'shell'] as const).map((agent) => (
+          <Swatch key={agent} label={agent}>
+            <span className="flex items-center gap-2.5 text-[13px] text-fg">
+              <AgentMark agent={agent} />
+              {agent === 'claude-code'
+                ? 'Claude Code'
+                : agent === 'codex'
+                  ? 'Codex'
+                  : agent === 'opencode'
+                    ? 'OpenCode'
+                    : 'Blank terminal'}
+            </span>
+          </Swatch>
+        ))}
       </Spec>
 
       <Spec
@@ -588,6 +678,27 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="sluginput"
+        title="SlugInput"
+        meta="slug-input.tsx"
+        desc="An Input for an address checked as you type, in the PasswordInput mould: it owns the mono prefix inside the border and the trailing verdict, which cycles through checking (a spinning ring), ok (a green check) and taken (a red ×, which also marks the field invalid). Pair with FieldDescription tone=success for the green hint. Type acme to see it taken."
+        code={`<SlugInput size="lg" prefix="oppenheimer.dev/" status={status} {...register('slug')} />
+<FieldDescription tone="success">oppenheimer.dev/versio is available.</FieldDescription>`}
+      >
+        <SlugFieldDemo />
+      </Spec>
+
+      <Spec
+        id="segmented"
+        title="SegmentedControl"
+        meta="segmented-control.tsx"
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup."
+        code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
+      >
+        <SegmentedDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
@@ -602,13 +713,11 @@ export default function Page() {
 
       <Spec
         id="chipselect"
-        title="ChipSelect"
-        meta="chip-select.tsx"
-        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch, with this agent. Open takes the blue ring; the listbox has two-line options with a check, and an action row after a hairline for Add a host."
-        code={`<ChipSelect value={host} onValueChange={setHost} icon={<CpuIcon />} aria-label="Host">
-  <ChipSelectOption value="mac-studio" description="macOS 15 · echo 38 ms">mac-studio</ChipSelectOption>
-  <ChipSelectAction onClick={addHost} description="Install the runner on another machine">Add a host…</ChipSelectAction>
-</ChipSelect>`}
+        title="ChipSelect · RepositorySelect"
+        meta="chip-select.tsx · repository-select.tsx"
+        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch, with this agent. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected."
+        code={`<ChipSelect value={host} onValueChange={setHost} options={hosts} icon={<CpuIcon />} searchPlaceholder="Search hosts…" emptyText="No host matches." action={{ label: 'Add host…', onSelect: openAddHost }} />
+<RepositorySelect repositories={repos} value={scope} onValueChange={setScope} />`}
       >
         <ScopeChips />
       </Spec>
@@ -631,10 +740,10 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 28px radius, the modal shadow, a blurred scrim, a 4px rise. Destructive copy states the cost and the button says exactly what it does."
-        code={`<Dialog><DialogTrigger render={<Button />}>Open</DialogTrigger><DialogContent><DialogHeader><DialogTitle>You're set up</DialogTitle>…`}
+        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add host is the only dialog in v1: one instruction, two ways to read it, and a status line that resolves in place so nothing below it moves. Destructive copy states the cost and the button says exactly what it does."
+        code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
-        <DialogDemo />
+        <AddHostDialogDemo />
         <DestructiveDialogDemo />
       </Spec>
 
@@ -675,7 +784,7 @@ export default function Page() {
         id="sidebar"
         title="Sidebar · SessionItem"
         meta="sidebar.tsx · session-item.tsx"
-        desc="The 264px rail on its own surface tier: wordmark, the New session button, an eyebrow header with count and filter, the session list, and the account footer. A session row is a glyph coloured by state and a name; the age appears on hover and on the active row."
+        desc="The 264px rail on its own surface tier: wordmark, the New session button, an eyebrow header with count and filter, the session list, and the account footer. A session row is a glyph coloured by state and a name; the age appears on hover and on the active row. A session still provisioning is pending: the grey glyph pulses."
         bare
       >
         <div className="flex flex-wrap gap-6">

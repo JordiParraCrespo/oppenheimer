@@ -22,8 +22,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
-| 10 | [API modules and data model](10-api-modules-and-data-model.md) | The in-depth version of 03's data model: the five API modules, their aggregates, the seven new tables, the on-disk layout, the endpoint surface, and where agents and models live |
-| 11 | [API implementation plan](11-api-implementation-plan.md) | How 10 becomes code: six API slices and three runner ones, each with its files, migration, tests and definition of done; the contract mismatches the plan settled |
 
 ## Decision log
 
@@ -92,143 +90,145 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   gains F26a: first install is trust-on-first-use, so F26 begins at the
   first self-update, not at install. The link is a **port**, not a
   bounded context.
-- 2026-09-18: 10-api-modules-and-data-model.md added, deepening 03's
-  "Data model, first cut" into the module map and schema the enforced
-  `apps/api` contract can carry. Four modules, not seven: `identity` is
-  the starter's auth, `installations` and `repositories` merge into
-  `github/` (one aggregate, because a webhook replaces the repository
-  set as a whole), `tokens` is a port on `github/` rather than a module
-  because installation tokens are never stored, and `events` is a table
-  inside `sessions/` rather than a module of its own. **Models and
-  coding agents get no table**: a model picker is a stated MVP non-goal
-  and an agent needs runner code either way, so the agent catalog is a
-  closed list in `packages/shared` and per-host availability is a host
-  fact. **"Repositories" and "GitHub allowed repositories" are one
-  noun**, because the App installation is a boundary GitHub enforces.
-  `SessionState` gains `blocked`, the one wire change; `done` and
-  `unknown` from the screen manifest are still unmapped (10 open Q8).
-  The schema is held to the shape of the starter's own Better Auth
-  tables — flat rows, credentials inline with their subject, a table
-  only where the lifetime is genuinely independent. That deletes three
-  tables an earlier draft had: host keys become a column pair on `host`,
-  the attach ticket becomes a Redis key with a TTL, and webhook
-  de-duplication becomes a cache key because the handler is a full
-  resync and therefore already idempotent.
-- 2026-09-18: **a project level, and a session that holds several
-  checkouts.** A project is the body of work; a session is one piece of
-  work inside it; a checkout is one repository on its own branch, and a
-  session has one or more. So `work_session` loses `repositoryId`,
-  `baseBranch` and `branch` to a new `session_checkout` table, and gains
-  `projectId` and `cwdCheckoutId` — *where the agent is launched*, the
-  one fact that matters, encoded directly instead of as a flag on a
-  checkout row. Eight tables, five modules (`projects/` joins). The
-  layout becomes
-  `projects/<slug>/repos/<owner>--<repo>.git` (bare, always
-  owner-prefixed) plus `projects/<slug>/sessions/<slug>/<checkout>`,
-  superseding note 11 §1; `projects/` rather than `workspaces/` because
-  the latter already means the `organization` row. A checkout records
-  whether it is a `worktree` or a `clone`, because cleanup differs.
-  Four rules come from reading Orca's source: identity is never a path,
-  ownership is proven by a `.oppenheimer` marker and never by where a
-  directory sits, ownership and visibility are different axes, and a
-  session slug is never reused because agent CLIs key conversation
-  state by working directory — which means `work_session` rows are
-  never hard-deleted. The pairing token gains `intendedName` so a host
-  can be named before it exists, as Orca's Add-remote-server dialog
-  does.
-- 2026-09-18: **a host has an owner, not just a workspace.** 08-auth.md
-  said hosts belong to the workspace that paired them. That is right
-  about the tenant boundary and wrong as a default for use: a session on
-  a direct-mode host has full access to the machine (F10), runs under
-  its owner's Unix account, and spends the agent login that is "the
-  host's own" — so workspace-ownership would make handing a teammate
-  your laptop and your subscription the default. `host.ownerUserId` is
-  therefore not audit only, and `HostResource` declares `'own'` and
-  `'grant'` as `leads` does. Identical in the MVP, where one person is
-  the whole workspace; the teams slice inherits the safe default.
-- 2026-09-19: **lessons from `eliasstravik/herdr-projects`**, which runs
-  the same shape (a project of threads, each a worktree and a branch).
-  It keeps **three** state vocabularies where this note kept one, which
-  is why `done` and `unknown` had nowhere to go: a stored lifecycle, the
-  agent's own pane observation, and a group derived on read and
-  organised by *what needs you*. `done` and `unknown` are inputs, not
-  session states. The group adds `landing` — pushed, PR open and
-  approved, not merged — which nothing here had named, and makes
-  `ready-for-review` a hash comparison rather than a state. Two rules
-  come with it: debounce from a recorded transition, never a live probe,
-  so a caller with no history cannot fabricate "blocked for five
-  minutes"; and precedence order is a different function from display
-  order. **Branch names now carry the ids** —
-  `oppenheimer/<project>/<session>` — which makes the cross-session
-  branch collision three reviewers flagged impossible by construction
-  rather than checked. A session may have **zero** checkouts, for a
-  project of notes and bots. `project` rows are never hard-deleted, so
-  the slug is a tombstone: herdr frees its project slugs on delete while
-  path-keyed grants survive, and warns about it in its own code. `stop`
-  leaves the worktrees on disk and `DELETE` closes, refusing when work
-  is unpushed and relaying git's refusal verbatim. No open questions
-  remain in 10.
-- 2026-09-19: **a host belongs to a person; workspaces borrow it.**
-  Reverses the 2026-09-18 line above: `host` loses `organizationId`
-  and keeps `ownerUserId`, scoped own-or-grant, because Better Auth
-  hangs every device-and-login table off `user`, and because the case
-  that matters — one person, a personal and a company workspace, one
-  laptop — pairs the machine once. The Claude login on that machine is
-  the person's too, so host and login sit on one axis; several logins
-  per machine are the accounts slice (note 06, `CLAUDE_CONFIG_DIR`, as
-  Orca and OpenClaw do it), not the MVP. The layout gains
-  `workspaces/<organization.slug>/` above `projects/`. Three more
-  decisions: **one API replica** for now (`connectionEpoch` and
-  `connectedReplicaId` gone; the fence is a named slice in `relay/`);
-  **sessions are named from the first prompt** by a model chosen in
-  configuration (`SESSION_NAMER_PROVIDER`, `SESSION_NAMER_MODEL`)
-  behind a port, with an opaque minted slug (`bold-otter-3f9a7k`) as
-  directory, branch and fallback name; **each checkout picks a base
-  branch** and the working branch is always
-  `oppenheimer/<project>/<session>`. The review's eleven act-on
-  findings are folded into 10: composite `(organizationId, …)` keys,
-  `removedAt` on repositories and checkouts, a frozen
-  `storeDirectoryName`, `Idempotency-Key` on create, `<runId>:<n>`
-  runner keys, the redeem-and-insert transaction with a fingerprint
-  retry, gateways in `relay/infrastructure/` that guard themselves in
-  the handshake, and three GitHub webhooks instead of one.
-- 2026-09-19: **repositories are listed live, not mirrored; agents are
-  never required on a host.** 10 stops mirroring the installation's
-  repository set: the picker asks GitHub through the installation token
-  (cached a minute in Redis), and a `github_repository` row is created
-  lazily on the first checkout, recording only what is on disk — the
-  frozen store name and the identity the checkout's key needs. Gone with
-  the mirror: the `installation_repositories` and `repository`
-  webhooks, the daily resync, the sync endpoint, `removedAt` and
-  `hiddenAt`. The `installation` webhook stays for suspend and delete.
-  `host.capabilities` is what the runner last saw, a hint on the agent
-  chip and never a gate; a session opens without `claude` and the
-  install command appears in the terminal, as on Orca.
-- 2026-09-19: **no repository table at all.** The lazily created
-  `github_repository` row from the entry above was still a repository
-  table by another name. A checkout carries `installationId`,
-  `githubRepoId` and a `repositoryFullName` snapshot inline, the way
-  Better Auth's `account` carries its provider ids; the runner names
-  stores `<owner>--<repo>.git`, writes the GitHub id into the bare
-  repo's config, finds them by that id thereafter, and reports the name
-  back. `project.originRepositoryId` becomes `originGithubRepoId`.
-  Seven tables.
-- 2026-09-19: 11-api-implementation-plan.md added: six API slices
-  (shared vocabulary, `github/`, `hosts/`, `projects/`, `sessions/`,
-  console, `relay/`) and three runner counterparts, each a pull request
-  green on the checks CI runs today. Writing it against the code settled
-  four contract mismatches: the register route is `POST /hosts/register`
-  as the runner and 01/09 already say, plus `DELETE /hosts/self` for
-  uninstall (10 said one call and `/hosts/pairing/redeem`); the host
-  assertion stays an `Authorization: Bearer` that the API's credential
-  resolver learns to recognise as a host principal — a first draft put
-  it in a private header and the owner's review of R1 sent it back —
-  and keeps the runner's five-minute lifetime with the `jti` burned for
-  that long; the
-  hint vocabulary is one closed set across 01 and 10 with `host_offline`
-  added; and 01's open question 1 is decided — the wire schema is Zod,
-  JSON Schema emitted, Go generated. Error-code prefixes on the API side
-  are plural (`HOSTS_`, `SESSIONS_`…) because the runner owns the
-  singular ones in the same catalog. The `user` system role, not
-  `owner`, carries `manage Host` by `ownerUserId`, the way it carries
-  `ApiToken`.
+- 2026-09-19: **the version-1 frames win over the older screen notes**,
+  after a screen-by-screen walk with the owner (PR #20). Onboarding is
+  four numbered steps and a landing: sign in, name your workspace and
+  its address, connect GitHub, add a host, then Ready into the console
+  (00, 05, 08). A session may span several repositories, one worktree
+  each on its own branch (00); the repository chip multi-selects with a
+  branch pane per repository and the branch chip shows only for one
+  repository (05). Every scope chip filters. The agent chip lists Claude
+  Code, Codex, OpenCode and a blank terminal with the vendors' published
+  marks (Anthropic's Claude mark, OpenCode's square; none for Codex),
+  and the model menu is scoped to the harness. The Add host dialog is
+  the one dialog; the welcome modal is gone. Both themes. The design
+  system grew the components these need (`ChipSelect` rebuilt on the
+  Combobox primitive so it filters, `RepositorySelect`, `StepHeader`,
+  `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
+  `AgentMark`); the frames in `design/version1/` remain the visual
+  record and 05 is the written one.
+- 2026-09-19: **credential kinds are contributions to the auth kernel**
+  (08). `apps/api/src/auth` imported `api-tokens` and `users` to resolve
+  a request's credential, so the layer everything is built on depended
+  on two of the things built on it — and the hosts slice was about to
+  add a third the same way. The kernel now recognises only what it
+  issues (session, OAuth grant) and takes every other kind from a
+  registry a module contributes to with
+  `AuthModule.contributeCredentials`, in the spirit of
+  `AuthzModule.forFeature` for resources — except that the providers go in
+  the contributing module, so nothing has to be published
+  application-wide to be reachable. Nothing about
+  what a credential authorizes changed, and no error code moved that a
+  client can see.
+- 2026-09-19: the **shared vocabulary lands in `packages/shared`**, and two of
+  these notes moved to match it. 01's open question 1 is **decided**: Zod is the
+  source of truth for the wire and JSON Schema is emitted from it at build, with
+  the Go structs generated from the committed artifact — one source, two
+  languages. 01's "what rides the link" gains three messages the note had
+  implied without naming: `events.append` with an `events.ack` that acknowledges
+  **by idempotency key** (a WebSocket cannot tell "persisted" from "never
+  arrived", so a batch is kept until every key is accounted for and resent
+  otherwise), `attachment.credit` for the consumed-byte credit the flow-control
+  section already required, and `credentials.grant` as the answer to
+  `credentials.token` rather than an optional field on the ask. The hint
+  vocabulary splits by socket: the link keeps three kinds and the attach ticket
+  adds `host_offline`, which a connected runner could not coherently send about
+  itself. 03's "repositories (cached from GitHub)" becomes **not a table** —
+  listed live through the installation, remembered only by the checkout that
+  took it. In the scope catalog there is no `Repository` CASL subject for the
+  same reason, and no `attach` action: opening a terminal is `update Session`,
+  so the model stays CRUD plus `manage`.
+- 2026-09-19: the runner's two ordinary HTTPS calls carry the API's
+  `/api/v1` prefix — `POST /api/v1/hosts/register` and `DELETE
+  /api/v1/hosts/self` — and uninstall no longer puts a host id in the
+  path: the host names itself by the subject of the boot JWT it presents.
+  That JWT stays an `Authorization: Bearer` credential, which the control
+  plane's resolver recognises as a host principal next to session cookies
+  and personal access tokens, rather than a header of its own that would
+  be frozen into every installed runner. **Key rotation leaves the
+  runner** until the link can carry it: the register route redeems
+  registration tokens and cannot rotate a key, and 09 §3 already places
+  rotation on an authenticated link. Recorded in 01, 03 and
+  `apps/runner`'s pairing client.
+- 2026-09-19: **a project is the body of work a session belongs to**, and the
+  layout gains a level. 03's data model lists `projects` and says a session
+  belongs to one; 11's §1 is superseded at the top by
+  `workspaces/<organization.slug>/projects/<project.slug>/{repos,sessions}`,
+  because a session may check out several repositories and the old tree had
+  nowhere to put the second one. 11's collision rule is unchanged and now names
+  the project's directory: the repository's own name, or `<owner>--<repo>` when
+  another repository already holds it, then `<owner>--<repo>-<githubRepoId>`,
+  which is where a rejected random suffix used to be — every candidate is
+  derived from the repository, so a directory can always be read back to what
+  created it. A project is created by the first session that needs one, found
+  again by GitHub's repository id (unique per workspace, and the conflict target
+  of the create), and its slug is immutable because it is a directory name on
+  every host holding it.
+- 2026-09-19: the **`github/` module is built** and 03 gains the section that
+  says so: six routes, one `github_installation` table, no repository table,
+  and `RepositoryAccessPort` as the only thing the module exports. Two
+  decisions tightened while writing it. A claim is what a workspace **holds**,
+  not what it once touched: `githubInstallationId` is unique among live rows
+  only, so a disconnected installation keeps its history and frees the number,
+  and `GITHUB_003` means "another workspace holds this" rather than "somebody
+  once connected it". And the minted repository token is **never cached** —
+  GitHub gives it an hour and the runner holds it for that hour, so minting
+  live is what makes "a repository removed from the installation stops working
+  on the next mint" true rather than true-after-a-TTL. `github_app` is on the
+  client capability subset, because a console cannot otherwise tell "you have
+  not connected yet" from "this deployment has no App".
+- 2026-09-19: **a host belongs to a person, and workspaces borrow it.**
+  08 said a host row carries the workspace id; it now carries
+  `ownerUserId` and no workspace id, the way Better Auth hangs `session`
+  and `account` off `user`. The case that decides it is one person with a
+  personal and a company workspace on one laptop: per-workspace, that
+  machine is paired twice, runs two runners with two keys, and the second
+  install has to invent a second `~/oppenheimer-ai`; per-person it is
+  paired once and either workspace runs sessions on it. It is also the
+  honest reading of the machine: a session there has full access to it
+  (F10), runs under its owner's Unix account, and spends the agent login
+  in that person's home directory. The tenant boundary does not
+  disappear, it moves down: a session carries the workspace, and the host
+  it names must be one its creator owns or holds a grant on. 08's open
+  question 2 is **decided** with it — the pairing token is bound to the
+  user who minted it, and the host it creates is theirs. Recorded in 08,
+  03, 09 and `apps/api/src/hosts/`. A host's key is a **column on the host
+  row** rather than a `host_keys` table, and the retired key joins it as a
+  second column when rotation arrives on the link: rotation needs exactly
+  two keys, never N, and every runner boot reads them.
+- 2026-09-20: the host's boot assertion becomes a **contributed credential
+  kind**: `apps/api/src/hosts` spreads
+  `AuthModule.contributeCredentials([HostCredentialResolver])` into its own
+  providers and is no longer `@Global`, so the auth kernel recognises a machine
+  without importing `hosts`. The kind's *shape* stays kernel vocabulary —
+  `ScopeContext` gains a `host` variant with no owner and no scopes, because the
+  guards read it — and nothing about what a host may do changed. Recorded in 08
+  and `apps/api/src/hosts/application/host-credential.resolver.ts`.
+- 2026-09-19: **the stored lifecycle answers "is this work finished", not "is a
+  process running".** `starting | open | failed | resolved` is the fold of a
+  session's log; stopping a session leaves it `open` with a `stoppedAt`, and
+  `resolved` is terminal. The derived group the sidebar shows is a **function of
+  the row** — the agent's last observation, when it entered that state and the
+  report hashes are folded columns, like `state` — because a listing cannot walk a
+  log per row, and because a group computed from inputs the log never recorded is a
+  group a caller can fake.
+- 2026-09-19: **stopping is a decision, restarting and closing are requests.** The
+  control plane will not dispatch a stopped session again, so the stop is the fact.
+  Restarting and closing need work on the host that can refuse — closing pushes
+  every branch and will not remove a dirty worktree unless the caller accepted the
+  loss — so the API records the request and the host's own `session.restarted` or
+  `session.closed` is what moves the row. A control plane that resolved a session
+  itself would make the tombstone permanent before anybody had looked at the
+  worktrees.
+- 2026-09-19: **a session's name is part of the fold**, which is what makes "a
+  model-derived title never overwrites a name a person typed" a rule a replay goes
+  through rather than a check somebody has to remember. Naming is a **capability**,
+  defaulting to `none`: with no provider configured a session keeps its minted slug,
+  and the startup log is what says so.
+- 2026-09-19: **archiving a project fails closed.** "Is any session still open in
+  this project" is a question only the module that owns sessions can answer, so it
+  answers it through a port that module registers; with nothing registered the
+  archive refuses rather than assuming the answer it would prefer on a destructive
+  path. An archived project is a tombstone on the create path too — no session can
+  be started in one — and the archive and a create serialise on the project row, so
+  they cannot both win.

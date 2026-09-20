@@ -1,9 +1,12 @@
 import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '../auth/auth.module';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from './api-tokens.di-tokens';
 import { ApiTokenMapper } from './api-tokens.mapper';
+import { ApiTokenCredentialResolver } from './application/api-token-credential.resolver';
+import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
 import { CreateApiTokenCommandHandler } from './commands/create-api-token/create-api-token.command-handler';
 import { CreateApiTokenHttpController } from './commands/create-api-token/create-api-token.http.controller';
 import { RevokeApiTokenCommandHandler } from './commands/revoke-api-token/revoke-api-token.command-handler';
@@ -48,15 +51,31 @@ const repositories: Provider[] = [
 /**
  * API tokens module.
  *
- * Marked `@Global` because the auth layer's credential resolver — used by the
- * globally registered `ScopesGuard` — depends on the token repository, and
- * that guard is instantiated outside any feature module's injector.
+ * It owns a credential kind, so what an `oppenheimer_pat_…` secret is stays
+ * here: the resolver below is contributed to the auth kernel
+ * (`AuthModule.contributeCredentials`) and built in this module's injector, so
+ * it injects this module's repository port like any other provider.
+ *
+ * Marked `@Global` as it has always been, which publishes the token repository
+ * application-wide. That is no longer what makes token authentication work —
+ * the contributed resolver resolves its dependencies here — so dropping it is
+ * a question about who else reads the port, not about auth.
  */
 @Global()
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([ApiTokenOrmEntity, MemberOrmEntity])],
   controllers: [...httpControllers],
-  providers: [...commandHandlers, ...queryHandlers, ...repositories, ApiTokenMapper],
+  providers: [
+    ...commandHandlers,
+    ...queryHandlers,
+    ...repositories,
+    ApiTokenMapper,
+    // This module's credential kind, registered with the kernel by being built.
+    ...AuthModule.contributeCredentials([ApiTokenCredentialResolver]),
+    // Revoking a token has to reach the session cached for it; the kernel
+    // publishes the port, this module knows when to call it.
+    ApiTokenRevokedDomainEventHandler,
+  ],
   exports: [API_TOKEN_REPOSITORY, ApiTokenMapper, TypeOrmModule],
 })
 export class ApiTokensModule {}

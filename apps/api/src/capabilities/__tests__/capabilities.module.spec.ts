@@ -14,7 +14,46 @@ describe('resolveCapabilities', () => {
       stripe_billing: false,
       s3_storage: false,
       email_delivery: false,
+      github_app: false,
+      hosts: false,
+      session_namer: false,
     });
+  });
+
+  it('only reports a session namer once one can actually be called', () => {
+    // A provider switched on without its key or its model is not configured: the
+    // no-op namer is bound and every session keeps its slug, which is a supported
+    // outcome. The capability is how that shows up in the startup log.
+    const partial = configWith({ 'sessions.namerProvider': 'anthropic' });
+    expect(resolveCapabilities(partial).session_namer).toBe(false);
+
+    const configured = configWith({
+      'sessions.namerProvider': 'anthropic',
+      'sessions.anthropicApiKey': 'sk-test',
+      'sessions.namerModel': 'a-model-id',
+    });
+    expect(resolveCapabilities(configured).session_namer).toBe(true);
+  });
+
+  it('reports hosts from the same predicate the host routes refuse on', () => {
+    // Two of the three is not a working pairing flow: without the install URL
+    // there is no command to print, and without a usable signing key there is no
+    // fingerprint for the runner to pin. The key is validated when the config is
+    // parsed, so what is read here is the fingerprint — a capability that said
+    // yes while every route answered HOSTS_004 would be the second source of
+    // truth the console reads first.
+    const partial = configWith({
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+    });
+    expect(resolveCapabilities(partial).hosts).toBe(false);
+
+    const complete = configWith({
+      'hosts.signingKeyFingerprint': 'f'.repeat(64),
+      'hosts.releaseBaseUrl': 'https://releases.example.com',
+      'hosts.installUrl': 'https://releases.example.com/install.sh',
+    });
+    expect(resolveCapabilities(complete).hosts).toBe(true);
   });
 
   it('requires both halves of an OAuth credential pair', () => {
@@ -52,6 +91,26 @@ describe('resolveCapabilities', () => {
       'storage.s3SecretAccessKey': 'secret',
     });
     expect(resolveCapabilities(s3Configured).s3_storage).toBe(true);
+  });
+
+  it('needs the whole GitHub App credential set, not part of it', () => {
+    const configured = {
+      'githubApp.appId': '1234567',
+      'githubApp.privateKey': '-----BEGIN RSA PRIVATE KEY-----',
+      'githubApp.webhookSecret': 'whsec',
+      'githubApp.clientId': 'Iv1.abc',
+      'githubApp.clientSecret': 'shhh',
+      'githubApp.slug': 'oppenheimer-sessions',
+    };
+    expect(resolveCapabilities(configWith(configured)).github_app).toBe(true);
+
+    // A partial set is off rather than half-on: the token mint needs the key,
+    // the claim proof needs the OAuth pair, and a suspension is only trustworthy
+    // with the webhook secret. Any one missing removes the whole feature.
+    for (const key of Object.keys(configured)) {
+      const partial = { ...configured, [key]: undefined };
+      expect(resolveCapabilities(configWith(partial)).github_app).toBe(false);
+    }
   });
 
   it('does not count the console email provider as delivery', () => {

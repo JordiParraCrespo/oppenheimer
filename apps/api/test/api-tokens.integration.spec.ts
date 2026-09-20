@@ -269,15 +269,20 @@ describe('API tokens & scopes (integration)', () => {
         'create:ApiToken',
         'create:Organization',
         'delete:ApiToken',
+        'manage:Host',
         'read:ApiToken',
         'read:Organization',
       ]);
 
-      // The token rules stay scoped to the caller's own rows. The workspace
-      // rules need no condition: Better Auth answers the read from the
+      // The token rules stay scoped to the caller's own rows, and so does the
+      // host rule — a host belongs to the person who paired it, so `manage Host`
+      // is conditioned on `ownerUserId` exactly as `ApiToken` is on `userId`. The
+      // workspace rules need no condition: Better Auth answers the read from the
       // caller's own memberships, and `create` is what lets a self-service
       // sign-up make its first workspace from onboarding.
-      for (const rule of role.permissions.filter((rule) => rule.subject === 'ApiToken')) {
+      for (const rule of role.permissions.filter(
+        (rule) => rule.subject === 'ApiToken' || rule.subject === 'Host',
+      )) {
         expect(rule.conditions).toBeTruthy();
       }
       expect(role.permissions.some((rule) => rule.subject === 'Article')).toBe(false);

@@ -13,9 +13,9 @@ import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
  * session and host in it, and every user manages their own API tokens under
  * Settings. A row that does need a permission takes its `policies` from
  * `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the
- * endpoint its screen reads (`ENDPOINT_POLICIES['/tokens']`), never a rule
- * list written out here — the API's `endpoint-policies.spec.ts` holds the
- * controller to that same entry.
+ * method and route its screen reads (`ENDPOINT_POLICIES['GET /tokens']`),
+ * never a rule list written out here — the API's `endpoint-policies.spec.ts`
+ * holds the controller to that same entry.
  */
 export const NAV = [
   { to: '/sessions', icon: Terminal, labelKey: 'sessions', policies: [] },

@@ -36,10 +36,10 @@ The Add host screen offers, in this order:
   online, report the preflight. It carries an explicit do-not list: not
   as root, no ports, do not copy the token elsewhere, stop if the
   checksum differs. The only secret in it is the registration token,
-  which can do exactly one thing — add one host, yours (10) — and
-  expires in an hour. The prompt is versioned and served by the control
-  plane, so a runner release can change steps and checksums without a
-  web deploy.
+  which can do exactly one thing — add one host to your account, usable
+  from any of your workspaces — and expires in an hour. The prompt is
+  versioned and served by the control plane, so a runner release can
+  change steps and checksums without a web deploy.
 - **The manual path**, for an air-gapped or suspicious host: the
   tarball, its `SHA256SUMS` and the detached signature from the release
   page, verified by hand, then `runner register` and `runner install`.
@@ -255,7 +255,7 @@ putting the user's credentials on it.
 | Control plane compromised, pushes a malicious runner | It cannot sign the manifest; the offline key is not in CI, let alone in the control plane |
 | Release host compromised, serves a different binary **to an installed runner** | Digest and signature are checked after download, against a key compiled into the running binary |
 | Release host compromised **during a first install** | Not prevented. `install.sh` is fetched over HTTPS and trusted on first use; a host that serves both the script and the manifest can replace both. The mitigations are the digest shown on the Add host screen, the token's single hour, and keeping the script host, the artifact host and the control plane separate (03). F26 begins at the first self-update — see F26a in 07 |
-| Registration token stolen | One hour, one use, one host added to that workspace; the source IP is shown and it can be revoked |
+| Registration token stolen | One hour, one use, one host added to that account; the source IP is shown and it can be revoked |
 | Host key stolen | It only authenticates a dial; rotation is a subcommand, revocation is a click, and the console shows the last dial |
 | Someone tricks the user into `sudo`-ing the installer | It refuses to run as root before it does anything else |
 | A bad release bricks a fleet | Percentage rollout, selfcheck before the swap, a health gate and automatic rollback after it |
