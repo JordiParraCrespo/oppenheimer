@@ -1,0 +1,927 @@
+{
+  "$id": "https://oppenheimer.dev/schemas/protocol/v1/protocol.schema.json",
+  "title": "Oppenheimer runner link protocol",
+  "description": "Control messages on the runner link. PTY bytes travel as binary frames and are not described here.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "hello"
+        },
+        "runnerVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "protocol": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "min",
+            "max"
+          ]
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "host": {
+          "$ref": "#/$defs/hostFacts"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sessionSnapshot"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "runnerVersion",
+        "protocol",
+        "runId",
+        "host",
+        "sessions"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "heartbeat"
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        },
+        "channel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "host": {
+          "$ref": "#/$defs/hostFacts"
+        },
+        "load": {
+          "type": "object",
+          "properties": {
+            "loadAverage1m": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "loadAverage1m"
+          ]
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sessionSnapshot"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "sentAt",
+        "channel",
+        "host",
+        "load",
+        "sessions"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "hint"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "update_available",
+            "update_required",
+            "blocked"
+          ]
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "events.append"
+        },
+        "batchId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "events": {
+          "minItems": 1,
+          "maxItems": 256,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "idempotencyKey": {
+                "$ref": "#/$defs/eventIdempotencyKey"
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "payload": {
+                "type": "string",
+                "maxLength": 8192
+              },
+              "occurredAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              }
+            },
+            "required": [
+              "idempotencyKey",
+              "kind",
+              "payload",
+              "occurredAt"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "batchId",
+        "sessionId",
+        "events"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "events.ack"
+        },
+        "batchId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "accepted": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/eventIdempotencyKey"
+          }
+        },
+        "rejected": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "idempotencyKey": {
+                "$ref": "#/$defs/eventIdempotencyKey"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "idempotencyKey",
+              "reason"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "batchId",
+        "accepted"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.create"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "organizationSlug": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "projectSlug": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "sessionSlug": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "agent": {
+          "$ref": "#/$defs/codingAgentId"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "branch": {
+          "$ref": "#/$defs/gitRef"
+        },
+        "checkouts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "checkoutId": {
+                "$ref": "#/$defs/checkoutId"
+              },
+              "githubRepoId": {
+                "$ref": "#/$defs/githubRepoId"
+              },
+              "repositoryFullName": {
+                "$ref": "#/$defs/gitRef"
+              },
+              "directoryName": {
+                "$ref": "#/$defs/gitRef"
+              },
+              "baseBranch": {
+                "$ref": "#/$defs/gitRef"
+              }
+            },
+            "required": [
+              "checkoutId",
+              "githubRepoId",
+              "repositoryFullName",
+              "directoryName",
+              "baseBranch"
+            ]
+          }
+        },
+        "cwdCheckoutId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/checkoutId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "organizationSlug",
+        "projectSlug",
+        "sessionSlug",
+        "agent",
+        "branch",
+        "checkouts",
+        "cwdCheckoutId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.attach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "window",
+        "attachmentId",
+        "cols",
+        "rows"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.input"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "data": {
+          "type": "string",
+          "format": "base64",
+          "contentEncoding": "base64",
+          "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "window",
+        "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.credit"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "bytes": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "bytes"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.resize"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId",
+        "cols",
+        "rows"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.window.open"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.window.close"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "window"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.close"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "acceptUnpushedWork": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.restart"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.preflight"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.update"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "channel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "version",
+        "channel"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "credentials.token"
+        },
+        "requestId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "checkoutId": {
+          "$ref": "#/$defs/checkoutId"
+        },
+        "githubRepoId": {
+          "$ref": "#/$defs/githubRepoId"
+        }
+      },
+      "required": [
+        "type",
+        "requestId",
+        "sessionId",
+        "checkoutId",
+        "githubRepoId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "credentials.grant"
+        },
+        "requestId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "checkoutId": {
+          "$ref": "#/$defs/checkoutId"
+        },
+        "sealed": {
+          "type": "string",
+          "format": "base64",
+          "contentEncoding": "base64",
+          "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+        }
+      },
+      "required": [
+        "type",
+        "requestId",
+        "sessionId",
+        "checkoutId",
+        "sealed",
+        "expiresAt"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "credentials.revoke"
+        },
+        "requestId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "checkoutId": {
+          "$ref": "#/$defs/checkoutId"
+        }
+      },
+      "required": [
+        "type",
+        "requestId",
+        "sessionId",
+        "checkoutId"
+      ]
+    }
+  ],
+  "$defs": {
+    "hostFacts": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": [
+            "macos",
+            "debian",
+            "ubuntu",
+            "linux",
+            "unsupported"
+          ]
+        },
+        "osVersion": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "home": {
+          "type": "string"
+        },
+        "root": {
+          "type": "boolean"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/hostTool"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "diskFreeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runnerVersion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "arch",
+        "hostname",
+        "user",
+        "home",
+        "root",
+        "tools",
+        "workspacePath",
+        "diskFreeBytes",
+        "runnerVersion"
+      ],
+      "id": "hostFacts"
+    },
+    "hostTool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "required"
+      ],
+      "id": "hostTool"
+    },
+    "sessionSnapshot": {
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "agent": {
+          "$ref": "#/$defs/codingAgentId"
+        },
+        "observed": {
+          "$ref": "#/$defs/observedAgentState"
+        },
+        "stateSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "$ref": "#/$defs/windowIndex"
+              },
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              }
+            },
+            "required": [
+              "index"
+            ]
+          }
+        },
+        "agentSessionId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reportHash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "loginUrl": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(?:https:\\/\\/(claude\\.ai|console\\.anthropic\\.com)(\\/[^\\s]*)?|https:\\/\\/(auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com)(\\/[^\\s]*)?)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sessionId",
+        "agent",
+        "observed",
+        "stateSeconds",
+        "windows",
+        "agentSessionId",
+        "reportHash",
+        "loginUrl"
+      ],
+      "id": "sessionSnapshot"
+    },
+    "sessionId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
+      "id": "sessionId"
+    },
+    "codingAgentId": {
+      "type": "string",
+      "enum": [
+        "claude-code",
+        "codex"
+      ],
+      "id": "codingAgentId"
+    },
+    "observedAgentState": {
+      "type": "string",
+      "enum": [
+        "working",
+        "blocked",
+        "idle",
+        "done",
+        "unknown"
+      ],
+      "id": "observedAgentState"
+    },
+    "windowIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "id": "windowIndex"
+    },
+    "eventIdempotencyKey": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+:\\d+$",
+      "id": "eventIdempotencyKey"
+    },
+    "commandId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
+      "id": "commandId"
+    },
+    "gitRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "id": "gitRef"
+    },
+    "checkoutId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
+      "id": "checkoutId"
+    },
+    "githubRepoId": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "id": "githubRepoId"
+    },
+    "attachmentId": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "id": "attachmentId"
+    }
+  }
+}

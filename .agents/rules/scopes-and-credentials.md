@@ -30,7 +30,7 @@ and must not be broken:
 
 ## The catalog is the single source of truth
 
-`packages/shared/src/scopes/catalog.ts` defines ten permission groups, each
+`packages/shared/src/scopes/catalog.ts` defines fifteen permission groups, each
 with a Read and an Edit level. **Add a resource there and nowhere else** — the
 API guard, the MCP tool registry, the CLI and the web permission picker all
 read from it.
@@ -132,6 +132,12 @@ then refused — the one failure mode the design exists to prevent.
 and `apps/mcp` is on Zod 4 while the rest of the repo is on Zod 3 — the MCP SDK
 v2 requires it. Do not import Zod schemas from `@oppenheimer/shared` here; that is
 what keeps the two versions from meeting.
+
+One caveat until it is resolved: `@oppenheimer/shared`'s `src/protocol/` is itself on
+`zod/v4`, because only that entry point can emit JSON Schema. Its DTO schemas are
+still Zod 3, so the rule above stands as written — but the isolation is now one
+module thin, and the fix is to put the whole package on one Zod line with a
+build-only converter rather than to relax this.
 
 The server is built **per request** from the calling credential, because
 protocol revision `2026-07-28` removed sessions: there is nowhere to cache the
