@@ -30,13 +30,21 @@ The runner speaks to three things, and only one of them is the link
 (01). These are the control plane's side of it, and they are specified
 here rather than in the notes that consume them:
 
-- `POST /v1/hosts/register` — spends a one-hour single-use registration
+The API mounts every route under `/api/v1` (a global `api` prefix and URI
+version `1`), so the paths below carry that prefix and the runner's
+`--url` stays the bare control-plane origin.
+
+- `POST /api/v1/hosts/register` — spends a one-hour single-use registration
   token and answers with the host id, the control plane's key
   fingerprint (which the runner pins from then on), the release channel
   and the release base URL. Unauthenticated apart from the token; the
   source IP is recorded and shown (F5).
-- `DELETE /v1/hosts/{id}` — uninstall, authenticated by the host's boot
-  JWT rather than by the spent registration token.
+- `DELETE /api/v1/hosts/self` — uninstall, authenticated by the host's boot
+  JWT rather than by the spent registration token. The JWT is presented as
+  `Authorization: Bearer`, so the credential resolver must recognise a host
+  principal alongside sessions and personal access tokens — the second
+  verifier below. There is no id in the path: the host is the subject of
+  the token it presented.
 - **Host JWT verification.** Boot tokens are EdDSA over the host's
   Ed25519 public key, five minutes, `aud` the control plane's URL, with
   a `jti` worth replay-checking. That is a second verifier next to the
