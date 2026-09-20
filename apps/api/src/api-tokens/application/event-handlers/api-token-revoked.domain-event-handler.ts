@@ -1,16 +1,18 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ApiTokenRevokedDomainEvent } from '../../../api-tokens/domain/events/api-token-revoked.domain-event';
-import { DELEGATED_SESSION } from '../../auth.di-tokens';
-import type { DelegatedSessionPort } from '../../infrastructure/delegated-session.port';
+import { DELEGATED_SESSION } from '../../../auth/auth.di-tokens';
+import type { DelegatedSessionPort } from '../../../auth/infrastructure/delegated-session.port';
+import { ApiTokenRevokedDomainEvent } from '../../domain/events/api-token-revoked.domain-event';
 
 /**
  * Drops the delegated Better Auth session cached for a revoked token.
  *
  * Without this, a revoked credential would keep working through its cached
  * session until the ten-minute window elapsed. Reacting to the domain event
- * (rather than calling the auth layer from the revoke handler) keeps the API
- * tokens module free of any dependency on the auth module's internals.
+ * (rather than calling the auth layer from the revoke handler) keeps the
+ * revoke use case free of any knowledge of sessions, and it lives here rather
+ * than in `auth` because the auth kernel does not know this module exists —
+ * the credential kind is ours, and so is what its revocation costs.
  */
 @Injectable()
 export class ApiTokenRevokedDomainEventHandler {

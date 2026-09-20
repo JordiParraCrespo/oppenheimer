@@ -31,15 +31,34 @@ describe('registerHostSchema', () => {
     publicKey: 'dGhpcyBpcyBub3QgYSByZWFsIGtleQ==',
   };
 
-  it('takes the same structured host facts the link carries', () => {
-    const facts = {
-      hostname: 'jordis-mbp',
-      os: 'darwin',
-      arch: 'arm64',
-      tools: { git: '2.45.0', tmux: null },
-      agents: [{ id: 'claude-code', version: '2.1.144' }],
-    };
-    expect(registerHostSchema.parse({ ...valid, facts })).toEqual({ ...valid, facts });
+  /** Exactly what `apps/runner/internal/host/domain/facts.go` marshals. */
+  const runnerFacts = {
+    platform: 'macos',
+    osVersion: '15.3.1',
+    arch: 'arm64',
+    hostname: 'jordis-mbp',
+    user: 'jordi',
+    home: '/Users/jordi',
+    root: false,
+    tools: [
+      { name: 'git', path: '/usr/bin/git', version: '2.45.0', required: true },
+      { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
+      { name: 'claude', required: false },
+    ],
+    workspacePath: '/Users/jordi/oppenheimer-ai',
+    diskFreeBytes: 120_000_000_000,
+    runnerVersion: '0.4.1',
+  };
+
+  it("takes the runner's Facts struct verbatim", () => {
+    expect(registerHostSchema.parse({ ...valid, facts: runnerFacts })).toEqual({
+      ...valid,
+      facts: runnerFacts,
+    });
+  });
+
+  it('leaves facts optional — a runner that reports nothing still pairs', () => {
+    expect(registerHostSchema.parse(valid)).toEqual(valid);
   });
 
   it('no longer accepts an opaque bag of facts', () => {
@@ -48,23 +67,29 @@ describe('registerHostSchema', () => {
     );
   });
 
-  it('refuses an agent outside the catalog inside the facts', () => {
+  it('refuses the invented shape no runner ever sent', () => {
     expect(
       registerHostSchema.safeParse({
         ...valid,
-        facts: {
-          hostname: 'h',
-          os: 'linux',
-          arch: 'x64',
-          tools: {},
-          agents: [{ id: 'cursor', version: null }],
-        },
+        facts: { hostname: 'h', os: 'darwin', arch: 'arm64', tools: {}, agents: [] },
       }).success,
     ).toBe(false);
   });
 
-  it('leaves facts optional — a runner that reports nothing still pairs', () => {
-    expect(registerHostSchema.parse(valid)).toEqual(valid);
+  it('refuses a platform outside the runner’s own enum', () => {
+    expect(
+      registerHostSchema.safeParse({ ...valid, facts: { ...runnerFacts, platform: 'windows' } })
+        .success,
+    ).toBe(false);
+  });
+
+  it('accepts `unsupported`, which the runner really does send', () => {
+    expect(
+      registerHostSchema.safeParse({
+        ...valid,
+        facts: { ...runnerFacts, platform: 'unsupported' },
+      }).success,
+    ).toBe(true);
   });
 
   it('refuses a public key that is not base64', () => {

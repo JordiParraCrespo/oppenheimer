@@ -5,6 +5,7 @@ import {
   type PermissionDefinition,
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
+import type { AbilityPort } from '../../auth/application/ability.port';
 import type { RoleRepositoryPort } from '../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../database/user-role.repository.port';
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
@@ -51,7 +52,7 @@ export interface AbilityScope {
  *      the join keep working.
  */
 @Injectable()
-export class AbilityFactory {
+export class AbilityFactory implements AbilityPort {
   constructor(
     @Inject(USER_ROLE_REPOSITORY)
     private readonly userRoleRepository: UserRoleRepositoryPort,

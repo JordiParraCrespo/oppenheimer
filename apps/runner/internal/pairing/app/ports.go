@@ -1,6 +1,6 @@
 // Package app holds the pairing use cases: redeem a registration token, read
-// the identity back, mint a boot token, rotate the key. Every side effect —
-// the files, the network, the signature — is a port.
+// the identity back, mint a boot token. Every side effect — the files, the
+// network, the signature — is a port.
 package app
 
 import (
@@ -41,11 +41,12 @@ type RegisterResponse struct {
 }
 
 // ControlPlane is the registration endpoint. `Revoke` is the uninstall half:
-// it tells the control plane this host is gone, authenticated by a boot token
-// rather than by the spent registration token.
+// it tells the control plane this host is gone, authenticated by the boot
+// assertion rather than by the spent registration token — which is also how
+// the host names itself, so no id is passed.
 type ControlPlane interface {
 	Register(ctx context.Context, baseURL string, req RegisterRequest) (RegisterResponse, error)
-	Revoke(ctx context.Context, baseURL, bearer, hostID string) error
+	Revoke(ctx context.Context, baseURL, assertion string) error
 }
 
 // TokenSigner turns claims into the compact JWT a dial carries.

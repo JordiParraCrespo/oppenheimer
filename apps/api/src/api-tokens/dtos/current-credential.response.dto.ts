@@ -2,11 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { SCOPES, type Scope } from '@oppenheimer/shared';
 
 export class CurrentCredentialResponseDto {
+  /**
+   * Typed `string` because credential kinds are contributed to the auth kernel
+   * by the modules that own them: the enum below is the set this API registers
+   * today, and a module adding a kind adds itself to it.
+   */
   @ApiProperty({
     description: 'How the caller authenticated.',
     enum: ['session', 'api-token', 'oauth'],
   })
-  kind!: 'session' | 'api-token' | 'oauth';
+  kind!: string;
 
   @ApiProperty()
   userId!: string;

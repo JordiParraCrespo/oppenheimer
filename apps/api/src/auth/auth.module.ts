@@ -1,14 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
-import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
-import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
-import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
-import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
-import { UsersModule } from '../users/user.module';
+import type { CredentialResolverPort } from './application/credential-resolver.port';
+import { CredentialResolverRegistry } from './application/credential-resolver.registry';
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
-import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
 import { CREDENTIAL_SCOPE, CREDENTIAL_VERIFIER, DELEGATED_SESSION } from './auth.di-tokens';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { Account } from './database/account.orm-entity';
@@ -25,9 +20,21 @@ import { BetterAuthCredentialVerifierAdapter } from './infrastructure/better-aut
 import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adapter';
 
 /**
- * Registers the Better Auth tables with TypeORM (so the schema is created /
- * migrated alongside the rest of the app) and exposes the guards that
- * authenticate and authorize requests:
+ * The auth kernel.
+ *
+ * It owns what every request is asked on the way in — who is calling, with
+ * what credential, and whether the route admits it — and it knows nothing
+ * about the features built on top of it. A module that owns a credential kind
+ * contributes a resolver with {@link AuthModule.contributeCredentials}; what a
+ * principal
+ * may do it asks through the `ABILITY` port, which `roles` binds; who a
+ * credential belongs to it asks through `CREDENTIAL_OWNER`, which `users`
+ * binds. `auth-is-a-kernel` in `.dependency-cruiser.cjs` is the enforced
+ * statement of that sentence.
+ *
+ * It registers the Better Auth tables it owns with TypeORM (so the schema is
+ * created / migrated alongside the rest of the app) and exposes the guards
+ * that authenticate and authorize requests:
  *
  * - {@link ApiAuthGuard} — authenticates a session cookie, an API token or an
  *   OAuth access token, and populates `request.user` / `request.scopeContext`.
@@ -40,9 +47,11 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
  *
  * The Better Auth HTTP handler itself is wired up via
  * `AuthModule.forRoot({ auth })` from `@thallesp/nestjs-better-auth` in
- * the root `AppModule`. The organization/team tables are Better-Auth-owned too
- * (organization plugin), as are the OAuth tables (MCP plugin); all are grouped
- * here alongside session/account.
+ * the root `AppModule`. The OAuth tables (MCP plugin) are Better-Auth-owned
+ * too and are grouped here alongside session/account. The organization and
+ * team tables are Better Auth's as well, but they are registered by the
+ * modules that read them (`organizations`, `authz`) — registering them here
+ * too would only be this module reaching into theirs.
  */
 /**
  * Marked `@Global` for the same reason as `RolesModule`: the guards below are
@@ -54,23 +63,20 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
 @Module({
   imports: [
     CqrsModule,
-    UsersModule,
     TypeOrmModule.forFeature([
       Session,
       Account,
       Verification,
-      OrganizationOrmEntity,
-      MemberOrmEntity,
-      InvitationOrmEntity,
-      TeamOrmEntity,
-      TeamMemberOrmEntity,
       OAuthApplicationOrmEntity,
       OAuthAccessTokenOrmEntity,
       OAuthConsentOrmEntity,
     ]),
   ],
   providers: [
-    ApiTokenRevokedDomainEventHandler,
+    // The credential kinds this application accepts, collected at boot from
+    // whoever called `forFeature`. A root provider because the guard that
+    // reads it is an `APP_GUARD`, outside any feature module's injector.
+    CredentialResolverRegistry,
     // Hands the running app's CommandBus to the Better Auth hooks, which are
     // configured at module scope and cannot inject it. See `auth-command-bus.util.ts`.
     AuthCommandBusBridge,
@@ -91,9 +97,51 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     PoliciesGuard,
     ApiAuthGuard,
     ScopesGuard,
+    CredentialResolverRegistry,
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
     TypeOrmModule,
   ],
 })
-export class AuthModule {}
+export class AuthModule {
+  /**
+   * The providers a module adds to contribute its own credential kinds:
+   *
+   * ```ts
+   * providers: [...AuthModule.contributeCredentials([ApiTokenCredentialResolver])]
+   * ```
+   *
+   * They go in the **feature module's** `providers`, not in an imported
+   * module of the kernel's, and that placement is the whole point: the
+   * resolver is constructed in the injector of the module that owns the
+   * credential, so it injects that module's own repository ports without
+   * anything having to be published application-wide. The only thing reached
+   * across is the registry, which the kernel provides globally.
+   *
+   * Registration happens when the module is instantiated — Nest constructs
+   * every provider a module declares, so the factory below runs although
+   * nothing injects it — which means a module that is never imported
+   * contributes nothing, and the registry describes the application that is
+   * actually running.
+   */
+  static contributeCredentials(resolvers: Type<CredentialResolverPort>[]): Provider[] {
+    return [
+      ...resolvers,
+      {
+        // Constructing this provider *is* the registration: the resolvers are
+        // instantiated as its dependencies and handed to the kernel's registry.
+        // The token is unique per call so two contributions in one module
+        // cannot overwrite one another.
+        provide: Symbol('CREDENTIAL_CONTRIBUTION'),
+        inject: [CredentialResolverRegistry, ...resolvers],
+        useFactory: (
+          registry: CredentialResolverRegistry,
+          ...contributed: CredentialResolverPort[]
+        ) => {
+          registry.registerAll(contributed);
+          return contributed;
+        },
+      },
+    ];
+  }
+}

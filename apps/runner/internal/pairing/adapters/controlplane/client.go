@@ -20,10 +20,12 @@ import (
 
 var _ app.ControlPlane = (*Client)(nil)
 
-// Paths on the control plane.
+// Paths on the control plane. The API mounts every route under `/api/v1`, so
+// the `--url` flag stays the bare origin (`https://app.oppenheimer.dev`) and
+// the prefix lives here (01-protocol.md, 03-control-plane.md).
 const (
-	registerPath = "/v1/hosts/register"
-	revokePath   = "/v1/hosts/%s"
+	registerPath = "/api/v1/hosts/register"
+	revokePath   = "/api/v1/hosts/self"
 )
 
 // maxResponse caps a reply body; registration answers are a few hundred bytes.
@@ -42,17 +44,37 @@ type Options struct {
 }
 
 // New builds the client. The default timeout is generous enough for a phone
-// tethering a laptop and short enough that `runner register` never hangs.
+// tethering a laptop and short enough that `runner register` never hangs. A
+// supplied client is copied rather than used, because this client decides how
+// redirects are handled and a caller's transport is all that is wanted from it.
 func New(opts Options) *Client {
-	httpClient := opts.HTTP
-	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 30 * time.Second}
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	if opts.HTTP != nil {
+		copied := *opts.HTTP
+		httpClient = &copied
 	}
+	httpClient.CheckRedirect = refuseCrossOriginRedirect
 	ua := opts.UserAgent
 	if ua == "" {
 		ua = "oppenheimer-runner"
 	}
 	return &Client{http: httpClient, userAgent: ua}
+}
+
+// refuseCrossOriginRedirect keeps the credential on the origin the host was
+// paired with. A redirect that changes scheme or host is refused instead of
+// followed, so the boot JWT is never offered to a second origin; a redirect
+// within the control plane is ordinary and is followed.
+func refuseCrossOriginRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) == 0 {
+		return nil
+	}
+	origin := via[0].URL
+	if req.URL.Scheme != origin.Scheme || req.URL.Host != origin.Host {
+		return fmt.Errorf("refused a redirect from %s://%s to %s://%s",
+			origin.Scheme, origin.Host, req.URL.Scheme, req.URL.Host)
+	}
+	return nil
 }
 
 // Register redeems a registration token.
@@ -88,13 +110,16 @@ func (c *Client) Register(ctx context.Context, baseURL string, req app.RegisterR
 	return out, nil
 }
 
-// Revoke tells the control plane this host is gone.
-func (c *Client) Revoke(ctx context.Context, baseURL, bearer, hostID string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL+fmt.Sprintf(revokePath, hostID), nil)
+// Revoke tells the control plane this host is gone. The boot JWT is the
+// bearer, and the host names itself by that token's subject, which is why the
+// route is `self` and carries no id. A 404 is the outcome the caller asked
+// for: something else already removed the host.
+func (c *Client) Revoke(ctx context.Context, baseURL, assertion string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, baseURL+revokePath, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+bearer)
+	req.Header.Set("Authorization", "Bearer "+assertion)
 	req.Header.Set("User-Agent", c.userAgent)
 	resp, err := c.http.Do(req)
 	if err != nil {
