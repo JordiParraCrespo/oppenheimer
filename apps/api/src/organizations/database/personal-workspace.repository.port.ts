@@ -18,6 +18,12 @@ export interface PersonalWorkspaceRepositoryPort {
    * unless the account already belongs to an organization. Answers whether it
    * wrote.
    *
+   * The owner's sessions that point at no organization are pointed at the new
+   * one in the same breath. A session opened before the workspace existed —
+   * which is every session sign-up itself returns — would otherwise carry no
+   * active organization, and an org-scoped role grant is only in a caller's
+   * ability while their session names the organization it was granted in.
+   *
    * The "already belongs" test is part of this operation rather than a check a
    * caller makes first, because a check outside the transaction is not a rule:
    * two provisions racing for the same account would both pass it and both

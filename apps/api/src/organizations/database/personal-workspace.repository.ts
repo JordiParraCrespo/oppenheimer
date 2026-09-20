@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { DataSource } from 'typeorm';
+import { DataSource, IsNull } from 'typeorm';
+import { Session } from '../../auth/database/session.orm-entity';
 import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
 import { USER_ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
 import { UserOrmEntity } from '../../users/database/user.orm-entity';
@@ -30,6 +31,10 @@ import type { PersonalWorkspaceRepositoryPort } from './personal-workspace.repos
  * this write may decide not to happen: that helper stages the aggregate's
  * events whatever the write returns, which would announce a workspace that was
  * never provisioned. Events are staged explicitly, on the branch that wrote.
+ *
+ * The owner's open sessions are pointed at the new workspace in the same
+ * transaction, because at sign-up they were written before it existed — see
+ * `provision` below.
  */
 @Injectable()
 export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryPort {
@@ -65,6 +70,29 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
         records.roleGrant.roleId,
         records.roleGrant.organizationId,
         manager,
+      );
+
+      // The sessions the account already has were opened before this workspace
+      // existed, and nothing else will ever tell them about it.
+      //
+      // Better Auth decides which organization a session lands in when the row
+      // is written (`session.create.before` in `better-auth.config.ts`), and at
+      // sign-up that happens first: the `user.create.after` hook this command
+      // comes from is queued until after the sign-up transaction commits, so
+      // sign-up's session row is written while the account still belongs
+      // nowhere and keeps `activeOrganizationId = null` for its whole week.
+      // `AbilityFactory` narrows role grants to the active organization, so the
+      // org-scoped `owner` role this transaction just granted would not be in
+      // the caller's ability and every org-scoped route would answer 403 until
+      // they signed in again.
+      //
+      // Only sessions that chose nothing are touched, so a session that has
+      // switched to another workspace keeps it, and the team column is left
+      // alone — a personal workspace has no team for a session to point at.
+      await manager.update(
+        Session,
+        { userId: workspace.ownerId, activeOrganizationId: IsNull() },
+        { activeOrganizationId: records.organization.id },
       );
       await this.outbox.stageEvents(manager, workspace.domainEvents);
       return true;
