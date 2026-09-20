@@ -19,6 +19,19 @@ function toEntity(data: UserResponseDto): UserEntity {
   );
 }
 
+/**
+ * `GET /users/me/permissions` serves raw CASL rules, so the wire type is a bag
+ * of unknown members (`conditions` and `fields` are free-form). Keep the rules
+ * that carry the two members `PermissionDefinition` requires — a rule missing
+ * either could not be applied to an ability anyway — so nothing has to be cast.
+ */
+function toPermissions(rules: Array<{ [key: string]: unknown }>): PermissionDefinition[] {
+  return rules.filter(
+    (rule): rule is { [key: string]: unknown } & PermissionDefinition =>
+      typeof rule.action === 'string' && typeof rule.subject === 'string',
+  );
+}
+
 @injectable()
 export class UsersRepository {
   @MapApiError(UsersErrors.FETCH_LIST_FAILED)
@@ -55,7 +68,7 @@ export class UsersRepository {
   async myPermissions(): Promise<PermissionDefinition[]> {
     const data = await UsersApi.permissions();
     if (!data) throw new AppError(UsersErrors.FETCH_FAILED);
-    return data.permissions as PermissionDefinition[];
+    return toPermissions(data.permissions);
   }
 
   @MapApiError(UsersErrors.FETCH_FAILED)
