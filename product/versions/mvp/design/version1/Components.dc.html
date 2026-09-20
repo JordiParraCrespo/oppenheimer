@@ -536,9 +536,9 @@ a:hover{text-decoration:underline}
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
 <h3 style="margin:0;font-size:17px;font-weight:600">Composer</h3>
-<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">chip select · textarea · attach · model + effort · dictate · send</code>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">scope chips · textarea · attach + permissions · model + effort · dictate · send</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Scope first, then the instruction. Every chip is a listbox trigger; the model button carries the effort setting as a second, muted token.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Three bands. The chips above the field fix <span style="color:var(--fg)">where</span> the work happens — host, repositories, branches. Bottom left is what it may touch: attachments and the permission level — ask for approval, approve for me, or full access, the one level allowed a warning tone because it changes a machine unattended. Bottom right is the engine — one button for harness and model (harness column, its models in a side panel, so the pair is always valid) and effort beside it as a five-stop ramp from faster to smarter.</p>
 </div>
 <div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--background)">
 <div class="op-newsession">
@@ -564,11 +564,6 @@ a:hover{text-decoration:underline}
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>main</span><span class="op-chipselect__chev">⌄</span>
 </button>
 </div>
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button">
-<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>Claude Code</span><span class="op-chipselect__chev">⌄</span>
-</button>
-</div>
 </div>
 
 <div class="op-composer">
@@ -577,10 +572,22 @@ a:hover{text-decoration:underline}
 <button class="op-composer__tool" type="button" aria-label="Attach files" title="Attach files">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
 </button>
+<div class="op-modelwrap">
+<button class="op-modelbtn" type="button" style="gap:7px;color:var(--fg-muted)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9.5-2 2 2 2"/><path d="m9.5 9.5 2 2-2 2"/></svg>
+<span>Approve for me</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+</div>
 <div class="op-composer__spacer"></div>
 <div class="op-modelwrap">
-<button class="op-modelbtn" type="button">
-<span>Claude Sonnet 4.6</span><span class="op-modelbtn__effort">Medium</span>
+<button class="op-modelbtn" type="button" style="gap:7px">
+<img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain">
+<span>Claude Sonnet 4.6</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+</div>
+<div class="op-modelwrap">
+<button class="op-modelbtn" type="button" style="gap:7px;color:var(--fg-muted)">
+<span>Medium</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
 </button>
 </div>
 <button class="op-composer__tool" type="button" aria-label="Dictate" title="Dictate">
