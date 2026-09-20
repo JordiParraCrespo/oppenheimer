@@ -68,6 +68,8 @@ async function mintPairingToken(api: APIRequestContext, name = 'e2e box') {
   const body = await response.json().catch(() => ({}));
   return {
     status: response.status(),
+    /** The problem code when minting was refused, so a caller can tell why. */
+    code: (body as { code?: string }).code,
     id: (body as { id?: string }).id,
     secret: /--token (\S+)/.exec((body as { installCommand?: string }).installCommand ?? '')?.[1],
     body,
@@ -192,7 +194,9 @@ test.describe('Hosts', () => {
     const { api } = await signedUpContext('hostbogus');
     const minted = await mintPairingToken(api);
     test.skip(
-      minted.status === 503,
+      // The code, not just the status: a 503 from anything else is a failure to
+      // report, not a deployment to look away from.
+      minted.status === 503 && minted.code === 'HOSTS_004',
       'this deployment has no runner release configured (HOSTS_004)',
     );
 
