@@ -10,6 +10,31 @@
 <helmet><script src="./ds-base.js"></script>
 <style>
 @keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+@keyframes op-effort-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.op-effort__value{display:inline-block;animation:op-effort-in 140ms cubic-bezier(.16,1,.3,1)}
+@media (prefers-reduced-motion:reduce){.op-effort__value{animation-duration:0s}}
+.op-effort{position:relative;height:28px;border-radius:10px;background:var(--hover-surface);cursor:pointer;touch-action:none;user-select:none;overflow:hidden}
+.op-effort:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.op-effort__dots{position:absolute;inset:0;pointer-events:none}
+.op-effort__dot{position:absolute;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:980px;background:var(--fg-subtle);opacity:.55;transition:opacity 140ms cubic-bezier(.4,0,.2,1)}
+.op-effort__dot:nth-child(1){left:15px}
+.op-effort__dot:nth-child(2){left:calc((100% - 30px) * .25 + 15px)}
+.op-effort__dot:nth-child(3){left:calc(50%)}
+.op-effort__dot:nth-child(4){left:calc((100% - 30px) * .75 + 15px)}
+.op-effort__dot:nth-child(5){left:calc(100% - 15px)}
+.op-effort__knob{position:absolute;top:0;left:0;width:30px;height:100%;border-radius:10px;background:var(--fg);pointer-events:none;transition:transform 140ms cubic-bezier(.4,0,.2,1)}
+.op-effort__fill{position:absolute;top:0;bottom:0;left:0;width:100%;border-radius:10px;background:var(--control-hover);pointer-events:none;transition:transform 140ms cubic-bezier(.4,0,.2,1)}
+@media (prefers-reduced-motion:reduce){.op-effort__fill{transition-duration:0s}}
+@media (prefers-reduced-motion:reduce){.op-effort__knob{transition-duration:0s}}
+[data-effort="minimal"] .op-effort__dot:nth-child(1){opacity:0}
+[data-effort="low"] .op-effort__dot:nth-child(2){opacity:0}
+[data-effort="medium"] .op-effort__dot:nth-child(3){opacity:0}
+[data-effort="high"] .op-effort__dot:nth-child(4){opacity:0}
+[data-effort="max"] .op-effort__dot:nth-child(5){opacity:0}
+.op-modelbtn.op-permbtn{color:var(--fg-muted)}
+.op-modelbtn.op-permbtn[data-perm="full"]{color:var(--warning)}
+.op-permrow[data-perm-row="full"]{color:var(--warning)}
+.op-permrow[data-perm-row="full"] .op-modelopt__desc{color:var(--warning)}
 @media (prefers-reduced-motion:reduce){.op-scrim,.op-dialog,[data-anim]{animation-duration:0s!important}}
 </style>
 </helmet>
@@ -134,7 +159,7 @@
 </button>
 <sc-if value="{{ hostOpen }}">
 <div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 <input type="text" placeholder="Search hosts…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
@@ -145,7 +170,7 @@
 </button>
 </sc-for>
 <sc-if value="{{ noHostMatch }}"><div class="op-listbox__empty">No host matches.</div></sc-if>
-<div style="margin:3px -4px -4px;padding:3px 4px 3px;border-top:1px solid var(--border-subtle)">
+<div style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
 <button class="op-option" type="button" role="option" onClick="{{ openAddHost }}" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px">
 <span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
 <span class="op-option__stack"><span>Add host…</span></span>
@@ -163,7 +188,7 @@
 <div class="op-listbox" role="listbox" style="width:318px;min-width:0;box-sizing:border-box;max-height:264px;padding:4px;overflow-x:hidden">
 
 <sc-if value="{{ repoListPane }}" hint-placeholder-val="{{ true }}">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 <input type="text" placeholder="Search repositories…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
@@ -185,11 +210,11 @@
 </sc-if>
 
 <sc-if value="{{ repoBranchPane }}">
-<button type="button" onClick="{{ backToRepos }}" style="display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;margin:0 0 5px;padding:6px 9px;border:0;border-bottom:1px solid var(--border-subtle);background:var(--popover);color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer">
+<button type="button" onClick="{{ backToRepos }}" style="display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;margin:0 0 4px;padding:6px 9px;border:0;border-bottom:1px solid var(--border-subtle);background:var(--popover);color:var(--fg);font:inherit;font-size:12.5px;text-align:left;cursor:pointer">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><path d="m15 18-6-6 6-6"/></svg>
 <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Branch for {{ paneRepoName }}</span>
 </button>
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 <input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
@@ -212,7 +237,7 @@
 </button>
 <sc-if value="{{ branchOpen }}">
 <div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 4px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
 <input type="text" placeholder="Search branches…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
 </div>
@@ -227,30 +252,6 @@
 </sc-if>
 </div>
 </sc-if>
-<div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ agentOpen }}" onClick="{{ toggleAgent }}">
-<svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><span>{{ agentLabel }}</span><span class="op-chipselect__chev">⌄</span>
-</button>
-<sc-if value="{{ agentOpen }}">
-<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:248px;padding:4px;overflow-x:hidden">
-<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:0 0 5px;padding:6px 9px;background:var(--popover);border-bottom:1px solid var(--border-subtle)" onClick="{{ stopClick }}">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search agents…" value="{{ query }}" onChange="{{ setQuery }}" autoFocus="{{ true }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
-</div>
-<sc-for list="{{ agentOptions }}" as="a" hint-placeholder-count="2">
-<button class="op-option" type="button" role="option" data-selected="{{ a.selected }}" onClick="{{ a.pick }}" style="padding:6px 10px;gap:9px;font-size:13px;line-height:1.35">
-<sc-if value="{{ a.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ a.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
-<sc-if value="{{ a.isShell }}"><span style="display:flex;flex:none;width:15px;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
-<sc-if value="{{ a.noIcon }}"><span style="display:flex;flex:none;width:15px;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
-<span class="op-option__stack"><span>{{ a.label }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ a.desc }}</span></span>
-<span class="op-option__check">✓</span>
-</button>
-</sc-for>
-<sc-if value="{{ noAgentMatch }}"><div class="op-listbox__empty">No agent matches.</div></sc-if>
-</div>
-</sc-if>
-</div>
 </div>
 
 <div class="op-composer">
@@ -267,47 +268,119 @@
 <button class="op-composer__tool" type="button" aria-label="Attach files" title="Attach files" onClick="{{ pickFiles }}">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
 </button>
-<div class="op-composer__spacer"></div>
-<sc-if value="{{ hasModel }}" hint-placeholder-val="{{ true }}">
+
 <div class="op-modelwrap">
-<button class="op-modelbtn" type="button" data-open="{{ modelOpen }}" onClick="{{ toggleModel }}">
-<span>{{ modelLabel }}</span><span class="op-modelbtn__effort">{{ effortLabel }}</span>
+<button class="op-modelbtn op-permbtn" type="button" data-open="{{ permOpen }}" data-perm="{{ permKey }}" onClick="{{ togglePerm }}" style="gap:7px">
+<sc-if value="{{ btnIsAsk }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></sc-if>
+<sc-if value="{{ btnIsAuto }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9.5-2 2 2 2"/><path d="m9.5 9.5 2 2-2 2"/></svg></sc-if>
+<sc-if value="{{ btnIsFull }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></sc-if>
+<span>{{ permLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+<sc-if value="{{ permOpen }}">
+<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="right:auto;left:0;min-width:296px">
+<sc-for list="{{ permOptions }}" as="p" hint-placeholder-count="3">
+<button class="op-menu__item op-permrow" type="button" onClick="{{ p.pick }}" data-perm-row="{{ p.value }}" style="gap:10px;padding:5px 10px">
+<span style="display:flex;padding-top:1px"><sc-if value="{{ p.isAsk }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></sc-if>
+<sc-if value="{{ p.isAuto }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m14.5 9.5-2 2 2 2"/><path d="m9.5 9.5 2 2-2 2"/></svg></sc-if>
+<sc-if value="{{ p.isFull }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></sc-if></span>
+<span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">{{ p.label }}</span><span class="op-modelopt__desc" style="font-size:11.5px">{{ p.desc }}</span></span>
+<span class="op-menu__tick">{{ p.check }}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div class="op-composer__spacer"></div>
+
+<div class="op-modelwrap">
+<button class="op-modelbtn" type="button" data-open="{{ modelOpen }}" onClick="{{ toggleModel }}" style="gap:7px">
+<sc-if value="{{ btnIsClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<sc-if value="{{ btnIsOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if>
+<sc-if value="{{ btnIsCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
+<sc-if value="{{ btnIsShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
+<sc-if value="{{ btnNoIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
+<span>{{ modelLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
 </button>
 <sc-if value="{{ modelOpen }}">
-<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}">
+<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="width:252px;min-width:252px;max-height:none">
 
-<sc-if value="{{ modelRoot }}">
-<div class="op-menu__label">{{ harnessLabel }}</div>
-<sc-for list="{{ modelOptions }}" as="m" hint-placeholder-count="3">
-<button class="op-menu__item" type="button" onClick="{{ m.pick }}">
-<span class="op-modelopt"><span class="op-modelopt__name">{{ m.label }}</span><span class="op-modelopt__desc">{{ m.desc }}</span></span>
+<sc-if value="{{ agentPane }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ harnessOptions }}" as="h" hint-placeholder-count="4">
+<button class="op-menu__item" type="button" onClick="{{ h.open }}" style="align-items:center;gap:9px;padding:6px 10px;font-size:13px">
+<sc-if value="{{ h.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ h.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ h.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
+<sc-if value="{{ h.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
+<sc-if value="{{ h.noIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
+<span class="op-menu__label-text" style="font-size:13px">{{ h.label }}</span>
+<span class="op-menu__tick">{{ h.check }}</span>
+<span class="op-menu__shortcut">›</span>
+</button>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ modelPane }}">
+<button class="op-menu__item" type="button" onClick="{{ backToAgents }}" style="align-items:center;gap:8px;padding:3px 10px;font-size:13px">
+<span class="op-menu__shortcut">‹</span>
+<sc-if value="{{ subisClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ subisOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:15px;height:15px;object-fit:contain"></sc-if>
+<sc-if value="{{ subisCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if>
+<sc-if value="{{ subisShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span></sc-if>
+<sc-if value="{{ subnoIcon }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span></sc-if>
+<span class="op-menu__label-text" style="font-size:13px">{{ subLabel }}</span>
+</button>
+<div style="position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:7px;margin:4px -4px;padding:5px 13px;background:var(--popover);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search models…" aria-label="Search models" value="{{ modelQuery }}" onChange="{{ setModelQuery }}" onClick="{{ stop }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:12.5px;color:var(--fg)">
+</div>
+<div style="height:{{ modelListH }};box-sizing:border-box;overflow-y:auto;overflow-x:hidden;scrollbar-width:none">
+<sc-for list="{{ subModels }}" as="m" hint-placeholder-count="3">
+<button class="op-menu__item" type="button" onClick="{{ m.pick }}" style="align-items:center;gap:9px;padding:6px 10px;font-size:13px">
+<span class="op-menu__label-text" style="min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.label }}</span>
 <span class="op-menu__tick">{{ m.check }}</span>
 </button>
 </sc-for>
-<div class="op-menu__sep"></div>
-<button class="op-menu__item" type="button" onClick="{{ openEffortMenu }}"><span class="op-menu__label-text">Effort</span><span class="op-menu__value">{{ effortLabel }}</span><span class="op-menu__shortcut">›</span></button>
+<sc-if value="{{ noModelMatch }}">
+<p style="margin:0;padding:10px 13px;font-size:12.5px;color:var(--fg-subtle)">No model matches “{{ modelQuery }}”.</p>
+</sc-if>
+</div>
 </sc-if>
 
-<sc-if value="{{ modelEffort }}">
-<button class="op-menu__item" type="button" onClick="{{ backToModels }}"><span class="op-menu__shortcut">‹</span><span class="op-menu__label-text">Effort</span></button>
-<div class="op-menu__sep"></div>
-<sc-for list="{{ effortOptions }}" as="e" hint-placeholder-count="3">
-<button class="op-menu__item" type="button" onClick="{{ e.pick }}">
-<span class="op-modelopt"><span class="op-modelopt__name">{{ e.label }}</span><span class="op-modelopt__desc">{{ e.desc }}</span></span>
-<span class="op-menu__tick">{{ e.check }}</span>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ hasModel }}" hint-placeholder-val="{{ true }}">
+<div class="op-modelwrap">
+<button class="op-modelbtn" type="button" data-open="{{ effortOpen }}" onClick="{{ toggleEffort }}" style="gap:7px;color:var(--fg-muted)">
+<span>{{ effortBtnLabel }}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
 </button>
+<sc-if value="{{ effortOpen }}">
+<div class="op-menu op-modelmenu" role="menu" onClick="{{ stop }}" style="min-width:268px;max-height:none;padding:13px 14px;display:flex;flex-direction:column;gap:11px">
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font-size:13px;color:var(--fg-muted)">Effort</span>
+<span class="op-effort__value" key="{{ effortKey }}" style="font-size:13px;color:var(--fg)">{{ effortLabel }}</span>
+<span style="flex:1"></span>
+<span style="display:flex;color:var(--fg-subtle)" title="How long the agent may think before it answers. Higher effort costs more and takes longer."><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted)"><span>Faster</span><span>Smarter</span></div>
+<div class="op-effort" data-effort="{{ effortKey }}" ref="{{ effortRef }}" role="slider" tabindex="0" aria-label="Effort" aria-valuemin="1" aria-valuemax="5" aria-valuenow="{{ effortIndex }}" aria-valuetext="{{ effortLabel }}" onPointerDown="{{ effortDown }}" onKeyDown="{{ effortKeyDown }}">
+<div class="op-effort__fill" ref="{{ effortFillRef }}"></div>
+<div class="op-effort__dots">
+<sc-for list="{{ effortStops }}" as="e" hint-placeholder-count="5">
+<span class="op-effort__dot"></span>
 </sc-for>
-</sc-if>
-
-
+</div>
+<span class="op-effort__knob" ref="{{ effortKnobRef }}"></span>
+</div>
+</div>
 </div>
 </sc-if>
 </div>
 </sc-if>
-<button class="op-composer__tool" type="button" data-recording="{{ recording }}" aria-label="Dictate" title="Dictate" onClick="{{ toggleMic }}">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg>
-<sc-if value="{{ recording }}"><span>{{ recordingTime }}</span></sc-if>
-</button>
+
 <button class="op-composer__send" type="button" aria-label="Start session" onClick="{{ startSession }}">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
 </button>
@@ -638,17 +711,27 @@ const THEMES = [
   { value: 'system', label: 'Match system' },
 ];
 
-const EFFORTS = [
-  { value: 'low', label: 'Low', desc: 'Answer fast, skip exploration' },
-  { value: 'medium', label: 'Medium', desc: 'Balanced — the default' },
-  { value: 'high', label: 'High', desc: 'Plan, verify, and re-check the work' },
+// What the agent may do on the host without asking. Not decoration: full
+// access is the one level that can change a machine unattended, so it is the
+// only one that takes a warning tone.
+const PERMS = [
+  { value: 'ask', label: 'Ask for approval', desc: 'Always ask before editing files or reaching the internet.' },
+  { value: 'auto', label: 'Approve for me', desc: 'Only ask for actions detected as potentially unsafe.' },
+  { value: 'full', label: 'Full access', desc: 'Unrestricted access to the internet and any file on the host.' },
 ];
+
+const EFFORTS = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'max', label: 'Max' },
+];
+
 
 // The harness, not the weights — each runs whatever model you pick below.
 const AGENTS = [
   { value: 'claude-code', label: 'Claude Code', desc: 'Anthropic · terminal-native', icon: './assets/agents/claude.svg' },
-  // No OpenAI mark ships with this system, so Codex keeps the neutral glyph
-  // rather than a hand-drawn imitation of someone else's logo.
   { value: 'codex', label: 'Codex', desc: 'OpenAI · fast wide edits' },
   { value: 'opencode', label: 'OpenCode', desc: 'Open source · bring your own model', icon: './assets/agents/opencode.png' },
   { value: 'shell', label: 'Blank terminal', desc: 'No agent · just a shell in the worktree' },
@@ -660,7 +743,8 @@ class Component extends DCLogic {
     filterOpen: false, menu: null,
     open: null, host: 'optimus', repos: ['xrp-mobile'], branchOf: { 'xrp-mobile': 'main' },
     repoPane: null, agentId: 'claude-code', query: '',
-    effort: 'medium', model: 'sonnet', modelOpen: false, modelMenu: null,
+    effort: 'medium', effortShown: 'medium', model: 'sonnet', modelQuery: '', modelOpen: false, modelMenu: null,
+    perm: 'auto', permOpen: false, effortOpen: false, sub: null,
     recording: false, seconds: 0, files: [], zoom: false,
     addHost: false, hostAdded: false, hostSecs: 3581, hostCopied: null,
     hostName: '', hostTab: 'cmd',
@@ -676,11 +760,12 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._away = () => {
-      const { open, filterOpen, modelOpen, accountOpen } = this.state;
-      if (open || filterOpen || modelOpen || accountOpen) {
+      const { open, filterOpen, modelOpen, accountOpen, permOpen, effortOpen } = this.state;
+      if (open || filterOpen || modelOpen || accountOpen || permOpen || effortOpen) {
         this.setState({
           open: null, filterOpen: false, menu: null, repoPane: null,
           modelOpen: false, modelMenu: null, accountOpen: false, accountMenu: null,
+          permOpen: false, effortOpen: false, sub: null,
         });
       }
     };
@@ -691,6 +776,8 @@ class Component extends DCLogic {
       else if (this.state.zoom) this.setState({ zoom: false });
     };
     document.addEventListener('keydown', this._esc);
+    this._onResize = () => this.syncEffort();
+    window.addEventListener('resize', this._onResize);
     this._mq = window.matchMedia('(prefers-color-scheme: dark)');
     this._onScheme = () => { if (this.state.theme === 'system') this.applyTheme('system'); };
     this._mq.addEventListener('change', this._onScheme);
@@ -723,6 +810,8 @@ class Component extends DCLogic {
   componentWillUnmount() {
     document.removeEventListener('click', this._away);
     document.removeEventListener('keydown', this._esc);
+    window.removeEventListener('resize', this._onResize);
+    this._effortEndNative();
     clearInterval(this._hostTick);
     clearTimeout(this._hostReg);
     clearTimeout(this._hostCopy);
@@ -771,6 +860,57 @@ class Component extends DCLogic {
   }
 
   primaryRepo() { return this.state.repos[0] || REPOS[0].value; }
+  _effortTrack = React.createRef();
+  _effortKnob = React.createRef();
+  _effortFill = React.createRef();
+  syncEffort = () => {
+    const t = this._effortTrack.current, k = this._effortKnob.current, f = this._effortFill.current;
+    if (!t || !k || !f) return;
+    const w = t.clientWidth, kw = k.offsetWidth || 30;
+    const x = Math.round((w - kw) * (this.effortIndex() / (EFFORTS.length - 1)));
+    k.style.transform = 'translateX(' + x + 'px)';
+    f.style.transform = 'translateX(' + (x + kw - w) + 'px)';
+  };
+  componentDidUpdate() { this.syncEffort(); }
+  effortIndex() { return Math.max(0, EFFORTS.findIndex(o => o.value === this.state.effort)); }
+  effortFromX(clientX) {
+    const el = this._effortTrack.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return null;
+    const i = Math.floor(((clientX - r.left) / r.width) * EFFORTS.length);
+    return EFFORTS[Math.max(0, Math.min(EFFORTS.length - 1, i))].value;
+  }
+  _effortMoveNative = e => {
+    const v = this.effortFromX(e.clientX);
+    if (v && v !== this.state.effort) this.setState({ effort: v });
+  };
+  _effortEndNative = () => {
+    document.removeEventListener('pointermove', this._effortMoveNative);
+    document.removeEventListener('pointerup', this._effortEndNative);
+    document.removeEventListener('pointercancel', this._effortEndNative);
+  };
+  effortDown = e => {
+    e.stopPropagation();
+    e.preventDefault();
+    const v = this.effortFromX(e.clientX);
+    if (v) this.setState({ effort: v });
+    document.addEventListener('pointermove', this._effortMoveNative);
+    document.addEventListener('pointerup', this._effortEndNative);
+    document.addEventListener('pointercancel', this._effortEndNative);
+  };
+  effortKeyDown = e => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1
+      : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1
+      : e.key === 'Home' ? -EFFORTS.length
+      : e.key === 'End' ? EFFORTS.length : 0;
+    if (!step) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const i = Math.max(0, Math.min(EFFORTS.length - 1, this.effortIndex() + step));
+    this.setState({ effort: EFFORTS[i].value });
+  };
+
   repoName() { const r = REPOS.find(o => o.value === this.primaryRepo()); return r ? r.label.split('/').pop() : ''; }
   // What the boot trace and the session row call the scope: one repo by name,
   // several counted, with the primary named and the rest tallied.
@@ -1086,7 +1226,6 @@ class Component extends DCLogic {
       noHostMatch: this.match(HOSTS).length ? undefined : 'true',
       noRepoMatch: this.match(REPOS).length ? undefined : 'true',
       noBranchMatch: this.match(branches).length ? undefined : 'true',
-      noAgentMatch: this.match(AGENTS).length ? undefined : 'true',
       // The chip has no room for the owner, and the owner is the same for all
       // of them — the repo name is the part that distinguishes.
       repoShort: find(REPOS, repo).split('/').pop() + (repos.length > 1 ? '  +' + (repos.length - 1) : ''),
@@ -1138,17 +1277,90 @@ class Component extends DCLogic {
       recordingTime: fmt(this.state.seconds),
       toggleMic: this.toggleMic,
 
-      modelLabel: find(ALL_MODELS, this.state.model),
-      effortLabel: find(EFFORTS, this.state.effort),
+      // The bottom bar reads left to right as scope of action, then engine:
+      // what it may touch, then who drives it and how hard it thinks.
+      permLabel: find(PERMS, this.state.perm),
+      permKey: this.state.perm,
+      btnIsAsk: this.state.perm === 'ask' ? 'true' : undefined,
+      btnIsAuto: this.state.perm === 'auto' ? 'true' : undefined,
+      btnIsFull: this.state.perm === 'full' ? 'true' : undefined,
+      permOpen: this.state.permOpen ? 'true' : undefined,
+      togglePerm: e => {
+        e.stopPropagation();
+        this.setState(st => ({ permOpen: !st.permOpen, effortOpen: false, modelOpen: false, sub: null, open: null }));
+      },
+      permOptions: PERMS.map(o => ({
+        ...o,
+        check: this.state.perm === o.value ? '✓' : '',
+        // Full access is the only level that can change a machine unattended,
+        // so it is the only one that takes a warning tone — label and all.
+        isAsk: o.value === 'ask' ? 'true' : undefined,
+        isAuto: o.value === 'auto' ? 'true' : undefined,
+        isFull: o.value === 'full' ? 'true' : undefined,
+        pick: e => { e.stopPropagation(); this.setState({ perm: o.value, permOpen: false }); },
+      })),
+
+      // A blank terminal runs no model, so the button names the agent instead
+      // of going blank — it is still the way back to a different agent.
+      modelLabel: models.length ? find(ALL_MODELS, this.state.model) : find(AGENTS, agentId),
       modelOpen: this.state.modelOpen ? 'true' : undefined,
-      modelRoot: this.state.modelOpen && !this.state.modelMenu ? 'true' : undefined,
-      modelEffort: this.state.modelMenu === 'effort' ? 'true' : undefined,
+      // Opening lands on the agent the session already uses, one step from
+      // its models and one step from a different agent.
       toggleModel: e => {
         e.stopPropagation();
-        this.setState(s => ({ modelOpen: !s.modelOpen, modelMenu: null, open: null }));
+        this.setState(st => ({ modelOpen: !st.modelOpen, sub: null, modelQuery: '', permOpen: false, effortOpen: false, open: null }));
       },
-      openEffortMenu: e => { e.stopPropagation(); this.setState({ modelMenu: 'effort' }); },
-      backToModels: e => { e.stopPropagation(); this.setState({ modelMenu: null }); },
+      agentPane: this.state.sub ? undefined : 'true',
+      modelPane: this.state.sub ? 'true' : undefined,
+      backToAgents: e => { e.stopPropagation(); this.setState({ sub: null, modelQuery: '' }); },
+      modelQuery: this.state.modelQuery,
+      setModelQuery: e => this.setState({ modelQuery: e.target.value }),
+      modelListH: Math.min(4, Math.max(1, ((HARNESS_MODELS[this.state.sub] || { primary: [] }).primary).length)) * 30.5 + 2 + 'px',
+      noModelMatch: ((HARNESS_MODELS[this.state.sub] || { primary: [] }).primary)
+        .filter(o => o.label.toLowerCase().includes(this.state.modelQuery.trim().toLowerCase()))
+        .length === 0 ? 'true' : undefined,
+      subLabel: this.state.sub ? find(AGENTS, this.state.sub) : '',
+      subisClaude: this.state.sub === 'claude-code' ? 'true' : undefined,
+      subisOpenCode: this.state.sub === 'opencode' ? 'true' : undefined,
+      subisCodex: this.state.sub === 'codex' ? 'true' : undefined,
+      subisShell: this.state.sub === 'shell' ? 'true' : undefined,
+      subnoIcon: this.state.sub && ['claude-code', 'opencode', 'shell', 'codex'].indexOf(this.state.sub) === -1 ? 'true' : undefined,
+      // Harness first, then its models: the pair has to be valid, and the
+      // second column is the only place that guarantees it.
+      harnessOptions: AGENTS.map(o => ({
+        ...o,
+        check: agentId === o.value ? '✓' : '',
+        isClaude: o.value === 'claude-code' ? 'true' : undefined,
+        isOpenCode: o.value === 'opencode' ? 'true' : undefined,
+        isCodex: o.value === 'codex' ? 'true' : undefined,
+        isShell: o.value === 'shell' ? 'true' : undefined,
+        noIcon: ['claude-code', 'opencode', 'shell', 'codex'].indexOf(o.value) === -1 ? 'true' : undefined,
+        open: e => {
+          e.stopPropagation();
+          const h = HARNESS_MODELS[o.value] || { primary: [] };
+          if (!h.primary.length) this.setState({ agentId: o.value, model: '', modelOpen: false, sub: null, modelQuery: '' });
+          else this.setState({ sub: o.value, modelQuery: '' });
+        },
+      })),
+      subModels: ((HARNESS_MODELS[this.state.sub] || { primary: [] }).primary)
+        .filter(o => o.label.toLowerCase().includes(this.state.modelQuery.trim().toLowerCase()))
+        .map(o => ({
+        ...o,
+        check: this.state.model === o.value && agentId === this.state.sub ? '✓' : '',
+        pick: e => { e.stopPropagation(); this.setState({ agentId: this.state.sub, model: o.value, modelOpen: false, sub: null, modelQuery: '' }); },
+      })),
+
+      effortLabel: find(EFFORTS, this.state.effort),
+      effortBtnLabel: find(EFFORTS, this.state.effortOpen ? this.state.effortShown : this.state.effort),
+      effortOpen: this.state.effortOpen ? 'true' : undefined,
+      toggleEffort: e => {
+        e.stopPropagation();
+        this.setState(st => ({
+          effortOpen: !st.effortOpen,
+          effortShown: st.effortOpen ? st.effortShown : st.effort,
+          permOpen: false, modelOpen: false, sub: null, open: null,
+        }));
+      },
       accountOpen: this.state.accountOpen ? 'true' : undefined,
       accountRoot: this.state.accountOpen && !this.state.accountMenu ? 'true' : undefined,
       accountTheme: this.state.accountMenu === 'theme' ? 'true' : undefined,
@@ -1179,22 +1391,22 @@ class Component extends DCLogic {
 
       // A blank terminal runs no model, so the model control has nothing to say.
       hasModel: models.length ? 'true' : undefined,
-      harnessLabel: find(AGENTS, agentId),
-      modelOptions: this.picker(models, 'model', { close: true }),
-      effortOptions: this.picker(EFFORTS, 'effort', { back: true }),
+      // Picking stays in the popover: you are comparing, not confirming.
+      effortStops: EFFORTS,
+      effortKey: this.state.effort,
+      effortIndex: this.effortIndex() + 1,
+      effortRef: this._effortTrack,
+      effortKnobRef: this._effortKnob,
+      effortFillRef: this._effortFill,
+      effortDown: this.effortDown,
+      effortKeyDown: this.effortKeyDown,
 
       agentLabel: find(AGENTS, agentId),
-      agentOptions: this.options(AGENTS, 'agentId').map(o => ({
-        ...o,
-        // A {{ }} hole in an img src is requested verbatim while the template
-        // parses, so every mark is a literal src gated on its own flag.
-        isClaude: o.value === 'claude-code' ? 'true' : undefined,
-        isOpenCode: o.value === 'opencode' ? 'true' : undefined,
-        isShell: o.value === 'shell' ? 'true' : undefined,
-        noIcon: !o.icon && o.value !== 'shell' ? 'true' : undefined,
-      })),
-      agentOpen: open === 'agentId',
-      toggleAgent: e => this.toggle('agentId', e),
+      btnIsClaude: agentId === 'claude-code' ? 'true' : undefined,
+      btnIsOpenCode: agentId === 'opencode' ? 'true' : undefined,
+      btnIsCodex: agentId === 'codex' ? 'true' : undefined,
+      btnIsShell: agentId === 'shell' ? 'true' : undefined,
+      btnNoIcon: ['claude-code', 'opencode', 'shell', 'codex'].indexOf(agentId) === -1 ? 'true' : undefined,
     };
   }
 }
