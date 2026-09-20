@@ -2,7 +2,7 @@ import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@ne
 import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../../auth/application/credential-scope.port';
 import { CREDENTIAL_SCOPE } from '../../auth/auth.di-tokens';
-import type { ScopedRequest } from '../../auth/domain/scope-context.types';
+import { isHostCredential, type ScopedRequest } from '../../auth/domain/scope-context.types';
 import { HOST_PRINCIPAL, type HostPrincipalRequest } from '../decorators/current-host.decorator';
 import { HostErrors } from '../domain/hosts.errors';
 
@@ -36,7 +36,7 @@ export class HostPrincipalGuard implements CanActivate {
     // something that is simply not a host.
     const credential = await this.credentials.resolve(request);
 
-    if (credential?.kind !== 'host') {
+    if (!isHostCredential(credential)) {
       // Returning `false` would hand back Nest's own codeless 403; the catalog
       // error is what the runner reads a `detail` out of.
       throw new AppError(HostErrors.ASSERTION_REJECTED, {

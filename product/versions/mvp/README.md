@@ -90,6 +90,36 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   gains F26a: first install is trust-on-first-use, so F26 begins at the
   first self-update, not at install. The link is a **port**, not a
   bounded context.
+- 2026-09-19: **the version-1 frames win over the older screen notes**,
+  after a screen-by-screen walk with the owner (PR #20). Onboarding is
+  four numbered steps and a landing: sign in, name your workspace and
+  its address, connect GitHub, add a host, then Ready into the console
+  (00, 05, 08). A session may span several repositories, one worktree
+  each on its own branch (00); the repository chip multi-selects with a
+  branch pane per repository and the branch chip shows only for one
+  repository (05). Every scope chip filters. The agent chip lists Claude
+  Code, Codex, OpenCode and a blank terminal with the vendors' published
+  marks (Anthropic's Claude mark, OpenCode's square; none for Codex),
+  and the model menu is scoped to the harness. The Add host dialog is
+  the one dialog; the welcome modal is gone. Both themes. The design
+  system grew the components these need (`ChipSelect` rebuilt on the
+  Combobox primitive so it filters, `RepositorySelect`, `StepHeader`,
+  `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
+  `AgentMark`); the frames in `design/version1/` remain the visual
+  record and 05 is the written one.
+- 2026-09-19: **credential kinds are contributions to the auth kernel**
+  (08). `apps/api/src/auth` imported `api-tokens` and `users` to resolve
+  a request's credential, so the layer everything is built on depended
+  on two of the things built on it — and the hosts slice was about to
+  add a third the same way. The kernel now recognises only what it
+  issues (session, OAuth grant) and takes every other kind from a
+  registry a module contributes to with
+  `AuthModule.contributeCredentials`, in the spirit of
+  `AuthzModule.forFeature` for resources — except that the providers go in
+  the contributing module, so nothing has to be published
+  application-wide to be reachable. Nothing about
+  what a credential authorizes changed, and no error code moved that a
+  client can see.
 - 2026-09-19: the **shared vocabulary lands in `packages/shared`**, and two of
   these notes moved to match it. 01's open question 1 is **decided**: Zod is the
   source of truth for the wire and JSON Schema is emitted from it at build, with
@@ -139,3 +169,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   row** rather than a `host_keys` table, and the retired key joins it as a
   second column when rotation arrives on the link: rotation needs exactly
   two keys, never N, and every runner boot reads them.
+- 2026-09-20: the host's boot assertion becomes a **contributed credential
+  kind**: `apps/api/src/hosts` spreads
+  `AuthModule.contributeCredentials([HostCredentialResolver])` into its own
+  providers and is no longer `@Global`, so the auth kernel recognises a machine
+  without importing `hosts`. The kind's *shape* stays kernel vocabulary —
+  `ScopeContext` gains a `host` variant with no owner and no scopes, because the
+  guards read it — and nothing about what a host may do changed. Recorded in 08
+  and `apps/api/src/hosts/application/host-credential.resolver.ts`.

@@ -41,8 +41,10 @@ version `1`), so the paths below carry that prefix and the runner's
   source IP is recorded and shown (F5).
 - `DELETE /api/v1/hosts/self` — uninstall, authenticated by the host's boot
   JWT rather than by the spent registration token. The JWT is presented as
-  `Authorization: Bearer`, so the credential resolver must recognise a host
-  principal alongside sessions and personal access tokens — the second
+  `Authorization: Bearer`, so a host assertion is a credential kind this
+  module contributes to the auth kernel
+  (`AuthModule.contributeCredentials`), alongside the sessions and personal
+  access tokens the kernel and `api-tokens` answer for — the second
   verifier below. There is no id in the path: the host is the subject of
   the token it presented.
 - **Host JWT verification.** Boot tokens are EdDSA over the host's

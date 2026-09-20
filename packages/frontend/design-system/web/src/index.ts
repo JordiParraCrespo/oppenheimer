@@ -1,5 +1,7 @@
 export type { AgentGradient } from './components/agent-card';
 export { AGENT_GRADIENTS, AgentCard } from './components/agent-card';
+export type { AgentId } from './components/agent-mark';
+export { AgentMark } from './components/agent-mark';
 export {
   Alert,
   AlertAction,
@@ -88,12 +90,16 @@ export { ChatMarkdown } from './components/chat-markdown';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
+export type { ChipSelectAction, ChipSelectOption } from './components/chip-select';
 export {
   ChipSelect,
-  ChipSelectAction,
-  ChipSelectGroup,
-  ChipSelectGroupLabel,
-  ChipSelectOption,
+  ChipSelectActionRow,
+  ChipSelectBack,
+  ChipSelectEmpty,
+  ChipSelectItem,
+  ChipSelectPopup,
+  ChipSelectSearch,
+  ChipSelectTrigger,
 } from './components/chip-select';
 export { CodeBlock } from './components/code-block';
 export {
@@ -300,7 +306,14 @@ export {
 export { RadioGroup, RadioGroupItem } from './components/radio-group';
 export { RecentItem } from './components/recent-item';
 export { ReplyBox } from './components/reply-box';
+export type {
+  RepositoryBranch,
+  RepositoryOption,
+  RepositoryScope,
+} from './components/repository-select';
+export { RepositorySelect } from './components/repository-select';
 export { SearchInput, searchInputVariants } from './components/search-input';
+export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export {
   Select,
   SelectContent,
@@ -355,6 +368,8 @@ export {
   useSidebar,
 } from './components/sidebar';
 export { Skeleton } from './components/skeleton';
+export type { SlugStatus } from './components/slug-input';
+export { SlugInput } from './components/slug-input';
 export { Toaster, toast } from './components/sonner';
 export { Sparkline } from './components/sparkline';
 export type {
@@ -365,8 +380,11 @@ export type {
 export { StageBreakdown } from './components/stage-breakdown';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
+export { StepHeader } from './components/step-header';
 export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
+export { SuccessMark } from './components/success-mark';
+export { SummaryCard, SummaryRow } from './components/summary-card';
 export { Switch } from './components/switch';
 export {
   Table,

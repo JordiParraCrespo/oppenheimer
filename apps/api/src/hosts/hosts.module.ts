@@ -1,9 +1,11 @@
-import { Global, Module, type Provider } from '@nestjs/common';
+import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { AuthModule } from '../auth/auth.module';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
+import { HostCredentialResolver } from './application/host-credential.resolver';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
 import { MintPairingTokenHttpController } from './commands/mint-pairing-token/mint-pairing-token.http.controller';
 import { RegisterHostCommandHandler } from './commands/register-host/register-host.command-handler';
@@ -86,16 +88,17 @@ const resolvers: Provider[] = [
  * The machines a person has paired, how they prove they are one of them, and
  * what each last reported about itself.
  *
- * Marked `@Global` for the same reason `ApiTokensModule` is: the credential
- * resolver behind the globally registered `ScopesGuard` asks this module to
- * recognise a host's boot assertion, and that guard is instantiated outside any
- * feature module's injector.
+ * A host's boot assertion is a credential kind this module **contributes** to
+ * the auth kernel: `HostCredentialResolver` goes in the providers below, so it
+ * is constructed in this module's own injector and injects this module's
+ * `HOST_ASSERTION` port. That is why nothing here is `@Global` — the kernel
+ * reaches only its own registry, and recognising a machine costs this module no
+ * application-wide publication.
  *
  * Only `HostResource` is contributed to the authorization kernel. The pairing
  * token's declaration exists to scope its rows and is deliberately not
  * registered — see `host-pairing-token.resource.ts`.
  */
-@Global()
 @Module({
   imports: [
     CqrsModule,
@@ -109,6 +112,7 @@ const resolvers: Provider[] = [
     ...mappers,
     ...repositories,
     ...resolvers,
+    ...AuthModule.contributeCredentials([HostCredentialResolver]),
     RunnerReleaseConfig,
     HostPrincipalGuard,
   ],

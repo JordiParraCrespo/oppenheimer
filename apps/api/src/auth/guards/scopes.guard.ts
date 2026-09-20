@@ -2,11 +2,11 @@ import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@ne
 import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import { isOrganizationAllowed, missingScopes, type Scope } from '@oppenheimer/shared';
-import { ApiTokenErrors } from '../../api-tokens/domain/api-token.errors';
 import type { CredentialScopePort } from '../application/credential-scope.port';
 import { CREDENTIAL_SCOPE } from '../auth.di-tokens';
 import { ORGANIZATION_PARAM_KEY } from '../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../decorators/require-scopes.decorator';
+import { AuthErrors } from '../domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
 
 /**
@@ -25,12 +25,6 @@ import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types'
  * This is only half of the check. The credential's owner still has to be
  * allowed to perform the operation at all, which `PoliciesGuard` evaluates
  * against their live roles — so the effective permission is the intersection.
-
- *
- * A host's boot assertion is the fourth kind of credential and needs no case of
- * its own: it carries an empty scope list, so the rules above refuse it on every
- * route that declares a scope, and the two machine routes say `@AllowAnyScope()`
- * because there is no permission for a machine to hold.
  */
 @Injectable()
 export class ScopesGuard implements CanActivate {
@@ -59,10 +53,13 @@ export class ScopesGuard implements CanActivate {
   }
 
   private assertScopes(context: ExecutionContext, scopeContext: ScopeContext): void {
-    const required = this.requiredScopes(context);
+    const required = this.reflector.getAllAndOverride<Scope[]>(REQUIRE_SCOPES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!required || required.length === 0) {
-      throw new AppError(ApiTokenErrors.ENDPOINT_NOT_TOKEN_ACCESSIBLE);
+      throw new AppError(AuthErrors.ENDPOINT_NOT_TOKEN_ACCESSIBLE);
     }
 
     const missing = missingScopes(scopeContext.scopes, required);
@@ -70,19 +67,11 @@ export class ScopesGuard implements CanActivate {
       // Which scopes are missing varies per request, so it belongs in the
       // problem's `detail` (and as an extension a client can act on), never in
       // the catalog message that titles the problem type.
-      throw new AppError(ApiTokenErrors.INSUFFICIENT_SCOPE, {
+      throw new AppError(AuthErrors.INSUFFICIENT_SCOPE, {
         detail: `This credential is missing: ${missing.join(', ')}`,
         extensions: { missingScopes: missing },
       });
     }
-  }
-
-  /** What the route declared, at method or class level. */
-  private requiredScopes(context: ExecutionContext): Scope[] | undefined {
-    return this.reflector.getAllAndOverride<Scope[]>(REQUIRE_SCOPES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
   }
 
   private assertOrganization(
@@ -94,7 +83,7 @@ export class ScopesGuard implements CanActivate {
 
     const organizationId = this.organizationIdFor(context, request);
     if (!isOrganizationAllowed(scopeContext.resourceScope, organizationId)) {
-      throw new AppError(ApiTokenErrors.ORGANIZATION_OUT_OF_SCOPE);
+      throw new AppError(AuthErrors.ORGANIZATION_OUT_OF_SCOPE);
     }
   }
 

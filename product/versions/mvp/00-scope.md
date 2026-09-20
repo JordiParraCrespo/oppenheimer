@@ -22,14 +22,23 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 - **A session is a worktree plus a terminal on a host.** No VM, no
   container. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
-  to the browser.
+  to the browser. A session may span **several repositories**: one
+  worktree per repository, each on its own branch, the tmux session
+  rooted in the primary one (decided 2026-09-19; the console shows the
+  extra repositories as a count on the chip and the boot trace clones
+  them one by one).
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
   (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
   personalities and the like come later (note 11 §1).
-- **Create session chips:** host, repo, branch, agent. Agent is Claude
-  Code in the MVP; Codex is the next entry.
+- **Create session chips:** host, repository, branch, agent, every one
+  of them searchable. The repository chip multi-selects and carries a
+  branch per selected repository; the branch chip shows only while one
+  repository is selected. The agent chip lists Claude Code, Codex,
+  OpenCode and a blank terminal with the vendors' marks where they
+  exist; Claude Code is the one wired end to end in the MVP, the others
+  are pickable so the flow is honest about where they go next.
 - **Agent login is the host's own.** The runner launches `claude` with
   the host's existing config; you log in once per host by typing it in
   the terminal, and the login URL becomes a button. No account objects,
@@ -47,10 +56,11 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   WebSocket to the control plane; the browser connects to the control
   plane; the control plane relays. Tailscale is an optional fast path
   later, never a requirement.
-- **Onboarding is four screens**: sign in, connect GitHub, add a host
-  (paste one command or hand an agent the install prompt), create the
-  first session on the real New session screen with chips prefilled
-  (05 §onboarding).
+- **Onboarding is four numbered steps and a landing**: sign in; name
+  your workspace and pick its address; connect GitHub; add a host
+  (paste one command or hand an agent the install prompt); then a
+  "You're all set" summary that leads into the console, where New
+  session has its chips prefilled (05 §onboarding).
 - **Sleep is not a platform concern.** The host is always on; tmux
   keeps sessions alive; the browser reattaches. Closing a session
   pushes the branch and removes the worktree.

@@ -30,6 +30,12 @@ import {
   TypeIcon,
   WavesIcon,
   ChevronDownCircleIcon,
+  BotIcon,
+  CircleCheckIcon,
+  ListChecksIcon,
+  ListStartIcon,
+  ToggleLeftIcon,
+  AtSignIcon,
 } from 'lucide-react';
 
 export type TocItem = { id: string; label: string; icon: LucideIcon };
@@ -69,12 +75,18 @@ export const TOC: TocGroup[] = [
       { id: 'cards', label: 'Card', icon: RectangleHorizontalIcon },
       { id: 'codeblock', label: 'CodeBlock', icon: CodeIcon },
       { id: 'emptystate', label: 'EmptyState', icon: SquareDashedIcon },
+      { id: 'summarycard', label: 'SummaryCard', icon: ListChecksIcon },
+      { id: 'successmark', label: 'SuccessMark', icon: CircleCheckIcon },
+      { id: 'stepheader', label: 'StepHeader', icon: ListStartIcon },
+      { id: 'agentmark', label: 'AgentMark', icon: BotIcon },
     ],
   },
   {
     group: 'Forms',
     items: [
       { id: 'fields', label: 'Field & Input', icon: TextCursorInputIcon },
+      { id: 'sluginput', label: 'SlugInput', icon: AtSignIcon },
+      { id: 'segmented', label: 'SegmentedControl', icon: ToggleLeftIcon },
       { id: 'textarea', label: 'Textarea', icon: TextIcon },
       { id: 'chipselect', label: 'ChipSelect', icon: SquareChevronDownIcon },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon },

@@ -3,4 +3,5 @@
 ---
 
 Add `hosts/`: pairing tokens, host registration, and the host's boot assertion
-as an ordinary `Authorization: Bearer` credential the resolver recognises.
+as the `host` credential kind this module contributes to the auth kernel with
+`AuthModule.contributeCredentials`.

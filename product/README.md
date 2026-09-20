@@ -89,6 +89,12 @@ earlier note:
   architecture matches ours, but herdr owns the PTYs, so its agents do not
   survive a restart. Our tmux layer is what buys that, at the cost of
   terminal fidelity — recorded as a trade, not a win.
+- `versions/mvp/00-scope.md` and `05-screens.md` said onboarding was four
+  screens ending on New session and a session was one repository. The
+  version-1 frames, walked with the owner on 2026-09-19, changed both:
+  onboarding names the workspace and lands on a Ready summary, and a
+  session may span several repositories, one worktree each. Recorded in
+  00, 05, 08 and the MVP decision log.
 - Note 02's open question about screen manifests is answered by note 13:
   lifecycle hooks are authoritative where an agent has them, screen reading
   is the fallback, and rules carry a priority and negative guards rather than

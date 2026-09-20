@@ -13,8 +13,9 @@ export interface CredentialOwner {
 }
 
 /**
- * What a credential acting **for a person** authorizes: an API token or an
- * OAuth access token.
+ * What a scoped credential acting **for a person** authorizes: an API token, an
+ * OAuth access token, or any other kind a module contributes that stands in for
+ * someone.
  *
  * Its presence on a request is what makes that request *narrowed*: a browser
  * session carries no scope context and is governed by the user's roles alone,
@@ -22,7 +23,12 @@ export interface CredentialOwner {
  * resource scope.
  */
 export interface UserCredentialContext {
-  kind: 'api-token' | 'oauth';
+  /**
+   * Which kind of credential this is. Open by design: the kernel resolves
+   * `oauth` itself and every other kind is contributed by the module that owns
+   * it (`api-token` today), so this is the contributing resolver's own `kind`.
+   */
+  kind: string;
   /** Id of the token record (API token id, or a digest of the OAuth token). */
   credentialId: string;
   /** The user the credential acts on behalf of. */
@@ -42,14 +48,16 @@ export interface UserCredentialContext {
 
 /**
  * What a credential acting **for a machine** authorizes: a host's boot
- * assertion, verified against the key that host registered with.
+ * assertion, verified by the `hosts` module against the key that host
+ * registered with and contributed to this kernel as the `host` kind.
  *
- * It is a kind of its own rather than a user credential with empty fields,
- * because a host has no owner to act as: nothing may read `owner` off it and
- * the compiler is what says so. It carries no scopes at all, which is the whole
- * of what the guards need to know — every route that declares a scope refuses
- * it by the ordinary rule, and the only routes open to it are the ones that
- * declare none and say so with `@AllowAnyScope()`.
+ * A kind's *shape* is kernel vocabulary even when its resolution is not, and
+ * this one is a variant of its own rather than a user credential with empty
+ * fields: a host acts for nobody, so there is no `owner` to read off it and the
+ * compiler is what says so. It carries no scopes at all, which is the whole of
+ * what the guards need to know — every route that declares a scope refuses it by
+ * the ordinary rule, and the only routes open to it are the ones that declare
+ * none and say so with `@AllowAnyScope()`.
  */
 export interface HostCredentialContext {
   kind: 'host';
@@ -65,6 +73,20 @@ export interface HostCredentialContext {
 
 /** Any credential that is not a browser session. */
 export type ScopeContext = UserCredentialContext | HostCredentialContext;
+
+/**
+ * Narrow a resolved credential to the machine kind.
+ *
+ * A predicate rather than a bare `kind === 'host'` because the person-side
+ * variant keeps its `kind` open — that openness is what lets a module contribute
+ * a kind without editing this file — so only the variant that names itself can
+ * be told apart by name.
+ */
+export function isHostCredential(
+  context: ScopeContext | null | undefined,
+): context is HostCredentialContext {
+  return context?.kind === 'host';
+}
 
 /**
  * A request as the auth layer sees it: the headers a credential arrives in,
