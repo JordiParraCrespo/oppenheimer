@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { CredentialOwner } from '../auth/domain/scope-context.types';
 import { UserOrmEntity } from './database/user.orm-entity';
 import { UserEntity } from './domain/user.entity';
 import { Email } from './domain/value-objects/email.value-object';
@@ -52,6 +53,23 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
         emailVerified: record.emailVerified,
       },
     });
+  }
+
+  /**
+   * The shape the auth kernel puts on `request.user` for a scoped credential.
+   * It is the live account, not a copy taken when the credential was issued,
+   * so the roles the policies guard reads are always current.
+   */
+  toCredentialOwner(entity: UserEntity): CredentialOwner {
+    return {
+      id: entity.id,
+      email: entity.email,
+      firstName: entity.firstName,
+      lastName: entity.lastName,
+      role: entity.role,
+      isActive: entity.isActive,
+      emailVerified: entity.emailVerified,
+    };
   }
 
   toResponse(entity: UserEntity): UserResponseDto {

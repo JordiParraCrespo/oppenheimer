@@ -30,7 +30,7 @@ and must not be broken:
 
 ## The catalog is the single source of truth
 
-`packages/shared/src/scopes/catalog.ts` defines ten permission groups, each
+`packages/shared/src/scopes/catalog.ts` defines fifteen permission groups, each
 with a Read and an Edit level. **Add a resource there and nowhere else** — the
 API guard, the MCP tool registry, the CLI and the web permission picker all
 read from it.
@@ -85,10 +85,31 @@ identity or data already served to anonymous callers (currently
   already proved who they are and needs to know what they are short of.
 - Someone else's token is reported as **not found**, not forbidden, so ids
   cannot be probed.
-- Revocation raises `ApiTokenRevokedDomainEvent`; the auth layer listens and
-  drops the cached delegated session so it takes effect immediately. Do not
-  call the auth layer from the api-tokens module directly — that is what the
-  event is for.
+- Revocation raises `ApiTokenRevokedDomainEvent`; a handler in the api-tokens
+  module listens and drops the cached delegated session through the kernel's
+  `DELEGATED_SESSION` port, so it takes effect immediately. Do not call the
+  auth layer from the revoke use case — that is what the event is for, and the
+  kernel cannot listen for it itself: it does not know this module exists.
+
+## Adding a credential kind
+
+`apps/api/src/auth` is a kernel and may import nothing else under `src/`
+(`auth-is-a-kernel` in `apps/api/.dependency-cruiser.cjs`). It resolves the two
+credentials it issues — a Better Auth session and an OAuth grant — and takes
+every other kind from the module that owns it:
+
+1. write `<module>/application/<kind>-credential.resolver.ts` implementing
+   `CredentialResolverPort` (a unique `kind`, a cheap `recognises` on the
+   presented string, a `resolve` that verifies it and throws on refusal);
+2. spread `AuthModule.contributeCredentials([<Kind>CredentialResolver])` into
+   that module's **`providers`**. The resolver is then built in your module's
+   own injector, so it injects your repository ports directly — nothing has to
+   be made `@Global` to reach it — plus the kernel's `CREDENTIAL_OWNER` port
+   for the account behind the credential.
+
+Refusals a guard raises about any credential (`TOKEN_003`, `TOKEN_005`–`007`)
+belong to `auth/domain/auth.errors.ts`; what your kind specifically can fail on
+is your module's catalog.
 
 ## Delegated sessions
 
@@ -111,6 +132,12 @@ then refused — the one failure mode the design exists to prevent.
 and `apps/mcp` is on Zod 4 while the rest of the repo is on Zod 3 — the MCP SDK
 v2 requires it. Do not import Zod schemas from `@oppenheimer/shared` here; that is
 what keeps the two versions from meeting.
+
+One caveat until it is resolved: `@oppenheimer/shared`'s `src/protocol/` is itself on
+`zod/v4`, because only that entry point can emit JSON Schema. Its DTO schemas are
+still Zod 3, so the rule above stands as written — but the isolation is now one
+module thin, and the fix is to put the whole package on one Zod line with a
+build-only converter rather than to relax this.
 
 The server is built **per request** from the calling credential, because
 protocol revision `2026-07-28` removed sessions: there is nowhere to cache the
