@@ -69,6 +69,58 @@ version `1`), so the paths below carry that prefix and the runner's
   sessions. The runtime-VM model and the scheduler return with the VM
   slice.
 
+## The `github/` module, as built
+
+The installations half of the control plane, implemented. Six routes, one
+table, and one port for the slices that follow.
+
+```
+GET    /api/v1/installations                                            read Installation    repositories:read
+POST   /api/v1/installations                                            create Installation  repositories:write
+DELETE /api/v1/installations/{id}                                       delete Installation  repositories:write
+GET    /api/v1/installations/{id}/repositories                          read Installation    repositories:read
+GET    /api/v1/installations/{id}/repositories/{githubRepoId}/branches  read Installation    repositories:read
+POST   /api/v1/github/webhook                                           signature, no policy
+```
+
+**One table, `github_installation`**: the workspace, GitHub's installation
+id, the account it is on, what the dialog granted (`all` | `selected`), who
+connected it, and the two dates that make it stop working — `suspendedAt`
+and `deletedAt`. There is no repository table. The picker asks GitHub
+through the installation's own token (one Redis key per installation, a
+minute), branches are read live, and a repository is remembered only by the
+checkout that took it.
+
+**A claim is something a workspace holds, not something it once touched.**
+`githubInstallationId` is unique among live rows only, so a disconnected or
+uninstalled installation keeps its history and frees the number; a second
+workspace connecting one another workspace still holds is a 409.
+
+**There is no `Repository` CASL subject.** A repository has no row, so a
+condition on one would either always deny or mean nothing. The routes that
+list repositories and branches check `read Installation` — the access GitHub
+is about to be asked to honour — while the credential scope keeps the name a
+token holder thinks in, `repositories:read` / `repositories:write`.
+
+**`RepositoryAccessPort` is what `sessions/` and `relay/` inject**, and the
+only thing the module exports:
+`mintRepositoryToken(installationId: uuid, githubRepoId: number)` returns a
+token narrowed to that one repository, contents and metadata only, valid for
+the hour GitHub gives it. `installationId` is *our* row's uuid, never
+GitHub's number. **Nothing caches or stores it**: GitHub already gives it an
+hour and the runner holds it in memory for that hour, and minting live is
+what makes the guarantee true — a repository removed from the installation
+stops working on the next mint rather than at the end of a TTL.
+
+**One webhook**, `installation`, for suspend, unsuspend and uninstall,
+verified as an HMAC over the raw body and applied as a conditional update on
+the live row, so a delivery can never revive a claim a workspace gave up.
+
+The App's six settings (`GITHUB_APP_*`, the slug included) are the
+`github_app` capability, on the client wire subset so a console can tell "not
+connected yet" from "this deployment has no App". Without them the module
+boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from

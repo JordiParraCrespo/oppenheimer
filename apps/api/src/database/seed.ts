@@ -13,6 +13,7 @@ import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.c
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
+import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -52,6 +53,7 @@ const dataSource = new DataSource({
     HostOrmEntity,
     HostPairingTokenOrmEntity,
     UserRoleOrmEntity,
+    GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
     InvitationOrmEntity,

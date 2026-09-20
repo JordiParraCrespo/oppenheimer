@@ -589,153 +589,75 @@ export type AddWorkspaceMemberRequest = {
     userId: string;
 };
 
-export type HostResponseDto = {
+export type InstallationResponseDto = {
+    /**
+     * The control-plane id. Everything but the connect body uses this.
+     */
     id: string;
+    organizationId: string;
     /**
-     * The person who paired this machine. A host has no workspace.
+     * GitHub’s own installation id.
      */
-    ownerUserId: string;
-    name: string;
-    hostname?: string | null;
-    os?: string | null;
-    arch?: string | null;
-    runnerVersion?: string | null;
+    githubInstallationId: number;
     /**
-     * What the runner last reported: the tools it found and their versions, the agents on PATH, free disk. A hint for the UI, never a gate — a session opens on a machine without the agent installed.
+     * The account the App is installed on.
      */
-    capabilities?: {
-        [key: string]: unknown;
-    } | null;
+    accountLogin: string;
+    accountType: 'User' | 'Organization';
     /**
-     * SHA-256 of the host’s Ed25519 public key, hex. The key itself stays server-side.
+     * What the installation dialog granted. GitHub enforces it, not us.
      */
-    publicKeyFingerprint: string;
+    repositorySelection: 'all' | 'selected';
     /**
-     * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
+     * The account that connected it.
      */
-    online: boolean;
-    lastSeenAt?: string | null;
+    installedByUserId: string;
     /**
-     * When the host was unpaired. The row is kept so its history survives.
+     * Set while GitHub reports the installation suspended; nothing resolves until it clears.
      */
-    unpairedAt?: string | null;
+    suspendedAt?: string | null;
     createdAt: string;
     updatedAt: string;
 };
 
-export type PairingTokenResponseDto = {
-    id: string;
-    /**
-     * The name the machine will adopt when it registers with this token.
-     */
-    name: string;
-    /**
-     * Non-secret display prefix. The secret is shown once, in the install command.
-     */
-    prefix: string;
-    /**
-     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
-     */
-    createdFromIp?: string | null;
-    /**
-     * Where it was spent from — a different fact from where it was minted.
-     */
-    redeemedFromIp?: string | null;
-    expiresAt: string;
-    revokedAt?: string | null;
-    redeemedAt?: string | null;
-    /**
-     * The host this token created.
-     */
-    redeemedHostId?: string | null;
-    createdAt: string;
+export type ConnectInstallationRequest = {
+    githubInstallationId: number;
+    code: string;
 };
 
-export type MintPairingTokenRequest = {
+export type RepositoryResponseDto = {
+    /**
+     * GitHub’s own repository id.
+     */
+    githubRepoId: number;
     name: string;
+    fullName: string;
+    /**
+     * Offered as the default base branch.
+     */
+    defaultBranch: string;
+    private: boolean;
+    /**
+     * Archived on GitHub: readable, but pushes are refused.
+     */
+    archived: boolean;
+    /**
+     * When GitHub last saw a push, for ordering the picker.
+     */
+    pushedAt: string | null;
 };
 
-export type MintedPairingTokenResponseDto = {
-    id: string;
-    /**
-     * The name the machine will adopt when it registers with this token.
-     */
+export type RepositoryBranchResponseDto = {
     name: string;
+    commitSha: string;
     /**
-     * Non-secret display prefix. The secret is shown once, in the install command.
+     * Whether a branch protection rule applies.
      */
-    prefix: string;
+    protected: boolean;
     /**
-     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     * Whether this is the repository’s default branch.
      */
-    createdFromIp?: string | null;
-    /**
-     * Where it was spent from — a different fact from where it was minted.
-     */
-    redeemedFromIp?: string | null;
-    expiresAt: string;
-    revokedAt?: string | null;
-    redeemedAt?: string | null;
-    /**
-     * The host this token created.
-     */
-    redeemedHostId?: string | null;
-    createdAt: string;
-    /**
-     * The one-line command that installs and registers the runner on the machine.
-     */
-    installCommand: string;
-    /**
-     * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
-     */
-    agentPrompt: string;
-};
-
-export type RegisterHostRequest = {
-    token: string;
-    name: string;
-    publicKey: string;
-    facts?: {
-        platform: 'macos' | 'debian' | 'ubuntu' | 'linux' | 'unsupported';
-        osVersion?: string;
-        arch: string;
-        hostname: string;
-        user: string;
-        home: string;
-        root: boolean;
-        tools: Array<{
-            name: string;
-            path?: string;
-            version?: string;
-            required: boolean;
-        }> | null;
-        workspacePath: string;
-        diskFreeBytes: number;
-        runnerVersion: string;
-    };
-};
-
-export type HostRegistrationResponseDto = {
-    /**
-     * The host this machine now is.
-     */
-    hostId: string;
-    /**
-     * SHA-256 of the control plane’s Ed25519 public key, hex. The runner pins it.
-     */
-    fingerprint: string;
-    /**
-     * The release channel this host follows.
-     */
-    channel?: string;
-    /**
-     * Where the runner fetches signed release artifacts from.
-     */
-    releaseBaseUrl?: string;
-};
-
-export type RenameHostRequest = {
-    name: string;
+    isDefault: boolean;
 };
 
 export type AdminUserResponseDto = {
@@ -3073,14 +2995,14 @@ export type RemoveMemberResponses = {
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
 
-export type List6Data = {
+export type ListInstallationsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/hosts';
+    url: '/api/v1/installations';
 };
 
-export type List6Errors = {
+export type ListInstallationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3091,80 +3013,62 @@ export type List6Errors = {
     403: ProblemDetailsDto;
 };
 
-export type List6Error = List6Errors[keyof List6Errors];
+export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
 
-export type List6Responses = {
-    200: Array<HostResponseDto>;
+export type ListInstallationsResponses = {
+    200: Array<InstallationResponseDto>;
 };
 
-export type List6Response = List6Responses[keyof List6Responses];
+export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
 
-export type List7Data = {
-    body?: never;
+export type ConnectInstallationData = {
+    body: ConnectInstallationRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/hosts/pairing';
+    url: '/api/v1/installations';
 };
 
-export type List7Errors = {
+export type ConnectInstallationErrors = {
+    /**
+     * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
+     */
+    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-};
-
-export type List7Error = List7Errors[keyof List7Errors];
-
-export type List7Responses = {
-    200: Array<PairingTokenResponseDto>;
-};
-
-export type List7Response = List7Responses[keyof List7Responses];
-
-export type MintData = {
-    body: MintPairingTokenRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/hosts/pairing';
-};
-
-export type MintErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * GITHUB_004 — GitHub does not list that installation for the authorizing account
      */
     403: ProblemDetailsDto;
     /**
-     * HOSTS_004 — This deployment has no runner release configured
+     * GITHUB_003 — Another workspace already holds that installation
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
      */
     503: ProblemDetailsDto;
 };
 
-export type MintError = MintErrors[keyof MintErrors];
+export type ConnectInstallationError = ConnectInstallationErrors[keyof ConnectInstallationErrors];
 
-export type MintResponses = {
-    201: MintedPairingTokenResponseDto;
+export type ConnectInstallationResponses = {
+    201: InstallationResponseDto;
 };
 
-export type MintResponse = MintResponses[keyof MintResponses];
+export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
 
-export type Revoke3Data = {
+export type ListInstallationRepositoriesData = {
     body?: never;
     path: {
         id: string;
     };
     query?: never;
-    url: '/api/v1/hosts/pairing/{id}';
+    url: '/api/v1/installations/{id}/repositories';
 };
 
-export type Revoke3Errors = {
+export type ListInstallationRepositoriesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3174,171 +3078,110 @@ export type Revoke3Errors = {
      */
     403: ProblemDetailsDto;
     /**
-     * HOSTS_002 — Pairing token not found
+     * GITHUB_001 — GitHub installation not found
      */
     404: ProblemDetailsDto;
-};
-
-export type Revoke3Error = Revoke3Errors[keyof Revoke3Errors];
-
-export type Revoke3Responses = {
     /**
-     * Pairing token revoked
+     * GITHUB_008 — The installation is suspended or no longer installed
      */
-    204: void;
-};
-
-export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
-
-export type RegisterData = {
-    body: RegisterHostRequest;
-    path?: never;
-    query?: never;
-    url: '/api/v1/hosts/register';
-};
-
-export type RegisterErrors = {
+    409: ProblemDetailsDto;
     /**
-     * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
+     * GITHUB_009 — GitHub could not be reached or rejected the request
      */
-    401: ProblemDetailsDto;
+    502: ProblemDetailsDto;
     /**
-     * HOSTS_004 — This deployment has no runner release configured
+     * GITHUB_002 — The GitHub App is not configured on this server
      */
     503: ProblemDetailsDto;
 };
 
-export type RegisterError = RegisterErrors[keyof RegisterErrors];
+export type ListInstallationRepositoriesError = ListInstallationRepositoriesErrors[keyof ListInstallationRepositoriesErrors];
 
-export type RegisterResponses = {
-    201: HostRegistrationResponseDto;
+export type ListInstallationRepositoriesResponses = {
+    200: Array<RepositoryResponseDto>;
 };
 
-export type RegisterResponse = RegisterResponses[keyof RegisterResponses];
+export type ListInstallationRepositoriesResponse = ListInstallationRepositoriesResponses[keyof ListInstallationRepositoriesResponses];
 
-export type UninstallData = {
+export type ListRepositoryBranchesData = {
     body?: never;
-    path?: never;
+    path: {
+        id: string;
+        githubRepoId: number;
+    };
     query?: never;
-    url: '/api/v1/hosts/self';
+    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches';
 };
 
-export type UninstallErrors = {
+export type ListRepositoryBranchesErrors = {
     /**
-     * HOSTS_005 — No valid host assertion was presented
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 — The installation is not connected, or does not cover that repository
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
 };
 
-export type UninstallError = UninstallErrors[keyof UninstallErrors];
+export type ListRepositoryBranchesError = ListRepositoryBranchesErrors[keyof ListRepositoryBranchesErrors];
 
-export type UninstallResponses = {
+export type ListRepositoryBranchesResponses = {
+    200: Array<RepositoryBranchResponseDto>;
+};
+
+export type ListRepositoryBranchesResponse = ListRepositoryBranchesResponses[keyof ListRepositoryBranchesResponses];
+
+export type DisconnectInstallationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}';
+};
+
+export type DisconnectInstallationErrors = {
     /**
-     * The calling host is unpaired
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DisconnectInstallationError = DisconnectInstallationErrors[keyof DisconnectInstallationErrors];
+
+export type DisconnectInstallationResponses = {
+    /**
+     * The installation is no longer connected.
      */
     204: void;
 };
 
-export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
-
-export type UnpairData = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/hosts/{id}';
-};
-
-export type UnpairErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * HOSTS_001 — Host not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type UnpairError = UnpairErrors[keyof UnpairErrors];
-
-export type UnpairResponses = {
-    /**
-     * Host unpaired
-     */
-    204: void;
-};
-
-export type UnpairResponse = UnpairResponses[keyof UnpairResponses];
-
-export type Get2Data = {
-    body?: never;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/hosts/{id}';
-};
-
-export type Get2Errors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * HOSTS_001 — Host not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type Get2Error = Get2Errors[keyof Get2Errors];
-
-export type Get2Responses = {
-    200: HostResponseDto;
-};
-
-export type Get2Response = Get2Responses[keyof Get2Responses];
-
-export type RenameData = {
-    body: RenameHostRequest;
-    path: {
-        id: string;
-    };
-    query?: never;
-    url: '/api/v1/hosts/{id}';
-};
-
-export type RenameErrors = {
-    /**
-     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
-     */
-    401: ProblemDetailsDto;
-    /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
-     */
-    403: ProblemDetailsDto;
-    /**
-     * HOSTS_001 — Host not found
-     */
-    404: ProblemDetailsDto;
-};
-
-export type RenameError = RenameErrors[keyof RenameErrors];
-
-export type RenameResponses = {
-    200: HostResponseDto;
-};
-
-export type RenameResponse = RenameResponses[keyof RenameResponses];
+export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
 
 export type ListUsersData = {
     body?: never;

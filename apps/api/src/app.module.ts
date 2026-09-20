@@ -33,12 +33,14 @@ import {
   databaseConfig,
   emailConfig,
   hostsConfig,
+  githubAppConfig,
   oauthConfig,
   redisConfig,
   storageConfig,
   stripeConfig,
 } from './config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
+import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -65,6 +67,7 @@ import { UsersModule } from './users/user.module';
         oauthConfig,
         stripeConfig,
         hostsConfig,
+        githubAppConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -186,6 +189,9 @@ import { UsersModule } from './users/user.module';
     // The control plane's own modules. `hosts` is first of them: the machines a
     // person paired, and the credential a runner authenticates with.
     HostsModule,
+    // What GitHub grants a workspace, and how the platform exercises it. The
+    // first of the product contexts named above.
+    GithubModule,
     AdminModule,
     // The control plane's own modules, in the order their slices land.
     ProjectsModule,

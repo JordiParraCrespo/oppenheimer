@@ -11,6 +11,7 @@ import { Verification } from '../auth/database/verification.orm-entity';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
+import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { LeadOrmEntity } from '../leads/database/lead.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
@@ -52,6 +53,7 @@ export default new DataSource({
     LeadOrmEntity,
     HostOrmEntity,
     HostPairingTokenOrmEntity,
+    GithubInstallationOrmEntity,
     ProjectOrmEntity,
     UserRoleOrmEntity,
     OrganizationOrmEntity,

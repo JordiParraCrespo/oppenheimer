@@ -15,6 +15,7 @@ describe('resolveCapabilities', () => {
       s3_storage: false,
       email_delivery: false,
       hosts: false,
+      github_app: false,
     });
   });
 
@@ -74,6 +75,26 @@ describe('resolveCapabilities', () => {
       'storage.s3SecretAccessKey': 'secret',
     });
     expect(resolveCapabilities(s3Configured).s3_storage).toBe(true);
+  });
+
+  it('needs the whole GitHub App credential set, not part of it', () => {
+    const configured = {
+      'githubApp.appId': '1234567',
+      'githubApp.privateKey': '-----BEGIN RSA PRIVATE KEY-----',
+      'githubApp.webhookSecret': 'whsec',
+      'githubApp.clientId': 'Iv1.abc',
+      'githubApp.clientSecret': 'shhh',
+      'githubApp.slug': 'oppenheimer-sessions',
+    };
+    expect(resolveCapabilities(configWith(configured)).github_app).toBe(true);
+
+    // A partial set is off rather than half-on: the token mint needs the key,
+    // the claim proof needs the OAuth pair, and a suspension is only trustworthy
+    // with the webhook secret. Any one missing removes the whole feature.
+    for (const key of Object.keys(configured)) {
+      const partial = { ...configured, [key]: undefined };
+      expect(resolveCapabilities(configWith(partial)).github_app).toBe(false);
+    }
   });
 
   it('does not count the console email provider as delivery', () => {
