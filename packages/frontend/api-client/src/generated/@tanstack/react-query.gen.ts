@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, getFull, getProfile, getProject, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, listMembers, listMine, listMine2, listProjects, listSessions, listUsers, me, type Options, permissions, permissions2, readiness, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, revoke, revoke2, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, ListData, ListError, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, Revoke2Data, Revoke2Error, Revoke2Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, connectInstallation, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, getFull, getProfile, getProject, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessions, listUsers, me, type Options, permissions, permissions2, readiness, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, revoke, revoke2, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, Revoke2Data, Revoke2Error, Revoke2Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1225,6 +1225,104 @@ export const removeMemberMutation = (options?: Partial<Options<RemoveMemberData>
     const mutationOptions: UseMutationOptions<RemoveMemberResponse, RemoveMemberError, Options<RemoveMemberData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await removeMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listInstallationsQueryKey = (options?: Options<ListInstallationsData>) => createQueryKey('listInstallations', options);
+
+/**
+ * List the workspace’s connected GitHub installations
+ *
+ * A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.
+ */
+export const listInstallationsOptions = (options?: Options<ListInstallationsData>) => queryOptions<ListInstallationsResponse, ListInstallationsError, ListInstallationsResponse, ReturnType<typeof listInstallationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listInstallations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listInstallationsQueryKey(options)
+});
+
+/**
+ * Connect a GitHub App installation to the workspace
+ *
+ * Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.
+ */
+export const connectInstallationMutation = (options?: Partial<Options<ConnectInstallationData>>): UseMutationOptions<ConnectInstallationResponse, ConnectInstallationError, Options<ConnectInstallationData>> => {
+    const mutationOptions: UseMutationOptions<ConnectInstallationResponse, ConnectInstallationError, Options<ConnectInstallationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await connectInstallation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listInstallationRepositoriesQueryKey = (options: Options<ListInstallationRepositoriesData>) => createQueryKey('listInstallationRepositories', options);
+
+/**
+ * List the repositories an installation covers
+ *
+ * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
+ */
+export const listInstallationRepositoriesOptions = (options: Options<ListInstallationRepositoriesData>) => queryOptions<ListInstallationRepositoriesResponse, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ReturnType<typeof listInstallationRepositoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listInstallationRepositories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listInstallationRepositoriesQueryKey(options)
+});
+
+export const listRepositoryBranchesQueryKey = (options: Options<ListRepositoryBranchesData>) => createQueryKey('listRepositoryBranches', options);
+
+/**
+ * List a repository’s branches
+ *
+ * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
+ */
+export const listRepositoryBranchesOptions = (options: Options<ListRepositoryBranchesData>) => queryOptions<ListRepositoryBranchesResponse, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ReturnType<typeof listRepositoryBranchesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryBranches({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryBranchesQueryKey(options)
+});
+
+/**
+ * Disconnect a GitHub App installation
+ *
+ * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
+ */
+export const disconnectInstallationMutation = (options?: Partial<Options<DisconnectInstallationData>>): UseMutationOptions<DisconnectInstallationResponse, DisconnectInstallationError, Options<DisconnectInstallationData>> => {
+    const mutationOptions: UseMutationOptions<DisconnectInstallationResponse, DisconnectInstallationError, Options<DisconnectInstallationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await disconnectInstallation({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

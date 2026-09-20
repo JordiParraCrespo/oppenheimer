@@ -4455,7 +4455,7 @@
     "/api/v1/installations": {
       "get": {
         "description": "A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.",
-        "operationId": "list",
+        "operationId": "listInstallations",
         "parameters": [],
         "responses": {
           "200": {
@@ -4502,7 +4502,7 @@
       },
       "post": {
         "description": "Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.",
-        "operationId": "connect",
+        "operationId": "connectInstallation",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -4588,7 +4588,7 @@
     "/api/v1/installations/{id}/repositories": {
       "get": {
         "description": "Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.",
-        "operationId": "list",
+        "operationId": "listInstallationRepositories",
         "parameters": [
           {
             "name": "id",
@@ -4686,7 +4686,7 @@
     "/api/v1/installations/{id}/repositories/{githubRepoId}/branches": {
       "get": {
         "description": "Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.",
-        "operationId": "list",
+        "operationId": "listRepositoryBranches",
         "parameters": [
           {
             "name": "id",
@@ -4792,7 +4792,7 @@
     "/api/v1/installations/{id}": {
       "delete": {
         "description": "The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.",
-        "operationId": "disconnect",
+        "operationId": "disconnectInstallation",
         "parameters": [
           {
             "name": "id",

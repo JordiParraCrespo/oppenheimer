@@ -31,6 +31,9 @@ export class FindInstallationsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Installation' })
   @RequireScopes('repositories:read')
   @ApiOperation({
+    // Named explicitly: the generated client turns an operationId into a function
+    // name, and the defaults (`list`, `connect`) would collide across resources.
+    operationId: 'listInstallations',
     summary: 'List the workspace’s connected GitHub installations',
     description:
       'A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.',

@@ -2995,14 +2995,14 @@ export type RemoveMemberResponses = {
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
 
-export type List6Data = {
+export type ListInstallationsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/api/v1/installations';
 };
 
-export type List6Errors = {
+export type ListInstallationsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3013,22 +3013,22 @@ export type List6Errors = {
     403: ProblemDetailsDto;
 };
 
-export type List6Error = List6Errors[keyof List6Errors];
+export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
 
-export type List6Responses = {
+export type ListInstallationsResponses = {
     200: Array<InstallationResponseDto>;
 };
 
-export type List6Response = List6Responses[keyof List6Responses];
+export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
 
-export type ConnectData = {
+export type ConnectInstallationData = {
     body: ConnectInstallationRequest;
     path?: never;
     query?: never;
     url: '/api/v1/installations';
 };
 
-export type ConnectErrors = {
+export type ConnectInstallationErrors = {
     /**
      * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
      */
@@ -3051,15 +3051,15 @@ export type ConnectErrors = {
     503: ProblemDetailsDto;
 };
 
-export type ConnectError = ConnectErrors[keyof ConnectErrors];
+export type ConnectInstallationError = ConnectInstallationErrors[keyof ConnectInstallationErrors];
 
-export type ConnectResponses = {
+export type ConnectInstallationResponses = {
     201: InstallationResponseDto;
 };
 
-export type ConnectResponse = ConnectResponses[keyof ConnectResponses];
+export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
 
-export type List7Data = {
+export type ListInstallationRepositoriesData = {
     body?: never;
     path: {
         id: string;
@@ -3068,7 +3068,7 @@ export type List7Data = {
     url: '/api/v1/installations/{id}/repositories';
 };
 
-export type List7Errors = {
+export type ListInstallationRepositoriesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3095,15 +3095,15 @@ export type List7Errors = {
     503: ProblemDetailsDto;
 };
 
-export type List7Error = List7Errors[keyof List7Errors];
+export type ListInstallationRepositoriesError = ListInstallationRepositoriesErrors[keyof ListInstallationRepositoriesErrors];
 
-export type List7Responses = {
+export type ListInstallationRepositoriesResponses = {
     200: Array<RepositoryResponseDto>;
 };
 
-export type List7Response = List7Responses[keyof List7Responses];
+export type ListInstallationRepositoriesResponse = ListInstallationRepositoriesResponses[keyof ListInstallationRepositoriesResponses];
 
-export type List8Data = {
+export type ListRepositoryBranchesData = {
     body?: never;
     path: {
         id: string;
@@ -3113,7 +3113,7 @@ export type List8Data = {
     url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches';
 };
 
-export type List8Errors = {
+export type ListRepositoryBranchesErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3140,15 +3140,15 @@ export type List8Errors = {
     503: ProblemDetailsDto;
 };
 
-export type List8Error = List8Errors[keyof List8Errors];
+export type ListRepositoryBranchesError = ListRepositoryBranchesErrors[keyof ListRepositoryBranchesErrors];
 
-export type List8Responses = {
+export type ListRepositoryBranchesResponses = {
     200: Array<RepositoryBranchResponseDto>;
 };
 
-export type List8Response = List8Responses[keyof List8Responses];
+export type ListRepositoryBranchesResponse = ListRepositoryBranchesResponses[keyof ListRepositoryBranchesResponses];
 
-export type DisconnectData = {
+export type DisconnectInstallationData = {
     body?: never;
     path: {
         id: string;
@@ -3157,7 +3157,7 @@ export type DisconnectData = {
     url: '/api/v1/installations/{id}';
 };
 
-export type DisconnectErrors = {
+export type DisconnectInstallationErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -3172,16 +3172,16 @@ export type DisconnectErrors = {
     404: ProblemDetailsDto;
 };
 
-export type DisconnectError = DisconnectErrors[keyof DisconnectErrors];
+export type DisconnectInstallationError = DisconnectInstallationErrors[keyof DisconnectInstallationErrors];
 
-export type DisconnectResponses = {
+export type DisconnectInstallationResponses = {
     /**
      * The installation is no longer connected.
      */
     204: void;
 };
 
-export type DisconnectResponse = DisconnectResponses[keyof DisconnectResponses];
+export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
 
 export type ListUsersData = {
     body?: never;

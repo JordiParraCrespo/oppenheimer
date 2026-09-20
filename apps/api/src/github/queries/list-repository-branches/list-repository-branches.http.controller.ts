@@ -42,6 +42,9 @@ export class ListRepositoryBranchesHttpController {
   @CheckPolicies({ action: 'read', subject: 'Installation' })
   @RequireScopes('repositories:read')
   @ApiOperation({
+    // Named explicitly: the generated client turns an operationId into a function
+    // name, and the defaults (`list`, `connect`) would collide across resources.
+    operationId: 'listRepositoryBranches',
     summary: 'List a repository’s branches',
     description:
       'Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.',

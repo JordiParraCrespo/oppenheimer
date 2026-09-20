@@ -36,6 +36,9 @@ export class DisconnectInstallationHttpController {
   @CheckPolicies({ action: 'delete', subject: 'Installation' })
   @RequireScopes('repositories:write')
   @ApiOperation({
+    // Named explicitly: the generated client turns an operationId into a function
+    // name, and the defaults (`list`, `connect`) would collide across resources.
+    operationId: 'disconnectInstallation',
     summary: 'Disconnect a GitHub App installation',
     description:
       'The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.',
