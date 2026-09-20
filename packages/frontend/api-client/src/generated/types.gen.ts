@@ -589,6 +589,77 @@ export type AddWorkspaceMemberRequest = {
     userId: string;
 };
 
+export type InstallationResponseDto = {
+    /**
+     * The control-plane id. Everything but the connect body uses this.
+     */
+    id: string;
+    organizationId: string;
+    /**
+     * GitHub’s own installation id.
+     */
+    githubInstallationId: number;
+    /**
+     * The account the App is installed on.
+     */
+    accountLogin: string;
+    accountType: 'User' | 'Organization';
+    /**
+     * What the installation dialog granted. GitHub enforces it, not us.
+     */
+    repositorySelection: 'all' | 'selected';
+    /**
+     * The account that connected it.
+     */
+    installedByUserId: string;
+    /**
+     * Set while GitHub reports the installation suspended; nothing resolves until it clears.
+     */
+    suspendedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ConnectInstallationRequest = {
+    githubInstallationId: number;
+    code: string;
+};
+
+export type RepositoryResponseDto = {
+    /**
+     * GitHub’s own repository id.
+     */
+    githubRepoId: number;
+    name: string;
+    fullName: string;
+    /**
+     * Offered as the default base branch.
+     */
+    defaultBranch: string;
+    private: boolean;
+    /**
+     * Archived on GitHub: readable, but pushes are refused.
+     */
+    archived: boolean;
+    /**
+     * When GitHub last saw a push, for ordering the picker.
+     */
+    pushedAt: string | null;
+};
+
+export type RepositoryBranchResponseDto = {
+    name: string;
+    commitSha: string;
+    /**
+     * Whether a branch protection rule applies.
+     */
+    protected: boolean;
+    /**
+     * Whether this is the repository’s default branch.
+     */
+    isDefault: boolean;
+};
+
 export type AdminUserResponseDto = {
     id: string;
     email: string;
@@ -2923,6 +2994,194 @@ export type RemoveMemberResponses = {
 };
 
 export type RemoveMemberResponse = RemoveMemberResponses[keyof RemoveMemberResponses];
+
+export type ListInstallationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations';
+};
+
+export type ListInstallationsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ListInstallationsError = ListInstallationsErrors[keyof ListInstallationsErrors];
+
+export type ListInstallationsResponses = {
+    200: Array<InstallationResponseDto>;
+};
+
+export type ListInstallationsResponse = ListInstallationsResponses[keyof ListInstallationsResponses];
+
+export type ConnectInstallationData = {
+    body: ConnectInstallationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/installations';
+};
+
+export type ConnectInstallationErrors = {
+    /**
+     * GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * GITHUB_004 — GitHub does not list that installation for the authorizing account
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_003 — Another workspace already holds that installation
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectInstallationError = ConnectInstallationErrors[keyof ConnectInstallationErrors];
+
+export type ConnectInstallationResponses = {
+    201: InstallationResponseDto;
+};
+
+export type ConnectInstallationResponse = ConnectInstallationResponses[keyof ConnectInstallationResponses];
+
+export type ListInstallationRepositoriesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}/repositories';
+};
+
+export type ListInstallationRepositoriesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ListInstallationRepositoriesError = ListInstallationRepositoriesErrors[keyof ListInstallationRepositoriesErrors];
+
+export type ListInstallationRepositoriesResponses = {
+    200: Array<RepositoryResponseDto>;
+};
+
+export type ListInstallationRepositoriesResponse = ListInstallationRepositoriesResponses[keyof ListInstallationRepositoriesResponses];
+
+export type ListRepositoryBranchesData = {
+    body?: never;
+    path: {
+        id: string;
+        githubRepoId: number;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}/repositories/{githubRepoId}/branches';
+};
+
+export type ListRepositoryBranchesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 / GITHUB_010 — The installation is not connected, or does not cover that repository
+     */
+    404: ProblemDetailsDto;
+    /**
+     * GITHUB_008 — The installation is suspended or no longer installed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * GITHUB_009 — GitHub could not be reached or rejected the request
+     */
+    502: ProblemDetailsDto;
+    /**
+     * GITHUB_002 — The GitHub App is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ListRepositoryBranchesError = ListRepositoryBranchesErrors[keyof ListRepositoryBranchesErrors];
+
+export type ListRepositoryBranchesResponses = {
+    200: Array<RepositoryBranchResponseDto>;
+};
+
+export type ListRepositoryBranchesResponse = ListRepositoryBranchesResponses[keyof ListRepositoryBranchesResponses];
+
+export type DisconnectInstallationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/installations/{id}';
+};
+
+export type DisconnectInstallationErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_001 — GitHub installation not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DisconnectInstallationError = DisconnectInstallationErrors[keyof DisconnectInstallationErrors];
+
+export type DisconnectInstallationResponses = {
+    /**
+     * The installation is no longer connected.
+     */
+    204: void;
+};
+
+export type DisconnectInstallationResponse = DisconnectInstallationResponses[keyof DisconnectInstallationResponses];
 
 export type ListUsersData = {
     body?: never;

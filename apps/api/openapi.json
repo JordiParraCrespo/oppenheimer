@@ -4452,6 +4452,401 @@
         "tags": ["Workspaces"]
       }
     },
+    "/api/v1/installations": {
+      "get": {
+        "description": "A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.",
+        "operationId": "listInstallations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InstallationResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s connected GitHub installations",
+        "tags": ["GitHub installations"]
+      },
+      "post": {
+        "description": "Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.",
+        "operationId": "connectInstallation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectInstallationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "GITHUB_005 / GITHUB_006 — The authorization code was expired or already used, or no organization is active",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GITHUB_004 — GitHub does not list that installation for the authorizing account",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_003 — Another workspace already holds that installation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a GitHub App installation to the workspace",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}/repositories": {
+      "get": {
+        "description": "Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.",
+        "operationId": "listInstallationRepositories",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 — GitHub installation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the repositories an installation covers",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}/repositories/{githubRepoId}/branches": {
+      "get": {
+        "description": "Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.",
+        "operationId": "listRepositoryBranches",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RepositoryBranchResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 / GITHUB_010 — The installation is not connected, or does not cover that repository",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GITHUB_008 — The installation is suspended or no longer installed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "GITHUB_009 — GitHub could not be reached or rejected the request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_002 — The GitHub App is not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a repository’s branches",
+        "tags": ["GitHub installations"]
+      }
+    },
+    "/api/v1/installations/{id}": {
+      "delete": {
+        "description": "The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.",
+        "operationId": "disconnectInstallation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The installation is no longer connected."
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GITHUB_001 — GitHub installation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a GitHub App installation",
+        "tags": ["GitHub installations"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -8185,6 +8580,152 @@
           }
         },
         "required": ["userId"]
+      },
+      "InstallationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The control-plane id. Everything but the connect body uses this."
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "githubInstallationId": {
+            "type": "number",
+            "description": "GitHub’s own installation id.",
+            "example": 45678901
+          },
+          "accountLogin": {
+            "type": "string",
+            "example": "acme-labs",
+            "description": "The account the App is installed on."
+          },
+          "accountType": {
+            "type": "string",
+            "example": "Organization",
+            "enum": ["User", "Organization"]
+          },
+          "repositorySelection": {
+            "type": "string",
+            "enum": ["all", "selected"],
+            "description": "What the installation dialog granted. GitHub enforces it, not us."
+          },
+          "installedByUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The account that connected it."
+          },
+          "suspendedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Set while GitHub reports the installation suspended; nothing resolves until it clears."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "githubInstallationId",
+          "accountLogin",
+          "accountType",
+          "repositorySelection",
+          "installedByUserId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ConnectInstallationRequest": {
+        "type": "object",
+        "properties": {
+          "githubInstallationId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["githubInstallationId", "code"]
+      },
+      "RepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "githubRepoId": {
+            "type": "number",
+            "description": "GitHub’s own repository id.",
+            "example": 831004242
+          },
+          "name": {
+            "type": "string",
+            "example": "oppenheimer"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "acme-labs/oppenheimer"
+          },
+          "defaultBranch": {
+            "type": "string",
+            "example": "main",
+            "description": "Offered as the default base branch."
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Archived on GitHub: readable, but pushes are refused."
+          },
+          "pushedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When GitHub last saw a push, for ordering the picker."
+          }
+        },
+        "required": [
+          "githubRepoId",
+          "name",
+          "fullName",
+          "defaultBranch",
+          "private",
+          "archived",
+          "pushedAt"
+        ]
+      },
+      "RepositoryBranchResponseDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "main"
+          },
+          "commitSha": {
+            "type": "string",
+            "example": "d6cd1e2bd19e03a81132a23b2025920577f84e37"
+          },
+          "protected": {
+            "type": "boolean",
+            "description": "Whether a branch protection rule applies."
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Whether this is the repository’s default branch."
+          }
+        },
+        "required": ["name", "commitSha", "protected", "isDefault"]
       },
       "AdminUserResponseDto": {
         "type": "object",
