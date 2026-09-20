@@ -13,8 +13,19 @@ export interface AuthLayoutProps {
    * carousel, or nothing for a control plane that has no atmosphere to sell.
    */
   panel?: ReactNode;
+  /**
+   * Whether the terms-and-privacy line sits under the form. The auth forms
+   * carry it; the onboarding steps, reached after sign-up, do not.
+   */
+  legal?: boolean;
   children: ReactNode;
 }
+
+const WIDTHS = {
+  form: 'max-w-85',
+  wide: 'max-w-100',
+  panel: 'max-w-[620px]',
+} as const;
 
 /**
  * The auth split from the MVP artboards: the wordmark top-left, a 340px form
@@ -29,7 +40,7 @@ export interface AuthLayoutProps {
  * The legal one-liner under the form is the page's when it declares
  * `staticData.legalNoteKey`, the terms-and-privacy line otherwise.
  */
-export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
+export function AuthLayout({ product, panel, legal = true, children }: AuthLayoutProps) {
   const { t } = useTranslation();
   // The innermost match that declares a note wins, so a page overrides its
   // layout and a page without one shows the default line.
@@ -40,6 +51,15 @@ export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
         if (key) return key;
       }
       return undefined;
+    },
+  });
+  const width = useMatches({
+    select: (matches) => {
+      for (let i = matches.length - 1; i >= 0; i -= 1) {
+        const w = matches[i]?.staticData.authWidth;
+        if (w) return w;
+      }
+      return 'form' as const;
     },
   });
 
@@ -54,22 +74,26 @@ export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
       <div className="relative flex w-full flex-col px-6 py-8 min-[900px]:px-11 min-[900px]:py-10">
         <BrandLogo product={product} />
 
-        <div className="mx-auto flex w-full max-w-85 flex-1 flex-col justify-center py-10">
+        <div
+          className={`mx-auto flex w-full ${WIDTHS[width]} flex-1 flex-col justify-center py-10`}
+        >
           {children}
 
-          <p className="mt-5 text-xs text-pretty text-fg-subtle">
-            {legalNoteKey ? (
-              t(legalNoteKey)
-            ) : (
-              <Trans
-                i18nKey="auth.legal"
-                components={{
-                  terms: <AuthLink to="/terms" />,
-                  privacy: <AuthLink to="/privacy" />,
-                }}
-              />
-            )}
-          </p>
+          {legal ? (
+            <p className="mt-5 text-xs text-pretty text-fg-subtle">
+              {legalNoteKey ? (
+                t(legalNoteKey)
+              ) : (
+                <Trans
+                  i18nKey="auth.legal"
+                  components={{
+                    terms: <AuthLink to="/terms" />,
+                    privacy: <AuthLink to="/privacy" />,
+                  }}
+                />
+              )}
+            </p>
+          ) : null}
         </div>
       </div>
 

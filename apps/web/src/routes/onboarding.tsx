@@ -1,10 +1,9 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { OnboardingScreen } from '@/features/organizations/screens/onboarding';
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 
 /**
- * The recovery path for a signed-in account with no workspace: it creates one
- * (sign-up normally does that itself). A signed-out visitor is sent to the
- * login page and returned here.
+ * Everything under `/onboarding` is for a signed-in account: the recovery
+ * screen at the index, and the numbered steps under `_flow`. A signed-out
+ * visitor is sent to the login page and returned here.
  */
 export const Route = createFileRoute('/onboarding')({
   beforeLoad: ({ context, location }) => {
@@ -12,9 +11,5 @@ export const Route = createFileRoute('/onboarding')({
       throw redirect({ to: '/login', search: { redirect: location.href } });
     }
   },
-  component: OnboardingPage,
+  component: Outlet,
 });
-
-function OnboardingPage() {
-  return <OnboardingScreen />;
-}
