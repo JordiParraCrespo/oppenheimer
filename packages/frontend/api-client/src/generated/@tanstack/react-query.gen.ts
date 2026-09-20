@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, connectInstallation, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, getFull, getProfile, getProject, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessions, listUsers, me, type Options, permissions, permissions2, readiness, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, revoke, revoke2, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, Revoke2Data, Revoke2Error, Revoke2Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, connectInstallation, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getProject, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, list6, list7, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessions, listUsers, me, mint, type Options, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, rename, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, uninstall, unpair, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1225,6 +1225,178 @@ export const removeMemberMutation = (options?: Partial<Options<RemoveMemberData>
     const mutationOptions: UseMutationOptions<RemoveMemberResponse, RemoveMemberError, Options<RemoveMemberData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await removeMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const list6QueryKey = (options?: Options<List6Data>) => createQueryKey('list6', options);
+
+/**
+ * List the hosts the caller can reach
+ *
+ * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
+ */
+export const list6Options = (options?: Options<List6Data>) => queryOptions<List6Response, List6Error, List6Response, ReturnType<typeof list6QueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await list6({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: list6QueryKey(options)
+});
+
+export const list7QueryKey = (options?: Options<List7Data>) => createQueryKey('list7', options);
+
+/**
+ * List the caller’s pairing tokens
+ *
+ * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
+ */
+export const list7Options = (options?: Options<List7Data>) => queryOptions<List7Response, List7Error, List7Response, ReturnType<typeof list7QueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await list7({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: list7QueryKey(options)
+});
+
+/**
+ * Mint a pairing token for a new host
+ *
+ * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.
+ */
+export const mintMutation = (options?: Partial<Options<MintData>>): UseMutationOptions<MintResponse, MintError, Options<MintData>> => {
+    const mutationOptions: UseMutationOptions<MintResponse, MintError, Options<MintData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await mint({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Revoke a pairing token
+ *
+ * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
+ */
+export const revoke3Mutation = (options?: Partial<Options<Revoke3Data>>): UseMutationOptions<Revoke3Response, Revoke3Error, Options<Revoke3Data>> => {
+    const mutationOptions: UseMutationOptions<Revoke3Response, Revoke3Error, Options<Revoke3Data>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await revoke3({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Redeem a registration token and become a host
+ *
+ * Called by the runner from the install command. Redemption and host creation commit together, so a retry with the same key after a lost response returns the same host rather than pairing the machine twice.
+ */
+export const registerMutation = (options?: Partial<Options<RegisterData>>): UseMutationOptions<RegisterResponse, RegisterError, Options<RegisterData>> => {
+    const mutationOptions: UseMutationOptions<RegisterResponse, RegisterError, Options<RegisterData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await register({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Unpair the calling host
+ *
+ * Called by the runner when it is uninstalled. Answers 204 whether or not the host was still paired: the machine cannot tell the two apart and neither side would do anything differently.
+ */
+export const uninstallMutation = (options?: Partial<Options<UninstallData>>): UseMutationOptions<UninstallResponse, UninstallError, Options<UninstallData>> => {
+    const mutationOptions: UseMutationOptions<UninstallResponse, UninstallError, Options<UninstallData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await uninstall({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Unpair a host
+ *
+ * Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.
+ */
+export const unpairMutation = (options?: Partial<Options<UnpairData>>): UseMutationOptions<UnpairResponse, UnpairError, Options<UnpairData>> => {
+    const mutationOptions: UseMutationOptions<UnpairResponse, UnpairError, Options<UnpairData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await unpair({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const get2QueryKey = (options: Options<Get2Data>) => createQueryKey('get2', options);
+
+/**
+ * Get one host
+ */
+export const get2Options = (options: Options<Get2Data>) => queryOptions<Get2Response, Get2Error, Get2Response, ReturnType<typeof get2QueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await get2({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: get2QueryKey(options)
+});
+
+/**
+ * Rename a host
+ *
+ * Display only — nothing on the machine is named after this.
+ */
+export const renameMutation = (options?: Partial<Options<RenameData>>): UseMutationOptions<RenameResponse, RenameError, Options<RenameData>> => {
+    const mutationOptions: UseMutationOptions<RenameResponse, RenameError, Options<RenameData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await rename({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
