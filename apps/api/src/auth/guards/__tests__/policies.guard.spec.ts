@@ -4,7 +4,7 @@ import { NO_POLICY_KEY } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AbilityFactory } from '../../../roles/application/ability.factory';
+import type { AbilityPort } from '../../application/ability.port';
 import { CHECK_POLICIES_KEY } from '../../decorators/check-policies.decorator';
 import { AuthErrors } from '../../domain/auth.errors';
 import { PoliciesGuard } from '../policies.guard';
@@ -30,14 +30,14 @@ function reflectorFor(metadata: Metadata): Reflector {
 }
 
 describe('PoliciesGuard', () => {
-  let abilityFactory: AbilityFactory;
+  let abilities: AbilityPort;
 
   beforeEach(() => {
-    abilityFactory = {
+    abilities = {
       forRequest: vi
         .fn()
         .mockResolvedValue(defineAbilitiesFromPermissions([{ action: 'read', subject: 'Lead' }])),
-    } as unknown as AbilityFactory;
+    };
   });
 
   it('allows a route whose policy the caller satisfies', async () => {
@@ -45,7 +45,7 @@ describe('PoliciesGuard', () => {
       reflectorFor({
         [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
       }),
-      abilityFactory,
+      abilities,
     );
 
     await expect(guard.canActivate(contextWith({ user: { id: 'u1' } }))).resolves.toBe(true);
@@ -56,7 +56,7 @@ describe('PoliciesGuard', () => {
       reflectorFor({
         [CHECK_POLICIES_KEY]: [{ action: 'delete', subject: 'Lead' }],
       }),
-      abilityFactory,
+      abilities,
     );
 
     // Returning `false` would hand back Nest's own codeless 403; the guard
@@ -72,7 +72,7 @@ describe('PoliciesGuard', () => {
   it('rejects a route that declares no policy at all', async () => {
     // The regression this guard exists to prevent: before, an undeclared route
     // was reachable by any authenticated caller.
-    const guard = new PoliciesGuard(reflectorFor({}), abilityFactory);
+    const guard = new PoliciesGuard(reflectorFor({}), abilities);
 
     await expect(guard.canActivate(contextWith({ user: { id: 'u1' } }))).rejects.toThrow(AppError);
   });
@@ -80,7 +80,7 @@ describe('PoliciesGuard', () => {
   it('allows a route with an explicit reasoned exemption', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({ [NO_POLICY_KEY]: 'returns the caller’s own profile' }),
-      abilityFactory,
+      abilities,
     );
 
     await expect(guard.canActivate(contextWith({ user: { id: 'u1' } }))).resolves.toBe(true);
@@ -91,7 +91,7 @@ describe('PoliciesGuard', () => {
       reflectorFor({
         [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
       }),
-      abilityFactory,
+      abilities,
     );
 
     // 401 tells the client to re-authenticate; a 403 would have it give up on
@@ -107,12 +107,12 @@ describe('PoliciesGuard', () => {
       reflectorFor({
         [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
       }),
-      abilityFactory,
+      abilities,
     );
     const request = { user: { id: 'u1' } };
 
     await guard.canActivate(contextWith(request));
 
-    expect(abilityFactory.forRequest).toHaveBeenCalledTimes(1);
+    expect(abilities.forRequest).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,3 +14,9 @@ export const CREDENTIAL_SCOPE = Symbol('CREDENTIAL_SCOPE');
 
 /** Verifies a presented credential against the identity provider. */
 export const CREDENTIAL_VERIFIER = Symbol('CREDENTIAL_VERIFIER');
+
+/** The current owner behind a credential, as the identity store has them now. */
+export const CREDENTIAL_OWNER = Symbol('CREDENTIAL_OWNER');
+
+/** Builds the caller's effective CASL ability for a request. */
+export const ABILITY = Symbol('ABILITY');

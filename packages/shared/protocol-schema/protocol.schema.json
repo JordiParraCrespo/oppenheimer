@@ -71,15 +71,13 @@
           "format": "date-time",
           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
         },
-        "runnerVersion": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 64
-        },
         "channel": {
           "type": "string",
           "minLength": 1,
           "maxLength": 64
+        },
+        "host": {
+          "$ref": "#/$defs/hostFacts"
         },
         "load": {
           "type": "object",
@@ -87,20 +85,11 @@
             "loadAverage1m": {
               "type": "number",
               "minimum": 0
-            },
-            "workspacesFreeBytes": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 9007199254740991
             }
           },
           "required": [
-            "loadAverage1m",
-            "workspacesFreeBytes"
+            "loadAverage1m"
           ]
-        },
-        "tools": {
-          "$ref": "#/$defs/toolVersions"
         },
         "sessions": {
           "type": "array",
@@ -112,10 +101,9 @@
       "required": [
         "type",
         "sentAt",
-        "runnerVersion",
         "channel",
+        "host",
         "load",
-        "tools",
         "sessions"
       ]
     },
@@ -697,90 +685,94 @@
     "hostFacts": {
       "type": "object",
       "properties": {
-        "hostname": {
-          "$ref": "#/$defs/hostFact"
+        "platform": {
+          "type": "string",
+          "enum": [
+            "macos",
+            "debian",
+            "ubuntu",
+            "linux",
+            "unsupported"
+          ]
         },
-        "os": {
-          "$ref": "#/$defs/hostFact"
+        "osVersion": {
+          "type": "string"
         },
         "arch": {
-          "$ref": "#/$defs/hostFact"
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "home": {
+          "type": "string"
+        },
+        "root": {
+          "type": "boolean"
         },
         "tools": {
-          "$ref": "#/$defs/toolVersions"
-        },
-        "agents": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "$ref": "#/$defs/codingAgentId"
-              },
-              "version": {
-                "anyOf": [
-                  {
-                    "$ref": "#/$defs/toolVersion"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/hostTool"
               }
             },
-            "required": [
-              "id",
-              "version"
-            ]
-          }
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "diskFreeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "runnerVersion": {
+          "type": "string"
         }
       },
       "required": [
-        "hostname",
-        "os",
+        "platform",
         "arch",
+        "hostname",
+        "user",
+        "home",
+        "root",
         "tools",
-        "agents"
+        "workspacePath",
+        "diskFreeBytes",
+        "runnerVersion"
       ],
       "id": "hostFacts"
     },
-    "hostFact": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255,
-      "id": "hostFact"
-    },
-    "toolVersions": {
+    "hostTool": {
       "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "minLength": 1
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        }
       },
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "$ref": "#/$defs/toolVersion"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      },
-      "id": "toolVersions"
-    },
-    "toolVersion": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 64,
-      "id": "toolVersion"
-    },
-    "codingAgentId": {
-      "type": "string",
-      "enum": [
-        "claude-code",
-        "codex"
+      "required": [
+        "name",
+        "required"
       ],
-      "id": "codingAgentId"
+      "id": "hostTool"
     },
     "sessionSnapshot": {
       "type": "object",
@@ -868,6 +860,14 @@
       "format": "uuid",
       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
       "id": "sessionId"
+    },
+    "codingAgentId": {
+      "type": "string",
+      "enum": [
+        "claude-code",
+        "codex"
+      ],
+      "id": "codingAgentId"
     },
     "observedAgentState": {
       "type": "string",

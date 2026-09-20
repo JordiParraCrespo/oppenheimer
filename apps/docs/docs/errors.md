@@ -125,6 +125,12 @@ that does not exist, so session ids cannot be probed.
 `TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens share
 one code so the endpoint cannot be used as a probing oracle.
 
+The codes are grouped here by what a client sees, which is not always the
+module that declares them. `TOKEN_003` and `TOKEN_005`–`TOKEN_007` are raised
+by the auth kernel — the credential resolver and the scopes guard — about any
+scoped credential, not only an API token, so they are declared in its catalog
+and apply unchanged to every credential kind a module contributes.
+
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.
 
@@ -150,7 +156,8 @@ one code so the endpoint cannot be used as a probing oracle.
 `AUTHZ_002` is a 500 rather than a 403 on purpose. A route that reached
 production without declaring what it requires is a programming error, and
 reporting it as a permission problem would send whoever hits it looking in the
-wrong place.
+wrong place. It is raised by the policies guard and declared in the auth
+kernel's catalog, beside the other refusals a guard can produce.
 
 ## Access grants
 
