@@ -500,6 +500,54 @@
       "hint": "You can rename it later from Settings.",
       "submit": "Create workspace",
       "submitting": "Creating…"
+    },
+    "flow": {
+      "back": "Back",
+      "counter": "{{step}} of {{total}}",
+      "continue": "Continue",
+      "workspace": {
+        "title": "Name your workspace",
+        "description": "A workspace holds your hosts, repositories and run history. You can rename it later; the address is permanent.",
+        "name": "Workspace name",
+        "namePlaceholder": "Versio Platform",
+        "address": "Workspace URL",
+        "addressPlaceholder": "versio",
+        "hint": "Letters, numbers and hyphens. This is the address your team signs in at.",
+        "checking": "Checking availability…",
+        "available": "{{address}} is available.",
+        "taken": "{{address}} is taken. Try another address.",
+        "using": "Using {{email}}",
+        "differentAccount": "Use a different account"
+      },
+      "github": {
+        "title": "Connect GitHub",
+        "description": "This installs the Oppenheimer GitHub App on your account. You pick all repositories or selected ones on GitHub's own page.",
+        "connect": "Connect GitHub",
+        "skip": "Skip for now",
+        "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
+        "connected": "{{count}} repositories · read access",
+        "change": "Change which repositories"
+      },
+      "host": {
+        "title": "Add your first host",
+        "description": "A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.",
+        "installCommand": "Install command",
+        "agentPrompt": "Prompt for an AI agent",
+        "agentNote": "Paste into Claude Code or Codex already running on that machine.",
+        "tokenExpires": "Token expires in {{time}} · single use",
+        "newToken": "Generate new token",
+        "waiting": "Waiting for the host to connect…",
+        "ready": "git, tmux, claude ready"
+      },
+      "ready": {
+        "title": "You're all set",
+        "description": "{{workspace}} is ready. Start a session and watch every step it takes.",
+        "workspace": "Workspace",
+        "code": "Code",
+        "host": "Host",
+        "repos": "{{owner}} · {{count}} repos",
+        "go": "Go to the console"
+      }
     }
   },
   "pages": {

@@ -2,6 +2,8 @@ export type { AgentGradient } from './components/agent-card';
 export { AGENT_GRADIENTS, AgentCard } from './components/agent-card';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
+export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
+export { AgentModelSelect } from './components/agent-model-select';
 export {
   Alert,
   AlertAction,
@@ -122,7 +124,7 @@ export {
   CommandShortcut,
 } from './components/command';
 export type { ComposerAttachment } from './components/composer';
-export { Composer } from './components/composer';
+export { Composer, ComposerToolButton } from './components/composer';
 export { DeltaText } from './components/delta-text';
 export {
   Dialog,
@@ -170,6 +172,8 @@ export {
   DropdownMenuTrigger,
   DropdownMenuValue,
 } from './components/dropdown-menu';
+export type { EffortStop } from './components/effort-slider';
+export { EFFORT_STOPS, EffortPicker, EffortSlider } from './components/effort-slider';
 export {
   Empty,
   EmptyContent,
@@ -270,6 +274,8 @@ export {
   PaginationPrevious,
 } from './components/pagination';
 export { PasswordInput } from './components/password-input';
+export type { PermissionLevel, PermissionOption } from './components/permission-menu';
+export { PermissionMenu } from './components/permission-menu';
 export {
   Popover,
   PopoverContent,

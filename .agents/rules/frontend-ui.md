@@ -34,6 +34,10 @@ multi-line, so a grep for `export` misses most of them.
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
 | A coding agent's logo | `AgentMark` | an `<img>` of a copied PNG |
+| A text trigger in the composer's foot row | `ComposerToolButton` | a `Button variant="ghost"` |
+| Which agent and model drive a session | `AgentModelSelect` | two `Select`s |
+| How hard the agent thinks | `EffortPicker` | a `Select` of five words |
+| What the agent may touch unattended | `PermissionMenu` | a `Switch` |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
@@ -54,7 +58,7 @@ the table (`GroupHeading`), never inside the bar.
 | A workspace list, one value, in a labelled field | `Combobox` |
 | Thousands, several values, fetched per keystroke | `AsyncMultiSelect` |
 | A toolbar filter rather than a field | `SelectMenu` (one) / `FilterMenu` (many) |
-| A scope chip on the console (host, branch, agent) | `ChipSelect`, always searchable |
+| A scope chip on the console (host, branch) | `ChipSelect`, always searchable |
 | Several repositories, each on its own branch | `RepositorySelect` |
 
 The threshold: if the option list is fetched from an endpoint, it is an

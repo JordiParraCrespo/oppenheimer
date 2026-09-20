@@ -102,6 +102,9 @@
     "./summary-card": "./src/components/summary-card.tsx",
     "./segmented-control": "./src/components/segmented-control.tsx",
     "./agent-mark": "./src/components/agent-mark.tsx",
+    "./agent-model-select": "./src/components/agent-model-select.tsx",
+    "./effort-slider": "./src/components/effort-slider.tsx",
+    "./permission-menu": "./src/components/permission-menu.tsx",
     "./assets/*": "./src/assets/*"
   },
   "scripts": {

@@ -41,7 +41,8 @@ Wire the styles into the app's CSS entry alongside Tailwind:
     `AgentMark`
   - forms: `Field`, `Input`, `PasswordInput`, `SlugInput`, `Textarea`,
     `SegmentedControl`, `ChipSelect` (and its parts), `RepositorySelect`,
-    `Composer`
+    `Composer` with `ComposerToolButton`, `AgentModelSelect`, `EffortSlider`
+    and `EffortPicker`, `PermissionMenu`
   - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
   - navigation: `Sidebar`, `SessionItem`, `Stepper`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`

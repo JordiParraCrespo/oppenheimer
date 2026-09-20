@@ -22,10 +22,16 @@ import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
+import { Route as OnboardingFlowRouteImport } from './routes/onboarding/_flow'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as OnboardingFlowGithubRouteImport } from './routes/onboarding/_flow/github'
+import { Route as OnboardingFlowHostRouteImport } from './routes/onboarding/_flow/host'
+import { Route as OnboardingFlowReadyRouteImport } from './routes/onboarding/_flow/ready'
+import { Route as OnboardingFlowWorkspaceRouteImport } from './routes/onboarding/_flow/workspace'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -90,6 +96,15 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OnboardingRoute,
+} as any)
+const OnboardingFlowRoute = OnboardingFlowRouteImport.update({
+  id: '/_flow',
+  getParentRoute: () => OnboardingRoute,
+} as any)
 const AuthenticatedSessionsIndexRoute =
   AuthenticatedSessionsIndexRouteImport.update({
     id: '/sessions/',
@@ -114,11 +129,31 @@ const AuthenticatedSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const OnboardingFlowGithubRoute = OnboardingFlowGithubRouteImport.update({
+  id: '/github',
+  path: '/github',
+  getParentRoute: () => OnboardingFlowRoute,
+} as any)
+const OnboardingFlowHostRoute = OnboardingFlowHostRouteImport.update({
+  id: '/host',
+  path: '/host',
+  getParentRoute: () => OnboardingFlowRoute,
+} as any)
+const OnboardingFlowReadyRoute = OnboardingFlowReadyRouteImport.update({
+  id: '/ready',
+  path: '/ready',
+  getParentRoute: () => OnboardingFlowRoute,
+} as any)
+const OnboardingFlowWorkspaceRoute = OnboardingFlowWorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => OnboardingFlowRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/onboarding': typeof OnboardingRoute
+  '/onboarding': typeof OnboardingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
@@ -127,15 +162,19 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/onboarding/github': typeof OnboardingFlowGithubRoute
+  '/onboarding/host': typeof OnboardingFlowHostRoute
+  '/onboarding/ready': typeof OnboardingFlowReadyRoute
+  '/onboarding/workspace': typeof OnboardingFlowWorkspaceRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/onboarding': typeof OnboardingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/forgot-password': typeof AuthForgotPasswordRoute
@@ -144,8 +183,13 @@ export interface FileRoutesByTo {
   '/reset-password': typeof AuthResetPasswordRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/onboarding/github': typeof OnboardingFlowGithubRoute
+  '/onboarding/host': typeof OnboardingFlowHostRoute
+  '/onboarding/ready': typeof OnboardingFlowReadyRoute
+  '/onboarding/workspace': typeof OnboardingFlowWorkspaceRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
 }
@@ -155,7 +199,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
-  '/onboarding': typeof OnboardingRoute
+  '/onboarding': typeof OnboardingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -164,8 +208,14 @@ export interface FileRoutesById {
   '/_auth/reset-password': typeof AuthResetPasswordRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/oauth/consent': typeof OauthConsentRoute
+  '/onboarding/_flow': typeof OnboardingFlowRouteWithChildren
+  '/onboarding/': typeof OnboardingIndexRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/onboarding/_flow/github': typeof OnboardingFlowGithubRoute
+  '/onboarding/_flow/host': typeof OnboardingFlowHostRoute
+  '/onboarding/_flow/ready': typeof OnboardingFlowReadyRoute
+  '/onboarding/_flow/workspace': typeof OnboardingFlowWorkspaceRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
@@ -183,15 +233,19 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/profile'
     | '/oauth/consent'
+    | '/onboarding/'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/onboarding/github'
+    | '/onboarding/host'
+    | '/onboarding/ready'
+    | '/onboarding/workspace'
     | '/sessions/'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/onboarding'
     | '/privacy'
     | '/terms'
     | '/forgot-password'
@@ -200,8 +254,13 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/profile'
     | '/oauth/consent'
+    | '/onboarding'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/onboarding/github'
+    | '/onboarding/host'
+    | '/onboarding/ready'
+    | '/onboarding/workspace'
     | '/sessions'
     | '/settings'
   id:
@@ -219,8 +278,14 @@ export interface FileRouteTypes {
     | '/_auth/reset-password'
     | '/_authenticated/profile'
     | '/oauth/consent'
+    | '/onboarding/_flow'
+    | '/onboarding/'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/onboarding/_flow/github'
+    | '/onboarding/_flow/host'
+    | '/onboarding/_flow/ready'
+    | '/onboarding/_flow/workspace'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
@@ -230,7 +295,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
-  OnboardingRoute: typeof OnboardingRoute
+  OnboardingRoute: typeof OnboardingRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   OauthConsentRoute: typeof OauthConsentRoute
@@ -329,6 +394,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
+    '/onboarding/_flow': {
+      id: '/onboarding/_flow'
+      path: ''
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingFlowRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
     '/_authenticated/sessions/': {
       id: '/_authenticated/sessions/'
       path: '/sessions'
@@ -356,6 +435,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/onboarding/_flow/github': {
+      id: '/onboarding/_flow/github'
+      path: '/github'
+      fullPath: '/onboarding/github'
+      preLoaderRoute: typeof OnboardingFlowGithubRouteImport
+      parentRoute: typeof OnboardingFlowRoute
+    }
+    '/onboarding/_flow/host': {
+      id: '/onboarding/_flow/host'
+      path: '/host'
+      fullPath: '/onboarding/host'
+      preLoaderRoute: typeof OnboardingFlowHostRouteImport
+      parentRoute: typeof OnboardingFlowRoute
+    }
+    '/onboarding/_flow/ready': {
+      id: '/onboarding/_flow/ready'
+      path: '/ready'
+      fullPath: '/onboarding/ready'
+      preLoaderRoute: typeof OnboardingFlowReadyRouteImport
+      parentRoute: typeof OnboardingFlowRoute
+    }
+    '/onboarding/_flow/workspace': {
+      id: '/onboarding/_flow/workspace'
+      path: '/workspace'
+      fullPath: '/onboarding/workspace'
+      preLoaderRoute: typeof OnboardingFlowWorkspaceRouteImport
+      parentRoute: typeof OnboardingFlowRoute
     }
   }
 }
@@ -396,12 +503,44 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface OnboardingFlowRouteChildren {
+  OnboardingFlowGithubRoute: typeof OnboardingFlowGithubRoute
+  OnboardingFlowHostRoute: typeof OnboardingFlowHostRoute
+  OnboardingFlowReadyRoute: typeof OnboardingFlowReadyRoute
+  OnboardingFlowWorkspaceRoute: typeof OnboardingFlowWorkspaceRoute
+}
+
+const OnboardingFlowRouteChildren: OnboardingFlowRouteChildren = {
+  OnboardingFlowGithubRoute: OnboardingFlowGithubRoute,
+  OnboardingFlowHostRoute: OnboardingFlowHostRoute,
+  OnboardingFlowReadyRoute: OnboardingFlowReadyRoute,
+  OnboardingFlowWorkspaceRoute: OnboardingFlowWorkspaceRoute,
+}
+
+const OnboardingFlowRouteWithChildren = OnboardingFlowRoute._addFileChildren(
+  OnboardingFlowRouteChildren,
+)
+
+interface OnboardingRouteChildren {
+  OnboardingFlowRoute: typeof OnboardingFlowRouteWithChildren
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
+}
+
+const OnboardingRouteChildren: OnboardingRouteChildren = {
+  OnboardingFlowRoute: OnboardingFlowRouteWithChildren,
+  OnboardingIndexRoute: OnboardingIndexRoute,
+}
+
+const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
+  OnboardingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
-  OnboardingRoute: OnboardingRoute,
+  OnboardingRoute: OnboardingRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   OauthConsentRoute: OauthConsentRoute,

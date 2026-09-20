@@ -57,7 +57,9 @@ import {
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
-  ModelMenu,
+  AgentModelDemo,
+  EffortDemo,
+  PermissionDemo,
   ScopeChips,
   SidebarDemo,
   StepperDemo,
@@ -715,7 +717,7 @@ export default function Page() {
         id="chipselect"
         title="ChipSelect · RepositorySelect"
         meta="chip-select.tsx · repository-select.tsx"
-        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch, with this agent. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected."
+        desc="A scope decision stated as a chip, so the row reads as a sentence: run on this host, this repo, this branch; the agent moved into the composer's engine button. Every one of them filters: a sticky search row, two-line options with a check and an optional mark, a centred line when nothing matches, and a pinned action band at the foot for adding what is not in the list yet. The repository picker multi-selects; each selected row grows a branch cell that opens a branch pane for that repo, and the branch chip only shows while exactly one repository is selected."
         code={`<ChipSelect value={host} onValueChange={setHost} options={hosts} icon={<CpuIcon />} searchPlaceholder="Search hosts…" emptyText="No host matches." action={{ label: 'Add host…', onSelect: openAddHost }} />
 <RepositorySelect repositories={repos} value={scope} onValueChange={setScope} />`}
       >
@@ -726,11 +728,54 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row with attach, the model picker, mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. Attachments list as removable chips."
-        code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick} onRecord={rec} tools={<ModelMenu />} />`}
+        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop."
+        code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
+  tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
+  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker value={effort} onValueChange={setEffort} /></>} />`}
       >
         <ComposerDemo />
         <ComposerDemo full />
+      </Spec>
+
+      <Spec
+        id="engine"
+        title="AgentModelSelect"
+        meta="agent-model-select.tsx"
+        desc="The engine button: the agent's mark and the model's name. Opening lands on the agent pane with the current harness checked; choosing one slides the same 252px popup to its models, with a back row, a search row and the check on the current model. Harness first, then its models, so the pair is always valid. A blank terminal has no models and is picked outright."
+        code={`<AgentModelSelect agents={harnesses} value={{ agent: 'claude-code', model: 'sonnet' }} onValueChange={setEngine} />`}
+      >
+        <AgentModelDemo />
+      </Spec>
+
+      <Spec
+        id="effort"
+        title="EffortSlider · EffortPicker"
+        meta="effort-slider.tsx"
+        desc="How long the agent may think, as a stepped track: five stops from Minimal to Max, a 30px knob in full ink, the used part of the track in the control wash, a dot at every stop the knob is not on. Pointer picks and drags, arrows step. EffortPicker is the composer's form: a muted tool button opening a 268px popover with the Effort header, the info glyph and Faster / Smarter at the ends. Picking stays in the popover; you are comparing, not confirming."
+        code={`<EffortPicker value={effort} onValueChange={setEffort} />
+<EffortSlider value={effort} onValueChange={setEffort} />`}
+      >
+        <Swatch label="picker">
+          <EffortDemo />
+        </Swatch>
+        <Swatch label="slider">
+          <EffortDemo bare />
+        </Swatch>
+      </Spec>
+
+      <Spec
+        id="permission"
+        title="PermissionMenu"
+        meta="permission-menu.tsx"
+        desc="What the agent may do on the host without asking: a muted tool button and three two-line options with their glyphs. Full access is the one level that can change a machine unattended, so it is the only one allowed the warning tone, on the button and on its row."
+        code={`<PermissionMenu options={levels} value={level} onValueChange={setLevel} />`}
+      >
+        <Swatch label="approve for me">
+          <PermissionDemo />
+        </Swatch>
+        <Swatch label="full access">
+          <PermissionDemo initial="full" />
+        </Swatch>
       </Spec>
 
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
@@ -751,14 +796,11 @@ export default function Page() {
         id="dropdown"
         title="DropdownMenu"
         meta="dropdown-menu.tsx"
-        desc="The popover tier: 14px radius, 14px rows, submenus for facets. The console's three menus share every part: filters with values, the account menu with its e-mail header and destructive Log out, the model picker with two-line options and an Effort submenu."
+        desc="The popover tier: 14px radius, 14px rows, submenus for facets. The console's menus share every part: filters with values, the account menu with its e-mail header and destructive Log out, the permission menu with icon rows and a warning tone."
         code={`<DropdownMenuSubTrigger>Repository <DropdownMenuValue>All repositories</DropdownMenuValue></DropdownMenuSubTrigger>`}
       >
         <Swatch label="filters">
           <FilterMenuDemo />
-        </Swatch>
-        <Swatch label="model and effort">
-          <ModelMenu />
         </Swatch>
         <Swatch label="account, opens upward">
           <div className="rounded-md border border-sidebar-border bg-sidebar p-1">

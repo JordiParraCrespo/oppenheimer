@@ -9,5 +9,53 @@
     "hint": "Podrás cambiarle el nombre más adelante desde Ajustes.",
     "submit": "Crear espacio de trabajo",
     "submitting": "Creando…"
+  },
+  "flow": {
+    "back": "Atrás",
+    "counter": "{{step}} de {{total}}",
+    "continue": "Continuar",
+    "workspace": {
+      "title": "Nombra tu espacio de trabajo",
+      "description": "Un espacio de trabajo reúne tus hosts, repositorios e historial de ejecuciones. Podrás cambiarle el nombre; la dirección es permanente.",
+      "name": "Nombre del espacio de trabajo",
+      "namePlaceholder": "Versio Platform",
+      "address": "URL del espacio de trabajo",
+      "addressPlaceholder": "versio",
+      "hint": "Letras, números y guiones. Es la dirección con la que inicia sesión tu equipo.",
+      "checking": "Comprobando disponibilidad…",
+      "available": "{{address}} está disponible.",
+      "taken": "{{address}} ya está en uso. Prueba otra dirección.",
+      "using": "Usando {{email}}",
+      "differentAccount": "Usar otra cuenta"
+    },
+    "github": {
+      "title": "Conecta GitHub",
+      "description": "Esto instala la GitHub App de Oppenheimer en tu cuenta. Eliges todos los repositorios o solo algunos en la propia página de GitHub.",
+      "connect": "Conectar GitHub",
+      "skip": "Saltar por ahora",
+      "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
+      "connected": "{{count}} repositorios · acceso de lectura",
+      "change": "Cambiar qué repositorios"
+    },
+    "host": {
+      "title": "Añade tu primer host",
+      "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
+      "installCommand": "Comando de instalación",
+      "agentPrompt": "Prompt para un agente de IA",
+      "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+      "tokenExpires": "El token caduca en {{time}} · un solo uso",
+      "newToken": "Generar un token nuevo",
+      "waiting": "Esperando a que el host se conecte…",
+      "ready": "git, tmux, claude listos"
+    },
+    "ready": {
+      "title": "Todo listo",
+      "description": "{{workspace}} está listo. Inicia una sesión y sigue cada paso que dé.",
+      "workspace": "Espacio de trabajo",
+      "code": "Código",
+      "host": "Host",
+      "repos": "{{owner}} · {{count}} repos",
+      "go": "Ir a la consola"
+    }
   }
 }

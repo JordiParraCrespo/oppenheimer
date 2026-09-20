@@ -31,6 +31,8 @@ import {
   WavesIcon,
   ChevronDownCircleIcon,
   BotIcon,
+  SlidersHorizontalIcon,
+  ShieldCheckIcon,
   CircleCheckIcon,
   ListChecksIcon,
   ListStartIcon,
@@ -90,6 +92,9 @@ export const TOC: TocGroup[] = [
       { id: 'textarea', label: 'Textarea', icon: TextIcon },
       { id: 'chipselect', label: 'ChipSelect', icon: SquareChevronDownIcon },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon },
+      { id: 'engine', label: 'AgentModelSelect', icon: BotIcon },
+      { id: 'effort', label: 'EffortSlider', icon: SlidersHorizontalIcon },
+      { id: 'permission', label: 'PermissionMenu', icon: ShieldCheckIcon },
     ],
   },
   {

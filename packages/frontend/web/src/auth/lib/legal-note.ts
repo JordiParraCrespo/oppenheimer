@@ -9,5 +9,12 @@ import type { ParseKeys } from 'i18next';
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     legalNoteKey?: ParseKeys;
+    /**
+     * How wide the centred column is: `form` (340px, the auth forms), `wide`
+     * (400px, the onboarding steps) or `panel` (620px, Add your first host,
+     * whose two code cards sit side by side). Read by `AuthLayout` off the
+     * innermost match, like the legal note.
+     */
+    authWidth?: 'form' | 'wide' | 'panel';
   }
 }

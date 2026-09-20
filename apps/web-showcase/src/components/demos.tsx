@@ -2,7 +2,16 @@
 
 import { Avatar, AvatarFallback } from '@oppenheimer/design-system-web/avatar';
 import { Button } from '@oppenheimer/design-system-web/button';
-import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
+import {
+  AgentModelSelect,
+  type AgentOption,
+  type Engine,
+} from '@oppenheimer/design-system-web/agent-model-select';
+import { EffortPicker, EffortSlider } from '@oppenheimer/design-system-web/effort-slider';
+import {
+  PermissionMenu,
+  type PermissionLevel,
+} from '@oppenheimer/design-system-web/permission-menu';
 import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { Field, FieldDescription, FieldLabel } from '@oppenheimer/design-system-web/field';
@@ -35,7 +44,6 @@ import {
   DropdownMenuContent,
   DropdownMenuHeader,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -69,7 +77,6 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import {
-  BotIcon,
   ChevronsUpDownIcon,
   CpuIcon,
   GitBranchIcon,
@@ -292,79 +299,80 @@ export function AccountMenuDemo() {
   );
 }
 
-const MODELS = [
-  ['opus', 'Claude Opus 4.6', 'Deepest reasoning, long-horizon work'],
-  ['sonnet', 'Claude Sonnet 4.6', 'Most efficient for everyday tasks'],
-  ['haiku', 'Claude Haiku 4.5', 'Fastest for quick answers'],
-] as const;
 
-type Harness = 'claude-code' | 'codex' | 'opencode';
+/* ── Engine: agent + model, effort, permissions ───────────────────────── */
 
-/** The menu is scoped to the harness: each agent drives only the models it supports. */
-const HARNESS_MODELS: Record<Harness, { label: string; models: readonly (readonly [string, string, string])[] }> = {
-  'claude-code': { label: 'Claude Code', models: MODELS },
-  codex: {
+export const HARNESSES: AgentOption[] = [
+  {
+    id: 'claude-code',
+    label: 'Claude Code',
+    models: [
+      { value: 'opus', label: 'Claude Opus 4.6' },
+      { value: 'sonnet', label: 'Claude Sonnet 4.6' },
+      { value: 'haiku', label: 'Claude Haiku 4.5' },
+    ],
+  },
+  {
+    id: 'codex',
     label: 'Codex',
     models: [
-      ['gpt', 'GPT-5.2', 'Strong at wide refactors'],
-      ['gpt-codex', 'GPT-5.2 Codex', 'Tuned for long coding runs'],
-      ['gpt-mini', 'GPT-5.2 mini', 'Fastest for quick answers'],
+      { value: 'gpt', label: 'GPT-5.2' },
+      { value: 'gpt-codex', label: 'GPT-5.2 Codex' },
+      { value: 'gpt-mini', label: 'GPT-5.2 mini' },
     ],
   },
-  opencode: {
+  {
+    id: 'opencode',
     label: 'OpenCode',
     models: [
-      ['qwen', 'Qwen3 Coder 480B', 'Open weights · runs on your host'],
-      ['deepseek', 'DeepSeek V3.2', 'Open weights · strong at tests'],
-      ['kimi', 'Kimi K2', 'Open weights · long context'],
+      { value: 'qwen', label: 'Qwen3 Coder 480B' },
+      { value: 'deepseek', label: 'DeepSeek V3.2' },
+      { value: 'kimi', label: 'Kimi K2' },
+      { value: 'llama', label: 'Llama 4 Maverick' },
+      { value: 'glm', label: 'GLM 4.6' },
     ],
   },
-};
+  { id: 'shell', label: 'Blank terminal', models: [] },
+];
 
-export function ModelMenu({ harness = 'claude-code' }: { harness?: Harness }) {
-  const { label: harnessLabel, models } = HARNESS_MODELS[harness];
-  const [model, setModel] = React.useState<string>(models[1]?.[0] ?? models[0]?.[0] ?? '');
-  const [effort, setEffort] = React.useState<string>('Medium');
-  const name = (models.find((m) => m[0] === model) ?? models[0])?.[1];
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <button
-            type="button"
-            className="flex h-[30px] items-center gap-2 rounded-sm px-2.5 text-sm whitespace-nowrap text-fg outline-none transition-colors duration-fast hover:bg-hover-surface aria-expanded:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring"
-          />
-        }
-      >
-        {name} <span className="text-fg-muted">{effort}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="end" className="min-w-[290px]">
-        <DropdownMenuLabel>{harnessLabel}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={model} onValueChange={(v) => setModel(String(v))}>
-          {models.map(([id, label, desc]) => (
-            <DropdownMenuRadioItem key={id} value={id} description={desc}>
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            Effort <DropdownMenuValue>{effort}</DropdownMenuValue>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={effort} onValueChange={(v) => setEffort(String(v))}>
-              {['Low', 'Medium', 'High'].map((e) => (
-                <DropdownMenuRadioItem key={e} value={e}>
-                  {e}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+export const PERMISSIONS = [
+  {
+    value: 'ask' as const,
+    label: 'Ask for approval',
+    description: 'Always ask before editing files or reaching the internet.',
+  },
+  {
+    value: 'auto' as const,
+    label: 'Approve for me',
+    description: 'Only ask for actions detected as potentially unsafe.',
+  },
+  {
+    value: 'full' as const,
+    label: 'Full access',
+    description: 'Unrestricted access to the internet and any file on the host.',
+  },
+];
+
+export function AgentModelDemo() {
+  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'sonnet' });
+  return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
+}
+
+export function EffortDemo({ bare }: { bare?: boolean }) {
+  const [effort, setEffort] = React.useState('medium');
+  if (bare) {
+    return (
+      <div className="w-[240px]">
+        <EffortSlider value={effort} onValueChange={setEffort} />
+      </div>
+    );
+  }
+  return <EffortPicker value={effort} onValueChange={setEffort} />;
+}
+
+export function PermissionDemo({ initial = 'auto' }: { initial?: PermissionLevel }) {
+  const [level, setLevel] = React.useState<PermissionLevel>(initial);
+  return <PermissionMenu options={PERMISSIONS} value={level} onValueChange={setLevel} />;
 }
 
 /* ── Tooltip ─────────────────────────────────────────────────────────────── */
@@ -441,33 +449,6 @@ export const REPOS: RepositoryOption[] = [
   },
 ];
 
-export const AGENTS: ChipSelectOption[] = [
-  {
-    value: 'claude-code',
-    label: 'Claude Code',
-    description: 'Anthropic · terminal-native',
-    leading: <AgentMark agent="claude-code" />,
-  },
-  {
-    value: 'codex',
-    label: 'Codex',
-    description: 'OpenAI · fast wide edits',
-    leading: <AgentMark agent="codex" />,
-  },
-  {
-    value: 'opencode',
-    label: 'OpenCode',
-    description: 'Open source · bring your own model',
-    leading: <AgentMark agent="opencode" />,
-  },
-  {
-    value: 'shell',
-    label: 'Blank terminal',
-    description: 'No agent · just a shell in the worktree',
-    leading: <AgentMark agent="shell" />,
-  },
-];
-
 /**
  * The scope row on New session. Every picker filters; the repository one
  * multi-selects with a branch pane per repo, and the branch chip only shows
@@ -476,7 +457,6 @@ export const AGENTS: ChipSelectOption[] = [
 export function ScopeChips() {
   const [host, setHost] = React.useState<string | null>('optimus');
   const [scope, setScope] = React.useState<RepositoryScope[]>([{ id: 'xrp-mobile', branch: 'main' }]);
-  const [agent, setAgent] = React.useState<string | null>('claude-code');
   const single = scope.length === 1 ? scope[0] : undefined;
   const singleRepo = single ? REPOS.find((r) => r.id === single.id) : undefined;
   return (
@@ -508,15 +488,6 @@ export function ScopeChips() {
           emptyText="No branch matches."
         />
       ) : null}
-      <ChipSelect
-        value={agent}
-        onValueChange={setAgent}
-        options={AGENTS}
-        icon={<BotIcon />}
-        aria-label="Agent"
-        searchPlaceholder="Search agents…"
-        emptyText="No agent matches."
-      />
     </div>
   );
 }
@@ -581,7 +552,7 @@ export function ComposerDemo({ full }: { full?: boolean }) {
   const [value, setValue] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   const [files, setFiles] = React.useState<{ id: string; name: string }[]>(
-    full ? [{ id: '1', name: 'api-config.md' }] : [],
+    full ? [{ id: '1', name: 'Screenshot from 2026-09-20 11-42-07.png' }] : [],
   );
   const [recording, setRecording] = React.useState(false);
   return (
@@ -604,7 +575,15 @@ export function ComposerDemo({ full }: { full?: boolean }) {
         onAttach={full ? () => setFiles((f) => [...f, { id: String(Date.now()), name: 'notes.txt' }]) : undefined}
         onRecord={full ? () => setRecording((r) => !r) : undefined}
         recording={recording}
-        tools={full ? <ModelMenu /> : undefined}
+        tools={full ? <PermissionDemo /> : undefined}
+        engine={
+          full ? (
+            <>
+              <AgentModelDemo />
+              <EffortDemo />
+            </>
+          ) : undefined
+        }
       />
     </div>
   );

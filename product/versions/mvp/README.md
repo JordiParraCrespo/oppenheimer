@@ -232,3 +232,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   path. An archived project is a tombstone on the create path too — no session can
   be started in one — and the archive and a create serialise on the project row, so
   they cannot both win.
+- 2026-09-20: **the composer rework** (design sync in PR #30). The agent
+  chip leaves the scope row; the composer's foot reads scope of action,
+  then engine: attach and a permission level (ask / approve for me / full
+  access, the last in a warning tone) on the left, the agent-and-model
+  button (harness first, then its models, with a search), a five-stop
+  effort slider in a popover, dictation and send on the right. Codex now
+  carries the OpenAI mark. The design system grew `ComposerToolButton`,
+  `AgentModelSelect`, `EffortSlider` / `EffortPicker` and `PermissionMenu`
+  (05).
