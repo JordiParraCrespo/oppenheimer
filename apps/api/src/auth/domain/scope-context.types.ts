@@ -13,14 +13,16 @@ export interface CredentialOwner {
 }
 
 /**
- * What a scoped credential (an API token or an OAuth access token) authorizes.
+ * What a scoped credential acting **for a person** authorizes: an API token, an
+ * OAuth access token, or any other kind a module contributes that stands in for
+ * someone.
  *
  * Its presence on a request is what makes that request *narrowed*: a browser
  * session carries no scope context and is governed by the user's roles alone,
  * while a scoped credential is additionally limited to these scopes and this
  * resource scope.
  */
-export interface ScopeContext {
+export interface UserCredentialContext {
   /**
    * Which kind of credential this is. Open by design: the kernel resolves
    * `oauth` itself and every other kind is contributed by the module that owns
@@ -42,6 +44,48 @@ export interface ScopeContext {
   expiresAt: Date | null;
   /** Display prefix of an API token, for logs and error messages. */
   prefix?: string;
+}
+
+/**
+ * What a credential acting **for a machine** authorizes: a host's boot
+ * assertion, verified by the `hosts` module against the key that host
+ * registered with and contributed to this kernel as the `host` kind.
+ *
+ * A kind's *shape* is kernel vocabulary even when its resolution is not, and
+ * this one is a variant of its own rather than a user credential with empty
+ * fields: a host acts for nobody, so there is no `owner` to read off it and the
+ * compiler is what says so. It carries no scopes at all, which is the whole of
+ * what the guards need to know — every route that declares a scope refuses it by
+ * the ordinary rule, and the only routes open to it are the ones that declare
+ * none and say so with `@AllowAnyScope()`.
+ */
+export interface HostCredentialContext {
+  kind: 'host';
+  /** Rate-limit and log identity: the host, since there is no token record. */
+  credentialId: string;
+  hostId: string;
+  /** Always empty. A machine holds no permissions of its own. */
+  scopes: Scope[];
+  resourceScope: ResourceScope;
+  /** When the presented assertion stops being valid. */
+  expiresAt: Date | null;
+}
+
+/** Any credential that is not a browser session. */
+export type ScopeContext = UserCredentialContext | HostCredentialContext;
+
+/**
+ * Narrow a resolved credential to the machine kind.
+ *
+ * A predicate rather than a bare `kind === 'host'` because the person-side
+ * variant keeps its `kind` open — that openness is what lets a module contribute
+ * a kind without editing this file — so only the variant that names itself can
+ * be told apart by name.
+ */
+export function isHostCredential(
+  context: ScopeContext | null | undefined,
+): context is HostCredentialContext {
+  return context?.kind === 'host';
 }
 
 /**

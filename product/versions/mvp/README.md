@@ -177,3 +177,30 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   on the next mint" true rather than true-after-a-TTL. `github_app` is on the
   client capability subset, because a console cannot otherwise tell "you have
   not connected yet" from "this deployment has no App".
+- 2026-09-19: **a host belongs to a person, and workspaces borrow it.**
+  08 said a host row carries the workspace id; it now carries
+  `ownerUserId` and no workspace id, the way Better Auth hangs `session`
+  and `account` off `user`. The case that decides it is one person with a
+  personal and a company workspace on one laptop: per-workspace, that
+  machine is paired twice, runs two runners with two keys, and the second
+  install has to invent a second `~/oppenheimer-ai`; per-person it is
+  paired once and either workspace runs sessions on it. It is also the
+  honest reading of the machine: a session there has full access to it
+  (F10), runs under its owner's Unix account, and spends the agent login
+  in that person's home directory. The tenant boundary does not
+  disappear, it moves down: a session carries the workspace, and the host
+  it names must be one its creator owns or holds a grant on. 08's open
+  question 2 is **decided** with it — the pairing token is bound to the
+  user who minted it, and the host it creates is theirs. Recorded in 08,
+  03, 09 and `apps/api/src/hosts/`. A host's key is a **column on the host
+  row** rather than a `host_keys` table, and the retired key joins it as a
+  second column when rotation arrives on the link: rotation needs exactly
+  two keys, never N, and every runner boot reads them.
+- 2026-09-20: the host's boot assertion becomes a **contributed credential
+  kind**: `apps/api/src/hosts` spreads
+  `AuthModule.contributeCredentials([HostCredentialResolver])` into its own
+  providers and is no longer `@Global`, so the auth kernel recognises a machine
+  without importing `hosts`. The kind's *shape* stays kernel vocabulary —
+  `ScopeContext` gains a `host` variant with no owner and no scopes, because the
+  guards read it — and nothing about what a host may do changed. Recorded in 08
+  and `apps/api/src/hosts/application/host-credential.resolver.ts`.

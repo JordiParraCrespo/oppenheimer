@@ -33,6 +33,7 @@ import {
   databaseConfig,
   emailConfig,
   githubAppConfig,
+  hostsConfig,
   oauthConfig,
   redisConfig,
   storageConfig,
@@ -41,6 +42,7 @@ import {
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
+import { HostsModule } from './hosts/hosts.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -64,6 +66,7 @@ import { UsersModule } from './users/user.module';
         storageConfig,
         oauthConfig,
         stripeConfig,
+        hostsConfig,
         githubAppConfig,
       ],
     }),
@@ -183,6 +186,9 @@ import { UsersModule } from './users/user.module';
     // MVP and the product contexts (hosts, installations, projects, sessions,
     // relay) take their place here as they land.
     OrganizationsModule,
+    // The control plane's own modules. `hosts` is first of them: the machines a
+    // person paired, and the credential a runner authenticates with.
+    HostsModule,
     // What GitHub grants a workspace, and how the platform exercises it. The
     // first of the product contexts named above.
     GithubModule,

@@ -3,7 +3,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../application/credential-scope.port';
 import { CREDENTIAL_SCOPE, DELEGATED_SESSION } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
-import type { ScopedRequest } from '../domain/scope-context.types';
+import { isHostCredential, type ScopedRequest } from '../domain/scope-context.types';
 import { auth } from '../infrastructure/better-auth.config';
 import { betterAuthHeaders } from '../infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
@@ -36,6 +36,16 @@ export class ApiAuthGuard implements CanActivate {
     const scopeContext = await this.credentials.resolve(request);
 
     if (!scopeContext) return this.authenticateSession(request);
+
+    // A machine credential acts for nobody: there is no owner to populate
+    // `request.user` with and no session to delegate, so every route this guard
+    // protects is closed to it. The routes a host may call carry their own guard
+    // instead and read the same resolution through `CREDENTIAL_SCOPE`.
+    if (isHostCredential(scopeContext)) {
+      throw new AppError(AuthErrors.UNAUTHENTICATED, {
+        detail: 'This endpoint requires a user credential; a machine credential acts for no user.',
+      });
+    }
 
     // A token restricted to exactly one organization acts inside it by
     // default, so organization-scoped routes resolve without an explicit id.
