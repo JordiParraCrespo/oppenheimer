@@ -21,7 +21,12 @@ export interface CredentialOwner {
  * resource scope.
  */
 export interface ScopeContext {
-  kind: 'api-token' | 'oauth';
+  /**
+   * Which kind of credential this is. Open by design: the kernel resolves
+   * `oauth` itself and every other kind is contributed by the module that owns
+   * it (`api-token` today), so this is the contributing resolver's own `kind`.
+   */
+  kind: string;
   /** Id of the token record (API token id, or a digest of the OAuth token). */
   credentialId: string;
   /** The user the credential acts on behalf of. */
