@@ -72,9 +72,12 @@ version `1`), so the paths below carry that prefix and the runner's
 users, installations, repositories (**not a table**: listed live from
 GitHub through the installation; a repository is remembered only by the
 checkout that took it, as GitHub's own id plus the installation and a
-name snapshot), hosts, host_keys, sessions (host, repo, base branch,
-branch, worktree path, agent, state, name), session_events,
-attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
+name snapshot), hosts, host_keys, projects (the body of work a session
+belongs to; auto-created from the first repository a session checks out,
+and found again by that repository's GitHub id; its slug is a directory
+name on every host and is never reissued), sessions (host, **project**,
+repo, base branch, branch, worktree path, agent, state, name) — a session
+belongs to a project —, session_events, attach_tickets, jobs. Accounts and runtime_vms come with later slices. The starter's
 users, organization, member and role tables are the identity half of
 this; a personal workspace is one organization with one owner member.
 

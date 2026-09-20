@@ -18,6 +18,7 @@ import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
+import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -50,6 +51,7 @@ const dataSource = new DataSource({
     OrganizationOrmEntity,
     MemberOrmEntity,
     InvitationOrmEntity,
+    ProjectOrmEntity,
     OutboxMessageSchema,
   ],
 });

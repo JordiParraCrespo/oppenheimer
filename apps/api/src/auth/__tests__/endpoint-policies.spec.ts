@@ -6,6 +6,8 @@ import { AdminController } from '../../admin/admin.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
 import { FindSubscriptionsHttpController } from '../../billing/queries/find-subscriptions/find-subscriptions.http.controller';
 import { MembersController } from '../../organizations/members.controller';
+import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
+import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
 
 /**
@@ -32,6 +34,8 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   '/tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
   '/admin/users': { controller: AdminController, handler: 'listUsers' },
   '/billing/subscriptions': { controller: FindSubscriptionsHttpController, handler: 'findAll' },
+  '/projects': { controller: FindProjectsHttpController, handler: 'list' },
+  '/projects/:id': { controller: FindProjectHttpController, handler: 'get' },
 };
 
 function methodOn(controller: object, handler: string): object {
