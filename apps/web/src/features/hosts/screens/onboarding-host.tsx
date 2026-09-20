@@ -24,13 +24,15 @@ export function OnboardingHostScreen() {
   const { t } = useTranslation();
   const { token, countdown, host, regenerate } = usePairingToken();
 
+  // oppenheimer:begin runner
   const command = `curl -fsSL ${INSTALL_URL} | sh -s -- --token ${token}`;
-  const prompt = [
-    'Install the oppenheimer runner on this machine.',
-    `Run: ${command}`,
+  const tail = [
+    `| sh -s -- --token ${token}`,
     'Then confirm the service is running with: oppenheimer-runner status',
     'Report the hostname and OS version back to me.',
   ].join('\n');
+  const prompt = `Install the oppenheimer runner on this machine.\nRun: curl -fsSL ${INSTALL_URL} ${tail}`;
+  // oppenheimer:end runner
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,7 +54,7 @@ export function OnboardingHostScreen() {
           <CodeBlock
             title={t('onboarding.flow.host.agentPrompt')}
             code={prompt}
-            dim={`| sh -s -- --token ${token}\nThen confirm the service is running with: oppenheimer-runner status\nReport the hostname and OS version back to me.`}
+            dim={tail}
             note={t('onboarding.flow.host.agentNote')}
           />
         </Card>
