@@ -10,7 +10,7 @@ Import a component from its subpath (tree-shakeable) or from the root:
 
 ```tsx
 import { Button } from '@oppenheimer/design-system-web/button';
-import { ChipSelect, ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
+import { ChipSelect } from '@oppenheimer/design-system-web/chip-select';
 import { Field, FieldLabel, PasswordInput } from '@oppenheimer/design-system-web';
 ```
 
@@ -37,8 +37,11 @@ Wire the styles into the app's CSS entry alongside Tailwind:
 - `src/components/` — the MVP inventory:
   - core: `Wordmark`, `BrandGlyph`, `Button`, `IconButton`, `Link`, `Chip`,
     `FilterChip`, `StatusDot`, `Avatar`, `Separator`, `Kbd`, `Card`,
-    `CodeBlock`, `EmptyState`
-  - forms: `Field`, `Input`, `PasswordInput`, `Textarea`, `ChipSelect`, `Composer`
+    `CodeBlock`, `EmptyState`, `SummaryCard`, `SuccessMark`, `StepHeader`,
+    `AgentMark`
+  - forms: `Field`, `Input`, `PasswordInput`, `SlugInput`, `Textarea`,
+    `SegmentedControl`, `ChipSelect` (and its parts), `RepositorySelect`,
+    `Composer`
   - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
   - navigation: `Sidebar`, `SessionItem`, `Stepper`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`

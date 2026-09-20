@@ -90,6 +90,36 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   gains F26a: first install is trust-on-first-use, so F26 begins at the
   first self-update, not at install. The link is a **port**, not a
   bounded context.
+- 2026-09-19: **the version-1 frames win over the older screen notes**,
+  after a screen-by-screen walk with the owner (PR #20). Onboarding is
+  four numbered steps and a landing: sign in, name your workspace and
+  its address, connect GitHub, add a host, then Ready into the console
+  (00, 05, 08). A session may span several repositories, one worktree
+  each on its own branch (00); the repository chip multi-selects with a
+  branch pane per repository and the branch chip shows only for one
+  repository (05). Every scope chip filters. The agent chip lists Claude
+  Code, Codex, OpenCode and a blank terminal with the vendors' published
+  marks (Anthropic's Claude mark, OpenCode's square; none for Codex),
+  and the model menu is scoped to the harness. The Add host dialog is
+  the one dialog; the welcome modal is gone. Both themes. The design
+  system grew the components these need (`ChipSelect` rebuilt on the
+  Combobox primitive so it filters, `RepositorySelect`, `StepHeader`,
+  `SlugInput`, `SuccessMark`, `SummaryCard`, `SegmentedControl`,
+  `AgentMark`); the frames in `design/version1/` remain the visual
+  record and 05 is the written one.
+- 2026-09-19: **credential kinds are contributions to the auth kernel**
+  (08). `apps/api/src/auth` imported `api-tokens` and `users` to resolve
+  a request's credential, so the layer everything is built on depended
+  on two of the things built on it — and the hosts slice was about to
+  add a third the same way. The kernel now recognises only what it
+  issues (session, OAuth grant) and takes every other kind from a
+  registry a module contributes to with
+  `AuthModule.contributeCredentials`, in the spirit of
+  `AuthzModule.forFeature` for resources — except that the providers go in
+  the contributing module, so nothing has to be published
+  application-wide to be reachable. Nothing about
+  what a credential authorizes changed, and no error code moved that a
+  client can see.
 - 2026-09-19: the **shared vocabulary lands in `packages/shared`**, and two of
   these notes moved to match it. 01's open question 1 is **decided**: Zod is the
   source of truth for the wire and JSON Schema is emitted from it at build, with
@@ -108,6 +138,32 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   took it. In the scope catalog there is no `Repository` CASL subject for the
   same reason, and no `attach` action: opening a terminal is `update Session`,
   so the model stays CRUD plus `manage`.
+- 2026-09-19: the runner's two ordinary HTTPS calls carry the API's
+  `/api/v1` prefix — `POST /api/v1/hosts/register` and `DELETE
+  /api/v1/hosts/self` — and uninstall no longer puts a host id in the
+  path: the host names itself by the subject of the boot JWT it presents.
+  That JWT stays an `Authorization: Bearer` credential, which the control
+  plane's resolver recognises as a host principal next to session cookies
+  and personal access tokens, rather than a header of its own that would
+  be frozen into every installed runner. **Key rotation leaves the
+  runner** until the link can carry it: the register route redeems
+  registration tokens and cannot rotate a key, and 09 §3 already places
+  rotation on an authenticated link. Recorded in 01, 03 and
+  `apps/runner`'s pairing client.
+- 2026-09-19: **a project is the body of work a session belongs to**, and the
+  layout gains a level. 03's data model lists `projects` and says a session
+  belongs to one; 11's §1 is superseded at the top by
+  `workspaces/<organization.slug>/projects/<project.slug>/{repos,sessions}`,
+  because a session may check out several repositories and the old tree had
+  nowhere to put the second one. 11's collision rule is unchanged and now names
+  the project's directory: the repository's own name, or `<owner>--<repo>` when
+  another repository already holds it, then `<owner>--<repo>-<githubRepoId>`,
+  which is where a rejected random suffix used to be — every candidate is
+  derived from the repository, so a directory can always be read back to what
+  created it. A project is created by the first session that needs one, found
+  again by GitHub's repository id (unique per workspace, and the conflict target
+  of the create), and its slug is immutable because it is a directory name on
+  every host holding it.
 - 2026-09-19: the **`github/` module is built** and 03 gains the section that
   says so: six routes, one `github_installation` table, no repository table,
   and `RepositoryAccessPort` as the only thing the module exports. Two
@@ -121,6 +177,33 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   on the next mint" true rather than true-after-a-TTL. `github_app` is on the
   client capability subset, because a console cannot otherwise tell "you have
   not connected yet" from "this deployment has no App".
+- 2026-09-19: **a host belongs to a person, and workspaces borrow it.**
+  08 said a host row carries the workspace id; it now carries
+  `ownerUserId` and no workspace id, the way Better Auth hangs `session`
+  and `account` off `user`. The case that decides it is one person with a
+  personal and a company workspace on one laptop: per-workspace, that
+  machine is paired twice, runs two runners with two keys, and the second
+  install has to invent a second `~/oppenheimer-ai`; per-person it is
+  paired once and either workspace runs sessions on it. It is also the
+  honest reading of the machine: a session there has full access to it
+  (F10), runs under its owner's Unix account, and spends the agent login
+  in that person's home directory. The tenant boundary does not
+  disappear, it moves down: a session carries the workspace, and the host
+  it names must be one its creator owns or holds a grant on. 08's open
+  question 2 is **decided** with it — the pairing token is bound to the
+  user who minted it, and the host it creates is theirs. Recorded in 08,
+  03, 09 and `apps/api/src/hosts/`. A host's key is a **column on the host
+  row** rather than a `host_keys` table, and the retired key joins it as a
+  second column when rotation arrives on the link: rotation needs exactly
+  two keys, never N, and every runner boot reads them.
+- 2026-09-20: the host's boot assertion becomes a **contributed credential
+  kind**: `apps/api/src/hosts` spreads
+  `AuthModule.contributeCredentials([HostCredentialResolver])` into its own
+  providers and is no longer `@Global`, so the auth kernel recognises a machine
+  without importing `hosts`. The kind's *shape* stays kernel vocabulary —
+  `ScopeContext` gains a `host` variant with no owner and no scopes, because the
+  guards read it — and nothing about what a host may do changed. Recorded in 08
+  and `apps/api/src/hosts/application/host-credential.resolver.ts`.
 - 2026-09-19: **a project is the body of work a session belongs to**, and the
   layout gains a level. 03's data model lists `projects` and says a session
   belongs to one; 11's §1 is superseded at the top by

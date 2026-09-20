@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changePassword, check, checkSlug, closeSession, connect, create, create2, create3, create4, create5, createSession, createUser, current, deleteAvatar, deploymentCapabilities, disconnect, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list10, list2, list3, list4, list5, list6, list7, list8, list9, listMembers, listMine, listMine2, listProjects, listSessionEvents, listSessions, listSessions2, listUsers, me, mint, type Options, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, stopSession, unban, uninstall, unpair, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, ConnectData, ConnectError, ConnectResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectData, DisconnectError, DisconnectResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List10Data, List10Error, List10Response, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, List8Data, List8Error, List8Response, List9Data, List9Error, List9Response, ListData, ListError, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessions2Data, ListSessions2Error, ListSessions2Response, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, active, add, addMember, assign, ban, cancel, catalog, changePassword, check, checkSlug, connectInstallation, create, create2, create3, create4, create5, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getProject, getSettings, getUser, impersonate, invite, leave, list, list2, list3, list4, list5, list6, list7, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessions, listUsers, me, mint, type Options, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeUser, rename, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, unban, uninstall, unpair, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1238,9 +1238,9 @@ export const removeMemberMutation = (options?: Partial<Options<RemoveMemberData>
 export const list6QueryKey = (options?: Options<List6Data>) => createQueryKey('list6', options);
 
 /**
- * List the workspace’s connected GitHub installations
+ * List the hosts the caller can reach
  *
- * A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.
+ * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
  */
 export const list6Options = (options?: Options<List6Data>) => queryOptions<List6Response, List6Error, List6Response, ReturnType<typeof list6QueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1255,33 +1255,14 @@ export const list6Options = (options?: Options<List6Data>) => queryOptions<List6
     queryKey: list6QueryKey(options)
 });
 
-/**
- * Connect a GitHub App installation to the workspace
- *
- * Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.
- */
-export const connectMutation = (options?: Partial<Options<ConnectData>>): UseMutationOptions<ConnectResponse, ConnectError, Options<ConnectData>> => {
-    const mutationOptions: UseMutationOptions<ConnectResponse, ConnectError, Options<ConnectData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await connect({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const list7QueryKey = (options: Options<List7Data>) => createQueryKey('list7', options);
+export const list7QueryKey = (options?: Options<List7Data>) => createQueryKey('list7', options);
 
 /**
- * List the repositories an installation covers
+ * List the caller’s pairing tokens
  *
- * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
+ * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
  */
-export const list7Options = (options: Options<List7Data>) => queryOptions<List7Response, List7Error, List7Response, ReturnType<typeof list7QueryKey>>({
+export const list7Options = (options?: Options<List7Data>) => queryOptions<List7Response, List7Error, List7Response, ReturnType<typeof list7QueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
         const { data } = await list7({
             ...options,
@@ -1292,85 +1273,6 @@ export const list7Options = (options: Options<List7Data>) => queryOptions<List7R
         return data;
     },
     queryKey: list7QueryKey(options)
-});
-
-export const list8QueryKey = (options: Options<List8Data>) => createQueryKey('list8', options);
-
-/**
- * List a repository’s branches
- *
- * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
- */
-export const list8Options = (options: Options<List8Data>) => queryOptions<List8Response, List8Error, List8Response, ReturnType<typeof list8QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list8({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: list8QueryKey(options)
-});
-
-/**
- * Disconnect a GitHub App installation
- *
- * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
- */
-export const disconnectMutation = (options?: Partial<Options<DisconnectData>>): UseMutationOptions<DisconnectResponse, DisconnectError, Options<DisconnectData>> => {
-    const mutationOptions: UseMutationOptions<DisconnectResponse, DisconnectError, Options<DisconnectData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await disconnect({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const list9QueryKey = (options?: Options<List9Data>) => createQueryKey('list9', options);
-
-/**
- * List the hosts the caller can reach
- *
- * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
- */
-export const list9Options = (options?: Options<List9Data>) => queryOptions<List9Response, List9Error, List9Response, ReturnType<typeof list9QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list9({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: list9QueryKey(options)
-});
-
-export const list10QueryKey = (options?: Options<List10Data>) => createQueryKey('list10', options);
-
-/**
- * List the caller’s pairing tokens
- *
- * Both source addresses are here: where each token was minted and, once spent, where it was redeemed from. A mismatch is the interesting one.
- */
-export const list10Options = (options?: Options<List10Data>) => queryOptions<List10Response, List10Error, List10Response, ReturnType<typeof list10QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await list10({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: list10QueryKey(options)
 });
 
 /**
@@ -1495,6 +1397,104 @@ export const renameMutation = (options?: Partial<Options<RenameData>>): UseMutat
     const mutationOptions: UseMutationOptions<RenameResponse, RenameError, Options<RenameData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await rename({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listInstallationsQueryKey = (options?: Options<ListInstallationsData>) => createQueryKey('listInstallations', options);
+
+/**
+ * List the workspace’s connected GitHub installations
+ *
+ * A read of the workspace’s own rows, not of GitHub. An empty list is what the console reads as “connect GitHub”, including on a deployment with no App configured.
+ */
+export const listInstallationsOptions = (options?: Options<ListInstallationsData>) => queryOptions<ListInstallationsResponse, ListInstallationsError, ListInstallationsResponse, ReturnType<typeof listInstallationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listInstallations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listInstallationsQueryKey(options)
+});
+
+/**
+ * Connect a GitHub App installation to the workspace
+ *
+ * Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.
+ */
+export const connectInstallationMutation = (options?: Partial<Options<ConnectInstallationData>>): UseMutationOptions<ConnectInstallationResponse, ConnectInstallationError, Options<ConnectInstallationData>> => {
+    const mutationOptions: UseMutationOptions<ConnectInstallationResponse, ConnectInstallationError, Options<ConnectInstallationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await connectInstallation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listInstallationRepositoriesQueryKey = (options: Options<ListInstallationRepositoriesData>) => createQueryKey('listInstallationRepositories', options);
+
+/**
+ * List the repositories an installation covers
+ *
+ * Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.
+ */
+export const listInstallationRepositoriesOptions = (options: Options<ListInstallationRepositoriesData>) => queryOptions<ListInstallationRepositoriesResponse, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ReturnType<typeof listInstallationRepositoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listInstallationRepositories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listInstallationRepositoriesQueryKey(options)
+});
+
+export const listRepositoryBranchesQueryKey = (options: Options<ListRepositoryBranchesData>) => createQueryKey('listRepositoryBranches', options);
+
+/**
+ * List a repository’s branches
+ *
+ * Answered live by GitHub, uncached: this is read once while a checkout is being created, and the branch someone just pushed is the one they are looking for. Each branch is offered as a base; the working branch is always the session’s.
+ */
+export const listRepositoryBranchesOptions = (options: Options<ListRepositoryBranchesData>) => queryOptions<ListRepositoryBranchesResponse, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ReturnType<typeof listRepositoryBranchesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryBranches({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryBranchesQueryKey(options)
+});
+
+/**
+ * Disconnect a GitHub App installation
+ *
+ * The workspace gives up its claim. Nothing is uninstalled on GitHub — that is done from the App’s page there — and re-running the install redirect reconnects the same installation.
+ */
+export const disconnectInstallationMutation = (options?: Partial<Options<DisconnectInstallationData>>): UseMutationOptions<DisconnectInstallationResponse, DisconnectInstallationError, Options<DisconnectInstallationData>> => {
+    const mutationOptions: UseMutationOptions<DisconnectInstallationResponse, DisconnectInstallationError, Options<DisconnectInstallationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await disconnectInstallation({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1781,7 +1781,7 @@ export const listProjectsQueryKey = (options?: Options<ListProjectsData>) => cre
 /**
  * List the projects in the caller’s workspace
  *
- * Newest first. Archived projects are left out unless asked for.
+ * Newest first.
  */
 export const listProjectsOptions = (options?: Options<ListProjectsData>) => queryOptions<ListProjectsResponse, ListProjectsError, ListProjectsResponse, ReturnType<typeof listProjectsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1795,25 +1795,6 @@ export const listProjectsOptions = (options?: Options<ListProjectsData>) => quer
     },
     queryKey: listProjectsQueryKey(options)
 });
-
-/**
- * Archive a project
- *
- * Retires the project so no new session can be started in it. The row is kept for ever: its slug is a directory name on every host that held it, and a retired name is never reissued. Refuses while the project still has sessions that are not closed.
- */
-export const archiveProjectMutation = (options?: Partial<Options<ArchiveProjectData>>): UseMutationOptions<ArchiveProjectResponse, ArchiveProjectError, Options<ArchiveProjectData>> => {
-    const mutationOptions: UseMutationOptions<ArchiveProjectResponse, ArchiveProjectError, Options<ArchiveProjectData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await archiveProject({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
 
 export const getProjectQueryKey = (options: Options<GetProjectData>) => createQueryKey('getProject', options);
 
@@ -1842,250 +1823,6 @@ export const updateProjectMutation = (options?: Partial<Options<UpdateProjectDat
     const mutationOptions: UseMutationOptions<UpdateProjectResponse, UpdateProjectError, Options<UpdateProjectData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateProject({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const listSessions2QueryKey = (options?: Options<ListSessions2Data>) => createQueryKey('listSessions2', options);
-
-/**
- * List the sessions in the caller’s workspace
- *
- * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
- */
-export const listSessions2Options = (options?: Options<ListSessions2Data>) => queryOptions<ListSessions2Response, ListSessions2Error, ListSessions2Response, ReturnType<typeof listSessions2QueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessions2({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: listSessions2QueryKey(options)
-});
-
-export const listSessions2InfiniteQueryKey = (options?: Options<ListSessions2Data>): QueryKey<Options<ListSessions2Data>> => createQueryKey('listSessions2', options, true);
-
-/**
- * List the sessions in the caller’s workspace
- *
- * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
- */
-export const listSessions2InfiniteOptions = (options?: Options<ListSessions2Data>) => {
-    const opts = infiniteQueryOptions<ListSessions2Response, ListSessions2Error, InfiniteData<ListSessions2Response>, QueryKey<Options<ListSessions2Data>>, number | Pick<QueryKey<Options<ListSessions2Data>>[0], 'body' | 'headers' | 'path' | 'query'>>(
-    // @ts-ignore
-    {
-        queryFn: async ({ pageParam, queryKey, signal }) => {
-            // @ts-ignore
-            const page: Pick<QueryKey<Options<ListSessions2Data>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
-                query: {
-                    page: pageParam
-                }
-            };
-            const params = createInfiniteParams(queryKey, page);
-            const { data } = await listSessions2({
-                ...options,
-                ...params,
-                signal,
-                throwOnError: true
-            });
-            return data;
-        },
-        queryKey: listSessions2InfiniteQueryKey(options)
-    });
-    return opts as Omit<typeof opts, 'initialData'>;
-};
-
-/**
- * Start a session
- *
- * Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.
- */
-export const createSessionMutation = (options?: Partial<Options<CreateSessionData>>): UseMutationOptions<CreateSessionResponse, CreateSessionError, Options<CreateSessionData>> => {
-    const mutationOptions: UseMutationOptions<CreateSessionResponse, CreateSessionError, Options<CreateSessionData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await createSession({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const listSessionEventsQueryKey = (options: Options<ListSessionEventsData>) => createQueryKey('listSessionEvents', options);
-
-/**
- * Read a session’s log
- *
- * The append-only log, which is the truth per session — the row is a fold of it. Paginated by `seq`, which is dense and assigned by the control plane.
- */
-export const listSessionEventsOptions = (options: Options<ListSessionEventsData>) => queryOptions<ListSessionEventsResponse, ListSessionEventsError, ListSessionEventsResponse, ReturnType<typeof listSessionEventsQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessionEvents({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: listSessionEventsQueryKey(options)
-});
-
-/**
- * Mint a ticket for a terminal on this session
- *
- * Single use, 60 seconds, one window. Present it as a WebSocket subprotocol, never in the query string. The relay re-checks at consume that the session is still live and the caller is still a member of the workspace, so authorization is not frozen at mint.
- */
-export const issueAttachTicketMutation = (options?: Partial<Options<IssueAttachTicketData>>): UseMutationOptions<IssueAttachTicketResponse, IssueAttachTicketError, Options<IssueAttachTicketData>> => {
-    const mutationOptions: UseMutationOptions<IssueAttachTicketResponse, IssueAttachTicketError, Options<IssueAttachTicketData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await issueAttachTicket({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Stop a session
- *
- * Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.
- */
-export const stopSessionMutation = (options?: Partial<Options<StopSessionData>>): UseMutationOptions<StopSessionResponse, StopSessionError, Options<StopSessionData>> => {
-    const mutationOptions: UseMutationOptions<StopSessionResponse, StopSessionError, Options<StopSessionData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await stopSession({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Restart a session
- *
- * Recreates window 0 in the worktrees the session already has — what a host reboot needs. It records a request: the session becomes open when the host says it did.
- */
-export const restartSessionMutation = (options?: Partial<Options<RestartSessionData>>): UseMutationOptions<RestartSessionResponse, RestartSessionError, Options<RestartSessionData>> => {
-    const mutationOptions: UseMutationOptions<RestartSessionResponse, RestartSessionError, Options<RestartSessionData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await restartSession({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Add a repository to a running session
- *
- * The checkout takes the session’s own branch, created from the base given here or the repository’s default, and a directory name no checkout of this session has ever used.
- */
-export const addSessionCheckoutMutation = (options?: Partial<Options<AddSessionCheckoutData>>): UseMutationOptions<AddSessionCheckoutResponse, AddSessionCheckoutError, Options<AddSessionCheckoutData>> => {
-    const mutationOptions: UseMutationOptions<AddSessionCheckoutResponse, AddSessionCheckoutError, Options<AddSessionCheckoutData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await addSessionCheckout({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Remove a repository from a session
- *
- * Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.
- */
-export const removeSessionCheckoutMutation = (options?: Partial<Options<RemoveSessionCheckoutData>>): UseMutationOptions<RemoveSessionCheckoutResponse, RemoveSessionCheckoutError, Options<RemoveSessionCheckoutData>> => {
-    const mutationOptions: UseMutationOptions<RemoveSessionCheckoutResponse, RemoveSessionCheckoutError, Options<RemoveSessionCheckoutData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await removeSessionCheckout({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-/**
- * Close a session
- *
- * Pushes each checkout’s branch, then removes the worktrees and prunes. The row is never deleted: its slug is the session’s directory name on the host and a retired name is never reissued, because the coding agents key their conversation state by working directory. Refuses when a checkout has unpushed work unless the loss is accepted.
- */
-export const closeSessionMutation = (options?: Partial<Options<CloseSessionData>>): UseMutationOptions<CloseSessionResponse, CloseSessionError, Options<CloseSessionData>> => {
-    const mutationOptions: UseMutationOptions<CloseSessionResponse, CloseSessionError, Options<CloseSessionData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await closeSession({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const getSessionQueryKey = (options: Options<GetSessionData>) => createQueryKey('getSession', options);
-
-/**
- * Read one session
- *
- * With its live checkouts. Retired checkouts are left out.
- */
-export const getSessionOptions = (options: Options<GetSessionData>) => queryOptions<GetSessionResponse, GetSessionError, GetSessionResponse, ReturnType<typeof getSessionQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getSession({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getSessionQueryKey(options)
-});
-
-/**
- * Rename a session
- *
- * Display only. The slug is the session’s directory name and the last segment of its branch, and it never changes. A name typed here is never overwritten by the title derived from the first prompt.
- */
-export const renameSessionMutation = (options?: Partial<Options<RenameSessionData>>): UseMutationOptions<RenameSessionResponse, RenameSessionError, Options<RenameSessionData>> => {
-    const mutationOptions: UseMutationOptions<RenameSessionResponse, RenameSessionError, Options<RenameSessionData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await renameSession({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

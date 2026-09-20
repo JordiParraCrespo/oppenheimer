@@ -36,6 +36,9 @@ export class ConnectInstallationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Installation' })
   @RequireScopes('repositories:write')
   @ApiOperation({
+    // Named explicitly: the generated client turns an operationId into a function
+    // name, and the defaults (`list`, `connect`) would collide across resources.
+    operationId: 'connectInstallation',
     summary: 'Connect a GitHub App installation to the workspace',
     description:
       'Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.',

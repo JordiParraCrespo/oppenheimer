@@ -43,6 +43,9 @@ export class ListInstallationRepositoriesHttpController {
   @CheckPolicies({ action: 'read', subject: 'Installation' })
   @RequireScopes('repositories:read')
   @ApiOperation({
+    // Named explicitly: the generated client turns an operationId into a function
+    // name, and the defaults (`list`, `connect`) would collide across resources.
+    operationId: 'listInstallationRepositories',
     summary: 'List the repositories an installation covers',
     description:
       'Answered live by GitHub through the installation’s own token and cached for a minute. Nothing is mirrored: the installation is the allowlist and GitHub enforces it.',

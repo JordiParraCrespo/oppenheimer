@@ -95,14 +95,6 @@ function fakeCache() {
       store.delete(key);
     }),
     reset: vi.fn(async () => store.clear()),
-    // The adapter never claims a key exactly once, but the double stands in for
-    // the whole `CacheService`, so it implements the primitive the interface
-    // declares rather than a subset of it.
-    setIfAbsent: vi.fn(async (key: string, value: unknown) => {
-      if (store.has(key)) return false;
-      store.set(key, value);
-      return true;
-    }),
   };
 }
 
