@@ -29,6 +29,15 @@
   agent, host, sort) with the active filters as chips under the header;
   the account menu at the bottom with appearance and language; hosts in
   a settings drawer.
+- The sidebar **is** the console's navigation, and version 1 has no
+  other destination: no nav rows, no chrome bar over the pane, no
+  command palette, and no settings or profile page — the account menu
+  holds appearance, language and log out, and nothing else. The console
+  is one screen: a sidebar beside the pane a session opens in. The
+  settings drawer above is a later slice, and a drawer is not a route;
+  hosts are paired in onboarding until it arrives. (Decided 2026-09-21
+  with the version-1 frames; the starter's Settings and Profile screens
+  were deleted rather than left unnavigated.)
 - New session: chips for host, repository, branch; a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
@@ -48,6 +57,12 @@
   enabled then. The model list is the harness's own (a blank
   terminal has no model). Runtime
   and lifetime chips arrive with the VM slice.
+- The pane beside the sidebar has four states, and each is a URL:
+  `/sessions/new` (the composer), `/sessions/{id}` (the terminal, or the
+  provisioning pane while the session is starting, or a closed session),
+  `/sessions` (nothing open: "No sessions open", and the way to start
+  one), and anything else (a 404 that keeps the sidebar rather than a
+  bare page).
 - Provisioning: named steps with a ring, a check and a mono meta line
   (container or host, clone, checkout, start the agent), an elapsed
   clock and a status word, so a slow step is diagnosable. With several
@@ -58,7 +73,9 @@
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
 - Settings drawer: hosts with the install command, the agent prompt,
-  an online dot, and the preflight result (git, tmux, claude).
+  an online dot, and the preflight result (git, tmux, claude). Not in
+  version 1 — the frames draw no way to open it, so it is designed here
+  and built with the slice that needs it.
   Accounts arrive with the accounts slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it

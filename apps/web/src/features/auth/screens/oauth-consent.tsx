@@ -103,7 +103,9 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{group.label}</span>
                     <Badge variant="neutral">{group.levels[level].label}</Badge>
-                    {group.sensitive && <Badge variant="paused">{t('apiTokens.sensitive')}</Badge>}
+                    {group.sensitive && (
+                      <Badge variant="paused">{t('consent.sensitiveScope')}</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-ink-600">{group.levels[level].description}</p>
                 </div>
@@ -118,16 +120,6 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
           )}
 
           <p className="text-sm text-ink-600">{t('consent.effectiveNote')}</p>
-          <p className="text-sm text-ink-600">
-            {t('consent.narrowerAlternative')}{' '}
-            <Link
-              to="/settings"
-              search={{ section: 'api' }}
-              className="underline underline-offset-4 hover:text-ink-900"
-            >
-              {t('consent.apiTokensLink')}
-            </Link>
-          </p>
         </CardContent>
 
         <CardFooter className="flex justify-end gap-2">

@@ -1,3 +1,6 @@
 {
-  "toggle": "Cambiar tema"
+  "toggle": "Cambiar tema",
+  "label": "Apariencia",
+  "light": "Claro",
+  "dark": "Oscuro"
 }

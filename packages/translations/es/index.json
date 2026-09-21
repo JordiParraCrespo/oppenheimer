@@ -159,6 +159,15 @@
       "PROFILE_008": "No hemos podido contactar con el servicio de cuentas. Inténtalo de nuevo.",
       "PROFILE_CLIENT_010": "Ese tipo de archivo no se puede usar como foto de perfil.",
       "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB."
+    },
+    "notFound": {
+      "title": "Esta página no existe",
+      "description": "Puede que el enlace sea incorrecto o que lo que señalaba ya no esté.",
+      "home": "Volver"
+    },
+    "unexpected": {
+      "title": "No se ha podido dibujar esta pantalla",
+      "retry": "Reintentar"
     }
   },
   "auth": {
@@ -281,16 +290,32 @@
     "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
   },
   "sessions": {
-    "title": "Sesiones",
-    "subtitle": "Cada sesión es un worktree con una terminal en una máquina tuya.",
-    "newSession": "Nueva sesión",
-    "emptyTitle": "Aún no hay sesiones",
-    "emptyDescription": "Añade una máquina en Ajustes y arranca tu primera sesión.",
+    "home": {
+      "emptyTitle": "No hay sesiones abiertas",
+      "emptyDescription": "Arranca una y la terminal ocupa este panel.",
+      "openTitle": "Ninguna sesión abierta",
+      "openDescription": "Elige una en la barra lateral o arranca otra."
+    },
+    "provisioning": {
+      "lead": "Preparando el worktree en tu máquina.",
+      "failedLead": "La máquina no ha podido arrancar esta sesión.",
+      "step": "Arrancando la sesión"
+    },
+    "state": {
+      "starting": "Arrancando",
+      "running": "En marcha",
+      "idle": "Inactiva",
+      "stopped": "Detenida",
+      "failed": "Fallida"
+    },
+    "closed": {
+      "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+    },
     "new": {
       "title": "Nueva sesión",
       "subtitle": "Elige máquina, repositorio, rama y agente.",
       "emptyTitle": "Llega con la primera máquina",
-      "emptyDescription": "El formulario de sesión aparece cuando haya una máquina emparejada. Añade una en Ajustes → Máquinas."
+      "emptyDescription": "El formulario de sesión llega en cuanto vinculas un host."
     },
     "session": {
       "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
@@ -328,19 +353,16 @@
   "nav": {
     "menu": "Menú",
     "logOut": "Cerrar sesión",
-    "apiTokens": "Tokens de API",
     "commandEmpty": "Sin resultados.",
     "commandPlaceholder": "Busca páginas y acciones…",
     "goTo": "Ir a",
     "primaryNavigation": "Navegación principal",
     "profile": "Perfil",
     "search": "Buscar",
-    "settings": "Ajustes",
     "team": "Equipo",
     "users": "Usuarios",
     "roles": "Roles",
     "toggleSidebar": "Mostrar u ocultar el menú",
-    "viewProfile": "Ver perfil",
     "sessions": "Sesiones",
     "newSession": "Nueva sesión"
   },
@@ -437,57 +459,19 @@
     "en": "English",
     "es": "Español"
   },
-  "apiTokens": {
-    "title": "Tokens de API",
-    "description": "Los tokens permiten que scripts, CI y agentes de IA actúen en tu nombre solo con los permisos que elijas.",
-    "create": "Crear un token",
-    "createDescription": "Un token nunca puede hacer más que tú. Lo que no tienes permitido aparece desactivado.",
-    "createButton": "Crear token",
-    "name": "Nombre",
-    "namePlaceholder": "Despliegue de CI, Claude, portátil…",
-    "permissions": "Permisos",
-    "permissionsHint": "Editar incluye Leer. Concede lo mínimo necesario.",
-    "organizations": "Organizaciones",
-    "organizationsHint": "Déjalas sin marcar para que el token siga tus membresías.",
-    "expiry": "Caduca",
-    "never": "Nunca",
-    "days": "{{count}} días",
-    "sensitive": "Sensible",
-    "levels": {
-      "none": "Sin acceso"
-    },
-    "yourTokens": "Tus tokens",
-    "yourTokensDescription": "Revocar un token tiene efecto inmediato.",
-    "empty": "Todavía no tienes tokens de API.",
-    "prefix": "Prefijo",
-    "status": "Estado",
-    "lastUsed": "Último uso",
-    "neverUsed": "Nunca",
-    "active": "Activo",
-    "expired": "Caducado",
-    "revoked": "Revocado",
-    "revoke": "Revocar",
-    "created": "Token creado",
-    "shownOnce": "Cópialo ahora: es la única vez que se muestra.",
-    "copy": "Copiar",
-    "copied": "Copiado",
-    "dismiss": "Descartar",
-    "permissionsRequired": "Selecciona al menos un permiso"
-  },
   "consent": {
     "title": "{{client}} quiere acceder a tu cuenta",
     "description": "Has iniciado sesión como {{email}}. Al aprobar podrá actuar en tu nombre con los permisos siguientes.",
     "noPermissions": "Esta aplicación no ha pedido ningún permiso.",
     "unknownScopes": "También ha pedido permisos que este despliegue no reconoce: {{scopes}}",
     "effectiveNote": "Nunca podrá hacer más de lo que permiten tus roles, y puedes desconectarla cuando quieras.",
-    "narrowerAlternative": "¿Necesitas conceder algo más limitado?",
-    "apiTokensLink": "Crea un token de API",
     "approve": "Aprobar",
     "deny": "Denegar",
     "invalidTitle": "Este enlace ha caducado",
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
-    "noRedirect": "El servidor no ha indicado a dónde continuar."
+    "noRedirect": "El servidor no ha indicado a dónde continuar.",
+    "sensitiveScope": "Sensible"
   },
   "onboarding": {
     "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
@@ -704,76 +688,6 @@
       }
     }
   },
-  "profile": {
-    "changePhoto": "Cambiar foto",
-    "details": {
-      "cancel": "Cancelar",
-      "description": "Tu información personal. Así te ven tus compañeros en todo el espacio de trabajo.",
-      "email": "Correo electrónico",
-      "emailDescription": "Se usa para iniciar sesión y recibir avisos",
-      "emailHint": "Lo gestiona tu espacio de trabajo: escribe a un administrador para cambiarlo.",
-      "firstName": "Nombre",
-      "jobTitle": "Puesto",
-      "jobTitleDescription": "Aparece en tu ficha de perfil",
-      "lastName": "Apellidos",
-      "phone": "Teléfono",
-      "save": "Guardar cambios",
-      "title": "Perfil"
-    },
-    "joined": "Se unió en {{date}}",
-    "password": {
-      "confirm": "Confirmar contraseña",
-      "confirmPlaceholder": "Repite la nueva contraseña",
-      "current": "Contraseña actual",
-      "description": "Protege tu cuenta con una contraseña sólida y verificación en dos pasos.",
-      "mismatch": "Las dos contraseñas deben coincidir.",
-      "new": "Nueva contraseña",
-      "newDescription": "Al menos 12 caracteres",
-      "newPlaceholder": "Nueva contraseña",
-      "submit": "Actualizar contraseña",
-      "title": "Contraseña",
-      "twoFactor": "Verificación en dos pasos",
-      "twoFactorDescription": "Pedir un código de tu aplicación de autenticación al iniciar sesión.",
-      "twoFactorOn": "Activada",
-      "twoFactorUnavailable": "Aún no disponible"
-    },
-    "sections": {
-      "details": "Perfil",
-      "password": "Contraseña",
-      "sessions": "Sesiones",
-      "preferences": "Preferencias"
-    },
-    "sessions": {
-      "activeNow": "Activa ahora",
-      "credentialsNote": "Aquí solo aparecen dispositivos. Las claves de API y las apps conectadas se revocan en API y webhooks: cerrar la sesión de un dispositivo no las desactiva.",
-      "description": "Dispositivos con la sesión iniciada en tu cuenta. Cierra cualquiera que no reconozcas.",
-      "empty": "No hay ningún dispositivo con la sesión iniciada.",
-      "signOut": "Cerrar sesión",
-      "signOutAll": "Cerrar el resto de sesiones",
-      "thisDevice": "Este dispositivo",
-      "title": "Sesiones",
-      "unknownDevice": "Dispositivo no reconocido",
-      "unknownLocation": "Dirección desconocida"
-    },
-    "viewTeamCard": "Ver ficha del equipo",
-    "preferences": {
-      "title": "Preferencias",
-      "description": "Cómo se ve el espacio de trabajo y qué llega a tu bandeja.",
-      "darkTheme": "Tema oscuro",
-      "darkThemeDescription": "Cambia todo el espacio de trabajo a una paleta oscura.",
-      "language": "Idioma",
-      "density": "Densidad de las tablas",
-      "densityDescription": "Altura de fila en las tablas del espacio de trabajo",
-      "densities": {
-        "comfortable": "Cómoda",
-        "compact": "Compacta"
-      },
-      "weeklyDigest": "Resumen semanal",
-      "weeklyDigestDescription": "Resumen de los lunes con lo ocurrido en tu espacio de trabajo.",
-      "productUpdates": "Novedades del producto",
-      "productUpdatesDescription": "Correos ocasionales sobre nuevas funciones."
-    }
-  },
   "public": {
     "footer": {
       "legalNavigation": "Información legal",
@@ -926,73 +840,6 @@
       "title": "Términos del servicio"
     }
   },
-  "settings": {
-    "api": {
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "create": "Crear clave",
-      "createKey": "Crear clave",
-      "createKeySubtitle": "Ponle un nombre para reconocerla luego. El secreto solo se muestra una vez.",
-      "createKeyTitle": "Crear clave de API",
-      "description": "Crea claves con permisos acotados para que tus herramientas llamen a la API en tu nombre.",
-      "expired": "Caducada",
-      "keyCreated": "Creada el {{created}} · último uso {{used}}",
-      "keyName": "Nombre de la clave",
-      "keyNameHint": "Usa una clave por sistema para poder revocarla por separado.",
-      "keyNamePlaceholder": "p. ej. web de WordPress",
-      "keyPermissions": "Permisos",
-      "keyPermissionsHint": "Una clave nunca puede hacer más que tú.",
-      "keys": "Claves de API",
-      "neverUsed": "nunca",
-      "noKeys": "Aún no hay claves de API.",
-      "noPermissionResults": "Ningún permiso coincide con la búsqueda.",
-      "revoke": "Revocar",
-      "revoked": "Revocada",
-      "searchPermissions": "Buscar permisos",
-      "secretSubtitle": "Es la única vez que se muestra el secreto. Guárdalo en un lugar seguro.",
-      "secretTitle": "Copia tu nueva clave",
-      "title": "API y webhooks"
-    },
-    "general": {
-      "description": "Cómo se llama tu espacio de trabajo y cómo lo ve todo el equipo.",
-      "logo": "Logotipo",
-      "logoHint": "PNG o SVG cuadrado, de al menos 128×128",
-      "logoUrl": "URL del logotipo",
-      "name": "Nombre de la organización",
-      "nameHint": "Se muestra en la barra lateral y a todos los miembros del espacio de trabajo",
-      "remove": "Quitar",
-      "save": "Guardar cambios",
-      "saveSuccess": "Configuración de la organización guardada",
-      "title": "General"
-    },
-    "nav": {
-      "api": "API y webhooks",
-      "general": "General",
-      "integrations": "Integraciones",
-      "label": "Secciones de configuración",
-      "notifications": "Notificaciones",
-      "security": "Seguridad",
-      "hosts": "Máquinas"
-    },
-    "saved": "Guardado",
-    "security": {
-      "description": "Todos los dispositivos con sesión iniciada en tu cuenta, y una forma de cerrar cualquiera de ellas.",
-      "sessions": "Sesiones activas",
-      "sessionsNote": "Aquí solo aparecen dispositivos. Las claves de API y las apps conectadas se revocan en API y webhooks: cerrar la sesión de un dispositivo no las desactiva.",
-      "signOut": "Cerrar sesión",
-      "signOutOthers": "Cerrar las demás sesiones",
-      "thisDevice": "Este dispositivo",
-      "title": "Seguridad",
-      "unknownDevice": "Dispositivo desconocido"
-    },
-    "subtitle": "Configuración de todo el espacio de trabajo de {{organization}}.",
-    "subtitleFallback": "Configuración de todo el espacio de trabajo.",
-    "title": "Configuración",
-    "hosts": {
-      "emptyTitle": "Aún no hay máquinas",
-      "emptyDescription": "Una máquina es un ordenador tuyo. Emparejarla es pegar un comando; aparece aquí en cuanto se conecta."
-    }
-  },
   "table": {
     "clearFilter": "Quitar el filtro",
     "clearSelection": "Quitar la selección",
@@ -1007,7 +854,10 @@
     "selected_other": "{{count}} seleccionados"
   },
   "theme": {
-    "toggle": "Cambiar tema"
+    "toggle": "Cambiar tema",
+    "label": "Apariencia",
+    "light": "Claro",
+    "dark": "Oscuro"
   },
   "toasts": {
     "copied": "Copiado al portapapeles.",

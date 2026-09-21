@@ -72,15 +72,15 @@ test.describe('web auth UI', () => {
   test('the redirect brings a deep link back with its search params', async ({ page }) => {
     const { user } = await provisionedUser('uideep');
 
-    await page.goto('/settings?section=security');
+    await page.goto('/sessions/new?from=deep-link');
     await expect(page).toHaveURL(/\/login/, { timeout: 20_000 });
 
     await page.fill('#email', user.email);
     await page.fill('#password', user.password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 
-    // `href`, not `pathname`: the section the reader asked for survives.
-    await expect(page).toHaveURL(/\/settings\?section=security/, { timeout: 20_000 });
+    // `href`, not `pathname`: what the reader asked for survives the round trip.
+    await expect(page).toHaveURL(/\/sessions\/new\?from=deep-link/, { timeout: 20_000 });
   });
 
   test('after sign-out the sessions list is closed again', async ({ page }) => {

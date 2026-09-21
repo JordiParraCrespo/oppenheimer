@@ -117,5 +117,14 @@
     "PROFILE_008": "We could not reach the account service. Please try again.",
     "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
     "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB."
+  },
+  "notFound": {
+    "title": "That page does not exist",
+    "description": "The link may be wrong, or what it pointed at is gone.",
+    "home": "Take me back"
+  },
+  "unexpected": {
+    "title": "This screen could not be drawn",
+    "retry": "Try again"
   }
 }

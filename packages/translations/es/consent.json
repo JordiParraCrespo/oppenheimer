@@ -4,12 +4,11 @@
   "noPermissions": "Esta aplicación no ha pedido ningún permiso.",
   "unknownScopes": "También ha pedido permisos que este despliegue no reconoce: {{scopes}}",
   "effectiveNote": "Nunca podrá hacer más de lo que permiten tus roles, y puedes desconectarla cuando quieras.",
-  "narrowerAlternative": "¿Necesitas conceder algo más limitado?",
-  "apiTokensLink": "Crea un token de API",
   "approve": "Aprobar",
   "deny": "Denegar",
   "invalidTitle": "Este enlace ha caducado",
   "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
   "backToSessions": "Volver a las sesiones",
-  "noRedirect": "El servidor no ha indicado a dónde continuar."
+  "noRedirect": "El servidor no ha indicado a dónde continuar.",
+  "sensitiveScope": "Sensible"
 }
