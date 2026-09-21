@@ -252,3 +252,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   than unreachable copy. The console builds its GitHub install link from
   `github_app_install_url` on `GET /health/capabilities`; the browser
   keeps no copy of the App slug.
+- 2026-09-21: **the console is one screen.** The sidebar is the
+  navigation — New session, the session list, the account menu — and the
+  pane beside it is a route: the composer, a terminal, the provisioning
+  steps, a closed session, "no sessions open", or a 404 that keeps the
+  sidebar. The starter's chrome went with it: no 56px bar over the pane,
+  no ⌘K palette, and no Settings or Profile page — those screens and
+  their features were deleted rather than left unnavigated, and
+  appearance and language moved into the account menu, which is where
+  the frames put them. The shell learned two things to make this the
+  console's shape without changing the control plane's: `chrome={false}`
+  and a per-route `pane` (`measure` or `full`, so a terminal gets the
+  whole content area). Hosts are paired in onboarding until the settings
+  drawer arrives (05).

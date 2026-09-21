@@ -1,9 +1,25 @@
 {
-  "title": "Sesiones",
-  "subtitle": "Cada sesión es un worktree con una terminal en una máquina tuya.",
-  "newSession": "Nueva sesión",
-  "emptyTitle": "Aún no hay sesiones",
-  "emptyDescription": "Vincula un host y arranca tu primera sesión.",
+  "home": {
+    "emptyTitle": "No hay sesiones abiertas",
+    "emptyDescription": "Arranca una y la terminal ocupa este panel.",
+    "openTitle": "Ninguna sesión abierta",
+    "openDescription": "Elige una en la barra lateral o arranca otra."
+  },
+  "provisioning": {
+    "lead": "Preparando el worktree en tu máquina.",
+    "failedLead": "La máquina no ha podido arrancar esta sesión.",
+    "step": "Arrancando la sesión"
+  },
+  "state": {
+    "starting": "Arrancando",
+    "running": "En marcha",
+    "idle": "Inactiva",
+    "stopped": "Detenida",
+    "failed": "Fallida"
+  },
+  "closed": {
+    "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+  },
   "new": {
     "title": "Nueva sesión",
     "subtitle": "Elige máquina, repositorio, rama y agente.",

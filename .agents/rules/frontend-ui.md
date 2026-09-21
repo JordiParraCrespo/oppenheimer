@@ -100,7 +100,9 @@ and the bullet after this one is why.
   invitations in the members table) are dropped by a facet, not left in.
 - Two tables on one route each take a `prefix`, or they fight over `?q=`.
 - A route with `validateSearch` must carry unknown keys through, or it deletes
-  what the table wrote on the next navigation. `/settings` is the example.
+  what the table wrote on the next navigation. `/settings` was the example
+  until the console's settings page was deleted; `/login` is the one left, and
+  it says so in its own comment.
 - A list the server hands over whole is sliced with the kit's `paginateRows`.
 
 ## A gated nav row's permissions are the endpoint's own

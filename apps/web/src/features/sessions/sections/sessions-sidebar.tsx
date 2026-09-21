@@ -1,4 +1,4 @@
-import { Button, SessionItem, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, SessionItem, SessionList, Skeleton } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionState } from '@oppenheimer/frontend-consumer';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
@@ -26,6 +26,13 @@ const DOT: Record<SessionState, 'running' | 'idle' | 'failed' | 'pending' | 'com
  * feature rather than kit because it reads a product hook; the brand row above
  * it and the account menu below it are the shell's.
  *
+ * The measurements are the export's, so this composes rather than styles: the
+ * button block sits in 12px with 10px under it, the list head is
+ * `.op-listhead` (2px/12px/6px, an 11px uppercase title against a mono count),
+ * and only the list scrolls, inside `.op-sidebar__scroll`'s 8px/12px/20px. The
+ * rows themselves are the design system's `SessionList` and `SessionItem`,
+ * which are already cut to this artboard.
+ *
  * The filter menu the artboard puts beside the count (repository, agent, host,
  * sort) is not here yet: the count is, because it is the list's own length.
  */
@@ -35,34 +42,40 @@ export function SessionsSidebar() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
-    <div className="flex min-h-0 flex-col gap-3 px-3">
-      <Button size="lg" block render={<Link to="/sessions/new" />}>
-        {t('nav.newSession')}
-      </Button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="px-3 pb-2.5">
+        <Button size="sm" block render={<Link to="/sessions/new" />}>
+          {t('nav.newSession')}
+        </Button>
+      </div>
 
-      <div className="flex items-center justify-between gap-2 px-2">
-        <span className="text-[11px] tracking-[0.04em] text-fg-subtle uppercase">
+      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
+        <span className="min-w-0 flex-1 text-[11px] tracking-[0.04em] text-fg-muted uppercase">
           {t('nav.sessions')}
         </span>
         {/* No count until the list has settled: a zero under a request that
             has not answered reads as "you have none", which is a different
             thing from "not yet known". */}
         {sessions ? (
-          <span className="figures text-xs text-fg-subtle">{sessions.length}</span>
+          <span className="figures text-[11px] text-fg-muted">{sessions.length}</span>
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-col gap-px overflow-y-auto">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pt-2 pb-5">
         {isPending ? (
-          <>
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </>
+          <SessionList>
+            <Skeleton className="h-[30px] w-full rounded-sm" />
+            <Skeleton className="h-[30px] w-full rounded-sm" />
+            <Skeleton className="h-[30px] w-full rounded-sm" />
+          </SessionList>
         ) : (
-          sessions?.map((session) => (
-            <SessionRow key={session.id} session={session} pathname={pathname} />
-          ))
+          // Nothing when there are none: the empty case is the pane's to
+          // explain, and a sidebar that argues with it says it twice.
+          <SessionList>
+            {sessions?.map((session) => (
+              <SessionRow key={session.id} session={session} pathname={pathname} />
+            ))}
+          </SessionList>
         )}
       </div>
     </div>

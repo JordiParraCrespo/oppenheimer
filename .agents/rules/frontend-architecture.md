@@ -118,18 +118,19 @@ name the jobs and split *those*.
   a screen subscribes to only so that one sibling below it can render the
   result belongs to that sibling.
 
-  API keys are the worked example. `ApiKeysSection` subscribes to the token
-  list because it renders the rows; `CreateApiTokenDialog` subscribes to the
-  permission catalog because it renders the picker; `CreateApiTokenForm` takes
-  neither and is handed what it needs. The shape this replaced had one screen
-  holding both queries for a card and a table below it, and passing the card
-  three props it forwarded straight to the form and read none of — so every
-  settle of the token list, a create, a revoke, a window refocus, went through
-  the create form and the picker beside it. Two siblings genuinely sharing one
-  result is a different thing and passes: `profile.tsx` fetches the profile
-  once for its hero and its details pane, and says so in a comment.
-  `pnpm check:structure` flags the single-consumer case, and flags a prop a
-  component only forwards.
+  API keys were the worked example, and the screens are gone with the
+  console's settings page, but the shape they were written against is why this
+  rule exists: one screen held the token list *and* the permission catalog for
+  a card and a table below it, and passed the card three props it forwarded
+  straight to the form and read none of — so every settle of the token list, a
+  create, a revoke, a window refocus, went through the create form and the
+  picker beside it. What stands in the console now is the same rule from the
+  other side: `SessionScreen` subscribes to the session it branches on and
+  every branch below it renders that one result, and `SessionsSidebar`
+  subscribes to the list because it draws the rows. Two siblings genuinely
+  sharing one result passes; a query a screen holds for one sibling does not,
+  and `pnpm check:structure` flags it, along with a prop a component only
+  forwards.
 
 - **A live input value is never a prop of a component that renders a list.**
   What a reader is typing is the field's state until it settles. Hand the list
@@ -171,10 +172,10 @@ name the jobs and split *those*.
   identity). Biome forbids the import.
 
   It is an optimisation, not the structure. It memoises a badly-shaped
-  component into a clean profile — measured, it took the picker above from
-  thirty-three wasted renders per click to zero, and the api-tokens screen's
-  threaded query from one to zero — so a profiler will not show you any of
-  this. That is why the two rules at the top of this list are checked rather
+  component into a clean profile — measured, it took the permission picker
+  that rule was written against from thirty-three wasted renders per click to
+  zero, and that screen's threaded query from one to zero — so a profiler will
+  not show you any of this. That is why the two rules at the top of this list are checked rather
   than profiled, and why a `*-render.spec.tsx` runs with the compiler **off**.
 
   The converse is the trap: splitting a component into files does not isolate

@@ -24,8 +24,13 @@ function workspaceInitial(name: string): string {
 
 /**
  * The workspace sidebar: brand row, the app's own body, and the user menu
- * pinned to the bottom. 244px and the hairline against the canvas both come
+ * pinned to the bottom. 264px and the hairline against the canvas both come
  * from the design system's `Sidebar`, which is already cut to this brand.
+ *
+ * The measurements are the design export's, not this file's invention: the
+ * head is one `--topbar-h` tall with 16px of leading space (`.op-sidebar__head`)
+ * and the foot is 10px/12px (`.op-sidebar__foot`), which is what keeps the
+ * brand row level with the content bar of an app that has one.
  *
  * The body is the nav list unless the app passed a `sidebar` of its own. The
  * console's is its session list, which is a feature rather than kit because
@@ -34,7 +39,7 @@ function workspaceInitial(name: string): string {
  */
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { workspace, sidebar } = useShell();
+  const { workspace, sidebar, brand, chrome = true } = useShell();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -48,24 +53,26 @@ export function AppSidebar() {
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
-    <Sidebar className="border-r border-border-subtle">
-      <SidebarHeader className="p-3">
-        <div className="flex min-w-0 items-center gap-2.5 px-2 py-2">
-          {workspace?.icon ?? (
-            <Avatar size={24} className="rounded-md after:rounded-md">
-              {workspace?.logo && (
-                <AvatarImage src={workspace.logo} alt="" className="rounded-md object-contain" />
-              )}
-              <AvatarFallback className="rounded-md bg-surface-sunken font-medium text-ink-600">
-                {workspaceInitial(workspaceName)}
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <span className="truncate text-base font-medium text-ink-900">{workspaceName}</span>
-        </div>
+    <Sidebar>
+      <SidebarHeader className="h-14 flex-none flex-row items-center justify-between gap-2 py-0 pr-3 pl-4">
+        {brand ?? (
+          <div className="flex min-w-0 items-center gap-2.5">
+            {workspace?.icon ?? (
+              <Avatar size={24} className="rounded-md after:rounded-md">
+                {workspace?.logo && (
+                  <AvatarImage src={workspace.logo} alt="" className="rounded-md object-contain" />
+                )}
+                <AvatarFallback className="rounded-md bg-surface-sunken font-medium text-ink-600">
+                  {workspaceInitial(workspaceName)}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <span className="truncate text-base font-medium text-ink-900">{workspaceName}</span>
+          </div>
+        )}
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="gap-0">
         {sidebar ?? (
           <SidebarGroup
             className="px-3 py-0"
@@ -95,7 +102,10 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      {/* The hairline above the account row is the control plane's, like the
+          bar at the top: the console's list scrolls to the foot and the
+          artboard draws no line there. */}
+      <SidebarFooter className={chrome ? undefined : 'border-t-0'}>
         <UserMenu />
       </SidebarFooter>
     </Sidebar>

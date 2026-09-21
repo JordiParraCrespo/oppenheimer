@@ -1,5 +1,5 @@
 import { heyApiClient } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
 import type { PaginatedResponse } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import {
@@ -68,13 +68,25 @@ export class SessionsRepository {
     return data.data.map(toEntity);
   }
 
+  /**
+   * One session.
+   *
+   * The failure keeps the response's status, which the other reads here do not
+   * need and this one does: the console's session route has to tell a mistyped
+   * or closed session id — a 404, and a destination that will never exist —
+   * from a read that failed and is worth retrying. `toAppError` is the same
+   * normaliser `MapApiError` uses, so a problem document the API sent still
+   * reaches the screen.
+   */
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiClient.get<SessionDto>({
+    const { data, error, response } = await heyApiClient.get<SessionDto>({
       url: `${SESSIONS_URL}/{id}`,
       path: { id },
     });
-    if (error || !data) throw new AppError(SessionsErrors.FETCH_ONE_FAILED);
+    if (error || !data) {
+      throw toAppError({ status: response?.status, body: error }, SessionsErrors.FETCH_ONE_FAILED);
+    }
     return toEntity(data);
   }
 
