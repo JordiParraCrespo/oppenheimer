@@ -16,8 +16,10 @@ import { cn } from '../lib/utils';
  *   the composer is already open.
  * - `ghost` — text only, hover wash. Toolbar and dialog dismissals.
  * - `outline` — hairline on transparent. Rare; kept for shadcn parity.
- * - `social` — the sign-in row: neutral fill, hairline, 600 weight, an 18px brand
- *   glyph before the label (`BrandGlyph`).
+ * - `social` — the sign-in row: a lit `card` surface, hairline, 600 weight, an 18px
+ *   brand glyph before the label (`BrandGlyph`). It sits on `card` rather than
+ *   `control` so the providers read as the offer on the auth screens, the way the
+ *   MVP artboards draw them, instead of as neutral secondary actions.
  * - `destructive` — red fill. "Stop run", "Log out" confirmations.
  *
  * It navigates, it is a `Link`; it acts, it is a `Button`. The one crossover is a
@@ -35,7 +37,7 @@ const buttonVariants = cva(
         outline:
           'border-border text-fg hover:border-border-strong hover:bg-hover-surface aria-expanded:bg-hover-surface',
         social:
-          'gap-2.5 border-border bg-control font-semibold text-fg hover:border-border-strong hover:bg-control-hover active:bg-control-active',
+          'gap-2.5 border-border bg-card font-semibold text-fg hover:border-border-strong hover:bg-card-hover active:bg-card-active',
         destructive: 'bg-danger text-white hover:brightness-[1.08]',
         // Legacy aliases from the starter's components; not part of the system.
         default: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',

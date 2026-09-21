@@ -1,5 +1,6 @@
 import { apiTokensKeys } from './api-tokens.queries';
 import { hostsKeys } from './hosts.queries';
+import { installationsKeys } from './installations.queries';
 import { profileKeys } from './profile.queries';
 import { sessionsKeys } from './sessions.queries';
 
@@ -13,6 +14,7 @@ import { sessionsKeys } from './sessions.queries';
 export const CONSUMER_NON_PERSISTED_FEATURES: readonly string[] = [
   sessionsKeys.all[0],
   hostsKeys.all[0],
+  installationsKeys.all[0],
   apiTokensKeys.all[0],
   profileKeys.all[0],
 ];

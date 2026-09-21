@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
+import type { HostEntity, HostPairing, HostPairingToken } from '../modules/hosts/host.entity';
 import { useConsumerApp } from './context';
 
 /**
@@ -18,6 +18,8 @@ export const hostsKeys = {
   all: ['hosts'] as const,
   lists: () => [...hostsKeys.all, 'list'] as const,
   list: () => [...hostsKeys.lists()] as const,
+  pairings: () => [...hostsKeys.all, 'pairings'] as const,
+  currentPairing: (name: string) => [...hostsKeys.all, 'pairing', 'current', name] as const,
 };
 
 /** The hosts the caller has paired: the Settings → Hosts list and New session's host chip. */
@@ -38,11 +40,59 @@ export function useHosts(
  * here: the host only appears once its runner dials in, which the list learns
  * of on its next refetch.
  */
-export function usePairHost(options?: UseMutationOptions<HostPairing, Error, void>) {
+export function usePairHost(options?: UseMutationOptions<HostPairing, Error, string>) {
   const app = useConsumerApp();
 
   return useMutation({
-    mutationFn: () => app.hosts.pair(),
+    mutationFn: (name: string) => app.hosts.pair(name),
+    ...options,
+  });
+}
+
+/**
+ * The token Add host is showing.
+ *
+ * A query rather than a mutation fired from an effect, even though minting
+ * writes: the step needs exactly one token for as long as it is open, which is
+ * what a query keyed to the screen gives — fetched once on mount, returned
+ * from cache on a re-render, and replaced by `refetch()` when the reader asks
+ * for a new one. Minting from an effect needed a ref to survive StrictMode and
+ * left the old command on screen until the next one resolved.
+ *
+ * Never cached beyond the visit: a token is single-use and hour-long, so
+ * handing a second visit the first one's command would show a secret that no
+ * longer pairs anything.
+ */
+export function useCurrentPairing(
+  name: string,
+  options?: Omit<UseQueryOptions<HostPairing, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: hostsKeys.currentPairing(name),
+    queryFn: () => app.hosts.pair(name),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
+    retry: false,
+    ...options,
+  });
+}
+
+/**
+ * The caller's pairing tokens. Add host polls this to find out whether the
+ * token it minted has been spent, and on which machine — a question the host
+ * list cannot answer for an account that already owns one.
+ */
+export function usePairingTokens(
+  options?: Omit<UseQueryOptions<HostPairingToken[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: hostsKeys.pairings(),
+    queryFn: () => app.hosts.pairings(),
     ...options,
   });
 }

@@ -1,5 +1,5 @@
 {
-  "description": "Your account is ready. Create a workspace for your team, or join one you have been invited to.",
+  "description": "Your account is ready. Name the workspace your sessions will live in.",
   "eyebrow": "Almost there",
   "signOut": "Sign out",
   "title": "Create your workspace",
@@ -26,7 +26,11 @@
       "available": "{{address}} is available.",
       "taken": "{{address}} is taken. Try another address.",
       "using": "Using {{email}}",
-      "differentAccount": "Use a different account"
+      "differentAccount": "Use a different account",
+      "claiming": "Saving...",
+      "claimFailed": "We could not save that workspace.",
+      "checkFailed": "We could not check that address. Try again in a moment.",
+      "permanent": "{{address}} is this workspace’s address."
     },
     "github": {
       "title": "Connect GitHub",
@@ -35,7 +39,10 @@
       "skip": "Skip for now",
       "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
       "connected": "{{count}} repositories · read access",
-      "change": "Change which repositories"
+      "change": "Change which repositories",
+      "failed": "We could not connect that GitHub installation.",
+      "connectedAll": "Every repository on the account",
+      "connectedPending": "Connected"
     },
     "host": {
       "title": "Add your first host",
@@ -46,7 +53,13 @@
       "tokenExpires": "Token expires in {{time}} · single use",
       "newToken": "Generate new token",
       "waiting": "Waiting for the host to connect…",
-      "ready": "git, tmux, claude ready"
+      "ready": "git, tmux, claude ready",
+      "mintFailed": "We could not create a registration token.",
+      "tokenExpired": "Token expired — generate a new one.",
+      "defaultName": "My first host",
+      "registered": "Registered — waiting for its runner",
+      "skip": "Skip for now",
+      "skipNote": "You can pair a machine later. Sessions need one before they can run."
     },
     "ready": {
       "title": "You're all set",
@@ -55,7 +68,10 @@
       "code": "Code",
       "host": "Host",
       "repos": "{{owner}} · {{count}} repos",
-      "go": "Go to the console"
+      "go": "Go to the console",
+      "noWorkspace": "No workspace yet",
+      "noGithub": "Not connected",
+      "noHost": "No host yet"
     }
   }
 }

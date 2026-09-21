@@ -20,6 +20,11 @@ import { IconButton } from './icon-button';
  * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at
  * 11.5px, no header, and an icon-only copy in the corner that flips to a green
  * check for a moment. Same copy logic, second layout.
+ *
+ * `copyLabel` and `copiedLabel` default to English because the design system
+ * carries no catalog. Any app that translates must pass its own — the defaults
+ * are for the showcase, not for a product screen, where leaving them is how a
+ * Spanish reader ends up with an English button.
  */
 function CodeBlock({
   code,
@@ -27,6 +32,7 @@ function CodeBlock({
   note,
   dim,
   layout = 'card',
+  maxLines,
   copyLabel = 'Copy',
   copiedLabel = 'Copied',
   className,
@@ -39,6 +45,16 @@ function CodeBlock({
   dim?: string;
   /** `card`: header row with a labelled Copy. `panel`: tonal panel, corner icon copy. */
   layout?: 'card' | 'panel';
+  /**
+   * Cap the visible code at roughly this many lines and scroll past it.
+   *
+   * Uncapped by default, because most snippets are a line or two. A block
+   * whose length the caller does not control — anything the server composes —
+   * passes this, or one long answer sets the height of every card beside it.
+   * Nothing is hidden: the region scrolls, and Copy takes the whole text
+   * either way.
+   */
+  maxLines?: number;
   copyLabel?: string;
   copiedLabel?: string;
 }) {
@@ -61,6 +77,11 @@ function CodeBlock({
   const head = dim && code.endsWith(dim) ? code.slice(0, -dim.length) : code;
   const tail = dim && code.endsWith(dim) ? dim : null;
 
+  // Expressed in `em` against the block's own leading, so the cap tracks the
+  // type scale instead of hard-coding a pixel height that drifts from it.
+  // biome-ignore lint/style/useNamingConvention: a CSS custom property
+  const capStyle = maxLines ? ({ '--code-max-lines': maxLines } as React.CSSProperties) : undefined;
+
   if (layout === 'panel') {
     return (
       <div
@@ -78,7 +99,14 @@ function CodeBlock({
         >
           {copied ? <CheckIcon strokeWidth={2.2} /> : <CopyIcon />}
         </IconButton>
-        <pre className="m-0 min-h-[76px] py-3 pr-10 pl-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]">
+        <pre
+          // biome-ignore lint/style/noInlineStyles: the cap is a caller-supplied number
+          style={capStyle}
+          className={cn(
+            'm-0 min-h-[76px] py-3 pr-10 pl-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
+            maxLines && 'max-h-[calc(var(--code-max-lines)*1.7em)] overflow-y-auto',
+          )}
+        >
           <code>
             {head}
             {tail ? <span className="text-fg-subtle">{tail}</span> : null}
@@ -111,7 +139,14 @@ function CodeBlock({
           </Button>
         </div>
       )}
-      <pre className="m-0 font-mono text-[12.5px] leading-[1.55] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]">
+      <pre
+        // biome-ignore lint/style/noInlineStyles: the cap is a caller-supplied number
+        style={capStyle}
+        className={cn(
+          'm-0 font-mono text-[12.5px] leading-[1.55] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
+          maxLines && 'max-h-[calc(var(--code-max-lines)*1.55em)] overflow-y-auto',
+        )}
+      >
         <code>
           {head}
           {tail ? <span className="text-fg-subtle">{tail}</span> : null}

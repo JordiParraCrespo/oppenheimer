@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientCapabilities } from '@oppenheimer/shared';
+import type { ClientDeployment } from '@oppenheimer/shared';
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { useOppenheimerApp } from './context';
 
@@ -26,8 +26,8 @@ export const capabilitiesKeys = {
  * which says nothing about what is configured — callers must not treat a
  * failed read as "capability missing".
  */
-export function useDeploymentCapabilities<TData = ClientCapabilities>(
-  options?: Omit<UseQueryOptions<ClientCapabilities, Error, TData>, 'queryKey' | 'queryFn'>,
+export function useDeploymentCapabilities<TData = ClientDeployment>(
+  options?: Omit<UseQueryOptions<ClientDeployment, Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useOppenheimerApp();
 

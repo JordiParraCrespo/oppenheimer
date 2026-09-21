@@ -11,6 +11,8 @@ export const TOKENS = {
   ApiTokensService: Symbol.for('ApiTokensService'),
   HostsRepository: Symbol.for('HostsRepository'),
   HostsService: Symbol.for('HostsService'),
+  InstallationsRepository: Symbol.for('InstallationsRepository'),
+  InstallationsService: Symbol.for('InstallationsService'),
   OrganizationsRepository: Symbol.for('OrganizationsRepository'),
   OrganizationsService: Symbol.for('OrganizationsService'),
   ProfileRepository: Symbol.for('ProfileRepository'),

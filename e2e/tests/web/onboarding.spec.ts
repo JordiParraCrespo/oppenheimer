@@ -11,26 +11,28 @@ import { registerThroughUi } from '../../support/web';
 /**
  * The first run of an account that registers without an invitation.
  *
- * Registering creates the personal workspace: one organization owned by the
- * account, no team, no roster (`product/versions/mvp/00-scope.md`). So a
- * newcomer lands on the sessions list, not on a screen asking them to make a
- * workspace first.
+ * Registering still creates the personal workspace — one organization owned by
+ * the account, no team, no roster (`product/versions/mvp/00-scope.md`) — but
+ * the account is sent to the step that *names* it rather than into the
+ * console. The workspace exists either way, so the flow is never a gate in
+ * front of a broken account; it is the naming the artboards ask for.
  */
-test('a newcomer lands in their personal workspace', async ({ page }) => {
+test('a newcomer is sent to name the workspace sign-up made', async ({ page }) => {
   const user = newUser('firstrun');
 
   await registerThroughUi(page, user);
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
-  // One workspace, owned by the account, named after it, with no team.
+  // One workspace already, owned by the account, with no team.
   const account = await findUserByEmail(user.email);
   expect(account).toBeTruthy();
   const memberships = await findOrganizationsForUser(account?.id ?? '');
   expect(memberships).toEqual([expect.objectContaining({ role: 'owner' })]);
   expect(await findTeamsForUser(account?.id ?? '')).toEqual([]);
 
-  // And it sticks: onboarding has nothing to offer an account with a workspace.
+  // And the index of onboarding still has nothing to offer them: it is the
+  // recovery screen for an account with no workspace at all.
   await page.goto('/onboarding');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 });
@@ -45,7 +47,7 @@ async function registerWithoutWorkspace(
   user: ReturnType<typeof newUser>,
 ) {
   await registerThroughUi(page, user);
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   const account = await findUserByEmail(user.email);
   await query(
     `DELETE FROM "organization" WHERE "id" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,

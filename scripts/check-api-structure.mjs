@@ -25,7 +25,11 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
+// `fileURLToPath`, not `new URL(...).pathname`: a pathname is URL-encoded, so a
+// checkout under a directory with a space in it resolves to `/Macintosh%20SSD/...`
+// and every `readdirSync` below it fails — or, worse, still relativises, and the
+// paths silently match nothing they are compared against.
+const root = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '');
 const API_SRC = join(root, 'apps/api/src');
 
 /**

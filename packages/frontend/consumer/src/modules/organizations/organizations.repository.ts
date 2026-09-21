@@ -51,6 +51,21 @@ export class OrganizationsRepository {
     return toEntity(result);
   }
 
+  /**
+   * Is this address free? Asked while the reader types it on the onboarding
+   * step, so the answer is a plain boolean rather than an entity.
+   *
+   * A failed read throws rather than reporting "taken": the onboarding step
+   * gates Continue on availability, and a network blip that answered `false`
+   * would tell somebody an address they can have is already gone.
+   */
+  @MapApiError(OrganizationsErrors.CHECK_SLUG_FAILED)
+  async checkSlug(slug: string): Promise<boolean> {
+    const result = await OrganizationsApi.checkSlug({ slug });
+    if (!result) throw new AppError(OrganizationsErrors.CHECK_SLUG_FAILED);
+    return result.available;
+  }
+
   @MapApiError(OrganizationsErrors.UPDATE_FAILED)
   async update(id: string, changes: UpdateOrganizationRequest): Promise<OrganizationEntity> {
     const result = await OrganizationsApi.update(id, changes);

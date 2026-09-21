@@ -61,6 +61,13 @@ export class RunnerReleaseConfig {
     // `stable` is the runner's own default; naming it would only add noise to
     // the line a person pastes into a terminal.
     if (this.channel !== 'stable') flags.push(`--channel ${this.channel}`);
+    // Where the installer fetches the manifest and the artifact from. The
+    // script falls back to the hosted release base when this is absent, which
+    // is the wrong host for every deployment but ours — a self-hosted install
+    // would resolve `get.oppenheimer.dev`, or fail to, and never reach the
+    // control plane it was handed. Naming it is the deployment's job precisely
+    // because the script cannot guess it.
+    if (this.releaseBaseUrl) flags.push(`--release-base ${this.releaseBaseUrl}`);
     return `curl -fsSL ${this.installUrl} | sh -s -- ${flags.join(' ')}`;
   }
 

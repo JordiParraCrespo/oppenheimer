@@ -22,7 +22,7 @@
     "description": "Keep your account secure with a strong password and two-factor authentication.",
     "mismatch": "Both passwords must be the same.",
     "new": "New password",
-    "newDescription": "At least 8 characters",
+    "newDescription": "At least 12 characters",
     "newPlaceholder": "New password",
     "submit": "Update password",
     "title": "Password",

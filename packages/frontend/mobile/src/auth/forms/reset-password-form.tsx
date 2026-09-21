@@ -10,7 +10,7 @@ import { PasswordChecklist } from '../components/password-checklist';
 import { PasswordInput } from '../components/password-input';
 import { type NewPasswordValues, newPasswordSchema } from '../lib/new-password-schema';
 
-const RULES: readonly PasswordRule[] = ['length', 'case', 'number', 'match'];
+const RULES: readonly PasswordRule[] = ['length', 'match'];
 
 export interface ResetPasswordFormProps {
   onSubmit: (values: NewPasswordValues) => void;

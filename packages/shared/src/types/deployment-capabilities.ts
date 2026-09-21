@@ -57,3 +57,20 @@ export const CLIENT_CAPABILITIES = [
 export type ClientCapability = (typeof CLIENT_CAPABILITIES)[number];
 
 export type ClientCapabilities = Record<ClientCapability, boolean>;
+
+/**
+ * What `GET /health/capabilities` answers: the flags above, plus the values a
+ * client cannot derive from them.
+ *
+ * The install URL is here rather than in the browser's own environment because
+ * it is built from `GITHUB_APP_SLUG`, which the server already holds. A second
+ * copy in a `VITE_*` variable is a thing to keep in sync by hand, and the
+ * installer fetching the hosted manifest is what that costs.
+ *
+ * `null` whenever `github_app` is false: with no App there is no page to send
+ * anyone to, and a link to `github.com/apps/undefined` is a 404 dressed as an
+ * offer.
+ */
+export interface ClientDeployment extends ClientCapabilities {
+  github_app_install_url: string | null;
+}

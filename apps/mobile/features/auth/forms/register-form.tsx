@@ -16,7 +16,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
-const RULES: readonly PasswordRule[] = ['length', 'case', 'number'];
+const RULES: readonly PasswordRule[] = ['length'];
 
 interface RegisterFormProps {
   onSubmit: (values: RegisterDto) => void;

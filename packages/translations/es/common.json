@@ -1,21 +1,22 @@
 {
   "appName": "Oppenheimer",
-  "controlAppName": "Oppenheimer Control",
-  "loading": "Cargando...",
-  "error": "Algo salió mal",
-  "save": "Guardar",
+  "back": "Volver",
   "cancel": "Cancelar",
+  "confirm": "Confirmar",
+  "controlAppName": "Oppenheimer Control",
+  "copied": "Copiado",
+  "copy": "Copiar",
+  "create": "Crear",
   "delete": "Eliminar",
   "edit": "Editar",
-  "create": "Crear",
-  "search": "Buscar",
-  "back": "Volver",
-  "next": "Siguiente",
-  "confirm": "Confirmar",
-  "orContinueWith": "O continúa con",
-  "google": "Google",
+  "error": "Algo salió mal",
   "github": "GitHub",
+  "google": "Google",
+  "loading": "Cargando...",
+  "next": "Siguiente",
   "or": "o",
+  "orContinueWith": "O continúa con",
+  "product": "Consola",
   "relative": {
     "day": "{{count}}d",
     "hour": "{{count}}h",
@@ -25,5 +26,6 @@
     "week": "{{count}}sem",
     "year": "{{count}}a"
   },
-  "product": "Consola"
+  "save": "Guardar",
+  "search": "Buscar"
 }
