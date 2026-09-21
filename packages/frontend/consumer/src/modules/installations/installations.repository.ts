@@ -1,4 +1,8 @@
-import { type ApiTypes, heyApiClient } from '@oppenheimer/api-client';
+import {
+  heyApiClient,
+  type InstallationResponseDto,
+  type RepositoryResponseDto,
+} from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
 import { InstallationEntity, RepositoryEntity } from './installation.entity';
@@ -9,9 +13,13 @@ import { InstallationsErrors } from './installations.errors';
  * writes them from the API's own OpenAPI, so a field the API renames cannot
  * stay right here and wrong there. They were hand-written once, which is how
  * `HostsRepository` read `state` for a field the API sends as `online`.
+ *
+ * Each is handed to the client as the status-keyed map it expects — see the
+ * note in `hosts.repository.ts`: a bare DTO resolves to the union of its own
+ * field types, not to the DTO.
  */
-type InstallationDto = ApiTypes.InstallationResponseDto;
-type RepositoryDto = ApiTypes.RepositoryResponseDto;
+type InstallationDto = InstallationResponseDto;
+type RepositoryDto = RepositoryResponseDto;
 
 const INSTALLATIONS_URL = '/api/v1/installations';
 
@@ -43,7 +51,9 @@ function toRepository(data: RepositoryDto): RepositoryEntity {
 export class InstallationsRepository {
   @MapApiError(InstallationsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<InstallationEntity[]> {
-    const { data, error } = await heyApiClient.get<InstallationDto[]>({ url: INSTALLATIONS_URL });
+    const { data, error } = await heyApiClient.get<{ 200: InstallationDto[] }>({
+      url: INSTALLATIONS_URL,
+    });
     // An absent body is a failed read, not an empty list — returning `[]` would
     // render "GitHub is not connected" over a request that never succeeded,
     // and send somebody to reinstall an App they already have.
@@ -61,7 +71,7 @@ export class InstallationsRepository {
    */
   @MapApiError(InstallationsErrors.CONNECT_FAILED)
   async connect(githubInstallationId: number, code: string): Promise<InstallationEntity> {
-    const { data, error } = await heyApiClient.post<InstallationDto>({
+    const { data, error } = await heyApiClient.post<{ 201: InstallationDto }>({
       url: INSTALLATIONS_URL,
       body: { githubInstallationId, code },
     });
@@ -80,7 +90,7 @@ export class InstallationsRepository {
 
   @MapApiError(InstallationsErrors.FETCH_REPOSITORIES_FAILED)
   async repositories(installationId: string): Promise<RepositoryEntity[]> {
-    const { data, error } = await heyApiClient.get<RepositoryDto[]>({
+    const { data, error } = await heyApiClient.get<{ 200: RepositoryDto[] }>({
       url: `${INSTALLATIONS_URL}/{id}/repositories`,
       path: { id: installationId },
     });
