@@ -4,12 +4,11 @@
   "noPermissions": "This application asked for no permissions.",
   "unknownScopes": "It also asked for permissions this deployment does not recognise: {{scopes}}",
   "effectiveNote": "It can never do more than your own roles allow, and you can disconnect it at any time.",
-  "narrowerAlternative": "Need to grant something narrower?",
-  "apiTokensLink": "Create an API token instead",
   "approve": "Approve",
   "deny": "Deny",
   "invalidTitle": "This link has expired",
   "invalidDescription": "Start the connection again from the application that sent you here.",
   "backToSessions": "Back to sessions",
-  "noRedirect": "The server did not say where to send you next."
+  "noRedirect": "The server did not say where to send you next.",
+  "sensitiveScope": "Sensitive"
 }

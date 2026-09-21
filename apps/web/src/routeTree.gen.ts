@@ -20,14 +20,13 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-pa
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as OnboardingFlowRouteImport } from './routes/onboarding/_flow'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as OnboardingFlowGithubRouteImport } from './routes/onboarding/_flow/github'
 import { Route as OnboardingFlowHostRouteImport } from './routes/onboarding/_flow/host'
 import { Route as OnboardingFlowReadyRouteImport } from './routes/onboarding/_flow/ready'
@@ -86,9 +85,9 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
+const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -123,12 +122,6 @@ const AuthenticatedSessionsNewRoute =
     path: '/sessions/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const OnboardingFlowGithubRoute = OnboardingFlowGithubRouteImport.update({
   id: '/github',
   path: '/github',
@@ -160,7 +153,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
-  '/profile': typeof AuthenticatedProfileRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
@@ -170,7 +163,6 @@ export interface FileRoutesByFullPath {
   '/onboarding/ready': typeof OnboardingFlowReadyRoute
   '/onboarding/workspace': typeof OnboardingFlowWorkspaceRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -181,7 +173,7 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/reset-password': typeof AuthResetPasswordRoute
-  '/profile': typeof AuthenticatedProfileRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
@@ -191,7 +183,6 @@ export interface FileRoutesByTo {
   '/onboarding/ready': typeof OnboardingFlowReadyRoute
   '/onboarding/workspace': typeof OnboardingFlowWorkspaceRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,7 +197,7 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_auth/reset-password': typeof AuthResetPasswordRoute
-  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/onboarding/_flow': typeof OnboardingFlowRouteWithChildren
   '/onboarding/': typeof OnboardingIndexRoute
@@ -217,7 +208,6 @@ export interface FileRoutesById {
   '/onboarding/_flow/ready': typeof OnboardingFlowReadyRoute
   '/onboarding/_flow/workspace': typeof OnboardingFlowWorkspaceRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,7 +221,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/profile'
+    | '/$'
     | '/oauth/consent'
     | '/onboarding/'
     | '/sessions/$sessionId'
@@ -241,7 +231,6 @@ export interface FileRouteTypes {
     | '/onboarding/ready'
     | '/onboarding/workspace'
     | '/sessions/'
-    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -252,7 +241,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/profile'
+    | '/$'
     | '/oauth/consent'
     | '/onboarding'
     | '/sessions/$sessionId'
@@ -262,7 +251,6 @@ export interface FileRouteTypes {
     | '/onboarding/ready'
     | '/onboarding/workspace'
     | '/sessions'
-    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -276,7 +264,7 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_auth/reset-password'
-    | '/_authenticated/profile'
+    | '/_authenticated/$'
     | '/oauth/consent'
     | '/onboarding/_flow'
     | '/onboarding/'
@@ -380,11 +368,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+    '/_authenticated/$': {
+      id: '/_authenticated/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AuthenticatedSplatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/oauth/consent': {
@@ -427,13 +415,6 @@ declare module '@tanstack/react-router' {
       path: '/sessions/new'
       fullPath: '/sessions/new'
       preLoaderRoute: typeof AuthenticatedSessionsNewRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/onboarding/_flow/github': {
@@ -484,19 +465,17 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
-  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

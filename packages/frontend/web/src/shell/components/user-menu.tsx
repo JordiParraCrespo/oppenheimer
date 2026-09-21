@@ -2,31 +2,46 @@ import {
   Avatar,
   AvatarFallback,
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuHeader,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  DropdownMenuValue,
   IconButton,
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
-import { ChevronsUpDown, LogOut } from '@oppenheimer/design-system-web/icons';
+import { ChevronDown, LogOut } from '@oppenheimer/design-system-web/icons';
 import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../theme';
 import { useShell } from '../hooks/use-shell';
 
+/** The appearances the menu offers, in the order the artboard lists them. */
+const THEMES = ['light', 'dark'] as const;
+
 /**
- * The account row at the foot of the sidebar: avatar, name and role, opening
- * a menu to the right. The plan row names the workspace the session is scoped
- * to, which is the one piece of context the sidebar cannot show anywhere else.
+ * The account row at the foot of the sidebar, and the menu it opens.
+ *
+ * Both are the artboard's: a 32px row of avatar, name and a chevron — no
+ * second line, because the role under someone's own name is a fact about them
+ * they already know — over a menu that is the account's email, appearance,
+ * language and the way out. Appearance and language open sideways rather than
+ * unrolling in place, so the menu is four rows tall whatever is in it, and the
+ * console loses nothing by having no chrome bar to put a theme toggle in.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();
   const { userMenuLinks = [] } = useShell();
+  const { theme, setTheme } = useTheme();
   const { data: user } = useProfile();
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
@@ -52,44 +67,29 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
           </Avatar>
         </DropdownMenuTrigger>
       ) : (
-        <DropdownMenuTrigger
-          render={
-            <SidebarMenuButton size="lg" className="gap-2.5 px-2 data-open:bg-surface-hover" />
-          }
-        >
-          <Avatar size={28}>
-            <AvatarFallback gradient="purple">{initials}</AvatarFallback>
+        <DropdownMenuTrigger render={<SidebarMenuButton aria-label={name} />}>
+          <Avatar size={22}>
+            <AvatarFallback gradient="purple" className="text-[10px]">
+              {initials}
+            </AvatarFallback>
           </Avatar>
-          <span className="min-w-0 flex-1 text-left">
-            <span className="block truncate text-sm font-medium text-ink-900">{name}</span>
-            <span className="mt-px block truncate text-xs text-ink-400">{user?.role}</span>
-          </span>
-          <ChevronsUpDown className="text-ink-400" />
+          <span className="min-w-0 flex-1 truncate text-left">{name}</span>
+          <ChevronDown className="size-3.5! text-sidebar-muted" />
         </DropdownMenuTrigger>
       )}
 
       <DropdownMenuContent
-        side={trigger === 'avatar' ? 'bottom' : 'right'}
-        align="end"
-        sideOffset={10}
-        className="w-64"
+        side={trigger === 'avatar' ? 'bottom' : 'top'}
+        align={trigger === 'avatar' ? 'end' : 'start'}
+        sideOffset={6}
+        className="w-62"
       >
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex min-w-0 items-center gap-3 px-2 py-1.5 font-normal">
-            <Avatar size={28}>
-              <AvatarFallback gradient="purple">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="grid min-w-0 flex-1 text-left leading-tight">
-              <span className="truncate text-sm font-medium">{name}</span>
-              <span className="mt-0.5 truncate text-xs text-ink-600">{user?.email}</span>
-            </div>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
+        {/* The identity line, not a second avatar: which account this is, is
+            the one thing the row below the menu cannot already show. */}
+        <DropdownMenuHeader>{user?.email}</DropdownMenuHeader>
 
         {userMenuLinks.length > 0 && (
           <>
-            <DropdownMenuSeparator />
-
             <DropdownMenuGroup>
               {userMenuLinks.map((link) => {
                 const Icon = link.icon;
@@ -101,31 +101,56 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
                 );
               })}
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
           </>
         )}
 
-        <DropdownMenuSeparator />
-
         <DropdownMenuGroup>
-          <DropdownMenuLabel>{t('language.label')}</DropdownMenuLabel>
-          {locales.map((locale) => (
-            <DropdownMenuCheckboxItem
-              key={locale}
-              checked={currentLocale === locale}
-              onCheckedChange={() => i18n.changeLanguage(locale)}
-            >
-              {t(`language.${locale}`)}
-            </DropdownMenuCheckboxItem>
-          ))}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              {t('theme.label')}
+              <DropdownMenuValue>{t(`theme.${theme}`)}</DropdownMenuValue>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {/* One choice, so radio rather than a row of ticks: the menu is
+                  saying which appearance is on, not which are. */}
+              <DropdownMenuRadioGroup
+                value={theme}
+                onValueChange={(next) => setTheme(next as (typeof THEMES)[number])}
+              >
+                {THEMES.map((option) => (
+                  <DropdownMenuRadioItem key={option} value={option}>
+                    {t(`theme.${option}`)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              {t('language.label')}
+              <DropdownMenuValue>{t(`language.${currentLocale}`)}</DropdownMenuValue>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={currentLocale}
+                onValueChange={(next) => i18n.changeLanguage(next as string)}
+              >
+                {locales.map((locale) => (
+                  <DropdownMenuRadioItem key={locale} value={locale}>
+                    {t(`language.${locale}`)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() => logout.mutate()}
-            className="text-destructive [&_svg]:text-destructive"
-          >
+          <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
             <LogOut />
             {t('nav.logOut')}
           </DropdownMenuItem>

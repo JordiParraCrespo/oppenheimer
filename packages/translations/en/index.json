@@ -159,6 +159,15 @@
       "PROFILE_008": "We could not reach the account service. Please try again.",
       "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
       "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB."
+    },
+    "notFound": {
+      "title": "That page does not exist",
+      "description": "The link may be wrong, or what it pointed at is gone.",
+      "home": "Take me back"
+    },
+    "unexpected": {
+      "title": "This screen could not be drawn",
+      "retry": "Try again"
     }
   },
   "auth": {
@@ -281,11 +290,27 @@
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
   },
   "sessions": {
-    "title": "Sessions",
-    "subtitle": "Each session is a worktree with a terminal on a host you own.",
-    "newSession": "New session",
-    "emptyTitle": "No sessions yet",
-    "emptyDescription": "Pair a host, then start your first session.",
+    "home": {
+      "emptyTitle": "No sessions open",
+      "emptyDescription": "Start one and the terminal takes over this pane.",
+      "openTitle": "No session open",
+      "openDescription": "Pick one from the sidebar, or start another."
+    },
+    "provisioning": {
+      "lead": "Setting up the worktree on your host.",
+      "failedLead": "The host could not start this session.",
+      "step": "Starting the session"
+    },
+    "state": {
+      "starting": "Starting",
+      "running": "Running",
+      "idle": "Idle",
+      "stopped": "Stopped",
+      "failed": "Failed"
+    },
+    "closed": {
+      "description": "This session has stopped. Its work is on its branch."
+    },
     "new": {
       "title": "New session",
       "subtitle": "Pick a host, a repository, a branch and an agent.",
@@ -328,19 +353,16 @@
   "nav": {
     "menu": "Menu",
     "logOut": "Log out",
-    "apiTokens": "API tokens",
     "commandEmpty": "No matches.",
     "commandPlaceholder": "Search pages and actions…",
     "goTo": "Go to",
     "primaryNavigation": "Main navigation",
     "profile": "Profile",
     "search": "Search",
-    "settings": "Settings",
     "team": "Team",
     "users": "Users",
     "roles": "Roles",
     "toggleSidebar": "Toggle sidebar",
-    "viewProfile": "View profile",
     "sessions": "Sessions",
     "newSession": "New session"
   },
@@ -437,57 +459,19 @@
     "en": "English",
     "es": "Español"
   },
-  "apiTokens": {
-    "title": "API tokens",
-    "description": "Tokens let scripts, CI and AI agents act on your behalf with only the permissions you choose.",
-    "create": "Create a token",
-    "createDescription": "A token can never do more than you can. Anything you are not permitted to do is greyed out.",
-    "createButton": "Create token",
-    "name": "Name",
-    "namePlaceholder": "CI deploy, Claude, laptop…",
-    "permissions": "Permissions",
-    "permissionsHint": "Edit includes Read. Grant the least that will do the job.",
-    "organizations": "Organizations",
-    "organizationsHint": "Leave all unticked to let the token follow your memberships.",
-    "expiry": "Expires",
-    "never": "Never",
-    "days": "{{count}} days",
-    "sensitive": "Sensitive",
-    "levels": {
-      "none": "No access"
-    },
-    "yourTokens": "Your tokens",
-    "yourTokensDescription": "Revoking a token takes effect immediately.",
-    "empty": "You have no API tokens yet.",
-    "prefix": "Prefix",
-    "status": "Status",
-    "lastUsed": "Last used",
-    "neverUsed": "Never",
-    "active": "Active",
-    "expired": "Expired",
-    "revoked": "Revoked",
-    "revoke": "Revoke",
-    "created": "Token created",
-    "shownOnce": "Copy it now — this is the only time it is shown.",
-    "copy": "Copy",
-    "copied": "Copied",
-    "dismiss": "Dismiss",
-    "permissionsRequired": "Select at least one permission"
-  },
   "consent": {
     "title": "{{client}} wants to access your account",
     "description": "Signed in as {{email}}. Approving lets it act on your behalf with the permissions below.",
     "noPermissions": "This application asked for no permissions.",
     "unknownScopes": "It also asked for permissions this deployment does not recognise: {{scopes}}",
     "effectiveNote": "It can never do more than your own roles allow, and you can disconnect it at any time.",
-    "narrowerAlternative": "Need to grant something narrower?",
-    "apiTokensLink": "Create an API token instead",
     "approve": "Approve",
     "deny": "Deny",
     "invalidTitle": "This link has expired",
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
-    "noRedirect": "The server did not say where to send you next."
+    "noRedirect": "The server did not say where to send you next.",
+    "sensitiveScope": "Sensitive"
   },
   "onboarding": {
     "description": "Your account is ready. Name the workspace your sessions will live in.",
@@ -704,76 +688,6 @@
       }
     }
   },
-  "profile": {
-    "changePhoto": "Change photo",
-    "details": {
-      "cancel": "Cancel",
-      "description": "Your personal information. This is how teammates see you across the workspace.",
-      "email": "Email",
-      "emailDescription": "Used to sign in and receive alerts",
-      "emailHint": "Managed by your workspace — contact an admin to change.",
-      "firstName": "First name",
-      "jobTitle": "Job title",
-      "jobTitleDescription": "Shown on your profile card",
-      "lastName": "Last name",
-      "phone": "Phone",
-      "save": "Save changes",
-      "title": "Profile"
-    },
-    "joined": "Joined {{date}}",
-    "password": {
-      "confirm": "Confirm password",
-      "confirmPlaceholder": "Re-enter new password",
-      "current": "Current password",
-      "description": "Keep your account secure with a strong password and two-factor authentication.",
-      "mismatch": "Both passwords must be the same.",
-      "new": "New password",
-      "newDescription": "At least 12 characters",
-      "newPlaceholder": "New password",
-      "submit": "Update password",
-      "title": "Password",
-      "twoFactor": "Two-factor authentication",
-      "twoFactorDescription": "Require a code from your authenticator app when signing in.",
-      "twoFactorOn": "On",
-      "twoFactorUnavailable": "Not available yet"
-    },
-    "sections": {
-      "details": "Profile",
-      "password": "Password",
-      "sessions": "Sessions",
-      "preferences": "Preferences"
-    },
-    "sessions": {
-      "activeNow": "Active now",
-      "credentialsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
-      "description": "Devices currently signed in to your account. Sign out anything you don't recognise.",
-      "empty": "No devices are signed in.",
-      "signOut": "Sign out",
-      "signOutAll": "Sign out all other sessions",
-      "thisDevice": "This device",
-      "title": "Sessions",
-      "unknownDevice": "Unrecognised device",
-      "unknownLocation": "Unknown address"
-    },
-    "viewTeamCard": "View team card",
-    "preferences": {
-      "title": "Preferences",
-      "description": "How the workspace looks and what lands in your inbox.",
-      "darkTheme": "Dark theme",
-      "darkThemeDescription": "Switch the whole workspace to a dark palette.",
-      "language": "Language",
-      "density": "Table density",
-      "densityDescription": "Row height in the workspace tables",
-      "densities": {
-        "comfortable": "Comfortable",
-        "compact": "Compact"
-      },
-      "weeklyDigest": "Weekly digest",
-      "weeklyDigestDescription": "Monday summary of what happened in your workspace.",
-      "productUpdates": "Product updates",
-      "productUpdatesDescription": "Occasional emails about new features."
-    }
-  },
   "public": {
     "footer": {
       "legalNavigation": "Legal information",
@@ -926,73 +840,6 @@
       "title": "Terms of service"
     }
   },
-  "settings": {
-    "api": {
-      "cancel": "Cancel",
-      "close": "Close",
-      "create": "Create key",
-      "createKey": "Create key",
-      "createKeySubtitle": "Name the key so you can recognise it later. You'll only see the secret once.",
-      "createKeyTitle": "Create API key",
-      "description": "Mint scoped keys so your own tools can call the API as you.",
-      "expired": "Expired",
-      "keyCreated": "Created {{created}} · last used {{used}}",
-      "keyName": "Key name",
-      "keyNameHint": "Use one key per system so you can revoke it independently.",
-      "keyNamePlaceholder": "e.g. WordPress site",
-      "keyPermissions": "Permissions",
-      "keyPermissionsHint": "A key can never do more than you can.",
-      "keys": "API keys",
-      "neverUsed": "never",
-      "noKeys": "No API keys yet.",
-      "noPermissionResults": "No permissions match your search.",
-      "revoke": "Revoke",
-      "revoked": "Revoked",
-      "searchPermissions": "Search permissions",
-      "secretSubtitle": "This is the only time the secret is shown. Store it somewhere safe.",
-      "secretTitle": "Copy your new key",
-      "title": "API & webhooks"
-    },
-    "general": {
-      "description": "How your workspace is named and shown to everyone on the team.",
-      "logo": "Logo",
-      "logoHint": "Square PNG or SVG, at least 128×128",
-      "logoUrl": "Logo URL",
-      "name": "Organisation name",
-      "nameHint": "Shown in the sidebar and to everyone in the workspace",
-      "remove": "Remove",
-      "save": "Save changes",
-      "saveSuccess": "Organization settings saved",
-      "title": "General"
-    },
-    "nav": {
-      "api": "API & webhooks",
-      "general": "General",
-      "integrations": "Integrations",
-      "label": "Settings sections",
-      "notifications": "Notifications",
-      "security": "Security",
-      "hosts": "Hosts"
-    },
-    "saved": "Saved",
-    "security": {
-      "description": "Every device signed in to your account, and a way to end any of them.",
-      "sessions": "Active sessions",
-      "sessionsNote": "Only devices appear here. API keys and connected apps are revoked under API & webhooks — signing out a device leaves them working.",
-      "signOut": "Sign out",
-      "signOutOthers": "Sign out all others",
-      "thisDevice": "This device",
-      "title": "Security",
-      "unknownDevice": "Unknown device"
-    },
-    "subtitle": "Workspace-wide configuration for {{organization}}.",
-    "subtitleFallback": "Workspace-wide configuration.",
-    "title": "Settings",
-    "hosts": {
-      "emptyTitle": "No hosts yet",
-      "emptyDescription": "A host is a machine you own. Pairing is one pasted command; the host appears here once it connects."
-    }
-  },
   "table": {
     "clearFilter": "Clear filter",
     "clearSelection": "Clear selection",
@@ -1007,7 +854,10 @@
     "selected_other": "{{count}} selected"
   },
   "theme": {
-    "toggle": "Toggle theme"
+    "toggle": "Toggle theme",
+    "label": "Appearance",
+    "light": "Light",
+    "dark": "Dark"
   },
   "toasts": {
     "copied": "Copied to clipboard.",

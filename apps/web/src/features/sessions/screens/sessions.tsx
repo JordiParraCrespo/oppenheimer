@@ -1,36 +1,49 @@
 import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { Terminal } from '@oppenheimer/design-system-web/icons';
-import { PageHead } from '@oppenheimer/frontend-web';
+import { Plus, Terminal } from '@oppenheimer/design-system-web/icons';
+import { useSessions } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The sessions list: the home screen of the product, and the sidebar of
- * `product/versions/mvp/05-screens.md` once sessions exist (name plus a
- * state dot from the runner's screen manifest). `useSessions` in
- * `@oppenheimer/frontend-consumer` is where the list will come from; until the
- * sessions API lands with the step-one spike this is the empty state that
- * points at New session, and it does not ask for a list that cannot be served.
+ * The console with no session open: `/sessions` itself.
+ *
+ * The sidebar is the list now, so this pane is not a second one — it is what
+ * the artboard draws in the same place a terminal goes, and it says what the
+ * pane is for: "start one and the terminal takes over this pane".
+ *
+ * It reads the list only to know which of two sentences is true. A reader with
+ * sessions came here by leaving one and is told where the others are; a reader
+ * with none is being told what the product does. Neither is a list: while the
+ * request is in flight the pane stays empty rather than flashing the wrong
+ * sentence and correcting itself.
  */
 export function SessionsScreen() {
   const { t } = useTranslation();
+  const { data: sessions } = useSessions();
+
+  if (!sessions) return null;
+
+  const hasSessions = sessions.length > 0;
 
   return (
-    <>
-      <PageHead
-        title={t('sessions.title')}
-        sub={t('sessions.subtitle')}
-        action={<Button render={<Link to="/sessions/new" />}>{t('sessions.newSession')}</Button>}
-      />
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <Terminal />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.emptyTitle')}</EmptyState.Title>
-          <EmptyState.Description>{t('sessions.emptyDescription')}</EmptyState.Description>
-        </EmptyState.Header>
-      </EmptyState>
-    </>
+    <EmptyState className="my-auto">
+      <EmptyState.Header>
+        <EmptyState.Media variant="icon">
+          <Terminal />
+        </EmptyState.Media>
+        <EmptyState.Title>
+          {t(hasSessions ? 'sessions.home.openTitle' : 'sessions.home.emptyTitle')}
+        </EmptyState.Title>
+        <EmptyState.Description>
+          {t(hasSessions ? 'sessions.home.openDescription' : 'sessions.home.emptyDescription')}
+        </EmptyState.Description>
+      </EmptyState.Header>
+      <EmptyState.Content>
+        <Button render={<Link to="/sessions/new" />}>
+          <Plus />
+          {t('nav.newSession')}
+        </Button>
+      </EmptyState.Content>
+    </EmptyState>
   );
 }

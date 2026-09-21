@@ -1,8 +1,10 @@
 # @oppenheimer/web
 
-The console: sign-up and sign-in, the sessions list and New session, the
-profile, and the workspace settings (general, hosts, security, API tokens). Platform administration is a different app,
-[`apps/admin-web`](../admin-web).
+The console: sign-up and sign-in, the first-run flow, and then one screen —
+a sidebar of sessions beside the pane a session opens in. There is no settings
+page and no profile page; the version-1 artboards have neither, and the account
+menu at the foot of the sidebar holds appearance, language and log out.
+Platform administration is a different app, [`apps/admin-web`](../admin-web).
 
 ## Stack
 
@@ -57,8 +59,9 @@ public/
 - Primitives are in `@oppenheimer/design-system-web`.
 - Domain logic is in `@oppenheimer/frontend-core` (session, users, user settings,
   capabilities, analytics) and `@oppenheimer/frontend-consumer` (sessions,
-  hosts, and the account chrome: organizations, profile, api-tokens). This app
-  loads the consumer product and never the admin one.
+  hosts, and the account chrome: organizations, profile, api-tokens — the last
+  two have no screen here yet). This app loads the consumer product and never
+  the admin one.
 
 ## More
 
