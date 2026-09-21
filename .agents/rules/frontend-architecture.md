@@ -195,6 +195,16 @@ name the jobs and split *those*.
 - **Contexts split by change rate.** A provider that holds a value and its
   setters exposes them so a toggle does not re-render the tree.
 
+## Routing is its own skill
+
+`apps/web` and `apps/admin-web` route with TanStack Router, where a file's
+name decides both its URL and the layout chain that renders it. Before adding,
+moving or guarding a route — or touching `routeTree.gen.ts`, `beforeLoad`,
+`validateSearch` or route `staticData` — read the `/tanstack-routing` skill
+(`.agents/skills/tanstack-routing/`). It carries the file-name table, the
+guard and search-param rules, and the check that proves a restructure did not
+change a URL. `apps/mobile` and `apps/admin-mobile` use expo-router instead.
+
 ## Patterns agents get wrong
 
 - Creating `components/<screen>/` at the app root. That is the pre-features
@@ -216,3 +226,8 @@ name the jobs and split *those*.
   every cell with it.
 - Reaching for `useEffect` to reset a form when a prop changes: React Hook
   Form's `values` option does it.
+- Renaming a route file without checking the URL it produces. In file-based
+  routing a rename is a URL change; `/tanstack-routing` has the diff that
+  catches it.
+- Putting two opposite guards on one shared layout route instead of giving
+  each subtree a pathless child that carries its own.
