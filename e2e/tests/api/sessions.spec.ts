@@ -1,6 +1,6 @@
-import { createHash, generateKeyPairSync } from 'node:crypto';
-import { type APIRequestContext, expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { expectProblemDocument, newContext, signedUpContext } from '../../support/auth';
+import { connectInstallation, pairHost, STUB_REPOSITORIES } from '../../support/sessions';
 
 /**
  * Sessions through the deployed pipeline.
@@ -12,83 +12,28 @@ import { expectProblemDocument, newContext, signedUpContext } from '../../suppor
  * Postgres in `apps/api/test/sessions.integration.spec.ts`; what is proved here is
  * that a caller reaches them, and that another workspace does not.
  *
- * Creating a session needs a **host** and a **connected GitHub installation**, and
- * a deployment without a runner release or a GitHub App has neither by design. So
- * the create path skips when it cannot be set up, and the refusals — which need no
- * setup at all — always run.
+ * Creating a session needs a **host** and a **connected GitHub installation**.
+ * Both are set up here through the real routes — minting a pairing token and
+ * redeeming it the way a runner does, and connecting an installation the GitHub
+ * stub serves (`support/sessions.ts`, and `e2e/README.md` for why there is a
+ * stub at all). The refusals need no setup and always run.
  */
-
-/** A machine's keypair, encoded the way the runner encodes it. */
-function hostKey() {
-  const { publicKey } = generateKeyPairSync('ed25519');
-  const raw = publicKey.export({ format: 'der', type: 'spki' }).subarray(12);
-  return {
-    base64: raw.toString('base64'),
-    fingerprint: createHash('sha256').update(raw).digest('hex'),
-  };
-}
-
-const FACTS = {
-  platform: 'linux',
-  arch: 'amd64',
-  hostname: 'e2e-box.local',
-  user: 'runner',
-  home: '/home/runner',
-  root: false,
-  tools: [
-    { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
-    { name: 'tmux', path: '/usr/bin/tmux', version: '3.5a', required: true },
-  ],
-  workspacePath: '/home/runner/oppenheimer-ai',
-  diskFreeBytes: 120_000_000_000,
-  runnerVersion: '0.1.0',
-};
-
-/** Pair a machine and return its id, or null when this deployment cannot pair one. */
-async function pairHost(api: APIRequestContext, name: string): Promise<string | null> {
-  const minted = await api.post('/api/v1/hosts/pairing', {
-    data: { name },
-    failOnStatusCode: false,
-  });
-  if (minted.status() !== 201) return null;
-  const secret = /--token (\S+)/.exec((await minted.json()).installCommand ?? '')?.[1];
-  if (!secret) return null;
-
-  const anonymous = await newContext();
-  const registered = await anonymous.post('/api/v1/hosts/register', {
-    data: { token: secret, name, publicKey: hostKey().base64, facts: FACTS },
-    failOnStatusCode: false,
-  });
-  if (registered.status() !== 201) return null;
-  return (await registered.json()).hostId as string;
-}
-
-/** The first installation this workspace has connected, if any. */
-async function anInstallation(api: APIRequestContext): Promise<string | null> {
-  const listed = await api.get('/api/v1/installations', { failOnStatusCode: false });
-  if (listed.status() !== 200) return null;
-  const rows = (await listed.json()) as { id: string }[];
-  return rows[0]?.id ?? null;
-}
 
 test.describe('Sessions', () => {
   test('a session is created, listed, stopped and keeps its log', async () => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
     const { api } = await signedUpContext('sessionowner');
 
     const hostId = await pairHost(api, 'Session box');
-    test.skip(hostId === null, 'this deployment cannot pair a host (no runner release)');
-    const installationId = await anInstallation(api);
-    test.skip(
-      installationId === null,
-      'this deployment has no connected GitHub installation to check a repository out of',
-    );
+    const installationId = await connectInstallation(api);
 
     const created = await api.post('/api/v1/sessions', {
       headers: { 'Idempotency-Key': `e2e-${Date.now()}` },
       data: {
         hostId,
         agent: 'claude-code',
-        checkouts: [{ installationId, githubRepoId: 1 }],
+        checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
       },
       failOnStatusCode: false,
     });
@@ -100,6 +45,9 @@ test.describe('Sessions', () => {
     expect(session.slug).toMatch(/^[a-z]+-[a-z]+-[0-9a-z]{6}$/);
     expect(session.name).toBe(session.slug);
     expect(session.lifecycle).toBe('starting');
+    // No launch was asked for, so the level that asks before every action is
+    // what was recorded — never one that escalates.
+    expect(session.launch).toEqual({ model: null, permission: 'ask', effort: null });
 
     const listed = await api.get('/api/v1/sessions', { failOnStatusCode: false });
     expect(listed.status()).toBe(200);
@@ -127,11 +75,15 @@ test.describe('Sessions', () => {
     expect(entries.filter((entry) => entry.kind === 'session.stopped')).toHaveLength(1);
 
     // Closing is a **request**: it has to push branches and remove worktrees, and
-    // only the host can say that happened. With no relay the session stays open with
-    // the request on its log, which is the honest state.
+    // only the host can say that happened. So the lifecycle does not move — and
+    // what it does not move *to* is the assertion, because where it stays
+    // depends on whether a host ever answered. With no relay this session never
+    // left `starting`; the rule is that closing did not resolve it.
     const closed = await api.delete(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
     expect(closed.status()).toBe(200);
-    expect((await closed.json()).lifecycle).toBe('open');
+    expect((await closed.json()).lifecycle, 'closing is a request, not an outcome').not.toBe(
+      'resolved',
+    );
 
     const afterClose = await api.get(`/api/v1/sessions/${session.id}/events`, {
       failOnStatusCode: false,
@@ -139,6 +91,63 @@ test.describe('Sessions', () => {
     const closing = (await afterClose.json()).data as { kind: string }[];
     expect(closing.some((entry) => entry.kind === 'session.close_requested')).toBe(true);
     expect(closing.some((entry) => entry.kind === 'session.closed')).toBe(false);
+  });
+
+  /**
+   * What the New session screen sets, through the API rather than a browser.
+   *
+   * The browser spec (`tests/web/new-session.spec.ts`) proves the screen sends
+   * it; this proves the route stores it — the launch on the row, the task in
+   * the log, and a name derived from that task where a namer is configured.
+   */
+  test('the launch options and the first task survive the round trip', async () => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
+    const { api } = await signedUpContext('sessionlaunch');
+    const hostId = await pairHost(api, 'Launch box');
+    const installationId = await connectInstallation(api);
+
+    const task = 'fix the wallet list empty state on mobile';
+    const created = await api.post('/api/v1/sessions', {
+      headers: { 'Idempotency-Key': `e2e-launch-${Date.now()}` },
+      data: {
+        hostId,
+        agent: 'claude-code',
+        checkouts: [
+          {
+            installationId,
+            githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId,
+            baseBranch: 'release/2026-09',
+          },
+        ],
+        launch: { model: 'opus', permission: 'auto', effort: 'high' },
+        prompt: task,
+      },
+      failOnStatusCode: false,
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    const session = await created.json();
+
+    expect(session.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    expect(session.checkouts[0].baseBranch).toBe('release/2026-09');
+    // The base is what the session branched *from*; the session works on its own.
+    expect(session.checkouts[0].branch).toContain(session.slug);
+
+    // A fresh read, because the response is built from the aggregate and the row
+    // is what a listing and a restart will read.
+    const read = await api.get(`/api/v1/sessions/${session.id}`, { failOnStatusCode: false });
+    expect((await read.json()).launch).toEqual({
+      model: 'opus',
+      permission: 'auto',
+      effort: 'high',
+    });
+
+    const log = await api.get(`/api/v1/sessions/${session.id}/events`, {
+      failOnStatusCode: false,
+    });
+    const entries = (await log.json()).data as { kind: string; payload: { text?: string } }[];
+    const prompt = entries.find((entry) => entry.kind === 'prompt.first');
+    expect(prompt?.payload.text, 'the first task is the log’s, never a column').toBe(task);
   });
 
   test('an anonymous caller cannot list or create sessions', async () => {

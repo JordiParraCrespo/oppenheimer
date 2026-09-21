@@ -1,5 +1,7 @@
 import {
   Controller,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -35,6 +37,11 @@ export class RestartSessionHttpController {
   ) {}
 
   @Post(':id/restart')
+  // 200, not Nest's default 201 for a POST: this creates nothing. It acts on a
+  // session that already exists and answers with that session. The Swagger
+  // response below has always said 200 — the runtime did not, and the one test
+  // that would have caught it was skipped for want of an installation.
+  @HttpCode(HttpStatus.OK)
   @Version('1')
   // `update Session`, not a verb of its own: the CASL model stays CRUD plus
   // `manage`, and what separates this from a read is the `sessions:write` scope.

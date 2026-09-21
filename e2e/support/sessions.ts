@@ -1,5 +1,5 @@
 import { createHash, generateKeyPairSync } from 'node:crypto';
-import { type APIRequestContext, expect } from '@playwright/test';
+import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
 import { claimInstallation } from './github-stub';
 
@@ -41,10 +41,12 @@ export async function connectInstallation(api: APIRequestContext): Promise<strin
   const githubInstallationId = 100_000 + process.pid * 100 + installationCounter;
   await claimInstallation(GITHUB_STUB_URL, githubInstallationId);
 
-  const response = await api.post('/api/v1/installations', {
-    data: { githubInstallationId, code: 'stub-oauth-code' },
-    failOnStatusCode: false,
-  });
+  const response = await withoutTripping(() =>
+    api.post('/api/v1/installations', {
+      data: { githubInstallationId, code: 'stub-oauth-code' },
+      failOnStatusCode: false,
+    }),
+  );
   expect(response.status(), await response.text()).toBe(201);
   return ((await response.json()) as { id: string }).id;
 }
@@ -76,23 +78,71 @@ const FACTS = {
 };
 
 /**
+ * Pairing is rate-limited at both ends, and both buckets are **this machine's
+ * address**: registration is anonymous, and minting is authenticated but the
+ * global throttler resolves a cookie session to its IP (the tracker says so —
+ * `request.user` is populated only when the guard runs at route level). Every
+ * worker of this suite shares one address, so a suite that pairs several
+ * machines trips five registrations or ten mints a minute.
+ *
+ * Those limits are the product's and are not a test's to weaken — one bounds
+ * guessing at a route whose whole job is redeeming a secret (F5). So the tests
+ * wait instead, and a test that pairs is `test.slow()` at its call site.
+ */
+const THROTTLE_RETRY_MS = 5_000;
+const THROTTLE_WINDOW_MS = 65_000;
+
+/**
+ * Make a throttled call, waiting the limiter out rather than working around it.
+ *
+ * A 429 here is the product working. The only correct response from a test is
+ * patience, so this retries until the window has rolled and returns whatever
+ * the route says then.
+ */
+async function withoutTripping(call: () => Promise<APIResponse>): Promise<APIResponse> {
+  const deadline = Date.now() + THROTTLE_WINDOW_MS;
+  let response = await call();
+  while (response.status() === 429 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, THROTTLE_RETRY_MS));
+    response = await call();
+  }
+  return response;
+}
+
+/**
+ * `POST /hosts/register`, retried while the throttle is closed.
+ *
+ * Exported so every spec that redeems a token shares one answer to the limit
+ * rather than four.
+ */
+export function registerHost(
+  anonymous: APIRequestContext,
+  body: Record<string, unknown>,
+): Promise<APIResponse> {
+  return withoutTripping(() =>
+    anonymous.post('/api/v1/hosts/register', { data: body, failOnStatusCode: false }),
+  );
+}
+
+/**
  * Pair a machine: mint the token the install command carries, then redeem it
  * the way a runner does — anonymously, with its own keypair.
  */
 export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
-  const minted = await api.post('/api/v1/hosts/pairing', {
-    data: { name },
-    failOnStatusCode: false,
-  });
+  const minted = await withoutTripping(() =>
+    api.post('/api/v1/hosts/pairing', { data: { name }, failOnStatusCode: false }),
+  );
   expect(minted.status(), await minted.text()).toBe(201);
   const command = ((await minted.json()) as { installCommand: string }).installCommand;
   const secret = /--token (\S+)/.exec(command)?.[1];
   expect(secret, 'the install command carries the pairing token').toBeTruthy();
 
   const anonymous = await newContext();
-  const registered = await anonymous.post('/api/v1/hosts/register', {
-    data: { token: secret, name, publicKey: hostKey().base64, facts: FACTS },
-    failOnStatusCode: false,
+  const registered = await registerHost(anonymous, {
+    token: secret,
+    name,
+    publicKey: hostKey().base64,
+    facts: FACTS,
   });
   expect(registered.status(), await registered.text()).toBe(201);
   const hostId = ((await registered.json()) as { hostId: string }).hostId;

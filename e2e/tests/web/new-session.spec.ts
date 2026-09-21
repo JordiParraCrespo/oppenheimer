@@ -27,6 +27,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
     const owner = await provisionedUser('newsession');
     const hostId = await pairHost(owner.api, 'E2E box');
     await connectInstallation(owner.api);
@@ -134,6 +136,8 @@ test.describe('New session', () => {
   test('offers the way to connect GitHub when there is a host but no repository', async ({
     page,
   }) => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
     const owner = await provisionedUser('norepo');
     await pairHost(owner.api, 'Lonely box');
 
