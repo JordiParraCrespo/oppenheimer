@@ -26,7 +26,9 @@
       "available": "{{address}} está disponible.",
       "taken": "{{address}} ya está en uso. Prueba otra dirección.",
       "using": "Usando {{email}}",
-      "differentAccount": "Usar otra cuenta"
+      "differentAccount": "Usar otra cuenta",
+      "createFailed": "No hemos podido crear ese espacio de trabajo.",
+      "creating": "Creando espacio de trabajo..."
     },
     "github": {
       "title": "Conecta GitHub",
@@ -35,7 +37,9 @@
       "skip": "Saltar por ahora",
       "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
       "connected": "{{count}} repositorios · acceso de lectura",
-      "change": "Cambiar qué repositorios"
+      "change": "Cambiar qué repositorios",
+      "failed": "No hemos podido conectar esa instalación de GitHub.",
+      "connectedAll": "Todos los repositorios de la cuenta"
     },
     "host": {
       "title": "Añade tu primer host",
@@ -46,7 +50,11 @@
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "newToken": "Generar un token nuevo",
       "waiting": "Esperando a que el host se conecte…",
-      "ready": "git, tmux, claude listos"
+      "ready": "git, tmux, claude listos",
+      "mintFailed": "No hemos podido crear un token de registro.",
+      "tokenExpired": "El token ha caducado: genera uno nuevo.",
+      "defaultName": "Mi primer host",
+      "registered": "Registrado: esperando a su runner"
     },
     "ready": {
       "title": "Todo listo",
@@ -55,7 +63,10 @@
       "code": "Código",
       "host": "Host",
       "repos": "{{owner}} · {{count}} repos",
-      "go": "Ir a la consola"
+      "go": "Ir a la consola",
+      "noWorkspace": "Aún sin espacio de trabajo",
+      "noGithub": "Sin conectar",
+      "noHost": "Aún sin host"
     }
   }
 }

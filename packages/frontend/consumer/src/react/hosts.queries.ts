@@ -38,11 +38,11 @@ export function useHosts(
  * here: the host only appears once its runner dials in, which the list learns
  * of on its next refetch.
  */
-export function usePairHost(options?: UseMutationOptions<HostPairing, Error, void>) {
+export function usePairHost(options?: UseMutationOptions<HostPairing, Error, string>) {
   const app = useConsumerApp();
 
   return useMutation({
-    mutationFn: () => app.hosts.pair(),
+    mutationFn: (name: string) => app.hosts.pair(name),
     ...options,
   });
 }

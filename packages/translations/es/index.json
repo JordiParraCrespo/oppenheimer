@@ -1,22 +1,23 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "controlAppName": "Oppenheimer Control",
-    "loading": "Cargando...",
-    "error": "Algo salió mal",
-    "save": "Guardar",
+    "back": "Volver",
     "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "controlAppName": "Oppenheimer Control",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "create": "Crear",
     "delete": "Eliminar",
     "edit": "Editar",
-    "create": "Crear",
-    "search": "Buscar",
-    "back": "Volver",
-    "next": "Siguiente",
-    "confirm": "Confirmar",
-    "orContinueWith": "O continúa con",
-    "google": "Google",
+    "error": "Algo salió mal",
     "github": "GitHub",
+    "google": "Google",
+    "loading": "Cargando...",
+    "next": "Siguiente",
     "or": "o",
+    "orContinueWith": "O continúa con",
+    "product": "Consola",
     "relative": {
       "day": "{{count}}d",
       "hour": "{{count}}h",
@@ -26,7 +27,8 @@
       "week": "{{count}}sem",
       "year": "{{count}}a"
     },
-    "product": "Consola"
+    "save": "Guardar",
+    "search": "Buscar"
   },
   "validation": {
     "title": "Error de validación",
@@ -168,7 +170,7 @@
     "lastName": "Apellido",
     "login": {
       "title": "Simple pero potente",
-      "description": "Inicia sesión en tu consola.",
+      "description": "Inicia sesión para acceder a tus espacios de trabajo.",
       "submit": "Iniciar sesión",
       "submitting": "Iniciando sesión...",
       "forgotPassword": "¿Olvidaste la contraseña?",
@@ -185,7 +187,7 @@
     },
     "register": {
       "title": "Crea tu cuenta",
-      "description": "Sesiones en tus propios hosts, desde el navegador.",
+      "description": "Tres pasos y tu primera sesión estará en marcha.",
       "passwordPlaceholder": "Crea una contraseña",
       "submit": "Crear cuenta",
       "submitting": "Creando cuenta...",
@@ -194,7 +196,7 @@
       "failed": "Error en el registro",
       "successTitle": "Cuenta creada",
       "successMessage": "Ya puedes iniciar sesión.",
-      "passwordHint": "Al menos 8 caracteres, con un número."
+      "passwordHint": "Doce caracteres como mínimo."
     },
     "forgotPassword": {
       "title": "Restablece tu contraseña",
@@ -273,7 +275,7 @@
     },
     "passwordRules": {
       "case": "Mayúsculas y minúsculas",
-      "length": "Al menos 8 caracteres",
+      "length": "Al menos 12 caracteres",
       "match": "Las dos contraseñas coinciden",
       "number": "Al menos un número"
     },
@@ -517,7 +519,9 @@
         "available": "{{address}} está disponible.",
         "taken": "{{address}} ya está en uso. Prueba otra dirección.",
         "using": "Usando {{email}}",
-        "differentAccount": "Usar otra cuenta"
+        "differentAccount": "Usar otra cuenta",
+        "createFailed": "No hemos podido crear ese espacio de trabajo.",
+        "creating": "Creando espacio de trabajo..."
       },
       "github": {
         "title": "Conecta GitHub",
@@ -526,7 +530,9 @@
         "skip": "Saltar por ahora",
         "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
         "connected": "{{count}} repositorios · acceso de lectura",
-        "change": "Cambiar qué repositorios"
+        "change": "Cambiar qué repositorios",
+        "failed": "No hemos podido conectar esa instalación de GitHub.",
+        "connectedAll": "Todos los repositorios de la cuenta"
       },
       "host": {
         "title": "Añade tu primer host",
@@ -537,7 +543,11 @@
         "tokenExpires": "El token caduca en {{time}} · un solo uso",
         "newToken": "Generar un token nuevo",
         "waiting": "Esperando a que el host se conecte…",
-        "ready": "git, tmux, claude listos"
+        "ready": "git, tmux, claude listos",
+        "mintFailed": "No hemos podido crear un token de registro.",
+        "tokenExpired": "El token ha caducado: genera uno nuevo.",
+        "defaultName": "Mi primer host",
+        "registered": "Registrado: esperando a su runner"
       },
       "ready": {
         "title": "Todo listo",
@@ -546,7 +556,10 @@
         "code": "Código",
         "host": "Host",
         "repos": "{{owner}} · {{count}} repos",
-        "go": "Ir a la consola"
+        "go": "Ir a la consola",
+        "noWorkspace": "Aún sin espacio de trabajo",
+        "noGithub": "Sin conectar",
+        "noHost": "Aún sin host"
       }
     }
   },
@@ -712,7 +725,7 @@
       "description": "Protege tu cuenta con una contraseña sólida y verificación en dos pasos.",
       "mismatch": "Las dos contraseñas deben coincidir.",
       "new": "Nueva contraseña",
-      "newDescription": "Al menos 8 caracteres",
+      "newDescription": "Al menos 12 caracteres",
       "newPlaceholder": "Nueva contraseña",
       "submit": "Actualizar contraseña",
       "title": "Contraseña",

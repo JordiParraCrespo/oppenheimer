@@ -1,24 +1,65 @@
-import { Button, Card, StepHeader, Link as TextLink } from '@oppenheimer/design-system-web';
-import { Check } from '@oppenheimer/design-system-web/icons';
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  Skeleton,
+  StepHeader,
+  Link as TextLink,
+} from '@oppenheimer/design-system-web';
+import {
+  useInstallationRepositories,
+  useInstallations,
+} from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { AuthLink } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-/** The installation the scaffold pretends GitHub returned. */
-const INSTALLATION = { owner: 'JordiParraCrespo', repositories: 12 };
+import { InstallationCard } from '@/features/organizations/components/installation-card';
+import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
+import { githubInstallUrl } from '@/features/organizations/lib/github-install';
 
 /**
- * Onboarding step 3: install the GitHub App. One primary button that, once
- * the installation exists, becomes a card naming the account and how many
- * repositories it covers, with Continue below. Skippable: the repo chip stays
- * empty until it is done.
+ * Onboarding step 3: install the GitHub App. One primary button that sends the
+ * browser to GitHub; once the installation exists it becomes a card naming the
+ * account and how many repositories it covers, with Continue below. Skippable:
+ * the repo picker stays empty until it is done.
  *
- * Scaffold: pressing Connect flips the local state; there is no round trip.
+ * The button is a plain link out, not a mutation — the install happens on
+ * GitHub. What comes back is `installation_id` and `code` on the query string,
+ * which the hook below exchanges once for the installation row.
  */
-export function OnboardingGithubScreen() {
+export function OnboardingGithubScreen({
+  installationId,
+  code,
+}: {
+  /** GitHub's installation id, present only on the return leg. */
+  installationId?: number;
+  /** The one-shot code from the same redirect. */
+  code?: string;
+}) {
   const { t } = useTranslation();
-  const [connected, setConnected] = useState(false);
+  const resolveError = useErrorMessage();
+  const installUrl = githubInstallUrl();
+
+  const { isExchanging, error: connectError } = useConnectInstallationCallback(
+    installationId,
+    code,
+  );
+  const { data: installations, isPending, error: listError } = useInstallations();
+
+  // The list is the truth about whether this workspace is connected; the
+  // callback only adds to it. Reading `connected` off the list rather than off
+  // the mutation means a reader who installed on a previous visit still sees
+  // the card when they come back to this step.
+  const installation = installations?.[0];
+  // The card shows the count, but a `components/` file never fetches, so the
+  // screen that renders it asks. Skipped entirely for an installation that
+  // covers the whole account, which has no number to show.
+  const { data: repositories } = useInstallationRepositories(
+    installation && !installation.coversEveryRepository ? installation.id : undefined,
+  );
+  const error = connectError ?? listError;
 
   return (
     <div className="flex flex-col gap-5">
@@ -32,32 +73,39 @@ export function OnboardingGithubScreen() {
         {t('onboarding.flow.github.description')}
       </StepHeader>
 
-      {connected ? (
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {resolveError(error, t('onboarding.flow.github.failed')).message}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isPending || isExchanging ? (
+        <Card className="flex-row items-center gap-3 px-[18px] py-4">
+          <Skeleton className="size-7 shrink-0 rounded-pill" />
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-2.5 w-20" />
+          </span>
+        </Card>
+      ) : installation ? (
         <div className="flex flex-col gap-5">
-          <Card className="flex-row items-center gap-3 px-[18px] py-4">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-success text-white">
-              <Check className="size-3.5" strokeWidth={2.5} aria-hidden />
-            </span>
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="figures text-[13px] text-fg">{INSTALLATION.owner}</span>
-              <span className="text-xs text-fg-muted">
-                {t('onboarding.flow.github.connected', { count: INSTALLATION.repositories })}
-              </span>
-            </span>
-          </Card>
+          <InstallationCard installation={installation} repositoryCount={repositories?.length} />
           <Button size="lg" block render={<Link to="/onboarding/host" />}>
             {t('onboarding.flow.continue')}
           </Button>
-          <TextLink
-            className="self-start text-sm"
-            render={<button type="button" onClick={() => setConnected(false)} />}
-          >
-            {t('onboarding.flow.github.change')}
-          </TextLink>
+          {installUrl && (
+            <TextLink className="self-start text-sm" render={<a href={installUrl} />}>
+              {t('onboarding.flow.github.change')}
+            </TextLink>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
-          <Button size="lg" block onClick={() => setConnected(true)}>
+          {/* No slug configured means no install page to send anyone to, so the
+              offer is disabled rather than pointing at a GitHub 404. */}
+          <Button size="lg" block disabled={!installUrl} render={<a href={installUrl ?? '#'} />}>
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">

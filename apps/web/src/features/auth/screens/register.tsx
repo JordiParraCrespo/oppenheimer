@@ -36,9 +36,11 @@ export function RegisterScreen({
       });
     }
 
-    // Sign-up creates the account and its personal workspace in one go, so
-    // the reader lands in the product, not on a sign-in screen.
-    mutate(values, { onSuccess: () => navigate({ to: '/sessions' }) });
+    // Sign-up creates the account and a workspace in one go, so the reader is
+    // never stranded without one. What it cannot do is *name* either — so the
+    // first-run flow opens on the step that does, and the console waits at the
+    // end of it. The workspace the hook made is the default that step renames.
+    mutate(values, { onSuccess: () => navigate({ to: '/onboarding/workspace' }) });
   };
 
   return (

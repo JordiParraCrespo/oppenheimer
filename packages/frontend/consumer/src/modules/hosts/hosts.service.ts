@@ -14,8 +14,9 @@ export class HostsService {
     return this.repository.findAll();
   }
 
-  pair(): Promise<HostPairing> {
-    return this.repository.pair();
+  /** Mint a registration token for a machine that will adopt `name`. */
+  pair(name: string): Promise<HostPairing> {
+    return this.repository.pair(name);
   }
 
   remove(id: string): Promise<void> {

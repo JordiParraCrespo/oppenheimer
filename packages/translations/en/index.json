@@ -1,22 +1,23 @@
 {
   "common": {
     "appName": "Oppenheimer",
-    "controlAppName": "Oppenheimer Control",
-    "loading": "Loading...",
-    "error": "Something went wrong",
-    "save": "Save",
+    "back": "Back",
     "cancel": "Cancel",
+    "confirm": "Confirm",
+    "controlAppName": "Oppenheimer Control",
+    "copied": "Copied",
+    "copy": "Copy",
+    "create": "Create",
     "delete": "Delete",
     "edit": "Edit",
-    "create": "Create",
-    "search": "Search",
-    "back": "Back",
-    "next": "Next",
-    "confirm": "Confirm",
-    "orContinueWith": "Or continue with",
-    "google": "Google",
+    "error": "Something went wrong",
     "github": "GitHub",
+    "google": "Google",
+    "loading": "Loading...",
+    "next": "Next",
     "or": "or",
+    "orContinueWith": "Or continue with",
+    "product": "Console",
     "relative": {
       "day": "{{count}}d",
       "hour": "{{count}}h",
@@ -26,7 +27,8 @@
       "week": "{{count}}w",
       "year": "{{count}}y"
     },
-    "product": "Console"
+    "save": "Save",
+    "search": "Search"
   },
   "validation": {
     "title": "Validation error",
@@ -168,7 +170,7 @@
     "lastName": "Last name",
     "login": {
       "title": "Simple but powerful",
-      "description": "Sign in to your console.",
+      "description": "Sign in to reach your workspaces.",
       "submit": "Sign in",
       "submitting": "Signing in...",
       "forgotPassword": "Forgot password?",
@@ -185,7 +187,7 @@
     },
     "register": {
       "title": "Create your account",
-      "description": "Sessions on your own hosts, in the browser.",
+      "description": "Three steps and your first session is running.",
       "passwordPlaceholder": "Create a password",
       "submit": "Create account",
       "submitting": "Creating account...",
@@ -194,7 +196,7 @@
       "failed": "Registration failed",
       "successTitle": "Account created",
       "successMessage": "You can now sign in.",
-      "passwordHint": "At least 8 characters, with a number."
+      "passwordHint": "Twelve characters minimum."
     },
     "forgotPassword": {
       "title": "Reset your password",
@@ -273,7 +275,7 @@
     },
     "passwordRules": {
       "case": "Upper & lowercase letters",
-      "length": "At least 8 characters",
+      "length": "At least 12 characters",
       "match": "Both passwords match",
       "number": "At least one number"
     },
@@ -517,7 +519,9 @@
         "available": "{{address}} is available.",
         "taken": "{{address}} is taken. Try another address.",
         "using": "Using {{email}}",
-        "differentAccount": "Use a different account"
+        "differentAccount": "Use a different account",
+        "createFailed": "We could not create that workspace.",
+        "creating": "Creating workspace..."
       },
       "github": {
         "title": "Connect GitHub",
@@ -526,7 +530,9 @@
         "skip": "Skip for now",
         "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
         "connected": "{{count}} repositories · read access",
-        "change": "Change which repositories"
+        "change": "Change which repositories",
+        "failed": "We could not connect that GitHub installation.",
+        "connectedAll": "Every repository on the account"
       },
       "host": {
         "title": "Add your first host",
@@ -537,7 +543,11 @@
         "tokenExpires": "Token expires in {{time}} · single use",
         "newToken": "Generate new token",
         "waiting": "Waiting for the host to connect…",
-        "ready": "git, tmux, claude ready"
+        "ready": "git, tmux, claude ready",
+        "mintFailed": "We could not create a registration token.",
+        "tokenExpired": "Token expired — generate a new one.",
+        "defaultName": "My first host",
+        "registered": "Registered — waiting for its runner"
       },
       "ready": {
         "title": "You're all set",
@@ -546,7 +556,10 @@
         "code": "Code",
         "host": "Host",
         "repos": "{{owner}} · {{count}} repos",
-        "go": "Go to the console"
+        "go": "Go to the console",
+        "noWorkspace": "No workspace yet",
+        "noGithub": "Not connected",
+        "noHost": "No host yet"
       }
     }
   },
@@ -712,7 +725,7 @@
       "description": "Keep your account secure with a strong password and two-factor authentication.",
       "mismatch": "Both passwords must be the same.",
       "new": "New password",
-      "newDescription": "At least 8 characters",
+      "newDescription": "At least 12 characters",
       "newPlaceholder": "New password",
       "submit": "Update password",
       "title": "Password",

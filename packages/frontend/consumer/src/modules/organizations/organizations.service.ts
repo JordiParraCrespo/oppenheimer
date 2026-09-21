@@ -21,6 +21,11 @@ export class OrganizationsService {
     return this.repository.create(dto);
   }
 
+  /** Whether an address is still free, for the onboarding step that claims one. */
+  checkSlug(slug: string): Promise<boolean> {
+    return this.repository.checkSlug(slug);
+  }
+
   /**
    * Rename the workspace or change its mark.
    *

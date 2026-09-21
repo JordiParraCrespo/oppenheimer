@@ -36,6 +36,9 @@ usage: install.sh --token <registration token> --url <control plane URL>
   --url     your control plane, e.g. https://app.oppenheimer.dev
   --name    a name for this host (default: this machine's hostname)
   --channel stable (default) or beta
+  --release-base
+            where the signed manifest and artifacts are served from; your
+            control plane puts its own in the command it hands you
   --yes     install a missing tmux without asking
   --no-deps never install anything with a package manager
 EOF

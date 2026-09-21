@@ -23,7 +23,35 @@ export const organizationsKeys = {
   all: ['organizations'] as const,
   lists: () => [...organizationsKeys.all, 'list'] as const,
   list: () => [...organizationsKeys.lists()] as const,
+  slug: (slug: string) => [...organizationsKeys.all, 'slug', slug] as const,
 };
+
+/**
+ * Whether a workspace address is free. The onboarding step asks this while the
+ * reader types, so callers debounce the value they pass — this hook is a plain
+ * query over whatever it is handed.
+ *
+ * `enabled` is the caller's: an empty address is not a question worth asking,
+ * and the step shows its neutral hint for it rather than a verdict.
+ *
+ * Deliberately not cached for long. An address is free until somebody takes
+ * it, and a stale `true` sends the reader into a create that then fails.
+ */
+export function useCheckSlug(
+  slug: string,
+  options?: Omit<UseQueryOptions<boolean, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: organizationsKeys.slug(slug),
+    queryFn: () => app.organizations.checkSlug(slug),
+    staleTime: 0,
+    gcTime: 30_000,
+    retry: false,
+    ...options,
+  });
+}
 
 /** The workspaces the signed-in user belongs to: their personal one, today. */
 export function useOrganizations(

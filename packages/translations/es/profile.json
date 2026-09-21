@@ -22,7 +22,7 @@
     "description": "Protege tu cuenta con una contraseña sólida y verificación en dos pasos.",
     "mismatch": "Las dos contraseñas deben coincidir.",
     "new": "Nueva contraseña",
-    "newDescription": "Al menos 8 caracteres",
+    "newDescription": "Al menos 12 caracteres",
     "newPlaceholder": "Nueva contraseña",
     "submit": "Actualizar contraseña",
     "title": "Contraseña",

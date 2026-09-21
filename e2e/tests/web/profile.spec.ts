@@ -267,7 +267,9 @@ test.describe('the password pane', () => {
     await page.getByLabel('Confirm password').fill('short');
     await page.getByRole('button', { name: 'Update password' }).click();
 
-    await expect(page.getByText(/at least 8/i).first()).toBeVisible();
+    // The number is `PASSWORD_MIN_LENGTH` in `@oppenheimer/shared`, read here as the
+    // copy the reader actually sees. e2e does not depend on that package.
+    await expect(page.getByText(/at least 12/i).first()).toBeVisible();
 
     await api.dispose();
   });

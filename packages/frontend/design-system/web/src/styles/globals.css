@@ -64,6 +64,11 @@
     --canvas: var(--op-gray-50); /* the page; light mode is never white */
     --background: var(--canvas);
     --card: var(--op-white); /* the only lit surface on the canvas */
+    /* A lit surface that is also a control — the social sign-in buttons — needs
+       somewhere to go on hover. It cannot be the canvas, or the button would
+       vanish into the page under the cursor, so it steps *away* from it. */
+    --card-hover: var(--op-gray-100);
+    --card-active: var(--op-gray-200);
     --popover: var(--op-white);
     --overlay: rgba(0, 0, 0, 0.32); /* the modal scrim */
 
@@ -364,6 +369,8 @@
     --canvas: #121213;
     --background: var(--canvas);
     --card: #1a1a1c;
+    --card-hover: #212124;
+    --card-active: #27272b;
     --popover: #202023;
     --overlay: rgba(0, 0, 0, 0.62);
 
@@ -635,6 +642,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-card-active: var(--card-active);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);

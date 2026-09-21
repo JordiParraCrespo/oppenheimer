@@ -26,7 +26,9 @@
       "available": "{{address}} is available.",
       "taken": "{{address}} is taken. Try another address.",
       "using": "Using {{email}}",
-      "differentAccount": "Use a different account"
+      "differentAccount": "Use a different account",
+      "createFailed": "We could not create that workspace.",
+      "creating": "Creating workspace..."
     },
     "github": {
       "title": "Connect GitHub",
@@ -35,7 +37,9 @@
       "skip": "Skip for now",
       "skipNote": "You can add repositories later in Settings. The repo picker stays empty until you do.",
       "connected": "{{count}} repositories · read access",
-      "change": "Change which repositories"
+      "change": "Change which repositories",
+      "failed": "We could not connect that GitHub installation.",
+      "connectedAll": "Every repository on the account"
     },
     "host": {
       "title": "Add your first host",
@@ -46,7 +50,11 @@
       "tokenExpires": "Token expires in {{time}} · single use",
       "newToken": "Generate new token",
       "waiting": "Waiting for the host to connect…",
-      "ready": "git, tmux, claude ready"
+      "ready": "git, tmux, claude ready",
+      "mintFailed": "We could not create a registration token.",
+      "tokenExpired": "Token expired — generate a new one.",
+      "defaultName": "My first host",
+      "registered": "Registered — waiting for its runner"
     },
     "ready": {
       "title": "You're all set",
@@ -55,7 +63,10 @@
       "code": "Code",
       "host": "Host",
       "repos": "{{owner}} · {{count}} repos",
-      "go": "Go to the console"
+      "go": "Go to the console",
+      "noWorkspace": "No workspace yet",
+      "noGithub": "Not connected",
+      "noHost": "No host yet"
     }
   }
 }
