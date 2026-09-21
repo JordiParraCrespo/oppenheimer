@@ -62,10 +62,10 @@ const query = useTableQuery<SortKey>({
 ```
 
 `apps/web/src/routes/_authenticated.tsx` mounts the shell with the app's own
-nav, and `apps/web/src/routes/_auth.tsx` mounts `AuthLayout` around both the
-sign-in screens and the onboarding flow, each with its own guard below it.
-Always import by package name; a path into `src/` fails
-`kit-through-its-entry` in the app's own rules.
+nav, and `apps/web/src/routes/_auth.tsx` mounts `AuthLayout` around both
+halves of the first walk, each with its own guard below it. Always import by
+package name; a path into `src/` fails `kit-through-its-entry` in the app's
+own rules.
 
 ## How to run it
 

@@ -31,7 +31,7 @@ apps/web/src/
     │   ├── _public.tsx     guard: signed-in → /sessions; no component
     │   ├── _public/        login · register · forgot-password · reset-password
     │   ├── onboarding.tsx  guard: signed-out → /login; no component
-    │   └── onboarding/     index · workspace · github · host · ready
+    │   └── onboarding/     index (redirects to workspace) · the four steps
     ├── _authenticated.tsx  guard: signed-out → /login; renders AppShell
     ├── _authenticated/     sessions/ · settings/ · profile
     └── about · privacy · terms · oauth/consent   (public, no layout)
@@ -134,16 +134,24 @@ things.
 
 When a layout needs to vary per page, the page declares route `staticData` and
 the layout reads it off the innermost match — the page overrides its layout
-without reaching up into it. `AuthLayout` reads three: `authWidth`,
-`authLegal`, `legalNoteKey`, declared in
-`packages/frontend/web/src/auth/lib/legal-note.ts` by augmenting
-`StaticDataRouteOption`.
+without reaching up into it. `AuthLayout` reads two keys, `authWidth` and
+`legalNoteKey`, typed by a `declare module` block that augments
+`StaticDataRouteOption` in the component's own file.
 
-Two things to get right. Test the walk with `!== undefined`, not truthiness, or
-a `false` reads as "not declared". And keep each `useMatches` selector
-returning a **concrete** type: a selector generic over the staticData key does
-not typecheck, because the router cannot resolve what it returns. See the
-`innermost()` helper in `auth-layout.tsx`.
+Three things to get right, each of which this layout got wrong first:
+
+- **Read one walk, not one per key.** A single `useMatches` whose `select`
+  returns the whole framing object beats a subscription per key. It is also
+  the only shape that typechecks cleanly: a helper generic over the staticData
+  key cannot be resolved by the router, so its selector's return type widens to
+  include the match array.
+- **Test "declared", not "truthy".** `'key' in staticData` — or `!== undefined`
+  where no falsy value is meaningful. Otherwise a legitimate `null` or `false`
+  reads as "this page said nothing" and the layout inherits.
+- **Give a key its own states rather than adding a flag beside it.**
+  `legalNoteKey` is `undefined` (the default line), a key (that line) or `null`
+  (no line). A separate boolean for "off" would be a second key that exists
+  only to be `false`, and a branch in the layout to match.
 
 ## Code splitting, preloading, and the loader decision
 

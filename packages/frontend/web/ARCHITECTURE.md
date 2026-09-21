@@ -43,8 +43,9 @@ from being unbuildable, and impossible to render in a test without mounting
 the whole app. Keeping `shell` and `auth` at the top means they compose the
 kit and nothing composes them.
 
-`AuthLayout` (top) importing `ThemeToggle` (leaf) and the `NavTo` type from
-`shell` is the direction the rule allows; `theme` importing `auth` is not.
+`AuthLayout` (top) importing `BrandLogo` (its own concern) and the `NavTo`
+type from `shell` is the direction the rule allows; `theme` importing `auth`
+is not.
 
 ## Concerns meet at their index
 
@@ -96,11 +97,13 @@ product name) and `panel` (`apps/web` passes its photograph carousel;
 
 Everything else the layout needs is route `staticData`, read off the innermost
 match that declares it, so a page overrides its layout and never reaches up
-into the layout's state:
+into the layout's state. There are two keys, `authWidth` and `legalNoteKey`,
+and the second has three answers — absent for the default terms-and-privacy
+line, a key for a page's own line, `null` for no line:
 
 ```tsx
-staticData: { authWidth: 'wide', authLegal: false }  // the onboarding steps
-staticData: { legalNoteKey: 'auth.forgotPassword.legal' }  // one page's own line
+staticData: { authWidth: 'wide', legalNoteKey: null }       // the onboarding steps
+staticData: { legalNoteKey: 'auth.forgotPassword.legal' }   // one page's own line
 ```
 
 The guard is not the layout's. `apps/web` puts its sign-in screens and its

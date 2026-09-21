@@ -9,13 +9,15 @@ import {
 import { registerThroughUi } from '../../support/web';
 
 /**
- * The first run of an account that registers without an invitation.
+ * How an account arrives in first-run, and what `/onboarding` means.
  *
- * Registering still creates the personal workspace — one organization owned by
- * the account, no team, no roster (`product/versions/mvp/00-scope.md`) — but
- * the account is sent to the step that *names* it rather than into the
- * console. The workspace exists either way, so the flow is never a gate in
- * front of a broken account; it is the naming the artboards ask for.
+ * The walk itself is `first-run.spec.ts`. This file covers the two ways in —
+ * a fresh sign-up, and the account whose sign-up hook left it with no
+ * workspace — and the fact that both land on the same step. `/onboarding` is
+ * the door to the walk, not a screen: it used to hold a second
+ * create-workspace form beside the one at `/onboarding/workspace`, and the
+ * step subsumed it once `claimPersonalWorkspace` learned to create when there
+ * is no row to name.
  */
 test('a newcomer is sent to name the workspace sign-up made', async ({ page }) => {
   const user = newUser('firstrun');
@@ -31,16 +33,19 @@ test('a newcomer is sent to name the workspace sign-up made', async ({ page }) =
   expect(memberships).toEqual([expect.objectContaining({ role: 'owner' })]);
   expect(await findTeamsForUser(account?.id ?? '')).toEqual([]);
 
-  // And the index of onboarding still has nothing to offer them: it is the
-  // recovery screen for an account with no workspace at all.
+  // And the index is a door: it opens the step rather than a screen of its own.
   await page.goto('/onboarding');
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
+  await expect(page.getByRole('heading', { name: /name your workspace/i })).toBeVisible();
 });
 
 /**
- * Onboarding stays as the recovery path for an account that has no workspace
- * (the sign-up hook is best-effort). The tests below put an account in that
- * state the only way it can happen: by removing its membership.
+ * The recovery path. Sign-up provisions the workspace, but the hook is
+ * best-effort, so an account can hold none — which every product screen reads
+ * as a refusal. `_authenticated` sends it to `/onboarding`, and from there it
+ * is the ordinary step that serves it.
+ *
+ * The only way to reach that state is to remove the membership.
  */
 async function registerWithoutWorkspace(
   page: Parameters<typeof registerThroughUi>[0],
@@ -54,29 +59,32 @@ async function registerWithoutWorkspace(
     [account?.id ?? ''],
   );
   await page.goto('/sessions');
-  await expect(page).toHaveURL(/\/onboarding/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
 }
 
-test('an account without a workspace creates one from onboarding', async ({ page }) => {
+test('an account with no workspace is served by the workspace step', async ({ page }) => {
   const user = newUser('firstrunrepair');
   await registerWithoutWorkspace(page, user);
 
-  // Not a refusal: the screen says what to do next, and no page-level alert.
-  await expect(page.getByRole('heading', { name: /create your workspace/i })).toBeVisible();
+  // Not a refusal: the step it lands on is the one that names a workspace, and
+  // there is no page-level alert about the one it does not have.
+  await expect(page.getByRole('heading', { name: /name your workspace/i })).toBeVisible();
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
   await page.getByLabel('Workspace name').fill('Nora & Co');
-  await page.getByRole('button', { name: 'Create workspace' }).click();
+  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Continue' }).click();
 
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  // On into the walk, and the claim created rather than renamed: one workspace,
+  // owned by the account, carrying the name it was just given.
+  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
 
   const account = await findUserByEmail(user.email);
   const memberships = await findOrganizationsForUser(account?.id ?? '');
   expect(memberships).toEqual([expect.objectContaining({ role: 'owner', orgName: 'Nora & Co' })]);
-  await expect(page.getByText('Nora & Co').first()).toBeVisible();
 });
 
-test('onboarding refuses an empty workspace name before asking the server', async ({ page }) => {
+test('the workspace step does not ask the server for an empty name', async ({ page }) => {
   const user = newUser('firstrunempty');
   await registerWithoutWorkspace(page, user);
 
@@ -86,16 +94,18 @@ test('onboarding refuses an empty workspace name before asking the server', asyn
       apiCalled = true;
     }
   });
-  await page.getByRole('button', { name: 'Create workspace' }).click();
 
-  await expect(page.getByText('This field is required')).toBeVisible();
+  // Continue is held until there is a name and a free address, so an empty
+  // form cannot reach the API at all.
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
   expect(apiCalled).toBe(false);
 });
 
-test('onboarding is not a trap: the newcomer can sign out', async ({ page }) => {
+test('first-run is not a trap: the newcomer can sign out', async ({ page }) => {
   const user = newUser('firstrunout');
   await registerWithoutWorkspace(page, user);
 
-  await page.getByRole('button', { name: /sign out/i }).click();
+  // Leaving has to end the session, or `/login` bounces straight back in.
+  await page.getByRole('button', { name: 'Use a different account' }).click();
   await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
 });

@@ -1,9 +1,32 @@
-import { type StaticDataRouteOption, useMatches } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import '../lib/legal-note';
 import { AuthLink } from './auth-primitives';
 import { BrandLogo } from './brand-logo';
+
+/**
+ * How a page is framed inside the auth split. Each is route `staticData`, read
+ * off the innermost match that declares it, so a page overrides its layout and
+ * no page reaches up into the layout's state to register anything.
+ */
+declare module '@tanstack/react-router' {
+  interface StaticDataRouteOption {
+    /**
+     * The legal one-liner pinned under the centred column: a key for that
+     * line, or `null` for no line at all. A page that declares nothing gets
+     * the terms-and-privacy default — which is why the onboarding steps, past
+     * the point where the reader agreed to them, say `null`.
+     */
+    legalNoteKey?: ParseKeys | null;
+    /**
+     * How wide the centred column is: `form` (340px, the auth forms), `wide`
+     * (400px, the onboarding steps) or `panel` (620px, Add your first host,
+     * whose two code cards sit side by side).
+     */
+    authWidth?: 'form' | 'wide' | 'panel';
+  }
+}
 
 export interface AuthLayoutProps {
   /** The wordmark's product suffix; defaults to `common.product`. */
@@ -23,28 +46,6 @@ const WIDTHS = {
 } as const;
 
 /**
- * The innermost match that declares a piece of framing wins, so a page
- * overrides its layout and a page that declares nothing inherits. `undefined`,
- * not falsiness, is what counts as declaring nothing — `authLegal` is a
- * boolean whose whole purpose is to be `false`.
- *
- * It takes the matches rather than calling `useMatches` itself: each caller
- * below selects a concrete type, which is what lets the router infer what the
- * selector returns.
- */
-function innermost<T>(
-  matches: ReadonlyArray<{ staticData: StaticDataRouteOption }>,
-  pick: (staticData: StaticDataRouteOption) => T | undefined,
-): T | undefined {
-  for (let i = matches.length - 1; i >= 0; i -= 1) {
-    const match = matches[i];
-    const value = match && pick(match.staticData);
-    if (value !== undefined) return value;
-  }
-  return undefined;
-}
-
-/**
  * The auth split from the MVP artboards: the wordmark top-left, a 340px form
  * column centred in the left half, the panel on the right. Below 900px the
  * panel drops away and the form takes the width; it carries no information,
@@ -55,14 +56,30 @@ function innermost<T>(
  * These screens follow the OS theme: there is no toggle here. Appearance is
  * chosen from the account menu once signed in.
  *
- * How wide the column is, whether the legal one-liner sits under it and which
- * line it is are the page's to declare as `staticData`.
+ * How wide the column is and what sits under it are the page's to declare as
+ * `staticData`. One walk reads both: the innermost match that *declares* a key
+ * wins, which is `in` rather than a truthiness test, because `null` is a
+ * legal-note answer and not an absence.
  */
 export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();
-  const legalNoteKey = useMatches({ select: (m) => innermost(m, (d) => d.legalNoteKey) });
-  const width = useMatches({ select: (m) => innermost(m, (d) => d.authWidth) ?? 'form' });
-  const legal = useMatches({ select: (m) => innermost(m, (d) => d.authLegal) ?? true });
+  const { legalNoteKey, width } = useMatches({
+    select: (matches) => {
+      let legalNoteKey: ParseKeys | null | undefined;
+      let width: keyof typeof WIDTHS | undefined;
+
+      for (let i = matches.length - 1; i >= 0; i -= 1) {
+        const declared = matches[i]?.staticData;
+        if (!declared) continue;
+        if (legalNoteKey === undefined && 'legalNoteKey' in declared) {
+          legalNoteKey = declared.legalNoteKey;
+        }
+        if (width === undefined && declared.authWidth !== undefined) width = declared.authWidth;
+      }
+
+      return { legalNoteKey, width: width ?? 'form' };
+    },
+  });
 
   return (
     <div
@@ -80,7 +97,7 @@ export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
         >
           {children}
 
-          {legal ? (
+          {legalNoteKey === null ? null : (
             <p className="mt-5 text-xs text-pretty text-fg-subtle">
               {legalNoteKey ? (
                 t(legalNoteKey)
@@ -94,7 +111,7 @@ export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
                 />
               )}
             </p>
-          ) : null}
+          )}
         </div>
       </div>
 

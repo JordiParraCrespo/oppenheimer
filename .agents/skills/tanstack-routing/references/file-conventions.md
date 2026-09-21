@@ -27,7 +27,13 @@ source of most confusion.
 `onboarding.tsx` next to `onboarding/` makes the file the layout for everything
 in the directory. This is how `_auth/onboarding.tsx` guards
 `_auth/onboarding/*` while `/onboarding` itself is served by
-`_auth/onboarding/index.tsx`.
+`_auth/onboarding/index.tsx` — which in this app is a `beforeLoad` that
+redirects into the first step, and so carries no component at all.
+
+Note that this layout is *not* pathless: `onboarding.tsx` has no `_` prefix, so
+it contributes the `/onboarding` segment its children hang from. `_auth` above
+it is pathless, which is why `/login` sits at the root. Both shapes appear in
+the same tree; read the prefix, not the nesting.
 
 ## Pathless layout vs grouping folder
 
@@ -69,7 +75,7 @@ _auth.tsx                  no guard                     →  AuthLayout
     _auth/onboarding/host.tsx                           →  /onboarding/host
 ```
 
-Three things to take from it:
+Four things to take from it:
 
 - A pathless layout route with **no `component`** is a fine thing to write. It
   defaults to rendering `<Outlet />`, so `_public.tsx` is four lines that exist
@@ -78,6 +84,10 @@ Three things to take from it:
   answers, so neither answer belongs on the shared parent.
 - `_flow`'s only job was to re-mount the same layout with one prop different.
   That prop became route `staticData`, and the layout route disappeared.
+- Unifying chrome makes duplicate *content* obvious, and the refactor is not
+  finished until you look. `/onboarding` held a second create-workspace form
+  beside the step at `/onboarding/workspace`; under one layout they were
+  visibly the same page twice, and the index became a redirect into the step.
 
 ## Reading the generated tree
 
