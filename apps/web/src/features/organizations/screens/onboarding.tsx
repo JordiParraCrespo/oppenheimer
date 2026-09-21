@@ -1,14 +1,7 @@
 import { Alert, AlertDescription, Button } from '@oppenheimer/design-system-web';
 import { useCreateOrganization, useOrganizations } from '@oppenheimer/frontend-consumer/react';
 import { useLogout } from '@oppenheimer/frontend-core/react';
-import {
-  AuthEyebrow,
-  AuthSubtitle,
-  AuthTitle,
-  BrandLogo,
-  ThemeToggle,
-  useErrorMessage,
-} from '@oppenheimer/frontend-web';
+import { AuthEyebrow, AuthSubtitle, AuthTitle, useErrorMessage } from '@oppenheimer/frontend-web';
 import { Navigate, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CreateOrganizationForm } from '@/features/organizations/forms/create-organization-form';
@@ -23,6 +16,9 @@ import { slugify } from '@/features/organizations/lib/slugify';
  * every screen — for an account that ended up with none that is a refusal.
  * This screen creates the workspace and makes the caller its owner; there are
  * no invitations to accept, because workspaces are personal.
+ *
+ * It renders in the auth layout, like the onboarding steps beside it: the
+ * wordmark, the column and the photograph panel are the route's.
  */
 export function OnboardingScreen() {
   const { t } = useTranslation();
@@ -39,41 +35,36 @@ export function OnboardingScreen() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background px-6 py-10 min-[900px]:px-14">
-      <ThemeToggle className="absolute top-8 right-6 z-10 min-[900px]:top-10 min-[900px]:right-14" />
-      <BrandLogo />
+    <>
+      <AuthEyebrow>{t('onboarding.eyebrow')}</AuthEyebrow>
+      <AuthTitle>{t('onboarding.title')}</AuthTitle>
+      <AuthSubtitle>{t('onboarding.description')}</AuthSubtitle>
 
-      <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-6">
-        <AuthEyebrow>{t('onboarding.eyebrow')}</AuthEyebrow>
-        <AuthTitle>{t('onboarding.title')}</AuthTitle>
-        <AuthSubtitle>{t('onboarding.description')}</AuthSubtitle>
+      {create.error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{resolveError(create.error).message}</AlertDescription>
+        </Alert>
+      )}
 
-        {create.error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{resolveError(create.error).message}</AlertDescription>
-          </Alert>
-        )}
+      <CreateOrganizationForm
+        disabled={create.isPending}
+        isPending={create.isPending}
+        onSubmit={({ name }) => {
+          const slug = slugify(name);
+          // A name with no slug-able characters ("日本") is the API's to name: sending
+          // `slug: ''` would fail the schema's floor for no reason the reader can fix.
+          create.mutate(slug.length >= 2 ? { name, slug } : { name });
+        }}
+      />
 
-        <CreateOrganizationForm
-          disabled={create.isPending}
-          isPending={create.isPending}
-          onSubmit={({ name }) => {
-            const slug = slugify(name);
-            // A name with no slug-able characters ("日本") is the API's to name: sending
-            // `slug: ''` would fail the schema's floor for no reason the reader can fix.
-            create.mutate(slug.length >= 2 ? { name, slug } : { name });
-          }}
-        />
-
-        <Button
-          variant="secondary"
-          className="mt-7 w-fit self-start"
-          disabled={logout.isPending}
-          onClick={() => logout.mutate()}
-        >
-          {t('onboarding.signOut')}
-        </Button>
-      </div>
-    </div>
+      <Button
+        variant="secondary"
+        className="mt-7 w-fit self-start"
+        disabled={logout.isPending}
+        onClick={() => logout.mutate()}
+      >
+        {t('onboarding.signOut')}
+      </Button>
+    </>
   );
 }

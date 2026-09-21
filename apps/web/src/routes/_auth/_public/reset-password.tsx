@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ResetPasswordScreen } from '@/features/auth/screens/reset-password';
 
-export const Route = createFileRoute('/_auth/reset-password')({
+export const Route = createFileRoute('/_auth/_public/reset-password')({
   validateSearch: (
     search: Record<string, unknown>,
   ): { token?: string; error?: string; email?: string } => ({

@@ -1,4 +1,4 @@
-import { useMatches } from '@tanstack/react-router';
+import { type StaticDataRouteOption, useMatches } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import '../lib/legal-note';
@@ -13,11 +13,6 @@ export interface AuthLayoutProps {
    * carousel, or nothing for a control plane that has no atmosphere to sell.
    */
   panel?: ReactNode;
-  /**
-   * Whether the terms-and-privacy line sits under the form. The auth forms
-   * carry it; the onboarding steps, reached after sign-up, do not.
-   */
-  legal?: boolean;
   children: ReactNode;
 }
 
@@ -28,40 +23,46 @@ const WIDTHS = {
 } as const;
 
 /**
+ * The innermost match that declares a piece of framing wins, so a page
+ * overrides its layout and a page that declares nothing inherits. `undefined`,
+ * not falsiness, is what counts as declaring nothing — `authLegal` is a
+ * boolean whose whole purpose is to be `false`.
+ *
+ * It takes the matches rather than calling `useMatches` itself: each caller
+ * below selects a concrete type, which is what lets the router infer what the
+ * selector returns.
+ */
+function innermost<T>(
+  matches: ReadonlyArray<{ staticData: StaticDataRouteOption }>,
+  pick: (staticData: StaticDataRouteOption) => T | undefined,
+): T | undefined {
+  for (let i = matches.length - 1; i >= 0; i -= 1) {
+    const match = matches[i];
+    const value = match && pick(match.staticData);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
+/**
  * The auth split from the MVP artboards: the wordmark top-left, a 340px form
  * column centred in the left half, the panel on the right. Below 900px the
  * panel drops away and the form takes the width; it carries no information,
  * only atmosphere. An app's `_auth` route mounts this around its `Outlet`,
- * after `redirectSignedIn` has decided who may be here.
+ * and the guards sit on the children — the sign-in screens turn a signed-in
+ * visitor away, the onboarding screens a signed-out one.
  *
  * These screens follow the OS theme: there is no toggle here. Appearance is
  * chosen from the account menu once signed in.
  *
- * The legal one-liner under the form is the page's when it declares
- * `staticData.legalNoteKey`, the terms-and-privacy line otherwise.
+ * How wide the column is, whether the legal one-liner sits under it and which
+ * line it is are the page's to declare as `staticData`.
  */
-export function AuthLayout({ product, panel, legal = true, children }: AuthLayoutProps) {
+export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();
-  // The innermost match that declares a note wins, so a page overrides its
-  // layout and a page without one shows the default line.
-  const legalNoteKey = useMatches({
-    select: (matches) => {
-      for (let i = matches.length - 1; i >= 0; i -= 1) {
-        const key = matches[i]?.staticData.legalNoteKey;
-        if (key) return key;
-      }
-      return undefined;
-    },
-  });
-  const width = useMatches({
-    select: (matches) => {
-      for (let i = matches.length - 1; i >= 0; i -= 1) {
-        const w = matches[i]?.staticData.authWidth;
-        if (w) return w;
-      }
-      return 'form' as const;
-    },
-  });
+  const legalNoteKey = useMatches({ select: (m) => innermost(m, (d) => d.legalNoteKey) });
+  const width = useMatches({ select: (m) => innermost(m, (d) => d.authWidth) ?? 'form' });
+  const legal = useMatches({ select: (m) => innermost(m, (d) => d.authLegal) ?? true });
 
   return (
     <div

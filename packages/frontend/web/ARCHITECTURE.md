@@ -87,21 +87,28 @@ language list, and `workspace` is what the sidebar header names.
 
 ## How an app configures the auth layout
 
-`AuthLayout` (`src/auth/components/auth-layout.tsx`) is the auth split: form
-on the left, `AuthArtPanel` on the right, the panel dropped below 900px. It
-takes `brandLabel` (the wordmark, defaulting to the product name), `links`
-(footer links, typed `NavTo`) and `copy` (`'consumer' | 'control'`, which
-product's words the art panel shows). The `_auth` route mounts it after
-`redirectSignedIn` has decided who may be here — `apps/web/src/routes/_auth.tsx`:
+`AuthLayout` (`src/auth/components/auth-layout.tsx`) is the auth split: the
+column on the left, the app's own `panel` on the right, the panel dropped
+below 900px. It takes `product` (the wordmark's suffix, defaulting to the
+product name) and `panel` (`apps/web` passes its photograph carousel;
+`apps/admin-web` passes nothing, having no atmosphere to sell). An app's
+`_auth` route mounts it around its `Outlet` — `apps/web/src/routes/_auth.tsx`.
+
+Everything else the layout needs is route `staticData`, read off the innermost
+match that declares it, so a page overrides its layout and never reaches up
+into the layout's state:
 
 ```tsx
-beforeLoad: ({ context, location }) =>
-  redirectSignedIn({ context, location, landing: '/dashboard', allow: ['/accept-invitation'] }),
+staticData: { authWidth: 'wide', authLegal: false }  // the onboarding steps
+staticData: { legalNoteKey: 'auth.forgotPassword.legal' }  // one page's own line
 ```
 
-`apps/admin-web/src/routes/_auth.tsx` composes the same pieces
-(`AuthArtPanel`, `BrandLogo`, `ThemeToggle`, `sanitizeRedirect`) by hand,
-because the control plane has no public pages and its redirect rule differs.
+The guard is not the layout's. `apps/web` puts its sign-in screens and its
+onboarding flow under the same `_auth`, and they want opposite guards —
+`_auth/_public.tsx` calls `redirectSignedIn` so a signed-in visitor is sent
+to the console, `_auth/onboarding.tsx` sends a signed-out one to the login
+page. `apps/admin-web` has only the one half, so its `_auth` route carries
+`redirectSignedIn` itself.
 
 ## Add a concern
 
