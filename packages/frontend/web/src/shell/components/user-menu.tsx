@@ -19,7 +19,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { ChevronDown, LogOut } from '@oppenheimer/design-system-web/icons';
 import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
-import { locales } from '@oppenheimer/translations/locales';
+import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../theme';
@@ -46,7 +46,11 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
   const navigate = useNavigate();
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
 
-  const currentLocale = i18n.resolvedLanguage ?? i18n.language;
+  // Narrowed to `Locale` because the menu *names* it (`language.en`), not just
+  // compares it: `t()` is typed over the catalog, and a bare `string` in the
+  // key would not resolve to one. i18next only ever resolves to a locale the
+  // app registered, which is this union.
+  const currentLocale = (i18n.resolvedLanguage ?? i18n.language) as Locale;
   const name = user ? `${user.firstName} ${user.lastName}` : '';
   const initials = user ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}` : '';
 
@@ -135,7 +139,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <DropdownMenuSubContent>
               <DropdownMenuRadioGroup
                 value={currentLocale}
-                onValueChange={(next) => i18n.changeLanguage(next as string)}
+                onValueChange={(next) => i18n.changeLanguage(next as Locale)}
               >
                 {locales.map((locale) => (
                   <DropdownMenuRadioItem key={locale} value={locale}>
