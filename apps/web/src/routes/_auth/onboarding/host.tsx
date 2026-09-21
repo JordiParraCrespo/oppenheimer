@@ -5,11 +5,13 @@ import { OnboardingHostScreen } from '@/features/hosts/screens/onboarding-host';
  * Carries the installation Connect GitHub wrote, so Ready can name it whether
  * or not this step pairs a machine.
  */
-export const Route = createFileRoute('/onboarding/_flow/host')({
+export const Route = createFileRoute('/_auth/onboarding/host')({
   validateSearch: (search: Record<string, unknown>): { installation?: string } => ({
     installation: typeof search.installation === 'string' ? search.installation : undefined,
   }),
   component: HostStep,
+  // Two code cards side by side need the wide column.
+  staticData: { authWidth: 'panel' },
 });
 
 function HostStep() {

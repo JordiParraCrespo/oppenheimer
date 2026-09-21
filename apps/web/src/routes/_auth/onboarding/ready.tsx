@@ -8,7 +8,7 @@ import { OnboardingReadyScreen } from '@/features/organizations/screens/onboardi
  * and two ids are cheaper to carry than a first-run store to keep in sync. A
  * step that was skipped passes nothing, which is how its row knows to say so.
  */
-export const Route = createFileRoute('/onboarding/_flow/ready')({
+export const Route = createFileRoute('/_auth/onboarding/ready')({
   validateSearch: (search: Record<string, unknown>): { installation?: string; host?: string } => ({
     installation: typeof search.installation === 'string' ? search.installation : undefined,
     host: typeof search.host === 'string' ? search.host : undefined,

@@ -365,6 +365,10 @@ pnpm changeset          # Create a changeset for versioning
   `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
 - UI in the web apps, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
+- Routes in `apps/web` and `apps/admin-web` — a new URL, a guard, a layout
+  route, search params, or anything that regenerates `routeTree.gen.ts` — is
+  the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route
+  file's name is its URL, so a rename is a URL change
 - Porting a design export onto the design system is the
   `/design-export-port` skill (`.agents/skills/design-export-port/`): the
   export's values go onto the token vocabulary in `globals.css` and the

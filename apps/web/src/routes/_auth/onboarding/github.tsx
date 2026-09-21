@@ -5,7 +5,7 @@ import {
 } from '@/features/organizations/lib/github-install';
 import { OnboardingGithubScreen } from '@/features/organizations/screens/onboarding-github';
 
-export const Route = createFileRoute('/onboarding/_flow/github')({
+export const Route = createFileRoute('/_auth/onboarding/github')({
   // GitHub returns here after an install with `installation_id` and `code` on
   // the query string. They are parsed at the boundary so the screen never sees
   // a half-typed id, and dropped from the URL once exchanged — the code is

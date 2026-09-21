@@ -43,8 +43,9 @@ from being unbuildable, and impossible to render in a test without mounting
 the whole app. Keeping `shell` and `auth` at the top means they compose the
 kit and nothing composes them.
 
-`AuthLayout` (top) importing `ThemeToggle` (leaf) and the `NavTo` type from
-`shell` is the direction the rule allows; `theme` importing `auth` is not.
+`AuthLayout` (top) importing `BrandLogo` (its own concern) and the `NavTo`
+type from `shell` is the direction the rule allows; `theme` importing `auth`
+is not.
 
 ## Concerns meet at their index
 
@@ -103,21 +104,30 @@ hands the content area to the screen and keeps no scroll of its own.
 
 ## How an app configures the auth layout
 
-`AuthLayout` (`src/auth/components/auth-layout.tsx`) is the auth split: form
-on the left, `AuthArtPanel` on the right, the panel dropped below 900px. It
-takes `brandLabel` (the wordmark, defaulting to the product name), `links`
-(footer links, typed `NavTo`) and `copy` (`'consumer' | 'control'`, which
-product's words the art panel shows). The `_auth` route mounts it after
-`redirectSignedIn` has decided who may be here — `apps/web/src/routes/_auth.tsx`:
+`AuthLayout` (`src/auth/components/auth-layout.tsx`) is the auth split: the
+column on the left, the app's own `panel` on the right, the panel dropped
+below 900px. It takes `product` (the wordmark's suffix, defaulting to the
+product name) and `panel` (`apps/web` passes its photograph carousel;
+`apps/admin-web` passes nothing, having no atmosphere to sell). An app's
+`_auth` route mounts it around its `Outlet` — `apps/web/src/routes/_auth.tsx`.
+
+Everything else the layout needs is route `staticData`, read off the innermost
+match that declares it, so a page overrides its layout and never reaches up
+into the layout's state. There are two keys, `authWidth` and `legalNoteKey`,
+and the second has three answers — absent for the default terms-and-privacy
+line, a key for a page's own line, `null` for no line:
 
 ```tsx
-beforeLoad: ({ context, location }) =>
-  redirectSignedIn({ context, location, landing: '/dashboard', allow: ['/accept-invitation'] }),
+staticData: { authWidth: 'wide', legalNoteKey: null }       // the onboarding steps
+staticData: { legalNoteKey: 'auth.forgotPassword.legal' }   // one page's own line
 ```
 
-`apps/admin-web/src/routes/_auth.tsx` composes the same pieces
-(`AuthArtPanel`, `BrandLogo`, `ThemeToggle`, `sanitizeRedirect`) by hand,
-because the control plane has no public pages and its redirect rule differs.
+The guard is not the layout's. `apps/web` puts its sign-in screens and its
+onboarding flow under the same `_auth`, and they want opposite guards —
+`_auth/_public.tsx` calls `redirectSignedIn` so a signed-in visitor is sent
+to the console, `_auth/onboarding.tsx` sends a signed-out one to the login
+page. `apps/admin-web` has only the one half, so its `_auth` route carries
+`redirectSignedIn` itself.
 
 ## Add a concern
 

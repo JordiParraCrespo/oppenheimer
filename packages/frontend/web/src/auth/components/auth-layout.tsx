@@ -1,9 +1,32 @@
 import { useMatches } from '@tanstack/react-router';
+import type { ParseKeys } from 'i18next';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import '../lib/legal-note';
 import { AuthLink } from './auth-primitives';
 import { BrandLogo } from './brand-logo';
+
+/**
+ * How a page is framed inside the auth split. Each is route `staticData`, read
+ * off the innermost match that declares it, so a page overrides its layout and
+ * no page reaches up into the layout's state to register anything.
+ */
+declare module '@tanstack/react-router' {
+  interface StaticDataRouteOption {
+    /**
+     * The legal one-liner pinned under the centred column: a key for that
+     * line, or `null` for no line at all. A page that declares nothing gets
+     * the terms-and-privacy default — which is why the onboarding steps, past
+     * the point where the reader agreed to them, say `null`.
+     */
+    legalNoteKey?: ParseKeys | null;
+    /**
+     * How wide the centred column is: `form` (340px, the auth forms), `wide`
+     * (400px, the onboarding steps) or `panel` (620px, Add your first host,
+     * whose two code cards sit side by side).
+     */
+    authWidth?: 'form' | 'wide' | 'panel';
+  }
+}
 
 export interface AuthLayoutProps {
   /** The wordmark's product suffix; defaults to `common.product`. */
@@ -13,11 +36,6 @@ export interface AuthLayoutProps {
    * carousel, or nothing for a control plane that has no atmosphere to sell.
    */
   panel?: ReactNode;
-  /**
-   * Whether the terms-and-privacy line sits under the form. The auth forms
-   * carry it; the onboarding steps, reached after sign-up, do not.
-   */
-  legal?: boolean;
   children: ReactNode;
 }
 
@@ -32,34 +50,34 @@ const WIDTHS = {
  * column centred in the left half, the panel on the right. Below 900px the
  * panel drops away and the form takes the width; it carries no information,
  * only atmosphere. An app's `_auth` route mounts this around its `Outlet`,
- * after `redirectSignedIn` has decided who may be here.
+ * and the guards sit on the children — the sign-in screens turn a signed-in
+ * visitor away, the onboarding screens a signed-out one.
  *
  * These screens follow the OS theme: there is no toggle here. Appearance is
  * chosen from the account menu once signed in.
  *
- * The legal one-liner under the form is the page's when it declares
- * `staticData.legalNoteKey`, the terms-and-privacy line otherwise.
+ * How wide the column is and what sits under it are the page's to declare as
+ * `staticData`. One walk reads both: the innermost match that *declares* a key
+ * wins, which is `in` rather than a truthiness test, because `null` is a
+ * legal-note answer and not an absence.
  */
-export function AuthLayout({ product, panel, legal = true, children }: AuthLayoutProps) {
+export function AuthLayout({ product, panel, children }: AuthLayoutProps) {
   const { t } = useTranslation();
-  // The innermost match that declares a note wins, so a page overrides its
-  // layout and a page without one shows the default line.
-  const legalNoteKey = useMatches({
+  const { legalNoteKey, width } = useMatches({
     select: (matches) => {
+      let legalNoteKey: ParseKeys | null | undefined;
+      let width: keyof typeof WIDTHS | undefined;
+
       for (let i = matches.length - 1; i >= 0; i -= 1) {
-        const key = matches[i]?.staticData.legalNoteKey;
-        if (key) return key;
+        const declared = matches[i]?.staticData;
+        if (!declared) continue;
+        if (legalNoteKey === undefined && 'legalNoteKey' in declared) {
+          legalNoteKey = declared.legalNoteKey;
+        }
+        if (width === undefined && declared.authWidth !== undefined) width = declared.authWidth;
       }
-      return undefined;
-    },
-  });
-  const width = useMatches({
-    select: (matches) => {
-      for (let i = matches.length - 1; i >= 0; i -= 1) {
-        const w = matches[i]?.staticData.authWidth;
-        if (w) return w;
-      }
-      return 'form' as const;
+
+      return { legalNoteKey, width: width ?? 'form' };
     },
   });
 
@@ -79,7 +97,7 @@ export function AuthLayout({ product, panel, legal = true, children }: AuthLayou
         >
           {children}
 
-          {legal ? (
+          {legalNoteKey === null ? null : (
             <p className="mt-5 text-xs text-pretty text-fg-subtle">
               {legalNoteKey ? (
                 t(legalNoteKey)
@@ -93,7 +111,7 @@ export function AuthLayout({ product, panel, legal = true, children }: AuthLayou
                 />
               )}
             </p>
-          ) : null}
+          )}
         </div>
       </div>
 

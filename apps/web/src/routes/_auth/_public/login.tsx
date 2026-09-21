@@ -2,7 +2,7 @@ import { sanitizeRedirect } from '@oppenheimer/frontend-web';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { LoginScreen } from '@/features/auth/screens/login';
 
-export const Route = createFileRoute('/_auth/login')({
+export const Route = createFileRoute('/_auth/_public/login')({
   validateSearch: (
     search: Record<string, unknown>,
   ): { redirect?: string; email?: string; error?: string } => ({

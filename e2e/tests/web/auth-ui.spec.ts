@@ -1,13 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { newUser, VALID_PASSWORD } from '../../support/auth';
-import { findResetToken, findUserByEmail } from '../../support/db';
+import { findResetToken, findUserByEmail, query } from '../../support/db';
 import { waitForEmailUrl } from '../../support/mail';
-import {
-  createOrganization,
-  loginThroughUi,
-  provisionedUser,
-  registerThroughUi,
-} from '../../support/web';
+import { loginThroughUi, provisionedUser, registerThroughUi } from '../../support/web';
 
 const NEW_PASSWORD = 'Rotated!Password9';
 
@@ -206,13 +201,23 @@ test.describe('web auth UI', () => {
     await expect(page.getByRole('alert').first()).toBeVisible({ timeout: 20_000 });
   });
 
-  test('a signed-in account with a workspace is bounced off onboarding', async ({ page }) => {
+  test('a signed-in account whose workspace is named is bounced off onboarding', async ({
+    page,
+  }) => {
     const user = newUser('uionb');
     await registerThroughUi(page, user);
     await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
 
-    // The browser's own cookie jar, so the workspace belongs to this session.
-    await createOrganization(page.request);
+    // What marks first-run finished is a *claimed address*, not the existence
+    // of a row: sign-up provisions one for everybody, so its presence would
+    // send every new account straight past the step it was sent here for
+    // (`08-auth.md`). Claim it the way the step would.
+    const account = await findUserByEmail(user.email);
+    await query(
+      `UPDATE "organization" SET "slug" = $2
+        WHERE "id" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,
+      [account?.id ?? '', `named-${Date.now().toString(36)}`],
+    );
 
     await page.goto('/onboarding');
     await expect(page).toHaveURL(/\/sessions/, { timeout: 20_000 });

@@ -4,12 +4,12 @@ import { signedUpContext, type TestUser } from './auth';
 /**
  * Helpers for the `web` project: the journeys every browser spec starts from.
  *
- * Registering creates an account and nothing else — an account belongs to no
- * workspace until it creates one from `/onboarding` or an invitation puts it in
- * one — so most specs want a user who already has somewhere to work. That is
- * {@link provisionedUser}: sign-up and workspace creation through the API, so
- * the spec spends its time on the screen it is about rather than on the two
- * screens before it.
+ * Registering provisions a personal workspace, but with an address nobody has
+ * chosen yet — so a fresh account lands in first-run, at the step that names
+ * it, rather than in the console. Most specs want a user who is already past
+ * that. That is {@link provisionedUser}: sign-up and workspace creation
+ * through the API, so the spec spends its time on the screen it is about
+ * rather than on the screens before it.
  */
 
 export const ORGANIZATION_NAME = 'E2E Workspace';
