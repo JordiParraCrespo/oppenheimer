@@ -1,28 +1,31 @@
-import { heyApiClient } from '@oppenheimer/api-client';
+import {
+  type HostResponseDto,
+  heyApiClient,
+  type MintedPairingTokenResponseDto,
+  type PairingTokenResponseDto,
+} from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { HostEntity, type HostPairing, type HostState } from './host.entity';
+import { HostEntity, type HostPairing, type HostPairingToken } from './host.entity';
 import { HostsErrors } from './hosts.errors';
 
 /**
- * The wire shape of a host, as the control plane's `hosts` module will answer
- * it (`product/versions/mvp/03-control-plane.md`, data model: hosts,
- * host_keys). Declared here until the endpoints exist and the typed SDK in
- * `@oppenheimer/api-client` is regenerated from them; then this file switches
- * to `HostsApi` like every other repository and the DTOs below go.
+ * The wire shapes come from the generated client rather than being mirrored
+ * here. A hand-written copy is what let this file read `state` for a field the
+ * API sends as `online`, uncaught until something finally called it.
+ *
+ * Each one is passed to the client as the **status-keyed map** it expects, not
+ * bare: `RequestResult` resolves a `TData` that satisfies
+ * `Record<string, unknown>` to `TData[keyof TData]`, so handing it a DTO
+ * directly yields the union of that DTO's own field types — `string` for a
+ * token whose fields are all strings. The generated SDK passes
+ * `{ 200: Dto }` for the same reason; its functions are not used here because
+ * this module's controllers collide into names like `list6` and `revoke3`,
+ * which renumber whenever another controller is added.
  */
-interface HostDto {
-  id: string;
-  name: string;
-  state: HostState;
-  lastSeenAt: string | null;
-  createdAt: string;
-}
-
-interface HostPairingDto {
-  installCommand: string;
-  expiresAt: string;
-}
+type HostDto = HostResponseDto;
+type PairingTokenDto = PairingTokenResponseDto;
+type MintedPairingTokenDto = MintedPairingTokenResponseDto;
 
 const HOSTS_URL = '/api/v1/hosts';
 
@@ -30,7 +33,11 @@ function toEntity(data: HostDto): HostEntity {
   return new HostEntity(
     data.id,
     data.name,
-    data.state,
+    data.online,
+    data.hostname ?? null,
+    data.os ?? null,
+    data.arch ?? null,
+    data.runnerVersion ?? null,
     data.lastSeenAt ? new Date(data.lastSeenAt) : null,
     new Date(data.createdAt),
   );
@@ -40,21 +47,54 @@ function toEntity(data: HostDto): HostEntity {
 export class HostsRepository {
   @MapApiError(HostsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<HostEntity[]> {
-    const { data, error } = await heyApiClient.get<HostDto[]>({ url: HOSTS_URL });
+    const { data, error } = await heyApiClient.get<{ 200: HostDto[] }>({ url: HOSTS_URL });
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no hosts" over a request that never succeeded.
     if (error || !data) throw new AppError(HostsErrors.FETCH_LIST_FAILED);
     return data.map(toEntity);
   }
 
-  /** Mint the registration token Add host pastes; the host appears once its runner dials in. */
+  /**
+   * Mint the registration token Add host pastes; the host appears once its
+   * runner dials in.
+   *
+   * The machine is named before it exists, because the token carries the name
+   * the runner will adopt. It can be renamed afterwards from Settings.
+   */
   @MapApiError(HostsErrors.PAIR_FAILED)
-  async pair(): Promise<HostPairing> {
-    const { data, error } = await heyApiClient.post<HostPairingDto>({
+  async pair(name: string): Promise<HostPairing> {
+    const { data, error } = await heyApiClient.post<{ 201: MintedPairingTokenDto }>({
       url: `${HOSTS_URL}/pairing`,
+      body: { name },
     });
     if (error || !data) throw new AppError(HostsErrors.PAIR_FAILED);
-    return { installCommand: data.installCommand, expiresAt: new Date(data.expiresAt) };
+    return {
+      id: data.id,
+      installCommand: data.installCommand,
+      agentPrompt: data.agentPrompt,
+      expiresAt: new Date(data.expiresAt),
+      redeemedHostId: data.redeemedHostId ?? null,
+    };
+  }
+
+  /**
+   * The caller's pairing tokens.
+   *
+   * Add host polls this to learn whether *its* token was spent, and on which
+   * machine. "The host list is non-empty" is a different question — an account
+   * that already owns a machine would answer it the moment the step opened.
+   */
+  @MapApiError(HostsErrors.FETCH_LIST_FAILED)
+  async pairings(): Promise<HostPairingToken[]> {
+    const { data, error } = await heyApiClient.get<{ 200: PairingTokenDto[] }>({
+      url: `${HOSTS_URL}/pairing`,
+    });
+    if (error || !data) throw new AppError(HostsErrors.FETCH_LIST_FAILED);
+    return data.map((token) => ({
+      id: token.id,
+      expiresAt: new Date(token.expiresAt),
+      redeemedHostId: token.redeemedHostId ?? null,
+    }));
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

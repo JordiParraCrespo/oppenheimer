@@ -1,15 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { HostEntity, type HostState } from '../host.entity';
+import { HostEntity } from '../host.entity';
 
-function host(state: HostState): HostEntity {
-  return new HostEntity('host-1', 'mac-studio', state, null, new Date('2026-06-15T12:00:00Z'));
+function host(online: boolean, os: string | null = null): HostEntity {
+  return new HostEntity(
+    'host-1',
+    'mac-studio',
+    online,
+    null,
+    os,
+    null,
+    null,
+    null,
+    new Date('2026-06-15T12:00:00Z'),
+  );
 }
 
-/** New session only offers a host whose runner is dialled in right now. */
-describe('HostEntity.isOnline', () => {
-  it('is true only for an online runner', () => {
-    expect(host('online').isOnline).toBe(true);
-    expect(host('offline').isOnline).toBe(false);
-    expect(host('pairing').isOnline).toBe(false);
+describe('HostEntity.summary', () => {
+  it('names the machine and the OS its runner reported', () => {
+    expect(host(true, 'macos').summary).toBe('mac-studio · macos');
+  });
+
+  // A runner that has not described itself yet would otherwise leave the row
+  // reading "mac-studio · " — a separator with nothing after it.
+  it('is the name alone until the runner has reported an OS', () => {
+    expect(host(true, null).summary).toBe('mac-studio');
   });
 });

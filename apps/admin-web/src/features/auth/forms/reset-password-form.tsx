@@ -27,7 +27,7 @@ const newPasswordSchema = resetPasswordSchema
 
 export type NewPasswordValues = z.infer<typeof newPasswordSchema>;
 
-const RULES: readonly PasswordRule[] = ['length', 'case', 'number', 'match'];
+const RULES: readonly PasswordRule[] = ['length', 'match'];
 
 export function ResetPasswordForm({
   isPending,

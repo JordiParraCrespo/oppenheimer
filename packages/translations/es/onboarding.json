@@ -1,5 +1,5 @@
 {
-  "description": "Tu cuenta está lista. Crea un espacio de trabajo para tu equipo o únete a uno al que te hayan invitado.",
+  "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
   "eyebrow": "Casi listo",
   "signOut": "Cerrar sesión",
   "title": "Crea tu espacio de trabajo",
@@ -26,7 +26,11 @@
       "available": "{{address}} está disponible.",
       "taken": "{{address}} ya está en uso. Prueba otra dirección.",
       "using": "Usando {{email}}",
-      "differentAccount": "Usar otra cuenta"
+      "differentAccount": "Usar otra cuenta",
+      "claiming": "Guardando...",
+      "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
+      "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
+      "permanent": "{{address}} es la dirección de este espacio de trabajo."
     },
     "github": {
       "title": "Conecta GitHub",
@@ -35,7 +39,10 @@
       "skip": "Saltar por ahora",
       "skipNote": "Puedes añadir repositorios más tarde en Ajustes. El selector de repositorios quedará vacío hasta entonces.",
       "connected": "{{count}} repositorios · acceso de lectura",
-      "change": "Cambiar qué repositorios"
+      "change": "Cambiar qué repositorios",
+      "failed": "No hemos podido conectar esa instalación de GitHub.",
+      "connectedAll": "Todos los repositorios de la cuenta",
+      "connectedPending": "Conectado"
     },
     "host": {
       "title": "Añade tu primer host",
@@ -46,7 +53,13 @@
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "newToken": "Generar un token nuevo",
       "waiting": "Esperando a que el host se conecte…",
-      "ready": "git, tmux, claude listos"
+      "ready": "git, tmux, claude listos",
+      "mintFailed": "No hemos podido crear un token de registro.",
+      "tokenExpired": "El token ha caducado: genera uno nuevo.",
+      "defaultName": "Mi primer host",
+      "registered": "Registrado: esperando a su runner",
+      "skip": "Saltar por ahora",
+      "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
     },
     "ready": {
       "title": "Todo listo",
@@ -55,7 +68,10 @@
       "code": "Código",
       "host": "Host",
       "repos": "{{owner}} · {{count}} repos",
-      "go": "Ir a la consola"
+      "go": "Ir a la consola",
+      "noWorkspace": "Aún sin espacio de trabajo",
+      "noGithub": "Sin conectar",
+      "noHost": "Aún sin host"
     }
   }
 }

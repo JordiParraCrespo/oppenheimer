@@ -1,47 +1,92 @@
+import type { HostEntity } from '@oppenheimer/frontend-consumer';
+import {
+  useCurrentPairing,
+  useHosts,
+  usePairingTokens,
+} from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
 
-const TOKEN_LIFETIME = 60 * 60;
-/** How long the scaffold waits before pretending the runner registered. */
-const REGISTER_AFTER_MS = 6000;
-
-export type PairedHost = { name: string; meta: string };
+/** How often the step asks whether this token has been spent yet. */
+const POLL_MS = 3000;
 
 /**
- * The pairing token's clock and the host it eventually pairs. Both effects
- * synchronise with timers: the one-second tick that counts the token down,
- * and the delay that stands in for a runner registering.
+ * The pairing token Add host shows, its clock, and the host **this token**
+ * paired.
  *
- * Scaffold: nothing here reaches the API. The token is a fixed string, the
- * host that "registers" is a fixture, and `regenerate` only resets the clock.
+ * One token is minted per visit. The mint is a query, not a mutation fired
+ * from an effect — the step needs exactly one token for as long as it is open,
+ * which is what a query keyed to the screen gives, and `regenerate()` is its
+ * refetch. Nothing here has to survive StrictMode by hand.
+ *
+ * Correlation is the point. "The host list is non-empty" is a different
+ * question from "this token landed" — an account that already owns a machine
+ * answers the first the moment the step opens, which would enable Continue
+ * under a command nobody has run. So the poll watches the *token*: the pairing
+ * list reports `redeemedHostId` once a runner spends it, and only then is the
+ * matching host looked up.
+ *
+ * One effect, and it synchronises with the clock. The countdown is recomputed
+ * from `expiresAt` rather than decremented, so a backgrounded tab that missed
+ * a hundred ticks still shows the right number when it comes back.
  */
-export function usePairingToken() {
-  const [seconds, setSeconds] = useState(TOKEN_LIFETIME - 19);
-  const [host, setHost] = useState<PairedHost | null>(null);
-  const [generation, setGeneration] = useState(0);
+export function usePairingToken(hostName: string) {
+  const { data: pairing, isPending, error, refetch } = useCurrentPairing(hostName);
+  const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
-    const tick = setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000);
+    if (!pairing) return;
+
+    const remaining = () =>
+      Math.max(0, Math.floor((pairing.expiresAt.getTime() - Date.now()) / 1000));
+
+    setSeconds(remaining());
+    const tick = setInterval(() => setSeconds(remaining()), 1000);
     return () => clearInterval(tick);
-  }, []);
+  }, [pairing]);
 
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setHost({ name: 'mac-studio', meta: 'macOS 15 · echo 38 ms' }),
-      REGISTER_AFTER_MS,
-    );
-    return () => clearTimeout(timer);
-  }, []);
+  const expired = Boolean(pairing) && seconds <= 0;
+
+  // Poll the token, not the host list. Stops once this token names a host, and
+  // once it has expired: a dead token can pair nothing, so polling past that is
+  // a request every three seconds that can only answer "no".
+  const { data: tokens } = usePairingTokens({
+    enabled: Boolean(pairing) && !expired,
+    refetchInterval: (query) => {
+      if (!pairing || expired) return false;
+      const mine = query.state.data?.find((token) => token.id === pairing.id);
+      return mine?.redeemedHostId ? false : POLL_MS;
+    },
+  });
+
+  const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
+
+  // The host row appears when the runner registers; its service may still be
+  // starting, so the caller decides what `online` means for Continue.
+  const { data: hosts } = useHosts({
+    enabled: Boolean(redeemedHostId),
+    refetchInterval: (query) => {
+      if (!redeemedHostId) return false;
+      const host = query.state.data?.find((row) => row.id === redeemedHostId);
+      return host?.online ? false : POLL_MS;
+    },
+  });
+
+  const host: HostEntity | null = redeemedHostId
+    ? (hosts?.find((row) => row.id === redeemedHostId) ?? null)
+    : null;
 
   const minutes = Math.floor(seconds / 60);
   const countdown = `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 
   return {
-    token: `opk_7f3a9c${generation ? generation : ''}`,
+    pairing,
     countdown,
+    /** Whether the token has run out, so the step can offer a new one. */
+    expired,
     host,
-    regenerate: () => {
-      setSeconds(TOKEN_LIFETIME);
-      setGeneration((g) => g + 1);
-    },
+    isPending,
+    error,
+    /** Replace the token on screen with a fresh one. */
+    regenerate: () => refetch(),
   };
 }

@@ -12,6 +12,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { checkApiStructure } from './check-api-structure.mjs';
 
 const roots = [];
@@ -193,7 +194,7 @@ test("the repository's own ledger is current", async () => {
   // The real run, with the real ledger: this is what CI asserts, and it fails
   // both on a new violation and on an entry whose debt has been paid.
   const { checkApiStructure: run, LEDGER } = await import('./check-api-structure.mjs');
-  const apiSrc = new URL('../apps/api/src', import.meta.url).pathname;
+  const apiSrc = fileURLToPath(new URL('../apps/api/src', import.meta.url));
   const result = run(apiSrc, { ledger: LEDGER });
   assert.deepEqual(
     result.outstanding.map((e) => e.message),

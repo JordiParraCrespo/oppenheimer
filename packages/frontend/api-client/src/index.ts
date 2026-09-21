@@ -100,3 +100,29 @@ export { ProfileApi } from './data-access/api/openapi/services/ProfileApi';
 export { RolesApi } from './data-access/api/openapi/services/RolesApi';
 export { UsersApi } from './data-access/api/openapi/services/UsersApi';
 export { WorkspacesApi } from './data-access/api/openapi/services/WorkspacesApi';
+// DTOs the hey-api output alone defines
+export type {
+  AddCheckoutRequest,
+  AttachTicketResponseDto,
+  ConnectInstallationRequest,
+  CreateSessionRequest,
+  HostRegistrationResponseDto,
+  HostResponseDto,
+  InstallationResponseDto,
+  IssueAttachTicketRequest,
+  MintedPairingTokenResponseDto,
+  MintPairingTokenRequest,
+  PaginatedSessionsResponseDto,
+  PairingTokenResponseDto,
+  ProjectResponseDto,
+  RegisterHostRequest,
+  RenameHostRequest,
+  RenameSessionRequest,
+  RepositoryBranchResponseDto,
+  RepositoryResponseDto,
+  SessionCheckoutResponseDto,
+  SessionEventPageResponseDto,
+  SessionEventResponseDto,
+  SessionResponseDto,
+  UpdateProjectRequest,
+} from './generated/types.gen';

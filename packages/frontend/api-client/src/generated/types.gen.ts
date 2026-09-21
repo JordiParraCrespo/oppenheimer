@@ -1098,6 +1098,10 @@ export type CapabilitiesResponseDto = {
      * The sessions GitHub App is configured.
      */
     github_app: boolean;
+    /**
+     * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
+     */
+    github_app_install_url: string | null;
 };
 
 export type GetSettingsData = {

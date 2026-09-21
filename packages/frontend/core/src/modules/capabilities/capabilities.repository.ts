@@ -1,5 +1,5 @@
 import { HealthApi } from '@oppenheimer/api-client';
-import type { ClientCapabilities } from '@oppenheimer/shared';
+import type { ClientDeployment } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import { AppError } from '../core/errors';
 import { MapApiError } from '../core/map-api-error.decorator';
@@ -14,7 +14,7 @@ import { CapabilitiesErrors } from './capabilities.errors';
 @injectable()
 export class CapabilitiesRepository {
   @MapApiError(CapabilitiesErrors.FETCH_FAILED)
-  async get(): Promise<ClientCapabilities> {
+  async get(): Promise<ClientDeployment> {
     const data = await HealthApi.deploymentCapabilities();
     if (!data) throw new AppError(CapabilitiesErrors.FETCH_FAILED);
     return data;

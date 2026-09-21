@@ -23,7 +23,35 @@ export const organizationsKeys = {
   all: ['organizations'] as const,
   lists: () => [...organizationsKeys.all, 'list'] as const,
   list: () => [...organizationsKeys.lists()] as const,
+  slug: (slug: string) => [...organizationsKeys.all, 'slug', slug] as const,
 };
+
+/**
+ * Whether a workspace address is free. The onboarding step asks this while the
+ * reader types, so callers debounce the value they pass — this hook is a plain
+ * query over whatever it is handed.
+ *
+ * `enabled` is the caller's: an empty address is not a question worth asking,
+ * and the step shows its neutral hint for it rather than a verdict.
+ *
+ * Deliberately not cached for long. An address is free until somebody takes
+ * it, and a stale `true` sends the reader into a create that then fails.
+ */
+export function useCheckSlug(
+  slug: string,
+  options?: Omit<UseQueryOptions<boolean, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: organizationsKeys.slug(slug),
+    queryFn: () => app.organizations.checkSlug(slug),
+    staleTime: 0,
+    gcTime: 30_000,
+    retry: false,
+    ...options,
+  });
+}
 
 /** The workspaces the signed-in user belongs to: their personal one, today. */
 export function useOrganizations(
@@ -68,6 +96,44 @@ export function useCreateOrganization(
         organization,
       ]);
       await queryClient.invalidateQueries();
+      options?.onSuccess?.(...args);
+    },
+  });
+}
+
+/** What onboarding step 2 submits: the chosen name and address, over the row it read. */
+export interface ClaimPersonalWorkspaceVariables {
+  existing: OrganizationEntity | undefined;
+  name: string;
+  slug: string;
+}
+
+/**
+ * Claim the personal workspace — name the row sign-up provisioned, or create
+ * one for the account that has none.
+ *
+ * Drops the whole cache for the same reason `useCreateOrganization` does: the
+ * workspace's name and address are what the shell, the nav and every
+ * org-scoped list were answers about.
+ */
+export function useClaimPersonalWorkspace(
+  options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
+      app.organizations.claimPersonalWorkspace(variables),
+    ...options,
+    onSuccess: (...args) => {
+      const [organization] = args;
+      queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
+        current?.some((row) => row.id === organization.id)
+          ? current.map((row) => (row.id === organization.id ? organization : row))
+          : [...(current ?? []), organization],
+      );
+      queryClient.invalidateQueries({ queryKey: organizationsKeys.lists() });
       options?.onSuccess?.(...args);
     },
   });

@@ -20,6 +20,18 @@ history) to work on the MVP.
   No roster UI, no invitations, no teams in the MVP; the routes the
   starter ships for them stay unexposed in the console and come back
   with the teams slice on the same tables.
+- **Sign-up opens the first-run flow, not the console.** Registering —
+  by email or through a provider — lands on `/onboarding/workspace`,
+  because the hook can provision a workspace but cannot name it. The
+  gate off that step is whether the **address has been claimed**, not
+  whether a workspace exists: every account has one from the moment it
+  signs up, so presence would send everybody straight past the step
+  they were sent to. A workspace whose slug is still the provisional
+  one the hook minted (the account's name plus eight hex characters)
+  has not been named; one whose slug a person chose is finished, and
+  `/onboarding/workspace` returns it to `/sessions`. Signing *in* never
+  enters the flow. (Decided 2026-09-21; the flow previously ended at
+  sign-up and the four steps were unreachable.)
 - **The console creates exactly one organization: your own.** Sign-up's
   hook is best-effort, so `/onboarding` is the recovery path for an
   account that ended up with no workspace — it creates one and makes the

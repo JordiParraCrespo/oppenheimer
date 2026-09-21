@@ -5,7 +5,7 @@ import { expo } from '@better-auth/expo';
 import { Logger } from '@nestjs/common';
 // oppenheimer:end mobile|admin-mobile
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
-import { DEFAULT_OAUTH_SCOPES, SCOPES } from '@oppenheimer/shared';
+import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
@@ -184,6 +184,11 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    // The same minimum the shared schemas hold the forms to. Better Auth
+    // defaults to eight, so without this the rule would live only in the
+    // client: anything posting straight at /api/auth could still set a
+    // shorter password than the screen it bypassed would accept.
+    minPasswordLength: PASSWORD_MIN_LENGTH,
     // Verification emails are sent on sign-up, but users can still sign in
     // immediately (set to `true` to hard-block unverified sign-ins).
     requireEmailVerification: false,

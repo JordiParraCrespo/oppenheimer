@@ -188,6 +188,29 @@ function generateRootIndex() {
     ? fs.readdirSync(destModelsDir).filter((f) => f.endsWith('.ts'))
     : [];
 
+  // DTOs only the hey-api output defines. Endpoints the retired generator
+  // never covered (hosts, installations) have no file in `src/common/models`,
+  // so without this a consumer reaching for their shapes has to hand-write
+  // one — which is how `HostsRepository` came to read `state` for a field the
+  // API sends as `online`, uncaught until something finally called it.
+  //
+  // Exported by name rather than as a namespace: a `export type * as` re-export
+  // does not survive the consumer's build, and the failure is silent — the
+  // member resolves to something unusable rather than erroring at the import.
+  const legacyNames = new Set(modelFiles.map((f) => path.basename(f, '.ts')));
+  const generatedOnly = fs.existsSync(generatedTypesPath)
+    ? Array.from(
+        new Set(
+          Array.from(
+            fs.readFileSync(generatedTypesPath, 'utf8').matchAll(/^export type (\w+) =/gm),
+            (m) => m[1],
+          ),
+        ),
+      )
+        .filter((name) => !legacyNames.has(name) && /(ResponseDto|Request)$/.test(name))
+        .sort()
+    : [];
+
   const lines = [
     "export { applyApiClientConfig, getAuthHeaders, rememberHeaders } from './configure';",
     "export type { ApiClientConfig, AuthHeaders } from './configure';",
@@ -197,6 +220,13 @@ function generateRootIndex() {
     '',
     BANNER,
     '',
+    ...(generatedOnly.length
+      ? [
+          '// DTOs the hey-api output alone defines',
+          `export type {\n${generatedOnly.map((n) => `  ${n},`).join('\n')}\n} from './generated/types.gen';`,
+          '',
+        ]
+      : []),
     '// Core',
     "export { ApiError } from './data-access/api/openapi/core/ApiError';",
     "export { CancelablePromise, CancelError } from './data-access/api/openapi/core/CancelablePromise';",

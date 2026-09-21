@@ -20,4 +20,8 @@ export const OrganizationsErrors = {
     code: 'ORGANIZATIONS_CLIENT_012',
     message: 'Failed to create the organization',
   },
+  CHECK_SLUG_FAILED: {
+    code: 'ORGANIZATIONS_CLIENT_013',
+    message: 'Failed to check the address',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

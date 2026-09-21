@@ -3,6 +3,8 @@ import type { ApiTokensService } from '../modules/api-tokens';
 import { ApiTokensModule } from '../modules/api-tokens';
 import type { HostsService } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
+import type { InstallationsService } from '../modules/installations';
+import { InstallationsModule } from '../modules/installations';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { ProfileService } from '../modules/profile';
@@ -19,6 +21,7 @@ import { TOKENS } from './tokens';
 export const consumerModules = [
   SessionsModule,
   HostsModule,
+  InstallationsModule,
   ApiTokensModule,
   OrganizationsModule,
   ProfileModule,
@@ -60,6 +63,11 @@ export class ConsumerApp {
 
   get hosts(): HostsService {
     return this.kernel.container.get(TOKENS.HostsService);
+  }
+
+  /** The GitHub App installations this workspace has connected. */
+  get installations(): InstallationsService {
+    return this.kernel.container.get(TOKENS.InstallationsService);
   }
 
   get apiTokens(): ApiTokensService {
