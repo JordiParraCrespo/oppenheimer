@@ -143,3 +143,11 @@ earlier note:
   now one screen — sidebar plus pane — and both pages were deleted
   rather than hidden. The drawer is still the answer for hosts; it is a
   later slice, and it is a drawer, not a destination.
+- `versions/mvp/10-api-modules-and-data-model.md` said a model was a
+  launch option "recorded in the log, not a column". `versions/mvp/12-session-launch.md`
+  makes the promotion that note said would be a replay: the New session
+  screen sets a model, a permission level and an effort, and a restart,
+  the engine button and the remembered last choice each read them per
+  row, so the fold projects them onto `work_session`. "No table, no
+  endpoint" is unchanged, and the flag strings each permission level maps
+  to are catalog data beside `command`, not a column per agent.

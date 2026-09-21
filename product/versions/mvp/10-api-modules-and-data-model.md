@@ -24,7 +24,7 @@ whose contract the API serves.
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
-| **Models** | no table, no column — a field on the shared catalog entry and on the session's launch spec | no table |
+| **Models** | no table — a field on the shared catalog entry and on the session's launch spec. *The "no column" half is superseded by [12](12-session-launch.md): the launch options are folded onto `work_session`.* | no table |
 
 Four of these resolve to "not a table". Each is argued below; none is
 an oversight.
@@ -610,13 +610,20 @@ nothing outside `relay/` reads either.
 
 ### The two "not a table" decisions
 
-**Models.** No table, no column, no endpoint. A model is a launch option
+**Models.** No table and no endpoint. A model is a launch option
 of an agent, and [`07-mvp.md`](../../07-mvp.md) says a model picker is
 explicitly a later idea — the New session screen has four chips and none
 is a model. The seam is an optional `model` in the session's launch
 spec, recorded in the log; because the log is the source of truth,
 promoting it to a column later is a replay, not a backfill of data we
 never captured.
+
+> **Superseded in part, 2026-09-21.** [12](12-session-launch.md) makes
+> that promotion: the New session screen sets a model, a permission level
+> and an effort, and a restart, the engine button and the remembered last
+> choice each read them per row, so the fold projects them onto
+> `work_session` as `launchModel`, `launchPermission` and `launchEffort`.
+> "No table, no endpoint" stands.
 
 Orca's own source is the argument here. Its agent spec carries
 `modelSource: 'static' | 'dynamic'` and a `modelDiscovery.parse(stdout)`
