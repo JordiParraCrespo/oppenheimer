@@ -1,4 +1,5 @@
 export {
+  BranchEntity,
   type InstallationAccountType,
   InstallationEntity,
   RepositoryEntity,

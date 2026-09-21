@@ -262,7 +262,14 @@ export class AdminController {
   @Version('1')
   @RequireScopes('admin:read')
   @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "List a user's sessions" })
+  @ApiOperation({
+    // Named explicitly because the default collides with the sessions module's
+    // own `listSessions`, and the generated client resolves a collision by
+    // suffixing a digit — which is how the console's work-session list ended up
+    // being called `listSessions2`. This one lists *a user's* sign-in sessions.
+    operationId: 'listUserSessions',
+    summary: "List a user's sessions",
+  })
   @ApiResponse({ status: 200, type: [AdminSessionResponseDto] })
   listSessions(
     @Req() req: Request,

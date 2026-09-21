@@ -23,4 +23,8 @@ export const InstallationsErrors = {
     code: 'INSTALLATIONS_CLIENT_004',
     message: 'Failed to load repositories',
   },
+  FETCH_BRANCHES_FAILED: {
+    code: 'INSTALLATIONS_CLIENT_005',
+    message: 'Failed to load branches',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

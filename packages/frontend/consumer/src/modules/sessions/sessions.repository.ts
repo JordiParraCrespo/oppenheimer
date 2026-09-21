@@ -1,49 +1,87 @@
-import { heyApiClient } from '@oppenheimer/api-client';
-import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
-import type { PaginatedResponse } from '@oppenheimer/shared';
-import { injectable } from 'inversify';
 import {
-  type CreateSessionInput,
-  type SessionAgent,
-  SessionEntity,
-  type SessionState,
-} from './session.entity';
+  type CreateSessionRequest,
+  heyApiSdk,
+  type SessionCheckoutResponseDto,
+  type SessionResponseDto,
+} from '@oppenheimer/api-client';
+import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
+import { injectable } from 'inversify';
+import { type CreateSessionInput, SessionCheckoutEntity, SessionEntity } from './session.entity';
 import { SessionsErrors } from './sessions.errors';
 
 /**
- * The wire shape of a session, as the control plane's `sessions` module will
- * answer it (`product/versions/mvp/03-control-plane.md`, data model: sessions
- * — host, repo, base branch, branch, worktree path, agent, state, name).
- * Declared here until the endpoints exist and the typed SDK in
- * `@oppenheimer/api-client` is regenerated from them; then this file switches
- * to `SessionsApi` like every other repository and the DTO below goes.
+ * The wire shapes come from the generated client: `pnpm generate:api-client`
+ * writes them from the API's own OpenAPI, so a field the API renames cannot
+ * stay right here and wrong there.
+ *
+ * They were hand-written here once, against a single-repository session with a
+ * `running | idle | stopped` state — a shape the control plane had already
+ * replaced with checkouts, a derived group and a stored lifecycle. Nothing
+ * noticed, because nothing called it. That is the whole argument for calling the
+ * generated operations rather than composing URLs by hand.
  */
-interface SessionDto {
-  id: string;
-  name: string;
-  hostId: string;
-  repository: string;
-  baseBranch: string;
-  branch: string;
-  agent: SessionAgent;
-  state: SessionState;
-  createdAt: string;
-}
-
-const SESSIONS_URL = '/api/v1/sessions';
-
-function toEntity(data: SessionDto): SessionEntity {
-  return new SessionEntity(
+function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
+  return new SessionCheckoutEntity(
     data.id,
-    data.name,
-    data.hostId,
-    data.repository,
+    data.installationId,
+    data.githubRepoId,
+    data.repositoryFullName,
+    data.directoryName,
     data.baseBranch,
     data.branch,
-    data.agent,
+  );
+}
+
+function toEntity(data: SessionResponseDto): SessionEntity {
+  return new SessionEntity(
+    data.id,
+    data.organizationId,
+    data.projectId,
+    data.hostId,
+    data.name,
+    data.slug,
+    data.agent as SessionEntity['agent'],
+    {
+      model: data.launch.model ?? null,
+      permission: data.launch.permission,
+      effort: data.launch.effort ?? null,
+    },
     data.state,
+    data.lifecycle,
+    data.cwdCheckoutId ?? null,
+    data.checkouts.map(toCheckout),
+    data.stoppedAt ? new Date(data.stoppedAt) : null,
+    data.hints ?? [],
     new Date(data.createdAt),
   );
+}
+
+/**
+ * The body `POST /sessions` takes.
+ *
+ * `launch` is sent only when the caller chose something: an empty object would
+ * be the API's defaults spelled out by a client that did not know them, and the
+ * one default that matters — the permission level — is the API's to state.
+ */
+function toRequest(input: CreateSessionInput): CreateSessionRequest {
+  const launch = input.launch
+    ? {
+        ...(input.launch.model ? { model: input.launch.model } : {}),
+        ...(input.launch.permission ? { permission: input.launch.permission } : {}),
+        ...(input.launch.effort ? { effort: input.launch.effort } : {}),
+      }
+    : undefined;
+
+  return {
+    hostId: input.hostId,
+    agent: input.agent,
+    checkouts: input.checkouts,
+    ...(input.cwdGithubRepoId !== undefined ? { cwdGithubRepoId: input.cwdGithubRepoId } : {}),
+    ...(launch && Object.keys(launch).length ? { launch } : {}),
+    ...(input.prompt ? { prompt: input.prompt } : {}),
+    ...(input.name ? { name: input.name } : {}),
+    ...(input.projectId ? { projectId: input.projectId } : {}),
+  };
 }
 
 @injectable()
@@ -53,15 +91,11 @@ export class SessionsRepository {
    *
    * `GET /sessions` answers the paginated envelope every list endpoint here
    * uses — `{ data, meta }` — so the rows are read out of it rather than off
-   * the body. Mapping the envelope itself threw `data.map is not a function`
-   * on every call, which nothing noticed because nothing called it: the
-   * sessions screen is still its own empty state.
+   * the body.
    */
   @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
-    const { data, error } = await heyApiClient.get<PaginatedResponse<SessionDto>>({
-      url: SESSIONS_URL,
-    });
+    const { data, error } = await heyApiSdk.listSessions();
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no sessions" over a request that never succeeded.
     if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
@@ -80,26 +114,36 @@ export class SessionsRepository {
    */
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)
   async findById(id: string): Promise<SessionEntity> {
-    const { data, error, response } = await heyApiClient.get<SessionDto>({
-      url: `${SESSIONS_URL}/{id}`,
-      path: { id },
-    });
+    const { data, error, response } = await heyApiSdk.getSession({ path: { id } });
     if (error || !data) {
       throw toAppError({ status: response?.status, body: error }, SessionsErrors.FETCH_ONE_FAILED);
     }
     return toEntity(data);
   }
 
+  /**
+   * Start a session.
+   *
+   * The `Idempotency-Key` is not optional in practice and so is minted here
+   * rather than asked of the caller: a session is directories, a git checkout
+   * and a process on somebody's machine, and a retry after a lost response must
+   * hand back the session already created instead of building a second worktree
+   * and a second branch.
+   */
   @MapApiError(SessionsErrors.CREATE_FAILED)
-  async create(input: CreateSessionInput): Promise<SessionEntity> {
-    const { data, error } = await heyApiClient.post<SessionDto>({ url: SESSIONS_URL, body: input });
+  async create(input: CreateSessionInput, idempotencyKey: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.createSession({
+      body: toRequest(input),
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
     if (error || !data) throw new AppError(SessionsErrors.CREATE_FAILED);
     return toEntity(data);
   }
 
   @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<void> {
-    const { error } = await heyApiClient.post({ url: `${SESSIONS_URL}/{id}/stop`, path: { id } });
-    if (error) throw new AppError(SessionsErrors.STOP_FAILED);
+  async stop(id: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.stopSession({ path: { id } });
+    if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
+    return toEntity(data);
   }
 }

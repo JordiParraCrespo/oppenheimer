@@ -45,6 +45,9 @@ export default defineConfig({
       '@oppenheimer/shared/schemas/role',
       '@oppenheimer/shared/constants',
       '@oppenheimer/shared/permissions',
+      // The coding-agent catalog: New session reads the models, the launch
+      // flags and the effort stops out of it.
+      '@oppenheimer/shared/agents',
     ],
   },
   build: {

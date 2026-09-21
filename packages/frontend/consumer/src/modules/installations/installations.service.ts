@@ -23,6 +23,10 @@ export class InstallationsService {
     return this.repository.remove(id);
   }
 
+  branches(installationId: string, githubRepoId: number) {
+    return this.repository.branches(installationId, githubRepoId);
+  }
+
   repositories(installationId: string): Promise<RepositoryEntity[]> {
     return this.repository.repositories(installationId);
   }

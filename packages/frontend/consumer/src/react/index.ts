@@ -19,10 +19,14 @@ export {
 export {
   type ConnectInstallationVariables,
   installationsKeys,
+  type RepositoryRef,
   useConnectInstallation,
   useInstallationRepositories,
+  useInstallationRepositoriesFor,
   useInstallations,
   useRemoveInstallation,
+  useRepositoryBranches,
+  useRepositoryBranchesFor,
 } from './installations.queries';
 export {
   type ClaimPersonalWorkspaceVariables,
@@ -47,6 +51,7 @@ export {
   useUploadAvatar,
 } from './profile.queries';
 export {
+  type CreateSessionVariables,
   sessionsKeys,
   useCreateSession,
   useSession,

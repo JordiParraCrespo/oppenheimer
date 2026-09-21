@@ -44,7 +44,11 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     return <RouteError error={error} />;
   }
 
-  if (session.state === 'starting' || session.state === 'failed') {
+  // The **lifecycle** decides which pane this is, never the derived group: the
+  // group is organised by what needs you, so an `idle` session has a live PTY
+  // and a `waiting-on-you` one may be a terminal or a failure. What the pane
+  // turns on is whether a terminal exists to attach to.
+  if (session.isProvisioning || session.lifecycle === 'failed') {
     return <SessionProvisioning session={session} />;
   }
 

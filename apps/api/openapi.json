@@ -6626,7 +6626,7 @@
     },
     "/api/v1/admin/users/{id}/sessions": {
       "get": {
-        "operationId": "listSessions",
+        "operationId": "listUserSessions",
         "parameters": [
           {
             "name": "id",

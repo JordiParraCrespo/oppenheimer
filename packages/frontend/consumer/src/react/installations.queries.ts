@@ -4,10 +4,12 @@ import {
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import type {
+  BranchEntity,
   InstallationEntity,
   RepositoryEntity,
 } from '../modules/installations/installation.entity';
@@ -23,6 +25,8 @@ export const installationsKeys = {
   list: () => [...installationsKeys.lists()] as const,
   repositories: (installationId: string) =>
     [...installationsKeys.all, installationId, 'repositories'] as const,
+  branches: (installationId: string, githubRepoId: number) =>
+    [...installationsKeys.all, installationId, 'branches', githubRepoId] as const,
 };
 
 /**
@@ -101,5 +105,94 @@ export function useInstallationRepositories(
     queryFn: () => app.installations.repositories(installationId as string),
     enabled: Boolean(installationId),
     ...options,
+  });
+}
+
+/**
+ * One repository's branches: the branch pane of New session's repository chip.
+ *
+ * Disabled until a repository is actually chosen, because the API answers this
+ * from GitHub uncached — a call per row of a picker nobody has opened is a rate
+ * limit spent on nothing.
+ */
+export function useRepositoryBranches(
+  installationId: string | undefined,
+  githubRepoId: number | undefined,
+  options?: Omit<UseQueryOptions<BranchEntity[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: installationsKeys.branches(installationId ?? '', githubRepoId ?? 0),
+    queryFn: () => app.installations.branches(installationId as string, githubRepoId as number),
+    enabled: Boolean(installationId) && Boolean(githubRepoId),
+    ...options,
+  });
+}
+
+/** One repository, as a picker names it: our installation row plus GitHub's id. */
+export interface RepositoryRef {
+  installationId: string;
+  githubRepoId: number;
+}
+
+/**
+ * The branches of several repositories at once — what New session needs, since
+ * its repository chip multi-selects and each selected row carries its own
+ * branch.
+ *
+ * `useQueries` rather than a hook per repository: the number of selected
+ * repositories changes as somebody picks them, and a hook cannot be called in a
+ * loop. Each entry is keyed exactly as {@link useRepositoryBranches} keys it, so
+ * the two share a cache rather than fetching the same branches twice.
+ */
+export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[]) {
+  const app = useConsumerApp();
+
+  return useQueries({
+    queries: repositories.map((repository) => ({
+      queryKey: installationsKeys.branches(repository.installationId, repository.githubRepoId),
+      queryFn: () => app.installations.branches(repository.installationId, repository.githubRepoId),
+    })),
+    combine: (results) => ({
+      /** Branches by `githubRepoId`, holding only the repositories that answered. */
+      byRepository: new Map(
+        results.flatMap((result, index) => {
+          const repository = repositories[index];
+          return result.data && repository
+            ? ([[repository.githubRepoId, result.data]] as [number, BranchEntity[]][])
+            : [];
+        }),
+      ),
+      isPending: results.some((result) => result.isPending),
+    }),
+  });
+}
+
+/**
+ * The repositories of several installations, merged into one list.
+ *
+ * A workspace may have the App installed on more than one account — a personal
+ * one and an organisation's — and the picker is one list rather than one per
+ * account. Each row carries the installation it came from, because
+ * `githubRepoId` alone is not unique across two installations and the create
+ * call names a repository by the pair.
+ */
+export function useInstallationRepositoriesFor(installationIds: readonly string[]) {
+  const app = useConsumerApp();
+
+  return useQueries({
+    queries: installationIds.map((installationId) => ({
+      queryKey: installationsKeys.repositories(installationId),
+      queryFn: () => app.installations.repositories(installationId),
+    })),
+    combine: (results) => ({
+      repositories: results.flatMap((result, index) => {
+        const installationId = installationIds[index];
+        if (!result.data || !installationId) return [];
+        return result.data.map((repository) => ({ repository, installationId }));
+      }),
+      isPending: results.some((result) => result.isPending),
+    }),
   });
 }

@@ -44,3 +44,20 @@ export class RepositoryEntity {
     public readonly pushedAt: Date | null,
   ) {}
 }
+
+/**
+ * One branch of one repository, offered as a checkout's base.
+ *
+ * Answered live by GitHub and never stored: the branch somebody pushed a minute
+ * ago is the one they are looking for, so there is nothing here worth a cache
+ * that could be stale (`product/versions/mvp/03-control-plane.md`).
+ */
+export class BranchEntity {
+  constructor(
+    public readonly name: string,
+    public readonly commitSha: string,
+    /** Whether a branch protection rule applies. */
+    public readonly isProtected: boolean,
+    public readonly isDefault: boolean,
+  ) {}
+}

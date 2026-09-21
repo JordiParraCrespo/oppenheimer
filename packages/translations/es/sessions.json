@@ -1,36 +1,102 @@
 {
   "home": {
     "emptyTitle": "No hay sesiones abiertas",
-    "emptyDescription": "Arranca una y la terminal ocupa este panel.",
+    "emptyDescription": "Inicia una y el terminal ocupará este panel.",
     "openTitle": "Ninguna sesión abierta",
-    "openDescription": "Elige una en la barra lateral o arranca otra."
+    "openDescription": "Elige una en la barra lateral o inicia otra."
   },
   "provisioning": {
-    "lead": "Preparando el worktree en tu máquina.",
-    "failedLead": "La máquina no ha podido arrancar esta sesión.",
-    "step": "Arrancando la sesión"
+    "lead": "Preparando el worktree en tu host.",
+    "failedLead": "El host no pudo iniciar esta sesión.",
+    "step": "Iniciando la sesión"
   },
-  "state": {
-    "starting": "Arrancando",
-    "running": "En marcha",
+  "group": {
+    "working": "Trabajando",
+    "waiting-on-you": "Te espera",
+    "ready-for-review": "Lista para revisar",
+    "landing": "Aterrizando",
     "idle": "Inactiva",
-    "stopped": "Detenida",
-    "failed": "Fallida"
+    "resolved": "Terminada"
   },
   "closed": {
     "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
   },
   "new": {
     "title": "Nueva sesión",
-    "subtitle": "Elige máquina, repositorio, rama y agente.",
-    "emptyTitle": "Llega con la primera máquina",
-    "emptyDescription": "El formulario de sesión llega en cuanto vinculas un host."
+    "subtitle": "Define el alcance y describe el trabajo.",
+    "host": {
+      "label": "Host",
+      "placeholder": "Host",
+      "search": "Buscar hosts…",
+      "empty": "Ningún host coincide.",
+      "add": "Añadir host…",
+      "offline": "Desconectado"
+    },
+    "repository": {
+      "label": "Repositorios",
+      "placeholder": "Repositorio",
+      "search": "Buscar repositorios…",
+      "empty": "Ningún repositorio coincide.",
+      "branchSearch": "Buscar ramas…",
+      "branchEmpty": "Ninguna rama coincide.",
+      "branchPane": "Rama de {{name}}",
+      "changeBranch": "Cambiar de rama",
+      "connect": "Conectar un repositorio…",
+      "archived": "Archivado"
+    },
+    "branch": {
+      "label": "Rama",
+      "placeholder": "Rama",
+      "search": "Buscar ramas…",
+      "empty": "Ninguna rama coincide.",
+      "default": "Por defecto"
+    },
+    "agent": {
+      "label": "Agente y modelo"
+    },
+    "permission": {
+      "label": "Nivel de permisos",
+      "ask": {
+        "label": "Pedir aprobación",
+        "description": "El agente pregunta antes de ejecutar nada."
+      },
+      "auto": {
+        "label": "Aprobar por mí",
+        "description": "Las ediciones y los comandos seguros se ejecutan; el resto sigue preguntando."
+      },
+      "full": {
+        "label": "Acceso total",
+        "description": "No pregunta nada. Puede cambiar esta máquina sin supervisión."
+      }
+    },
+    "effort": {
+      "label": "Esfuerzo",
+      "minimal": "Mínimo",
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto",
+      "max": "Máximo"
+    },
+    "composer": {
+      "placeholder": "Describe una tarea o haz una pregunta"
+    },
+    "noHosts": {
+      "title": "Todavía no hay host",
+      "description": "Una sesión se ejecuta en una máquina tuya. Vincula una y aparecerá aquí.",
+      "action": "Añadir un host"
+    },
+    "noRepositories": {
+      "title": "Todavía no hay repositorios",
+      "description": "Conecta GitHub y elige los repositorios que una sesión puede usar.",
+      "action": "Conectar GitHub"
+    },
+    "queued": "Tu primera tarea está en cola para este host."
   },
   "session": {
     "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
     "status": {
       "connecting": "Conectando",
-      "live": "En directo",
+      "live": "En vivo",
       "closed": "Desconectado"
     }
   }
