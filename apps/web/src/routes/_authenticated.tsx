@@ -1,18 +1,26 @@
+import { Wordmark } from '@oppenheimer/design-system-web';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { AppShell } from '@oppenheimer/frontend-web';
+import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect } from '@tanstack/react-router';
-import { NAV, USER_MENU_LINKS } from '@/lib/nav';
+import { useTranslation } from 'react-i18next';
+import { NotFoundScreen } from '@/features/public/screens/not-found';
+import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
+import { NAV } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
       // `href`, not `pathname`: a deep link's search params are part of where
-      // the reader was going (`/settings?section=security`), and dropping them
-      // lands them somewhere else after they sign in.
+      // the reader was going, and dropping them lands them somewhere else
+      // after they sign in.
       throw redirect({ to: '/login', search: { redirect: location.href } });
     }
   },
   component: AuthenticatedShell,
+  // Inside the shell, not over it: a 404 or a thrown render keeps the sidebar,
+  // so the reader is still in the product with their sessions one click away.
+  errorComponent: RouteError,
+  notFoundComponent: NotFoundScreen,
 });
 
 /**
@@ -32,6 +40,7 @@ export const Route = createFileRoute('/_authenticated')({
  * on a network blip, or straight back to the onboarding screen they just left.
  */
 function AuthenticatedShell() {
+  const { t } = useTranslation();
   const organizations = useOrganizations();
 
   const settledEmpty =
@@ -39,16 +48,15 @@ function AuthenticatedShell() {
 
   if (settledEmpty) return <Navigate to="/onboarding" replace />;
 
-  // The shell names the first organization the caller belongs to. Keeping it
-  // on the same list query as General Settings means a saved name or logo is
-  // reflected here immediately from the query cache.
-  const organization = organizations.data?.[0];
-
   return (
     <AppShell
       nav={NAV}
-      userMenuLinks={USER_MENU_LINKS}
-      workspace={organization ? { name: organization.name, logo: organization.logo } : undefined}
+      sidebar={<SessionsSidebar />}
+      // The brand row names the product, not the workspace — version 1 has one
+      // workspace per account. `chrome={false}` is the bar, the palette and
+      // the foot's hairline; `AppShell` and `use-shell.ts` say why.
+      brand={<Wordmark size={18} product={t('common.product')} />}
+      chrome={false}
     >
       <Outlet />
     </AppShell>

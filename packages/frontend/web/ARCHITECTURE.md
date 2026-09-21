@@ -15,13 +15,13 @@ importing it configures i18next; everything else is pure and may be dropped.
 
 | Concern | What it holds | Layer |
 | --- | --- | --- |
-| `platform` | `LocalStorageService`, `useCopy`, `sanitizeRedirect` — the browser, wrapped | leaf |
+| `platform` | `LocalStorageService`, `sanitizeRedirect` — the browser, wrapped | leaf |
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `useZodResolver` | leaf |
 | `table` | `DataTable` (a shell over a header, a body and a footer, so a keystroke in the search field does not re-render the rows), its column/facet/sort types, `useTableQuery`, `useClampedPage`, `useDebouncedCallback`, `paginateRows`, `downloadCsv` | middle |
-| `layout` | `PageHead`, the section primitives (`SectionCard`, `SectionRow`, `FieldRow`, …), `ConfirmDialog` | middle |
+| `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
 | `auth` | `AuthLayout`, `AuthArtPanel`, `BrandLogo`, the auth primitives, `PasswordInput`, `SocialLoginButtons`, `OAuthCallbackNotice`, `redirectSignedIn` | top |
@@ -67,8 +67,9 @@ what the shell shows — `apps/web/src/routes/_authenticated.tsx`:
 ```tsx
 <AppShell
   nav={NAV}
-  userMenuLinks={USER_MENU_LINKS}
-  workspace={organization ? { name: organization.name, logo: organization.logo } : undefined}
+  sidebar={<SessionsSidebar />}
+  brand={<Wordmark size={18} product={t('common.product')} />}
+  chrome={false}
 >
   <Outlet />
 </AppShell>
@@ -83,8 +84,23 @@ route its screen reads (`ENDPOINT_POLICIES['GET /tokens']`), rather than writing
 rules out — the API's own `endpoint-policies.spec.ts` pins its controllers to that
 same entry. The kit
 holds no route list: the URLs belong to each app, and the two Vite apps do not
-share them. `userMenuLinks` are the account-menu rows above the
-language list, and `workspace` is what the sidebar header names.
+share them.
+
+The other four are slots, and the console is the app that uses them: `sidebar`
+replaces the nav list between the brand row and the account menu (its own is a
+feature, because it reads a product hook), `brand` replaces the workspace row
+at the top, `userMenuLinks` are account-menu rows above appearance and
+language, and `workspace` is what the sidebar header names when no `brand` is
+given. `chrome` is the one that takes things away: `false` drops the 56px bar,
+the ⌘K palette and the hairline above the account row, which is the console —
+its sidebar is its content, and the version-1 artboards draw none of the
+three.
+
+A screen says how it wants to be framed with route `staticData.pane`:
+`measure` (the default: the padded 1080px reading column) or `full`, which
+hands the content area to the screen and keeps no scroll of its own.
+`resolveContentPane` reads the innermost match that declares one, the same way
+`AuthLayout` reads its legal note.
 
 ## How an app configures the auth layout
 

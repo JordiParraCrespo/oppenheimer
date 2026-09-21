@@ -137,3 +137,9 @@ earlier note:
 - The same note then dropped the repository table entirely: a checkout
   carries GitHub's ids inline and the runner owns the store on disk.
   Seven new tables, not eight.
+- `versions/mvp/05-screens.md` described a settings drawer holding
+  hosts, and the console kept the starter's Settings and Profile pages
+  underneath it. The version-1 frames draw neither, so the console is
+  now one screen — sidebar plus pane — and both pages were deleted
+  rather than hidden. The drawer is still the answer for hosts; it is a
+  later slice, and it is a drawer, not a destination.

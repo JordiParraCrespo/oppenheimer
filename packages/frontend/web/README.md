@@ -35,7 +35,7 @@ Everything is re-exported from the package root (`src/index.ts`):
   `useLocale`, `useApplyUserSettings`, the date formatters
   (`formatMediumDate`, …) and the person-name helpers.
 - **analytics** — `PageViewTracker`, `createWebAnalyticsClient`.
-- **platform** — `LocalStorageService`, `useCopy`, `sanitizeRedirect`.
+- **platform** — `LocalStorageService`, `sanitizeRedirect`.
 - **roles** — `RolePill`.
 
 `package.json` `sideEffects` names one file, `src/i18n/lib/i18n.ts`: it

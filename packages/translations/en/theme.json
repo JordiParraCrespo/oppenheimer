@@ -1,3 +1,6 @@
 {
-  "toggle": "Toggle theme"
+  "toggle": "Toggle theme",
+  "label": "Appearance",
+  "light": "Light",
+  "dark": "Dark"
 }

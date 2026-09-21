@@ -17,7 +17,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as AuthPublicForgotPasswordRouteImport } from './routes/_auth/_public/forgot-password'
 import { Route as AuthPublicLoginRouteImport } from './routes/_auth/_public/login'
@@ -31,7 +31,6 @@ import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onbo
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,9 +69,9 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
+const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -144,12 +143,6 @@ const AuthenticatedSessionsNewRoute =
     path: '/sessions/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -157,7 +150,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/onboarding': typeof AuthOnboardingRouteWithChildren
-  '/profile': typeof AuthenticatedProfileRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
@@ -171,14 +164,13 @@ export interface FileRoutesByFullPath {
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
-  '/profile': typeof AuthenticatedProfileRoute
+  '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
@@ -192,7 +184,6 @@ export interface FileRoutesByTo {
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -204,7 +195,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_auth/_public': typeof AuthPublicRouteWithChildren
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
-  '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/_auth/_public/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/_auth/_public/login': typeof AuthPublicLoginRoute
@@ -218,7 +209,6 @@ export interface FileRoutesById {
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,7 +218,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/onboarding'
-    | '/profile'
+    | '/$'
     | '/oauth/consent'
     | '/forgot-password'
     | '/login'
@@ -242,14 +232,13 @@ export interface FileRouteTypes {
     | '/sessions/new'
     | '/onboarding/'
     | '/sessions/'
-    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/privacy'
     | '/terms'
-    | '/profile'
+    | '/$'
     | '/oauth/consent'
     | '/forgot-password'
     | '/login'
@@ -263,7 +252,6 @@ export interface FileRouteTypes {
     | '/sessions/new'
     | '/onboarding'
     | '/sessions'
-    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -274,7 +262,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_auth/_public'
     | '/_auth/onboarding'
-    | '/_authenticated/profile'
+    | '/_authenticated/$'
     | '/oauth/consent'
     | '/_auth/_public/forgot-password'
     | '/_auth/_public/login'
@@ -288,7 +276,6 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/new'
     | '/_auth/onboarding/'
     | '/_authenticated/sessions/'
-    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -359,11 +346,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+    '/_authenticated/$': {
+      id: '/_authenticated/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AuthenticatedSplatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/oauth/consent': {
@@ -457,13 +444,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
   }
 }
 
@@ -518,19 +498,17 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
-  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

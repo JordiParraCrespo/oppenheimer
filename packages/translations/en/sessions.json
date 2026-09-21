@@ -1,14 +1,30 @@
 {
-  "title": "Sessions",
-  "subtitle": "Each session is a worktree with a terminal on a host you own.",
-  "newSession": "New session",
-  "emptyTitle": "No sessions yet",
-  "emptyDescription": "Add a host under Settings, then start your first session.",
+  "home": {
+    "emptyTitle": "No sessions open",
+    "emptyDescription": "Start one and the terminal takes over this pane.",
+    "openTitle": "No session open",
+    "openDescription": "Pick one from the sidebar, or start another."
+  },
+  "provisioning": {
+    "lead": "Setting up the worktree on your host.",
+    "failedLead": "The host could not start this session.",
+    "step": "Starting the session"
+  },
+  "state": {
+    "starting": "Starting",
+    "running": "Running",
+    "idle": "Idle",
+    "stopped": "Stopped",
+    "failed": "Failed"
+  },
+  "closed": {
+    "description": "This session has stopped. Its work is on its branch."
+  },
   "new": {
     "title": "New session",
     "subtitle": "Pick a host, a repository, a branch and an agent.",
     "emptyTitle": "Coming with the first host",
-    "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+    "emptyDescription": "The session form lands once a host is paired."
   },
   "session": {
     "composerPlaceholder": "Ask the agent, or run a command",

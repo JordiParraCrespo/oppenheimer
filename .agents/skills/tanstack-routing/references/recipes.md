@@ -143,22 +143,22 @@ const { proceed, reset, status } = useBlocker({
 Render the app's `ConfirmDialog` from the kit on `status === 'blocked'`. Put
 the hook in the feature's `hooks/`, not in the route file — a route composes.
 
-## Add a not-found boundary
+## Make a route answer "this does not exist"
 
-There is none today (see the skill's gaps section), so the first one is an
-app-wide decision worth raising before writing.
-
-When it lands: a `notFoundComponent` on `__root.tsx` catches unknown URLs. For
-"this id does not exist", throw `notFound()` from the route's `beforeLoad` or
-loader and give the *layout* the boundary, so the 404 renders inside the app
-shell rather than replacing it:
+The boundaries already exist — `__root.tsx` for a URL outside any layout,
+`_authenticated.tsx` for one inside the console, and `_authenticated/$.tsx` as
+the console's catch-all. So a route with a bad id does not add a screen; it
+throws:
 
 ```tsx
-// routes/_authenticated.tsx
-export const Route = createFileRoute('/_authenticated')({
-  notFoundComponent: () => <NotFoundScreen />,   // inside AppShell
+export const Route = createFileRoute('/_authenticated/sessions/$sessionId')({
+  beforeLoad: ({ params }) => {
+    if (!looksLikeId(params.sessionId)) throw notFound();
+  },
 });
 ```
 
-`notFoundMode` defaults to `fuzzy`, which renders at the closest matching route
-with a boundary — that is what keeps the shell on screen.
+`notFoundMode` is `fuzzy` by default, so this renders at the closest match with
+a boundary — inside `AppShell`, with the sidebar still beside it, rather than
+replacing the page. Reach for `__root`'s boundary only for something genuinely
+outside the app.

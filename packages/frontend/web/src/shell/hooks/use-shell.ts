@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 import type { NavItem, NavLink, ShellWorkspace } from '../lib/nav';
 
 /**
@@ -11,6 +11,36 @@ export interface ShellConfig {
   /** Links shown in the account menu above the language list. */
   userMenuLinks?: readonly NavLink[];
   workspace?: ShellWorkspace;
+  /**
+   * What fills the sidebar between the brand row and the account menu,
+   * replacing the nav list.
+   *
+   * The console's sidebar *is* its session list, which needs a product hook
+   * and so cannot live in a kit both apps load. An app that has something
+   * better to put there passes it; the control plane, whose sidebar is a set
+   * of destinations, passes nothing and keeps the nav.
+   */
+  sidebar?: ReactNode;
+  /**
+   * What the sidebar's top row shows, replacing the workspace avatar and name.
+   *
+   * The console puts its wordmark there: version 1 has one workspace per
+   * account, so naming it in the chrome says nothing the reader does not know,
+   * and the row is where the product names itself. An app with real workspaces
+   * to tell apart passes nothing and keeps the avatar.
+   */
+  brand?: ReactNode;
+  /**
+   * Whether the app wears the control plane's chrome: the 56px bar over the
+   * content, the ⌘K command palette, and the hairline above the account row.
+   * Default `true`.
+   *
+   * The console passes `false`. Its sidebar *is* its content, so a second row
+   * of navigation has nothing to hold, and the version-1 artboards draw none
+   * of the three. Nothing is lost with them: appearance and language live in
+   * the account menu, and with two destinations there is nothing to search.
+   */
+  chrome?: boolean;
 }
 
 const ShellContext = createContext<ShellConfig | null>(null);

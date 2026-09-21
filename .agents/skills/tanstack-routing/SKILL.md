@@ -32,8 +32,8 @@ apps/web/src/
     │   ├── _public/        login · register · forgot-password · reset-password
     │   ├── onboarding.tsx  guard: signed-out → /login; no component
     │   └── onboarding/     index (redirects to workspace) · the four steps
-    ├── _authenticated.tsx  guard: signed-out → /login; renders AppShell
-    ├── _authenticated/     sessions/ · settings/ · profile
+    ├── _authenticated.tsx  guard: signed-out → /login; AppShell + its 404/error
+    ├── _authenticated/     sessions/ · settings/ · profile · $ (console catch-all)
     └── about · privacy · terms · oauth/consent   (public, no layout)
 ```
 
@@ -134,9 +134,14 @@ things.
 
 When a layout needs to vary per page, the page declares route `staticData` and
 the layout reads it off the innermost match — the page overrides its layout
-without reaching up into it. `AuthLayout` reads two keys, `authWidth` and
-`legalNoteKey`, typed by a `declare module` block that augments
-`StaticDataRouteOption` in the component's own file.
+without reaching up into it.
+
+Two layouts do this, each augmenting `StaticDataRouteOption` with a
+`declare module` block beside the code that reads it, so a key and its only
+consumer stay together: `AuthLayout` reads `authWidth` and `legalNoteKey`,
+and `AppShell` reads `pane` (`measure` or `full`) through `resolveContentPane`
+in the kit's `shell/lib/pane.ts`. Adding a key means adding it next to its
+reader, not to a shared types file.
 
 Three things to get right, each of which this layout got wrong first:
 
@@ -176,24 +181,27 @@ not a route change — put the `queryClient` on the router context, say why the
 router should own that data, and revisit `defaultPreloadStaleTime` in the same
 diff.
 
-## What these apps do not have yet
+## Not-found and error boundaries
 
-Worth knowing before you assume a mechanism exists — and worth proposing rather
+Both exist; do not rebuild them. `__root.tsx` carries an `errorComponent` and
+a `notFoundComponent` for a URL outside any layout, and `_authenticated.tsx`
+carries its own pair so a 404 or a thrown render inside the console keeps the
+shell and sidebar around it. `_authenticated/$.tsx` is the catch-all that
+routes an unknown console URL into that same screen.
+
+`notFoundMode` defaults to `fuzzy`, which is what renders the 404 at the
+closest match with a boundary rather than replacing the whole page. For "this
+id does not exist", throw `notFound()` from the route's `beforeLoad` or loader
+and let the layout's boundary catch it.
+
+## What these apps still do not have
+
+Worth knowing before you assume a mechanism exists, and worth proposing rather
 than quietly adding, since each is app-wide:
 
-- **No `notFoundComponent` anywhere**, and no `defaultNotFoundComponent`. An
-  unknown URL renders the router's bare "Not Found" inside `__root`, with no
-  app chrome. A real 404 screen belongs on `__root` (and, for a bad id inside
-  a layout, on that layout, with `notFound()` thrown from the route).
-- **No `errorComponent`**, so a render error in a route has no boundary below
-  the root.
 - **No `useBlocker`.** That is the tool for a form with unsaved changes, and
   it drives the browser's own `beforeunload` too.
 - **No scroll restoration** configured.
-
-None of these are load-bearing for the current screens; all four are the kind
-of thing an agent invents badly under time pressure. Raise them as their own
-change.
 
 ## Verify before you push
 
