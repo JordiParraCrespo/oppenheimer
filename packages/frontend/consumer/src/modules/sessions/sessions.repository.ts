@@ -1,5 +1,6 @@
 import { heyApiClient } from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import type { PaginatedResponse } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import {
   type CreateSessionInput,
@@ -47,13 +48,24 @@ function toEntity(data: SessionDto): SessionEntity {
 
 @injectable()
 export class SessionsRepository {
+  /**
+   * The caller's sessions.
+   *
+   * `GET /sessions` answers the paginated envelope every list endpoint here
+   * uses — `{ data, meta }` — so the rows are read out of it rather than off
+   * the body. Mapping the envelope itself threw `data.map is not a function`
+   * on every call, which nothing noticed because nothing called it: the
+   * sessions screen is still its own empty state.
+   */
   @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<SessionEntity[]> {
-    const { data, error } = await heyApiClient.get<SessionDto[]>({ url: SESSIONS_URL });
+    const { data, error } = await heyApiClient.get<PaginatedResponse<SessionDto>>({
+      url: SESSIONS_URL,
+    });
     // An absent body is a failed read, not an empty collection — returning `[]`
     // would render "no sessions" over a request that never succeeded.
-    if (error || !data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
-    return data.map(toEntity);
+    if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
+    return data.data.map(toEntity);
   }
 
   @MapApiError(SessionsErrors.FETCH_ONE_FAILED)

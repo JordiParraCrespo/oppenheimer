@@ -3,12 +3,12 @@
   "subtitle": "Each session is a worktree with a terminal on a host you own.",
   "newSession": "New session",
   "emptyTitle": "No sessions yet",
-  "emptyDescription": "Add a host under Settings, then start your first session.",
+  "emptyDescription": "Pair a host, then start your first session.",
   "new": {
     "title": "New session",
     "subtitle": "Pick a host, a repository, a branch and an agent.",
     "emptyTitle": "Coming with the first host",
-    "emptyDescription": "The session form lands once a host is paired. Add one under Settings → Hosts."
+    "emptyDescription": "The session form lands once a host is paired."
   },
   "session": {
     "composerPlaceholder": "Ask the agent, or run a command",

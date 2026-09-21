@@ -1,6 +1,7 @@
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
 import { AppShell } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect } from '@tanstack/react-router';
+import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { NAV, USER_MENU_LINKS } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
@@ -48,6 +49,7 @@ function AuthenticatedShell() {
     <AppShell
       nav={NAV}
       userMenuLinks={USER_MENU_LINKS}
+      sidebar={<SessionsSidebar />}
       workspace={organization ? { name: organization.name, logo: organization.logo } : undefined}
     >
       <Outlet />

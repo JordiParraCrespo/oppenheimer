@@ -23,13 +23,18 @@ function workspaceInitial(name: string): string {
 }
 
 /**
- * The workspace sidebar: brand row, the nav, and the user menu pinned to the
- * bottom. 244px and the hairline against the canvas both come from the design
- * system's `Sidebar`, which is already cut to this brand.
+ * The workspace sidebar: brand row, the app's own body, and the user menu
+ * pinned to the bottom. 244px and the hairline against the canvas both come
+ * from the design system's `Sidebar`, which is already cut to this brand.
+ *
+ * The body is the nav list unless the app passed a `sidebar` of its own. The
+ * console's is its session list, which is a feature rather than kit because
+ * it reads a product hook; the brand row and the account menu stay here, so
+ * an app that replaces the middle still gets both.
  */
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { workspace } = useShell();
+  const { workspace, sidebar } = useShell();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -61,31 +66,33 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup
-          className="px-3 py-0"
-          role="navigation"
-          aria-label={t('nav.primaryNavigation')}
-        >
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-px">
-              {entries.map((entry) => {
-                const Icon = entry.icon;
-                // `/sessions/new` should still light up Sessions, so match on
-                // the prefix rather than the exact path.
-                const active = pathname === entry.to || pathname.startsWith(`${entry.to}/`);
+        {sidebar ?? (
+          <SidebarGroup
+            className="px-3 py-0"
+            role="navigation"
+            aria-label={t('nav.primaryNavigation')}
+          >
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-px">
+                {entries.map((entry) => {
+                  const Icon = entry.icon;
+                  // `/sessions/new` should still light up Sessions, so match on
+                  // the prefix rather than the exact path.
+                  const active = pathname === entry.to || pathname.startsWith(`${entry.to}/`);
 
-                return (
-                  <SidebarMenuItem key={entry.to}>
-                    <SidebarMenuButton isActive={active} render={<Link to={entry.to} />}>
-                      <Icon />
-                      <span>{t(`nav.${entry.labelKey}`)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  return (
+                    <SidebarMenuItem key={entry.to}>
+                      <SidebarMenuButton isActive={active} render={<Link to={entry.to} />}>
+                        <Icon />
+                        <span>{t(`nav.${entry.labelKey}`)}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
