@@ -35,6 +35,31 @@ describe('resolveCapabilities', () => {
     expect(resolveCapabilities(configured).session_namer).toBe(true);
   });
 
+  it('reports a namer for an OpenAI-compatible server, key or no key', () => {
+    // One adapter serves Groq, Together, vLLM and a local Ollama; the last of
+    // those wants no key, and demanding one would report "no namer" for exactly
+    // the deployment where the prompt never leaves the building.
+    const local = configWith({
+      'sessions.namerProvider': 'openai-compatible',
+      'sessions.namerBaseUrl': 'http://localhost:11434/v1',
+      'sessions.namerModel': 'a-model-id',
+    });
+    expect(resolveCapabilities(local).session_namer).toBe(true);
+
+    // Without somewhere to send the prompt it is still not configured.
+    const noBaseUrl = configWith({
+      'sessions.namerProvider': 'openai-compatible',
+      'sessions.namerModel': 'a-model-id',
+    });
+    expect(resolveCapabilities(noBaseUrl).session_namer).toBe(false);
+
+    const noModel = configWith({
+      'sessions.namerProvider': 'openai-compatible',
+      'sessions.namerBaseUrl': 'http://localhost:11434/v1',
+    });
+    expect(resolveCapabilities(noModel).session_namer).toBe(false);
+  });
+
   it('reports hosts from the same predicate the host routes refuse on', () => {
     // Two of the three is not a working pairing flow: without the install URL
     // there is no command to print, and without a usable signing key there is no

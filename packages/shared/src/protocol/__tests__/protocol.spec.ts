@@ -98,6 +98,8 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     projectSlug: 'xrp-mobile',
     sessionSlug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
+    launch: { model: 'opus', permission: 'ask', effort: 'medium' },
+    prompt: 'Fix the wallet list empty state',
     branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     checkouts: [
       {

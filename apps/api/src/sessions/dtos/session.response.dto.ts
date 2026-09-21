@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SESSION_GROUPS, SESSION_STATES } from '@oppenheimer/shared';
+import type { SessionEffortDto, SessionPermissionDto } from '@oppenheimer/shared';
+import {
+  SESSION_EFFORTS,
+  SESSION_GROUPS,
+  SESSION_PERMISSIONS,
+  SESSION_STATES,
+} from '@oppenheimer/shared';
 
 /**
  * One repository checked out for this session.
@@ -59,6 +65,39 @@ export class SessionCheckoutResponseDto {
   branch!: string;
 }
 
+/**
+ * How the agent was started.
+ *
+ * It is on the read as well as the write because the console shows the engine
+ * button on a session that already exists, and because a restart has to
+ * reproduce the launch (`product/versions/mvp/12-session-launch.md`). What each
+ * value means to a given CLI is catalog data in `@oppenheimer/shared`, not
+ * something this API translates.
+ */
+export class SessionLaunchResponseDto {
+  @ApiPropertyOptional({
+    description: 'The model the agent was launched with; null runs that agent’s own default.',
+    nullable: true,
+    type: String,
+    example: 'opus',
+  })
+  model!: string | null;
+
+  @ApiProperty({
+    enum: SESSION_PERMISSIONS,
+    description:
+      'What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default.',
+  })
+  permission!: SessionPermissionDto;
+
+  @ApiPropertyOptional({
+    enum: SESSION_EFFORTS,
+    nullable: true,
+    description: 'How hard the agent may think. Null leaves the agent its own default.',
+  })
+  effort!: SessionEffortDto | null;
+}
+
 export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
@@ -87,6 +126,9 @@ export class SessionResponseDto {
 
   @ApiProperty({ description: 'The coding agent this session runs.', example: 'claude-code' })
   agent!: string;
+
+  @ApiProperty({ type: SessionLaunchResponseDto })
+  launch!: SessionLaunchResponseDto;
 
   @ApiProperty({
     enum: SESSION_GROUPS,

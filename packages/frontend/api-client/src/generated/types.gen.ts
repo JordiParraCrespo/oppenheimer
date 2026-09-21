@@ -898,6 +898,21 @@ export type UpdateProjectRequest = {
     name: string;
 };
 
+export type SessionLaunchResponseDto = {
+    /**
+     * The model the agent was launched with; null runs that agent’s own default.
+     */
+    model?: string | null;
+    /**
+     * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default.
+     */
+    permission: 'ask' | 'auto' | 'full';
+    /**
+     * How hard the agent may think. Null leaves the agent its own default.
+     */
+    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+};
+
 export type SessionCheckoutResponseDto = {
     id: string;
     /**
@@ -951,6 +966,7 @@ export type SessionResponseDto = {
      * The coding agent this session runs.
      */
     agent: string;
+    launch: SessionLaunchResponseDto;
     /**
      * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
      */
@@ -1010,6 +1026,12 @@ export type CreateSessionRequest = {
         baseBranch?: string;
     }>;
     cwdGithubRepoId?: number;
+    launch?: {
+        model?: string;
+        permission?: 'ask' | 'auto' | 'full';
+        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    };
+    prompt?: string;
 };
 
 export type SessionEventResponseDto = {

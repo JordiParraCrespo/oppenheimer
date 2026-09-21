@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { sessionNamerIsConfigured } from '../../config/sessions.config';
 
 /** The providers a deployment can name sessions with. `none` is the default. */
-export type SessionNamerProvider = 'none' | 'anthropic';
+export type SessionNamerProvider = 'none' | 'anthropic' | 'openai-compatible';
 
 /**
  * Which namer this deployment has, and what it needs to run.
@@ -34,6 +34,16 @@ export class SessionNamerConfig {
 
   get anthropicApiKey(): string | undefined {
     return this.configService.get<string>('sessions.anthropicApiKey');
+  }
+
+  /** Where an OpenAI-compatible server lives, up to and including its `/v1`. */
+  get baseUrl(): string | undefined {
+    return this.configService.get<string>('sessions.namerBaseUrl');
+  }
+
+  /** Optional: a model served locally wants no key. */
+  get apiKey(): string | undefined {
+    return this.configService.get<string>('sessions.namerApiKey');
   }
 
   /**

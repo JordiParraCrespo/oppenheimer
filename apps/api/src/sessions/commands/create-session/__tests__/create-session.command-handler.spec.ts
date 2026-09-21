@@ -1,11 +1,14 @@
 import { AppError } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
+import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
 import type { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
+import { WorkSessionMapper } from '../../../work-session.mapper';
 import { CreateSessionCommand } from '../create-session.command';
 import { CreateSessionCommandHandler } from '../create-session.command-handler';
 
@@ -43,6 +46,7 @@ describe('CreateSessionCommandHandler', () => {
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
   let dispatch: SessionDispatchPort;
   let plan: SessionPlanFactory;
+  let naming: { nameFromText: ReturnType<typeof vi.fn> };
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
@@ -64,7 +68,16 @@ describe('CreateSessionCommandHandler', () => {
       cwdCheckoutIdFor: vi.fn().mockReturnValue(null),
     } as unknown as SessionPlanFactory;
 
-    handler = new CreateSessionCommandHandler(sessions, hosts, dispatch, plan);
+    naming = { nameFromText: vi.fn().mockResolvedValue(undefined) };
+
+    handler = new CreateSessionCommandHandler(
+      sessions,
+      hosts as unknown as HostAccessPort,
+      dispatch,
+      plan,
+      naming as unknown as SessionNamingResolver,
+      new WorkSessionMapper(),
+    );
   });
 
   const command = (
@@ -187,5 +200,117 @@ describe('CreateSessionCommandHandler', () => {
     await expect(
       handler.execute(command({ scope: { ...SCOPE, organizationId: null } })),
     ).rejects.toMatchObject({ code: 'SESSIONS_002' });
+  });
+});
+
+/**
+ * The composer's foot row and its first task, which is what the create request
+ * grew for the New session screen (`product/versions/mvp/12-session-launch.md`).
+ *
+ * All three assertions are about the same rule from different sides: the launch
+ * is *stated in the log*, because the columns that carry it are a projection of
+ * that log and writing them any other way would be a second truth.
+ */
+describe('CreateSessionCommandHandler: the launch and the first task', () => {
+  let sessions: WorkSessionRepositoryPort;
+  let dispatch: SessionDispatchPort;
+  let naming: { nameFromText: ReturnType<typeof vi.fn> };
+  let handler: CreateSessionCommandHandler;
+
+  beforeEach(() => {
+    sessions = {
+      findOneByIdempotencyKey: vi.fn().mockResolvedValue(None),
+      createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
+        session,
+        created: true,
+        projectArchived: false,
+      })),
+    } as unknown as WorkSessionRepositoryPort;
+    dispatch = {
+      create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
+    } as unknown as SessionDispatchPort;
+    naming = { nameFromText: vi.fn().mockResolvedValue(undefined) };
+    handler = new CreateSessionCommandHandler(
+      sessions,
+      { assertUsable: vi.fn().mockResolvedValue(undefined) } as unknown as HostAccessPort,
+      dispatch,
+      {
+        resolveProject: vi.fn().mockResolvedValue(project()),
+        attachCheckout: vi.fn().mockResolvedValue(undefined),
+        cwdCheckoutIdFor: vi.fn().mockReturnValue(null),
+      } as unknown as SessionPlanFactory,
+      naming as unknown as SessionNamingResolver,
+      new WorkSessionMapper(),
+    );
+  });
+
+  const run = (input: Record<string, unknown>) =>
+    handler.execute(
+      new CreateSessionCommand({
+        scope: SCOPE,
+        userId: 'user-1',
+        input: { ...INPUT, ...input } as never,
+        idempotencyKey: null,
+      }),
+    );
+
+  function requestPayload() {
+    const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    const requested = events.find((event) => event.kind === 'session.requested');
+    return requested?.payload as { launch?: Record<string, unknown> };
+  }
+
+  // What the handler owes is the *statement* in the log; the columns follow from
+  // it when the repository folds the batch, which is asserted against the fold
+  // itself in `__tests__/session-state.spec.ts` rather than through a mock that
+  // would only prove the mock records what it was handed.
+  it('states the launch in the log, where the columns are folded from', async () => {
+    await run({ launch: { model: 'opus', permission: 'auto', effort: 'high' } });
+
+    expect(requestPayload().launch).toEqual({
+      model: 'opus',
+      permission: 'auto',
+      effort: 'high',
+    });
+  });
+
+  it('defaults to the level that asks, never to one that escalates', async () => {
+    await run({});
+
+    expect(requestPayload().launch).toEqual({ model: null, permission: 'ask', effort: null });
+  });
+
+  it('records the first task as prompt.first and sends it with the launch', async () => {
+    await run({ prompt: 'Fix the wallet list empty state' });
+
+    const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    const prompt = events.find((event) => event.kind === 'prompt.first');
+    expect(prompt?.source).toBe('api');
+    expect(prompt?.payload).toEqual({ text: 'Fix the wallet list empty state' });
+
+    // It rides the launch rather than a second message, so the host gives it to
+    // the agent once the agent is up rather than racing it.
+    const [, spec] = vi.mocked(dispatch.create).mock.calls[0];
+    expect(spec.prompt).toBe('Fix the wallet list empty state');
+  });
+
+  it('names the session from that task, keyed on the entry that carried it', async () => {
+    await run({ prompt: 'Fix the wallet list empty state' });
+
+    const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    const prompt = events.find((event) => event.kind === 'prompt.first');
+    expect(naming.nameFromText).toHaveBeenCalledWith(
+      expect.anything(),
+      'Fix the wallet list empty state',
+      prompt?.idempotencyKey,
+    );
+  });
+
+  it('writes no prompt entry and names nothing when the composer was empty', async () => {
+    await run({});
+
+    const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
+    expect(events.some((event) => event.kind === 'prompt.first')).toBe(false);
+    expect(naming.nameFromText).not.toHaveBeenCalled();
   });
 });

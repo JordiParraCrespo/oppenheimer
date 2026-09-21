@@ -4,15 +4,16 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionNamingResolver } from '../../application/session-naming.resolver';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
 import { sessionBranchName } from '../../domain/session-layout.policy';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
-import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
+import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
 
 /**
@@ -39,6 +40,8 @@ export class CreateSessionCommandHandler
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly plan: SessionPlanFactory,
+    private readonly naming: SessionNamingResolver,
+    private readonly mapper: WorkSessionMapper,
   ) {}
 
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
@@ -70,35 +73,16 @@ export class CreateSessionCommandHandler
       await this.plan.attachCheckout(scope, session, project, checkout);
     }
 
-    // Two entries, one transaction, one action: the request, and where the agent
-    // runs. The second is an event rather than a column write because
-    // `cwdCheckoutId` is part of the fold — a later "work in this checkout instead"
-    // is the same entry, and a replay rebuilds it.
-    const created = await this.sessions.createIfUnclaimed(session, [
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          command.id,
-          SESSION_EVENT_KINDS.REQUESTED,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.REQUESTED,
-        payload: {
-          agent: input.agent,
-          hostId: input.hostId,
-          checkouts: session.checkouts.length,
-          requestedByUserId: command.userId,
-        },
-      },
-      {
-        idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
-          command.id,
-          SESSION_EVENT_KINDS.CWD_SET,
-        ),
-        source: 'api',
-        kind: SESSION_EVENT_KINDS.CWD_SET,
-        payload: { checkoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId) },
-      },
-    ]);
+    const created = await this.sessions.createIfUnclaimed(
+      session,
+      this.mapper.toRequestEvents({
+        commandId: command.id,
+        userId: command.userId,
+        input,
+        checkouts: session.checkouts.length,
+        cwdCheckoutId: this.plan.cwdCheckoutIdFor(session, input.cwdGithubRepoId),
+      }),
+    );
     // The project was retired between the lookup and the insert. The project row is
     // locked inside that transaction, so this is the race decided rather than
     // detected afterwards.
@@ -112,7 +96,20 @@ export class CreateSessionCommandHandler
     const { hints } = await this.dispatch.create(created.session, {
       projectSlug: project.slug,
       branch: sessionBranchName(project.slug, session.slug),
+      prompt: input.prompt,
     });
+
+    // Naming is deliberately not awaited: it is a call to a model, and a title is
+    // never what makes creating a session slow. The name lands in the log a moment
+    // later and the console reads it on its next listing. Nothing here throws —
+    // the resolver swallows its own failures, and the session keeps its slug.
+    if (input.prompt) {
+      void this.naming.nameFromText(
+        created.session,
+        input.prompt,
+        WorkSessionMapper.promptKeyFor(command.id),
+      );
+    }
     return { session: created.session, hints };
   }
 }

@@ -25,6 +25,15 @@ export const FIELD_BOUNDS = {
   displayName: { min: 1, max: 200 },
   /** A git ref: branch names are bounded by what git and the filesystem take. */
   gitRef: { min: 1, max: 255 },
+  /**
+   * The first task somebody types into the composer.
+   *
+   * Generous, because a good first prompt is a paragraph or three and a limit
+   * that truncates one is a limit that loses work. Bounded all the same: this
+   * lands in an append-only log and travels in a control frame, and neither
+   * wants an unbounded string.
+   */
+  prompt: { min: 1, max: 16_000 },
 } as const;
 
 /**
@@ -58,6 +67,16 @@ export const displayNameSchema = z
   .max(FIELD_BOUNDS.displayName.max);
 
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
+
+/**
+ * A session's first task, as typed. Trimmed before it is measured so a body of
+ * whitespace is the empty prompt it looks like rather than a one-character one.
+ */
+export const promptSchema = z
+  .string()
+  .trim()
+  .min(FIELD_BOUNDS.prompt.min)
+  .max(FIELD_BOUNDS.prompt.max);
 
 /**
  * The host family, at the granularity the installer and the service manager care

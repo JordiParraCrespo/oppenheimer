@@ -263,10 +263,41 @@
         "agent": {
           "$ref": "#/$defs/codingAgentId"
         },
-        "model": {
+        "launch": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "permission": {
+              "type": "string",
+              "enum": [
+                "ask",
+                "auto",
+                "full"
+              ]
+            },
+            "effort": {
+              "type": "string",
+              "enum": [
+                "minimal",
+                "low",
+                "medium",
+                "high",
+                "max"
+              ]
+            }
+          },
+          "required": [
+            "permission"
+          ]
+        },
+        "prompt": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 128
+          "maxLength": 16000
         },
         "branch": {
           "$ref": "#/$defs/gitRef"
@@ -320,6 +351,7 @@
         "projectSlug",
         "sessionSlug",
         "agent",
+        "launch",
         "branch",
         "checkouts",
         "cwdCheckoutId"

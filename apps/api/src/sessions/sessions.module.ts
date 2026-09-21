@@ -34,6 +34,7 @@ import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { AnthropicSessionNamerAdapter } from './infrastructure/anthropic-session-namer.adapter';
 import { NoopSessionNamerAdapter } from './infrastructure/noop-session-namer.adapter';
+import { OpenAiCompatibleSessionNamerAdapter } from './infrastructure/openai-compatible-session-namer.adapter';
 import { PendingSessionDispatchAdapter } from './infrastructure/pending-session-dispatch.adapter';
 import { SessionNamerConfig } from './infrastructure/session-namer.config';
 import type { SessionNamerPort } from './infrastructure/session-namer.port';
@@ -98,10 +99,16 @@ const adapters: Provider[] = [
     // no-op adapter is then the honest binding, and every session keeps its slug.
     provide: SESSION_NAMER,
     inject: [ConfigService],
-    useFactory: (configService: ConfigService): SessionNamerPort =>
-      sessionNamerIsConfigured(configService)
-        ? new AnthropicSessionNamerAdapter(new SessionNamerConfig(configService))
-        : new NoopSessionNamerAdapter(),
+    useFactory: (configService: ConfigService): SessionNamerPort => {
+      if (!sessionNamerIsConfigured(configService)) return new NoopSessionNamerAdapter();
+      const config = new SessionNamerConfig(configService);
+      // `openai-compatible` is one adapter for most of the field — Groq,
+      // Together, OpenRouter, vLLM, a local Ollama — which is how a session gets
+      // named by a fast open-weights model without a vendor adapter each.
+      return config.provider === 'openai-compatible'
+        ? new OpenAiCompatibleSessionNamerAdapter(config)
+        : new AnthropicSessionNamerAdapter(config);
+    },
   },
   // Bound to the adapter that records the job as owed until there is a link to
   // send it over. It is a real implementation of the port, not a stub: "this work

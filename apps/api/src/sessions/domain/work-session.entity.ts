@@ -17,6 +17,7 @@ import {
   SESSION_EVENT_KINDS,
   type SessionAgent,
   type SessionFold,
+  type SessionLaunchFold,
   type SessionLogEntry,
   type SessionNameSource,
 } from './session-state.policy';
@@ -153,6 +154,14 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.cwdCheckoutId;
   }
 
+  /**
+   * How this session was launched. Read by the dispatcher building a job for the
+   * host, and by the console's engine button.
+   */
+  get launch(): SessionLaunchFold {
+    return this.props.launch;
+  }
+
   get idempotencyKey(): string | null {
     return this.props.idempotencyKey;
   }
@@ -219,6 +228,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       observedSince: this.props.observedSince,
       reportHash: this.props.reportHash,
       ackedReportHash: this.props.ackedReportHash,
+      launch: this.props.launch,
     };
   }
 
@@ -244,6 +254,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.observedSince = fold.observedSince;
     this.props.reportHash = fold.reportHash;
     this.props.ackedReportHash = fold.ackedReportHash;
+    this.props.launch = fold.launch;
   }
 
   /**

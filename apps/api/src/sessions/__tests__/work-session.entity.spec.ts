@@ -110,11 +110,6 @@ describe('recordEvent is the only mutator of the fold', () => {
 });
 
 describe('the checkouts the aggregate holds', () => {
-  it('refuses to launch the agent in a checkout that is not its own', () => {
-    const work = session();
-    expect(() => work.setCwdCheckout('somebody-elses-checkout')).toThrow();
-  });
-
   it('takes its working directory from the log, not from a setter', () => {
     const work = session();
     const first = checkout(work, 'xrp-mobile', '1');

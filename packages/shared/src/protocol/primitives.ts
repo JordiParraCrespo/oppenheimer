@@ -1,5 +1,10 @@
 import { z } from 'zod/v4';
-import { CODING_AGENT_IDS, CODING_AGENTS } from '../agents/catalog';
+import {
+  CODING_AGENT_IDS,
+  CODING_AGENTS,
+  SESSION_EFFORTS,
+  SESSION_PERMISSIONS,
+} from '../agents/catalog';
 import { FIELD_BOUNDS, HOST_PLATFORMS } from '../schemas/primitives';
 
 /**
@@ -38,6 +43,35 @@ export const githubRepoIdSchema = z.number().int().positive();
 
 /** The agent a session runs. The catalog is the closed union; see `../agents/catalog`. */
 export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
+
+/**
+ * How the agent is started, as the host receives it.
+ *
+ * **Structured, never argv.** The control plane says which of the product's
+ * three permission levels and five effort stops somebody chose; the host is
+ * what turns that into a command line, from the same catalog this schema takes
+ * its unions from. A control plane that sent argv would be dictating a command
+ * to run on somebody's laptop, and the runner would have nothing left to check
+ * — so the mapping stays on the machine that executes it
+ * (`product/versions/mvp/12-session-launch.md`).
+ *
+ * `permission` is required here although the DTO defaults it: by the time a
+ * launch reaches a host the choice has been made, and an absent level on the
+ * wire would be a second place deciding what "unspecified" means.
+ */
+export const launchOptionsSchema = z.object({
+  model: z.string().min(1).max(128).optional(),
+  permission: z.enum(SESSION_PERMISSIONS),
+  effort: z.enum(SESSION_EFFORTS).optional(),
+});
+
+export type LaunchOptions = z.infer<typeof launchOptionsSchema>;
+
+/** The first task, bounded by the same number the DTO is bounded by. */
+export const promptTextSchema = z
+  .string()
+  .min(FIELD_BOUNDS.prompt.min)
+  .max(FIELD_BOUNDS.prompt.max);
 
 /**
  * Every catalog login pattern, or-ed into one anchored expression.
