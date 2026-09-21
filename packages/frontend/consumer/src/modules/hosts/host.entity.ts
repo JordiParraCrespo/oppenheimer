@@ -26,11 +26,6 @@ export class HostEntity {
     public readonly createdAt: Date,
   ) {}
 
-  /** Whether a session can be started on this host right now. */
-  get isOnline(): boolean {
-    return this.online;
-  }
-
   /**
    * The one-line description the summary rows show ("mac-studio · macos").
    * Falls back to the name alone rather than printing a dangling separator
@@ -39,6 +34,18 @@ export class HostEntity {
   get summary(): string {
     return this.os ? `${this.name} · ${this.os}` : this.name;
   }
+}
+
+/**
+ * A pairing token as the list reports it — enough to answer "has this token
+ * been spent, and on which machine". The secret is not here: it is shown once,
+ * inside the command the mint returns.
+ */
+export interface HostPairingToken {
+  id: string;
+  expiresAt: Date;
+  /** The host this token created, once a runner has redeemed it. */
+  redeemedHostId: string | null;
 }
 
 /**

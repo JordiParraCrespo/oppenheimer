@@ -274,10 +274,8 @@
       "noAccount": "Todavía no hay ninguna cuenta con ese acceso. Crea una abajo: los botones de proveedor lo hacen en un solo paso."
     },
     "passwordRules": {
-      "case": "Mayúsculas y minúsculas",
       "length": "Al menos 12 caracteres",
-      "match": "Las dos contraseñas coinciden",
-      "number": "Al menos un número"
+      "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
     "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
@@ -492,7 +490,7 @@
     "noRedirect": "El servidor no ha indicado a dónde continuar."
   },
   "onboarding": {
-    "description": "Tu cuenta está lista. Crea un espacio de trabajo para tu equipo o únete a uno al que te hayan invitado.",
+    "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
     "eyebrow": "Casi listo",
     "signOut": "Cerrar sesión",
     "title": "Crea tu espacio de trabajo",
@@ -520,8 +518,10 @@
         "taken": "{{address}} ya está en uso. Prueba otra dirección.",
         "using": "Usando {{email}}",
         "differentAccount": "Usar otra cuenta",
-        "createFailed": "No hemos podido crear ese espacio de trabajo.",
-        "creating": "Creando espacio de trabajo..."
+        "claiming": "Guardando...",
+        "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
+        "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
+        "permanent": "{{address}} es la dirección de este espacio de trabajo."
       },
       "github": {
         "title": "Conecta GitHub",
@@ -532,7 +532,8 @@
         "connected": "{{count}} repositorios · acceso de lectura",
         "change": "Cambiar qué repositorios",
         "failed": "No hemos podido conectar esa instalación de GitHub.",
-        "connectedAll": "Todos los repositorios de la cuenta"
+        "connectedAll": "Todos los repositorios de la cuenta",
+        "connectedPending": "Conectado"
       },
       "host": {
         "title": "Añade tu primer host",
@@ -547,7 +548,9 @@
         "mintFailed": "No hemos podido crear un token de registro.",
         "tokenExpired": "El token ha caducado: genera uno nuevo.",
         "defaultName": "Mi primer host",
-        "registered": "Registrado: esperando a su runner"
+        "registered": "Registrado: esperando a su runner",
+        "skip": "Saltar por ahora",
+        "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
       },
       "ready": {
         "title": "Todo listo",

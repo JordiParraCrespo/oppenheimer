@@ -1,39 +1,17 @@
-import { heyApiClient } from '@oppenheimer/api-client';
+import { type ApiTypes, heyApiClient } from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import {
-  type InstallationAccountType,
-  InstallationEntity,
-  RepositoryEntity,
-  type RepositorySelection,
-} from './installation.entity';
+import { InstallationEntity, RepositoryEntity } from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
 
 /**
- * The wire shapes of `apps/api`'s github module, mirrored from
- * `InstallationResponseDto` and `RepositoryResponseDto`. Declared here because
- * the generated SDK does not cover these routes yet; regenerating
- * `@oppenheimer/api-client` is what replaces them.
+ * The wire shapes come from the generated client: `pnpm generate:api-client`
+ * writes them from the API's own OpenAPI, so a field the API renames cannot
+ * stay right here and wrong there. They were hand-written once, which is how
+ * `HostsRepository` read `state` for a field the API sends as `online`.
  */
-interface InstallationDto {
-  id: string;
-  organizationId: string;
-  githubInstallationId: number;
-  accountLogin: string;
-  accountType: InstallationAccountType;
-  repositorySelection: RepositorySelection;
-  createdAt: string;
-}
-
-interface RepositoryDto {
-  githubRepoId: number;
-  name: string;
-  fullName: string;
-  defaultBranch: string;
-  private: boolean;
-  archived: boolean;
-  pushedAt: string | null;
-}
+type InstallationDto = ApiTypes.InstallationResponseDto;
+type RepositoryDto = ApiTypes.RepositoryResponseDto;
 
 const INSTALLATIONS_URL = '/api/v1/installations';
 

@@ -28,10 +28,16 @@ export function InstallationCard({
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="figures text-[13px] text-fg">{installation.accountLogin}</span>
+        {/* The account is known before the count is. While it is in flight the
+            line names the account alone — "0 repositories" under a connection
+            that just succeeded reads as a failure, which is the case Ready was
+            written to avoid. */}
         <span className="text-xs text-fg-muted">
           {installation.coversEveryRepository
             ? t('onboarding.flow.github.connectedAll')
-            : t('onboarding.flow.github.connected', { count: repositoryCount ?? 0 })}
+            : repositoryCount === undefined
+              ? t('onboarding.flow.github.connectedPending')
+              : t('onboarding.flow.github.connected', { count: repositoryCount })}
         </span>
       </span>
     </Card>

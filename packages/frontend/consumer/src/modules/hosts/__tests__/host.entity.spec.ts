@@ -15,14 +15,6 @@ function host(online: boolean, os: string | null = null): HostEntity {
   );
 }
 
-/** New session only offers a host whose runner is dialled in right now. */
-describe('HostEntity.isOnline', () => {
-  it('follows what the API reported', () => {
-    expect(host(true).isOnline).toBe(true);
-    expect(host(false).isOnline).toBe(false);
-  });
-});
-
 describe('HostEntity.summary', () => {
   it('names the machine and the OS its runner reported', () => {
     expect(host(true, 'macos').summary).toBe('mac-studio · macos');

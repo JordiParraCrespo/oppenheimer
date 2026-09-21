@@ -1,34 +1,17 @@
-import { heyApiClient } from '@oppenheimer/api-client';
+import { type ApiTypes, heyApiClient } from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { HostEntity, type HostPairing } from './host.entity';
+import { HostEntity, type HostPairing, type HostPairingToken } from './host.entity';
 import { HostsErrors } from './hosts.errors';
 
 /**
- * The wire shapes of `apps/api`'s hosts module, mirrored from
- * `HostResponseDto` and `MintedPairingTokenResponseDto`. They are declared
- * here rather than imported because the generated SDK does not cover these
- * routes yet; regenerating `@oppenheimer/api-client` is what replaces them.
+ * The wire shapes come from the generated client rather than being mirrored
+ * here. A hand-written copy is what let this file read `state` for a field the
+ * API sends as `online`, uncaught until something finally called it.
  */
-interface HostDto {
-  id: string;
-  name: string;
-  hostname?: string | null;
-  os?: string | null;
-  arch?: string | null;
-  runnerVersion?: string | null;
-  online: boolean;
-  lastSeenAt?: string | null;
-  createdAt: string;
-}
-
-interface MintedPairingTokenDto {
-  id: string;
-  installCommand: string;
-  agentPrompt: string;
-  expiresAt: string;
-  redeemedHostId?: string | null;
-}
+type HostDto = ApiTypes.HostResponseDto;
+type PairingTokenDto = ApiTypes.PairingTokenResponseDto;
+type MintedPairingTokenDto = ApiTypes.MintedPairingTokenResponseDto;
 
 const HOSTS_URL = '/api/v1/hosts';
 
@@ -78,6 +61,26 @@ export class HostsRepository {
       expiresAt: new Date(data.expiresAt),
       redeemedHostId: data.redeemedHostId ?? null,
     };
+  }
+
+  /**
+   * The caller's pairing tokens.
+   *
+   * Add host polls this to learn whether *its* token was spent, and on which
+   * machine. "The host list is non-empty" is a different question — an account
+   * that already owns a machine would answer it the moment the step opened.
+   */
+  @MapApiError(HostsErrors.FETCH_LIST_FAILED)
+  async pairings(): Promise<HostPairingToken[]> {
+    const { data, error } = await heyApiClient.get<PairingTokenDto[]>({
+      url: `${HOSTS_URL}/pairing`,
+    });
+    if (error || !data) throw new AppError(HostsErrors.FETCH_LIST_FAILED);
+    return data.map((token) => ({
+      id: token.id,
+      expiresAt: new Date(token.expiresAt),
+      redeemedHostId: token.redeemedHostId ?? null,
+    }));
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

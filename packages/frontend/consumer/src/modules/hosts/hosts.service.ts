@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
-import type { HostEntity, HostPairing } from './host.entity';
+import type { HostEntity, HostPairing, HostPairingToken } from './host.entity';
 import type { HostsRepository } from './hosts.repository';
 
 @injectable()
@@ -17,6 +17,11 @@ export class HostsService {
   /** Mint a registration token for a machine that will adopt `name`. */
   pair(name: string): Promise<HostPairing> {
     return this.repository.pair(name);
+  }
+
+  /** The caller's pairing tokens, so Add host can tell which one was spent. */
+  pairings(): Promise<HostPairingToken[]> {
+    return this.repository.pairings();
   }
 
   remove(id: string): Promise<void> {

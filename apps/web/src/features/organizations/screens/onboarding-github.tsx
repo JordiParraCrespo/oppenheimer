@@ -11,13 +11,12 @@ import {
   useInstallationRepositories,
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { AuthLink } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/organizations/components/installation-card';
 import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
-import { githubInstallUrl } from '@/features/organizations/lib/github-install';
 
 /**
  * Onboarding step 3: install the GitHub App. One primary button that sends the
@@ -40,19 +39,29 @@ export function OnboardingGithubScreen({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const installUrl = githubInstallUrl();
+  // Where the browser goes to install, as the deployment reports it. An
+  // unreachable read leaves it undefined, which renders a disabled offer
+  // rather than a link to a page that may not exist.
+  const { data: deployment } = useDeploymentCapabilities();
+  const installUrl = deployment?.github_app_install_url ?? undefined;
 
-  const { isExchanging, error: connectError } = useConnectInstallationCallback(
-    installationId,
-    code,
-  );
+  const {
+    isExchanging,
+    connected,
+    error: connectError,
+  } = useConnectInstallationCallback(installationId, code);
   const { data: installations, isPending, error: listError } = useInstallations();
 
-  // The list is the truth about whether this workspace is connected; the
-  // callback only adds to it. Reading `connected` off the list rather than off
-  // the mutation means a reader who installed on a previous visit still sees
-  // the card when they come back to this step.
-  const installation = installations?.[0];
+  // The installation this visit connected, when there was one — the callback
+  // knows which row it just wrote. Falling back to the list covers the reader
+  // who installed on a previous visit and came back; matching on
+  // `githubInstallationId` rather than taking the first row means an account
+  // with more than one connection still sees the one it just made.
+  const installation =
+    (connected && installations?.find((row) => row.id === connected.id)) ??
+    connected ??
+    installations?.find((row) => row.githubInstallationId === installationId) ??
+    installations?.[0];
   // The card shows the count, but a `components/` file never fetches, so the
   // screen that renders it asks. Skipped entirely for an installation that
   // covers the whole account, which has no number to show.
@@ -92,7 +101,11 @@ export function OnboardingGithubScreen({
       ) : installation ? (
         <div className="flex flex-col gap-5">
           <InstallationCard installation={installation} repositoryCount={repositories?.length} />
-          <Button size="lg" block render={<Link to="/onboarding/host" />}>
+          <Button
+            size="lg"
+            block
+            render={<Link to="/onboarding/host" search={{ installation: installation.id }} />}
+          >
             {t('onboarding.flow.continue')}
           </Button>
           {installUrl && (

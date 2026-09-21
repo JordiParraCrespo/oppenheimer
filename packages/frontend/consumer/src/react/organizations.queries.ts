@@ -101,6 +101,44 @@ export function useCreateOrganization(
   });
 }
 
+/** What onboarding step 2 submits: the chosen name and address, over the row it read. */
+export interface ClaimPersonalWorkspaceVariables {
+  existing: OrganizationEntity | undefined;
+  name: string;
+  slug: string;
+}
+
+/**
+ * Claim the personal workspace — name the row sign-up provisioned, or create
+ * one for the account that has none.
+ *
+ * Drops the whole cache for the same reason `useCreateOrganization` does: the
+ * workspace's name and address are what the shell, the nav and every
+ * org-scoped list were answers about.
+ */
+export function useClaimPersonalWorkspace(
+  options?: UseMutationOptions<OrganizationEntity, Error, ClaimPersonalWorkspaceVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
+      app.organizations.claimPersonalWorkspace(variables),
+    ...options,
+    onSuccess: (...args) => {
+      const [organization] = args;
+      queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
+        current?.some((row) => row.id === organization.id)
+          ? current.map((row) => (row.id === organization.id ? organization : row))
+          : [...(current ?? []), organization],
+      );
+      queryClient.invalidateQueries({ queryKey: organizationsKeys.lists() });
+      options?.onSuccess?.(...args);
+    },
+  });
+}
+
 export interface UpdateOrganizationVariables {
   id: string;
   changes: UpdateOrganizationRequest;

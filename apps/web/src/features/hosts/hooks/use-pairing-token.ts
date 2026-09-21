@@ -1,44 +1,38 @@
-import { type HostEntity, type HostPairing } from '@oppenheimer/frontend-consumer';
-import { useHosts, usePairHost } from '@oppenheimer/frontend-consumer/react';
-import { useEffect, useRef, useState } from 'react';
+import type { HostEntity } from '@oppenheimer/frontend-consumer';
+import {
+  useCurrentPairing,
+  useHosts,
+  usePairingTokens,
+} from '@oppenheimer/frontend-consumer/react';
+import { useEffect, useState } from 'react';
 
-/** How often the step asks whether a runner has dialled in yet. */
+/** How often the step asks whether this token has been spent yet. */
 const POLL_MS = 3000;
 
 /**
- * The pairing token Add host shows, its clock, and the host it pairs.
+ * The pairing token Add host shows, its clock, and the host **this token**
+ * paired.
  *
- * One token is minted when the step opens — `POST /hosts/pairing` returns the
- * install command and the agent prompt with the secret already in them, since
- * the secret is shown once and the server is the only place that knows it.
+ * One token is minted per visit. The mint is a query, not a mutation fired
+ * from an effect — the step needs exactly one token for as long as it is open,
+ * which is what a query keyed to the screen gives, and `regenerate()` is its
+ * refetch. Nothing here has to survive StrictMode by hand.
  *
- * `hostName` is the name the machine adopts when its runner registers: the
- * token carries it, so it is chosen before the machine exists. The step has no
- * field for it (the artboard has none), so it is a default the reader renames
- * from Settings afterwards.
+ * Correlation is the point. "The host list is non-empty" is a different
+ * question from "this token landed" — an account that already owns a machine
+ * answers the first the moment the step opens, which would enable Continue
+ * under a command nobody has run. So the poll watches the *token*: the pairing
+ * list reports `redeemedHostId` once a runner spends it, and only then is the
+ * matching host looked up.
  *
- * Two effects, each synchronising with something outside React: the
- * one-second tick that counts the token down, and the mint itself, which is
- * fired once per mount rather than on every render. The host list is not an
- * effect — it is a polled query, and it stops polling once a host appears.
+ * One effect, and it synchronises with the clock. The countdown is recomputed
+ * from `expiresAt` rather than decremented, so a backgrounded tab that missed
+ * a hundred ticks still shows the right number when it comes back.
  */
 export function usePairingToken(hostName: string) {
-  const { mutate: mint, data: pairing, isPending, error } = usePairHost();
+  const { data: pairing, isPending, error, refetch } = useCurrentPairing(hostName);
   const [seconds, setSeconds] = useState(0);
-  const minted = useRef(false);
 
-  // Synchronises with the mount: mint exactly one token per visit, never one
-  // per render. StrictMode invokes effects twice in development, and a second
-  // mint would hand the reader a command whose token the first one replaced.
-  useEffect(() => {
-    if (minted.current) return;
-    minted.current = true;
-    mint(hostName);
-  }, [mint, hostName]);
-
-  // Synchronises with the clock. Recomputed from `expiresAt` rather than
-  // decremented from a fixed lifetime, so a backgrounded tab that missed a
-  // hundred ticks still shows the right number when it comes back.
   useEffect(() => {
     if (!pairing) return;
 
@@ -50,27 +44,49 @@ export function usePairingToken(hostName: string) {
     return () => clearInterval(tick);
   }, [pairing]);
 
-  // The host appears when its runner registers, which happens on the machine,
-  // not here — so this is a poll. It stops as soon as one is found, and while
-  // the token is still alive: a dead token can pair nothing, and polling on
-  // past it is a request per three seconds that can only answer "no".
-  const { data: hosts } = useHosts({
-    refetchInterval: (query) =>
-      (query.state.data?.length ?? 0) > 0 || seconds <= 0 ? false : POLL_MS,
+  const expired = Boolean(pairing) && seconds <= 0;
+
+  // Poll the token, not the host list. Stops once this token names a host, and
+  // once it has expired: a dead token can pair nothing, so polling past that is
+  // a request every three seconds that can only answer "no".
+  const { data: tokens } = usePairingTokens({
+    enabled: Boolean(pairing) && !expired,
+    refetchInterval: (query) => {
+      if (!pairing || expired) return false;
+      const mine = query.state.data?.find((token) => token.id === pairing.id);
+      return mine?.redeemedHostId ? false : POLL_MS;
+    },
   });
 
-  const host: HostEntity | null = hosts?.[0] ?? null;
+  const redeemedHostId = tokens?.find((token) => token.id === pairing?.id)?.redeemedHostId ?? null;
+
+  // The host row appears when the runner registers; its service may still be
+  // starting, so the caller decides what `online` means for Continue.
+  const { data: hosts } = useHosts({
+    enabled: Boolean(redeemedHostId),
+    refetchInterval: (query) => {
+      if (!redeemedHostId) return false;
+      const host = query.state.data?.find((row) => row.id === redeemedHostId);
+      return host?.online ? false : POLL_MS;
+    },
+  });
+
+  const host: HostEntity | null = redeemedHostId
+    ? (hosts?.find((row) => row.id === redeemedHostId) ?? null)
+    : null;
+
   const minutes = Math.floor(seconds / 60);
   const countdown = `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 
   return {
-    pairing: pairing as HostPairing | undefined,
+    pairing,
     countdown,
     /** Whether the token has run out, so the step can offer a new one. */
-    expired: Boolean(pairing) && seconds <= 0,
+    expired,
     host,
     isPending,
     error,
-    regenerate: () => mint(hostName),
+    /** Replace the token on screen with a fresh one. */
+    regenerate: () => refetch(),
   };
 }

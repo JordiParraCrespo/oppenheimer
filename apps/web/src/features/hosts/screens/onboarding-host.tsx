@@ -10,6 +10,7 @@ import {
   Link as TextLink,
 } from '@oppenheimer/design-system-web';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { AuthLink } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { usePairingToken } from '@/features/hosts/hooks/use-pairing-token';
@@ -27,7 +28,12 @@ const CODE_MAX_LINES = 12;
  * once, and the server is the only place that knows it, so neither string is
  * assembled here.
  */
-export function OnboardingHostScreen() {
+export function OnboardingHostScreen({
+  installationId,
+}: {
+  /** What Connect GitHub connected, passed through so Ready can name it. */
+  installationId?: string;
+}) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const { pairing, countdown, expired, host, isPending, error, regenerate } = usePairingToken(
@@ -128,10 +134,37 @@ export function OnboardingHostScreen() {
         )}
       </div>
 
-      <div>
-        <Button size="lg" disabled={!host} render={<Link to="/onboarding/ready" />}>
+      <div className="flex flex-col items-start gap-3.5">
+        {/* Online, not merely registered: the row appears when the runner
+            registers, and its service may still be starting. Continuing on a
+            host that never came up is onboarding claiming a machine the
+            console cannot use. */}
+        <Button
+          size="lg"
+          disabled={!host?.online}
+          render={
+            <Link
+              to="/onboarding/ready"
+              search={{ installation: installationId, host: host?.id }}
+            />
+          }
+        >
           {t('onboarding.flow.continue')}
         </Button>
+
+        {/* The step is skippable for the same reason Connect GitHub is: a
+            deployment with no runner release configured answers HOSTS_004 to
+            every mint, and without a way past this the first-run flow every
+            sign-up now walks would have no exit. It is also what makes Ready's
+            "no host yet" row reachable. */}
+        <div className="flex flex-col items-start gap-1.5">
+          <AuthLink to="/onboarding/ready" search={{ installation: installationId }}>
+            {t('onboarding.flow.host.skip')}
+          </AuthLink>
+          <p className="text-xs leading-normal text-fg-subtle">
+            {t('onboarding.flow.host.skipNote')}
+          </p>
+        </div>
       </div>
     </div>
   );

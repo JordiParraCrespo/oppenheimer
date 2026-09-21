@@ -194,6 +194,13 @@ function generateRootIndex() {
     "export { client as heyApiClient } from './generated/client.gen';",
     "export * as heyApiQuery from './generated/@tanstack/react-query.gen';",
     "export * as heyApiSdk from './generated/sdk.gen';",
+    // Every DTO the API describes, under one namespace. Endpoints the retired
+    // generator never covered (hosts, installations) have no entry in
+    // `src/common/models`, and a consumer reaching for their shapes would
+    // otherwise hand-roll them — which is how `HostsRepository` came to read
+    // `state` for a field the API sends as `online`. Namespaced because the
+    // legacy models still export some of the same names.
+    "export type * as ApiTypes from './generated/types.gen';",
     '',
     BANNER,
     '',

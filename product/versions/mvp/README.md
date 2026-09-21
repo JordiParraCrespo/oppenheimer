@@ -241,3 +241,14 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   carries the OpenAI mark. The design system grew `ComposerToolButton`,
   `AgentModelSelect`, `EffortSlider` / `EffortPicker` and `PermissionMenu`
   (05).
+- 2026-09-21: the first-run flow is **wired and reachable**. Sign-up
+  opens `/onboarding/workspace` rather than the console, step 2 claims
+  the workspace the hook provisioned (renaming it; creating only for an
+  account that has none), and the gate off the step is whether the
+  address has been claimed rather than whether a workspace exists (08).
+  Connect GitHub and Add host are both skippable, so a deployment with
+  no GitHub App and no runner release can still finish — which also
+  makes Ready's "not connected" and "no host yet" rows reachable rather
+  than unreachable copy. The console builds its GitHub install link from
+  `github_app_install_url` on `GET /health/capabilities`; the browser
+  keeps no copy of the App slug.

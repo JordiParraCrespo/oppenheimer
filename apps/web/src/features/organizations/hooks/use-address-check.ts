@@ -15,11 +15,12 @@ const DEBOUNCE_MS = 400;
  * previous verdict — showing "available" under an address nobody has asked
  * about yet is how someone ends up pressing Continue on a name that is gone.
  *
- * A failed check reports `checking` rather than `taken`: the step gates
- * Continue on `ok`, so an unreachable API holds the reader still instead of
- * telling them an address they could have is already claimed.
+ * A failed check returns the error rather than dressing it as a verdict. It is
+ * neither `taken` (an address the reader could have, refused) nor a permanent
+ * `checking` (a spinner with no end and no explanation): the caller renders the
+ * failure and keeps Continue disabled, because it still does not know.
  */
-export function useAddressCheck(address: string): SlugStatus {
+export function useAddressCheck(address: string): { status: SlugStatus; error: Error | null } {
   const [debounced, setDebounced] = useState(address);
 
   useEffect(() => {
@@ -28,11 +29,12 @@ export function useAddressCheck(address: string): SlugStatus {
   }, [address]);
 
   const settled = debounced === address;
-  const { data, isFetching, isError } = useCheckSlug(debounced, {
+  const { data, isFetching, error } = useCheckSlug(debounced, {
     enabled: settled && debounced.length > 0,
   });
 
-  if (!address) return 'idle';
-  if (!settled || isFetching || isError || data === undefined) return 'checking';
-  return data ? 'ok' : 'taken';
+  if (!address) return { status: 'idle', error: null };
+  if (error && settled) return { status: 'idle', error };
+  if (!settled || isFetching || data === undefined) return { status: 'checking', error: null };
+  return { status: data ? 'ok' : 'taken', error: null };
 }

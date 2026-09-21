@@ -24,6 +24,7 @@ export {
   CLIENT_CAPABILITIES,
   type ClientCapabilities,
   type ClientCapability,
+  type ClientDeployment,
   DEPLOYMENT_CAPABILITIES,
   type DeploymentCapabilities,
   type DeploymentCapability,

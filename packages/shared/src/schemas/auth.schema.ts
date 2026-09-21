@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { PASSWORD_MIN_LENGTH } from '../constants';
+import { PASSWORD_LEGACY_MIN_LENGTH, PASSWORD_MIN_LENGTH } from '../constants';
 
 /**
  * Auth DTOs. These carry no failure messages on purpose: an explicit message
@@ -17,7 +17,7 @@ import { PASSWORD_MIN_LENGTH } from '../constants';
  */
 export const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(PASSWORD_LEGACY_MIN_LENGTH),
 });
 
 export const registerSchema = z.object({

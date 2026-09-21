@@ -8514,7 +8514,7 @@
           },
           "newPassword": {
             "type": "string",
-            "minLength": 8
+            "minLength": 12
           },
           "revokeOtherSessions": {
             "type": "boolean",
@@ -11234,9 +11234,21 @@
           "github_app": {
             "type": "boolean",
             "description": "The sessions GitHub App is configured."
+          },
+          "github_app_install_url": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://github.com/apps/oppenheimer/installations/new",
+            "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
           }
         },
-        "required": ["google_oauth", "github_oauth", "stripe_billing", "github_app"]
+        "required": [
+          "google_oauth",
+          "github_oauth",
+          "stripe_billing",
+          "github_app",
+          "github_app_install_url"
+        ]
       }
     }
   }

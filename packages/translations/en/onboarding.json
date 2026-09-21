@@ -1,5 +1,5 @@
 {
-  "description": "Your account is ready. Create a workspace for your team, or join one you have been invited to.",
+  "description": "Your account is ready. Name the workspace your sessions will live in.",
   "eyebrow": "Almost there",
   "signOut": "Sign out",
   "title": "Create your workspace",
@@ -27,8 +27,10 @@
       "taken": "{{address}} is taken. Try another address.",
       "using": "Using {{email}}",
       "differentAccount": "Use a different account",
-      "createFailed": "We could not create that workspace.",
-      "creating": "Creating workspace..."
+      "claiming": "Saving...",
+      "claimFailed": "We could not save that workspace.",
+      "checkFailed": "We could not check that address. Try again in a moment.",
+      "permanent": "{{address}} is this workspace’s address."
     },
     "github": {
       "title": "Connect GitHub",
@@ -39,7 +41,8 @@
       "connected": "{{count}} repositories · read access",
       "change": "Change which repositories",
       "failed": "We could not connect that GitHub installation.",
-      "connectedAll": "Every repository on the account"
+      "connectedAll": "Every repository on the account",
+      "connectedPending": "Connected"
     },
     "host": {
       "title": "Add your first host",
@@ -54,7 +57,9 @@
       "mintFailed": "We could not create a registration token.",
       "tokenExpired": "Token expired — generate a new one.",
       "defaultName": "My first host",
-      "registered": "Registered — waiting for its runner"
+      "registered": "Registered — waiting for its runner",
+      "skip": "Skip for now",
+      "skipNote": "You can pair a machine later. Sessions need one before they can run."
     },
     "ready": {
       "title": "You're all set",

@@ -1,3 +1,4 @@
+import type { InstallationEntity } from '@oppenheimer/frontend-consumer';
 import { useConnectInstallation } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
@@ -10,14 +11,18 @@ import { useEffect, useRef } from 'react';
  * invoke in development and against a re-render mid-flight, because the code
  * is one-shot and a second POST with it fails.
  *
- * The parameters are stripped on both outcomes. On success they are spent; on
- * failure they are still spent, and leaving them in the address bar means a
- * refresh retries an exchange that can only fail again, burying the real error
- * under a second one.
+ * The parameters are cleared **on success only**. They are spent either way,
+ * but a failed exchange still needs to say which attempt failed: dropping them
+ * leaves the step reading "not connected" under a generic alert, with no way
+ * to tell a refusal from never having tried. The guard already stops a refresh
+ * from re-posting a dead code.
+ *
+ * Returns the installation it connected, so the caller renders the row it just
+ * wrote rather than guessing at the head of a list.
  */
 export function useConnectInstallationCallback(installationId?: number, code?: string) {
   const navigate = useNavigate();
-  const { mutate, isPending, error } = useConnectInstallation();
+  const { mutate, data: connected, isPending, error } = useConnectInstallation();
   const exchanged = useRef<string | null>(null);
 
   useEffect(() => {
@@ -25,22 +30,19 @@ export function useConnectInstallationCallback(installationId?: number, code?: s
     if (exchanged.current === code) return;
     exchanged.current = code;
 
-    const clearCallbackParams = () =>
-      navigate({
-        to: '/onboarding/github',
-        search: {},
-        replace: true,
-      });
-
     mutate(
       { githubInstallationId: installationId, code },
-      { onSuccess: clearCallbackParams, onError: clearCallbackParams },
+      {
+        onSuccess: () => navigate({ to: '/onboarding/github', search: {}, replace: true }),
+      },
     );
   }, [installationId, code, mutate, navigate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */
     isExchanging: isPending,
+    /** The installation this visit connected, if it did. */
+    connected: connected as InstallationEntity | undefined,
     error,
   };
 }
