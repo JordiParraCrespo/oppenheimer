@@ -266,6 +266,26 @@ jobs:
       # in .env.example gives it. `support/db.ts` reads the same root .env as
       # the API, so both necessarily agree on the database.
       - run: cp .env.example .env
+      # The two stand-ins the suite needs, and the configuration that points
+      # the API at them. GitHub answers repositories and branches live through
+      # an App no CI run has, and the namer is somebody's inference server — so
+      # without these the sessions create path cannot run at all, which is why
+      # it used to skip. Everything else in the job is the real thing.
+      # See `e2e/README.md`.
+      - name: Configure the stubs
+        run: node --experimental-strip-types e2e/support/stub-env.ts >> .env
+      - name: Start the stubs
+        run: |
+          node --experimental-strip-types e2e/support/github-stub.ts > /tmp/github-stub.log 2>&1 &
+          node --experimental-strip-types e2e/support/namer-stub.ts > /tmp/namer-stub.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf http://127.0.0.1:4319/installation/repositories > /dev/null \
+              && curl -sf -X POST http://127.0.0.1:4320/v1/chat/completions \
+                -H 'content-type: application/json' -d '{"messages":[]}' > /dev/null \
+              && exit 0
+            sleep 1
+          done
+          echo "a stub never came up"; cat /tmp/github-stub.log /tmp/namer-stub.log; exit 1
       # Only what the API needs: the `api` project drives HTTP, so there is no
       # browser and no web build in this job — and therefore no Go toolchain
       # either, since nothing here reaches apps/runner.
@@ -297,6 +317,8 @@ jobs:
       - name: What the API saw
         if: failure()
         run: |
+          echo "--- what the stubs were asked for"
+          tail -n 20 /tmp/github-stub.log /tmp/namer-stub.log || true
           echo "--- verification links (token stripped)"
           grep -o 'verify-email?[^ ]*' /tmp/api.log | sed 's/token=[^&]*/token=REDACTED/' | sort -u | head -n 5
           echo "--- refusals"

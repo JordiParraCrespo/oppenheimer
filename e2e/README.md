@@ -48,12 +48,19 @@ problem-document filter and its Postgres are all the real ones.
 | `support/github-stub.ts` | GitHub's REST API | `GITHUB_API_URL`, `GITHUB_OAUTH_URL` | Repositories and branches are answered live through a GitHub App installation. Without an App, `POST /sessions` cannot validate a repository and New session has nothing to pick |
 | `support/namer-stub.ts` | The model that names a session | `SESSION_NAMER_BASE_URL` | The namer is an OpenAI-compatible server (Groq, vLLM, a local Ollama). Its stub answers a title derived from the prompt it was given, so a request carrying the wrong text fails visibly |
 
-Both run before the API, because the API reads their URLs at boot:
+Both run before the API, because the API reads their URLs at boot — and the
+configuration that points it at them is generated rather than committed, since
+it includes a GitHub App key and a control-plane signing key:
 
 ```bash
-node --experimental-strip-types e2e/support/github-stub.ts &   # :4319
-node --experimental-strip-types e2e/support/namer-stub.ts &    # :4320
+node --experimental-strip-types e2e/support/stub-env.ts >> .env   # keys, per run
+node --experimental-strip-types e2e/support/github-stub.ts &      # :4319
+node --experimental-strip-types e2e/support/namer-stub.ts &       # :4320
 ```
+
+CI does exactly this in the `End-to-End Tests (API)` job, which is why the
+sessions create path runs there now instead of skipping: it needed a connected
+installation, and a deployment with no App has none.
 
 The GitHub stub has one endpoint GitHub does not:
 `PUT /__stub/installations/{id}` claims an installation id. Each test claims its
