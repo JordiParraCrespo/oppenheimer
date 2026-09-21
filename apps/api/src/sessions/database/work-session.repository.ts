@@ -382,11 +382,20 @@ export class WorkSessionRepository
     }
 
     if (appended.length > 0) {
+      // **Every column the fold projects**, and nothing else. The list is the
+      // one in `SessionFold`, spelled once: a hand-picked subset here is a
+      // column the fold silently stops maintaining, which is what happened to
+      // the four observation columns — the inputs the sidebar's own debounce
+      // reads — and then to the launch options. The row is the projection or it
+      // is a second truth.
       const record = this.mapper.toPersistence(session);
       await manager.query(
         `UPDATE "work_session"
             SET "state" = $2, "stateSeq" = $3, "agentSessionId" = $4, "lastEventAt" = $5,
                 "stoppedAt" = $6, "name" = $7, "nameSource" = $8, "cwdCheckoutId" = $9,
+                "lastObservedState" = $10, "observedSince" = $11,
+                "reportHash" = $12, "ackedReportHash" = $13,
+                "launchModel" = $14, "launchPermission" = $15, "launchEffort" = $16,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -399,6 +408,13 @@ export class WorkSessionRepository
           record.name,
           record.nameSource,
           record.cwdCheckoutId,
+          record.lastObservedState,
+          record.observedSince,
+          record.reportHash,
+          record.ackedReportHash,
+          record.launchModel,
+          record.launchPermission,
+          record.launchEffort,
         ],
       );
       await this.outbox.stageEvents(manager, session.domainEvents);

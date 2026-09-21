@@ -14,6 +14,11 @@ import { useTranslation } from 'react-i18next';
  * agent has been blocked for thirty seconds and one whose launch has sat
  * unready for a minute all want the same glance. `working` is the pulsing dot
  * of a session with something happening on a machine elsewhere.
+ *
+ * One dot is not the group's to give: a session the host has not built yet
+ * reads as `idle`, because nothing needs you about it — but the artboard draws
+ * it joining the list at once with a pulsing grey glyph, and that is the
+ * **lifecycle** speaking, not the group. {@link dotFor} puts the two together.
  */
 const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
   working: 'running',
@@ -23,6 +28,11 @@ const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'com
   idle: 'idle',
   resolved: 'completed',
 };
+
+/** The dot a row shows: provisioning first, then what needs you. */
+function dotFor(session: SessionEntity) {
+  return session.isProvisioning ? 'pending' : DOT[session.state];
+}
 
 /**
  * The console's sidebar body: New session, then the sessions themselves.
@@ -101,7 +111,7 @@ function SessionRow({ session, pathname }: { session: SessionEntity; pathname: s
     <SessionItem
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
-      state={DOT[session.state]}
+      state={dotFor(session)}
       active={pathname === `/sessions/${session.id}`}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
     />

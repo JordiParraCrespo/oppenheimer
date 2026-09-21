@@ -259,6 +259,76 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(count).toBe(1);
     });
 
+    /**
+     * The fold's columns are the projection, so **every** one of them has to be
+     * written where the fold runs.
+     *
+     * This is the test that would have caught a real bug: the update inside
+     * `appendWithin` hand-listed its columns, so the four observation columns —
+     * the inputs the sidebar's debounce reads — and later the three launch
+     * options were folded onto the aggregate and never reached the row. Nothing
+     * noticed, because every assertion read the aggregate rather than the row.
+     * So this one reads the row.
+     */
+    it('persists every column the fold projects, not the ones somebody listed', async () => {
+      const work = session();
+      const first = checkout(work);
+      work.attachCheckout(first);
+
+      await repository.createIfUnclaimed(work, [
+        {
+          idempotencyKey: `session.requested:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.REQUESTED,
+          payload: {
+            agent: 'claude-code',
+            launch: { model: 'opus', permission: 'auto', effort: 'high' },
+          },
+        },
+        {
+          idempotencyKey: `cwd:${randomUUID()}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.CWD_SET,
+          payload: { checkoutId: first.id },
+        },
+        {
+          idempotencyKey: `obs:${randomUUID()}`,
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.AGENT_OBSERVED,
+          payload: { state: 'blocked' },
+        },
+        {
+          idempotencyKey: `rep:${randomUUID()}`,
+          source: 'runner',
+          kind: SESSION_EVENT_KINDS.REPORT_PUBLISHED,
+          payload: { hash: 'abc123' },
+        },
+      ]);
+
+      const [row] = await dataSource.query(`SELECT * FROM "work_session" WHERE "id" = $1`, [
+        work.id,
+      ]);
+
+      // The launch the request stated, which a restart and the engine button read.
+      expect(row.launchModel).toBe('opus');
+      expect(row.launchPermission).toBe('auto');
+      expect(row.launchEffort).toBe('high');
+      // The observation columns the derived group is computed from.
+      expect(row.lastObservedState).toBe('blocked');
+      expect(row.reportHash).toBe('abc123');
+      expect(row.ackedReportHash).toBeNull();
+
+      // And the row agrees with a replay of its own log, which is the property
+      // all of this exists to keep.
+      const replayed = await repository.findOneById(scope(), work.id);
+      expect(replayed.isSome()).toBe(true);
+      expect(replayed.unwrap().launch).toEqual({
+        model: 'opus',
+        permission: 'auto',
+        effort: 'high',
+      });
+    });
+
     it('lets two sessions with no idempotency key both land', async () => {
       // The partial unique is `WHERE "idempotencyKey" IS NOT NULL`: absent header,
       // absent protection — not a constraint several nulls collide on.

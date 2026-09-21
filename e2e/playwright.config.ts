@@ -16,6 +16,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
+/** A Chromium the environment already has, for images that ship one. */
+const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 
 export default defineConfig({
   testDir: './tests',
@@ -59,6 +61,11 @@ export default defineConfig({
         // The web app talks to the API through Vite's `/api` proxy, so the
         // session cookie stays same-origin exactly as it does in production.
         ignoreHTTPSErrors: true,
+        // An environment that already ships a Chromium — a container image, a
+        // sandbox — says where it is rather than downloading a second copy for
+        // the build this Playwright happens to pin. Unset, Playwright resolves
+        // its own, which is what CI does.
+        launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : undefined,
       },
     },
     // oppenheimer:end web

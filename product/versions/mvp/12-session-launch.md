@@ -82,6 +82,19 @@ implementation time, in one commit, with the version they were read from
 recorded beside them. Writing them from memory is how a launch silently
 becomes `full access` on a stranger's laptop.
 
+> **Read off, 2026-09-21.** claude 2.1.278 takes `--permission-mode`
+> (`manual` / `acceptEdits` / `bypassPermissions` for the three levels)
+> and `--effort` with five levels of its own, so the slider's five stops
+> map one to one and none of them collapse. codex-cli 0.155.1 has
+> `--ask-for-approval`, `--sandbox`, and its own `--approve-for-me` —
+> which is the middle level under the CLI's own name for it — plus
+> `--dangerously-bypass-approvals-and-sandbox`. Its effort is the
+> `model_reasoning_effort` config key rather than a flag, and its
+> vocabulary stops at `high`, so the top two stops land on the same
+> level. Those four value names are the one thing not read off a
+> `--help`; the CLI accepts an unrecognised value without failing, so a
+> wrong name costs the setting rather than the launch.
+
 **`full` is never a remembered default.** Chips remember the last choice
 (05); this one does not. A permission that escalates by being used once
 is the failure `product/04-security-review.md` exists to prevent, so the
@@ -101,7 +114,15 @@ never worth refusing a session over.
 The catalog grows `models: readonly { id, label, default? }[]`. No table,
 no endpoint: the console already imports the catalog, so opening the
 engine button's second pane costs no round trip, and a deployment that
-adds an agent adds it in one place. What a *host* can actually run may
+adds an agent adds it in one place.
+
+Claude Code's entry lists the aliases its own `--help` documents
+(`opus`, `sonnet`, `fable`) rather than pinned ids, which are a moving
+target this repository is in no position to keep current. **Codex ships
+an empty list**, because inventing ids would be a second model list that
+drifts from the CLI's own — and an agent with no models is a case the
+engine button already has: it is picked outright and the button names
+the agent. Open question 3 is what fills it. What a *host* can actually run may
 narrow the list later through `host.capabilities` — a hint on the chip,
 never a gate, which is the rule the agent itself already follows.
 
@@ -147,11 +168,18 @@ on `createSessionSchema`. Three things happen to it, in this order:
 
 1. **It is appended as `prompt.first`** with `source: 'api'`, in the same
    transaction as the session row — one user action, one entry, which is
-   the rule the dispatch port is built around. Its idempotency key is
-   `prompt.first:<sessionId>`, so the runner reporting the same first
-   message out of the agent's transcript later **dedupes against it**
-   instead of naming the session twice. That kind has two writers from
-   here on, and its comment says so.
+   the rule the dispatch port is built around. That kind has two writers
+   from here on, and its comment says so.
+
+   > **Corrected while building this.** The draft said the two writers
+   > would dedupe on a shared idempotency key. They cannot: the API keys
+   > its entries by command id and the runner keys its by run, so a key
+   > is exactly what they do not share. What must not happen twice is the
+   > **naming**, and what stops it is the name itself — the resolver
+   > skips a session that already carries one, from a person or a model,
+   > because the *first* prompt is the one it names from and there is
+   > only one of those. The log may hold the runner's own observation of
+   > the same first message; that is a true record of what the host saw.
 2. **It is carried on `session.create`** as `prompt`, and the runner
    types it into window 0 once the agent is ready. Deliberately not a
    separate `session.input` after `session.started`: input needs the agent

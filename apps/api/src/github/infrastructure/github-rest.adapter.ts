@@ -14,8 +14,14 @@ import type {
   GithubRepositoryToken,
 } from './github-app.port';
 
-const API = 'https://api.github.com';
-const OAUTH_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+/**
+ * Where GitHub is. Configuration rather than a constant since GitHub Enterprise
+ * Server exists and serves the same API on somebody else's host — and since an
+ * end-to-end run has to reach a stub to exercise a path that needs a repository
+ * without registering an App (`product/versions/mvp/12-session-launch.md`).
+ * Both default to github.com, so a deployment that sets neither is unchanged.
+ */
+const OAUTH_TOKEN_PATH = '/login/oauth/access_token';
 
 /** GitHub's REST API version, pinned so a future default cannot move under us. */
 const API_VERSION = '2022-11-28';
@@ -143,6 +149,21 @@ export class GithubRestAdapter implements GithubAppPort {
     return this.capabilities.has('github_app');
   }
 
+  /** GitHub's REST root for this deployment, without a trailing slash. */
+  private get api(): string {
+    return (
+      this.configService.get<string>('githubApp.apiBaseUrl') ?? 'https://api.github.com'
+    ).replace(/\/+$/, '');
+  }
+
+  /** Where an OAuth code is exchanged for this deployment. */
+  private get oauthTokenUrl(): string {
+    const base = (
+      this.configService.get<string>('githubApp.oauthBaseUrl') ?? 'https://github.com'
+    ).replace(/\/+$/, '');
+    return `${base}${OAUTH_TOKEN_PATH}`;
+  }
+
   async listUserInstallations(code: string): Promise<GithubInstallationRef[]> {
     this.assertConfigured();
 
@@ -151,7 +172,7 @@ export class GithubRestAdapter implements GithubAppPort {
     // installations can this account see".
     const userToken = await this.exchangeCode(code);
     const installations = await this.paginate<RawInstallation>(
-      `${API}/user/installations`,
+      `${this.api}/user/installations`,
       userToken,
       (body) => collectionOf<RawInstallation>(body, 'installations'),
     );
@@ -163,7 +184,7 @@ export class GithubRestAdapter implements GithubAppPort {
     this.assertConfigured();
 
     const { body } = await this.request<RawInstallation>(
-      `${API}/app/installations/${githubInstallationId}`,
+      `${this.api}/app/installations/${githubInstallationId}`,
       {
         token: this.appJwt(),
         onStatus: { 404: GithubErrors.INSTALLATION_NOT_FOUND },
@@ -183,7 +204,7 @@ export class GithubRestAdapter implements GithubAppPort {
     const token = await this.installationToken(githubInstallationId);
 
     const repositories = await this.paginate<RawRepository>(
-      `${API}/installation/repositories`,
+      `${this.api}/installation/repositories`,
       token,
       (body) => collectionOf<RawRepository>(body, 'repositories'),
     );
@@ -207,7 +228,7 @@ export class GithubRestAdapter implements GithubAppPort {
 
   /** The raw row, so the two readers above cannot drift on the refusal mapping. */
   private async rawRepository(token: string, githubRepoId: number): Promise<RawRepository> {
-    const { body } = await this.request<RawRepository>(`${API}/repositories/${githubRepoId}`, {
+    const { body } = await this.request<RawRepository>(`${this.api}/repositories/${githubRepoId}`, {
       token,
       onStatus: {
         403: GithubErrors.REPOSITORY_NOT_IN_INSTALLATION,
@@ -226,7 +247,7 @@ export class GithubRestAdapter implements GithubAppPort {
 
     const [owner, name] = repository.full_name.split('/');
     const branches = await this.paginate<RawBranch>(
-      `${API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/branches`,
+      `${this.api}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/branches`,
       token,
       (body) => (Array.isArray(body) ? (body as RawBranch[]) : []),
       {
@@ -288,7 +309,7 @@ export class GithubRestAdapter implements GithubAppPort {
     this.assertConfigured();
 
     const { body } = await this.request<RawAccessToken>(
-      `${API}/app/installations/${githubInstallationId}/access_tokens`,
+      `${this.api}/app/installations/${githubInstallationId}/access_tokens`,
       {
         method: 'POST',
         token: this.appJwt(),
@@ -311,7 +332,7 @@ export class GithubRestAdapter implements GithubAppPort {
    * matters here.
    */
   private async exchangeCode(code: string): Promise<string> {
-    const { body } = await this.request<RawOauthToken>(OAUTH_TOKEN_URL, {
+    const { body } = await this.request<RawOauthToken>(this.oauthTokenUrl, {
       method: 'POST',
       accept: 'application/json',
       body: { client_id: this.clientId, client_secret: this.clientSecret, code },
