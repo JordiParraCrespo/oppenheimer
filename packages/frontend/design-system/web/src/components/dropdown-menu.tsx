@@ -94,7 +94,7 @@ function DropdownMenuHeader({ className, ...props }: React.ComponentProps<'div'>
     <div
       data-slot="dropdown-menu-header"
       className={cn(
-        '-mx-1 -mt-1 mb-1 truncate border-b border-border-subtle px-3.5 pt-3 pb-1.5 text-[12.5px] text-fg-muted',
+        '-mx-1 -mt-1 mb-1 truncate border-b border-border-subtle px-3.5 pt-3 pb-2.5 text-[12.5px] text-fg-muted',
         className,
       )}
       {...props}

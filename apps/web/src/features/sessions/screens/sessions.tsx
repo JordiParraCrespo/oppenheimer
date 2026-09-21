@@ -1,5 +1,4 @@
-import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { Plus, Terminal } from '@oppenheimer/design-system-web/icons';
+import { Button } from '@oppenheimer/design-system-web';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +9,12 @@ import { useTranslation } from 'react-i18next';
  * The sidebar is the list now, so this pane is not a second one — it is what
  * the artboard draws in the same place a terminal goes, and it says what the
  * pane is for: "start one and the terminal takes over this pane".
+ *
+ * The frame is the export's `.op-newsession`, the same one New session uses,
+ * centred with the artboard's 120px of air over it: a 32px display line, a
+ * 15px muted sentence under it and one primary button, 18px apart. No icon
+ * disc — the pane is saying what belongs here, not reporting that a
+ * collection is empty, and the artboard draws none.
  *
  * It reads the list only to know which of two sentences is true. A reader with
  * sessions came here by leaving one and is told where the others are; a reader
@@ -26,24 +31,19 @@ export function SessionsScreen() {
   const hasSessions = sessions.length > 0;
 
   return (
-    <EmptyState className="my-auto">
-      <EmptyState.Header>
-        <EmptyState.Media variant="icon">
-          <Terminal />
-        </EmptyState.Media>
-        <EmptyState.Title>
-          {t(hasSessions ? 'sessions.home.openTitle' : 'sessions.home.emptyTitle')}
-        </EmptyState.Title>
-        <EmptyState.Description>
-          {t(hasSessions ? 'sessions.home.openDescription' : 'sessions.home.emptyDescription')}
-        </EmptyState.Description>
-      </EmptyState.Header>
-      <EmptyState.Content>
-        <Button render={<Link to="/sessions/new" />}>
-          <Plus />
-          {t('nav.newSession')}
-        </Button>
-      </EmptyState.Content>
-    </EmptyState>
+    <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas">
+      <div className="m-auto flex w-full max-w-[720px] flex-col items-center gap-4.5 px-8 pt-30 pb-12 text-center">
+        <div>
+          <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
+            {t(hasSessions ? 'sessions.home.openTitle' : 'sessions.home.emptyTitle')}
+          </h1>
+          <p className="mt-1.5 text-base text-fg-muted">
+            {t(hasSessions ? 'sessions.home.openDescription' : 'sessions.home.emptyDescription')}
+          </p>
+        </div>
+
+        <Button render={<Link to="/sessions/new" />}>{t('nav.newSession')}</Button>
+      </div>
+    </div>
   );
 }

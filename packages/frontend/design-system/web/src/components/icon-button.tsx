@@ -8,8 +8,10 @@ import { cn } from '../lib/utils';
  * 28 / 34 / 42 ramp as Button. Icon-only, so every instance needs an
  * `aria-label`, and normally a Tooltip.
  *
- * - `ghost` (default) — muted glyph, hover wash. The filter button in the
- *   sidebar header, the attach and mic buttons in the composer, the dialog close.
+ * - `ghost` (default) — muted glyph, hover wash. The attach and mic buttons in
+ *   the composer, the dialog close.
+ * - `quiet` — a grey quieter, for the 24px button in a list header (the
+ *   sidebar's filter). `data-dirty` keeps it lit while a filter is on.
  * - `solid` — the neutral grey pill.
  * - `outline` — hairline on transparent.
  * - `primary` — the round blue send button.
@@ -22,7 +24,13 @@ const iconButtonVariants = cva(
   {
     variants: {
       variant: {
-        ghost: 'text-fg-muted hover:bg-hover-surface hover:text-fg active:bg-active-surface aria-expanded:bg-active-surface aria-expanded:text-fg',
+        ghost:
+          'text-fg-muted hover:bg-hover-surface hover:text-fg active:bg-active-surface aria-expanded:bg-active-surface aria-expanded:text-fg data-dirty:bg-active-surface data-dirty:text-fg',
+        // `.op-iconbtn-sm` — the button in a list header, one grey quieter
+        // than `ghost` because it sits beside an 11px label, and lit while
+        // what it controls is narrowing the list below it.
+        quiet:
+          'text-fg-subtle hover:bg-hover-surface hover:text-fg active:bg-active-surface aria-expanded:bg-active-surface aria-expanded:text-fg data-dirty:bg-active-surface data-dirty:text-fg',
         solid: 'bg-control text-control-fg hover:bg-control-hover active:bg-control-active',
         outline: 'border-border text-fg hover:bg-hover-surface',
         primary: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',
@@ -30,7 +38,7 @@ const iconButtonVariants = cva(
         filled: 'bg-control text-control-fg hover:bg-control-hover active:bg-control-active',
       },
       size: {
-        xs: 'size-6 rounded-sm [&_svg:not([class*=size-])]:size-3.5',
+        xs: 'size-6 rounded-sm [&_svg:not([class*=size-])]:size-3.75',
         sm: 'size-(--control-h-sm) [&_svg:not([class*=size-])]:size-3.5',
         md: 'size-(--control-h-md) [&_svg:not([class*=size-])]:size-4',
         lg: 'size-(--control-h-lg) [&_svg:not([class*=size-])]:size-[18px]',

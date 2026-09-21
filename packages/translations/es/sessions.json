@@ -33,5 +33,27 @@
       "live": "En directo",
       "closed": "Desconectado"
     }
+  },
+  "filters": {
+    "label": "Filtrar sesiones",
+    "repository": "Repositorio",
+    "agent": "Agente",
+    "host": "Equipo",
+    "sort": "Ordenar por",
+    "clear": "Quitar filtros",
+    "remove": "Quitar filtro",
+    "allRepositories": "Todos los repositorios",
+    "allAgents": "Todos los agentes",
+    "allHosts": "Todos los equipos",
+    "noMatches": "Ninguna sesión coincide con estos filtros."
+  },
+  "sort": {
+    "recent": "Última actividad",
+    "oldest": "Más antiguas primero",
+    "name": "Nombre"
+  },
+  "agents": {
+    "claude-code": "Claude Code",
+    "codex": "Codex"
   }
 }

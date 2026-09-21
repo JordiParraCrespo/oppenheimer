@@ -92,7 +92,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
         side={trigger === 'avatar' ? 'bottom' : 'top'}
         align={trigger === 'avatar' ? 'end' : 'start'}
         sideOffset={6}
-        className="min-w-[250px]"
+        className="min-w-62.5"
       >
         {/* The identity line, not a second avatar: which account this is, is
             the one thing the row below the menu cannot already show. */}
