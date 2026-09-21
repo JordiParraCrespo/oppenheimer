@@ -1,22 +1,28 @@
 import { createContext, useContext, useState } from 'react';
+import { useAppliedTheme } from '../hooks/use-applied-theme';
 
-type Theme = 'light' | 'dark';
+/** What the account menu offers: the two explicit choices, and the OS's. */
+export type ThemePreference = 'light' | 'dark' | 'system';
+/** What `<html>` ends up wearing once "Match system" has been resolved. */
+export type Theme = 'light' | 'dark';
 
 /** localStorage key holding this device's own theme choice. */
 export const THEME_STORAGE_KEY = 'theme';
 
 const ThemeContext = createContext<{
-  theme: Theme;
-  setTheme: (t: Theme) => void;
+  theme: ThemePreference;
+  resolvedTheme: Theme;
+  setTheme: (t: ThemePreference) => void;
 }>({
-  theme: 'light',
+  theme: 'system',
+  resolvedTheme: 'light',
   setTheme: () => {},
 });
 
-function readStoredTheme(): Theme | null {
+function readStoredTheme(): ThemePreference | null {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === 'dark' || stored === 'light' ? stored : null;
+    return stored === 'dark' || stored === 'light' || stored === 'system' ? stored : null;
   } catch {
     return null;
   }
@@ -27,31 +33,20 @@ export function hasStoredTheme(): boolean {
   return readStoredTheme() !== null;
 }
 
-/**
- * Puts the theme on `<html>`, where Tailwind's `dark` variant and the portalled
- * dialogs and toasts read it from.
- *
- * Called from the one place a theme changes — `setTheme` — rather than from an
- * effect watching the state: the first paint is already right, because
- * `public/theme-init.js` applied the stored choice before the bundle ran, so
- * there is nothing to sync on mount and every later change is an event.
- */
-function applyThemeClass(theme: Theme): void {
-  document.documentElement.classList.toggle('dark', theme === 'dark');
-  document.documentElement.classList.toggle('light', theme === 'light');
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Light is the brand's default: every reference screen is drawn on the warm
-  // off-white canvas, and dark is the opt-in.
-  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'light');
+  // "Match system" is the default the frames decided
+  // (`product/versions/mvp/05-screens.md`): the brand is drawn light, but a
+  // machine that is already dark should not be argued with on first run.
+  const [theme, setThemeState] = useState<ThemePreference>(() => readStoredTheme() ?? 'system');
+  const resolvedTheme = useAppliedTheme(theme);
 
   // Stored on an explicit choice, not on every render: `hasStoredTheme` is
   // what lets the signed-in user's saved preference become a device's default
-  // without overriding a theme that device picked for itself.
-  const setTheme = (next: Theme) => {
+  // without overriding a theme that device picked for itself. The preference
+  // is what is stored, not the resolution — "Match system" has to survive a
+  // reload as itself, or it would freeze into whichever appearance was on.
+  const setTheme = (next: ThemePreference) => {
     setThemeState(next);
-    applyThemeClass(next);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
@@ -59,7 +54,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

@@ -10,10 +10,10 @@ import { UserMenu } from './user-menu';
  */
 export function TopBar({ onSearch }: { onSearch: () => void }) {
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const { toggleSidebar } = useSidebar();
 
-  const isDark = theme === 'dark';
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <header className="flex h-14 flex-none items-center gap-5 border-b border-border-subtle bg-chrome-bg px-5">
