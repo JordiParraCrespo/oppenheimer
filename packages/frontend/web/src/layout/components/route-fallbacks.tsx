@@ -36,11 +36,17 @@ export function RouteNotFound({ children }: { children?: ReactNode }) {
  * the document, so a failure that was the network's costs a retry and not the
  * whole app's state.
  *
- * The message is the fallback sentence, never `error.message`: what a bundler
- * throws is not a sentence anyone can act on, and a server's own explanation
- * reaches the reader through the screen that asked, not through here.
+ * `error` is `unknown`, which is what a route's `errorComponent` is handed and
+ * what a `throw` is worth: anything at all can be thrown, and a component that
+ * declares `Error` is one `throw 'nope'` away from reading `.message` off a
+ * string. Typing it honestly is also what makes this assignable to
+ * `errorComponent` without a cast.
+ *
+ * The message shown is the fallback sentence, never the error's own: what a
+ * bundler throws is not a sentence anyone can act on, and a server's own
+ * explanation reaches the reader through the screen that asked, not here.
  */
-export function RouteError({ error }: { error: Error }) {
+export function RouteError({ error }: { error: unknown }) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -60,7 +66,7 @@ export function RouteError({ error }: { error: Error }) {
       </EmptyState.Content>
       {/* Not shown, but in the DOM for a bug report to carry. */}
       <p hidden data-slot="route-error-message">
-        {error.message}
+        {error instanceof Error ? error.message : String(error)}
       </p>
     </EmptyState>
   );
