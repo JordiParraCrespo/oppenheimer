@@ -6,7 +6,7 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '@oppenheimer/shared/agents';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { defaultModelFor } from '../lib/session-options';
 
 /**
@@ -89,13 +89,23 @@ export function useNewSessionDraft() {
     };
   });
 
-  /** Apply a change and remember the parts that are worth remembering. */
+  /**
+   * Write the remembered choices out.
+   *
+   * The external system is `localStorage`, which is what makes this an effect
+   * rather than something the setter does: a state updater must be pure, and
+   * writing from inside one ran twice per change under StrictMode. It syncs on
+   * the four fields that are remembered, so a repository or a permission level
+   * never triggers it.
+   */
+  const { hostId, agent, model, effort } = draft;
+  useEffect(() => {
+    remember({ hostId, agent, model, effort });
+  }, [hostId, agent, model, effort]);
+
+  /** Apply a change. What of it survives the visit is the effect above. */
   function update(patch: Partial<NewSessionDraft>) {
-    setDraft((current) => {
-      const next = { ...current, ...patch };
-      remember(next);
-      return next;
-    });
+    setDraft((current) => ({ ...current, ...patch }));
   }
 
   /** Switching agent carries the model with it: a model belongs to one agent. */
@@ -106,14 +116,9 @@ export function useNewSessionDraft() {
   return { draft, update, setEngine };
 }
 
-function remember(draft: NewSessionDraft) {
+/** The four choices worth carrying between visits, as storage holds them. */
+function remember(choices: RememberedChoices) {
   try {
-    const choices: RememberedChoices = {
-      hostId: draft.hostId,
-      agent: draft.agent,
-      model: draft.model,
-      effort: draft.effort,
-    };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(choices));
   } catch {
     // Private browsing, a full quota, storage switched off. The screen works
