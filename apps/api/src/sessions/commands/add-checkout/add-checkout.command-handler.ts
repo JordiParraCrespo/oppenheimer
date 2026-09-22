@@ -5,6 +5,7 @@ import type { ProjectLookupPort } from '../../../projects/application/project-lo
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
@@ -36,6 +37,7 @@ export class AddCheckoutCommandHandler
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly plan: SessionPlanFactory,
+    private readonly launches: SessionLaunchSpecFactory,
   ) {}
 
   async execute(command: AddCheckoutCommand): Promise<SessionCommandResult> {
@@ -82,10 +84,11 @@ export class AddCheckoutCommandHandler
         },
       },
     ]);
-    const { hints } = await this.dispatch.addCheckout(session, checkout, {
-      projectSlug: project.slug,
-      branch: checkout.branch,
-    });
+    const { hints } = await this.dispatch.addCheckout(
+      session,
+      checkout,
+      await this.launches.build(session, project.slug, { branch: checkout.branch }),
+    );
     return { session, hints };
   }
 }

@@ -1,14 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import type {
+  ProtocolMessage,
   SessionCloseMessage,
   SessionCreateMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
-import { Repository } from 'typeorm';
-import { OrganizationOrmEntity } from '../../organizations/database/organization.orm-entity';
 import type {
   SessionCloseSpec,
   SessionDispatchOutcome,
@@ -22,6 +20,7 @@ import { LINK_REGISTRY } from '../links.di-tokens';
 
 const OFFLINE: SessionDispatchOutcome = { delivered: false, hints: ['host_offline'] };
 const DELIVERED: SessionDispatchOutcome = { delivered: true, hints: [] };
+const NOT_SUPPORTED: SessionDispatchOutcome = { delivered: false, hints: ['not_supported'] };
 
 /**
  * `SessionDispatchPort` over the runner link.
@@ -44,11 +43,6 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   constructor(
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
-    // The workspace's slug is a path segment on every host and lives on the
-    // organization row; the sessions module has no business loading it, so the
-    // dispatcher reads it here, on the one path that needs it.
-    @InjectRepository(OrganizationOrmEntity)
-    private readonly organizations: Repository<OrganizationOrmEntity>,
   ) {}
 
   async create(
@@ -57,8 +51,7 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   ): Promise<SessionDispatchOutcome> {
     const link = this.links.find(session.hostId);
     if (!link) return OFFLINE;
-    const message = await this.createMessage(session, spec);
-    return this.deliver(link, message);
+    return this.deliver(link, createMessage(session, spec));
   }
 
   async stop(session: WorkSessionEntity): Promise<SessionDispatchOutcome> {
@@ -103,19 +96,20 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     _checkout: SessionCheckoutEntity,
     _spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome> {
-    // Deferred to a later slice with multi-checkout on the runner; the row and
-    // the log entry exist, and the host learns of it on its next full launch.
-    return this.links.find(session.hostId) ? { delivered: false, hints: [] } : OFFLINE;
+    // There is no frame for this on the wire yet (01 lists none), so nothing
+    // is sent and the caller is told so rather than handed a delivery that did
+    // not happen: the row is ahead of the host until the launch is re-sent.
+    return this.links.find(session.hostId) ? NOT_SUPPORTED : OFFLINE;
   }
 
   async removeCheckout(
     session: WorkSessionEntity,
     _checkout: SessionCheckoutEntity,
   ): Promise<SessionDispatchOutcome> {
-    return this.links.find(session.hostId) ? { delivered: false, hints: [] } : OFFLINE;
+    return this.links.find(session.hostId) ? NOT_SUPPORTED : OFFLINE;
   }
 
-  private deliver(link: RunnerLink, message: Record<string, unknown>): SessionDispatchOutcome {
+  private deliver(link: RunnerLink, message: ProtocolMessage): SessionDispatchOutcome {
     if (!link.send(message)) {
       this.logger.warn({
         message: 'a command could not be queued on the host link',
@@ -126,41 +120,31 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
     }
     return DELIVERED;
   }
+}
 
-  private async createMessage(
-    session: WorkSessionEntity,
-    spec: SessionLaunchSpec,
-  ): Promise<SessionCreateMessage> {
-    const organization = await this.organizations.findOne({
-      where: { id: session.organizationId },
-      select: { id: true, slug: true },
-    });
-    if (!organization) {
-      throw new Error(`session ${session.id} belongs to no organization`);
-    }
-    return {
-      type: 'session.create',
-      commandId: randomUUID(),
-      sessionId: session.id,
-      organizationSlug: organization.slug,
-      projectSlug: spec.projectSlug,
-      sessionSlug: session.slug,
-      agent: session.agent,
-      launch: {
-        ...(session.launch.model ? { model: session.launch.model } : {}),
-        permission: session.launch.permission,
-        ...(session.launch.effort ? { effort: session.launch.effort } : {}),
-      },
-      ...(spec.prompt ? { prompt: spec.prompt } : {}),
-      branch: spec.branch,
-      checkouts: session.liveCheckouts.map((checkout) => ({
-        checkoutId: checkout.id,
-        githubRepoId: Number(checkout.githubRepoId),
-        repositoryFullName: checkout.repositoryFullName,
-        directoryName: checkout.directoryName,
-        baseBranch: checkout.baseBranch,
-      })),
-      cwdCheckoutId: session.cwdCheckoutId,
-    };
-  }
+function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): SessionCreateMessage {
+  return {
+    type: 'session.create',
+    commandId: randomUUID(),
+    sessionId: session.id,
+    organizationSlug: spec.organizationSlug,
+    projectSlug: spec.projectSlug,
+    sessionSlug: session.slug,
+    agent: session.agent,
+    launch: {
+      ...(session.launch.model ? { model: session.launch.model } : {}),
+      permission: session.launch.permission,
+      ...(session.launch.effort ? { effort: session.launch.effort } : {}),
+    },
+    ...(spec.prompt ? { prompt: spec.prompt } : {}),
+    branch: spec.branch,
+    checkouts: session.liveCheckouts.map((checkout) => ({
+      checkoutId: checkout.id,
+      githubRepoId: Number(checkout.githubRepoId),
+      repositoryFullName: checkout.repositoryFullName,
+      directoryName: checkout.directoryName,
+      baseBranch: checkout.baseBranch,
+    })),
+    cwdCheckoutId: session.cwdCheckoutId,
+  };
 }

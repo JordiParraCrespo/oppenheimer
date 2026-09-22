@@ -77,6 +77,10 @@ type Welcome struct {
 	Protocol       int    `json:"protocol"`
 	KeyFingerprint string `json:"keyFingerprint"`
 	HostID         string `json:"hostId"`
+	// Epoch is the reconnect generation the control plane allocated for this
+	// link: the number both peers use, so a log line on either side names the
+	// same link.
+	Epoch uint64 `json:"epoch"`
 }
 
 // Hint is the control plane's closed vocabulary of advice.

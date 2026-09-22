@@ -134,6 +134,16 @@ What belongs here is what the runner does with it:
   runaway build stalls its own pane.
 - It survives the link being down indefinitely. Sessions keep running;
   tmux does not care.
+- **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
+  port with one transport adapter, as §3 says; the composition root maps
+  each message onto the session service. The launch argv comes from
+  `sessions/domain/launch_catalog.gen.go`, **generated** from
+  `packages/shared/src/agents/catalog.ts` at the shared package's build
+  and checked against it by the catalog's own test, so a catalog edit
+  reaches this host or fails the build. Still its own, not yet §5's: the
+  session layout (`<repo>/worktrees/<slug>`), one checkout per session
+  (a frame with any other number is refused with `SESS_002`), and the
+  first prompt read off the transcript.
 
 ### 5. Sessions
 

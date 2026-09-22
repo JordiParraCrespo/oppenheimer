@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
-import { sessionBranchName } from '../domain/session-layout.policy';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { SESSION_DISPATCH, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 import type { SessionDispatchPort } from './session-dispatch.port';
+import { SessionLaunchSpecFactory } from './session-launch.factory';
 import type {
   HostReconciliationOutcome,
   SessionReconciliationPort,
@@ -35,6 +35,7 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     private readonly sessions: WorkSessionRepositoryPort,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
+    private readonly launches: SessionLaunchSpecFactory,
   ) {}
 
   async reconcile(
@@ -49,11 +50,10 @@ export class SessionReconciliationResolver implements SessionReconciliationPort 
     for (const { session, projectSlug, prompt } of rows) {
       if (held.has(session.id)) continue;
       if (session.state === 'starting') {
-        const { delivered } = await this.dispatch.create(session, {
-          projectSlug,
-          branch: sessionBranchName(projectSlug, session.slug),
-          ...(prompt ? { prompt } : {}),
-        });
+        const { delivered } = await this.dispatch.create(
+          session,
+          await this.launches.build(session, projectSlug, { prompt }),
+        );
         if (delivered) outcome.redispatched.push(session.id);
         continue;
       }

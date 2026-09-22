@@ -21,9 +21,29 @@ import {
  */
 export type StreamStatus = 'connecting' | 'live' | 'offline' | 'closed';
 
+/**
+ * Why a stream ended for good. `stopped` is the one the console acts on: the
+ * session's tmux is gone and its checkouts are kept, so the pane gives way to
+ * Restart rather than a reconnect ladder.
+ */
+export type StreamEnd =
+  | 'stopped'
+  | 'resolved'
+  | 'missing'
+  | 'unauthorized'
+  | 'forbidden'
+  | 'refused';
+
 export interface SessionStream {
-  /** PTY output, as the bytes the socket carried. The returned function unsubscribes. */
-  onData(listener: (chunk: Uint8Array | string) => void): () => void;
+  /**
+   * PTY output, as the bytes the socket carried. The listener calls `consumed`
+   * once the terminal has drained the chunk — that is the credit 01 describes,
+   * bytes the browser *consumed*, and it is what lets the runner resume a paused
+   * pane. The returned function unsubscribes.
+   */
+  onData(listener: (chunk: Uint8Array | string, consumed: () => void) => void): () => void;
+  /** The stream ended and no reconnect can change it; `onStatus` reports `closed` too. */
+  onEnd(listener: (reason: StreamEnd) => void): () => void;
   /** Connection state, for the status line. The returned function unsubscribes. */
   onStatus(listener: (status: StreamStatus) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
@@ -56,12 +76,36 @@ export interface SessionStreamOptions {
 export const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
 
 /** Close codes after which reconnecting cannot help: the answer would be the same. */
-const FINAL_CLOSE_CODES = new Set<number>([
-  ATTACH_CLOSE_CODES.UNAUTHORIZED,
-  ATTACH_CLOSE_CODES.FORBIDDEN,
-  ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE,
-  ATTACH_CLOSE_CODES.REFUSED,
+const FINAL_CLOSE_CODES = new Map<number, StreamEnd>([
+  [ATTACH_CLOSE_CODES.UNAUTHORIZED, 'unauthorized'],
+  [ATTACH_CLOSE_CODES.FORBIDDEN, 'forbidden'],
+  [ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE, 'resolved'],
+  [ATTACH_CLOSE_CODES.SESSION_STOPPED, 'stopped'],
+  [ATTACH_CLOSE_CODES.REFUSED, 'refused'],
 ]);
+
+/**
+ * How a failed ticket mint ends. A problem status the API named is a fact about
+ * the session or the person and is final; anything else — the API unreachable,
+ * a 5xx, a hung request — is the ladder's. `host_offline` is never said here:
+ * only the attach socket may say it (01), and a mint that failed has no socket.
+ */
+function endOfMintFailure(error: unknown): StreamEnd | null {
+  const status = (error as { status?: unknown } | null)?.status;
+  switch (status) {
+    case 401:
+      return 'unauthorized';
+    case 403:
+      return 'forbidden';
+    case 404:
+      return 'missing';
+    case 409:
+      // The ticket handler refuses a resolved session with 409.
+      return 'resolved';
+    default:
+      return null;
+  }
+}
 
 /** Turn the ticket's path into the socket URL on the API's origin. */
 export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
@@ -83,8 +127,9 @@ export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): s
  * a resize that arrives before the socket is open waits for it.
  */
 export function createSessionStream(options: SessionStreamOptions): SessionStream {
-  const dataListeners = new Set<(chunk: Uint8Array | string) => void>();
+  const dataListeners = new Set<(chunk: Uint8Array | string, consumed: () => void) => void>();
   const statusListeners = new Set<(status: StreamStatus) => void>();
+  const endListeners = new Set<(reason: StreamEnd) => void>();
   const socketFactory =
     options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
   const schedule =
@@ -103,11 +148,20 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
   let attempt = 0;
   let cancelRetry: (() => void) | null = null;
   let viewport: { cols: number; rows: number } | null = null;
+  /** The reason a `closed` control frame named, read back when the close follows. */
+  let closedReason: StreamEnd | null = null;
 
   const setStatus = (next: StreamStatus) => {
     if (status === next) return;
     status = next;
     for (const listener of statusListeners) listener(next);
+  };
+
+  /** Over for good: say why, then say closed, and never dial again. */
+  const end = (reason: StreamEnd) => {
+    cancelRetry?.();
+    for (const listener of endListeners) listener(reason);
+    setStatus('closed');
   };
 
   const tell = (message: AttachClientMessage) => {
@@ -127,13 +181,20 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
     if (disposed) return;
     const thisEpoch = ++epoch;
     attached = false;
+    closedReason = null;
     let ticket: { ticket: string; url: string };
     try {
       ticket = await options.issueTicket();
-    } catch {
-      // The session is gone or the API is unreachable; the ladder decides how
-      // soon to ask again, and the screen's own query says which it was.
-      retry('offline');
+    } catch (error) {
+      if (disposed || thisEpoch !== epoch) return;
+      const final = endOfMintFailure(error);
+      if (final) {
+        end(final);
+        return;
+      }
+      // The API could not be reached or answered with something that is not
+      // an answer about this session: the ladder decides how soon to ask again.
+      retry('connecting');
       return;
     }
     if (disposed || thisEpoch !== epoch) return;
@@ -154,17 +215,25 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
         return;
       }
       const bytes = new Uint8Array(event.data as ArrayBuffer);
-      for (const listener of dataListeners) listener(bytes);
-      // Consumed-byte credit: what lets the runner resume a paused pane.
-      if (bytes.byteLength > 0) tell({ type: 'credit', bytes: bytes.byteLength });
+      if (bytes.byteLength === 0) return;
+      // The credit is the terminal's to give, once it has drained the chunk;
+      // a socket that has since been replaced gives none.
+      let credited = false;
+      const consumed = () => {
+        if (credited || thisEpoch !== epoch || !attached) return;
+        credited = true;
+        tell({ type: 'credit', bytes: bytes.byteLength });
+      };
+      for (const listener of dataListeners) listener(bytes, consumed);
     };
     ws.onclose = (event: CloseEvent) => {
       if (thisEpoch !== epoch) return;
       socket = null;
       attached = false;
       if (disposed) return;
-      if (FINAL_CLOSE_CODES.has(event.code)) {
-        setStatus('closed');
+      const final = closedReason ?? FINAL_CLOSE_CODES.get(event.code);
+      if (final) {
+        end(final);
         return;
       }
       // Host offline, link lost, a relay restart, a dropped radio: the ladder.
@@ -194,7 +263,10 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
         if (message.data.kind === 'host_offline') setStatus('offline');
         return;
       case 'refused':
-        // The close that follows carries a final code; the status lands there.
+        closedReason = 'refused';
+        return;
+      case 'closed':
+        closedReason = message.data.reason;
         return;
     }
   };
@@ -213,6 +285,10 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
       statusListeners.add(listener);
       return () => statusListeners.delete(listener);
     },
+    onEnd(listener) {
+      endListeners.add(listener);
+      return () => endListeners.delete(listener);
+    },
     send(data) {
       if (!attached || socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
       socket.send(encoder.encode(data));
@@ -228,6 +304,7 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
       epoch += 1;
       cancelRetry?.();
       dataListeners.clear();
+      endListeners.clear();
       const open = socket;
       socket = null;
       if (

@@ -7,8 +7,10 @@ import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { SessionLaunchSpecFactory } from './application/session-launch.factory';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
@@ -152,6 +154,8 @@ const adapters: Provider[] = [
     // Importing it is what makes the port's implementation the relay's rather
     // than this module's, without this module knowing a socket exists.
     LinksModule,
+    // The workspace's slug for a launch, and nothing else of organizations'.
+    OrganizationsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -160,6 +164,7 @@ const adapters: Provider[] = [
     ...adapters,
     WorkSessionMapper,
     SessionPlanFactory,
+    SessionLaunchSpecFactory,
     SessionNamingResolver,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while

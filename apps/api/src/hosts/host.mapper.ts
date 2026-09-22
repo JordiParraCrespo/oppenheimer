@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostOrmEntity } from './database/host.orm-entity';
-import { HostEntity, type RegisterHostProps } from './domain/host.entity';
+import { HostEntity, hostPlatformOf, type RegisterHostProps } from './domain/host.entity';
 import { HostResponseDto } from './dtos/host.response.dto';
 
 /** What a runner sends when it registers, before anything has been read out of it. */
@@ -46,7 +46,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       publicKey: registration.publicKey,
       publicKeyFingerprint: registration.publicKeyFingerprint,
       hostname: facts?.hostname ?? null,
-      os: facts ? platformOf(facts) : null,
+      os: facts ? hostPlatformOf(facts) : null,
       arch: facts?.arch ?? null,
       runnerVersion: facts?.runnerVersion ?? null,
       capabilities: facts ? { ...facts } : null,
@@ -128,6 +128,3 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
  * release when it could determine one — `macos 15.2` reads better on a host row
  * than `macos` alone, and the parts stay separate in `capabilities`.
  */
-function platformOf(facts: HostFactsDto): string {
-  return facts.osVersion ? `${facts.platform} ${facts.osVersion}` : facts.platform;
-}

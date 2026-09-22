@@ -10,9 +10,11 @@ import type { HostFactsDto } from '@oppenheimer/shared';
  */
 export interface HostPresencePort {
   /**
-   * Record a hello or a heartbeat. The facts are the same shape registration
-   * validated (`hostFactsSchema`), so the two describe one machine. An unknown or
-   * unpaired host is ignored rather than resurrected.
+   * Record a hello or a heartbeat: the facts are the same shape registration
+   * validated (`hostFactsSchema`), so the two describe one machine, and `at` is
+   * when this process received the report — never the runner's clock, which a
+   * skewed host would use to take itself offline. An unknown or unpaired host is
+   * ignored rather than resurrected.
    */
-  observe(hostId: string, facts: HostFactsDto | null, at?: Date): Promise<void>;
+  observe(hostId: string, facts: HostFactsDto, at?: Date): Promise<void>;
 }

@@ -6,7 +6,6 @@ import type { ConfigService } from '@nestjs/config';
 import type { HttpAdapterHost } from '@nestjs/core';
 import type { CacheService } from '@oppenheimer/backend-cache';
 import { ATTACH_CLOSE_CODES, PROTOCOL_VERSION } from '@oppenheimer/shared/protocol';
-import type { Repository } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
@@ -14,7 +13,7 @@ import type { HostAssertionPort } from '../../hosts/application/host-assertion.p
 import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
-import type { MemberOrmEntity } from '../../organizations/database/member.orm-entity';
+import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import type {
   RecordSessionEventsPort,
   RunnerEventBatch,
@@ -79,12 +78,12 @@ interface Harness {
   reconciliation: SessionReconciliationPort;
   events: RecordSessionEventsPort;
   lookup: SessionLookupPort;
-  members: { exist: ReturnType<typeof vi.fn> };
+  workspaces: WorkspaceLookupPort;
   registry: InProcessLinkRegistry;
   close(): Promise<void>;
 }
 
-async function harness(): Promise<Harness> {
+async function harness(options: { fingerprint?: string | null } = {}): Promise<Harness> {
   Logger.overrideLogger(false);
   const assertions: HostAssertionPort = {
     recognises: (bearer) => bearer.startsWith('valid.'),
@@ -104,7 +103,7 @@ async function harness(): Promise<Harness> {
   };
   const lookup: SessionLookupPort = {
     findAttachTarget: vi.fn(async (id) =>
-      id === SESSION ? { id, organizationId: ORG, hostId: HOST, attachable: true } : null,
+      id === SESSION ? { id, organizationId: ORG, hostId: HOST, state: 'live' as const } : null,
     ),
     findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
@@ -116,11 +115,15 @@ async function harness(): Promise<Harness> {
       return value;
     }),
   } as unknown as CacheService;
-  const members = { exist: vi.fn().mockResolvedValue(true) };
+  const workspaces: WorkspaceLookupPort = {
+    slugOf: vi.fn().mockResolvedValue('jordi'),
+    isMember: vi.fn().mockResolvedValue(true),
+  };
   const config = {
     get: (key: string) =>
       ({
-        'hosts.signingKeyFingerprint': FINGERPRINT,
+        'hosts.signingKeyFingerprint':
+          options.fingerprint === undefined ? FINGERPRINT : options.fingerprint,
         'app.frontendUrl': 'http://localhost:3000',
         'app.adminFrontendUrl': 'http://localhost:3003',
       })[key],
@@ -137,13 +140,7 @@ async function harness(): Promise<Harness> {
     { publicKeyOf: vi.fn().mockResolvedValue(null) } as unknown as HostKeyPort,
   );
   const runners = new RunnerLinkGateway(assertions, registry, processor, credentials, config);
-  const browsers = new BrowserAttachGateway(
-    cache,
-    lookup,
-    registry,
-    members as unknown as Repository<MemberOrmEntity>,
-    config,
-  );
+  const browsers = new BrowserAttachGateway(cache, lookup, registry, workspaces, config);
   const server = createServer((_request, response) => response.writeHead(404).end());
   const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
   upgrade.mount(server);
@@ -157,7 +154,7 @@ async function harness(): Promise<Harness> {
     reconciliation,
     events,
     lookup,
-    members,
+    workspaces,
     registry,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
@@ -245,6 +242,17 @@ describe('runner link', () => {
     runner.on('error', () => {});
     await expect(refused(runner)).resolves.toBe(401);
     expect(h.registry.find(HOST)).toBeUndefined();
+  });
+
+  it('refuses every upgrade while the control plane has no signing key', async () => {
+    await h.close();
+    h = await harness({ fingerprint: null });
+    const runner = ws(h.origin, '/api/v1/relay/runner', {
+      headers: { authorization: 'Bearer valid.host' },
+    });
+    sockets.push(runner);
+    runner.on('error', () => {});
+    await expect(refused(runner)).resolves.toBe(503);
   });
 
   it('refuses an assertion the hosts module rejects', async () => {
@@ -342,7 +350,7 @@ describe('browser attach socket', () => {
     await expect(refused(browser)).resolves.toBe(401);
   });
 
-  it('refuses a ticket that was already redeemed', async () => {
+  it('closes a redeemed ticket on the socket with a reason the browser can classify', async () => {
     const runner = await runnerUp(h);
     sockets.push(runner);
     const ticket = issueTicket(h);
@@ -351,29 +359,55 @@ describe('browser attach socket', () => {
     await opened(first);
     const second = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
     sockets.push(second);
-    second.on('error', () => {});
-    await expect(refused(second)).resolves.toBe(401);
+    const gone = closed(second);
+    const why = nextMessage(second);
+    await opened(second);
+    expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
+    await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
   });
 
-  it('refuses a session that is no longer attachable', async () => {
+  it('tells a stopped session apart from a resolved one', async () => {
     vi.mocked(h.lookup.findAttachTarget).mockResolvedValueOnce({
       id: SESSION,
       organizationId: ORG,
       hostId: HOST,
-      attachable: false,
+      state: 'stopped',
     });
-    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
-    sockets.push(browser);
-    browser.on('error', () => {});
-    await expect(refused(browser)).resolves.toBe(409);
+    const stopped = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(stopped);
+    const stoppedGone = closed(stopped);
+    const stoppedWhy = nextMessage(stopped);
+    await opened(stopped);
+    expect((await stoppedWhy).text).toEqual({ type: 'closed', reason: 'stopped' });
+    await expect(stoppedGone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.SESSION_STOPPED });
+
+    vi.mocked(h.lookup.findAttachTarget).mockResolvedValueOnce({
+      id: SESSION,
+      organizationId: ORG,
+      hostId: HOST,
+      state: 'resolved',
+    });
+    const resolved = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
+    sockets.push(resolved);
+    const resolvedGone = closed(resolved);
+    const resolvedWhy = nextMessage(resolved);
+    await opened(resolved);
+    expect((await resolvedWhy).text).toEqual({ type: 'closed', reason: 'resolved' });
+    await expect(resolvedGone).resolves.toMatchObject({
+      code: ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE,
+    });
   });
 
-  it('refuses a person who left the workspace since the ticket was minted', async () => {
-    h.members.exist.mockResolvedValueOnce(false);
+  it('closes on a person who left the workspace since the ticket was minted', async () => {
+    vi.mocked(h.workspaces.isMember).mockResolvedValueOnce(false);
     const browser = ws(h.origin, '/api/v1/relay/attach', {}, [issueTicket(h)]);
     sockets.push(browser);
-    browser.on('error', () => {});
-    await expect(refused(browser)).resolves.toBe(403);
+    const gone = closed(browser);
+    const why = nextMessage(browser);
+    await opened(browser);
+    expect((await why).text).toEqual({ type: 'closed', reason: 'forbidden' });
+    await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.FORBIDDEN });
+    expect(h.workspaces.isMember).toHaveBeenCalledWith(ORG, USER);
   });
 
   it('refuses a browser from an origin the API does not serve', async () => {
@@ -429,15 +463,13 @@ describe('browser attach socket', () => {
     runner.send(frame, { binary: true });
     expect((await output).bytes?.toString()).toBe('$ claude\r\n');
 
-    // Keystrokes: bare bytes from the browser become session.input on the link.
+    // Keystrokes: bare bytes from the browser become a binary frame on the link,
+    // under this attachment's id — the same layout as the output, reversed.
     const input = nextMessage(runner);
     browser.send(Buffer.from('ls\r'), { binary: true });
-    expect((await input).text).toMatchObject({
-      type: 'session.input',
-      sessionId: SESSION,
-      window: 0,
-      data: Buffer.from('ls\r').toString('base64'),
-    });
+    const typed = (await input).bytes as Buffer;
+    expect([...typed.subarray(0, 4)]).toEqual([0, 0, 0, 1]);
+    expect(typed.subarray(4).toString()).toBe('ls\r');
 
     // A later resize is per attachment.
     const resize = nextMessage(runner);

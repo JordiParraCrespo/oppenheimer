@@ -70,6 +70,7 @@ interface Harness {
   sockets: FakeSocket[];
   statuses: StreamStatus[];
   chunks: string[];
+  ends: string[];
   tickets: ReturnType<typeof vi.fn>;
   timers: { fn: () => void; ms: number }[];
   flush(): Promise<void>;
@@ -105,12 +106,18 @@ function harness(
   const statuses: StreamStatus[] = [];
   const chunks: string[] = [];
   stream.onStatus((status) => statuses.push(status));
-  stream.onData((chunk) => chunks.push(new TextDecoder().decode(chunk as Uint8Array)));
+  const ends: string[] = [];
+  stream.onEnd((reason) => ends.push(reason));
+  stream.onData((chunk, consumed) => {
+    chunks.push(new TextDecoder().decode(chunk as Uint8Array));
+    consumed();
+  });
   return {
     stream,
     sockets,
     statuses,
     chunks,
+    ends,
     tickets,
     timers,
     // The ticket is awaited before the socket is made; two ticks settle it.
@@ -149,6 +156,20 @@ describe('createSessionStream', () => {
     expect(socket.binaryType).toBe('arraybuffer');
     socket.open();
     expect(socket.controls()).toEqual([{ type: 'resize', cols: 120, rows: 40 }]);
+  });
+
+  it('credits only what the terminal consumed, and only once attached', async () => {
+    const h = harness();
+    await h.flush();
+    const socket = h.sockets[0];
+    socket.open();
+    // Before attach: bytes are delivered but no credit leaves, whatever the terminal says.
+    socket.bytes('early');
+    expect(h.chunks).toEqual(['early']);
+    expect(socket.controls()).not.toContainEqual(expect.objectContaining({ type: 'credit' }));
+    socket.text({ type: 'attached', window: 0 });
+    socket.bytes('later');
+    expect(socket.controls()).toContainEqual({ type: 'credit', bytes: 5 });
   });
 
   it('goes live on attached, delivers bytes, credits them, and sends keystrokes as bytes', async () => {
@@ -222,25 +243,51 @@ describe('createSessionStream', () => {
     socket.text({ type: 'refused', code: 'SESS_003', detail: 'stopped' });
     socket.drop(ATTACH_CLOSE_CODES.REFUSED);
     expect(h.statuses.at(-1)).toBe('closed');
+    expect(h.ends).toEqual(['refused']);
     expect(h.timers).toHaveLength(0);
     expect(h.tickets).toHaveBeenCalledTimes(1);
   });
 
-  it('retries when the ticket itself cannot be minted', async () => {
+  it('ends with the reason the relay named on the socket, so a stop is not a ladder', async () => {
+    const h = harness();
+    await h.flush();
+    const socket = h.sockets[0];
+    socket.open();
+    socket.text({ type: 'closed', reason: 'stopped' });
+    socket.drop(ATTACH_CLOSE_CODES.SESSION_STOPPED);
+    expect(h.ends).toEqual(['stopped']);
+    expect(h.statuses.at(-1)).toBe('closed');
+    expect(h.timers).toHaveLength(0);
+  });
+
+  it('retries when the API cannot be reached to mint a ticket, and never says offline', async () => {
     let calls = 0;
     const h = harness({
       issueTicket: async () => {
         calls += 1;
-        if (calls === 1) throw new Error('503');
+        if (calls === 1) throw new Error('network');
         return { ticket: 'late', url: '/api/v1/relay/attach' };
       },
     });
     await h.flush();
     expect(h.sockets).toHaveLength(0);
-    expect(h.statuses.at(-1)).toBe('offline');
+    expect(h.statuses).toEqual(['connecting']);
     h.timers[0].fn();
     await h.flush();
     expect(h.sockets[0].protocols).toEqual(['late']);
+  });
+
+  it('ends on a mint the API refused about this session, without a ladder', async () => {
+    const h = harness({
+      issueTicket: async () => {
+        throw Object.assign(new Error('gone'), { status: 404 });
+      },
+    });
+    await h.flush();
+    expect(h.sockets).toHaveLength(0);
+    expect(h.ends).toEqual(['missing']);
+    expect(h.statuses.at(-1)).toBe('closed');
+    expect(h.timers).toHaveLength(0);
   });
 
   it('closes the socket, cancels the retry and reports closed on dispose', async () => {

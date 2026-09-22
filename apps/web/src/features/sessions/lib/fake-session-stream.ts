@@ -7,6 +7,8 @@
 
 import type { SessionStream, StreamStatus } from './session-stream';
 
+const noop = () => {};
+
 const ESC = '[';
 const RESET = `${ESC}0m`;
 const DIM = `${ESC}90m`;
@@ -69,7 +71,7 @@ const TRANSCRIPT: ReadonlyArray<{ after: number; text: string }> = [
  * that echoes locally keeps that loop honest.
  */
 export function createFakeSessionStream(): SessionStream {
-  const dataListeners = new Set<(chunk: string) => void>();
+  const dataListeners = new Set<(chunk: string, consumed: () => void) => void>();
   const statusListeners = new Set<(status: StreamStatus) => void>();
   const timers: ReturnType<typeof setTimeout>[] = [];
   let status: StreamStatus = 'connecting';
@@ -77,7 +79,7 @@ export function createFakeSessionStream(): SessionStream {
   let line = '';
 
   const emit = (chunk: string) => {
-    for (const listener of dataListeners) listener(chunk);
+    for (const listener of dataListeners) listener(chunk, noop);
   };
 
   const setStatus = (next: StreamStatus) => {
@@ -103,6 +105,10 @@ export function createFakeSessionStream(): SessionStream {
     onData(listener) {
       dataListeners.add(listener);
       return () => dataListeners.delete(listener);
+    },
+    onEnd() {
+      // The replay never ends on its own; only dispose ends it.
+      return noop;
     },
     onStatus(listener) {
       listener(status);

@@ -264,6 +264,14 @@ export type SessionAttachMessage = z.infer<typeof sessionAttachSchema>;
  * for input the control plane originates, which is why the bytes are base64 in
  * a JSON control frame rather than raw.
  */
+/**
+ * Input the **control plane** originates for a window nobody is watching: the
+ * composer's line on a session with no pane open, a scripted command. It is
+ * not the interactive path — a browser's keystrokes are bare binary frames on
+ * the attach socket and are relayed as binary frames on the link, under the
+ * attachment id the relay allocated — which is why this is keyed by window and
+ * carries no attachment.
+ */
 export const sessionInputSchema = z.object({
   type: z.literal('session.input'),
   commandId: commandIdSchema,
@@ -460,6 +468,13 @@ export const welcomeSchema = z.object({
   keyFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
   /** The link's own view of the host, so the runner can log what it is known as. */
   hostId: z.string().min(1).max(64),
+  /**
+   * The reconnect generation, allocated by the control plane per accepted link
+   * on this host and bumped on every one. Both peers use this number: the
+   * runner drops frames and callbacks from an older epoch, the control plane
+   * closes the older socket — so a log line on either side names the same link.
+   */
+  epoch: z.number().int().min(1),
 });
 
 export type WelcomeMessage = z.infer<typeof welcomeSchema>;

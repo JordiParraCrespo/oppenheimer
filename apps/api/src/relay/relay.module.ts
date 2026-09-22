@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
-import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
+import { OrganizationsModule } from '../organizations/organizations.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { BrowserAttachGateway } from './infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from './infrastructure/credentials.processor';
@@ -19,16 +18,13 @@ import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
  * browser opens with an attach ticket. Between them sits `links/`, the registry
  * that says which host is reachable, which is also what `sessions/` dispatches
  * through — so this module imports `sessions/` for the door that records what a
- * runner reports, and never the other way round.
+ * runner reports, and never the other way round. What it sees of the other
+ * modules is their published ports and nothing of their tables: the sessions
+ * doors, the host assertion, presence and key, the repository token mint, and
+ * the workspace membership check.
  */
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([MemberOrmEntity]),
-    LinksModule,
-    SessionsModule,
-    HostsModule,
-    GithubModule,
-  ],
+  imports: [LinksModule, SessionsModule, HostsModule, GithubModule, OrganizationsModule],
   providers: [
     RelayEventsProcessor,
     CredentialsProcessor,

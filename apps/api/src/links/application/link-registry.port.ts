@@ -1,3 +1,5 @@
+import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
+
 /**
  * A live runner link, as the rest of the control plane sees it: something a
  * control message or a PTY frame can be sent down, and a table of the
@@ -24,8 +26,12 @@ export interface RunnerLink {
   readonly runId: string;
   /** Bumped per accepted link on this host; frames from an older epoch are dropped. */
   readonly epoch: number;
-  /** Queue a JSON control frame. `false` when the socket is no longer writable. */
-  send(message: Record<string, unknown>): boolean;
+  /**
+   * Queue a control frame. It is the same union inbound frames are parsed with,
+   * so what this process sends is what the shared package says it sends.
+   * `false` when the socket is no longer writable.
+   */
+  send(message: ProtocolMessage): boolean;
   /** Queue a PTY frame for the runner: attachment id then bytes. */
   sendBinary(attachmentId: number, bytes: Uint8Array): boolean;
   /**

@@ -34,6 +34,7 @@ type controlPlane struct {
 
 func newControlPlane(t *testing.T) *controlPlane {
 	cp := &controlPlane{t: t, fingerprint: strings.Repeat("ab", 32), conns: make(chan *websocket.Conn, 8), hellos: make(chan link.Hello, 8)}
+	var epochs uint64
 	cp.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != link.Path {
 			http.NotFound(w, r)
@@ -68,7 +69,8 @@ func newControlPlane(t *testing.T) *controlPlane {
 			conn.Close(4426, "update required")
 			return
 		}
-		body, _ := json.Marshal(link.Welcome{Type: "welcome", Protocol: link.ProtocolVersion, KeyFingerprint: cp.fingerprint, HostID: "host-1"})
+		epochs++
+		body, _ := json.Marshal(link.Welcome{Type: "welcome", Protocol: link.ProtocolVersion, KeyFingerprint: cp.fingerprint, HostID: "host-1", Epoch: epochs})
 		_ = conn.Write(ctx, websocket.MessageText, body)
 		cp.conns <- conn
 	}))

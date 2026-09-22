@@ -300,48 +300,33 @@ stays fake until slice 6. Each is a feature under
 
 ## Slice 6 — `relay/`: the two sockets
 
-**As built (pull request for issue #41):** two modules rather than one, so
-the dependency runs one way. `links/` holds the per-host link registry and
-the `SessionDispatchPort` implementation and is imported by `sessions/`;
-`relay/` holds the two sockets, the frame codec and the events processor and
-imports `sessions/`, `hosts/` and `links/`. The sockets are `upgrade`
-listeners on the API's own HTTP server (`relay-upgrade.gateway.ts`) over
-`ws`, not Nest gateways, because each takes its credential from the
-handshake. `credentials.processor.ts` mints live and seals to the host's key
-(`seal.util.ts`: Ed25519 → X25519, ephemeral ECDH, HKDF-SHA256, AES-256-GCM;
-the runner's `pairing/adapters/token/seal.go` opens it). Hello reconciliation
-is `sessions/`' `SESSION_RECONCILIATION`: a `starting` session the host does
-not hold is dispatched again, an `open` one it lost is recorded stopped, keyed
-by the runner's `runId`. `attachment.credit` pauses the runner's PTY reads at
-256 KB in flight. Still open: multi-window, `addCheckout`/`removeCheckout` on
-the wire, and the runner's session layout per note 10.
+The decided shape is written where it belongs: the wire in 01, the
+modules, routes and ports in 03 ("The relay, as built"). What is left here
+is the order of work.
 
-```
-apps/api/src/relay/
-  relay.module.ts  relay.di-tokens.ts
-  infrastructure/runner-link.gateway.ts        # GET /api/v1/relay/runner; handshake: Authorization: Bearer <boot JWT> → hosts' HostAssertionPort; hello; min_supported → update_required
-  infrastructure/browser-attach.gateway.ts     # GET /api/v1/relay/attach; Sec-WebSocket-Protocol ticket → cache.take(); re-check session live + membership; Origin
-  infrastructure/link-registry.adapter.ts      # in-process: hostId → socket; attachment ids per link; freed on detach
-  infrastructure/frame.util.ts                 # 4-byte big-endian attachment id + bytes; JSON text frames for control
-  infrastructure/flow-control.util.ts          # 256 KB window per attachment, browser acks → credit
-  infrastructure/relay-dispatch.adapter.ts     # implements sessions' SessionDispatchPort over the link
-  infrastructure/relay-events.processor.ts     # runner events.append → RecordSessionEventsCommand; heartbeat → hosts lastSeenAt + capabilities
-  infrastructure/credentials.processor.ts      # credentials.token → github's RepositoryAccessPort, sealed to the host key (F7)
-  __tests__/runner-link.gateway.spec.ts        # a socket with no assertion is closed before any frame is handled
-  __tests__/browser-attach.gateway.spec.ts     # a socket with no ticket, a used ticket, a stopped session: closed
-  __tests__/frame.spec.ts  flow-control.spec.ts  link-registry.spec.ts
-```
+- [x] `links/`: the per-host link registry and `RelayDispatchAdapter`
+      bound to `SESSION_DISPATCH`; the pending adapter goes.
+- [x] `relay/`: `GET /api/v1/relay/runner` and `GET /api/v1/relay/attach`
+      as `upgrade` listeners on the API's own HTTP server over `ws`;
+      `main.ts` is untouched. (Nest's `@nestjs/websockets` + `WsAdapter`
+      was the alternative and is not used: each socket takes its
+      credential from the handshake, where Nest's pipeline does not look.)
+- [x] `hosts/`: `HOST_PRESENCE` and `HOST_KEY`; `sessions/`:
+      `SESSION_LOOKUP` and `SESSION_RECONCILIATION`; `organizations/`:
+      `WORKSPACE_LOOKUP`. `packages/backend/cache` gains `take<T>(key)` over
+      `GETDEL`.
+- [x] `credentials.token` → `credentials.grant`, sealed to the host key.
+- [x] Hello reconciliation against the rows.
+- [x] The gateway specs run both sockets on a real HTTP server and are
+      the coverage the routes get, `route-policy-coverage.spec.ts` not
+      seeing an upgrade.
+- [ ] Multi-window in the console (the runner handles
+      `session.window.open|close`; no route yet).
+- [ ] `addCheckout` / `removeCheckout` on the wire (no frame in 01 yet;
+      the dispatcher answers `not_supported` on a live link).
+- [ ] `attachment.credit` end to end is in place; a credit *policy* on the
+      relay (dropping a browser that never credits) is not.
 
-- Dependencies: `@nestjs/websockets`, `@nestjs/platform-ws`, `ws`;
-  `main.ts` gains `app.useWebSocketAdapter(new WsAdapter(app))`.
-  `packages/backend/cache` gains `take<T>(key)` over `GETDEL` (and the
-  hand-rolled double in `delegated-session.adapter.spec.ts` gains it
-  too).
-- The gateways are the guard: the two specs above are the coverage test
-  the HTTP surface gets from `route-policy-coverage.spec.ts`, and they
-  are required, not nice-to-have.
-- Two hint schemas: the link's is 01's closed set (`update_available`,
-  `update_required`, `blocked`); the attach ticket's adds `host_offline`.
 - **Acceptance is the step-one spike gate**
   ([`06-step-one-spike.md`](06-step-one-spike.md)): keystroke echo under
   50 ms median from Barcelona on wifi with the relay in the host's

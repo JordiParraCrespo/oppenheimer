@@ -26,8 +26,13 @@ export interface SessionAttachTarget {
   id: string;
   organizationId: string;
   hostId: string;
-  /** `false` once the session is resolved or stopped: nothing to attach to. */
-  attachable: boolean;
+  /**
+   * Three answers, because they end differently on the socket: `live` attaches;
+   * `stopped` is tmux gone with the checkouts kept, so the console offers
+   * Restart; `resolved` is the end. A boolean would give the last two one close
+   * code and the person who pressed Stop a reconnect ladder instead of a button.
+   */
+  state: 'live' | 'stopped' | 'resolved';
 }
 
 /** What a `credentials.token` ask resolves to, before anything is minted. */

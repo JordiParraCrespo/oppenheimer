@@ -4,7 +4,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { useEffect, useRef, useState } from 'react';
-import type { SessionStream, StreamStatus } from '../lib/session-stream';
+import type { SessionStream, StreamEnd, StreamStatus } from '../lib/session-stream';
 import { readTerminalTheme, TERMINAL_FONT } from '../lib/terminal-theme';
 
 export interface TerminalGrid {
@@ -27,12 +27,18 @@ export interface TerminalGrid {
  * mounts next subscribes to something already shut, which renders blank in
  * development and nowhere else. `createStream` must be a stable reference.
  */
-export function useTerminal(createStream: () => SessionStream) {
+export function useTerminal(
+  createStream: () => SessionStream,
+  onEnd?: (reason: StreamEnd) => void,
+) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const streamRef = useRef<SessionStream | null>(null);
   const focusRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<StreamStatus>('connecting');
   const [grid, setGrid] = useState<TerminalGrid>({ cols: 0, rows: 0 });
+  // Read through a ref so a new callback identity never rebuilds the terminal.
+  const onEndRef = useRef(onEnd);
+  onEndRef.current = onEnd;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -104,13 +110,17 @@ export function useTerminal(createStream: () => SessionStream) {
     });
     themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
-    const offData = stream.onData((chunk) => term.write(chunk));
+    // xterm's write callback fires once the parser has drained the chunk:
+    // that is the moment the bytes are consumed, and the credit goes with it.
+    const offData = stream.onData((chunk, consumed) => term.write(chunk, consumed));
     const offStatus = stream.onStatus(setStatus);
+    const offEnd = stream.onEnd((reason) => onEndRef.current?.(reason));
     const input = term.onData((data) => stream.send(data));
 
     return () => {
       offData();
       offStatus();
+      offEnd();
       input.dispose();
       themeObserver.disconnect();
       resizeObserver.disconnect();

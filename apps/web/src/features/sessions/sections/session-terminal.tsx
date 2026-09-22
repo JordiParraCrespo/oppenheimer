@@ -1,6 +1,7 @@
 import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { SessionComposer } from '../components/session-composer';
+import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useSessionStream } from '../hooks/use-session-stream';
 import { useTerminal } from '../hooks/use-terminal';
 
@@ -24,7 +25,8 @@ import { useTerminal } from '../hooks/use-terminal';
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId);
-  const { containerRef, status, submit } = useTerminal(createStream);
+  const refresh = useSessionRefresh(sessionId);
+  const { containerRef, status, submit } = useTerminal(createStream, refresh);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">

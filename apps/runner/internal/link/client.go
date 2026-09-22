@@ -124,8 +124,10 @@ func dialURL(origin string) (string, error) {
 	return u.String(), nil
 }
 
-// Epoch is the number of links accepted so far; frames and callbacks from an
-// older epoch are dropped by whoever holds one.
+// Epoch is the reconnect generation of the current link, as the control plane
+// allocated it on welcome (01): frames and callbacks from an older epoch are
+// dropped by whoever holds one, and the control plane's log names the same
+// number. Zero before the first welcome.
 func (c *Client) Epoch() uint64 { return c.epoch.Load() }
 
 // Live reports whether a link is up right now.
@@ -225,7 +227,13 @@ func (c *Client) dialOnce(ctx context.Context) error {
 			welcome.KeyFingerprint, c.opts.Fingerprint)
 	}
 
-	epoch := c.epoch.Add(1)
+	if welcome.Epoch == 0 || welcome.Epoch <= c.epoch.Load() {
+		// The control plane allocates epochs upward per host; one that does not
+		// move is a relay replaying an old welcome, and is not a link.
+		return fmt.Errorf("welcome epoch %d is not newer than %d", welcome.Epoch, c.epoch.Load())
+	}
+	epoch := welcome.Epoch
+	c.epoch.Store(epoch)
 	send := make(chan []byte, sendQueue)
 	c.mu.Lock()
 	c.conn, c.send = conn, send

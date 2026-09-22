@@ -172,3 +172,15 @@ describe('launch mapping', () => {
     }
   });
 });
+
+describe('the runner launch table', () => {
+  it('is the committed generation of this catalog, so the host cannot drift from the console', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { createRequire } = await import('node:module');
+    const require = createRequire(import.meta.url);
+    // The generator reads the built catalog, as the shared build does; the
+    // committed Go file must be byte-identical to what it renders now.
+    const { outputPath, render } = require('../../../scripts/emit-agent-catalog.cjs');
+    expect(readFileSync(outputPath, 'utf8')).toBe(render());
+  });
+});

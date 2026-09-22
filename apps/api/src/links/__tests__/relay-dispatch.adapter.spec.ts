@@ -1,8 +1,6 @@
 import 'reflect-metadata';
 import { sessionCreateSchema } from '@oppenheimer/shared/protocol';
-import type { Repository } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
-import type { OrganizationOrmEntity } from '../../organizations/database/organization.orm-entity';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
@@ -54,16 +52,14 @@ function harness(withLink: boolean) {
     nextEpoch: vi.fn(),
     find: vi.fn().mockReturnValue(withLink ? link : undefined),
   };
-  const organizations = {
-    findOne: vi.fn().mockResolvedValue({ id: ORG, slug: 'jordi' }),
-  } as unknown as Repository<OrganizationOrmEntity>;
-  return { link, adapter: new RelayDispatchAdapter(links, organizations) };
+  return { link, adapter: new RelayDispatchAdapter(links) };
 }
 
 describe('RelayDispatchAdapter', () => {
   it('answers host_offline, and sends nothing, when the host holds no link', async () => {
     const { adapter, link } = harness(false);
     const outcome = await adapter.create(session(), {
+      organizationSlug: 'jordi',
       projectSlug: 'xrp-mobile',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     });
@@ -75,6 +71,7 @@ describe('RelayDispatchAdapter', () => {
     const { adapter, link } = harness(true);
     const entity = session();
     const outcome = await adapter.create(entity, {
+      organizationSlug: 'jordi',
       projectSlug: 'xrp-mobile',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
       prompt: 'Fix the wallet list empty state',
@@ -105,5 +102,17 @@ describe('RelayDispatchAdapter', () => {
     expect(link.send).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'session.close', acceptUnpushedWork: true }),
     );
+  });
+
+  it('names an operation the wire has no frame for, rather than a delivery that did not happen', async () => {
+    const { adapter, link } = harness(true);
+    const entity = session();
+    const outcome = await adapter.addCheckout(entity, entity.checkouts[0], {
+      organizationSlug: 'jordi',
+      projectSlug: 'xrp-mobile',
+      branch: 'x',
+    });
+    expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+    expect(link.send).not.toHaveBeenCalled();
   });
 });

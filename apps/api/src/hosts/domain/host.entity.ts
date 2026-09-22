@@ -4,6 +4,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostRegisteredDomainEvent } from './events/host-registered.domain-event';
 
 /** Whatever the runner last reported about the machine, stored as it arrived. */
@@ -54,15 +55,9 @@ export interface RegisterHostProps {
 }
 
 /** A 64-character lowercase hex digest — SHA-256 of the raw key. */
-/** What a link report says about the machine, already reduced to columns. */
-export interface HostReport {
-  facts?: {
-    hostname?: string | null;
-    os?: string | null;
-    arch?: string | null;
-    runnerVersion?: string | null;
-    capabilities?: HostCapabilities | null;
-  } | null;
+/** `<platform> <osVersion>` when the runner knew the version, the platform alone otherwise. */
+export function hostPlatformOf(facts: HostFactsDto): string {
+  return facts.osVersion ? `${facts.platform} ${facts.osVersion}` : facts.platform;
 }
 
 const FINGERPRINT = /^[0-9a-f]{64}$/;
@@ -183,17 +178,22 @@ export class HostEntity extends AggregateRoot<HostProps> {
   /**
    * The runner reported in: on hello and on every heartbeat. `online` is derived
    * from `lastSeenAt` by the repository's read, so this is the only writer of
-   * the fact the sidebar dot reads. The facts are kept whole on `capabilities`,
-   * as registration does, and the columns worth their own name follow them.
+   * the fact the sidebar dot reads.
+   *
+   * The facts are the one shape registration validated (`hostFactsSchema`,
+   * `facts.go`'s twin), and they **replace** what was there: presence is the
+   * machine as of this report, so a tool that went missing since pairing goes
+   * missing here too rather than living on from the last time it was seen. The
+   * four columns worth their own name are read off the same object registration
+   * reads them off (`HostMapper.toRegisterProps`), and the whole inventory is
+   * kept on `capabilities` as it arrived, as at registration.
    */
-  observe(report: HostReport, at: Date = new Date()): void {
-    if (report.facts) {
-      this.props.hostname = report.facts.hostname ?? this.props.hostname;
-      this.props.os = report.facts.os ?? this.props.os;
-      this.props.arch = report.facts.arch ?? this.props.arch;
-      this.props.runnerVersion = report.facts.runnerVersion ?? this.props.runnerVersion;
-      this.props.capabilities = report.facts.capabilities ?? this.props.capabilities;
-    }
+  observe(facts: HostFactsDto, at: Date = new Date()): void {
+    this.props.hostname = facts.hostname;
+    this.props.os = hostPlatformOf(facts);
+    this.props.arch = facts.arch;
+    this.props.runnerVersion = facts.runnerVersion;
+    this.props.capabilities = { ...facts };
     this.props.lastSeenAt = at;
     this.setUpdatedAt(at);
     this.validate();

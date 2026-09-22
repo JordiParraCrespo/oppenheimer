@@ -56,7 +56,9 @@ export class RelayEventsProcessor {
   }
 
   async onHeartbeat(link: RunnerLink, heartbeat: HeartbeatMessage): Promise<void> {
-    await this.presence.observe(link.hostId, heartbeat.host, new Date(heartbeat.sentAt));
+    // Receipt time, not `sentAt`: presence is when this process heard from the
+    // host, and a skewed clock on the host must not take it offline.
+    await this.presence.observe(link.hostId, heartbeat.host);
   }
 
   async onEventsAppend(link: RunnerLink, batch: EventsAppendMessage): Promise<void> {

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostAccessPort } from '../../../../hosts/application/host-access.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
+import { SessionLaunchSpecFactory } from '../../../application/session-launch.factory';
 import type { SessionNamingResolver } from '../../../application/session-naming.resolver';
 import type { SessionPlanFactory } from '../../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
@@ -41,6 +42,13 @@ function project() {
   });
 }
 
+function launches(): SessionLaunchSpecFactory {
+  return new SessionLaunchSpecFactory({
+    slugOf: vi.fn().mockResolvedValue('jordi'),
+    isMember: vi.fn(),
+  });
+}
+
 describe('CreateSessionCommandHandler', () => {
   let sessions: WorkSessionRepositoryPort;
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
@@ -75,6 +83,7 @@ describe('CreateSessionCommandHandler', () => {
       hosts as unknown as HostAccessPort,
       dispatch,
       plan,
+      launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
     );
@@ -239,6 +248,7 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
         attachCheckout: vi.fn().mockResolvedValue(undefined),
         cwdCheckoutIdFor: vi.fn().mockReturnValue(null),
       } as unknown as SessionPlanFactory,
+      launches(),
       naming as unknown as SessionNamingResolver,
       new WorkSessionMapper(),
     );

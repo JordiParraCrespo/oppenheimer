@@ -49,10 +49,23 @@ export const attachRefusedSchema = z.object({
   detail: z.string().max(500).optional(),
 });
 
+/**
+ * The relay is about to close this socket for a reason no reconnect can
+ * change: the ticket was not honoured, the person is no longer a member, or
+ * the session is stopped or resolved. It is sent on an *established* socket
+ * before the close, because a browser's WebSocket cannot see the status of a
+ * refused upgrade — it sees 1006 and would retry.
+ */
+export const attachClosedSchema = z.object({
+  type: z.literal('closed'),
+  reason: z.enum(['unauthorized', 'forbidden', 'stopped', 'resolved', 'missing']),
+});
+
 export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachAttachedSchema,
   attachHintSchema,
   attachRefusedSchema,
+  attachClosedSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;
@@ -67,8 +80,10 @@ export const ATTACH_CLOSE_CODES = Object.freeze({
   UNAUTHORIZED: 4401,
   /** The person is no longer a member of the session's workspace. */
   FORBIDDEN: 4403,
-  /** The session is gone, closed or stopped. */
+  /** The session is gone or resolved; nothing will attach again. */
   SESSION_UNAVAILABLE: 4404,
+  /** The session is stopped: tmux is gone, the checkouts are kept, Restart applies. */
+  SESSION_STOPPED: 4410,
   /** The host holds no link right now; `host_offline` was sent first. */
   HOST_OFFLINE: 4503,
   /** The runner refused the attach; `refused` was sent first. */

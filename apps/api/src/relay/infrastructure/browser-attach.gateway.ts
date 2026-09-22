@@ -3,14 +3,15 @@ import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CacheService } from '@oppenheimer/backend-cache';
 import {
   ATTACH_CLOSE_CODES,
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
-import { Repository } from 'typeorm';
+
+type AttachClosedReason = Extract<AttachServerMessage, { type: 'closed' }>['reason'];
+
 import { type WebSocket, WebSocketServer } from 'ws';
 import type {
   AttachmentClosedReason,
@@ -19,7 +20,8 @@ import type {
   RunnerLink,
 } from '../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../links/links.di-tokens';
-import { MemberOrmEntity } from '../../organizations/database/member.orm-entity';
+import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
+import { WORKSPACE_LOOKUP } from '../../organizations/organizations.di-tokens';
 import {
   ATTACH_TICKET_PREFIX,
   type AttachTicket,
@@ -47,12 +49,23 @@ const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
  *
  * The ticket travels in `Sec-WebSocket-Protocol` and is redeemed with a
  * read-and-delete, so a second socket presenting it is refused. What the ticket
- * authorised is re-checked at redemption — the session still attachable, the
- * person still a member of its workspace — because sixty seconds is long enough
- * for either to have changed. Then the session's host either holds a link, and
- * the attachment is opened on it with the browser's own viewport, or it does not,
- * and the socket is told `host_offline` and closed: that hint is the ticket's,
- * not the link's, and this is the one place it is said.
+ * authorised is re-checked at redemption — the session still live, the person
+ * still a member of its workspace (through `organizations/`' port) — because
+ * sixty seconds is long enough for either to have changed.
+ *
+ * Every refusal after the handshake is **a message and a close code on an
+ * established socket**, never a refused upgrade: a browser's WebSocket cannot
+ * see the status of a refused upgrade, only a 1006 it would take for a dropped
+ * radio and retry. So the upgrade is completed for any request that carries a
+ * ticket and comes from an origin this API serves, and the ticket is judged on
+ * the socket, where `closed` names the reason and the code is final. Only a
+ * request with no ticket at all, or from another origin, is refused before the
+ * upgrade — neither is something a browser this app serves can send.
+ *
+ * Then the session's host either holds a link, and the attachment is opened on
+ * it with the browser's own viewport, or it does not, and the socket is told
+ * `host_offline` and closed: that hint is the ticket's, not the link's, and this
+ * is the one place it is said.
  */
 @Injectable()
 export class BrowserAttachGateway {
@@ -71,8 +84,8 @@ export class BrowserAttachGateway {
     private readonly sessions: SessionLookupPort,
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
-    @InjectRepository(MemberOrmEntity)
-    private readonly members: Repository<MemberOrmEntity>,
+    @Inject(WORKSPACE_LOOKUP)
+    private readonly workspaces: WorkspaceLookupPort,
     private readonly configService: ConfigService,
   ) {}
 
@@ -87,34 +100,45 @@ export class BrowserAttachGateway {
       refuseUpgrade(socket, 401, 'an attach ticket is presented as the subprotocol');
       return;
     }
+    this.server.handleUpgrade(request, socket, head, (ws) => void this.redeem(ws, ticket));
+  }
+
+  private async redeem(ws: WebSocket, ticket: string): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
     if (!claim) {
-      refuseUpgrade(socket, 401, 'attach ticket rejected');
+      this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
     const target = await this.sessions.findAttachTarget(claim.sessionId);
-    if (!target || target.organizationId !== claim.organizationId || !target.attachable) {
-      refuseUpgrade(socket, 409, 'session is not attachable');
+    if (!target || target.organizationId !== claim.organizationId) {
+      this.end(ws, 'missing', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
       return;
     }
-    const member = await this.members.exist({
-      where: { organizationId: claim.organizationId, userId: claim.userId },
-    });
-    if (!member) {
-      refuseUpgrade(socket, 403, 'not a member of the session workspace');
+    if (target.state === 'resolved') {
+      this.end(ws, 'resolved', ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE);
       return;
     }
-    this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, claim, target.hostId));
-  }
-
-  private accept(ws: WebSocket, claim: AttachTicket, hostId: string): void {
-    const link = this.links.find(hostId);
+    if (target.state === 'stopped') {
+      this.end(ws, 'stopped', ATTACH_CLOSE_CODES.SESSION_STOPPED);
+      return;
+    }
+    if (!(await this.workspaces.isMember(claim.organizationId, claim.userId))) {
+      this.end(ws, 'forbidden', ATTACH_CLOSE_CODES.FORBIDDEN);
+      return;
+    }
+    const link = this.links.find(target.hostId);
     if (!link) {
       this.tell(ws, { type: 'hint', kind: 'host_offline' });
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
       return;
     }
     new BrowserAttachment(ws, claim, link, this.logger).start();
+  }
+
+  /** A final answer: the reason as a control frame, then the code. */
+  private end(ws: WebSocket, reason: AttachClosedReason, code: number): void {
+    this.tell(ws, { type: 'closed', reason });
+    ws.close(code, reason);
   }
 
   private tell(ws: WebSocket, message: AttachServerMessage): void {
@@ -241,15 +265,16 @@ class BrowserAttachment implements AttachmentSink {
     }
   }
 
+  /**
+   * Keystrokes are the attach socket's binary frames, copied onto the link as
+   * binary frames under this attachment's id — the same frame layout the PTY's
+   * output uses the other way. No JSON, no base64, no window lookup on the host:
+   * the runner writes them to the PTY the id names (`session.input` is the
+   * control plane's own path for a window nobody is watching).
+   */
   private input(bytes: Buffer): void {
-    if (!this.attached || bytes.byteLength === 0) return;
-    this.link.send({
-      type: 'session.input',
-      commandId: randomUUID(),
-      sessionId: this.claim.sessionId,
-      window: this.claim.window,
-      data: bytes.toString('base64'),
-    });
+    if (!this.attached || this.attachmentId === null || bytes.byteLength === 0) return;
+    this.link.sendBinary(this.attachmentId, bytes);
   }
 
   private attach(viewport: { cols: number; rows: number }): void {

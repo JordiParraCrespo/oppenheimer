@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
 import type { SessionDispatchPort } from '../session-dispatch.port';
+import { SessionLaunchSpecFactory } from '../session-launch.factory';
 import { SessionReconciliationResolver } from '../session-reconciliation.resolver';
 
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
@@ -30,7 +31,15 @@ function harness(rows: { session: WorkSessionEntity; projectSlug: string; prompt
   const dispatch = {
     create: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
   } as unknown as SessionDispatchPort;
-  return { sessions, dispatch, resolver: new SessionReconciliationResolver(sessions, dispatch) };
+  const launches = new SessionLaunchSpecFactory({
+    slugOf: vi.fn().mockResolvedValue('jordi'),
+    isMember: vi.fn(),
+  });
+  return {
+    sessions,
+    dispatch,
+    resolver: new SessionReconciliationResolver(sessions, dispatch, launches),
+  };
 }
 
 describe('SessionReconciliationResolver', () => {
@@ -40,6 +49,7 @@ describe('SessionReconciliationResolver', () => {
     const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
     expect(outcome).toEqual({ redispatched: [owed.id], stopped: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
+      organizationSlug: 'jordi',
       projectSlug: 'xrp',
       branch: 'oppenheimer/xrp/bold-otter-3f9a7k',
       prompt: 'fix it',

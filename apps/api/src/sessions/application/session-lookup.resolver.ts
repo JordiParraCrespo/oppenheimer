@@ -22,7 +22,7 @@ export class SessionLookupResolver implements SessionLookupPort {
       id: session.id,
       organizationId: session.organizationId,
       hostId: session.hostId,
-      attachable: !session.isResolved && session.stoppedAt === null,
+      state: session.isResolved ? 'resolved' : session.stoppedAt !== null ? 'stopped' : 'live',
     };
   }
 

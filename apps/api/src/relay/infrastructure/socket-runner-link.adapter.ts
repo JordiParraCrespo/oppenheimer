@@ -1,3 +1,4 @@
+import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
 import type { WebSocket } from 'ws';
 import type { AttachmentSink, RunnerLink } from '../../links/application/link-registry.port';
 import { encodeFrame } from './frame.util';
@@ -25,7 +26,7 @@ export class SocketRunnerLink implements RunnerLink {
     private readonly socket: WebSocket,
   ) {}
 
-  send(message: Record<string, unknown>): boolean {
+  send(message: ProtocolMessage): boolean {
     if (!this.writable) return false;
     this.socket.send(JSON.stringify(message));
     return true;

@@ -3,9 +3,7 @@ package cli
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -15,7 +13,6 @@ import (
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
-	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
@@ -256,194 +253,6 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 	}
 }
 
-/* ------------------------------------------------------------------ commands */
-
-func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
-	agent, ok := agentOf(m.Agent)
-	if !ok {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
-		return
-	}
-	if len(m.Checkouts) == 0 {
-		// A session with no checkout is a directory and a shell; this runner's
-		// session service still needs a repository to make one.
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("a session needs at least one checkout on this runner"))
-		return
-	}
-	first := m.Checkouts[0]
-	session, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
-		ID:         m.SessionID,
-		Repo:       first.RepositoryFullName,
-		Remote:     "https://github.com/" + first.RepositoryFullName + ".git",
-		BaseBranch: first.BaseBranch,
-		Branch:     m.Branch,
-		Name:       m.SessionSlug,
-		Agent:      agent,
-		Launch: sessionsdomain.Launch{
-			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
-		},
-		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-	})
-	if err != nil {
-		h.fail(m.CommandID, err)
-		h.reporter.Append(m.SessionID, "session.failed", failurePayload(err))
-		return
-	}
-	h.reporter.Append(session.ID, "session.started", map[string]any{
-		"checkouts": []map[string]any{{
-			"checkoutId": first.CheckoutID, "branch": session.Branch, "path": session.Worktree, "mode": "worktree",
-		}},
-	})
-}
-
-func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach) {
-	pty, err := h.app.Sessions.Attach(ctx, m.SessionID, m.Window, sessionsapp.Size{Cols: clampSize(m.Cols), Rows: clampSize(m.Rows)})
-	if err != nil {
-		h.fail(m.CommandID, err)
-		return
-	}
-	readCtx, cancel := context.WithCancel(context.Background())
-	att := &attachment{id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel, flow: newFlowWindow()}
-	h.mu.Lock()
-	if previous, exists := h.attachments[m.AttachmentID]; exists {
-		previous.flow.close()
-		previous.cancel()
-		_ = previous.pty.Close()
-	}
-	h.attachments[m.AttachmentID] = att
-	h.mu.Unlock()
-	go h.pump(readCtx, att)
-}
-
-// pump is the one goroutine reading an attachment's PTY: one read, one frame.
-func (h *linkHandler) pump(ctx context.Context, att *attachment) {
-	buf := make([]byte, ptyRead)
-	for {
-		// Flow control: the read waits while the browser's window is spent,
-		// so tmux's own buffer, not this process, holds a runaway pane.
-		if !att.flow.acquire(ctx) {
-			return
-		}
-		n, err := att.pty.Read(buf)
-		if n > 0 {
-			att.flow.sent(n)
-			if sendErr := h.client.SendFrame(att.id, buf[:n]); sendErr != nil && !errors.Is(sendErr, link.ErrBackpressure) {
-				break
-			}
-		}
-		if err != nil {
-			break
-		}
-		if ctx.Err() != nil {
-			return
-		}
-	}
-	if ctx.Err() != nil {
-		return
-	}
-	// The PTY ended on its own — the window closed, or tmux went — so the id
-	// is free and the control plane is told.
-	h.mu.Lock()
-	if h.attachments[att.id] == att {
-		delete(h.attachments, att.id)
-	}
-	h.mu.Unlock()
-	_ = att.pty.Close()
-	_ = h.client.Send(link.AttachmentClosed{Type: "attachment.closed", AttachmentID: att.id, Reason: "pty closed"})
-}
-
-func (h *linkHandler) input(ctx context.Context, m link.SessionInput) {
-	data, err := base64.StdEncoding.DecodeString(m.Data)
-	if err != nil || len(data) == 0 {
-		return
-	}
-	// A window someone is watching takes the bytes on its PTY, which is how
-	// mouse reports and escape sequences arrive intact; an unwatched window
-	// gets them typed through tmux.
-	if att := h.attachmentFor(m.SessionID, m.Window); att != nil {
-		_, _ = att.pty.Write(data)
-		return
-	}
-	if err := h.app.Sessions.Send(ctx, m.SessionID, m.Window, string(data)); err != nil {
-		h.fail(m.CommandID, err)
-	}
-}
-
-func (h *linkHandler) resize(m link.SessionResize) {
-	if att := h.attachmentByID(m.AttachmentID); att != nil {
-		_ = att.pty.Resize(sessionsapp.Size{Cols: clampSize(m.Cols), Rows: clampSize(m.Rows)})
-	}
-}
-
-func (h *linkHandler) detach(id uint32) {
-	h.mu.Lock()
-	att := h.attachments[id]
-	delete(h.attachments, id)
-	h.mu.Unlock()
-	if att != nil {
-		att.flow.close()
-		att.cancel()
-		_ = att.pty.Close()
-	}
-}
-
-func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
-	var err error
-	switch m.Type {
-	case "session.stop":
-		_, err = h.app.Sessions.Stop(ctx, m.SessionID)
-	case "session.restart":
-		var session sessionsdomain.Session
-		if session, err = h.app.Sessions.Restart(ctx, m.SessionID); err == nil {
-			h.reporter.Append(session.ID, "session.restarted", map[string]any{})
-		}
-	case "session.close":
-		_, err = h.app.Sessions.Close(ctx, m.SessionID, sessionsapp.CloseInput{Push: true, Force: m.AcceptUnpushedWork})
-		h.credentials.Forget(m.SessionID)
-	case "session.window.open":
-		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)
-	case "session.window.close":
-		err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window)
-	}
-	if err != nil {
-		h.fail(m.CommandID, err)
-	}
-}
-
-// preflight re-collects the host facts and reports them at once, as a
-// heartbeat, which is the shape the control plane already reads them in.
-func (h *linkHandler) preflight(ctx context.Context, commandID string) {
-	if _, err := h.app.Host.Preflight(ctx); err != nil {
-		h.fail(commandID, err)
-	}
-	beat, err := h.Heartbeat(ctx)
-	if err != nil {
-		h.fail(commandID, err)
-		return
-	}
-	beat.Type = "heartbeat"
-	_ = h.client.Send(beat)
-}
-
-// update applies a version the control plane asks for: the pin and the safe
-// window are the control plane's to override here, the signature and the
-// digest never are (09 §5).
-func (h *linkHandler) update(ctx context.Context, m link.HostUpdate) {
-	if h.app.Updates == nil {
-		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("this host is not paired"))
-		return
-	}
-	if m.Version != "" {
-		if _, err := h.app.Pairing.SetPin(m.Version); err != nil {
-			h.fail(m.CommandID, err)
-			return
-		}
-	}
-	if _, err := h.app.Updates.Apply(ctx, updapp.ApplyOptions{Force: true}); err != nil {
-		h.fail(m.CommandID, err)
-	}
-}
-
 /* ------------------------------------------------------------------- helpers */
 
 func (h *linkHandler) fail(commandID string, err error) {
@@ -466,23 +275,6 @@ func failurePayload(err error) map[string]any {
 	return payload
 }
 
-func (h *linkHandler) attachmentByID(id uint32) *attachment {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	return h.attachments[id]
-}
-
-func (h *linkHandler) attachmentFor(sessionID string, window int) *attachment {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	for _, att := range h.attachments {
-		if att.sessionID == sessionID && att.window == window {
-			return att
-		}
-	}
-	return nil
-}
-
 func (h *linkHandler) snapshots() []link.SessionSnapshot {
 	sessions := h.app.Sessions.List()
 	out := make([]link.SessionSnapshot, 0, len(sessions))
@@ -493,7 +285,7 @@ func (h *linkHandler) snapshots() []link.SessionSnapshot {
 		}
 		snapshot := link.SessionSnapshot{
 			SessionID:    s.ID,
-			Agent:        protocolAgent(s.Agent),
+			Agent:        s.Agent.CatalogID(),
 			Observed:     observedOf(s.State),
 			StateSeconds: int(now.Sub(s.Updated).Seconds()),
 			Windows:      []link.Window{},
@@ -508,25 +300,6 @@ func (h *linkHandler) snapshots() []link.SessionSnapshot {
 		out = append(out, snapshot)
 	}
 	return out
-}
-
-func agentOf(id string) (sessionsdomain.Agent, bool) {
-	switch id {
-	case "claude-code":
-		return sessionsdomain.AgentClaude, true
-	case "codex":
-		return sessionsdomain.AgentCodex, true
-	}
-	return "", false
-}
-
-func protocolAgent(agent sessionsdomain.Agent) string {
-	switch agent {
-	case sessionsdomain.AgentCodex:
-		return "codex"
-	default:
-		return "claude-code"
-	}
 }
 
 // observedOf maps the runner's states onto the five the log's
@@ -556,7 +329,3 @@ func truncate(s string, n int) string {
 	}
 	return s[:n]
 }
-
-// Attachment ids are printed in logs as hex, for a person matching them to
-// the control plane's; nothing parses them back.
-func (att *attachment) String() string { return fmt.Sprintf("attachment#%08x", att.id) }

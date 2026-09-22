@@ -75,6 +75,7 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     protocol: 1,
     keyFingerprint: 'a'.repeat(64),
     hostId: '4a2f0c9e-5b1d-4a7c-9e3f-2b8d6c1a0f47',
+    epoch: 3,
   },
   'command.failed': { type: 'command.failed', commandId, code: 'SESS_003', detail: 'stopped' },
   'session.detach': { type: 'session.detach', commandId, sessionId, attachmentId: 7 },

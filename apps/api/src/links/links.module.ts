@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { SESSION_DISPATCH } from '../sessions/sessions.di-tokens';
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
@@ -12,13 +10,12 @@ import { LINK_REGISTRY } from './links.di-tokens';
  *
  * It is its own module rather than part of `relay/` so the dependency runs one
  * way: `sessions/` imports this to dispatch, `relay/` imports this to register
- * the sockets it accepts, and this module imports neither — it knows the two
- * only through their ports and tokens. The alternative, one module that both
- * dispatches and records events, would need `sessions/` and `relay/` to import
- * each other.
+ * the sockets it accepts, and this module imports nothing — no other module,
+ * no table — and knows the two only through their ports and tokens. The
+ * alternative, one module that both dispatches and records events, would need
+ * `sessions/` and `relay/` to import each other.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([OrganizationOrmEntity])],
   providers: [
     { provide: LINK_REGISTRY, useClass: InProcessLinkRegistry },
     { provide: SESSION_DISPATCH, useClass: RelayDispatchAdapter },

@@ -5,9 +5,9 @@ import type { ProjectLookupPort } from '../../../projects/application/project-lo
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
-import { sessionBranchName } from '../../domain/session-layout.policy';
 import { SESSION_EVENT_KINDS } from '../../domain/session-state.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -39,6 +39,7 @@ export class RestartSessionCommandHandler
     private readonly projects: ProjectLookupPort,
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
+    private readonly launches: SessionLaunchSpecFactory,
   ) {}
 
   async execute(command: RestartSessionCommand): Promise<SessionCommandResult> {
@@ -69,10 +70,10 @@ export class RestartSessionCommandHandler
         payload: { requestedBy: 'api' },
       },
     ]);
-    const { hints } = await this.dispatch.restart(session, {
-      projectSlug,
-      branch: sessionBranchName(projectSlug, session.slug),
-    });
+    const { hints } = await this.dispatch.restart(
+      session,
+      await this.launches.build(session, projectSlug),
+    );
     return { session, hints };
   }
 }

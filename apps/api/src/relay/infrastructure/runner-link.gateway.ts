@@ -7,6 +7,7 @@ import {
   PROTOCOL_VERSION,
   type ProtocolMessage,
   protocolMessageSchema,
+  welcomeSchema,
 } from '@oppenheimer/shared/protocol';
 import { type WebSocket, WebSocketServer } from 'ws';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
@@ -63,6 +64,13 @@ export class RunnerLinkGateway {
   ) {}
 
   async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
+    if (!this.keyFingerprint) {
+      // F6 is "pin what registration returned". Without a signing key there is
+      // nothing to have returned, and advertising an empty pin would make the
+      // runner's check either refuse everything or accept anything.
+      refuseUpgrade(socket, 503, 'this control plane has no signing key configured');
+      return;
+    }
     const bearer = bearerOf(request.headers.authorization);
     if (!bearer || !this.assertions.recognises(bearer)) {
       refuseUpgrade(socket, 401, 'a runner presents its boot assertion as a bearer');
@@ -153,12 +161,17 @@ export class RunnerLinkGateway {
       this.logger.warn({ message: 'runner socket error', hostId, error: error.message });
     });
 
-    link.send({
-      type: 'welcome',
-      protocol: PROTOCOL_VERSION,
-      keyFingerprint: this.configService.get<string>('hosts.signingKeyFingerprint') ?? '',
-      hostId,
-    });
+    // Parsed through the same schema the runner parses it with: what leaves this
+    // process is what the shared package says leaves it.
+    link.send(
+      welcomeSchema.parse({
+        type: 'welcome',
+        protocol: PROTOCOL_VERSION,
+        keyFingerprint: this.keyFingerprint,
+        hostId,
+        epoch: link.epoch,
+      }),
+    );
     try {
       await this.events.onHello(link, hello);
     } catch (error) {
@@ -224,6 +237,12 @@ export class RunnerLinkGateway {
           type: message.type,
         });
     }
+  }
+
+  /** The fingerprint registration handed every host, which the runner pins. */
+  private get keyFingerprint(): string | null {
+    const value = this.configService.get<string>('hosts.signingKeyFingerprint');
+    return value && /^[0-9a-f]{64}$/.test(value) ? value : null;
   }
 }
 

@@ -23,7 +23,9 @@ export interface SessionDispatchOutcome {
   /**
    * Structured hints for the caller. `host_offline` is the one the console has a
    * use for; a runner must not be able to say it about itself, which is why the
-   * link's hint vocabulary and this one are two schemas.
+   * link's hint vocabulary and this one are two schemas. `not_supported` is the
+   * other: the host is reachable and the operation has no frame on the wire yet,
+   * so nothing was sent and the row is ahead of the host.
    */
   hints: string[];
 }
@@ -32,12 +34,14 @@ export interface SessionDispatchOutcome {
  * What the host is told to make. Every path segment is a unique-constrained
  * column, so the runner derives
  * `workspaces/<organizationSlug>/projects/<projectSlug>/sessions/<sessionSlug>/`
- * without asking — and only the two names it cannot read off the session travel
- * here. The workspace's own slug is not among them: it belongs to the organization
- * row, which the implementation reads when it builds the job, rather than being
- * carried through a module that has no business loading it.
+ * without asking — and only the names it cannot read off the session travel
+ * here. The workspace's slug is one of them: it belongs to the organization row,
+ * which this module asks `organizations/` for through its published port, so the
+ * dispatcher never reads another module's table.
  */
 export interface SessionLaunchSpec {
+  /** The workspace's slug: a path segment on the host, read through `WORKSPACE_LOOKUP`. */
+  organizationSlug: string;
   projectSlug: string;
   /** Always the session's own branch, created from each checkout's base. */
   branch: string;

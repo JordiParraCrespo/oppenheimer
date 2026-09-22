@@ -10,11 +10,12 @@ import { InvitationOrmEntity } from './database/invitation.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
 import { OrganizationOrmEntity } from './database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from './database/personal-workspace.repository';
+import { WorkspaceLookupRepository } from './database/workspace-lookup.repository';
 import { InvitationsController, OrganizationInvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 import { MembersController } from './members.controller';
 import { OrganizationsController } from './organizations.controller';
-import { PERSONAL_WORKSPACE_REPOSITORY } from './organizations.di-tokens';
+import { PERSONAL_WORKSPACE_REPOSITORY, WORKSPACE_LOOKUP } from './organizations.di-tokens';
 import { OrganizationsService } from './organizations.service';
 import { WorkspacesController } from './workspaces.controller';
 import { WorkspacesService } from './workspaces.service';
@@ -37,6 +38,7 @@ const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceCommandHandler];
 
 const repositories: Provider[] = [
   { provide: PERSONAL_WORKSPACE_REPOSITORY, useClass: PersonalWorkspaceRepository },
+  { provide: WORKSPACE_LOOKUP, useClass: WorkspaceLookupRepository },
 ];
 
 @Module({
@@ -70,5 +72,9 @@ const repositories: Provider[] = [
     ...commandHandlers,
     ...repositories,
   ],
+  // The one published port: two facts about a workspace, for the modules that
+  // put its slug on a host or re-check a membership at a socket. The tables
+  // stay inside.
+  exports: [WORKSPACE_LOOKUP],
 })
 export class OrganizationsModule {}

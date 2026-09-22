@@ -15,51 +15,39 @@ type Launch struct {
 	Prompt string `json:"prompt,omitempty"`
 }
 
-// launchMap mirrors one agent's `launch` entry in
-// `packages/shared/src/agents/catalog.ts`: argument *vectors* per choice, so
+// launchMap is one agent's `launch` entry of the catalog
+// (`packages/shared/src/agents/catalog.ts`): argument *vectors* per choice, so
 // the runner concatenates and never parses, and a value needing quoting cannot
-// become a second word. The TypeScript file is the source; this table has to
-// match it, and `launch_test.go` pins the spellings that matter.
+// become a second word. The table itself is `launch_catalog.gen.go`, written
+// from the catalog by `packages/shared/scripts/emit-agent-catalog.cjs` at the
+// shared package's build and checked against it by `catalog.spec.ts`, so the
+// next catalog edit reaches this host or fails the build — never drifts.
 type launchMap struct {
+	command    string
 	model      []string
 	permission map[string][]string
 	effort     map[string][]string
 	prompt     []string
 }
 
-var launches = map[Agent]launchMap{
-	AgentClaude: {
-		model: []string{"--model", "<model>"},
-		permission: map[string][]string{
-			"ask":  {"--permission-mode", "manual"},
-			"auto": {"--permission-mode", "acceptEdits"},
-			"full": {"--permission-mode", "bypassPermissions"},
-		},
-		effort: map[string][]string{
-			"minimal": {"--effort", "low"},
-			"low":     {"--effort", "medium"},
-			"medium":  {"--effort", "high"},
-			"high":    {"--effort", "xhigh"},
-			"max":     {"--effort", "max"},
-		},
-		prompt: []string{"<prompt>"},
-	},
-	AgentCodex: {
-		model: []string{"--model", "<model>"},
-		permission: map[string][]string{
-			"ask":  {"--ask-for-approval", "on-request", "--sandbox", "workspace-write"},
-			"auto": {"--approve-for-me"},
-			"full": {"--dangerously-bypass-approvals-and-sandbox"},
-		},
-		effort: map[string][]string{
-			"minimal": {"-c", "model_reasoning_effort=minimal"},
-			"low":     {"-c", "model_reasoning_effort=low"},
-			"medium":  {"-c", "model_reasoning_effort=medium"},
-			"high":    {"-c", "model_reasoning_effort=high"},
-			"max":     {"-c", "model_reasoning_effort=high"},
-		},
-		prompt: []string{"<prompt>"},
-	},
+// AgentFromCatalogID maps a catalog agent id (`claude-code`, `codex`) onto
+// this runner's agent; the ids are the catalog's `CODING_AGENT_IDS`.
+func AgentFromCatalogID(id string) (Agent, bool) {
+	switch id {
+	case "claude-code":
+		return AgentClaude, true
+	case "codex":
+		return AgentCodex, true
+	}
+	return "", false
+}
+
+// CatalogID is the inverse, for snapshots the control plane reads.
+func (a Agent) CatalogID() string {
+	if a == AgentCodex {
+		return "codex"
+	}
+	return "claude-code"
 }
 
 // Args turns the launch into the argument vector appended to the agent's
@@ -68,8 +56,8 @@ var launches = map[Agent]launchMap{
 // and the console has already hidden a control the catalog declares nothing
 // for. The prompt is always last.
 func (l Launch) Args(agent Agent) []string {
-	m, ok := launches[agent]
-	if !ok {
+	m, ok := launchCatalog[agent.CatalogID()]
+	if !ok || agent == AgentShell {
 		return nil
 	}
 	var args []string
@@ -104,11 +92,14 @@ func substitute(vector []string, placeholder, value string) []string {
 // and the launch argv, each word quoted for a POSIX shell so a prompt with
 // spaces, quotes or a `$` stays one argument. Empty for the plain shell.
 func (l Launch) CommandLine(agent Agent) string {
-	command := agent.Command()
-	if command == "" {
+	if agent == AgentShell {
 		return ""
 	}
-	words := append([]string{command}, l.Args(agent)...)
+	m, ok := launchCatalog[agent.CatalogID()]
+	if !ok {
+		return agent.Command()
+	}
+	words := append([]string{m.command}, l.Args(agent)...)
 	quoted := make([]string, len(words))
 	for i, word := range words {
 		quoted[i] = shellQuote(word)
