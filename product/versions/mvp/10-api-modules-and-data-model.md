@@ -138,6 +138,15 @@ host must never be left with zero valid keys, which is why the pair
 lives on the aggregate rather than a child table) and
 `HostPairingTokenEntity`.
 
+**v0.2 adds the host factory here, not a module.** A cloud account a
+person connects and the machines it makes are two more person-owned
+rows — `cloud_account` and `machine`, below — and the provider behind
+them is a port `hosts/` owns, with an adapter per provider in its
+`infrastructure/` (03 §Cloud machines). A machine that pairs is a
+`host` row like any other; `machine.hostId` points at it, and a pairing
+token carries the `machineId` it was minted for so registration can
+join the two.
+
 **`github/`** owns which App installations belong to the workspace, how
 to list what they cover **when asked**, and how to turn one repository
 into a one-hour token. One aggregate, `GithubInstallationEntity`. The
@@ -742,6 +751,22 @@ on the workspace-owned tables, exactly as `lead` does (all but
   the token carries it, and the host adopts it at registration instead
   of defaulting to a hostname you then have to rename.
 
+- `cloud_account` (v0.2) — `id`, `ownerUserId`, `provider` (`aws` |
+  `oci` | `alibaba`, a check constraint), `region`, `label`,
+  `credential` (ciphertext under `MACHINES_ENCRYPTION_KEY`), `network`
+  jsonb (the per-region VPC or VCN ids created on connect),
+  `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
+  `host`: no `organizationId`, `keys: { owner, id }`.
+- `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
+  paired, `providerRef` (the instance id), `spec` jsonb (size, arch,
+  image, disk, market), `state` (`provisioning` | `running` | `stopped`
+  | `suspended` | `destroyed`), `lifetime` (`keep` | `ephemeral`),
+  `perHourUsd` snapshot, `stoppedAt`, `destroyedAt`, timestamps. Unique
+  `(providerRef)`; index `(cloudAccountId)`, `(hostId)`. Its id is the
+  provider's idempotency key and is never reused: a recreate is a new
+  row pointing at the same session's new host.
+- `host_pairing_token` gains `machineId` null (v0.2).
+
 **`github/`**
 
 - `github_installation` — `id`, `organizationId`, `githubInstallationId`
@@ -1244,6 +1269,13 @@ Each step is a vertical slice that can land alone.
   the runner last saw, shown as a hint on the agent chip. A session
   opens without `claude` and the install command appears in the
   terminal, as on Orca. The one hard requirement is `tmux`.
+
+- **v0.2: a cloud machine is a host that pairs itself, and `hosts/` is
+  the host factory.** Note 14 first drafted a sixth module and a package
+  for the provider drivers; the review folded both into `hosts/`, the
+  same way the GitHub App key stayed a port instead of becoming
+  `tokens/`. Two person-owned tables and one port; the surface is 03
+  §Cloud machines.
 
 ## Open questions
 

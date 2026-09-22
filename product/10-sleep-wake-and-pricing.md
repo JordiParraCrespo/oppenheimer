@@ -129,59 +129,61 @@ The one rule worth fixing now: **sleeping sessions are free**. That is
 what makes "open thirty sessions and forget them" feel safe, and it is
 true on the cost side because they cost disk only.
 
-## 6. The same two tiers on AWS and other clouds
+## 6. The same tiers on cloud machines
 
-The cloud adapter from note 03 §4 is the runner running in the control
-plane instead of on a host, calling a provider API. The session
-lifecycle stays identical; only what each state costs changes, and that
-is the whole story of cloud sessions.
+A session can run on a cloud machine instead of the host: an ordinary
+runner, installed by cloud-init with an ordinary pairing token, on a VM
+the control plane created through a machine-lifecycle port (note 14;
+`versions/mvp/03` §Cloud machines). No guest agent, no vsock, nothing
+of ours resident on any provider host. The session lifecycle is the one
+above; what changes per provider is which tiers exist and what each
+costs, and that is the whole story of cloud sessions. The drivers, in
+the order they are built: **AWS, then Oracle Cloud, then Alibaba
+Cloud** (v0.2). GCP, Azure, Fly Machines and Hetzner Cloud are further
+drivers of the same port, unscheduled; their rows below say what each
+would be.
 
-| Provider | Suspend (RAM kept) | Hibernate (disk kept) | Cost while asleep | Notes |
-|----------|--------------------|-----------------------|-------------------|-------|
-| **AWS EC2** | native hibernation: RAM written to the encrypted EBS root, instance stops, resume restores processes | stop the instance, EBS volumes stay | EBS only, roughly $0.08 per GB-month for gp3, so a 60 GB root plus an 8 GB memory image is about $5 a month; compute is zero | hibernation needs an encrypted root volume, a supported instance family (most current general-purpose ones), and RAM under the documented limit; both fit our 8 GB shape |
-| **GCP Compute Engine** | native suspend and resume, memory to persistent disk | stop the instance | persistent disk plus the suspended memory storage | supported on most machine types, not on preemptible |
-| **Azure** | hibernation, generally available | deallocate | disk only | needs a hibernation-enabled VM and page file sizing |
-| **Fly Machines** | none | stop the machine, attached volume stays; start is seconds | rootfs storage only, roughly cents; volumes billed per GB-month | closest to our own host in feel: per-second billing, sub-second stops, fast starts |
-| **Hetzner Cloud** | none | shut down, or snapshot and delete | a stopped Hetzner cloud server is billed the full price; only a snapshot plus delete stops the bill | so on Hetzner Cloud, hibernate means snapshot and delete, wake means create from snapshot, which is minutes, not seconds |
+| Provider | Suspend (RAM kept) | Pause (disk kept) | Cost while asleep | Notes |
+|---|---|---|---|---|
+| **AWS EC2** (first) | native hibernation: RAM to the encrypted root volume, resume restores processes | stop, EBS stays | EBS only; our shape about $5 a month, plus $3.60 if a public IP stays | hibernation needs an encrypted root sized root + RAM, a supported family, Amazon Linux 2023 or Ubuntu 22.04 (not 24.04), enabled at launch; 60-day cap |
+| **Oracle Cloud** (second) | none | stop; the boot volume stays | boot volume only, 50 GB about $2 a month | stopped compute is free on Standard and Flex shapes; an OS shutdown does not stop billing, only the API stop does; stopped machines count against limits |
+| **Alibaba Cloud** (third) | none in practice | stop in economical mode; disks stay | disks only, about $5 a month | the doc says a stopped instance may not restart when the zone has no inventory, so a pause pushes first and a refused start is a recreate |
+| GCP | native suspend | stop | disk plus the suspended memory | unscheduled |
+| Azure | hibernation | deallocate | disk | unscheduled |
+| Fly Machines | none | stop, the volume stays | cents | unscheduled; Docker in a machine is not a supported path |
+| Hetzner Cloud | none | a stopped server is billed in full; snapshot and delete instead | snapshot storage | unscheduled; the wrong product for sessions (§7) |
 
-What the adapter does per state:
+What the port does per tier: **pause** is `stop('suspend')` where the
+driver has suspend and `stop('stop')` elsewhere — the policy reads the
+capability and sends the verb it means, and a driver without suspend
+refuses the word rather than degrading it; **resume** is `start`, then
+the same token rotation and clock check as on our host, and on a
+driver without suspend the runner relaunches tmux and resumes the
+agent by its session id, the hibernate column of §1; **delete** is
+`destroy`, volumes gone except the account volume.
 
-- **Suspend** → EC2 `StopInstances` with hibernate, GCP `suspend`, Azure
-  hibernate. Where the provider has no suspend (Fly, Hetzner Cloud), the
-  adapter skips this tier and goes straight to hibernate.
-- **Hibernate** → stop or deallocate, keep the volumes; on Hetzner Cloud,
-  snapshot then delete.
-- **Wake** → start or resume, then the same token rotation and clock
-  check as on our host.
-- **Destroy** → terminate, delete volumes except the account volume,
-  which is a provider block volume that lives on.
-
-Two things stay the same everywhere: the guest agent, image, and vsock
-contract do not exist on clouds, so the guest agent connects **out** to
-the control plane over TLS instead, with the same JIT identity; and the
-account volume is a provider volume attached to one instance at a time,
-exactly the F13 rule.
-
-*Superseded in part by note 14*: there is no separate guest agent on a
-cloud machine. The ordinary runner is installed by cloud-init with an
-ordinary pairing token and the machine becomes a host; the provider
-order is now AWS, Oracle, Alibaba. The account-volume rule stands.
+Two things stay the same everywhere: the runner dials **out** to the
+control plane over TLS with the host identity pairing gave it; and the
+account volume is a provider volume attached to one instance at a
+time, exactly the F13 rule.
 
 Cost reality for a hosted plan, per always-available session slot:
 
-| Where | Running, per hour | Asleep, per month | Wake from suspend |
-|-------|-------------------|-------------------|-------------------|
+| Where | Running, per hour | Asleep, per month | Wake |
+|-------|-------------------|-------------------|------|
 | Own AX42-class host | ~€0.01 amortised over six slots | ~€0 (disk we already own) | seconds |
-| EC2 t3.xlarge or similar, 4 vCPU 16 GB | ~$0.17 on demand | ~$5 EBS | tens of seconds (hibernate resume) |
-| Fly Machine, 4 vCPU 8 GB | ~$0.10 | cents | seconds, but from a cold process state |
-| Hetzner Cloud CPX31 | ~€0.03 | full price if merely stopped | minutes via snapshot |
+| AWS t4g.xlarge, 4 vCPU 16 GB, Frankfurt | $0.154 on demand, $0.072 spot | ~$5 to $9 | tens of seconds, hibernate resume |
+| Oracle A1.Flex, 4 OCPU 16 GB | $0.064 | ~$2 | a boot plus an agent resume, about two minutes |
+| Alibaba g7a.xlarge, 4 vCPU 16 GB, Frankfurt | $0.196 on demand, $0.043 spot | ~$5 | a boot plus an agent resume, if it restarts |
 
-So the pricing shape in §5 gets one more line: **cloud sessions bill per
-running hour plus storage while asleep, at the provider's price plus a
-margin**, and the console shows the meter. The user picks where a host
-lives when they add it: their own machine, or a cloud account they
-connect. AWS first, because it has real hibernation and the largest
-audience; Fly second for its speed; GCP and Azure after.
+So the pricing shape in §5 gets one more line: **cloud sessions bill
+per running hour plus storage while asleep, at the provider's price
+plus a margin**, and the console shows the meter. The user picks where
+a host lives when they add it: their own machine, or a cloud account
+they connect. AWS first, because it has real hibernation and the
+largest audience; Oracle second, because it is the cheapest to run by
+a factor of two and its trial is a 30-day clock; Alibaba when a user
+brings an account.
 
 ## 7. Own host versus cloud versus sandbox services, for this workload
 
@@ -308,8 +310,8 @@ creation, next to host, repo, branch, and agent:
 
 | Lifetime | Behavior | Cost while not running | Use it for |
 |----------|----------|------------------------|------------|
-| **Keep** (default on your own host) | the three sleep tiers, destroyed only when you close it | free on your host; storage on a cloud | long-running work you return to for days |
-| **Ephemeral** (default on cloud hosts) | runs, sleeps briefly, and is **destroyed after N hours idle** (default 2 h). The agent is told at start that the VM is disposable, so it pushes its branch; the runner also auto-pushes the working branch before destroying, and keeps the last scrollback in the session log | nothing: no volume, no memory image, no instance | one task, one PR, done |
+| **Keep** (the default everywhere) | the three sleep tiers, destroyed only when you close it | free on your host; storage on a cloud | long-running work you return to for days |
+| **Ephemeral** (an option) | runs, sleeps briefly, and is **destroyed after N hours idle** (default 2 h). The agent is told at start that the VM is disposable, so it pushes its branch; the runner also auto-pushes the working branch before destroying, and keeps the last scrollback in the session log | nothing: no volume, no memory image, no instance | one task, one PR, done |
 
 What "ephemeral" keeps: the pushed branch on GitHub, the session log
 and scrollback in the control plane, and the account volume (that is
@@ -320,12 +322,12 @@ timer instead of a moon.
 On AWS an ephemeral session is pure running-hours: ten sessions,
 four hours each on a working day, 22 days, is 880 hours, about **$130 a
 month on demand or $45 on spot**, and $0 on the days you do not use it.
-On your own host the same sessions are free either way, so Keep is the
-default there and Ephemeral is just a tidiness option.
-
-*Superseded by note 14 (v0.2)*: the default on a cloud host is Keep,
-paused when idle and resumed when opened, since stopped compute is free
-on AWS, Oracle and Alibaba; Ephemeral is the option.
+On your own host the same sessions are free either way. Keep is the
+default on a cloud host too (v0.2, note 14 §7): a paused machine costs
+only its disk on AWS, Oracle and Alibaba, so the session pauses after
+thirty idle minutes, resumes when opened, and is deleted when you say
+so or after seven days asleep. Ephemeral is the option for one-task
+work.
 
 Placement follows the same logic: the **host chip** lists your own
 hosts and any connected cloud accounts. Own host first; cloud when the
@@ -342,9 +344,8 @@ is visible.
   set by measured load with 2:1 CPU overcommit: about four running on
   the i7-6700 host, eight to twelve on an AX42. The paused tier plus
   balloon reclaim is what lets many more sessions stay warm.
-- The cloud adapter of note 03 gets an order: AWS first, Fly second,
-  GCP and Azure after. It is a post-MVP slice; the MVP host is the
-  Hetzner machine.
+- The cloud port gets an order: AWS, Oracle, Alibaba (note 14). It is
+  v0.2, the slice after the MVP; the MVP host is the Hetzner machine.
 
 ## Sources
 

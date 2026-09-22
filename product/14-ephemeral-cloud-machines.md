@@ -7,11 +7,16 @@ on AWS, Oracle Cloud and Alibaba Cloud? Yes. The shape is smaller than
 the cloud adapter notes 03 and 10 sketched, because the MVP runner
 already does most of the work: a cloud machine is **a host that pairs
 itself**, and the provider driver only creates, stops and destroys
-machines. This note is the design for **v0.2**: it designs the interface, checks
-each provider's facts as of 2026-09-22, makes **pause, resume and
-delete later** the headline of the slice, and orders the work: AWS
-first, Oracle second while the $300 trial is live, Alibaba when
-somebody needs it.
+machines. This is the research behind **v0.2**: what Claude Code on the web
+does, each provider's facts as of 2026-09-22, the comparison, the
+login gap, and the order of work — AWS first, Oracle second while the
+$300 trial is live, Alibaba when somebody needs it. The decisions it
+led to live in the MVP design notes that own them, not here: the port,
+the routes and the pause, resume, delete policy in
+[`versions/mvp/03`](versions/mvp/03-control-plane.md) §Cloud machines,
+the tables in `versions/mvp/10`, the wire and the runner in
+`versions/mvp/01` and `02`, the screens in `05`, the cloud-init path
+in `09`.
 
 Sources are primary docs and price lists, dated where the page gives a
 date; the Claude Code self-hosted runner docs are read closely because
@@ -90,7 +95,7 @@ JIT identity. That was written before the MVP runner existed. Now that
 it does, the smaller design is:
 
 - The control plane calls the provider to create a VM whose cloud-init
-  runs **the ordinary install command** from 09 §1 with a one-hour,
+  runs **the ordinary install command** of `versions/mvp/09` §1 with a one-hour,
   single-use pairing token. The runner registers, the VM appears as a
   host owned by the person whose cloud account it is, and the session is
   dispatched to it exactly as to a Mac Studio: worktree, tmux, PTY over
@@ -100,14 +105,20 @@ it does, the smaller design is:
   registration, seconds after boot, before any session runs. Nothing
   long-lived is in user data, which matters because on all three clouds
   user data is readable by any process on the machine.
-- The provider driver never touches a session. It knows five verbs and a
-  status. Everything session-shaped — dispatch, idle detection, push
-  before destroy, the log — is the existing `sessions/` module plus one
-  new fact: this host has a lifetime.
+- The provider driver never touches a session: it creates, starts,
+  stops, destroys and lists machines, and says what it can do.
+  Everything session-shaped — dispatch, idle, the push before a stop,
+  the log — is `sessions/` as built plus one fact: this host has a
+  lifetime.
 
-What changes in the host model: nothing in `host` itself. A machine is
-a new row that *points at* the host it became, and a pairing token can
-carry the machine it is for. One thing note 10 §10 decided changes: a
+What it changes in the control plane is written where the control plane
+is designed, `versions/mvp/03` §Cloud machines and `10`: `hosts/` is
+the host factory — two person-owned rows, `cloud_account` and
+`machine`, a `MachineProviderPort` with an adapter per provider in its
+`infrastructure/`, `machine.hostId` set at registration and
+`host_pairing_token.machineId` to join the two, `POST /sessions`
+accepting a cloud account in place of a host — and there is no sixth
+module and no package. One thing note 10 §10 decided changes: a
 session on a cloud host defaults to **Keep**, paused when idle and
 resumed when opened (§7), because a paused machine costs only its disk
 on all three providers; **Ephemeral**, destroyed after N idle hours
@@ -121,24 +132,24 @@ console: New session, host chip = "AWS eu-central-1 (my account)"
 POST /sessions ──► sessions/ creates the row, state=starting, event machine.requested
    │
    ▼
-machines/  mint pairing token (intendedName, machineId)
-           provider.create({ spec, userData(install cmd + token), idempotencyKey = machine.id })
-           row: machine{ providerRef, state=provisioning }
+hosts/     mint a pairing token bound to a new machine row
+           provider.create(spec, userData(install command + token), key = machine.id)
    │            ▲
    │            └── sweeper every minute: provider.list(tag) vs machine rows;
    │                anything unknown or past its TTL → destroy
    ▼
-VM boots, cloud-init: create user `agent`, install git tmux node claude,
-   runuser -l agent -c 'curl … install.sh | sh -s -- --token … --url …'
+VM boots, cloud-init as root: create user `agent`, install git tmux node claude,
+   loginctl enable-linger agent, then the installer as agent with its runtime env set (versions/mvp/09 §2)
    │
    ▼
 POST /api/v1/hosts/register  ──► host row created, machine.hostId set, link comes up
    │
    ▼
-sessions/ dispatches session.create to the new host  (existing path)
+sessions/ dispatches session.create to the new host  (the offline-host path 01 already has)
    │
    ▼
-idle 30 min ──► push, session.stopped ──► provider.stop('suspend') ──► machine.stopped   (resume: start, restart)
+idle 30 min (the control plane's call) ──► session.stop push:true ──► provider.stop(suspend | stop) ──► machine.stopped
+   resume: provider.start, then session.restart
 Delete, or 7 d asleep ──► session.close ──► provider.destroy ──► machine.destroyed, host.unpairedAt
 ```
 
@@ -147,115 +158,50 @@ worktree, tmux, agent) gain four rows in front: *machine requested*,
 *booting*, *runner online*, *paired*. Each is an event on the session
 log, so the sidebar's boot trace is the same component.
 
-## 3. The interface
+## 3. What the research says the port must express
 
-A TypeScript package, because the control plane is NestJS and the SDK
-for each provider is best in its own language on npm; Go would mean a
-second process and a second wire for a thing that makes three API calls
-an hour. It is a **library**, not a pluggable-by-config service like
-`@oppenheimer/backend-storage`, because a person connects *their own*
-cloud accounts and the API holds one driver instance per account, not
-one per deployment. The kernel is dependency-free; the NestJS module
-that owns the tables and the sweeper is in `apps/api`.
+The port itself — verbs, errors, routes — is named once, in
+`versions/mvp/03` §Cloud machines, and lives in `hosts/`. What the
+provider research below fixes about it, so three drivers cannot drift:
 
-```
-packages/backend/machines/              @oppenheimer/backend-machines
-  src/
-    machine-provider.ts                 the port (below), the spec, the status, the errors
-    sizes.ts                            the size catalog: small/medium/large → vCPU, GiB, arch
-    user-data.ts                        cloud-config builder: user, packages, the install command
-    providers/
-      aws-ec2.provider.ts               @aws-sdk/client-ec2 (already a dependency shape: storage uses client-s3)
-      oci.provider.ts                   oci-common + oci-core + oci-workrequests
-      alibaba-ecs.provider.ts           @alicloud/ecs20140526 + @alicloud/openapi-core + @alicloud/credentials
-    index.ts
-apps/api/src/machines/                  the module: cloud_account, machine, the sweeper, the endpoints
-```
-
-The port, as the thing every driver must satisfy:
-
-```ts
-export type ProviderKind = 'aws' | 'oci' | 'alibaba';
-
-export interface MachineSpec {
-  region: string;                      // provider's own id: eu-central-1, eu-frankfurt-1, eu-central-1
-  size: 'small' | 'medium' | 'large';  // resolved per provider and region at create time (§5)
-  arch: 'arm64' | 'amd64';
-  image: 'ubuntu-24.04' | 'provider-default';   // a prebaked image id per provider later
-  diskGiB: number;                     // 40 default; OCI floor is 50
-  market: 'on-demand' | 'spot';        // spot only where the driver says it survives stop
-  userData: string;                    // cloud-config text; the driver base64s it
-  tags: Record<string, string>;        // always includes oppenheimer:managed and oppenheimer:machine
-}
-
-export interface MachineRef { kind: ProviderKind; region: string; id: string }   // instance id
-
-export type MachineState =
-  | 'pending' | 'running' | 'stopping' | 'stopped' | 'suspended' | 'terminated' | 'unknown';
-
-export interface MachineStatus {
-  ref: MachineRef; state: MachineState; publicIp?: string; startedAt?: Date; tags: Record<string, string>;
-}
-
-export interface ProviderCapabilities {
-  suspend: boolean;            // memory survives a stop (EC2 hibernate): true / false
-  stopBillsCompute: boolean;   // Hetzner-style: a stopped machine still costs its hourly price
-  stopMayNotRestart: boolean;  // Alibaba economical mode, OCI A1: capacity can be gone at start
-  spotSurvivesStop: boolean;   // OCI preemptible cannot stop; AWS spot can with persistent + hibernate; pause needs this or no spot
-  userDataMutable: 'never' | 'when-stopped';
-  arm64Regions: string[];      // Alibaba: Singapore only outside China
-}
-
-export interface MachineProvider {
-  readonly kind: ProviderKind;
-  capabilities(): ProviderCapabilities;
-  create(spec: MachineSpec, idempotencyKey: string): Promise<MachineRef>;
-  start(ref: MachineRef): Promise<void>;
-  stop(ref: MachineRef, mode: 'stop' | 'suspend'): Promise<void>;
-  destroy(ref: MachineRef): Promise<void>;
-  describe(ref: MachineRef): Promise<MachineStatus>;
-  list(region: string, tag: { key: string; value: string }): Promise<MachineStatus[]>;   // the sweeper's view
-  quote(spec: MachineSpec): Promise<{ perHour: number; currency: 'USD' } | null>;          // for the host chip; null if unknown
-}
-```
-
-Rules the port fixes so the three drivers cannot drift:
-
-- **`create` is idempotent on the key** and the key is the machine row's
-  id. AWS `ClientToken` (≤64 ASCII, `IdempotentParameterMismatch` on a
-  reuse with different params, zonal if a subnet is given), Alibaba
-  `ClientToken` (same contract), OCI `opcRetryToken` on the launch
-  request. Same rule as the spawn hook: one key, at most one machine.
-- **`create` returns as soon as the provider has the request.** The
-  status waiter is the caller's, because `RunInstances` on all three is
-  asynchronous and the console wants to draw *booting* before *running*.
-- **`stop('suspend')` on a provider without suspend is `stop`**, and the
-  driver says so in `capabilities()`; the caller decides whether that is
-  acceptable for the session's lifetime. This is note 10 §6's "where the
-  provider has no suspend the adapter skips the tier", made explicit.
-- **`destroy` is idempotent and final**: terminating an already-gone
-  instance is success. Boot volumes go with the machine on every
-  provider (AWS `DeleteOnTermination`, OCI `preserveBootVolume: false`,
-  Alibaba `DeleteWithInstance`), account volumes are a later slice and
-  never a boot volume.
-- **Every machine carries two tags** the drivers set on the instance and
-  its disks: `oppenheimer:managed=true` and `oppenheimer:machine=<id>`.
-  IAM is scoped to the first; the sweeper joins on the second. Alibaba
-  rejects keys starting with `aliyun` or `acs:`, so the prefix is ours.
-- **Errors are one small catalog**: `MACHINE_CAPACITY` (retryable, the
-  provider has no host: OCI `InternalError` "Out of host capacity",
-  AWS `InsufficientInstanceCapacity`, Alibaba `OperationDenied.NoStock`),
-  `MACHINE_QUOTA` (not retryable without a human: AWS vCPU limit, OCI
-  service limit, Alibaba quota), `MACHINE_CREDENTIALS` (the account's
-  credential no longer works), `MACHINE_NOT_FOUND`, `MACHINE_PROVIDER`
-  (everything else, with the provider's code in `detail`). The first
-  two map straight onto the spawn hook's exit 1 and exit 2.
-
-What is deliberately **not** in the port: images (a string the driver
-resolves), networking (each driver owns one pre-made VPC or VCN per
-region per account, created on connect, see §6), volumes (later slice),
-and any notion of session. `quote` is the only luxury, and it exists
-because note 10 §10 put the per-hour price on the host chip.
+- **Idempotency is a provider primitive on all three**, and the key
+  must be ours: AWS `ClientToken` (64 ASCII characters,
+  `IdempotentParameterMismatch` on reuse with other parameters, zonal
+  when a subnet is given), Alibaba `ClientToken` (the same contract),
+  Oracle's `opcRetryToken` on the launch request. Sending the `machine`
+  row's id as that token is what makes "never retry a key" cheap.
+- **Create returns before the machine exists** on all three;
+  `RunInstances` and `launchInstance` are asynchronous, and Alibaba's
+  docs say to poll `DescribeInstanceStatus` at one to two seconds. The
+  waiter is the caller's, so the console can draw *booting*.
+- **Suspend exists on one of the three.** AWS hibernates; Oracle and
+  Alibaba only stop. That is why the port fails closed on `suspend`
+  and the policy sends the verb it means, rather than a driver quietly
+  turning one into the other: on Oracle a "suspended" session would
+  otherwise be a boot and an agent resume with nothing in the row
+  saying so.
+- **A stop may not restart** on two of the three (Alibaba's
+  documented inventory caveat; Oracle A1 capacity), which is why pause
+  pushes and a refused start is a recreate, and why `stopMayNotRestart`
+  is a capability rather than a retry loop.
+- **Boot volumes go with the machine everywhere**: AWS
+  `DeleteOnTermination`, Oracle `preserveBootVolume: false`, Alibaba
+  `DeleteWithInstance`. The account volume of §8 is the only disk that
+  outlives a machine, and it is a later slice.
+- **Tags are the only scope all three IAM systems share**, with one
+  rule: Alibaba rejects keys starting with `aliyun` or `acs:`, so the
+  prefix is `oppenheimer:`. Oracle cannot condition a create or a
+  power action on a tag, so there the compartment is the scope and the
+  tag is for the sweeper only.
+- **User data is readable by any process on the machine** on all
+  three, and mutable only while stopped (AWS, Alibaba) or never
+  (Oracle). Nothing but the one-hour pairing token goes in it, and
+  every later secret arrives over the link.
+- **The provider's capacity error is a class, not a code**: OCI
+  `InternalError` "Out of host capacity", AWS
+  `InsufficientInstanceCapacity`, Alibaba `OperationDenied.NoStock`
+  all map to `MACHINE_CAPACITY`, retryable, versus the quota errors
+  that need a person.
 
 ## 4. What each provider is, checked
 
@@ -482,7 +428,7 @@ changes it by region:
 | medium (default) | 4 / 16 | t4g.xlarge | A1.Flex 4 / 16 | g7a.xlarge / g8y.xlarge |
 | large | 8 / 32 | m7g.2xlarge | A1.Flex 8 / 32 | g7a.2xlarge / g8y.2xlarge |
 
-Arm first: the runner already ships `linux/arm64` (09 §2), Node and
+Arm first: the runner already ships `linux/arm64` (`versions/mvp/09` §2), Node and
 Claude Code run on it, and it is the cheapest tier on AWS and the only
 tier on OCI's free money. `arch: 'amd64'` is a per-session override for
 a repository that needs it (Docker images built for x86, a native
@@ -491,10 +437,13 @@ dependency), and on Alibaba in Europe it is the only option.
 The image is the provider's Ubuntu 24.04 everywhere except AWS with a
 Keep lifetime, where it is Amazon Linux 2023 because hibernation
 demands it. Version one installs at boot from cloud-config: create the
-`agent` user (the installer refuses root, 09 §2, and cloud-init runs as
-root), `apt install git tmux`, Node 22 from NodeSource, `npm i -g
-@anthropic-ai/claude-code`, then
-`runuser -l agent -c 'curl -fsSL …/install.sh | sh -s -- --token … --url …'`.
+`agent` user (the installer refuses root, and cloud-init runs as root),
+`apt install git tmux`, Node 22 from NodeSource, `npm i -g
+@anthropic-ai/claude-code`, `loginctl enable-linger agent` so the
+user's systemd manager and bus exist before `runner install` asks
+`systemctl --user` for a unit, then the installer as `agent` with
+`XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` set
+(`versions/mvp/09` §2).
 That is two to four minutes on all three clouds. Version two prebakes
 the image per provider (Packer, or EC2 Image Builder on AWS, a custom
 image from a stopped instance on OCI and Alibaba) and the cloud-config
@@ -518,7 +467,7 @@ credential is the first secret the API stores as a *row* rather than
 reads from config (the GitHub App key and the signing key are `.env`),
 so the slice adds one root `.env` variable, `MACHINES_ENCRYPTION_KEY`,
 and the credential is encrypted with it before it is written and never
-leaves `machines/infrastructure/`.
+leaves `hosts/infrastructure/`.
 
 | Provider | What the person pastes | What we do on connect |
 |----------|------------------------|-----------------------|
@@ -546,115 +495,104 @@ than a credential problem.
 
 ## 7. Pause, resume, and delete later
 
-This slice is **v0.2**, and its headline is that a session on a cloud
-machine can be **paused, resumed, and deleted later**, the way a
-laptop lid works, with the machine costing nothing but its disk while
-it is closed. Note 10 §10 made Ephemeral (destroy after idle) the
-default on cloud hosts; that changes here. Stopped compute is free on
-all three providers (§4), so the default on a cloud machine is the same
-as on an own host: **Keep**, paused when idle, resumed when opened,
-deleted when you say so or after a long sleep. Ephemeral stays as an
-option for the one-task-one-PR case.
-
-Three verbs, and what each one is on each provider:
+The headline of v0.2 is that a session on a cloud machine can be
+**paused, resumed, and deleted later**, the way a laptop lid works,
+with the machine costing nothing but its disk while it is closed. Note
+10 §10 made Ephemeral (destroy after idle) the default on cloud hosts;
+that changes. Stopped compute is free on all three providers (§4), so
+the default on a cloud machine is the same as on an own host: **Keep**,
+paused when idle, resumed when opened, deleted when you say so or after
+a long sleep. Ephemeral stays as an option for one-task work. The
+policy and its routes are `versions/mvp/03` §Cloud machines; this
+section is what each verb *is* on each provider and why the policy has
+the shape it has.
 
 | | AWS EC2 | Oracle Cloud | Alibaba Cloud |
 |---|---|---|---|
 | **Pause** | `StopInstances` with `Hibernate: true`: RAM to the encrypted root volume, the agent mid-task, tmux and scrollback all kept | `instanceAction STOP` (the API call, never an OS shutdown, which keeps billing) | `StopInstance` with `StoppedMode: 'StopCharging'` |
-| What survives | everything | the boot volume: worktrees, uncommitted changes, the agent's session files, the login | the same as OCI |
-| **Resume** | `StartInstances`: the terminal is live with the cursor where it was, no boot | `START`: the machine boots, the runner's user service comes up, reconnects the link, relaunches tmux, and restarts the agent with `claude --resume <id>` | the same, and a start that fails for inventory is a **recreate** (below) |
+| What survives | everything | the boot volume: worktrees, uncommitted changes, the agent's session files, the login | the same as Oracle |
+| **Resume** | `StartInstances`: the terminal is live with the cursor where it was, no boot | `START`: the machine boots, the runner's user service comes up, reconnects the link, and the control plane's `restart` relaunches tmux and the agent with `claude --resume <id>` | the same, and a start that fails for inventory is a **recreate** |
 | Resume time | tens of seconds: a new host reads the RAM image back | 45 to 90 s to a login, plus the runner and the resume | a minute or so; no official figure |
 | Cost while paused | root volume plus the RAM image (t4g.xlarge: 40 GB + 16 GB gp3 ≈ $5.30 a month) plus $3.60 if a public IP stays attached | boot volume, 50 GB ≈ $2.13 a month | system disk, 40 GB PL0 ≈ $4.60 a month; the public IP is released and a new one assigned on resume |
 | **Delete** | `TerminateInstances`, `DeleteOnTermination` volumes go with it | `terminateInstance`, `preserveBootVolume: false` | `DeleteInstance` with `Force: true`, `DeleteWithInstance` disks |
-| Caveats | hibernate needs AL2023 (not Ubuntu 24.04), an encrypted root sized root + RAM, enabled at launch; caps at 60 days, after which the driver stops without hibernate; a hibernate that fails "performs a normal shutdown", so the resume path below is the fallback on AWS too | stopped machines count against the OCPU limit (16 A1 OCPU per AD on a paid tenancy: **four** paused 4-OCPU machines); A1 capacity may be gone at resume | the doc says a stopped instance may not start when the zone has no inventory; spot adds price to that |
+| Caveats | hibernate needs AL2023 (not Ubuntu 24.04), an encrypted root sized root + RAM, enabled at launch; caps at 60 days; a hibernate that fails "performs a normal shutdown", so the cold path below is the fallback on AWS too | stopped machines count against the OCPU limit (16 A1 OCPU per AD on a paid tenancy: **four** paused 4-OCPU machines); A1 capacity may be gone at resume | the doc says a stopped instance may not start when the zone has no inventory; spot adds price to that |
 
 So there are two resume paths and every driver may need the second:
 **warm** (AWS hibernate, processes intact) and **cold** (boot, relaunch,
 `--resume`). The cold path is note 10 §1's hibernate column and needs
-what 02 §9 already records: the agent's native session id, captured
-continuously, never at pause time. The runner on wake does the three
-things note 10 §3 lists before it announces ready: mint a fresh
-repository token (the one-hour one is dead), let `chrony` fix the
-clock, and, on the cold path, relaunch tmux window 0 with the agent's
-own `--resume` and windows 1 and up as plain shells in the same
-worktree.
+what `versions/mvp/02` §9 already records: the agent's native session
+id, captured continuously, never at pause time. On wake the runner
+does what note 10 §3 lists before it announces ready — mint a fresh
+repository token, let `chrony` fix the clock — and on the cold path
+the control plane's `restart` relaunches window 0 with the agent's
+own `--resume` (`versions/mvp/02` §5).
 
-**Pause pushes.** Before the machine stops, the runner pushes every
-checkout's working branch, the same step `session.close` performs, but
-without removing the worktree. That is what makes a failed resume on
-Alibaba or a capacity miss on OCI a nuisance rather than a loss: the
-**recreate** path builds a new machine from the image, clones the
-pushed branches into a fresh worktree, and resumes the agent by its
-session id; what is lost is unpushed nothing and the shell history.
-The session row does not change identity across a recreate; the
-machine row does.
+**Pause pushes.** `session.stop` carries `push: true` on a host the
+control plane can put to sleep (`versions/mvp/01`): the runner pushes
+every checkout's working branch before ending the agent, the push
+`close` performs without the removal. That is what makes a failed
+resume on Alibaba or a capacity miss on Oracle a nuisance rather than
+a loss: the **recreate** path builds a new machine from the image,
+clones the pushed branches into a fresh worktree, and resumes the
+agent by its session id. The session keeps its identity across a
+recreate; the machine row does not.
 
-How it maps onto the control plane, which already has most of it:
+**The policy picks the verb; the driver never degrades one.** Pause on
+AWS is `stop('suspend')`; on Oracle and Alibaba it is `stop('stop')`,
+because their capabilities say `suspend: false` and the port refuses a
+`suspend` there rather than quietly stopping. Note 10 §6's "skip the
+tier" rule, made a decision the row records instead of an alias inside
+the driver.
 
-- `POST /sessions/{id}/stop` and `/restart` exist (`versions/mvp/03`):
-  stop is a decision, restart is a request the host answers with
-  `session.restarted`. **Pause is stop plus a machine stop; resume is a
-  machine start plus restart.** A paused session is `open` with a
-  `stoppedAt`, and its machine row is `stopped` or `suspended`; the
-  sidebar shows the moon (note 10 §2), not the timer. Nothing new in the
-  fold; the machine state is a column on `machine`, joined for the
-  listing.
-- **Auto-pause** after idle: the runner's screen manifests say idle
-  (02 §9); on a cloud host the default is **30 minutes** rather than
-  note 10 §2's ten, because a resume costs a boot on two of the three
-  providers. Per-user setting, as note 10 §2 already says.
-- **Auto-resume** on open or on input, as note 10 §2: the console
-  draws the boot trace rows (*machine starting*, *runner online*,
-  *agent resumed*) in the session pane while it waits, the same
-  component as provisioning.
-- **Delete** is `session.close`: push (a no-op after a pause), remove
-  the worktree, then `destroy`. It is explicit, from the session menu,
-  or automatic after **7 days asleep** (per-user, with a notice in the
-  sidebar three days before), and always after AWS's 60-day hibernate
-  cap. An Ephemeral session is the same thing with the delete at the
-  idle window instead of the pause.
+**Idle is the control plane's call, and the guest never powers itself
+off.** The sidebar group already says when a session is idle
+(`versions/mvp/10`), so a session idle for thirty minutes on a cloud
+host — longer than note 10 §2's ten, because a resume costs a boot on
+two of the three providers — is paused by the sweeper, which sends the
+stop and then the machine stop. The runner reports and the control
+plane acts, on every provider alike; there is no runner flag for it,
+and no in-guest shutdown, because on Oracle and Alibaba an OS shutdown
+does **not** stop billing and an AWS-only trick
+(`InstanceInitiatedShutdownBehavior`) would give one binary two
+teardown protocols.
+
+**Delete** is `close` then `destroy`: explicit from the session menu, or
+automatic after **7 days asleep** (per-user, with a notice in the
+sidebar three days before), and always before AWS's 60-day hibernate
+cap. An Ephemeral session is the same thing with the delete at the
+idle window instead of the pause.
 
 ```
 running ──(idle 30 min)──► paused ──(asleep 7 d, or Delete)──► deleted
    ▲                          │
    └── resume, warm (AWS): tens of seconds, cursor where it was
-   └── resume, cold (OCI, Alibaba, AWS fallback): a boot, tmux relaunched, agent --resume
+   └── resume, cold (Oracle, Alibaba, AWS fallback): a boot, tmux relaunched, agent --resume
    └── recreate (start refused): new machine, clone the pushed branches, agent --resume
 ```
 
 ### Never leaking a machine
 
-Teardown is layered so that a bug in any one layer cannot leave a
-machine running and billing:
+The ladder in `versions/mvp/03` §Cloud machines, and why each rung is
+there:
 
-1. **In the guest, first.** The runner knows when its sessions are idle
-   and, on a cloud host, is started with `--host-lifetime cloud
-   --idle-min 30`: after the window it pushes, reports `session.stopped`
-   with `reason: idle` over the link, and asks the control plane to
-   pause the machine. If that ask fails it powers the machine off, which
-   on AWS with `InstanceInitiatedShutdownBehavior: 'stop'` is a stop
-   without hibernate, and on OCI and Alibaba is a running-but-idle
-   machine that layer 3 catches, because an OS shutdown does **not**
-   stop billing there.
-2. **The control plane, on the event.** `session.stopped` with
-   `reason: idle` on a cloud host calls `stop('suspend')`; a missing
-   event after the idle window plus a grace period calls it anyway;
-   `session.closed` calls `destroy`.
-3. **The sweeper, every minute, per cloud account.** `list(region,
-   oppenheimer:managed)` against the `machine` table: an instance with
-   no row, a `running` row whose session has been stopped for longer
-   than the grace period, a `stopped` row past its 7-day sleep, or a
-   `provisioning` row older than the boot budget (300 s, the
-   `--expected-spawn-seconds` of §1) is stopped or destroyed as its
-   state requires, and the session, if any, gets a `machine.lost`
-   event. This is the only thing that catches a machine whose user data
-   never ran.
-4. **The provider's own safety.** A spot instance is `persistent` +
-   `hibernate` on AWS (the only spot shape that survives a pause) or
-   not used, an AWS Budget action stops tagged instances at a threshold
-   the person sets on connect, and an OCI compartment quota caps the
-   tenancy. Alibaba has budget alerts but no action; the sweeper is the
-   cap there.
+1. **The event.** `session.stopped` on a cloud host is followed by the
+   machine stop; `session.closed` by `destroy`. The runner's part is to
+   report, which it already does.
+2. **The sweeper, every minute, per cloud account.** `list(region,
+   oppenheimer:managed)` against the `machine` rows catches the cases
+   an event cannot: an instance with no row, a `running` machine whose
+   session has been stopped past the grace period, a `stopped` machine
+   past its 7 days, a `provisioning` machine older than the boot budget
+   (300 s, the `--expected-spawn-seconds` of §1). This is the only thing
+   that catches a machine whose user data never ran, and it is the
+   rung Actuated's "everything around the VM is slow" lesson (note 03
+   §3) says will fire.
+3. **The provider's own safety.** Spot on AWS is `persistent` +
+   `hibernate` (the only spot shape that survives a pause) or not used;
+   an AWS Budget action stops tagged instances at a threshold the
+   person sets on connect; an Oracle compartment quota caps the
+   tenancy. Alibaba has budget alerts but no action, so the sweeper is
+   the cap there.
 
 One rule from the spawn hook carries into all of this: **a machine that
 never paired is not retried on the same key**. The sweeper destroys it,
@@ -708,7 +646,7 @@ platform a holder of vendor credentials.
 - **Apache Libcloud** (Python, 35 providers, has OCI and Aliyun
   drivers) and **pkgcloud** (Node, AWS/Azure/DigitalOcean/OpenStack/
   Rackspace, no OCI or Alibaba, stale): a generic node abstraction
-  is exactly what §3 is, and writing it over three official SDKs is
+  is exactly the port of `versions/mvp/03`, and writing it over three official SDKs is
   three files, each a hundred lines of mapping. A generic library buys
   the fourth provider and costs us the capability flags that make the
   first three honest.
@@ -725,13 +663,14 @@ platform a holder of vendor credentials.
 
 ## 10. Order of work: v0.2
 
-1. **The port, the AWS driver, and pause, resume, delete**, with the
-   `machines/` module: two tables, connect with an access key pair
-   first (the cross-account role is a CloudFormation template and a
-   settings screen, a week on its own), the sweeper, the boot-trace
-   rows, the cold resume path in the runner (relaunch tmux, agent
-   `--resume`, token rotation on wake) and the warm one on AWS
-   (hibernate: AL2023 arm64 image, encrypted root sized root + RAM).
+1. **The port, the AWS driver, and pause, resume, delete**, all in
+   `hosts/`: the two rows, connect with an access key pair first (the
+   cross-account role is a CloudFormation template and a settings
+   screen, a week on its own), the sweeper, the boot-trace rows, the
+   `push` flag on stop and the cold resume in the runner (relaunch
+   tmux, agent `--resume`, token rotation on wake) and the warm one on
+   AWS (hibernate: AL2023 arm64 image, encrypted root sized root +
+   RAM).
    Done means: New session on `AWS eu-central-1`, a t4g.xlarge boots and
    pairs, runs the demo scene; stop typing for thirty minutes and the
    machine hibernates and the sidebar shows the moon; open it from the
@@ -760,17 +699,21 @@ platform a holder of vendor credentials.
 
 ## 11. What this changes in the plan
 
-- Note 03 §4's "Cloud: the runner is an adapter in the control plane …
-  the in-guest agent registers with the JIT identity" and note 10 §6's
-  "the guest agent connects out … with the same JIT identity" are
-  superseded by §2: there is no guest agent, the ordinary runner pairs
-  with an ordinary pairing token, and the adapter is a machine-lifecycle
-  port with no session knowledge.
+- Note 03 §4's cloud bullet and note 10 §6 are rewritten: there is no
+  guest agent, the ordinary runner pairs with an ordinary pairing
+  token, and the adapter is a machine-lifecycle port with no session
+  knowledge, owned by `hosts/` rather than a sixth module.
+- The MVP design notes gain the decisions: `versions/mvp/03` the port,
+  the routes and the pause, resume, delete policy; `10` the two rows;
+  `01` the `push` flag on `stop`; `02` push-on-stop and the cold
+  resume; `05` the host chip, the boot-trace rows and the session menu;
+  `09` the cloud-init path. This note stays research.
 - Note 10 §6's provider order "AWS first, Fly second, GCP and Azure
-  after" becomes **AWS, Oracle, Alibaba**, driven by where the money
-  and the accounts are; Fly, GCP and Azure are additional drivers of
-  the same port and are not scheduled.
-- Note 10 §10's "Ephemeral is the default on cloud hosts" is superseded:
+  after" is now **AWS, Oracle, Alibaba** in that note's body, driven by
+  where the money and the accounts are; Fly, GCP, Azure and Hetzner
+  Cloud are rows of the same table there, unscheduled drivers of the
+  same port.
+- Note 10 §10's "Ephemeral is the default on cloud hosts" is rewritten:
   stopped compute is free on all three providers, so the cloud default
   is Keep with pause and resume (§7), and Ephemeral is the option.
   Its teardown ladder and the boot-trace rows (§2) are new.

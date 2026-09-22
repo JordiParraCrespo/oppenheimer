@@ -100,6 +100,13 @@ runner does with it and point back.
   the process starts and there is nothing to synchronise. A session
   created while its host is offline therefore keeps its task in the log
   and delivers it when the launch is finally dispatched.
+- **`stop` may carry `push: true`** (v0.2): the runner pushes every
+  checkout's working branch before ending the agent, the push `close`
+  performs without the removal, so a host the control plane is about to
+  put to sleep loses nothing committed (02 §5). Nothing else changes on
+  the wire for cloud machines: `machine.*` events are the control
+  plane's own writes to the log, and a cloud host registers, dials and
+  is driven exactly as any other (03 §Cloud machines).
 - `host.preflight`, `host.update`
 - `credentials.token` — the runner asks for the installation token for
   one session's repository; the control plane answers with

@@ -154,13 +154,15 @@ Other hosts, same interface:
 - **macOS host**: Apple Virtualization.framework through `tart` or `lume`.
   Linux guests boot in seconds, Docker works, and the persistent home
   volume is a shared directory. Same lifecycle, different backend.
-- **Cloud**: the "runner" is an adapter in the control plane that calls
-  a provider API (Hetzner Cloud, Fly Machines, EC2) to create a VM from
-  our image, and the in-guest agent registers with the JIT identity
-  exactly like a Firecracker guest. No daemon on any host.
-  *Superseded by note 14*: the cloud VM runs the ordinary runner,
-  paired by cloud-init with an ordinary pairing token, and the adapter
-  is a machine-lifecycle port with no session knowledge.
+- **Cloud**: an ordinary host that pairs itself. The control plane asks
+  the provider (AWS, Oracle Cloud, Alibaba Cloud) for a VM whose
+  cloud-init runs the ordinary install command with a one-hour pairing
+  token; the runner registers and the machine is a host like any
+  other, driven over the link. The provider sits behind a
+  machine-lifecycle port that knows nothing about sessions (note 14;
+  `versions/mvp/03` §Cloud machines). No guest agent and no daemon of
+  ours resident on any provider host; the Firecracker guest path above
+  is mode B on a host we own, not the cloud path.
 - **Docker-only host** (no KVM, e.g. a cheap VPS): a container instead of
   a VM, with the same in-guest agent. Weaker isolation, clearly labelled
   in the UI as "container, not VM".

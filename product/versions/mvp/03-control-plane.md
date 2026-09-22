@@ -393,6 +393,116 @@ hostId)`, which loads the host through that same scoped read and refuses
 an unreachable or unpaired one as missing. That port, not the repository,
 is what `hosts/` publishes.
 
+## Cloud machines (v0.2)
+
+Decided 2026-09-22 with [note 14](../../14-ephemeral-cloud-machines.md).
+A session can run on a machine that exists for it, on AWS, Oracle Cloud
+or Alibaba Cloud, and the control plane's half of that is small because
+of two rules.
+
+**A cloud machine is a host that pairs itself.** The control plane asks
+a provider for a VM whose cloud-init runs the install command of 09 §1
+with a one-hour, single-use pairing token. The runner registers through
+`POST /hosts/register` as any runner does, the machine becomes a `host`
+row owned by the person whose cloud account it is, and the session is
+dispatched to it over the link exactly as to any other host. No guest
+agent, no second wire, no second identity: the pairing token is the
+just-in-time identity research note 03 asked for, spent seconds after
+boot.
+
+**`hosts/` is the host factory; there is no sixth module.** The account
+a person connects and the machines it makes are person-owned rows next
+to `host` and `host_pairing_token` (10), and the provider is a port
+`hosts/` owns, `MachineProviderPort`, with one adapter per provider in
+`hosts/infrastructure/providers/` — the same shape as the GitHub App
+key, which stayed a port instead of growing a `tokens/` module. No
+package of its own: three adapters of about a hundred lines each over
+the providers' official SDKs.
+
+The port, named once:
+
+| Verb | Contract |
+|---|---|
+| `create(spec, idempotencyKey)` | returns the provider's instance reference as soon as the provider has the request. The key is the `machine` row's id, sent as the provider's client token, and **a key is never retried**: a machine that did not pair is destroyed and a new row gets a new key |
+| `start(ref)` | the provider's start |
+| `stop(ref, 'stop' \| 'suspend')` | `suspend` keeps memory (EC2 hibernation). A driver whose capabilities say `suspend: false` **refuses** `suspend` with `MACHINE_UNSUPPORTED` rather than degrading it to `stop`: the pause policy below reads the capability and sends the verb it means, so no session lifetime has an invisible extra mode |
+| `destroy(ref)` | idempotent and final; boot volumes go with the machine on every provider |
+| `describe(ref)`, `list(region, tag)` | the machine's state as the provider sees it, and every instance carrying our tag, which is the sweeper's view |
+| `capabilities()` | the facts the policy reads: `suspend`, `stopMayNotRestart` (Alibaba's economical mode, Oracle's A1 capacity), `userDataMutable`, the regions that sell Arm |
+| `quote(spec)` | a per-hour price for the host chip, or nothing |
+
+Errors are one short catalog: `MACHINE_CAPACITY` (retryable: the
+provider has no host), `MACHINE_QUOTA` (needs a person: a limit),
+`MACHINE_CREDENTIALS`, `MACHINE_UNSUPPORTED`, `MACHINE_NOT_FOUND`,
+`MACHINE_PROVIDER` (everything else, the provider's own code in
+`detail`).
+
+**Routes.** Cloud accounts are a Host verb, as pairing is:
+`POST /hosts/cloud-accounts` (provider, region, the credential; the
+control plane creates the per-region network on connect),
+`GET /hosts/cloud-accounts`, `DELETE /hosts/cloud-accounts/{id}`
+(revokes the row and destroys its machines once their sessions are
+closed; the network stays, because a network something else in the
+person's account might use is not ours to delete). `POST /sessions`
+accepts `cloudAccountId` in place of `hostId`: the session row is
+created `starting`, `hosts/` mints a pairing token bound to the new
+`machine` row and calls `create`, and `session.create` is dispatched
+when the host registers — the "created while its host is offline" path
+01 already has, with the boot as the reason the host is offline.
+`POST /sessions/{id}/stop` and `/restart` are unchanged and are what
+pause and resume are made of.
+
+**Pause, resume, delete.** The default lifetime on a cloud host is
+Keep, as on an own host. **Pause** is `stop` on the session with
+`push: true` (01), then `stop('suspend')` where the driver has suspend
+and `stop('stop')` elsewhere; a paused session is `open` with a
+`stoppedAt` and its machine `stopped` or `suspended`. **Resume** is
+`start` on the machine, then `restart` on the session once the host's
+link is up: warm on AWS, where the terminal returns with the cursor
+where it was; cold elsewhere, where the runner relaunches window 0
+with the agent's own resume flag (02 §5). A `start` the provider
+refuses with `MACHINE_CAPACITY` is a **recreate**: a new machine row, the
+pushed branches cloned into a fresh worktree, the same session row, the
+agent resumed by its recorded id. **Delete** is `close` then `destroy`:
+from the session menu, or after seven days paused with a notice three
+days before, or before AWS's 60-day hibernation cap. Idle is the
+control plane's decision, not the runner's: the sidebar group already
+says when a session is idle (10), and a session idle for thirty
+minutes on a cloud host is paused by the sweeper below. Ephemeral —
+delete at the idle window instead of pausing — is an option on New
+session, not the default.
+
+**Never leaking a machine.** Every instance and its disks carry
+`oppenheimer:managed=true` and `oppenheimer:machine=<id>`; IAM on every
+provider is scoped to the first and the sweeper joins on the second.
+The sweeper runs every minute per cloud account: `list` against the
+`machine` rows, and an instance with no row, a `running` machine whose
+session has been stopped past a grace period, a `stopped` machine past
+its seven days, or a `provisioning` machine older than the boot budget
+(300 s) is stopped or destroyed as its state requires, with a
+`machine.lost` event on the session if there is one. On Oracle and
+Alibaba an OS shutdown does not stop billing, so the guest never
+powers itself off on any provider: the runner reports, the control
+plane acts. The provider's own caps are set on connect where they
+exist: an AWS Budget action that stops tagged instances, an Oracle
+compartment quota.
+
+**The log.** The machine's lifecycle is written to the session log by
+the control plane — `machine.requested`, `machine.booting`,
+`machine.paired`, `machine.stopped`, `machine.started`,
+`machine.recreated`, `machine.lost`, `machine.destroyed` — and is what
+the provisioning pane draws (05). Nothing new rides the link (01).
+
+**Credentials.** The cloud account's credential is the first secret the
+API stores as a row rather than reads from config, so the slice adds
+`MACHINES_ENCRYPTION_KEY` to the root `.env` and the row holds the
+ciphertext. AWS: an IAM access key pair first, the cross-account role
+with an ExternalId when the connect screen can host a CloudFormation
+link; Oracle: an API signing key for a user in its own group scoped to
+one compartment; Alibaba: a RAM user's key that may only assume the
+role carrying a tag-scoped policy. The per-provider facts are note 14
+§4 and §6.
+
 ## Open questions
 
 1. Where is `docker compose up` meant to run for "hosted by us": one

@@ -290,3 +290,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
+- 2026-09-22: **v0.2, cloud machines** (research note 14). A cloud
+  machine is an ordinary host that pairs itself — cloud-init runs the
+  install command with a pairing token — and `hosts/` is the host
+  factory: two person-owned rows, `cloud_account` and `machine`, and a
+  `MachineProviderPort` with an adapter per provider in its
+  `infrastructure/`; no sixth module, no package. 03 gains the port,
+  the routes and the pause, resume, delete policy (Keep is the default
+  on cloud too; `suspend` fails closed on a driver without it; idle is
+  the control plane's call and the guest never powers itself off); 10
+  the tables; 01 a `push` flag on `stop`; 02 the push-on-stop and the
+  cold resume; 05 the host chip, the boot-trace rows and the session
+  menu; 09 the cloud-init path with the lingering user manager.

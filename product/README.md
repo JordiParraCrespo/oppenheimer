@@ -20,7 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
-| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | A per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba behind one `MachineProvider` port; a cloud machine is a host that pairs itself; each provider's SDK, sleep, price, free money and quotas checked; pause, resume and delete later as the v0.2 headline, with the warm and cold resume paths; the teardown ladder; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand |
+| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | The research behind v0.2: a per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba; what Anthropic's own self-hosted runner does; each provider's SDK, sleep, price, free money and quotas checked; why pause, resume and delete later is the headline and what each verb is per provider; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand. The decisions live in `versions/mvp/03` and `10` |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -157,14 +157,17 @@ earlier note:
   fold, `01-protocol.md` for the wire.
 - Note 03 §4 and note 10 §6 described the cloud adapter as "the runner
   running in the control plane" with an in-guest agent registering a JIT
-  identity. Note 14 supersedes that with the MVP runner in hand: a cloud
-  machine is an ordinary host whose cloud-init runs the ordinary install
-  command with a one-hour pairing token, and the provider driver is a
-  machine-lifecycle port (create, start, stop, destroy, describe, list)
-  that knows nothing about sessions. Note 10 §6's provider order "AWS,
-  Fly, GCP, Azure" becomes AWS, Oracle, Alibaba.
-- Note 10 §10 made Ephemeral the default lifetime on cloud hosts. Note
-  14 (the v0.2 design) makes it Keep: a session on a cloud machine is
-  paused when idle, resumed when opened and deleted later, because a
-  stopped machine costs only its disk on AWS, Oracle and Alibaba.
-  Ephemeral stays as the option for one-task work.
+  identity. Both passages are rewritten (v0.2, researched in note 14): a
+  cloud machine is an ordinary host whose cloud-init runs the ordinary
+  install command with a one-hour pairing token, and the provider sits
+  behind a machine-lifecycle port that `hosts/` owns — no sixth module
+  and no package; the five modules of `versions/mvp/10` stand. The port,
+  the routes and the pause, resume, delete policy are
+  `versions/mvp/03` §Cloud machines; the two tables are in `10`. Note
+  10 §6's provider order "AWS, Fly, GCP, Azure" is now AWS, Oracle,
+  Alibaba in its body.
+- Note 10 §10 made Ephemeral the default lifetime on cloud hosts; it now
+  says Keep: a session on a cloud machine is paused when idle, resumed
+  when opened and deleted later, because a stopped machine costs only
+  its disk on AWS, Oracle and Alibaba. Ephemeral stays as the option for
+  one-task work.

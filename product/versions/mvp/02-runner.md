@@ -232,6 +232,17 @@ plane is what refuses the close unless the caller accepts the loss (10).
 Stop is not close: it ends the agent and the tmux session and leaves
 every checkout on disk for Restart.
 
+**Stop may push (v0.2).** On a host the control plane can put to sleep,
+`session.stop` carries `push: true` (01) and the runner pushes every
+checkout's working branch before ending the agent — the push `close`
+performs, without the removal — so a machine that never comes back has
+lost nothing committed. Restart after a boot relaunches window 0 with
+the agent's own resume flag and the session id §9 recorded
+(`claude --resume <id>`, `codex resume <id>`), which is what a cold
+resume on a cloud machine is. The runner never decides that a host is
+idle and never powers a host off: it reports, and the control plane
+acts (03 §Cloud machines).
+
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
 rehydrates each ring buffer from `capture-pane`, and **reports** the
@@ -396,6 +407,10 @@ service unit be three lines.
 Guest agent, vsock, libvirt lifecycle, sleep tiers, account volumes,
 capacity gate, the egress proxy, and the `hypervisor`, `guest` and
 `proxy` subcommands. None of it changes a boundary above.
+
+The v0.2 cloud machine needs none of this: it is an ordinary host that
+paired itself (03 §Cloud machines), and the two things it asks of the
+runner are in §5.
 
 ## Open questions
 
