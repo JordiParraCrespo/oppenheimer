@@ -21,9 +21,11 @@ import { provisionedUser, signInAs } from '../../support/web';
  * Zod pipe and its Postgres are all the real ones.
  *
  * The run needs the stack up and the API pointed at the stub — see
- * `e2e/README.md`. Without a host or an installation the screen renders its own
- * empty state instead, which is a different spec's subject, so these skip
- * rather than fail on a deployment that cannot pair one.
+ * `e2e/README.md`.
+ *
+ * An account with no machine is no longer a separate screen: the composer
+ * renders either way and the host chip's foot action opens Add host, which is
+ * `add-host.spec.ts`'s subject.
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {
@@ -131,20 +133,6 @@ test.describe('New session', () => {
     await owner.api.dispose();
   });
 
-  test('offers the way to pair a machine when there is no host', async ({ page }) => {
-    const owner = await provisionedUser('nohost');
-    await signInAs(page, owner.user);
-    await page.goto('/sessions/new');
-
-    // No host, no session: the screen says so and offers the step that fixes it
-    // rather than an empty picker.
-    await expect(page.getByText('No host yet')).toBeVisible();
-    await page.getByRole('button', { name: 'Add a host' }).click();
-    await expect(page).toHaveURL(/\/onboarding\/host/);
-
-    await owner.api.dispose();
-  });
-
   test('offers the way to connect GitHub when there is a host but no repository', async ({
     page,
   }) => {
@@ -156,8 +144,10 @@ test.describe('New session', () => {
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
 
-    await expect(page.getByText('No repository yet')).toBeVisible();
-    await page.getByRole('button', { name: 'Connect GitHub' }).click();
+    // The empty screens are gone: an account with nothing connected still gets
+    // the composer, and the way out is inside the chip that is empty.
+    await page.getByRole('button', { name: 'Repositories' }).click();
+    await page.getByRole('button', { name: 'Connect a repository…' }).click();
     await expect(page).toHaveURL(/\/onboarding\/github/);
 
     await owner.api.dispose();

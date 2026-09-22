@@ -290,11 +290,22 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
+- 2026-09-22: **Add host is armed on a registered host, not an online
+  one** (05). The dialog picks the machine a session will run on, and
+  the control plane already records a session against a host whose
+  runner is still coming up — that is what the create response's
+  `host_offline` hint and the chip's offline rows mean (01, 03). The
+  onboarding step keeps waiting for `online`, because a first-run flow
+  that ends on a machine which never came up has claimed something the
+  console cannot use. The step's capability card (✓ git, ✓ tmux) stays
+  on the artboard until the wire carries a host's tools: the status row
+  says the runner is connected, or that it is still coming up, and
+  nothing more.
 - 2026-09-22: **shown-once covers the whole first-run flow**, not only
   the step that names the workspace (08). The landing could be re-opened
   by pressing Back out of the console, so an account that finished days
   ago was congratulated again on a walk it had no way to re-take. Ready
-  now asks whether the navigation is the walk rather than whether the
-  account is finished, which every arrival there is. Connect GitHub and
-  Add host stay ungated: they are also New session's install-the-App and
-  pair-a-machine screens (05).
+  now asks whether the navigation *is* the walk rather than whether the
+  account is finished, which every arrival there is. Connect GitHub
+  stays ungated: New session's repository chip still sends a finished
+  account to it to install the App.

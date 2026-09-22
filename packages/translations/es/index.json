@@ -3,6 +3,7 @@
     "appName": "Oppenheimer",
     "back": "Volver",
     "cancel": "Cancelar",
+    "close": "Cerrar",
     "confirm": "Confirmar",
     "controlAppName": "Oppenheimer Control",
     "copied": "Copiado",
@@ -291,8 +292,6 @@
   },
   "sessions": {
     "home": {
-      "emptyTitle": "No hay sesiones abiertas",
-      "emptyDescription": "Inicia una y el terminal ocupará este panel.",
       "openTitle": "Ninguna sesión abierta",
       "openDescription": "Elige una en la barra lateral o inicia otra."
     },
@@ -322,6 +321,16 @@
         "empty": "Ningún host coincide.",
         "add": "Añadir host…",
         "offline": "Desconectado"
+      },
+      "addHost": {
+        "title": "Añadir un host",
+        "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
+        "instruction": "Ejecuta esto en él, una vez",
+        "format": "Cómo leerlo",
+        "command": "Comando",
+        "agentPrompt": "Instrucción para el agente",
+        "use": "Usar este host",
+        "defaultName": "Nuevo host"
       },
       "repository": {
         "label": "Repositorios",
@@ -371,20 +380,9 @@
       "composer": {
         "placeholder": "Describe una tarea o haz una pregunta"
       },
-      "noHosts": {
-        "title": "Todavía no hay host",
-        "description": "Una sesión se ejecuta en una máquina tuya. Vincula una y aparecerá aquí.",
-        "action": "Añadir un host"
-      },
-      "noRepositories": {
-        "title": "Todavía no hay repositorios",
-        "description": "Conecta GitHub y elige los repositorios que una sesión puede usar.",
-        "action": "Conectar GitHub"
-      },
       "queued": "Tu primera tarea está en cola para este host."
     },
     "session": {
-      "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
       "status": {
         "connecting": "Conectando",
         "live": "En vivo",
@@ -413,6 +411,17 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    }
+  },
+  "hosts": {
+    "pairing": {
+      "tokenExpires": "El token caduca en {{time}} · un solo uso",
+      "tokenExpired": "Token caducado: genera uno nuevo.",
+      "newToken": "Nuevo token",
+      "waiting": "Escuchando a este host…",
+      "registered": "Registrado: esperando a su runner",
+      "online": "Runner conectado",
+      "mintFailed": "No hemos podido crear un token de registro."
     }
   },
   "home": {
@@ -614,14 +623,7 @@
         "installCommand": "Comando de instalación",
         "agentPrompt": "Prompt para un agente de IA",
         "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
-        "tokenExpires": "El token caduca en {{time}} · un solo uso",
-        "newToken": "Generar un token nuevo",
-        "waiting": "Esperando a que el host se conecte…",
-        "ready": "git, tmux, claude listos",
-        "mintFailed": "No hemos podido crear un token de registro.",
-        "tokenExpired": "El token ha caducado: genera uno nuevo.",
         "defaultName": "Mi primer host",
-        "registered": "Registrado: esperando a su runner",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
       },

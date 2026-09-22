@@ -36,20 +36,6 @@ export function useHosts(
 }
 
 /**
- * Mint the install command Add host shows. The host list is not invalidated
- * here: the host only appears once its runner dials in, which the list learns
- * of on its next refetch.
- */
-export function usePairHost(options?: UseMutationOptions<HostPairing, Error, string>) {
-  const app = useConsumerApp();
-
-  return useMutation({
-    mutationFn: (name: string) => app.hosts.pair(name),
-    ...options,
-  });
-}
-
-/**
  * The token Add host is showing.
  *
  * A query rather than a mutation fired from an effect, even though minting

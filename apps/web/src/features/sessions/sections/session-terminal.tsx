@@ -1,17 +1,22 @@
 import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
-import { SessionComposer } from '../components/session-composer';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useSessionStream } from '../hooks/use-session-stream';
 import { useTerminal } from '../hooks/use-terminal';
 
 /**
- * The session's terminal: scrollback, the pinned prompt row, and the status
- * band along the bottom — the three parts of the session artboard in
- * `product/versions/mvp/design/version1/SessionsConsole.dc.html`, in that
- * order and nothing else. No window strip: the design does not have one, and
- * the design system's tab CSS is kept "for when the console supports several
- * at once", which is a later slice.
+ * The session's terminal: the scrollback and the status band along the
+ * bottom. No window strip — the design does not have one, and the design
+ * system's tab CSS is kept "for when the console supports several at once",
+ * which is a later slice.
+ *
+ * **There is no prompt row of ours.** The artboard draws one, but the
+ * artboard's scrollback is hand-written DOM with no program behind it; a real
+ * session has an agent drawing *its own* prompt inside the grid, so a second
+ * field below it gave the pane two carets and no way to tell which one the
+ * next keystroke reached. The agent's is the real one — it is what has the
+ * history, the slash commands and the mode — so the grid keeps the input and
+ * this renders none.
  *
  * The scrollback is xterm.js, mounted by `useTerminal` and fed by the attach
  * socket `session-stream.ts` opens with a ticket for this session. Everything
@@ -26,7 +31,7 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId);
   const refresh = useSessionRefresh(sessionId);
-  const { containerRef, status, submit } = useTerminal(createStream, refresh);
+  const { containerRef, status } = useTerminal(createStream, refresh);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">
@@ -37,8 +42,6 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
       <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
         <div ref={containerRef} className="size-full" />
       </div>
-
-      <SessionComposer onSubmit={submit} />
 
       <TerminalStatusBar>
         <TerminalStatusItem>

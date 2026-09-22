@@ -125,18 +125,16 @@ export function registerHost(
 }
 
 /**
- * Pair a machine: mint the token the install command carries, then redeem it
- * the way a runner does — anonymously, with its own keypair.
+ * Spend a registration token the way a runner does — anonymously, with its own
+ * keypair.
+ *
+ * Exported apart from {@link pairHost} because a token is not always minted
+ * through the API: the Add host dialog mints its own and prints it inside the
+ * install command, and the spec that drives it redeems *that* secret, which is
+ * the only way the dialog's status line can be shown to be watching the token
+ * it minted rather than the host list.
  */
-export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
-  const minted = await withoutTripping(() =>
-    api.post('/api/v1/hosts/pairing', { data: { name }, failOnStatusCode: false }),
-  );
-  expect(minted.status(), await minted.text()).toBe(201);
-  const command = ((await minted.json()) as { installCommand: string }).installCommand;
-  const secret = /--token (\S+)/.exec(command)?.[1];
-  expect(secret, 'the install command carries the pairing token').toBeTruthy();
-
+export async function redeemPairingToken(secret: string, name: string): Promise<string> {
   const anonymous = await newContext();
   const registered = await registerHost(anonymous, {
     token: secret,
@@ -148,4 +146,24 @@ export async function pairHost(api: APIRequestContext, name: string): Promise<st
   const hostId = ((await registered.json()) as { hostId: string }).hostId;
   await anonymous.dispose();
   return hostId;
+}
+
+/** The secret an install command carries, which is the only place it is shown. */
+export function tokenFrom(installCommand: string): string {
+  const secret = /--token (\S+)/.exec(installCommand)?.[1];
+  expect(secret, 'the install command carries the pairing token').toBeTruthy();
+  return secret as string;
+}
+
+/**
+ * Pair a machine: mint the token the install command carries, then redeem it
+ * the way a runner does — anonymously, with its own keypair.
+ */
+export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
+  const minted = await withoutTripping(() =>
+    api.post('/api/v1/hosts/pairing', { data: { name }, failOnStatusCode: false }),
+  );
+  expect(minted.status(), await minted.text()).toBe(201);
+  const command = ((await minted.json()) as { installCommand: string }).installCommand;
+  return redeemPairingToken(tokenFrom(command), name);
 }

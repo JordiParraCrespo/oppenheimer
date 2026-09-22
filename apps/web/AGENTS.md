@@ -54,9 +54,9 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   because what it lists is sessions; the shell around it is the kit's.
 - Building a screen this console does not have. There is no settings page and
   no profile page — the version-1 artboards draw neither, and both were
-  deleted with their features. Hosts arrive through onboarding and come back
-  later as a drawer (`product/versions/mvp/05-screens.md`), which is not a
-  route.
+  deleted with their features. A host is paired from the Add host dialog or in
+  onboarding; the *list* of them comes back later as a drawer
+  (`product/versions/mvp/05-screens.md`), which is not a route.
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:
