@@ -297,7 +297,7 @@
         "prompt": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 16000
+          "maxLength": 2048
         },
         "branch": {
           "$ref": "#/$defs/gitRef"

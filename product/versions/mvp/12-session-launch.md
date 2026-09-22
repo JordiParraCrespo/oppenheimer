@@ -161,10 +161,19 @@ so they follow `.agents/rules/typeorm.md`. `launch` is then a field on
 ### 6. The first prompt is a field on create, an entry in the log, and a field on the wire
 
 ```ts
-prompt: z.string().min(1).max(FIELD_BOUNDS.prompt.max).optional()   // 16_000
+prompt: promptSchema.optional()   // 2 KB of UTF-8, which is what 02 §7 says
 ```
 
-on `createSessionSchema`. Three things happen to it, in this order:
+on `createSessionSchema`.
+
+> **Corrected in review.** A draft of this allowed 16,000 *characters*, which
+> two existing limits already contradicted: `02-runner.md` §7 caps
+> `prompt.first` at 2 KB, and every `work_session_event` payload is capped at
+> 8 KiB of serialized JSON. Four bytes per character is legal UTF-8, so the
+> route would have accepted a prompt the log then **rejected** — committing a
+> session whose task nothing recorded, and which therefore never named itself
+> and never reached its host. The bound is bytes now, at the number 02 already
+> states. Three things happen to it, in this order:
 
 1. **It is appended as `prompt.first`** with `source: 'api'`, in the same
    transaction as the session row — one user action, one entry, which is
@@ -253,7 +262,7 @@ directories, a checkout and a process on somebody's machine.
   checkouts: [{ installationId, githubRepoId, baseBranch? }],
   cwdGithubRepoId?: number,
   launch?: { model?: string, permission?: 'ask'|'auto'|'full', effort?: Effort },
-  prompt?: string                      // ≤ 16_000
+  prompt?: string                      // ≤ 2 KB of UTF-8 (02 §7)
 }
 ```
 

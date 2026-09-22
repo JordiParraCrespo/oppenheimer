@@ -11127,7 +11127,7 @@
           "prompt": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 16000
+            "maxLength": 2048
           }
         },
         "required": ["hostId", "agent", "checkouts"]

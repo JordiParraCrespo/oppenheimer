@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { hostFactsSchema as wireHostFactsSchema } from '../protocol/primitives';
-import { hostFactsSchema as dtoHostFactsSchema } from '../schemas/primitives';
+import {
+  hostFactsSchema as wireHostFactsSchema,
+  promptTextSchema as wirePromptSchema,
+} from '../protocol/primitives';
+import {
+  hostFactsSchema as dtoHostFactsSchema,
+  promptSchema as dtoPromptSchema,
+  FIELD_BOUNDS,
+  promptByteLength,
+} from '../schemas/primitives';
 
 /**
  * The package is on two Zod entry points for as long as the JSON Schema emitter
@@ -121,5 +129,52 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
       'user',
       'workspacePath',
     ]);
+  });
+});
+
+/**
+ * The prompt bound, on both Zod entry points.
+ *
+ * It is a **byte** bound, and that is the whole point of testing it: the event
+ * log caps a payload at 8 KiB of serialized JSON and `02-runner.md` §7 caps
+ * `prompt.first` at 2 KB, so a character bound would accept a multibyte prompt
+ * the log then refuses — committing a session whose task nothing recorded.
+ */
+describe('promptSchema agrees across the two Zod entry points', () => {
+  const at = (bytes: number, char = 'a') => char.repeat(bytes);
+  // Four bytes each: the case a character bound gets wrong.
+  const emoji = (count: number) => '🙂'.repeat(count);
+
+  const accepted: [string, string][] = [
+    ['a one-line task', 'fix the wallet list empty state'],
+    ['a prompt exactly at the bound', at(FIELD_BOUNDS.prompt.maxBytes)],
+    ['multibyte text inside the bound', emoji(FIELD_BOUNDS.prompt.maxBytes / 4)],
+  ];
+
+  const refused: [string, string][] = [
+    ['an empty prompt', ''],
+    ['one byte over', at(FIELD_BOUNDS.prompt.maxBytes + 1)],
+    [
+      'multibyte text that is short in characters and over in bytes',
+      emoji(FIELD_BOUNDS.prompt.maxBytes / 4 + 1),
+    ],
+  ];
+
+  it.each(accepted)('both accept %s', (_label, value) => {
+    expect(dtoPromptSchema.safeParse(value).success).toBe(true);
+    expect(wirePromptSchema.safeParse(value).success).toBe(true);
+  });
+
+  it.each(refused)('both refuse %s', (_label, value) => {
+    expect(dtoPromptSchema.safeParse(value).success).toBe(false);
+    expect(wirePromptSchema.safeParse(value).success).toBe(false);
+  });
+
+  it('stays inside what one event payload can hold', () => {
+    const payload = JSON.stringify({ text: at(FIELD_BOUNDS.prompt.maxBytes) });
+    // `SESSION_EVENT_PAYLOAD_MAX_BYTES` in the API is 8 KiB. The prompt is the
+    // largest payload the control plane writes, so the headroom is the margin
+    // every other entry inherits.
+    expect(promptByteLength(payload)).toBeLessThan(8 * 1024);
   });
 });

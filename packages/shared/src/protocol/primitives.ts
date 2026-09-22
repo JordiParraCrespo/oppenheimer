@@ -5,7 +5,7 @@ import {
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
 } from '../agents/catalog';
-import { FIELD_BOUNDS, HOST_PLATFORMS } from '../schemas/primitives';
+import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives';
 
 /**
  * The pieces more than one message is built from. Nothing here is a message:
@@ -67,11 +67,17 @@ export const launchOptionsSchema = z.object({
 
 export type LaunchOptions = z.infer<typeof launchOptionsSchema>;
 
-/** The first task, bounded by the same number the DTO is bounded by. */
+/**
+ * The first task, bounded by the same rule the DTO is bounded by: 2 KB of
+ * UTF-8, which is what `02-runner.md` §7 states and what the event log can
+ * actually keep (its payloads are capped at 8 KiB of serialized JSON).
+ */
 export const promptTextSchema = z
   .string()
   .min(FIELD_BOUNDS.prompt.min)
-  .max(FIELD_BOUNDS.prompt.max);
+  // Documentable upper bound, then the rule; see the DTO schema's note.
+  .max(FIELD_BOUNDS.prompt.maxBytes)
+  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes);
 
 /**
  * Every catalog login pattern, or-ed into one anchored expression.
