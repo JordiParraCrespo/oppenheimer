@@ -60,7 +60,14 @@ func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
 	var err error
 	switch m.Type {
 	case "session.stop":
-		_, err = h.app.Sessions.Stop(ctx, m.SessionID)
+		h.mu.Lock()
+		h.decided[m.SessionID] = true
+		h.mu.Unlock()
+		if _, err = h.app.Sessions.Stop(ctx, m.SessionID); err != nil {
+			h.mu.Lock()
+			delete(h.decided, m.SessionID)
+			h.mu.Unlock()
+		}
 	case "session.restart":
 		var session sessionsdomain.Session
 		if session, err = h.app.Sessions.Restart(ctx, m.SessionID); err == nil {

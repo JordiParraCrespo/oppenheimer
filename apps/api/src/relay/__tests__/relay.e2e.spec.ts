@@ -358,25 +358,28 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
     );
   }, 60_000);
 
-  it('turns a stop into a stopped session the browser cannot attach to', async () => {
+  it('carries out a stop without echoing the entry the control plane already wrote', async () => {
     const link = w.registry.find(HOST);
     link?.send({ type: 'session.stop', commandId: randomUUID(), sessionId: SESSION });
-    const stopped = await until(
-      'session.stopped',
-      () => w.batches.flatMap((b) => b.events).find((e) => e.kind === 'session.stopped'),
+    // tmux no longer holds the session; the worktree survives for Restart.
+    await until(
+      'tmux to drop the session',
+      () => {
+        try {
+          execFileSync('tmux', ['-L', 'oppenheimer', 'has-session', '-t', `opp-${SESSION}`], {
+            stdio: 'ignore',
+          });
+          return undefined;
+        } catch {
+          return true;
+        }
+      },
       20_000,
     );
-    expect(stopped.kind).toBe('session.stopped');
-    // tmux no longer holds the session; the worktree survives for Restart.
-    let live = true;
-    try {
-      execFileSync('tmux', ['-L', 'oppenheimer', 'has-session', '-t', `opp-${SESSION}`], {
-        stdio: 'ignore',
-      });
-    } catch {
-      live = false;
-    }
-    expect(live).toBe(false);
+    // One action, one entry: the API recorded the stop it ordered, so the runner
+    // reports nothing for it — a stopped it observes on its own is another matter.
+    await new Promise((r) => setTimeout(r, 1_000));
+    expect(w.batches.flatMap((b) => b.events).map((e) => e.kind)).not.toContain('session.stopped');
     // What the log would have received, for a person reading the run.
     process.stdout.write(
       `\nrecorded events:\n${w.batches

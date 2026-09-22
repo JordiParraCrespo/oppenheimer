@@ -36,6 +36,11 @@ type linkHandler struct {
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	epoch       uint64
+	// decided holds the sessions whose stop the control plane ordered: the
+	// API already wrote that entry, so the observation it causes is not
+	// reported a second time. A stop the host sees on its own — tmux gone
+	// after a reboot — is still its to report.
+	decided map[string]bool
 }
 
 type attachment struct {
@@ -63,7 +68,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		logger.Error("could not mint a run id; the link stays down", slog.Any("error", err))
 		return
 	}
-	handler := &linkHandler{app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}}
+	handler := &linkHandler{app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{}}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
 		Token:           a.Pairing.BootToken,
@@ -241,6 +246,14 @@ func (h *linkHandler) SessionChanged(session sessionsdomain.Session) {
 	}
 	switch session.State {
 	case sessionsdomain.StateStopped:
+		h.mu.Lock()
+		ordered := h.decided[session.ID]
+		delete(h.decided, session.ID)
+		h.mu.Unlock()
+		if ordered {
+			// One action, one entry: the control plane recorded the stop it ordered.
+			return
+		}
 		h.reporter.Append(session.ID, "session.stopped", map[string]any{"source": "host"})
 	case sessionsdomain.StateClosed:
 		h.reporter.Append(session.ID, "session.closed", map[string]any{"dirty": session.Dirty})
