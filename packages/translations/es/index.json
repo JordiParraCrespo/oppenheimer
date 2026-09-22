@@ -291,8 +291,6 @@
   },
   "sessions": {
     "home": {
-      "emptyTitle": "No hay sesiones abiertas",
-      "emptyDescription": "Inicia una y el terminal ocupará este panel.",
       "openTitle": "Ninguna sesión abierta",
       "openDescription": "Elige una en la barra lateral o inicia otra."
     },
@@ -371,20 +369,9 @@
       "composer": {
         "placeholder": "Describe una tarea o haz una pregunta"
       },
-      "noHosts": {
-        "title": "Todavía no hay host",
-        "description": "Una sesión se ejecuta en una máquina tuya. Vincula una y aparecerá aquí.",
-        "action": "Añadir un host"
-      },
-      "noRepositories": {
-        "title": "Todavía no hay repositorios",
-        "description": "Conecta GitHub y elige los repositorios que una sesión puede usar.",
-        "action": "Conectar GitHub"
-      },
       "queued": "Tu primera tarea está en cola para este host."
     },
     "session": {
-      "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
       "status": {
         "connecting": "Conectando",
         "live": "En vivo",
