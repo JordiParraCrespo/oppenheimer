@@ -58,6 +58,8 @@ type App struct {
 	Terminals *tmux.Server
 	// Link is the control-plane link while `run` holds one, for `status`.
 	Link *link.Client
+	// Credentials answers the git credential helper while `run` holds a link.
+	Credentials *credentialBroker
 }
 
 // New wires the host agent. It reads the identity when there is one, which is
@@ -79,6 +81,7 @@ func New(version string) (*App, error) {
 		Store:        store,
 		ControlPlane: controlplane.New(controlplane.Options{UserAgent: "oppenheimer-runner/" + version}),
 		Signer:       pairtoken.New(),
+		Unsealer:     pairtoken.Unsealer{},
 	})
 
 	manager := serviceManager(paths)

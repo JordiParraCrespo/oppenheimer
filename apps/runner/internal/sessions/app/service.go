@@ -107,6 +107,10 @@ type CreateInput struct {
 	// Launch is the model, permission, effort and first task, as argv, from
 	// the catalog (02-runner §5). Zero for a CLI-created session.
 	Launch domain.Launch
+	// CheckoutID and GithubRepoID are the control plane's names for the
+	// repository, kept for the credential helper.
+	CheckoutID   string
+	GithubRepoID int64
 }
 
 // Create makes a session: mirror, worktree, tmux session, agent in window 0.
@@ -166,6 +170,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	session := domain.Session{
 		ID: id, Name: nameOr(in.Name, branch), Repo: in.Repo,
 		BaseBranch: base, Branch: branch, Worktree: worktree, Agent: agent, Launch: in.Launch,
+		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
 		State: domain.StateStarting, Created: now, Updated: now,
 		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
 	}

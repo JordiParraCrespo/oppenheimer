@@ -13,6 +13,7 @@ import type { HostAssertionPort } from '../../hosts/application/host-assertion.p
 import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../links/links.di-tokens';
+import { CredentialsProcessor } from './credentials.processor';
 import { decodeFrame } from './frame.util';
 import { RelayEventsProcessor } from './relay-events.processor';
 import { SocketRunnerLink } from './socket-runner-link.adapter';
@@ -57,6 +58,7 @@ export class RunnerLinkGateway {
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
     private readonly events: RelayEventsProcessor,
+    private readonly credentials: CredentialsProcessor,
     private readonly configService: ConfigService,
   ) {}
 
@@ -208,11 +210,7 @@ export class RunnerLinkGateway {
         link.closeAttachment(message.attachmentId);
         return;
       case 'credentials.token':
-        // Sealing an installation token to the host key is a later slice; the
-        // ask is logged so a host waiting on one is visible, and never answered
-        // with something that is not a credential.
-        this.logger.warn({ message: 'credentials.token is not served yet', hostId: link.hostId });
-        return;
+        return this.credentials.onToken(link, message);
       case 'hello':
         // A second hello on an open link is a runner bug, not a reconnect.
         link.close(4400, 'hello already received');

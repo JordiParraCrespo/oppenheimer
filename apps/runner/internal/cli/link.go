@@ -15,6 +15,7 @@ import (
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
@@ -33,6 +34,8 @@ type linkHandler struct {
 	client   *link.Client
 	reporter *link.Reporter
 
+	credentials *credentialBroker
+
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	epoch       uint64
@@ -44,6 +47,7 @@ type attachment struct {
 	window    int
 	pty       sessionsapp.Attachment
 	cancel    context.CancelFunc
+	flow      *flowWindow
 }
 
 // newRunID mints the id every event key of this process starts with.
@@ -77,6 +81,8 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	}
 	handler.client = client
 	handler.reporter = link.NewReporter(runID, client, logger)
+	handler.credentials = newCredentialBroker(client, a.Pairing.Unseal, a.Sessions.Get)
+	a.Credentials = handler.credentials
 	// State changes the session service observes become `agent.observed`
 	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
@@ -131,6 +137,7 @@ func (h *linkHandler) Disconnected(uint64) {
 	h.attachments = map[uint32]*attachment{}
 	h.mu.Unlock()
 	for _, att := range open {
+		att.flow.close()
 		att.cancel()
 		_ = att.pty.Close()
 	}
@@ -150,6 +157,15 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 		var ack link.EventsAck
 		if msg.Decode(&ack) == nil {
 			h.reporter.Ack(ack)
+		}
+	case "command.failed":
+		var failed link.CommandFailed
+		if msg.Decode(&failed) == nil {
+			// The only commands this runner issues are credential asks; a
+			// failure naming one of them is that ask's answer.
+			if !h.credentials.Refuse(failed.CommandID, fmt.Errorf("%s: %s", failed.Code, failed.Detail)) {
+				h.logger.Warn("command.failed for an unknown command", slog.String("command", failed.CommandID))
+			}
 		}
 	case "hint":
 		var hint link.Hint
@@ -187,10 +203,32 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 			h.lifecycle(ctx, m)
 		}
 	case "attachment.credit":
-		// Flow control is a later slice: the PTY read loop is not paused yet,
-		// and the browser's credit is accepted and unused.
-	case "credentials.grant", "credentials.revoke", "host.preflight", "host.update":
-		h.logger.Info("message not handled by this runner yet", slog.String("type", msg.Type))
+		var m link.AttachmentCredit
+		if msg.Decode(&m) == nil {
+			if att := h.attachmentByID(m.AttachmentID); att != nil {
+				att.flow.credit(m.Bytes)
+			}
+		}
+	case "credentials.grant":
+		var m link.CredentialsGrant
+		if msg.Decode(&m) == nil {
+			h.credentials.Grant(m)
+		}
+	case "credentials.revoke":
+		var m link.CredentialsRevoke
+		if msg.Decode(&m) == nil {
+			h.credentials.Revoke(m.SessionID)
+		}
+	case "host.preflight":
+		var m link.SessionCommand
+		if msg.Decode(&m) == nil {
+			h.preflight(ctx, m.CommandID)
+		}
+	case "host.update":
+		var m link.HostUpdate
+		if msg.Decode(&m) == nil {
+			h.update(ctx, m)
+		}
 	default:
 		h.logger.Warn("unknown message from the control plane", slog.String("type", msg.Type))
 	}
@@ -244,6 +282,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		Launch: sessionsdomain.Launch{
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
 		},
+		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
 	})
 	if err != nil {
 		h.fail(m.CommandID, err)
@@ -264,9 +303,10 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach) {
 		return
 	}
 	readCtx, cancel := context.WithCancel(context.Background())
-	att := &attachment{id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel}
+	att := &attachment{id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel, flow: newFlowWindow()}
 	h.mu.Lock()
 	if previous, exists := h.attachments[m.AttachmentID]; exists {
+		previous.flow.close()
 		previous.cancel()
 		_ = previous.pty.Close()
 	}
@@ -279,8 +319,14 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach) {
 func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 	buf := make([]byte, ptyRead)
 	for {
+		// Flow control: the read waits while the browser's window is spent,
+		// so tmux's own buffer, not this process, holds a runaway pane.
+		if !att.flow.acquire(ctx) {
+			return
+		}
 		n, err := att.pty.Read(buf)
 		if n > 0 {
+			att.flow.sent(n)
 			if sendErr := h.client.SendFrame(att.id, buf[:n]); sendErr != nil && !errors.Is(sendErr, link.ErrBackpressure) {
 				break
 			}
@@ -335,6 +381,7 @@ func (h *linkHandler) detach(id uint32) {
 	delete(h.attachments, id)
 	h.mu.Unlock()
 	if att != nil {
+		att.flow.close()
 		att.cancel()
 		_ = att.pty.Close()
 	}
@@ -352,12 +399,47 @@ func (h *linkHandler) lifecycle(ctx context.Context, m link.SessionCommand) {
 		}
 	case "session.close":
 		_, err = h.app.Sessions.Close(ctx, m.SessionID, sessionsapp.CloseInput{Push: true, Force: m.AcceptUnpushedWork})
+		h.credentials.Forget(m.SessionID)
 	case "session.window.open":
 		_, err = h.app.Sessions.OpenWindow(ctx, m.SessionID)
 	case "session.window.close":
 		err = h.app.Sessions.CloseWindow(ctx, m.SessionID, m.Window)
 	}
 	if err != nil {
+		h.fail(m.CommandID, err)
+	}
+}
+
+// preflight re-collects the host facts and reports them at once, as a
+// heartbeat, which is the shape the control plane already reads them in.
+func (h *linkHandler) preflight(ctx context.Context, commandID string) {
+	if _, err := h.app.Host.Preflight(ctx); err != nil {
+		h.fail(commandID, err)
+	}
+	beat, err := h.Heartbeat(ctx)
+	if err != nil {
+		h.fail(commandID, err)
+		return
+	}
+	beat.Type = "heartbeat"
+	_ = h.client.Send(beat)
+}
+
+// update applies a version the control plane asks for: the pin and the safe
+// window are the control plane's to override here, the signature and the
+// digest never are (09 §5).
+func (h *linkHandler) update(ctx context.Context, m link.HostUpdate) {
+	if h.app.Updates == nil {
+		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("this host is not paired"))
+		return
+	}
+	if m.Version != "" {
+		if _, err := h.app.Pairing.SetPin(m.Version); err != nil {
+			h.fail(m.CommandID, err)
+			return
+		}
+	}
+	if _, err := h.app.Updates.Apply(ctx, updapp.ApplyOptions{Force: true}); err != nil {
 		h.fail(m.CommandID, err)
 	}
 }

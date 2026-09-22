@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
+import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
 import { MintPairingTokenHttpController } from './commands/mint-pairing-token/mint-pairing-token.http.controller';
@@ -29,6 +30,7 @@ import { HostPairingTokenMapper } from './host-pairing-token.mapper';
 import {
   HOST_ACCESS,
   HOST_ASSERTION,
+  HOST_KEY,
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
@@ -85,6 +87,7 @@ const resolvers: Provider[] = [
   { provide: HOST_ASSERTION, useClass: HostAssertionResolver },
   { provide: HOST_ACCESS, useClass: HostAccessResolver },
   { provide: HOST_PRESENCE, useClass: HostPresenceResolver },
+  { provide: HOST_KEY, useClass: HostKeyResolver },
 ];
 
 /**
@@ -122,6 +125,6 @@ const resolvers: Provider[] = [
   // The two application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
   // which is exactly the check the port exists to make unavoidable.
-  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE],
+  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_KEY],
 })
 export class HostsModule {}

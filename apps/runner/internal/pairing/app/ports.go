@@ -53,3 +53,8 @@ type ControlPlane interface {
 type TokenSigner interface {
 	Sign(key ed25519.PrivateKey, claims domain.BootClaims) (string, error)
 }
+
+// Unsealer opens a box the control plane sealed to this host's key (F7).
+type Unsealer interface {
+	Unseal(key ed25519.PrivateKey, sealed []byte) ([]byte, error)
+}

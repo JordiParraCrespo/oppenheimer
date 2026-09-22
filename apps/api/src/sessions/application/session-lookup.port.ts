@@ -30,7 +30,21 @@ export interface SessionAttachTarget {
   attachable: boolean;
 }
 
+/** What a `credentials.token` ask resolves to, before anything is minted. */
+export interface SessionCredentialTarget {
+  hostId: string;
+  installationId: string;
+  githubRepoId: number;
+  /** `false` once the checkout was retired or the session resolved. */
+  live: boolean;
+}
+
 export interface SessionLookupPort {
   /** Unscoped: the ticket already proved who asked, and the caller re-checks membership. */
   findAttachTarget(sessionId: string): Promise<SessionAttachTarget | null>;
+  /** Unscoped: the runner proved which host it is, and the caller checks it matches. */
+  findCredentialTarget(
+    sessionId: string,
+    checkoutId: string,
+  ): Promise<SessionCredentialTarget | null>;
 }

@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, Repository } from 'typeorm';
+import { DataSource, type EntityManager, In, Repository } from 'typeorm';
+import { ProjectOrmEntity } from '../../projects/database/project.orm-entity';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
+import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import {
   payloadBytes,
@@ -16,6 +18,7 @@ import { WorkSessionMapper } from '../work-session.mapper';
 import { SessionCheckoutOrmEntity } from './session-checkout.orm-entity';
 import { WorkSessionOrmEntity } from './work-session.orm-entity';
 import type {
+  HostSessionRow,
   NewSessionEvent,
   SessionAppendOutcome,
   SessionEventPage,
@@ -246,6 +249,50 @@ export class WorkSessionRepository
       .where('session.id = :id', { id })
       .getOne();
     return this.withCheckouts(record);
+  }
+
+  async findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]> {
+    const records = await this.unscopedQuery(
+      "the link reconciles a host's hello against what this host should hold; the host proved who it is with a signature and there is no person on the frame",
+    )
+      .where('session.hostId = :hostId', { hostId })
+      .andWhere('session.state IN (:...states)', { states: ['starting', 'open'] })
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    if (records.length === 0) return [];
+
+    const ids = records.map((record) => record.id);
+    const [checkouts, projects, prompts] = await Promise.all([
+      this.checkoutsFor(ids),
+      this.repository.manager.getRepository(ProjectOrmEntity).find({
+        where: { id: In([...new Set(records.map((record) => record.projectId))]) },
+        select: { id: true, slug: true },
+      }),
+      this.repository.manager.getRepository(WorkSessionEventOrmEntity).find({
+        where: { sessionId: In(ids), kind: SESSION_EVENT_KINDS.PROMPT_FIRST },
+        select: { sessionId: true, payload: true },
+      }),
+    ]);
+    const slugs = new Map(projects.map((project) => [project.id, project.slug]));
+    const firstPrompts = new Map<string, string>();
+    for (const event of prompts) {
+      const text = (event.payload as { text?: unknown } | null)?.text;
+      if (typeof text === 'string' && !firstPrompts.has(event.sessionId)) {
+        firstPrompts.set(event.sessionId, text);
+      }
+    }
+    return records.flatMap((record) => {
+      const projectSlug = slugs.get(record.projectId);
+      if (!projectSlug) return [];
+      const prompt = firstPrompts.get(record.id);
+      return [
+        {
+          session: this.mapper.toDomain(record, checkouts.get(record.id) ?? []),
+          projectSlug,
+          ...(prompt ? { prompt } : {}),
+        },
+      ];
+    });
   }
 
   async findEvents(

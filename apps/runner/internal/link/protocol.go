@@ -201,6 +201,41 @@ type SessionCommand struct {
 	AcceptUnpushedWork bool `json:"acceptUnpushedWork"`
 }
 
+// CredentialsToken asks for the installation token of one session's repository.
+type CredentialsToken struct {
+	Type         string `json:"type"`
+	RequestID    string `json:"requestId"`
+	SessionID    string `json:"sessionId"`
+	CheckoutID   string `json:"checkoutId"`
+	GithubRepoID int64  `json:"githubRepoId"`
+}
+
+// CredentialsGrant is the token, sealed to this host's key.
+type CredentialsGrant struct {
+	Type       string    `json:"type"`
+	RequestID  string    `json:"requestId"`
+	SessionID  string    `json:"sessionId"`
+	CheckoutID string    `json:"checkoutId"`
+	Sealed     string    `json:"sealed"`
+	ExpiresAt  time.Time `json:"expiresAt"`
+}
+
+// CredentialsRevoke drops a token early.
+type CredentialsRevoke struct {
+	Type       string `json:"type"`
+	RequestID  string `json:"requestId"`
+	SessionID  string `json:"sessionId"`
+	CheckoutID string `json:"checkoutId"`
+}
+
+// HostUpdate asks the host to move to a version on a channel.
+type HostUpdate struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	Version   string `json:"version"`
+	Channel   string `json:"channel"`
+}
+
 // AttachmentCredit is the browser's consumed-byte credit, relayed.
 type AttachmentCredit struct {
 	Type         string `json:"type"`

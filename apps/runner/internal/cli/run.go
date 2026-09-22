@@ -187,9 +187,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 	})
 	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
 		// The token comes from the control plane, per session and per
-		// repository, and the link that fetches it is the next slice. Until
-		// then this answers honestly rather than inventing a credential:
-		// the helper turns a 404 into git's "I have none".
+		// repository, over the link. A 404 is the helper's "I have none":
+		// no link, no session id in the environment, or a refusal.
 		var request map[string]string
 		if err := httpx.DecodeJSON(r, &request); err != nil {
 			return err
@@ -197,8 +196,16 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		logger.Info("credential requested",
 			slog.String("session", request["session"]),
 			slog.String("host", request["host"]))
-		return problem.ErrNotFound.WithDetail(
-			"this runner has no credential for %s yet: the control-plane link is not implemented", request["host"])
+		if a.Credentials == nil || request["host"] != "github.com" {
+			return problem.ErrNotFound.WithDetail("this runner has no credential for %s", request["host"])
+		}
+		token, err := a.Credentials.Get(r.Context(), request["session"])
+		if err != nil {
+			return problem.ErrNotFound.WithDetail("no credential for this session: %v", err)
+		}
+		// GitHub's installation tokens go over HTTPS basic auth with this
+		// fixed username; the token is the password and is never logged.
+		return httpx.WriteJSON(w, http.StatusOK, map[string]string{"username": "x-access-token", "password": token})
 	})
 	router.HandleFunc("GET /v1/updates", func(w http.ResponseWriter, _ *http.Request) error {
 		if a.Updates == nil {

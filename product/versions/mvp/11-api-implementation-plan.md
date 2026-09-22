@@ -307,8 +307,14 @@ the `SessionDispatchPort` implementation and is imported by `sessions/`;
 imports `sessions/`, `hosts/` and `links/`. The sockets are `upgrade`
 listeners on the API's own HTTP server (`relay-upgrade.gateway.ts`) over
 `ws`, not Nest gateways, because each takes its credential from the
-handshake. `credentials.processor.ts`, `attachment.credit` flow control and
-hello reconciliation are deferred to the next slice.
+handshake. `credentials.processor.ts` mints live and seals to the host's key
+(`seal.util.ts`: Ed25519 → X25519, ephemeral ECDH, HKDF-SHA256, AES-256-GCM;
+the runner's `pairing/adapters/token/seal.go` opens it). Hello reconciliation
+is `sessions/`' `SESSION_RECONCILIATION`: a `starting` session the host does
+not hold is dispatched again, an `open` one it lost is recorded stopped, keyed
+by the runner's `runId`. `attachment.credit` pauses the runner's PTY reads at
+256 KB in flight. Still open: multi-window, `addCheckout`/`removeCheckout` on
+the wire, and the runner's session layout per note 10.
 
 ```
 apps/api/src/relay/

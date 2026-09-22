@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { SessionsModule } from '../sessions/sessions.module';
 import { BrowserAttachGateway } from './infrastructure/browser-attach.gateway';
+import { CredentialsProcessor } from './infrastructure/credentials.processor';
 import { RelayEventsProcessor } from './infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from './infrastructure/relay-upgrade.gateway';
 import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
@@ -20,7 +22,19 @@ import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
  * runner reports, and never the other way round.
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([MemberOrmEntity]), LinksModule, SessionsModule, HostsModule],
-  providers: [RelayEventsProcessor, RunnerLinkGateway, BrowserAttachGateway, RelayUpgradeGateway],
+  imports: [
+    TypeOrmModule.forFeature([MemberOrmEntity]),
+    LinksModule,
+    SessionsModule,
+    HostsModule,
+    GithubModule,
+  ],
+  providers: [
+    RelayEventsProcessor,
+    CredentialsProcessor,
+    RunnerLinkGateway,
+    BrowserAttachGateway,
+    RelayUpgradeGateway,
+  ],
 })
 export class RelayModule {}

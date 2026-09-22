@@ -9,7 +9,9 @@ import { ATTACH_CLOSE_CODES, PROTOCOL_VERSION } from '@oppenheimer/shared/protoc
 import type { Repository } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
+import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
+import type { HostKeyPort } from '../../hosts/application/host-key.port';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
 import { InProcessLinkRegistry } from '../../links/infrastructure/link-registry.adapter';
 import type { MemberOrmEntity } from '../../organizations/database/member.orm-entity';
@@ -21,7 +23,9 @@ import type {
   AttachTicket,
   SessionLookupPort,
 } from '../../sessions/application/session-lookup.port';
+import type { SessionReconciliationPort } from '../../sessions/application/session-reconciliation.port';
 import { BrowserAttachGateway } from '../infrastructure/browser-attach.gateway';
+import { CredentialsProcessor } from '../infrastructure/credentials.processor';
 import { RelayEventsProcessor } from '../infrastructure/relay-events.processor';
 import { RelayUpgradeGateway } from '../infrastructure/relay-upgrade.gateway';
 import { MIN_SUPPORTED_PROTOCOL, RunnerLinkGateway } from '../infrastructure/runner-link.gateway';
@@ -72,6 +76,7 @@ interface Harness {
   origin: string;
   tickets: Map<string, AttachTicket>;
   presence: HostPresencePort;
+  reconciliation: SessionReconciliationPort;
   events: RecordSessionEventsPort;
   lookup: SessionLookupPort;
   members: { exist: ReturnType<typeof vi.fn> };
@@ -101,6 +106,7 @@ async function harness(): Promise<Harness> {
     findAttachTarget: vi.fn(async (id) =>
       id === SESSION ? { id, organizationId: ORG, hostId: HOST, attachable: true } : null,
     ),
+    findCredentialTarget: vi.fn().mockResolvedValue(null),
   };
   const tickets = new Map<string, AttachTicket>();
   const cache = {
@@ -121,8 +127,16 @@ async function harness(): Promise<Harness> {
   } as unknown as ConfigService;
 
   const registry = new InProcessLinkRegistry();
-  const processor = new RelayEventsProcessor(events, presence);
-  const runners = new RunnerLinkGateway(assertions, registry, processor, config);
+  const reconciliation: SessionReconciliationPort = {
+    reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
+  };
+  const processor = new RelayEventsProcessor(events, presence, reconciliation);
+  const credentials = new CredentialsProcessor(
+    lookup,
+    { mintRepositoryToken: vi.fn() } as unknown as RepositoryAccessPort,
+    { publicKeyOf: vi.fn().mockResolvedValue(null) } as unknown as HostKeyPort,
+  );
+  const runners = new RunnerLinkGateway(assertions, registry, processor, credentials, config);
   const browsers = new BrowserAttachGateway(
     cache,
     lookup,
@@ -140,6 +154,7 @@ async function harness(): Promise<Harness> {
     origin: `http://127.0.0.1:${port}`,
     tickets,
     presence,
+    reconciliation,
     events,
     lookup,
     members,

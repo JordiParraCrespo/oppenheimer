@@ -13,6 +13,7 @@ import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
 import { SessionProjectUsage } from './application/session-project-usage.resolver';
+import { SessionReconciliationResolver } from './application/session-reconciliation.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
@@ -49,6 +50,7 @@ import {
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
   SESSION_NAMER,
+  SESSION_RECONCILIATION,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
 import { SessionResource } from './sessions.resource';
@@ -113,6 +115,7 @@ const adapters: Provider[] = [
   },
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
+  { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
 ];
 
 /**
@@ -167,6 +170,6 @@ const adapters: Provider[] = [
   // The two application ports, and nothing else. The repository is this module's
   // persistence adapter: publishing it would let the next slice read and append
   // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
-  exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP],
+  exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION],
 })
 export class SessionsModule {}

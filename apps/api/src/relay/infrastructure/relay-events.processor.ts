@@ -8,7 +8,8 @@ import type { HostPresencePort } from '../../hosts/application/host-presence.por
 import { HOST_PRESENCE } from '../../hosts/hosts.di-tokens';
 import type { RunnerLink } from '../../links/application/link-registry.port';
 import type { RecordSessionEventsPort } from '../../sessions/application/record-session-events.port';
-import { RECORD_SESSION_EVENTS } from '../../sessions/sessions.di-tokens';
+import type { SessionReconciliationPort } from '../../sessions/application/session-reconciliation.port';
+import { RECORD_SESSION_EVENTS, SESSION_RECONCILIATION } from '../../sessions/sessions.di-tokens';
 
 /**
  * What the control plane does with what a runner reports: a batch of one
@@ -28,12 +29,20 @@ export class RelayEventsProcessor {
     private readonly events: RecordSessionEventsPort,
     @Inject(HOST_PRESENCE)
     private readonly presence: HostPresencePort,
+    @Inject(SESSION_RECONCILIATION)
+    private readonly reconciliation: SessionReconciliationPort,
   ) {}
 
   async onHello(link: RunnerLink, hello: HelloMessage): Promise<void> {
     await this.presence.observe(link.hostId, hello.host);
-    // The snapshot is what the runner holds; reconciling it against the rows
-    // (re-dispatching a session it should hold and does not) is the next slice.
+    // The snapshot is what the runner holds; the rows are what it should hold.
+    // A launch that never arrived goes out again, and a pane tmux lost is
+    // recorded stopped — reconciled, never replayed from a queue.
+    const outcome = await this.reconciliation.reconcile(
+      link.hostId,
+      link.runId,
+      hello.sessions.map((session) => session.sessionId),
+    );
     this.logger.log({
       message: 'runner link up',
       hostId: link.hostId,
@@ -41,6 +50,8 @@ export class RelayEventsProcessor {
       epoch: link.epoch,
       runnerVersion: hello.runnerVersion,
       sessions: hello.sessions.length,
+      redispatched: outcome.redispatched.length,
+      stopped: outcome.stopped.length,
     });
   }
 
