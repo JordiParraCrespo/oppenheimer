@@ -24,6 +24,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
+| 12 | [Orchestration (v0.2)](12-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
 
 ## Decision log
 
@@ -324,3 +325,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   catalog and the cloud-config that pairs a fresh machine. `hosts/` is
   its only consumer and still owns the rows and the policy (03 §Cloud
   hosts, 10).
+- 2026-09-22: **orchestration is 12.** One runner per host and many
+  hosts per person; the control plane assigns a session to a host at
+  create by a ladder (running host with room, stopped host, new host
+  within the account's cap) and never lets hosts claim; a session
+  waiting for a host is a `starting` row with no `hostId`, not a jobs
+  table; provider calls are BullMQ jobs grouped per cloud account, with
+  the outcome written as `machine.*` events; domain events stay on the
+  outbox. Persistence gains a fourth layer, the **transcript snapshot**
+  in object storage at every stop, so a session on a lost rented host
+  resumes with its conversation. VMs run in their own scope and outlive
+  the runner. One API replica holds links in v0.2; presence and
+  dispatch through Redis are the named seam.

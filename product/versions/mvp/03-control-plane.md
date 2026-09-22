@@ -460,12 +460,14 @@ control plane creates the per-region network on connect),
 closed; the network stays, because a network something else in the
 person's account might use is not ours to delete). `POST /sessions`
 accepts `cloudAccountId` in place of `hostId`: the session row is
-created `starting`; if the account already has a paired host with room
-the session is dispatched there, otherwise `hosts/` mints a pairing
-token bound to a new `machine` row and calls `create`, and
-`session.create` is dispatched when the host registers — the "created
-while its host is offline" path 01 already has, with the boot as the
-reason the host is offline. `POST /sessions/{id}/stop` and `/restart`
+created `starting` and **placement** runs the ladder of 12 §2 — a
+running host with room, a stopped one, a new one within the account's
+cap — inside the create transaction; a session with no host yet keeps
+its `machineId` and is dispatched when that machine's runner registers,
+the "created while its host is offline" path 01 already has, with the
+boot as the reason the host is offline. The provider calls behind that
+are the machine jobs of 12 §3, and `machine` rows fold `machine.*`
+events as sessions fold theirs. `POST /sessions/{id}/stop` and `/restart`
 are unchanged and are what pause and resume are made of.
 
 **Pause, resume, delete: the session.** The default lifetime is Keep

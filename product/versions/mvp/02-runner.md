@@ -459,8 +459,20 @@ internal/
   off; the runner reports and the control plane acts (03). The runner's
   own reconcile on boot lists VM sockets and disks the way it lists
   tmux sessions today, and reports rather than reaps.
-- **Snapshots** (memory restore) are not in v0.2: the boot on the kept
-  disk is the resume, as it is for Claude Code on the web.
+- **VMs outlive the runner.** Each Firecracker process runs in its own
+  transient scope (`systemd-run --scope`), never in the runner's cgroup,
+  so a runner restart or self-update (09 §5) leaves every session
+  running; on boot the runner adopts VMs from their sockets under
+  `~/.oppenheimer/run/vms/` the way it adopts tmux sessions (§11), and
+  reports what it cannot match rather than killing it.
+- **The transcript snapshot.** On a stop that carries `snapshotUploadUrl`
+  (01), the guest agent tars and compresses the agent's session files
+  for that session after the push and uploads them through the proxy
+  before the VM is killed; on a create or restart that carries
+  `snapshotDownloadUrl`, it unpacks them before relaunching the agent
+  with its resume flag. Capped at 50 MB, newest end kept (12 §5).
+- **Firecracker snapshots** (memory restore) are not in v0.2: the boot
+  on the kept disk is the resume, as it is for Claude Code on the web.
 
 Still deferred: the account volume, the shared workspace VM of note 11
 §2, Firecracker snapshots, `tart` on macOS.

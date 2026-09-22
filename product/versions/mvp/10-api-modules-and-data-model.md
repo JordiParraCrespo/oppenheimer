@@ -756,8 +756,8 @@ on the workspace-owned tables, exactly as `lead` does (all but
 - `cloud_account` (v0.2) — `id`, `ownerUserId`, `provider` (`aws` |
   `oci` | `alibaba`, a check constraint), `region`, `label`,
   `credential` (ciphertext under `MACHINES_ENCRYPTION_KEY`), `network`
-  jsonb (the per-region VPC or VCN ids created on connect),
-  `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
+  jsonb (the per-region VPC or VCN ids created on connect), `maxHosts`
+  (default 2, 12 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
   `host`: no `organizationId`, `keys: { owner, id }`.
 - `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
   paired, `providerRef` (the instance id), `spec` jsonb (the host's
@@ -875,7 +875,8 @@ there.
 
 - `work_session` — `id` (UUID v4, unguessable per F25, and also the tmux
   session name), `organizationId`, `projectId`, `createdByUserId`,
-  `hostId`, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
+  `hostId` (null while the session waits for a host, 12 §2), `machineId`
+  null, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
   a check constraint), `cwdCheckoutId` null,
   `idempotencyKey` null, then the fold: `state`, `stateSeq`,
   `agentSessionId`, `lastEventAt`, `stoppedAt`, timestamps.

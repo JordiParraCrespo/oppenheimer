@@ -109,7 +109,12 @@ runner does with it and point back.
 - **`stop` may carry `push: true`** (v0.2): the runner pushes every
   checkout's working branch before ending the agent, the push `close`
   performs without the removal, so a host the control plane is about to
-  put to sleep loses nothing committed (02 §5). Nothing else changes on
+  put to sleep loses nothing committed (02 §5). It may also carry
+  `snapshotUploadUrl`, a presigned PUT for the agent's session files;
+  `session.stopped` then reports the object's key and size.
+  `session.create` and `restart` may carry `snapshotDownloadUrl` for a
+  session resuming on a fresh disk (12 §5). Host facts gain `vmSlots`,
+  the number of microVM sessions the host will hold (12 §2). Nothing else changes on
   the wire for cloud machines: `machine.*` events are the control
   plane's own writes to the log, and a cloud host registers, dials and
   is driven exactly as any other (03 §Cloud hosts).
