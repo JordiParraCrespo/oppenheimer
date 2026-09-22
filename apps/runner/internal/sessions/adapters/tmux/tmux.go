@@ -51,12 +51,22 @@ type Options struct {
 // Config is the runner's tmux configuration: no status bar (the console draws
 // its own chrome), mouse on, a large scrollback, and no prefix key, because
 // every keystroke in the browser belongs to the program in the terminal.
+//
+// `window-size latest` is what makes a browser's viewport the one that counts.
+// tmux sizes a window to fit *every* attached client, so one client left on
+// the 80x24 a detached session starts at pins the window there however wide
+// the reader's pane is — and the agent, which lays its turn out to the size it
+// is told, draws an 80-column block with its prompt on row 21 of 24 while the
+// browser shows a grid half as tall again. `latest` hands the window to
+// whoever resized last, which is the person actually looking at it.
 const Config = `set -g status off
 set -g mouse on
 set -g history-limit 50000
 set -g escape-time 0
 set -g focus-events on
 set -g default-terminal "xterm-256color"
+set -g window-size latest
+set -g aggressive-resize on
 unbind C-b
 set -g prefix None
 `
@@ -90,8 +100,17 @@ func (s *Server) Available(ctx context.Context) error {
 }
 
 // args prefixes every invocation with the socket and the config.
+//
+// `-u` tells tmux the terminal is UTF-8 rather than letting it infer that from
+// the locale. A service has no locale to infer from: launchd passes neither
+// LANG nor LC_ALL, and a tmux client that cannot prove UTF-8 replaces every
+// non-ASCII character it writes with `_`. The pane keeps the real bytes — it
+// is the client that downgrades — so a session looked right in `capture-pane`
+// and arrived in the browser with an underscore where each agent's turn
+// marker, spinner and prompt chevron should be. The unit carries a UTF-8
+// locale as well, and this does not depend on it having one.
 func (s *Server) args(rest ...string) []string {
-	args := []string{"-L", s.socket}
+	args := []string{"-u", "-L", s.socket}
 	if s.config != "" {
 		args = append(args, "-f", s.config)
 	}
