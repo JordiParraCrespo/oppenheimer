@@ -55,7 +55,18 @@
   two forms behind a Command / Agent prompt switch, a copyable panel,
   the token line, and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
-  enabled then. The model list is the harness's own (a blank
+  enabled then. **Registered, not online**, and that is the difference
+  from onboarding: the step's Continue waits for the runner to dial in,
+  because a first-run flow that ends on a machine which never came up
+  has claimed something the console cannot use; the dialog is picking
+  the host of a session, and a session may be started on a machine
+  whose runner is still coming up — the control plane records it and
+  owes it to that host the moment it connects, which is what the
+  chip's offline rows mean too (01, 03). The status row says what the
+  API says — the runner is connected, or it is still coming up. The
+  capability line the artboard draws (✓ git, ✓ tmux) arrives with the
+  capabilities themselves; nothing on the wire carries a host's tools
+  to the console yet. The model list is the harness's own (a blank
   terminal has no model). Runtime
   and lifetime chips arrive with the VM slice.
 - **What the foot row sets, and what it remembers.** The permission

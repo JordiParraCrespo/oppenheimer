@@ -37,13 +37,6 @@
       "format": "How to read it",
       "command": "Command",
       "agentPrompt": "Agent prompt",
-      "tokenExpires": "Token expires in {{time}} · single use",
-      "tokenExpired": "Token expired — generate a new one.",
-      "newToken": "New token",
-      "waiting": "Listening for this host…",
-      "registered": "Registered — waiting for its runner",
-      "ready": "git, tmux, claude ready",
-      "mintFailed": "We could not create a registration token.",
       "use": "Use this host",
       "defaultName": "New host"
     },

@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import { HostEntity, type HostPairing, type HostPairingToken } from '../../modules/hosts';
-import { useHostPairing } from '../hosts.queries';
+import { useHostPairing } from '../hosts.pairing';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -81,13 +81,14 @@ const redeemed: HostPairingToken = {
 };
 
 describe('useHostPairing', () => {
-  it('shows the minted command and counts its token down', async () => {
+  it('shows the minted command and how long its token has left', async () => {
     const { wrapper } = setup([unredeemed], [OWNED]);
     const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
 
     await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
     expect(result.current.expired).toBe(false);
-    expect(result.current.countdown).toMatch(/^\d+:\d{2}$/);
+    // A count, not `mm:ss`: how it is said belongs to the surface.
+    expect(result.current.secondsLeft).toBeGreaterThan(3500);
   });
 
   it('offers no host while the token is unspent, however many the account owns', async () => {
@@ -114,7 +115,22 @@ describe('useHostPairing', () => {
     rerender();
     expect(service.pair).toHaveBeenCalledTimes(1);
 
-    await result.current.regenerate();
-    expect(service.pair).toHaveBeenCalledTimes(2);
+    result.current.regenerate();
+    await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
+  });
+
+  it('drops the host it was offering when the reader takes a new token', async () => {
+    // Use this host must not stay armed under a command that has been thrown
+    // away: the new token has not been spent, so nothing is paired yet.
+    const { wrapper, service } = setup([redeemed], [OWNED, PAIRED]);
+    const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
+
+    await waitFor(() => expect(result.current.host?.id).toBe('host-2'));
+
+    service.pair.mockResolvedValue({ ...PAIRING, id: 'token-2' });
+    result.current.regenerate();
+
+    await waitFor(() => expect(result.current.pairing?.id).toBe('token-2'));
+    expect(result.current.host).toBeNull();
   });
 });

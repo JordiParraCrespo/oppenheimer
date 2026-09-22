@@ -329,13 +329,6 @@
         "format": "Cómo leerlo",
         "command": "Comando",
         "agentPrompt": "Instrucción para el agente",
-        "tokenExpires": "El token caduca en {{time}} · un solo uso",
-        "tokenExpired": "Token caducado: genera uno nuevo.",
-        "newToken": "Nuevo token",
-        "waiting": "Escuchando a este host…",
-        "registered": "Registrado: esperando a su runner",
-        "ready": "git, tmux y claude listos",
-        "mintFailed": "No hemos podido crear un token de registro.",
         "use": "Usar este host",
         "defaultName": "Nuevo host"
       },
@@ -418,6 +411,17 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    }
+  },
+  "hosts": {
+    "pairing": {
+      "tokenExpires": "El token caduca en {{time}} · un solo uso",
+      "tokenExpired": "Token caducado: genera uno nuevo.",
+      "newToken": "Nuevo token",
+      "waiting": "Escuchando a este host…",
+      "registered": "Registrado: esperando a su runner",
+      "online": "Runner conectado",
+      "mintFailed": "No hemos podido crear un token de registro."
     }
   },
   "home": {
@@ -619,14 +623,7 @@
         "installCommand": "Comando de instalación",
         "agentPrompt": "Prompt para un agente de IA",
         "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
-        "tokenExpires": "El token caduca en {{time}} · un solo uso",
-        "newToken": "Generar un token nuevo",
-        "waiting": "Esperando a que el host se conecte…",
-        "ready": "git, tmux, claude listos",
-        "mintFailed": "No hemos podido crear un token de registro.",
-        "tokenExpired": "El token ha caducado: genera uno nuevo.",
         "defaultName": "Mi primer host",
-        "registered": "Registrado: esperando a su runner",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."
       },

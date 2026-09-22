@@ -8,15 +8,12 @@ export {
 } from './api-tokens.queries';
 export { useRegister } from './auth.queries';
 export { useConsumerApp } from './context';
-export {
-  hostsKeys,
-  useCurrentPairing,
-  useHostPairing,
-  useHosts,
-  usePairHost,
-  usePairingTokens,
-  useRemoveHost,
-} from './hosts.queries';
+// `useCurrentPairing`, `usePairingTokens` and the host poll are the flow's
+// internals: a surface that reached for them directly would be back to asking
+// "is there a host?" instead of "was this token spent?". They stay exported
+// from their own file for a spec or a later drawer; the barrel offers the flow.
+export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
+export { hostsKeys, useHosts, useRemoveHost } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
   installationsKeys,

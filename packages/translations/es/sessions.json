@@ -37,13 +37,6 @@
       "format": "Cómo leerlo",
       "command": "Comando",
       "agentPrompt": "Instrucción para el agente",
-      "tokenExpires": "El token caduca en {{time}} · un solo uso",
-      "tokenExpired": "Token caducado: genera uno nuevo.",
-      "newToken": "Nuevo token",
-      "waiting": "Escuchando a este host…",
-      "registered": "Registrado: esperando a su runner",
-      "ready": "git, tmux y claude listos",
-      "mintFailed": "No hemos podido crear un token de registro.",
       "use": "Usar este host",
       "defaultName": "Nuevo host"
     },

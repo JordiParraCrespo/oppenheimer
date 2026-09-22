@@ -5,6 +5,7 @@ import control from './en/control.json';
 import emails from './en/emails.json';
 import errors from './en/errors.json';
 import home from './en/home.json';
+import hosts from './en/hosts.json';
 import language from './en/language.json';
 import nav from './en/nav.json';
 import onboarding from './en/onboarding.json';
@@ -31,6 +32,7 @@ const en = {
   pages,
   public: publicCopy,
   sessions,
+  hosts,
   table,
   theme,
   toasts,

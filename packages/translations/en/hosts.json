@@ -1,0 +1,11 @@
+{
+  "pairing": {
+    "tokenExpires": "Token expires in {{time}} · single use",
+    "tokenExpired": "Token expired — generate a new one.",
+    "newToken": "New token",
+    "waiting": "Listening for this host…",
+    "registered": "Registered — waiting for its runner",
+    "online": "Runner connected",
+    "mintFailed": "We could not create a registration token."
+  }
+}
