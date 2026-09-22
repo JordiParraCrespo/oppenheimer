@@ -13,8 +13,9 @@ import { LOCALE_STORAGE_KEY } from '../lib/i18n';
  * choices are stored locally. So the saved values are applied **once per
  * shell mount, and only where the device has not chosen for itself** — a
  * laptop that picked dark stays dark whatever the phone saved, and a signed-out
- * screen keeps reading the local choice. `system` is left to the device
- * entirely.
+ * screen keeps reading the local choice. `system` is one of the three saved
+ * values, not an absence of one: the account menu offers "Match system" and
+ * the theme provider resolves it, so it applies like the other two.
  */
 export function useApplyUserSettings(): void {
   const { i18n } = useTranslation();
@@ -27,7 +28,7 @@ export function useApplyUserSettings(): void {
     applied.current = true;
 
     const { theme, locale } = settings.data;
-    if ((theme === 'dark' || theme === 'light') && !hasStoredTheme()) setTheme(theme);
+    if (!hasStoredTheme()) setTheme(theme);
 
     let storedLocale: string | null = null;
     try {

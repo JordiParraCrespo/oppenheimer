@@ -95,7 +95,7 @@ function FilterChip({
     <span
       data-slot="filter-chip"
       className={cn(
-        'inline-flex h-[22px] items-center gap-1 rounded-sm bg-control pr-1 pl-2 text-[11.5px] leading-none text-fg',
+        'inline-flex h-[22px] items-center gap-1.25 rounded-sm bg-control pr-1 pl-2 text-[11.5px] leading-none text-fg',
         className,
       )}
       {...props}

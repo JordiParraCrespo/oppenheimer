@@ -2,5 +2,6 @@
   "toggle": "Cambiar tema",
   "label": "Apariencia",
   "light": "Claro",
-  "dark": "Oscuro"
+  "dark": "Oscuro",
+  "system": "Igual que el sistema"
 }

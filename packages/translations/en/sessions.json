@@ -33,5 +33,27 @@
       "live": "Live",
       "closed": "Disconnected"
     }
+  },
+  "filters": {
+    "label": "Filter sessions",
+    "repository": "Repository",
+    "agent": "Agent",
+    "host": "Host",
+    "sort": "Sort by",
+    "clear": "Clear filters",
+    "remove": "Clear filter",
+    "allRepositories": "All repositories",
+    "allAgents": "All agents",
+    "allHosts": "All hosts",
+    "noMatches": "No sessions match these filters."
+  },
+  "sort": {
+    "recent": "Last activity",
+    "oldest": "Oldest first",
+    "name": "Name"
+  },
+  "agents": {
+    "claude-code": "Claude Code",
+    "codex": "Codex"
   }
 }

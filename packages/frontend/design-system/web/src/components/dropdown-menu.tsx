@@ -20,7 +20,7 @@ import { cn } from '../lib/utils';
  *   `DropdownMenuRadioItem`s with a `description`, an Effort submenu row
  */
 const ITEM_CLASSES =
-  "group/dropdown-menu-item relative flex w-full cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-operate text-fg outline-hidden select-none transition-colors duration-instant data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&>svg]:text-fg-subtle";
+  "group/dropdown-menu-item relative flex w-full cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-operate text-fg outline-hidden select-none transition-colors duration-instant data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.75 [&>svg]:text-fg-subtle";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -94,7 +94,7 @@ function DropdownMenuHeader({ className, ...props }: React.ComponentProps<'div'>
     <div
       data-slot="dropdown-menu-header"
       className={cn(
-        '-mx-1 -mt-1 mb-1 truncate border-b border-border-subtle px-3.5 py-2.5 text-[12.5px] text-fg-muted',
+        '-mx-1 -mt-1 mb-1 truncate border-b border-border-subtle px-3.5 pt-3 pb-2.5 text-[12.5px] text-fg-muted',
         className,
       )}
       {...props}
@@ -131,7 +131,7 @@ function DropdownMenuValue({ className, ...props }: React.ComponentProps<'span'>
   return (
     <span
       data-slot="dropdown-menu-value"
-      className={cn('ml-auto truncate text-sm text-fg-muted', className)}
+      className={cn('ml-auto truncate text-sm text-fg', className)}
       {...props}
     />
   );
@@ -155,7 +155,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="-mr-1 size-3.5! text-fg-subtle" />
+      <ChevronRightIcon className="-mr-1 size-3! text-fg-subtle" />
     </MenuPrimitive.SubmenuTrigger>
   );
 }
@@ -212,7 +212,7 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
 
 /**
  * A choice row. With `description` it becomes the two-line option (name,
- * then a muted line), the check aligned to the first line. `icon` is a 16px
+ * then a muted line), the check aligned to the first line. `icon` is a 15px
  * mark before the text; `tone="warning"` colours the whole row, label and
  * description, for the one choice that changes a machine unattended.
  */
@@ -244,7 +244,7 @@ function DropdownMenuRadioItem({
       {...props}
     >
       {icon ? (
-        <span className="flex shrink-0 pt-px [&_svg:not([class*=size-])]:size-4">{icon}</span>
+        <span className="flex shrink-0 pt-px [&_svg:not([class*=size-])]:size-3.75">{icon}</span>
       ) : null}
       <span className="flex min-w-0 flex-1 flex-col gap-px text-left">
         <span className="truncate">{children}</span>

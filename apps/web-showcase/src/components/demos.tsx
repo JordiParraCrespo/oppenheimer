@@ -189,10 +189,10 @@ export function DestructiveDialogDemo() {
 export function FilterMenuDemo() {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<IconButton aria-label="Filter sessions" size="xs" />}>
+      <DropdownMenuTrigger render={<IconButton aria-label="Filter sessions" size="xs" variant="quiet" />}>
         <Settings2Icon />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-[230px]">
+      <DropdownMenuContent className="min-w-57.5">
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             Repository <DropdownMenuValue>All repositories</DropdownMenuValue>
@@ -265,7 +265,7 @@ export function AccountMenuDemo() {
         <span className="flex-1 truncate text-operate">Jordi Parra</span>
         <ChevronsUpDownIcon className="size-3.5 text-fg-subtle" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" className="min-w-[250px]">
+      <DropdownMenuContent side="top" className="min-w-62.5">
         <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
@@ -273,9 +273,9 @@ export function AccountMenuDemo() {
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup defaultValue="system">
-              <DropdownMenuRadioItem value="system">Match system</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">Match system</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
