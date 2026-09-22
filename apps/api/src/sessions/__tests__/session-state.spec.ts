@@ -179,3 +179,60 @@ describe('the fold as a property', () => {
     }
   });
 });
+
+/**
+ * The launch options, which are the newest columns the fold projects.
+ *
+ * They exist as columns because a restart must reproduce the launch and the
+ * console shows the engine button on a session that already exists — so the
+ * property that matters is the same one every other column here has: the log
+ * alone rebuilds them (`product/versions/mvp/03-control-plane.md`).
+ */
+describe('the launch the fold projects', () => {
+  it('takes the launch from the request that stated it', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        launch: { model: 'opus', permission: 'auto', effort: 'high' },
+      }),
+    );
+
+    expect(fold.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    // The request is also what starts the session, and stating a launch must not
+    // have cost it that.
+    expect(fold.state).toBe('starting');
+  });
+
+  it('reads a request with no launch as the level that asks', () => {
+    const fold = foldSessionEvent(INITIAL_SESSION_FOLD, entry(SESSION_EVENT_KINDS.REQUESTED, {}));
+
+    expect(fold.launch).toEqual({ model: null, permission: 'ask', effort: null });
+  });
+
+  it('refuses a permission level outside the union rather than storing it', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        launch: { permission: 'root', effort: 'ludicrous' },
+      }),
+    );
+
+    // `ask` is the safe reading of "unknown": the alternative is a session that
+    // asks for nothing, which is not a thing an unreadable log should produce.
+    expect(fold.launch.permission).toBe('ask');
+    expect(fold.launch.effort).toBeNull();
+  });
+
+  it('survives every later entry, because only the request states it', () => {
+    const fold = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        launch: { model: 'sonnet', permission: 'full', effort: 'max' },
+      }),
+      entry(SESSION_EVENT_KINDS.STARTED, { agentSessionId: 'agent-1' }),
+      entry(SESSION_EVENT_KINDS.AGENT_OBSERVED, { state: 'working' }),
+      entry(SESSION_EVENT_KINDS.STOPPED),
+    ]);
+
+    expect(fold.launch).toEqual({ model: 'sonnet', permission: 'full', effort: 'max' });
+  });
+});

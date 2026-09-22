@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changePassword, check, checkSlug, closeSession, connectInstallation, create, create2, create3, create4, create5, createSession, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list2, list3, list4, list5, list6, list7, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessionEvents, listSessions, listSessions2, listUsers, me, mint, type Options, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, stopSession, unban, uninstall, unpair, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessions2Data, ListSessions2Error, ListSessions2Response, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, active, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changePassword, check, checkSlug, closeSession, connectInstallation, create, create2, create3, create4, create5, createSession, createUser, current, deleteAvatar, deploymentCapabilities, disconnectInstallation, findAll, findAll2, findAll3, findOne, findOne2, findSessions, findUserRoles, get, get2, getFull, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list2, list3, list4, list5, list6, list7, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessionEvents, listSessions, listUsers, listUserSessions, me, mint, type Options, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, stopSession, unban, uninstall, unpair, update, update2, update3, update4, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1724,14 +1724,14 @@ export const impersonateMutation = (options?: Partial<Options<ImpersonateData>>)
     return mutationOptions;
 };
 
-export const listSessionsQueryKey = (options: Options<ListSessionsData>) => createQueryKey('listSessions', options);
+export const listUserSessionsQueryKey = (options: Options<ListUserSessionsData>) => createQueryKey('listUserSessions', options);
 
 /**
  * List a user's sessions
  */
-export const listSessionsOptions = (options: Options<ListSessionsData>) => queryOptions<ListSessionsResponse, ListSessionsError, ListSessionsResponse, ReturnType<typeof listSessionsQueryKey>>({
+export const listUserSessionsOptions = (options: Options<ListUserSessionsData>) => queryOptions<ListUserSessionsResponse, ListUserSessionsError, ListUserSessionsResponse, ReturnType<typeof listUserSessionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessions({
+        const { data } = await listUserSessions({
             ...options,
             ...queryKey[0],
             signal,
@@ -1739,7 +1739,7 @@ export const listSessionsOptions = (options: Options<ListSessionsData>) => query
         });
         return data;
     },
-    queryKey: listSessionsQueryKey(options)
+    queryKey: listUserSessionsQueryKey(options)
 });
 
 /**
@@ -1852,16 +1852,16 @@ export const updateProjectMutation = (options?: Partial<Options<UpdateProjectDat
     return mutationOptions;
 };
 
-export const listSessions2QueryKey = (options?: Options<ListSessions2Data>) => createQueryKey('listSessions2', options);
+export const listSessionsQueryKey = (options?: Options<ListSessionsData>) => createQueryKey('listSessions', options);
 
 /**
  * List the sessions in the caller’s workspace
  *
  * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
-export const listSessions2Options = (options?: Options<ListSessions2Data>) => queryOptions<ListSessions2Response, ListSessions2Error, ListSessions2Response, ReturnType<typeof listSessions2QueryKey>>({
+export const listSessionsOptions = (options?: Options<ListSessionsData>) => queryOptions<ListSessionsResponse, ListSessionsError, ListSessionsResponse, ReturnType<typeof listSessionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await listSessions2({
+        const { data } = await listSessions({
             ...options,
             ...queryKey[0],
             signal,
@@ -1869,29 +1869,29 @@ export const listSessions2Options = (options?: Options<ListSessions2Data>) => qu
         });
         return data;
     },
-    queryKey: listSessions2QueryKey(options)
+    queryKey: listSessionsQueryKey(options)
 });
 
-export const listSessions2InfiniteQueryKey = (options?: Options<ListSessions2Data>): QueryKey<Options<ListSessions2Data>> => createQueryKey('listSessions2', options, true);
+export const listSessionsInfiniteQueryKey = (options?: Options<ListSessionsData>): QueryKey<Options<ListSessionsData>> => createQueryKey('listSessions', options, true);
 
 /**
  * List the sessions in the caller’s workspace
  *
  * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
-export const listSessions2InfiniteOptions = (options?: Options<ListSessions2Data>) => {
-    const opts = infiniteQueryOptions<ListSessions2Response, ListSessions2Error, InfiniteData<ListSessions2Response>, QueryKey<Options<ListSessions2Data>>, number | Pick<QueryKey<Options<ListSessions2Data>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+export const listSessionsInfiniteOptions = (options?: Options<ListSessionsData>) => {
+    const opts = infiniteQueryOptions<ListSessionsResponse, ListSessionsError, InfiniteData<ListSessionsResponse>, QueryKey<Options<ListSessionsData>>, number | Pick<QueryKey<Options<ListSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
         queryFn: async ({ pageParam, queryKey, signal }) => {
             // @ts-ignore
-            const page: Pick<QueryKey<Options<ListSessions2Data>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+            const page: Pick<QueryKey<Options<ListSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
                 query: {
                     page: pageParam
                 }
             };
             const params = createInfiniteParams(queryKey, page);
-            const { data } = await listSessions2({
+            const { data } = await listSessions({
                 ...options,
                 ...params,
                 signal,
@@ -1899,7 +1899,7 @@ export const listSessions2InfiniteOptions = (options?: Options<ListSessions2Data
             });
             return data;
         },
-        queryKey: listSessions2InfiniteQueryKey(options)
+        queryKey: listSessionsInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };

@@ -17,9 +17,21 @@ import { parseEnv } from './env';
  * switched on without one is simply not configured.
  */
 const schema = z.object({
-  namerProvider: z.enum(['none', 'anthropic']).default('none'),
+  namerProvider: z.enum(['none', 'anthropic', 'openai-compatible']).default('none'),
   namerModel: z.string().min(1).optional(),
   anthropicApiKey: z.string().min(1).optional(),
+  /**
+   * Where an OpenAI-compatible server lives, up to and including `/v1`. One
+   * adapter serves Groq, Together, OpenRouter, vLLM and a local Ollama, so this
+   * is the setting that picks between them.
+   */
+  namerBaseUrl: z.string().url().optional(),
+  /**
+   * Optional on purpose: a model served on your own machine wants no key, and
+   * requiring one would rule out the deployment where the prompt never leaves
+   * the building.
+   */
+  namerApiKey: z.string().min(1).optional(),
 });
 
 /**
@@ -32,10 +44,15 @@ const schema = z.object({
  * startup log says so.
  */
 export function sessionNamerIsConfigured(configService: ConfigService): boolean {
-  if (configService.get<string>('sessions.namerProvider') !== 'anthropic') return false;
-  return Boolean(
-    configService.get('sessions.anthropicApiKey') && configService.get('sessions.namerModel'),
-  );
+  const provider = configService.get<string>('sessions.namerProvider');
+  // A model id is what every provider needs; what else it needs differs.
+  if (!configService.get('sessions.namerModel')) return false;
+  if (provider === 'anthropic') return Boolean(configService.get('sessions.anthropicApiKey'));
+  // The key is not checked: a local server legitimately has none, and a remote
+  // one without a key fails its first call and keeps the slug, which is the same
+  // outcome as no namer at all.
+  if (provider === 'openai-compatible') return Boolean(configService.get('sessions.namerBaseUrl'));
+  return false;
 }
 
 export const sessionsConfig = registerAs('sessions', () =>
@@ -43,5 +60,7 @@ export const sessionsConfig = registerAs('sessions', () =>
     namerProvider: 'SESSION_NAMER_PROVIDER',
     namerModel: 'SESSION_NAMER_MODEL',
     anthropicApiKey: 'ANTHROPIC_API_KEY',
+    namerBaseUrl: 'SESSION_NAMER_BASE_URL',
+    namerApiKey: 'SESSION_NAMER_API_KEY',
   }),
 );

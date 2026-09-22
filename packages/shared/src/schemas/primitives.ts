@@ -25,6 +25,22 @@ export const FIELD_BOUNDS = {
   displayName: { min: 1, max: 200 },
   /** A git ref: branch names are bounded by what git and the filesystem take. */
   gitRef: { min: 1, max: 255 },
+  /**
+   * The first task somebody types into the composer.
+   *
+   * **Bytes, not characters, and 2 KB because that is what already exists.**
+   * `02-runner.md` §7 caps `prompt.first` at 2 KB, and every
+   * `work_session_event` payload is capped at 8 KiB of serialized JSON. A
+   * character bound cannot honour either: four bytes per character is legal
+   * UTF-8, so a 16,000-character prompt — which an earlier draft of this
+   * allowed — passes the route, commits the session, and then has its
+   * `prompt.first` entry *rejected* by the log. The session exists, nothing
+   * records the task, and neither the namer nor the host ever sees it.
+   *
+   * So the bound is the one the log can actually keep, measured the way the
+   * log measures it.
+   */
+  prompt: { min: 1, maxBytes: 2 * 1024 },
 } as const;
 
 /**
@@ -58,6 +74,43 @@ export const displayNameSchema = z
   .max(FIELD_BOUNDS.displayName.max);
 
 export const gitRefSchema = z.string().min(FIELD_BOUNDS.gitRef.min).max(FIELD_BOUNDS.gitRef.max);
+
+/**
+ * How long a prompt is, as the event log counts it: UTF-8 bytes.
+ *
+ * Exported because the wire schema is built on a different Zod entry point and
+ * cannot share the schema object — only the rule. `src/__tests__/cross-version-primitives.spec.ts`
+ * holds the two to the same answer.
+ */
+export function promptByteLength(value: string): number {
+  let bytes = 0;
+  // `for…of` walks code points, so a surrogate pair counts once, as four bytes.
+  // Written out rather than `TextEncoder` or `Buffer`: this package is imported
+  // by a browser bundle and by Node, and neither global belongs in its types.
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0;
+    bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4;
+  }
+  return bytes;
+}
+
+/**
+ * A session's first task, as typed. Trimmed before it is measured so a body of
+ * whitespace is the empty prompt it looks like rather than a one-character one,
+ * and measured in bytes so a paragraph of CJK or emoji is refused at the route
+ * rather than accepted and then dropped by the log.
+ */
+export const promptSchema = z
+  .string()
+  .trim()
+  .min(FIELD_BOUNDS.prompt.min)
+  // A character is at least one byte, so the byte cap is also a character cap:
+  // stating it keeps a `maxLength` in the emitted OpenAPI and JSON Schema,
+  // which a `refine` alone does not. It is necessary but not sufficient — the
+  // refine below is the rule — and that is the honest shape for a bound the
+  // wire measures in bytes.
+  .max(FIELD_BOUNDS.prompt.maxBytes)
+  .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes);
 
 /**
  * The host family, at the granularity the installer and the service manager care

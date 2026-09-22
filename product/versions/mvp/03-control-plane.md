@@ -155,6 +155,49 @@ transaction that makes the row change it implies; what could not be delivered to
 a host comes back as a `host_offline` hint on the response, not as a second
 entry from a second writer.
 
+**Creating a session sets how it is launched, and what it is for.**
+`POST /sessions` takes the host, the agent, the checkouts and an optional
+name, plus two fields the composer's foot row and text area set:
+
+```ts
+launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Effort }
+prompt?: string                         // ≤ 2 KB of UTF-8, the cap 02 §7 already states
+```
+
+`launch` is **one object rather than four fields spelled four times**,
+because the four travel together everywhere — the route body, the
+`session.requested` payload, the `session.create` frame (01) and the
+response. `agent` stays outside it: the agent is *what the session is*,
+the launch is *how it was started*, and only the second is a thing a
+later slice changes without making a different session. Permission
+defaults to `ask` on the server as well as in the console, and `full` is
+never seeded from a previous choice (05).
+
+**The three launch options are folded onto `work_session`, for restart.**
+Note 10 recorded a model in the log and said promoting it to a column
+later would be *a replay, not a backfill*; this is that promotion, and
+the reader that needs it is `restart`, which must relaunch a session the
+way it was launched and would otherwise walk the whole log to find out.
+The fold is not a second truth — every column on the row is already a
+projection of its log — so `launchModel`, `launchPermission` and
+`launchEffort` are three more fields of the fold, written by
+`session.requested` and rebuilt exactly by a replay. No backfill:
+existing rows are `ask` with no model, which is what they were launched
+with. Changing them on a live session is a later slice and brings its own
+event kind with its writer, never before.
+
+**The first task is written once, by whichever end has it.** A `prompt`
+on the create is appended as `prompt.first` in the same transaction as
+the session row — one action, one entry — and rides `session.create` to
+the host, which appends it to the agent's argv rather than typing it at a
+running process (02 §5). A session created with no prompt is the other
+case: the person types the first message themselves and the runner
+reports it off the transcript (02 §7). Exactly one of the two writes the
+entry, decided by whether the field was set, which is what keeps the log
+honest without the two writers needing a shared key. It is stored nowhere
+but the log and never returned on a list: a prompt is the person's own
+sentence, and the log and the host are the two places it belongs.
+
 **Three vocabularies.** The stored lifecycle is
 `starting | open | failed | resolved` and answers *is this work finished* — so
 stopping does not move it, and `resolved` is terminal. The agent's observations
@@ -185,12 +228,24 @@ check and the write share a transaction that locks the project row, and creating
 a session takes a share lock on the same row, so an archive and a create cannot
 both win.
 
-**Naming is configuration.** A session keeps its minted slug until the runner
-reports the first prompt; `SESSION_NAMER_PROVIDER` (`none` by default),
-`SESSION_NAMER_MODEL` and `ANTHROPIC_API_KEY` choose what titles it, and a
-deployment with none configured names nothing. A model-derived title never
-overwrites a name a person typed, and that rule is in the fold. The one line
-that leaves the host is the person's own prompt.
+**Naming is configuration.** A session keeps its minted slug until its first
+prompt exists — from the composer at create, or reported off the transcript
+later. `SESSION_NAMER_PROVIDER` (`none` by default) chooses what titles it:
+`anthropic`, or `openai-compatible`, which is one adapter over
+`POST {baseUrl}/chat/completions` and therefore covers Groq, Together,
+Fireworks, DeepInfra, OpenRouter, vLLM and a local Ollama alike — so "a fast
+open-weights model" is a matter of `SESSION_NAMER_BASE_URL`,
+`SESSION_NAMER_MODEL` and an optional `SESSION_NAMER_API_KEY` rather than a
+third adapter per vendor. A deployment with none configured names nothing.
+Both adapters have the same posture: a 5-second timeout, a 32-token budget,
+and every failure swallowed into `null`, because the fallback is the session's
+own slug and a title is not worth failing a request over. Naming is **never
+awaited** on the create path — the name lands in the log a moment later and the
+console reads it on its next listing. A model-derived title never overwrites a
+name a person typed, and that rule is in the fold; it is also what stops a
+second naming, since the *first* prompt is the one it names from and there is
+only one of those. The one line that leaves the host is the person's own
+prompt.
 
 ## Data model, first cut
 

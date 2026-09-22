@@ -2,6 +2,7 @@ import { createHash, generateKeyPairSync, type KeyObject, sign } from 'node:cryp
 import { type APIRequestContext, expect, request, test } from '@playwright/test';
 import { API_URL } from '../../playwright.config';
 import { expectProblemDocument, newContext, signedUpContext } from '../../support/auth';
+import { registerHost } from '../../support/sessions';
 
 /**
  * Pairing a machine, driven the way a machine drives it.
@@ -115,9 +116,11 @@ test.describe('Hosts', () => {
     // The runner's first HTTP call: no credential but the token itself.
     const key = hostKey();
     const anonymous = await newContext();
-    const registered = await anonymous.post('/api/v1/hosts/register', {
-      data: { token: minted.secret, name: 'detected-name', publicKey: key.base64, facts: FACTS },
-      failOnStatusCode: false,
+    const registered = await registerHost(anonymous, {
+      token: minted.secret,
+      name: 'detected-name',
+      publicKey: key.base64,
+      facts: FACTS,
     });
     expect(registered.status(), await registered.text()).toBe(201);
     const { hostId, fingerprint } = await registered.json();
@@ -160,9 +163,11 @@ test.describe('Hosts', () => {
 
     const key = hostKey();
     const anonymous = await newContext();
-    const registered = await anonymous.post('/api/v1/hosts/register', {
-      data: { token: minted.secret, name: 'scoped', publicKey: key.base64, facts: FACTS },
-      failOnStatusCode: false,
+    const registered = await registerHost(anonymous, {
+      token: minted.secret,
+      name: 'scoped',
+      publicKey: key.base64,
+      facts: FACTS,
     });
     const { hostId } = await registered.json();
 
@@ -203,14 +208,11 @@ test.describe('Hosts', () => {
     // The token is invented, and nothing else about the call is: a real runner
     // redeeming a real token makes exactly this request.
     const anonymous = await newContext();
-    const registered = await anonymous.post('/api/v1/hosts/register', {
-      data: {
-        token: 'opr_reg_totally-made-up-secret-0123456789',
-        name: 'nobody',
-        publicKey: hostKey().base64,
-        facts: FACTS,
-      },
-      failOnStatusCode: false,
+    const registered = await registerHost(anonymous, {
+      token: 'opr_reg_totally-made-up-secret-0123456789',
+      name: 'nobody',
+      publicKey: hostKey().base64,
+      facts: FACTS,
     });
 
     // Used, expired, revoked and never-real share one answer on purpose.
@@ -234,9 +236,11 @@ test.describe('Hosts', () => {
 
     const key = hostKey();
     const anonymous = await newContext();
-    const registered = await anonymous.post('/api/v1/hosts/register', {
-      data: { token: minted.secret, name: 'victim', publicKey: key.base64, facts: FACTS },
-      failOnStatusCode: false,
+    const registered = await registerHost(anonymous, {
+      token: minted.secret,
+      name: 'victim',
+      publicKey: key.base64,
+      facts: FACTS,
     });
     const { hostId } = await registered.json();
 

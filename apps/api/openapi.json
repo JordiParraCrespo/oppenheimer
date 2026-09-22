@@ -6444,7 +6444,7 @@
     },
     "/api/v1/admin/users/{id}/sessions": {
       "get": {
-        "operationId": "listSessions",
+        "operationId": "listUserSessions",
         "parameters": [
           {
             "name": "id",
@@ -10820,6 +10820,29 @@
         },
         "required": ["name"]
       },
+      "SessionLaunchResponseDto": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "The model the agent was launched with; null runs that agent’s own default.",
+            "nullable": true,
+            "example": "opus"
+          },
+          "permission": {
+            "type": "string",
+            "enum": ["ask", "auto", "full"],
+            "description": "What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default."
+          },
+          "effort": {
+            "type": "string",
+            "enum": ["minimal", "low", "medium", "high", "max"],
+            "nullable": true,
+            "description": "How hard the agent may think. Null leaves the agent its own default."
+          }
+        },
+        "required": ["permission"]
+      },
       "SessionCheckoutResponseDto": {
         "type": "object",
         "properties": {
@@ -10913,6 +10936,9 @@
             "description": "The coding agent this session runs.",
             "example": "claude-code"
           },
+          "launch": {
+            "$ref": "#/components/schemas/SessionLaunchResponseDto"
+          },
           "state": {
             "type": "string",
             "enum": [
@@ -10982,6 +11008,7 @@
           "name",
           "slug",
           "agent",
+          "launch",
           "state",
           "lifecycle",
           "checkouts",
@@ -11077,6 +11104,30 @@
             "type": "integer",
             "minimum": 0,
             "exclusiveMinimum": true
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "permission": {
+                "type": "string",
+                "enum": ["ask", "auto", "full"],
+                "default": "ask"
+              },
+              "effort": {
+                "type": "string",
+                "enum": ["minimal", "low", "medium", "high", "max"]
+              }
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
           }
         },
         "required": ["hostId", "agent", "checkouts"]

@@ -49,15 +49,30 @@ export function useSession(
   });
 }
 
-/** Start a session: New session's four chips and a name. */
+/** What starting a session takes: the draft, and the key that makes a retry safe. */
+export interface CreateSessionVariables {
+  input: CreateSessionInput;
+  /**
+   * The caller's `Idempotency-Key`. It belongs to the **attempt**, not to this
+   * hook: a lost response leaves somebody looking at an error over a session
+   * that was in fact created, and pressing send again must return that session
+   * rather than build a second worktree. Only the screen holding the draft
+   * knows the second press is the same attempt, so it mints the key and keeps
+   * it until one succeeds.
+   */
+  idempotencyKey: string;
+}
+
+/** Start a session: New session's chips, its foot row and its first task. */
 export function useCreateSession(
-  options?: UseMutationOptions<SessionEntity, Error, CreateSessionInput>,
+  options?: UseMutationOptions<SessionEntity, Error, CreateSessionVariables>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateSessionInput) => app.sessions.create(input),
+    mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
+      app.sessions.create(input, idempotencyKey),
     ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
@@ -66,7 +81,7 @@ export function useCreateSession(
   });
 }
 
-export function useStopSession(options?: UseMutationOptions<void, Error, string>) {
+export function useStopSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 

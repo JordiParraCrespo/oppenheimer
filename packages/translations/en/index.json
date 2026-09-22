@@ -301,21 +301,87 @@
       "failedLead": "The host could not start this session.",
       "step": "Starting the session"
     },
-    "state": {
-      "starting": "Starting",
-      "running": "Running",
+    "group": {
+      "working": "Working",
+      "waiting-on-you": "Waiting on you",
+      "ready-for-review": "Ready for review",
+      "landing": "Landing",
       "idle": "Idle",
-      "stopped": "Stopped",
-      "failed": "Failed"
+      "resolved": "Done"
     },
     "closed": {
       "description": "This session has stopped. Its work is on its branch."
     },
     "new": {
       "title": "New session",
-      "subtitle": "Pick a host, a repository, a branch and an agent.",
-      "emptyTitle": "Coming with the first host",
-      "emptyDescription": "The session form lands once a host is paired."
+      "subtitle": "Set the scope, then describe the work.",
+      "host": {
+        "label": "Host",
+        "placeholder": "Host",
+        "search": "Search hosts…",
+        "empty": "No host matches.",
+        "add": "Add host…",
+        "offline": "Offline"
+      },
+      "repository": {
+        "label": "Repositories",
+        "placeholder": "Repository",
+        "search": "Search repositories…",
+        "empty": "No repository matches.",
+        "branchSearch": "Search branches…",
+        "branchEmpty": "No branch matches.",
+        "branchPane": "Branch for {{name}}",
+        "changeBranch": "Change branch",
+        "connect": "Connect a repository…",
+        "archived": "Archived"
+      },
+      "branch": {
+        "label": "Branch",
+        "placeholder": "Branch",
+        "search": "Search branches…",
+        "empty": "No branch matches.",
+        "default": "Default"
+      },
+      "agent": {
+        "label": "Agent and model"
+      },
+      "permission": {
+        "label": "Permission level",
+        "ask": {
+          "label": "Ask for approval",
+          "description": "The agent asks before it runs anything."
+        },
+        "auto": {
+          "label": "Approve for me",
+          "description": "Edits and safe commands run; the rest still asks."
+        },
+        "full": {
+          "label": "Full access",
+          "description": "Nothing is asked. It can change this machine unattended."
+        }
+      },
+      "effort": {
+        "label": "Effort",
+        "minimal": "Minimal",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "max": "Max"
+      },
+      "composer": {
+        "placeholder": "Describe a task or ask a question"
+      },
+      "noHosts": {
+        "title": "No host yet",
+        "description": "A session runs on a machine you own. Pair one and it appears here.",
+        "action": "Add a host"
+      },
+      "noRepositories": {
+        "title": "No repository yet",
+        "description": "Connect GitHub and pick the repositories a session may check out.",
+        "action": "Connect GitHub"
+      },
+      "queued": "Your first task is queued for this host."
     },
     "session": {
       "composerPlaceholder": "Ask the agent, or run a command",

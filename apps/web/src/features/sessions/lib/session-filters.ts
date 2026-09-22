@@ -58,7 +58,14 @@ function distinct(values: string[]): string[] {
 export function repositoryOptions(sessions: SessionEntity[], allLabel: string): FilterOption[] {
   return [
     { value: ALL, label: allLabel },
-    ...distinct(sessions.map((session) => session.repository)).map((repository) => ({
+    // Every checkout, not one per session: a session is several repositories
+    // now, and a repository is worth filtering by whether or not it is the one
+    // the agent happens to be launched in.
+    ...distinct(
+      sessions.flatMap((session) =>
+        session.checkouts.map((checkout) => checkout.repositoryFullName),
+      ),
+    ).map((repository) => ({
       value: repository,
       label: repositoryLabel(repository),
     })),
@@ -105,7 +112,10 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
   return sessions
     .filter(
       (session) =>
-        (filters.repository === ALL || session.repository === filters.repository) &&
+        (filters.repository === ALL ||
+          session.checkouts.some(
+            (checkout) => checkout.repositoryFullName === filters.repository,
+          )) &&
         (filters.agent === ALL || session.agent === filters.agent) &&
         (filters.host === ALL || session.hostId === filters.host),
     )

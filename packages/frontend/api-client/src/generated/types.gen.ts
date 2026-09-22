@@ -898,6 +898,21 @@ export type UpdateProjectRequest = {
     name: string;
 };
 
+export type SessionLaunchResponseDto = {
+    /**
+     * The model the agent was launched with; null runs that agent’s own default.
+     */
+    model?: string | null;
+    /**
+     * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default.
+     */
+    permission: 'ask' | 'auto' | 'full';
+    /**
+     * How hard the agent may think. Null leaves the agent its own default.
+     */
+    effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+};
+
 export type SessionCheckoutResponseDto = {
     id: string;
     /**
@@ -951,6 +966,7 @@ export type SessionResponseDto = {
      * The coding agent this session runs.
      */
     agent: string;
+    launch: SessionLaunchResponseDto;
     /**
      * The derived group — what the sidebar dot shows, computed from the row and organised by what needs you: the session failed, the agent has been blocked for 30 s, or a launch has sat unready for 60 s. Two arms have no writer until the relay and the pull-request flow land: `landing`, and the fourth `waiting-on-you` source (the pane is gone with no report).
      */
@@ -1010,6 +1026,12 @@ export type CreateSessionRequest = {
         baseBranch?: string;
     }>;
     cwdGithubRepoId?: number;
+    launch?: {
+        model?: string;
+        permission?: 'ask' | 'auto' | 'full';
+        effort?: 'minimal' | 'low' | 'medium' | 'high' | 'max';
+    };
+    prompt?: string;
 };
 
 export type SessionEventResponseDto = {
@@ -4297,7 +4319,7 @@ export type ImpersonateResponses = {
 
 export type ImpersonateResponse = ImpersonateResponses[keyof ImpersonateResponses];
 
-export type ListSessionsData = {
+export type ListUserSessionsData = {
     body?: never;
     path: {
         id: string;
@@ -4306,7 +4328,7 @@ export type ListSessionsData = {
     url: '/api/v1/admin/users/{id}/sessions';
 };
 
-export type ListSessionsErrors = {
+export type ListUserSessionsErrors = {
     /**
      * ADMIN_005 / ADMIN_007 — The role is not assignable, or the request was otherwise rejected
      */
@@ -4335,13 +4357,13 @@ export type ListSessionsErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
+export type ListUserSessionsError = ListUserSessionsErrors[keyof ListUserSessionsErrors];
 
-export type ListSessionsResponses = {
+export type ListUserSessionsResponses = {
     200: Array<AdminSessionResponseDto>;
 };
 
-export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
+export type ListUserSessionsResponse = ListUserSessionsResponses[keyof ListUserSessionsResponses];
 
 export type RevokeSessionsData = {
     body?: never;
@@ -4570,7 +4592,7 @@ export type UpdateProjectResponses = {
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
 
-export type ListSessions2Data = {
+export type ListSessionsData = {
     body?: never;
     path?: never;
     query?: {
@@ -4598,7 +4620,7 @@ export type ListSessions2Data = {
     url: '/api/v1/sessions';
 };
 
-export type ListSessions2Errors = {
+export type ListSessionsErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -4609,13 +4631,13 @@ export type ListSessions2Errors = {
     403: ProblemDetailsDto;
 };
 
-export type ListSessions2Error = ListSessions2Errors[keyof ListSessions2Errors];
+export type ListSessionsError = ListSessionsErrors[keyof ListSessionsErrors];
 
-export type ListSessions2Responses = {
+export type ListSessionsResponses = {
     200: PaginatedSessionsResponseDto;
 };
 
-export type ListSessions2Response = ListSessions2Responses[keyof ListSessions2Responses];
+export type ListSessionsResponse = ListSessionsResponses[keyof ListSessionsResponses];
 
 export type CreateSessionData = {
     body: CreateSessionRequest;

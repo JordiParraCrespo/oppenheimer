@@ -143,3 +143,14 @@ earlier note:
   now one screen — sidebar plus pane — and both pages were deleted
   rather than hidden. The drawer is still the answer for hosts; it is a
   later slice, and it is a drawer, not a destination.
+- `versions/mvp/10-api-modules-and-data-model.md` said a model was a
+  launch option "recorded in the log, not a column", and made the
+  promotion conditional on a reader needing it per row. `restart` is that
+  reader, so the note now records the promotion as decided: the three
+  launch options the composer's foot row sets are folded onto
+  `work_session`, which is a projection of the log and so was a replay
+  rather than a backfill. "No table, no endpoint" is unchanged, and the
+  flag strings each permission level maps to are catalog data beside
+  `command`, not a column per agent. The surface itself is in the notes
+  that own it — `versions/mvp/03-control-plane.md` for the route and the
+  fold, `01-protocol.md` for the wire.

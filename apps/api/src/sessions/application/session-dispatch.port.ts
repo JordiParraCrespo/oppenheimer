@@ -41,6 +41,16 @@ export interface SessionLaunchSpec {
   projectSlug: string;
   /** Always the session's own branch, created from each checkout's base. */
   branch: string;
+  /**
+   * The first task, to be given to the agent once the host has it up.
+   *
+   * It travels here rather than on the session because it is **not** a column:
+   * a prompt is the person's own sentence, and the log and the host are the two
+   * places it belongs (`product/versions/mvp/03-control-plane.md`). An
+   * implementation reads the launch options off the session itself, which are
+   * folded.
+   */
+  prompt?: string;
 }
 
 export interface SessionCloseSpec {

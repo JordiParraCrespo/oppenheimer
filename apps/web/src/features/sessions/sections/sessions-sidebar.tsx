@@ -5,7 +5,7 @@ import {
   SessionList,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity, SessionState } from '@oppenheimer/frontend-consumer';
+import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
@@ -26,17 +26,33 @@ import {
 } from '../lib/session-filters';
 
 /**
- * How a session's own state reads as a dot. `starting` is the pulsing grey of
- * a session that has joined the list before its worktree exists
- * (`product/versions/mvp/05-screens.md`); the rest map straight across.
+ * How a session's **group** reads as a dot.
+ *
+ * The group is what the sidebar shows because it is organised by what needs
+ * you rather than by what a process is doing
+ * (`product/versions/mvp/05-screens.md`): a session that failed, one whose
+ * agent has been blocked for thirty seconds and one whose launch has sat
+ * unready for a minute all want the same glance. `working` is the pulsing dot
+ * of a session with something happening on a machine elsewhere.
+ *
+ * One dot is not the group's to give: a session the host has not built yet
+ * reads as `idle`, because nothing needs you about it — but the artboard draws
+ * it joining the list at once with a pulsing grey glyph, and that is the
+ * **lifecycle** speaking, not the group. {@link dotFor} puts the two together.
  */
-const DOT: Record<SessionState, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
-  starting: 'pending',
-  running: 'running',
+const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
+  working: 'running',
+  'waiting-on-you': 'failed',
+  'ready-for-review': 'running',
+  landing: 'pending',
   idle: 'idle',
-  stopped: 'completed',
-  failed: 'failed',
+  resolved: 'completed',
 };
+
+/** The dot a row shows: provisioning first, then what needs you. */
+function dotFor(session: SessionEntity) {
+  return session.isProvisioning ? 'pending' : DOT[session.state];
+}
 
 /**
  * The console's sidebar body: New session, then the sessions themselves.
@@ -158,7 +174,7 @@ function SessionRow({ session, pathname }: { session: SessionEntity; pathname: s
     <SessionItem
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
-      state={DOT[session.state]}
+      state={dotFor(session)}
       active={pathname === `/sessions/${session.id}`}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
     />

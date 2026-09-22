@@ -57,6 +57,31 @@ runner does with it and point back.
 
 - `session.create | attach | input | resize | window.open |
   window.close | close | restart`
+- **`session.create` carries the launch**, because how a session is
+  started is part of what the runner is being asked to start. Three
+  fields beyond the checkouts: `launch` (`{ model?, permission, effort? }`),
+  `prompt` (the person's first task, optional), and the slugs and
+  checkouts the directory layout needs.
+
+  `launch` is **structured, not argv**. The control plane sends what the
+  person chose in the composer's foot row and the host maps it to its own
+  flags, reading the same catalog entry it already reads for `command`
+  (`packages/shared/src/agents/catalog.ts`; what the runner does with it
+  is 02 §5). Argv on the wire would put one CLI's spelling in a message
+  every agent shares, and would make a flag change a protocol change.
+
+  It **replaces** the bare `model` this message carried while a model was
+  the only launch option there was. One shape, not both: the three travel
+  together, and the fold keeps them on the session so a restart
+  reproduces the launch (03).
+
+  `prompt` rides the create rather than arriving as a `session.input`
+  after `session.started`, and that is the whole reason it is a launch
+  field: input needs the agent up, and "the agent is up" is a moment only
+  the host can name. Appended to the launch argv, the task is there before
+  the process starts and there is nothing to synchronise. A session
+  created while its host is offline therefore keeps its task in the log
+  and delivers it when the launch is finally dispatched.
 - `host.preflight`, `host.update`
 - `credentials.token` — the runner asks for the installation token for
   one session's repository; the control plane answers with
@@ -109,7 +134,7 @@ grounds can still fetch, verify and install the version that fixes it
   agent, and the update channel.
 - **Hints** may ride a heartbeat reply or an attach ticket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (note 12). An attach ticket may
+  `blocked` with a retry-after (`../../12-lessons-from-grok-bot.md`). An attach ticket may
   additionally carry `host_offline`, for a session whose host has no link
   right now. That kind is the ticket's alone and is **not** a link hint:
   a runner connected enough to send a frame cannot coherently report
@@ -127,7 +152,7 @@ grounds can still fetch, verify and install the version that fixes it
   link.
 - Reconnect ladder 0.5 s, 1, 2, 5, 10, 30 with jitter, and an epoch
   counter bumped on every successful connect; frames and callbacks from
-  an older epoch are dropped (note 12).
+  an older epoch are dropped (`../../12-lessons-from-grok-bot.md`).
 
 ## Open questions
 

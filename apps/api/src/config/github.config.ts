@@ -26,6 +26,35 @@ const schema = z.object({
   clientSecret: z.string().optional(),
   /** The App's URL slug, so the console can link to its install page. */
   slug: z.string().optional(),
+  /**
+   * Where GitHub's REST API lives, up to but not including a trailing slash.
+   *
+   * Defaulted rather than optional, because unlike the six above this one is
+   * never absent — a deployment either talks to github.com or to a GitHub
+   * Enterprise Server, and the second is the reason this is configurable at
+   * all. It is also the seam an end-to-end run points at a stub, so a create
+   * path that needs a repository can be exercised without registering an App.
+   *
+   * **The variable is `GITHUB_APP_API_URL`, not `GITHUB_API_URL`, and that is
+   * not a matter of taste.** `GITHUB_API_URL` is one of the environment
+   * variables GitHub Actions defines in every step, set to
+   * `https://api.github.com` — and `@oppenheimer/env` lets a real environment
+   * variable win over the root `.env`, as it must. So a deployment or a test
+   * run that lives inside Actions would have had this silently overridden by
+   * the runner, which is exactly what happened the first time the end-to-end
+   * job tried to point the API at its stub: the OAuth URL took effect, the
+   * API URL did not, and the suite talked to the real github.com. The
+   * `GITHUB_APP_` prefix the other six already carry is outside that reserved
+   * namespace.
+   */
+  apiBaseUrl: z.string().url().default('https://api.github.com'),
+  /**
+   * Where the OAuth code is exchanged. A different host from the API on
+   * github.com, and on Enterprise Server a different path on the same one, so
+   * it is stated separately rather than derived. Prefixed for the same reason
+   * as the one above.
+   */
+  oauthBaseUrl: z.string().url().default('https://github.com'),
 });
 
 export const githubAppConfig = registerAs('githubApp', () =>
@@ -36,5 +65,7 @@ export const githubAppConfig = registerAs('githubApp', () =>
     clientId: 'GITHUB_APP_CLIENT_ID',
     clientSecret: 'GITHUB_APP_CLIENT_SECRET',
     slug: 'GITHUB_APP_SLUG',
+    apiBaseUrl: 'GITHUB_APP_API_URL',
+    oauthBaseUrl: 'GITHUB_APP_OAUTH_URL',
   }),
 );

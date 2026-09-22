@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '../agents/catalog';
 import { PAGINATION } from '../constants';
 import { paginationSchema } from './pagination.schema';
 import {
@@ -7,6 +8,7 @@ import {
   githubRepoIdSchema,
   gitRefSchema,
   installationIdSchema,
+  promptSchema,
 } from './primitives';
 
 /**
@@ -24,7 +26,46 @@ import {
  * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
-export { codingAgentSchema };
+export { codingAgentSchema, SESSION_EFFORTS, SESSION_PERMISSIONS };
+
+export const sessionPermissionSchema = z.enum(SESSION_PERMISSIONS);
+
+export type SessionPermissionDto = z.infer<typeof sessionPermissionSchema>;
+
+export const sessionEffortSchema = z.enum(SESSION_EFFORTS);
+
+export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
+
+/**
+ * How the agent is started: the composer's foot row, as one object.
+ *
+ * Four controls that always travel together — the route body, the log payload,
+ * `session.create` and the response all carry this same shape — so it is named
+ * once rather than spelled four times in four places
+ * (`product/versions/mvp/03-control-plane.md`).
+ *
+ * `agent` is deliberately **not** in here. The agent is what the session is;
+ * the launch is how it was started, and only the second is something a later
+ * slice changes without making a different session.
+ *
+ * `permission` defaults to `ask` and nothing else: it is the level that asks
+ * before every action, and a default that escalates is the one mistake this
+ * field must not make. The console never seeds `full` from a remembered choice
+ * either, for the same reason.
+ *
+ * What each value means to a given CLI is catalog data, beside that agent's
+ * command (`../agents/catalog`), because the answer differs per agent and a
+ * column here would state it once per agent.
+ */
+export const sessionLaunchSchema = z.object({
+  /** An id or alias the agent's own CLI takes; absent runs that agent's default. */
+  model: z.string().min(1).max(128).optional(),
+  permission: sessionPermissionSchema.default('ask'),
+  /** Absent leaves the agent's own default; an agent with no notion of it ignores it. */
+  effort: sessionEffortSchema.optional(),
+});
+
+export type SessionLaunchDto = z.infer<typeof sessionLaunchSchema>;
 
 /**
  * One repository, checked out for one session.
@@ -58,6 +99,16 @@ const createSessionFields = z.object({
   checkouts: z.array(sessionCheckoutInputSchema),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
+  /** The composer's foot row. Absent is `ask` with each agent's own defaults. */
+  launch: sessionLaunchSchema.optional(),
+  /**
+   * The first task, as typed into the composer.
+   *
+   * It is recorded as the log's `prompt.first` and carried to the host on the
+   * launch, so the agent is started and then given it — never a second message
+   * racing the first. It also names the session where a namer is configured.
+   */
+  prompt: promptSchema.optional(),
 });
 
 /**

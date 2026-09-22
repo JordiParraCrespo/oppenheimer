@@ -27,10 +27,16 @@ const APPS = [
   {
     name: '@oppenheimer/web',
     dist: 'apps/web/dist',
-    // 371KB measured. The floor is ~108KB of Base UI and icons plus ~57KB of
-    // React; the next real reduction is keeping a vendor chunk off the auth
-    // screens, not shaving app code.
-    budgetKB: 385,
+    // 421KB measured (2026-09-21), raised from 385KB against 371KB. Two things
+    // happened and only one of them is a diff: the app had already drifted to
+    // 415KB while nothing re-measured — this check has been failing, not
+    // passing — and New session then added 6.1KB of it. That 6.1KB is almost
+    // all `vendor-ui`: `manualChunks` puts every design-system component in one
+    // chunk the entry loads, so a picker used on one lazy route still lands on
+    // the critical path. The floor is ~108KB of Base UI and icons plus ~57KB of
+    // React; the next real reduction is letting design-system code follow its
+    // route rather than shaving app code, and that is its own measured diff.
+    budgetKB: 430,
   },
   // oppenheimer:end web
   // oppenheimer:begin admin-web

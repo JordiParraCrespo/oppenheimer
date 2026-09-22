@@ -1,4 +1,10 @@
-import type { CreateSessionDto, SessionState } from '@oppenheimer/shared';
+import type {
+  CreateSessionDto,
+  SessionEffortDto,
+  SessionPermissionDto,
+  SessionState,
+} from '@oppenheimer/shared';
+import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
 
 /**
  * The fold: `(fold, event) → fold`.
@@ -95,6 +101,23 @@ export const SESSION_EVENT_KINDS = {
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION_EVENT_KINDS];
 
+/**
+ * How the agent was started, as the fold keeps it.
+ *
+ * A projection like every other column here, and a column for the same reason
+ * they are: a restart has to relaunch the session the way it was launched, and
+ * the console shows the engine button on a session that already exists. Neither
+ * can walk a log (`product/versions/mvp/03-control-plane.md`).
+ *
+ * `permission` has no null: a session was launched at some level, and `ask` is
+ * what an absent choice meant.
+ */
+export interface SessionLaunchFold {
+  model: string | null;
+  permission: SessionPermissionDto;
+  effort: SessionEffortDto | null;
+}
+
 /** One entry of the log, as the fold reads it. */
 export interface SessionLogEntry {
   seq: number;
@@ -136,6 +159,8 @@ export interface SessionFold {
   /** The agent's last report, and the last one somebody read. Equal means "seen". */
   reportHash: string | null;
   ackedReportHash: string | null;
+  /** The model, permission level and effort this session was launched with. */
+  launch: SessionLaunchFold;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -151,6 +176,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   observedSince: null,
   reportHash: null,
   ackedReportHash: null,
+  launch: { model: null, permission: 'ask', effort: null },
 };
 
 /** Reads a string field off a payload of unknown shape, without casting at call sites. */
@@ -158,6 +184,32 @@ function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const value = (payload as Record<string, unknown>)[field];
   return typeof value === 'string' && value.trim() ? value : null;
+}
+
+/**
+ * The launch a `session.requested` payload states, narrowed once here so nothing
+ * downstream casts.
+ *
+ * A value outside the union is dropped rather than kept: these arrive from a
+ * request body that a Zod pipe has already checked, so an unknown level here is a
+ * log written by something else — and `ask` is the safe reading of "unknown",
+ * because the alternative is a session that asks for nothing.
+ */
+function launchOf(payload: unknown): SessionLaunchFold | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const launch = (payload as { launch?: unknown }).launch;
+  if (typeof launch !== 'object' || launch === null) return null;
+  const permission = stringField(launch, 'permission');
+  const effort = stringField(launch, 'effort');
+  return {
+    model: stringField(launch, 'model'),
+    permission: SESSION_PERMISSIONS.includes(permission as SessionPermissionDto)
+      ? (permission as SessionPermissionDto)
+      : 'ask',
+    effort: SESSION_EFFORTS.includes(effort as SessionEffortDto)
+      ? (effort as SessionEffortDto)
+      : null,
+  };
 }
 
 function observedStateOf(payload: unknown): AgentObservedState | null {
@@ -177,6 +229,10 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
 
   switch (event.kind) {
     case SESSION_EVENT_KINDS.REQUESTED:
+      // The request is where the launch is stated, so it is where the projection
+      // takes it. A payload without one folds to `ask` with no model, which is
+      // what every session created before this field existed was launched with.
+      next.launch = launchOf(event.payload) ?? next.launch;
       return transition(next, 'starting');
     case SESSION_EVENT_KINDS.STARTED: {
       // A start after a failure is a late event, not a recovery: the runner that

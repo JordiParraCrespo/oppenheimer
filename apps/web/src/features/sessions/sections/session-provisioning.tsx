@@ -21,7 +21,7 @@ import { useElapsed } from '../hooks/use-elapsed';
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
-  const failed = session.state === 'failed';
+  const failed = session.lifecycle === 'failed';
   const elapsed = useElapsed(session.createdAt, !failed);
 
   return (
@@ -30,7 +30,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           room the shell gives it (`.op-provision__inner`). */}
       <div className="m-auto w-full max-w-[420px] p-8">
         <p className="figures text-[11px] tracking-[0.06em] text-fg-muted uppercase">
-          {session.repository}
+          {session.scopeLabel ?? session.slug}
         </p>
         <h1 className="mt-2 font-display text-[26px] leading-[1.15] font-semibold tracking-[-0.018em] text-fg">
           {session.name}
@@ -45,12 +45,12 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
             {
               id: 'start',
               label: t('sessions.provisioning.step'),
-              meta: session.branch,
+              meta: session.cwdCheckout?.branch ?? session.slug,
               state: failed ? 'failed' : 'running',
             },
           ]}
           elapsed={elapsed}
-          status={t(`sessions.state.${session.state}`)}
+          status={t(`sessions.group.${session.state}`)}
         />
       </div>
     </div>

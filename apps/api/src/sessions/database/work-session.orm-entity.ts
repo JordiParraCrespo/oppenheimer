@@ -1,4 +1,4 @@
-import type { SessionState } from '@oppenheimer/shared';
+import type { SessionEffortDto, SessionPermissionDto, SessionState } from '@oppenheimer/shared';
 import {
   Column,
   CreateDateColumn,
@@ -127,6 +127,28 @@ export class WorkSessionOrmEntity {
    */
   @Column({ type: 'timestamp', nullable: true })
   observedSince!: Date | null;
+
+  /**
+   * How the agent was launched: the model, the permission level and the effort
+   * the composer's foot row was set to.
+   *
+   * Three columns rather than one JSON value, because each is a closed union and
+   * a union is what a `varchar` column here is for (`.agents/rules/typeorm.md`).
+   * They are folded from `session.requested` like every column below, and they
+   * are columns at all because a restart must reproduce the launch and the
+   * console shows it on a session that already exists
+   * (`product/versions/mvp/03-control-plane.md`).
+   */
+  @Column({ type: 'varchar', nullable: true })
+  launchModel!: string | null;
+
+  /** Never null: a session was launched at some level, and `ask` is the absent one. */
+  @Column({ type: 'varchar', default: 'ask' })
+  launchPermission!: SessionPermissionDto;
+
+  /** Null leaves the agent its own default. */
+  @Column({ type: 'varchar', nullable: true })
+  launchEffort!: SessionEffortDto | null;
 
   /** The agent's last report and the last one somebody read. Equal means "seen". */
   @Column({ type: 'varchar', nullable: true })

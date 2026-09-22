@@ -1,11 +1,13 @@
 import {
   heyApiClient,
+  heyApiSdk,
   type InstallationResponseDto,
+  type RepositoryBranchResponseDto,
   type RepositoryResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { InstallationEntity, RepositoryEntity } from './installation.entity';
+import { BranchEntity, InstallationEntity, RepositoryEntity } from './installation.entity';
 import { InstallationsErrors } from './installations.errors';
 
 /**
@@ -97,4 +99,24 @@ export class InstallationsRepository {
     if (error || !data) throw new AppError(InstallationsErrors.FETCH_REPOSITORIES_FAILED);
     return data.map(toRepository);
   }
+
+  /**
+   * One repository's branches, live from GitHub.
+   *
+   * Read when a repository is picked rather than for every repository on the
+   * account: the API answers this uncached and one call per row of a picker
+   * nobody has opened is a GitHub rate limit spent on nothing.
+   */
+  @MapApiError(InstallationsErrors.FETCH_BRANCHES_FAILED)
+  async branches(installationId: string, githubRepoId: number): Promise<BranchEntity[]> {
+    const { data, error } = await heyApiSdk.listRepositoryBranches({
+      path: { id: installationId, githubRepoId },
+    });
+    if (error || !data) throw new AppError(InstallationsErrors.FETCH_BRANCHES_FAILED);
+    return data.map(toBranch);
+  }
+}
+
+function toBranch(data: RepositoryBranchResponseDto): BranchEntity {
+  return new BranchEntity(data.name, data.commitSha, data.protected, data.isDefault);
 }

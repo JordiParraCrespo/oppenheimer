@@ -21,7 +21,9 @@ import {
  * takes the warning tone, on the button and on its row, label and all.
  *
  * The levels are the product's; pass them in so the copy is translated where
- * the call site is.
+ * the call site is. Picking one closes the menu: unlike the appearance and
+ * language menus a radio group is usually built for, this is a decision made
+ * once on the way to sending a task, not a setting somebody flips to compare.
  */
 type PermissionLevel = 'ask' | 'auto' | 'full';
 
@@ -80,6 +82,11 @@ function PermissionMenu({
               icon={ICONS[option.value]}
               tone={option.value === 'full' ? 'warning' : 'default'}
               description={option.description}
+              // Picking a level is a decision, not a comparison, so the menu
+              // closes behind it — Base UI keeps a radio item's menu open by
+              // default, which left the composer's send button behind an inert
+              // backdrop until somebody clicked away.
+              closeOnClick
             >
               {option.label}
             </DropdownMenuRadioItem>

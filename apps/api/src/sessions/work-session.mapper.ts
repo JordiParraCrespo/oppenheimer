@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { CreateSessionDto } from '@oppenheimer/shared';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
+import type { NewSessionEvent } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
-import type { SessionAgent, SessionFold } from './domain/session-state.policy';
+import {
+  SESSION_EVENT_KINDS,
+  type SessionAgent,
+  type SessionFold,
+  type SessionLaunchFold,
+} from './domain/session-state.policy';
 import { WorkSessionEntity } from './domain/work-session.entity';
 import { WorkSessionEventEntity } from './domain/work-session-event.entity';
 import { SessionCheckoutResponseDto, SessionResponseDto } from './dtos/session.response.dto';
@@ -53,6 +60,9 @@ export class WorkSessionMapper
     record.observedSince = fold.observedSince;
     record.reportHash = fold.reportHash;
     record.ackedReportHash = fold.ackedReportHash;
+    record.launchModel = fold.launch.model;
+    record.launchPermission = fold.launch.permission;
+    record.launchEffort = fold.launch.effort;
     return record;
   }
 
@@ -99,7 +109,92 @@ export class WorkSessionMapper
       observedSince: record.observedSince,
       reportHash: record.reportHash,
       ackedReportHash: record.ackedReportHash,
+      launch: {
+        model: record.launchModel,
+        // A row written before these columns existed reads as the level it was
+        // launched at: the one that asks before every action.
+        permission: record.launchPermission ?? 'ask',
+        effort: record.launchEffort,
+      },
     };
+  }
+
+  /**
+   * The entries a create request owes its log — one action, one transaction.
+   *
+   * It is a mapper method rather than an object literal in the handler for the
+   * reason every shape in this file is: these three entries *are* the session's
+   * columns, since the fold projects them, and assembling them beside the
+   * persistence shape they produce is what keeps the two saying the same thing.
+   *
+   * There are three, at most. `session.requested` states the launch, because the
+   * launch columns are a projection of it. `session.cwd_set` says where the agent
+   * runs, as an entry rather than a column write because a later "work in this
+   * checkout instead" is the same entry. `prompt.first` carries the composer's
+   * task when there was one — and never appears at all when there was not, rather
+   * than appearing empty.
+   */
+  toRequestEvents(props: {
+    commandId: string;
+    userId: string;
+    input: CreateSessionDto;
+    checkouts: number;
+    cwdCheckoutId: string | null;
+  }): NewSessionEvent[] {
+    const { input } = props;
+    const key = (kind: string) => WorkSessionEntity.apiIdempotencyKey(props.commandId, kind);
+    const events: NewSessionEvent[] = [
+      {
+        idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.REQUESTED,
+        payload: {
+          agent: input.agent,
+          hostId: input.hostId,
+          checkouts: props.checkouts,
+          requestedByUserId: props.userId,
+          launch: this.toLaunch(input.launch),
+        },
+      },
+      {
+        idempotencyKey: key(SESSION_EVENT_KINDS.CWD_SET),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.CWD_SET,
+        payload: { checkoutId: props.cwdCheckoutId },
+      },
+    ];
+    if (input.prompt) {
+      events.push({
+        idempotencyKey: WorkSessionMapper.promptKeyFor(props.commandId),
+        source: 'api',
+        kind: SESSION_EVENT_KINDS.PROMPT_FIRST,
+        payload: { text: input.prompt },
+      });
+    }
+    return events;
+  }
+
+  /**
+   * The launch a request states, with the absences filled in.
+   *
+   * An absent level is `ask` — the one that asks before every action — and never
+   * anything else: a default that escalated is the single mistake this field must
+   * not make (`product/versions/mvp/03-control-plane.md`).
+   */
+  toLaunch(launch: CreateSessionDto['launch']): SessionLaunchFold {
+    return {
+      model: launch?.model ?? null,
+      permission: launch?.permission ?? 'ask',
+      effort: launch?.effort ?? null,
+    };
+  }
+
+  /**
+   * What keys the `prompt.first` entry of a create request — and therefore the
+   * name derived from it, so the title is keyed on the prompt that caused it.
+   */
+  static promptKeyFor(commandId: string): string {
+    return WorkSessionEntity.apiIdempotencyKey(commandId, SESSION_EVENT_KINDS.PROMPT_FIRST);
   }
 
   checkoutToPersistence(entity: SessionCheckoutEntity): SessionCheckoutOrmEntity {
@@ -195,6 +290,11 @@ export class WorkSessionMapper
     dto.name = entity.name;
     dto.slug = entity.slug;
     dto.agent = entity.agent;
+    dto.launch = {
+      model: entity.launch.model,
+      permission: entity.launch.permission,
+      effort: entity.launch.effort,
+    };
     dto.state = entity.group(now);
     dto.lifecycle = entity.state;
     dto.cwdCheckoutId = entity.cwdCheckoutId;

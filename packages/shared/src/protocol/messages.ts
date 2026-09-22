@@ -7,6 +7,8 @@ import {
   githubRepoIdSchema,
   gitRefSchema,
   hostFactsSchema,
+  launchOptionsSchema,
+  promptTextSchema,
   protocolAgentSchema,
   protocolRangeSchema,
   sessionIdSchema,
@@ -191,11 +193,33 @@ export const sessionCreateSchema = z.object({
   sessionSlug: gitRefSchema,
   agent: protocolAgentSchema,
   /**
-   * A launch option of the agent, not a column and not a table anywhere: it is
-   * recorded in the log, so promoting it later is a replay rather than a
-   * backfill of data nobody captured.
+   * How the agent is started: the model, the permission level and the effort
+   * somebody chose in the composer's foot row. Structured rather than argv —
+   * the host owns the mapping to its own flags, from the same catalog
+   * (`launchOptionsSchema`).
+   *
+   * It replaces the bare `model` this message carried while a model was the
+   * only launch option there was; the three travel together now, and the fold
+   * keeps them on the session so a restart reproduces the launch
+   * (`product/versions/mvp/01-protocol.md`).
    */
-  model: z.string().min(1).max(128).optional(),
+  launch: launchOptionsSchema,
+  /**
+   * The person's first task, if the composer supplied one.
+   *
+   * The runner appends it to the agent's **argv** — both CLIs document the
+   * first task as a trailing positional, and the catalog's `launch.prompt`
+   * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
+   * rather than arriving as a `session.input` after `session.started`: input
+   * needs the agent up, and "the agent is up" is a moment only the host can
+   * name. In argv there is nothing to synchronise.
+   *
+   * Set, the control plane has already written `prompt.first` to the log and
+   * the runner writes nothing; unset, the runner reports the first message off
+   * the transcript instead. The field is what decides which, so the two
+   * writers never collide and never need a shared key (02 §7).
+   */
+  prompt: promptTextSchema.optional(),
   branch: gitRefSchema,
   checkouts: z.array(
     z.object({
