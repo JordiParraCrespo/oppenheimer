@@ -53,7 +53,8 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
  * its unions from. A control plane that sent argv would be dictating a command
  * to run on somebody's laptop, and the runner would have nothing left to check
  * — so the mapping stays on the machine that executes it
- * (`product/versions/mvp/12-session-launch.md`).
+ * (`product/versions/mvp/01-protocol.md`, and
+ * `02-runner.md` §5 for what the runner then does with it).
  *
  * `permission` is required here although the DTO defaults it: by the time a
  * launch reaches a host the choice has been made, and an absent level on the

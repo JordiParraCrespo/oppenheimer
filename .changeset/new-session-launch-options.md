@@ -12,14 +12,17 @@ New session sets how a session is launched, and `POST /sessions` takes it.
 
 The route grows a `launch` object — model, permission level, effort — and the
 `prompt` typed into the composer. The launch is folded onto `work_session` so a
-restart and the engine button can read it per row; the prompt is a log entry and
-rides `session.create` to the host, so nothing about the composer waits on the
-relay. It also names the session, through a new `openai-compatible` namer
-provider that covers Groq, Together, vLLM and a local Ollama.
+restart can relaunch a session the way it was launched without walking its log.
+The prompt is a log entry and rides `session.create` to the host, where it
+becomes the agent's trailing argument rather than something typed at a running
+terminal — so nothing about the composer waits on the relay, and exactly one of
+the two ends ever writes `prompt.first`. It also names the session, through a
+new `openai-compatible` namer provider that covers Groq, Together, vLLM and a
+local Ollama.
 
 The agent catalog in `@oppenheimer/shared` grows each agent's models and the
-argv its permission levels and effort stops map to, read off claude 2.1.278's
-and codex-cli 0.155.1's own `--help`.
+argv its permission levels, effort stops and first task map to, read off
+claude 2.1.278's and codex-cli 0.155.1's own `--help`.
 
 **Breaking, `@oppenheimer/frontend-consumer`:** `SessionEntity` was modelling one
 repository, one branch and a `running | idle | stopped` state the control plane

@@ -138,6 +138,19 @@ describe('launch mapping', () => {
     }
   });
 
+  it('substitutes the first task rather than concatenating it, and puts it last', () => {
+    for (const id of CODING_AGENT_IDS) {
+      const { prompt } = CODING_AGENTS[id].launch;
+      if (!prompt) continue;
+      expect(prompt, `${id} takes a first task but names no placeholder`).toContain('<prompt>');
+      // The trailing positional is the whole reason this is argv rather than
+      // something typed at a running TUI: a placeholder anywhere but the end
+      // would put the person's sentence where a flag's value belongs, and both
+      // CLIs document it as the last argument.
+      expect(prompt.at(-1), `${id} does not end on the task`).toBe('<prompt>');
+    }
+  });
+
   it('offers models the agent can be launched with, or none at all', () => {
     for (const id of CODING_AGENT_IDS) {
       const { models, launch } = CODING_AGENTS[id];

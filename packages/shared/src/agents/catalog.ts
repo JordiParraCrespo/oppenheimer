@@ -87,6 +87,22 @@ export interface CodingAgentLaunch {
   readonly permission: Readonly<Record<SessionPermission, readonly string[]>>;
   /** Absent: this agent has no notion of effort, and the console hides the slider. */
   readonly effort?: Readonly<Record<SessionEffort, readonly string[]>>;
+  /**
+   * How the person's first task reaches the agent, with `<prompt>` substituted
+   * whole — always the **last** argv appended, because both CLIs take it as a
+   * trailing positional.
+   *
+   * It is a launch option and not a message typed at a running process, which
+   * is the whole reason it is here: writing into window 0 once the TUI is up
+   * is neither how these CLIs take a first task nor a thing with a moment you
+   * can name, and `product/versions/mvp/02-runner.md` §5 is what that would
+   * have raced with. Appended to argv, the task is present before the agent
+   * starts and there is nothing to synchronise.
+   *
+   * Absent: this agent takes no task on the command line, and the person types
+   * the first one themselves.
+   */
+  readonly prompt?: readonly string[];
 }
 
 /** One agent's launch and inspection facts. */
@@ -129,7 +145,8 @@ export interface CodingAgentDefinition {
    *
    * Empty is a real answer and not a gap: the console picks such an agent
    * outright and the button names the agent itself. Codex is empty here until
-   * the model-discovery probe lands (note 12's open question 3) — inventing
+   * the model-discovery probe lands (`product/versions/mvp/05-screens.md`,
+   * open question 6) — inventing
    * ids would be a second model list that drifts from the CLI's own.
    */
   readonly models: readonly CodingAgentModel[];
@@ -180,6 +197,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         high: Object.freeze(['--effort', 'xhigh']),
         max: Object.freeze(['--effort', 'max']),
       }),
+      // `claude [options] [command] [prompt]`, whose own help calls the
+      // positional "Your prompt" and the default mode "an interactive
+      // session" — so this starts the TUI with the task already in it.
+      prompt: Object.freeze(['<prompt>']),
     }),
   }),
   codex: Object.freeze({
@@ -221,6 +242,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         high: Object.freeze(['-c', 'model_reasoning_effort=high']),
         max: Object.freeze(['-c', 'model_reasoning_effort=high']),
       }),
+      // `codex [OPTIONS] [PROMPT]`, documented as "Optional user prompt to
+      // start the session". Not the `exec` subcommand, which is the
+      // non-interactive one and would give the person no terminal to take over.
+      prompt: Object.freeze(['<prompt>']),
     }),
   }),
 });

@@ -201,15 +201,23 @@ export const sessionCreateSchema = z.object({
    * It replaces the bare `model` this message carried while a model was the
    * only launch option there was; the three travel together now, and the fold
    * keeps them on the session so a restart reproduces the launch
-   * (`product/versions/mvp/12-session-launch.md`).
+   * (`product/versions/mvp/01-protocol.md`).
    */
   launch: launchOptionsSchema,
   /**
-   * The first task, to be given to the agent once it is up.
+   * The person's first task, if the composer supplied one.
    *
-   * It rides the launch rather than arriving as a `session.input` after
-   * `session.started`, because the second is a race the launch already knows
-   * how to avoid: only the host knows when its agent is ready for a prompt.
+   * The runner appends it to the agent's **argv** — both CLIs document the
+   * first task as a trailing positional, and the catalog's `launch.prompt`
+   * says how (`product/versions/mvp/02-runner.md` §5). So it rides the launch
+   * rather than arriving as a `session.input` after `session.started`: input
+   * needs the agent up, and "the agent is up" is a moment only the host can
+   * name. In argv there is nothing to synchronise.
+   *
+   * Set, the control plane has already written `prompt.first` to the log and
+   * the runner writes nothing; unset, the runner reports the first message off
+   * the transcript instead. The field is what decides which, so the two
+   * writers never collide and never need a shared key (02 §7).
    */
   prompt: promptTextSchema.optional(),
   branch: gitRefSchema,
