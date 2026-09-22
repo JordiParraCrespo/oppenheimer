@@ -38,6 +38,18 @@ test.describe('New session', () => {
 
     await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible();
 
+    // ── The prompt box has the size the export gives it ──────────────────────
+    // It lost that size once: `field-sizing-content` overrides the `rows`
+    // attribute, so an empty textarea collapsed to a single line while every
+    // class still looked right. Nothing in jsdom can catch it — it needs a
+    // browser that has applied the stylesheet — and the number is what
+    // `product/versions/mvp/design/_ds/…/terminal.css` states for
+    // `.op-composer__input`. Asserted here rather than in a spec of its own
+    // because the composer only renders once a host exists, and pairing a
+    // second one would trip the per-IP throttle this file already works around.
+    const composer = page.getByRole('textbox', { name: /Describe a task/ });
+    expect((await composer.boundingBox())?.height, 'the empty composer is 112px tall').toBe(112);
+
     // ── The host chip ────────────────────────────────────────────────────────
     await page.getByRole('button', { name: 'Host' }).click();
     await page.getByRole('option', { name: /E2E box/ }).click();

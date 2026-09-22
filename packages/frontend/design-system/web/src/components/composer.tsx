@@ -95,7 +95,13 @@ function Composer({
         placeholder={placeholder}
         disabled={disabled}
         rows={minRows}
-        className="field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] pt-4 pb-2 text-lg leading-normal text-fg outline-none placeholder:text-field-placeholder"
+        // `min-h`, not `rows`: `field-sizing-content` sizes the box to what is
+        // typed and overrides the `rows` attribute outright, so an empty
+        // composer collapsed to a single line. The export's floor is 112px
+        // (`.op-composer__input`), which is the prompt box having "real
+        // presence" before anyone has typed into it — the whole point of the
+        // control. `rows` stays for the no-`field-sizing` fallback.
+        className="field-sizing-content max-h-[40svh] min-h-28 w-full resize-none bg-transparent px-[18px] py-4 text-compose text-fg outline-none placeholder:text-field-placeholder"
       />
       {attachments && attachments.length > 0 ? (
         <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
@@ -119,8 +125,14 @@ function Composer({
       ) : null}
       <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
         {onAttach ? (
-          <IconButton aria-label="Attach a file" size="sm" shape="square" onClick={onAttach}>
-            <PaperclipIcon />
+          <IconButton
+            aria-label="Attach a file"
+            size="sm"
+            shape="square"
+            onClick={onAttach}
+            className="size-[30px]"
+          >
+            <PaperclipIcon className="size-[15px]" />
           </IconButton>
         ) : null}
         {tools}
@@ -133,9 +145,12 @@ function Composer({
             size="sm"
             shape="square"
             onClick={onRecord}
-            className={cn(recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger')}
+            className={cn(
+              'size-[30px]',
+              recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
+            )}
           >
-            <MicIcon />
+            <MicIcon className="size-[15px]" />
           </IconButton>
         ) : null}
         <IconButton
@@ -146,7 +161,11 @@ function Composer({
           disabled={!busy && !canSend}
           className="size-8"
         >
-          {busy ? <SquareIcon className="size-3.5 fill-current" /> : <ArrowUpIcon strokeWidth={2.5} />}
+          {busy ? (
+            <SquareIcon className="size-3.5 fill-current" />
+          ) : (
+            <ArrowUpIcon className="size-[15px]" strokeWidth={2.2} />
+          )}
         </IconButton>
       </div>
     </div>

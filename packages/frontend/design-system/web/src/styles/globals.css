@@ -506,6 +506,17 @@
   --text-base: var(--text-body);
   --text-base--line-height: var(--leading-body);
   --text-base--letter-spacing: var(--tracking-body);
+  --text-compose: 16px;
+  /* The one step between body (15px) and body-lg (17px), and the export
+     declares it nowhere but `.op-composer__input` — the prompt box, which is
+     the one field in the product where a person writes prose rather than
+     fills in a value, and which the export's own comment calls "the one place
+     on the page with real presence". It carries a rounder 1.5 leading than
+     the ladder's 1.47 for the same reason. Used by Composer and nothing
+     else; if a second reader appears, that is the moment to ask whether the
+     ladder is missing a step rather than to widen this one. */
+  --text-compose--line-height: 1.5;
+  --text-compose--letter-spacing: var(--tracking-body);
   --text-body: var(--text-body);
   --text-body--line-height: var(--leading-body);
   --text-body--letter-spacing: var(--tracking-body);
