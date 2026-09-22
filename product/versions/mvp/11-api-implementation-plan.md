@@ -319,7 +319,9 @@ is the order of work.
 - [x] Hello reconciliation against the rows.
 - [x] The gateway specs run both sockets on a real HTTP server and are
       the coverage the routes get, `route-policy-coverage.spec.ts` not
-      seeing an upgrade.
+      seeing an upgrade. `relay.e2e.spec.ts` (`RELAY_E2E=1`) runs the real
+      runner binary against them: a real boot assertion, a real clone and
+      worktree, window 0 with the launch argv, bytes both ways, stop.
 - [ ] Multi-window in the console (the runner handles
       `session.window.open|close`; no route yet).
 - [ ] `addCheckout` / `removeCheckout` on the wire (no frame in 01 yet;
