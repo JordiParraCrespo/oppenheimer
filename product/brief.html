@@ -100,6 +100,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
+  <li><a href="#digitalocean">DigitalOcean lessons</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -751,6 +752,15 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 <div class="verdict"><p><strong>The architecture holds.</strong> What we take is not structure but craft: manifests as versioned data, hooks over scraping, and the terminal title as a first-class signal.</p></div>
 
+<h2 id="digitalocean">Lessons from DigitalOcean Managed Agents</h2>
+<p>DigitalOcean's Managed Agents (public preview, 2026-09-22) is note 15's runtime sold as a service: a Firecracker microVM per session running Claude Code, Codex or a custom image, paused when idle. Read from the docs and from the source of its open clients (note 16).</p>
+<div class="rule">
+  <span class="k">not a runtime</span><span>Every model call rides an API key the platform holds: <code>ANTHROPIC_API_KEY</code> for Claude Code, <code>OPENAI_API_KEY</code> written into the guest for Codex, and the native-Codex proxy stubs the ChatGPT login out. That is the opposite of "the person logs in to their own subscription". Only a custom image running our runner could fit, and that is unverified.</span>
+  <span class="k">take</span><span>Agent state from hooks and approvals as records you can answer from a phone; a session event log you can resume by sequence, backfilled before it goes live; a reconnect policy that knows which failures are final; idle measured between turns, never mid-turn; wake on use, waiting until the agent listens before typing; for Codex, a tee on the app-server, not a facade.</span>
+  <span class="k">leave</span><span>Vendor keys in manifests, a chat view rebuilt from translated events, one stream per device, memory checkpoints for now, prepayment.</span>
+</div>
+<div class="verdict"><p><strong>It confirms the shape of note 15</strong> and teaches the layer above the VM we have not designed yet: the event feed, approvals and reconnect policy the console needs whether a session runs on a laptop or in a microVM.</p></div>
+
 <h2 id="phases">Phases</h2>
 <div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, Codex and the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud machines with pause and resume (v0.2), Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
@@ -777,6 +787,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
+  <li><a href="https://www.digitalocean.com/blog/managed-agents-public-preview">DigitalOcean Managed Agents</a>, <a href="https://docs.digitalocean.com/products/managed-agents/agent-harness-runtime/">Harness Runtime docs</a>, <a href="https://github.com/digitalocean/doctl">doctl</a>, <a href="https://pypi.org/project/pydo/">pydo</a></li>
   <li><a href="https://code.claude.com/docs/en/self-hosted-environments">Claude Code self-hosted environments</a>, <a href="https://code.claude.com/docs/en/self-hosted-environments-configuration">the spawn-runner hook</a>; <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-hibernate-overview.html">EC2 hibernation</a>, <a href="https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm">OCI Always Free</a>, <a href="https://www.alibabacloud.com/help/en/ecs/user-guide/economical-mode">Alibaba economical mode</a>; <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md">Firecracker snapshots</a>, <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/vsock.md">vsock</a>, <a href="https://www.anthropic.com/engineering/how-we-contain-claude">How we contain Claude</a>, <a href="https://aws.amazon.com/about-aws/whats-new/2026/02/amazon-ec2-nested-virtualization-on-virtual">EC2 nested virtualization</a>, <a href="https://blogs.oracle.com/cloud-infrastructure/firecracker-oci-vm-vs-bm">Firecracker on OCI</a></li>
 </ul>
 </div>
