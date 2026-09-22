@@ -158,6 +158,9 @@ Other hosts, same interface:
   a provider API (Hetzner Cloud, Fly Machines, EC2) to create a VM from
   our image, and the in-guest agent registers with the JIT identity
   exactly like a Firecracker guest. No daemon on any host.
+  *Superseded by note 14*: the cloud VM runs the ordinary runner,
+  paired by cloud-init with an ordinary pairing token, and the adapter
+  is a machine-lifecycle port with no session knowledge.
 - **Docker-only host** (no KVM, e.g. a cheap VPS): a container instead of
   a VM, with the same in-guest agent. Weaker isolation, clearly labelled
   in the UI as "container, not VM".

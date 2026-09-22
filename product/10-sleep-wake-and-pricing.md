@@ -162,6 +162,11 @@ the control plane over TLS instead, with the same JIT identity; and the
 account volume is a provider volume attached to one instance at a time,
 exactly the F13 rule.
 
+*Superseded in part by note 14*: there is no separate guest agent on a
+cloud machine. The ordinary runner is installed by cloud-init with an
+ordinary pairing token and the machine becomes a host; the provider
+order is now AWS, Oracle, Alibaba. The account-volume rule stands.
+
 Cost reality for a hosted plan, per always-available session slot:
 
 | Where | Running, per hour | Asleep, per month | Wake from suspend |

@@ -20,6 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
+| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | A per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba behind one `MachineProvider` port; a cloud machine is a host that pairs itself; each provider's SDK, sleep, price, free money and quotas checked; the teardown ladder; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -154,3 +155,11 @@ earlier note:
   `command`, not a column per agent. The surface itself is in the notes
   that own it — `versions/mvp/03-control-plane.md` for the route and the
   fold, `01-protocol.md` for the wire.
+- Note 03 §4 and note 10 §6 described the cloud adapter as "the runner
+  running in the control plane" with an in-guest agent registering a JIT
+  identity. Note 14 supersedes that with the MVP runner in hand: a cloud
+  machine is an ordinary host whose cloud-init runs the ordinary install
+  command with a one-hour pairing token, and the provider driver is a
+  machine-lifecycle port (create, start, stop, destroy, describe, list)
+  that knows nothing about sessions. Note 10 §6's provider order "AWS,
+  Fly, GCP, Azure" becomes AWS, Oracle, Alibaba.

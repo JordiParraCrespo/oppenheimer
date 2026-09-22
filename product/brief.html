@@ -96,6 +96,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
+  <li><a href="#cloud">Ephemeral cloud machines</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
@@ -673,6 +674,45 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 
 
+<h2 id="cloud">Ephemeral cloud machines</h2>
+<p>A machine that exists only for one task, the way a Claude Code on the web session gets a fresh VM and loses it when idle, on AWS, Oracle Cloud and Alibaba Cloud behind one interface. Smaller than the cloud adapter sketched earlier, because the MVP runner already does the work: <b>a cloud machine is a host that pairs itself</b>. The control plane asks the provider for a VM whose cloud-init runs the ordinary install command with a one-hour, single-use pairing token; the runner registers, the VM is a host the person owns, and the session is dispatched to it like to a Mac Studio. The provider driver knows five verbs and a status and nothing about sessions (note 14).</p>
+<div class="grid2">
+  <div class="panel">
+    <span class="tag">The port, one package</span>
+    <ul>
+      <li><code>@oppenheimer/backend-machines</code>: <code>create</code>, <code>start</code>, <code>stop(stop | suspend)</code>, <code>destroy</code>, <code>describe</code>, <code>list</code> by tag, <code>quote</code>; a capability record per driver says whether suspend exists, whether a stop may fail to restart, where Arm is sold</li>
+      <li>Create is idempotent on the machine row's id, never retried on the same key; every instance carries <code>oppenheimer:managed</code> and <code>oppenheimer:machine</code> tags that IAM and the sweeper key on</li>
+      <li>Sizes small / medium / large resolve to a shape per provider and region at create time; Arm first, x86 as an override</li>
+      <li>Copied from Anthropic's own self-hosted runner orchestrator: the spawn-hook contract, an expected-boot lease, exit codes for retryable versus blocked, retire-at for spot reclaim</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <span class="tag">Never leak a machine</span>
+    <ul>
+      <li>In the guest first: the runner closes an idle ephemeral session itself, pushes, and powers off; on AWS that is the destruction with no API call</li>
+      <li>On the event: <code>session.closed</code> on a cloud host destroys the machine; on OCI and Alibaba an OS shutdown does not stop billing, so the API call is mandatory there</li>
+      <li>The sweeper, every minute: provider list by tag against the machine table; unknown, over-cap, or never-paired machines are destroyed</li>
+      <li>The provider's own safety: AWS budget actions, an OCI compartment quota, spot as one-time and terminate</li>
+    </ul>
+  </div>
+</div>
+<table>
+  <thead><tr><th></th><th>AWS EC2</th><th>Oracle Cloud</th><th>Alibaba Cloud</th></tr></thead>
+  <tbody>
+    <tr><td>4 vCPU / 16 GB, per hour</td><td>t4g.xlarge $0.154 Frankfurt</td><td>A1.Flex $0.064</td><td>g7a.xlarge $0.196 Frankfurt</td></tr>
+    <tr><td>880 running hours a month</td><td>$135, $63 spot</td><td>$56</td><td>$172, or $121 on the 4 / 8 c7a</td></tr>
+    <tr><td>Suspend with RAM kept</td><td>yes, hibernate on Amazon Linux 2023</td><td>no</td><td>no, in practice</td></tr>
+    <tr><td>Stopped</td><td>EBS only</td><td>boot volume only, about $2 a month</td><td>disks only, and it may not restart</td></tr>
+    <tr><td>Free money</td><td>$100 to $200 credits, six months, 5 vCPU quota</td><td>$300 for 30 days, then 2 OCPU / 12 GB forever</td><td>$300+ credits for 60 days</td></tr>
+    <tr><td>Watch out</td><td>Ubuntu 24.04 cannot hibernate; new-account quota is one xlarge</td><td>"Out of host capacity" on A1; stopped machines count against limits</td><td>Arm only in Singapore; the most paperwork</td></tr>
+  </tbody>
+</table>
+<div class="rule">
+  <span class="k">login</span><span>The one place this is worse than Claude Code on the web: an ephemeral machine has no Claude login, and the platform stores no vendor credential. Version one is the login button once per machine, ten seconds on a phone. Version two is the account volume: a small block volume in the person's own cloud account holding the login directory, attached to one machine at a time, with the accounts slice.</span>
+  <span class="k">order</span><span>The port and the AWS driver first; Oracle second, and do not start the $300 trial until that driver is a week away, since the clock is 30 days; Keep-on-cloud with hibernate; prebaked images; Alibaba when someone needs it; the account volume with accounts. The dedicated host stays the daily answer, the cloud is the overflow and the no-host-yet path.</span>
+</div>
+
+
 <h2 id="layout">Workspace layout</h2>
 <p>No free-form filesystem. Every repo lives in one fixed place with one main checkout and one worktree per session, exactly Orca's model, so the UX is the same.</p>
 <div class="term">
@@ -757,5 +797,6 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
+  <li><a href="https://code.claude.com/docs/en/self-hosted-environments">Claude Code self-hosted environments</a>, <a href="https://code.claude.com/docs/en/self-hosted-environments-configuration">the spawn-runner hook</a>; <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-hibernate-overview.html">EC2 hibernation</a>, <a href="https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm">OCI Always Free</a>, <a href="https://www.alibabacloud.com/help/en/ecs/user-guide/economical-mode">Alibaba economical mode</a></li>
 </ul>
 </div>
