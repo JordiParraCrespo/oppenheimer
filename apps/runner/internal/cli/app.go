@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
@@ -193,6 +194,24 @@ func unit(paths Paths) svcdomain.Unit {
 	if workspaces := os.Getenv(EnvWorkspaces); workspaces != "" {
 		env[EnvWorkspaces] = workspaces
 	}
+	// The PATH the installer was run with, carried onto the service.
+	//
+	// launchd hands a job `/usr/bin:/bin:/usr/sbin:/sbin` and systemd little
+	// more, and neither contains `/opt/homebrew/bin` — so on a stock Homebrew
+	// Mac the installed runner cannot see tmux, git or the agent, and every
+	// session fails with "a required tool is missing" while `runner status`,
+	// which inherits the caller's shell, reports all of them present. Taking
+	// the PATH from the install is what makes those two agree: the tools the
+	// installer verified are the tools the service can reach.
+	if path := os.Getenv("PATH"); path != "" {
+		env["PATH"] = path
+	}
+	// A UTF-8 locale, for the same reason and from the same gap: launchd and
+	// systemd pass none, and a tmux client without one writes `_` in place of
+	// every non-ASCII character. `-u` already forces tmux's hand; this is for
+	// everything else a session runs, which reads the locale the ordinary way.
+	env["LANG"] = utf8Locale(os.Getenv("LANG"))
+	env["LC_ALL"] = utf8Locale(os.Getenv("LC_ALL"))
 	return svcdomain.Unit{
 		ExecPath:   paths.Current(),
 		Args:       []string{"run"},
@@ -201,6 +220,18 @@ func unit(paths Paths) svcdomain.Unit {
 		Env:        env,
 		User:       accountName(),
 	}
+}
+
+// utf8Locale keeps a locale that already names UTF-8 and otherwise answers one
+// that does. An installer run from a terminal usually has a good value; a
+// package manager's post-install hook often has none, and "no locale" is the
+// case that has to come out right.
+func utf8Locale(current string) string {
+	if strings.Contains(strings.ToUpper(current), "UTF-8") ||
+		strings.Contains(strings.ToUpper(current), "UTF8") {
+		return current
+	}
+	return "C.UTF-8"
 }
 
 // credentialHelper is the command git calls for a password: this binary's own

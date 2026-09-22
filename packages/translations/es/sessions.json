@@ -1,7 +1,5 @@
 {
   "home": {
-    "emptyTitle": "No hay sesiones abiertas",
-    "emptyDescription": "Inicia una y el terminal ocupará este panel.",
     "openTitle": "Ninguna sesión abierta",
     "openDescription": "Elige una en la barra lateral o inicia otra."
   },
@@ -31,6 +29,16 @@
       "empty": "Ningún host coincide.",
       "add": "Añadir host…",
       "offline": "Desconectado"
+    },
+    "addHost": {
+      "title": "Añadir un host",
+      "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
+      "instruction": "Ejecuta esto en él, una vez",
+      "format": "Cómo leerlo",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente",
+      "use": "Usar este host",
+      "defaultName": "Nuevo host"
     },
     "repository": {
       "label": "Repositorios",
@@ -80,20 +88,9 @@
     "composer": {
       "placeholder": "Describe una tarea o haz una pregunta"
     },
-    "noHosts": {
-      "title": "Todavía no hay host",
-      "description": "Una sesión se ejecuta en una máquina tuya. Vincula una y aparecerá aquí.",
-      "action": "Añadir un host"
-    },
-    "noRepositories": {
-      "title": "Todavía no hay repositorios",
-      "description": "Conecta GitHub y elige los repositorios que una sesión puede usar.",
-      "action": "Conectar GitHub"
-    },
     "queued": "Tu primera tarea está en cola para este host."
   },
   "session": {
-    "composerPlaceholder": "Pregunta al agente o ejecuta un comando",
     "status": {
       "connecting": "Conectando",
       "live": "En vivo",
