@@ -101,8 +101,10 @@ earlier note:
   landing is finished too. The landing asks instead whether the
   navigation *is* the walk, and `/onboarding/ready` reached any other way
   — Back out of the console, a typed address — returns the reader to the
-  console. Connect GitHub and Add host are not gated, because they are
-  also New session's install-the-App and pair-a-machine screens
+  console, and Add host asks the same, now that the console pairs a
+  machine in its own dialog rather than sending readers into step 4.
+  Connect GitHub is not gated, because New session's repository chip
+  still sends a finished account there to install the App
   (`versions/mvp/05-screens.md`).
 - Note 02's open question about screen manifests is answered by note 13:
   lifecycle hooks are authoritative where an agent has them, screen reading

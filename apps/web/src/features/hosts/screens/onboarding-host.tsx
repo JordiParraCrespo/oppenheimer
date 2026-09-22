@@ -37,10 +37,10 @@ export function OnboardingHostScreen({
   /** What Connect GitHub connected, passed through so Ready can name it. */
   installationId?: string;
   /**
-   * Set when this visit is the first-run walk. Ready turns away anyone who
-   * arrives without it, which is how a reader New session sent here to pair a
-   * second machine lands back in the console rather than on first-run's
-   * landing (`organizations/lib/first-run.ts`).
+   * Set when this visit is the first-run walk — which, since Add host pairs a
+   * machine from the console, is the only way to be on this step at all. It is
+   * handed on to Ready, which asks the same question
+   * (`organizations/lib/first-run.ts`).
    */
   walk?: true;
 }) {

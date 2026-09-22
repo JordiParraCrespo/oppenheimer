@@ -95,9 +95,11 @@ test('a named workspace is not sent back through the slug form', async ({ page }
  * because every legitimate arrival at Ready is finished too — the address is
  * claimed by the end of step 2. Having walked there is.
  *
- * Connect GitHub and Add host stay open on purpose: they are also New
- * session's install-the-App and pair-a-machine screens, and `new-session.spec.ts`
- * walks the console into both.
+ * Connect GitHub stays open on purpose: New session's repository chip still
+ * sends a finished account there to install the App, which
+ * `new-session.spec.ts` drives. Add host used to be open for the same reason
+ * and no longer is — the console pairs a machine in its own dialog
+ * (`add-host.spec.ts`), so nothing links at step 4 any more.
  */
 test('a finished account cannot walk back into the flow', async ({ page }) => {
   const user = newUser('firstrunover');
@@ -125,12 +127,14 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   await page.goto('/onboarding');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
-  // The two steps the console shares stay reachable once the walk is over —
-  // New session's empty states link straight at them, and version 1 draws no
-  // other screen that pairs a machine or installs the App.
+  // Step 4 goes with it: the console pairs a machine in Add host now, so
+  // nothing links here and the step is first-run's alone.
+  await page.goto('/onboarding/host');
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  // Connect GitHub is the one step that stays open, because New session's
+  // repository chip still sends a finished account to it — `new-session.spec.ts`
+  // drives that path.
   await page.goto('/onboarding/github');
   await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
-
-  await page.goto('/onboarding/host');
-  await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
 });

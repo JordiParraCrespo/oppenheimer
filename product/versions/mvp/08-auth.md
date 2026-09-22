@@ -40,13 +40,16 @@ history) to work on the MVP.
   one, the flow's own links carry it, and `/onboarding/ready` reached
   any other way — Back out of the console, a typed address, a second
   tab — returns the reader to `/sessions` instead of congratulating
-  them again. Connect GitHub and Add host are not gated and are not
-  meant to be: New session links straight at them from its empty states
-  and its chips, and version 1 draws no other screen that installs the
-  App or pairs a machine (05). A reader the console sent to one of them
-  is not walking, so finishing there lands them back in the console.
-  (Decided 2026-09-22; before it, only step 2 was gated and the landing
-  could be re-opened by pressing Back.)
+  them again. Add host asks the same question, for the same reason: the
+  console pairs a machine in its own dialog now, so nothing links at
+  step 4 and it is first-run's alone. Connect GitHub is the one step
+  that is not gated and is not meant to be — New session's repository
+  chip still sends a finished account there to install the App, and
+  version 1 draws no other screen that does (05). A reader the console
+  sent there is not walking, so continuing lands them back in the
+  console rather than in the rest of the flow. (Decided 2026-09-22;
+  before it, only step 2 was gated and the landing could be re-opened by
+  pressing Back.)
 - **The console creates exactly one organization: your own.** Sign-up's
   hook is best-effort, so `/onboarding` is the recovery path for an
   account that ended up with no workspace — it creates one and makes the

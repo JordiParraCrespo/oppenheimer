@@ -305,7 +305,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   the step that names the workspace (08). The landing could be re-opened
   by pressing Back out of the console, so an account that finished days
   ago was congratulated again on a walk it had no way to re-take. Ready
-  now asks whether the navigation *is* the walk rather than whether the
-  account is finished, which every arrival there is. Connect GitHub
-  stays ungated: New session's repository chip still sends a finished
-  account to it to install the App.
+  and Add host now ask whether the navigation *is* the walk rather than
+  whether the account is finished, which every arrival there is. Add
+  host could not be gated while it was also the console's pairing
+  screen; the dialog above took that job, so the step went back to
+  first-run's. Connect GitHub stays ungated: New session's repository
+  chip still sends a finished account to it to install the App.
