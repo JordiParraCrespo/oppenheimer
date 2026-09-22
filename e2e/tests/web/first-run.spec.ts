@@ -89,3 +89,55 @@ test('a named workspace is not sent back through the slug form', async ({ page }
   await page.goto('/onboarding/workspace');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 });
+
+/**
+ * The flow is shown once, and that holds for the whole flow, not just the step
+ * that names the workspace.
+ *
+ * Ready is where it showed: an account that had finished days ago could press
+ * Back out of the console, or type the URL, and be congratulated all over
+ * again on a walk it had no way to re-take. What separates that reader from
+ * one still walking is not the account — both have claimed an address — but
+ * whether this tab is between step 2 and Ready.
+ *
+ * Connect GitHub and Add a host are deliberately not in this: they are also
+ * the console's only way to fill those two gaps, and `new-session.spec.ts`
+ * walks New session into both.
+ */
+test('a finished account cannot walk back into the flow', async ({ page }) => {
+  const user = newUser('firstrunover');
+
+  await registerThroughUi(page, user);
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
+
+  await page.getByLabel(/workspace name/i).fill(`Over ${Date.now().toString(36)}`);
+  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: /continue/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+
+  // Mid-walk the steps are open, claimed address and all — that is the whole
+  // reason the claim cannot be the test on its own.
+  await page.getByRole('link', { name: /skip for now/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  await page.getByRole('link', { name: /skip for now/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
+
+  // Going to the console ends the walk.
+  await page.getByRole('link', { name: /go to the console/i }).click();
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  // Back out of the console, and by URL: neither re-opens the landing.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  await page.goto('/onboarding/ready');
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  await page.goto('/onboarding');
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  // The two steps the console shares stay reachable, or a reader who skipped
+  // them could never pair a host or connect a repository.
+  await page.goto('/onboarding/host');
+  await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+});

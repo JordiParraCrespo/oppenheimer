@@ -13,6 +13,10 @@ export const Route = createFileRoute('/_auth/onboarding/github')({
   validateSearch: (search: Record<string, unknown>): GithubInstallCallback =>
     parseInstallCallback(search),
   component: GithubStep,
+  // Not first-run only: this is also the console's Connect GitHub. New
+  // session's "no repository yet" empty state and the repository chip both
+  // link here, so the flow's gate leaves it open once first-run is over.
+  staticData: { firstRunOnly: false },
 });
 
 function GithubStep() {

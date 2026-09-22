@@ -18,6 +18,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAddressCheck } from '@/features/organizations/hooks/use-address-check';
+import { closeFirstRun, openFirstRun } from '@/features/organizations/lib/first-run';
 import { slugify } from '@/features/organizations/lib/slugify';
 import { workspaceAddressPrefix } from '@/features/organizations/lib/workspace-address';
 
@@ -43,7 +44,12 @@ export function OnboardingWorkspaceScreen() {
   // screen, which is only true if the session goes with them: a still-signed-in
   // `/login` bounces straight to `/sessions` (PR #28).
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
-  const leave = () => logout.mutate();
+  const leave = () => {
+    // Whatever this tab was walking, it is not walking it any more: the next
+    // account to sign in here starts from its own gate, not this one's.
+    closeFirstRun();
+    logout.mutate();
+  };
   // `isSuccess`, not merely `data`: submitting before this settles would take
   // the create branch over a workspace sign-up had already provisioned, and
   // Better Auth would happily make a second one.
@@ -78,11 +84,17 @@ export function OnboardingWorkspaceScreen() {
   const edit = (changes: Partial<{ name: string; address: string }>) =>
     setDraft({ name, address, ...changes });
 
-  const submit = () =>
+  const submit = () => {
+    // Before the claim, not after it. The claim is what makes the account
+    // finished, and the gate over the subtree sends a finished account to the
+    // console — this reader included, two steps short of the end, unless the
+    // walk is already open when the workspace list settles.
+    openFirstRun();
     claim.mutate(
       { existing, name: name.trim(), slug: address },
       { onSuccess: () => navigate({ to: '/onboarding/github' }) },
     );
+  };
 
   return (
     <div className="flex flex-col gap-5">

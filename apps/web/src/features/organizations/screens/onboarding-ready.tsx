@@ -14,6 +14,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { closeFirstRun } from '@/features/organizations/lib/first-run';
 import { workspaceAddress } from '@/features/organizations/lib/workspace-address';
 
 /**
@@ -104,7 +105,10 @@ export function OnboardingReadyScreen({
         </SummaryRow>
       </SummaryCard>
 
-      <Button size="lg" block render={<Link to="/sessions" />}>
+      {/* The one exit, and the end of the walk: closing it here is what makes
+          the flow shown-once, so Back out of the console lands on the console
+          again rather than on this page congratulating the reader twice. */}
+      <Button size="lg" block render={<Link to="/sessions" onClick={closeFirstRun} />}>
         {t('onboarding.flow.ready.go')}
       </Button>
     </div>
