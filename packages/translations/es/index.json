@@ -388,6 +388,7 @@
       "status": {
         "connecting": "Conectando",
         "live": "En vivo",
+        "offline": "Host desconectado",
         "closed": "Desconectado"
       }
     },

@@ -108,6 +108,16 @@
       "default": "./dist/protocol/index.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "agents": [
+        "./dist/agents/index.d.ts"
+      ],
+      "protocol": [
+        "./dist/protocol/index.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs",
     "dev": "tsc -p tsconfig.json --watch",

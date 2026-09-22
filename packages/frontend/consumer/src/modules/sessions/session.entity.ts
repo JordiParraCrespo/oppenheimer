@@ -78,6 +78,19 @@ export class SessionCheckoutEntity {
  * this file made — it carried one `running | idle | stopped` union that the API
  * had already stopped sending.
  */
+/**
+ * A single-use pass to one window of a session's terminal, as
+ * `POST /sessions/{id}/attach-ticket` mints it. It travels in
+ * `Sec-WebSocket-Protocol` and is redeemed by opening `url` on the API's origin.
+ */
+export interface AttachTicket {
+  ticket: string;
+  /** A path on the API's own origin, e.g. `/api/v1/relay/attach`. */
+  url: string;
+  expiresAt: Date;
+  window: number;
+}
+
 export class SessionEntity {
   constructor(
     public readonly id: string,

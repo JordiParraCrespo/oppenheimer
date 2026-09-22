@@ -353,6 +353,18 @@ export type SessionCloseMessage = z.infer<typeof sessionCloseSchema>;
  * shows every session as stopped with a Restart button, and nothing about the
  * checkouts has changed.
  */
+/**
+ * End the agent and the tmux session and leave every checkout on disk, which
+ * is what makes Restart possible afterwards (02 §5: "Stop is not close").
+ */
+export const sessionStopSchema = z.object({
+  type: z.literal('session.stop'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+});
+
+export type SessionStopMessage = z.infer<typeof sessionStopSchema>;
+
 export const sessionRestartSchema = z.object({
   type: z.literal('session.restart'),
   commandId: commandIdSchema,
@@ -432,6 +444,69 @@ export const credentialsRevokeSchema = z.object({
 
 export type CredentialsRevokeMessage = z.infer<typeof credentialsRevokeSchema>;
 
+/* ------------------------------------------------------------------ handshake and outcomes */
+
+/**
+ * The control plane's answer to `hello`, and the first thing the runner reads
+ * after sending it. It carries the protocol version the two will speak and the
+ * fingerprint of the control plane's signing key, which the runner compares
+ * against the one it pinned at registration and refuses on mismatch (01 F6).
+ * A runner below `min_supported` never receives this: it is refused with an
+ * `update_required` hint instead.
+ */
+export const welcomeSchema = z.object({
+  type: z.literal('welcome'),
+  protocol: z.number().int().min(1),
+  keyFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  /** The link's own view of the host, so the runner can log what it is known as. */
+  hostId: z.string().min(1).max(64),
+});
+
+export type WelcomeMessage = z.infer<typeof welcomeSchema>;
+
+/**
+ * The runner refused or could not carry out a command. Success is never
+ * reported this way — a created session says so with `session.started` in the
+ * log, an attachment says so with its first frame — because a command's success
+ * is a fact about the session and belongs in its log, while a failure to even
+ * try is a fact about this one delivery, which is all a link reply can be.
+ */
+export const commandFailedSchema = z.object({
+  type: z.literal('command.failed'),
+  commandId: commandIdSchema,
+  /** A catalog code (`SESS_003`, `TMUX_001`), so the console can render it. */
+  code: z.string().min(1).max(32),
+  detail: z.string().max(500).optional(),
+});
+
+export type CommandFailedMessage = z.infer<typeof commandFailedSchema>;
+
+/**
+ * The control plane frees an attachment: the browser went away, or the relay
+ * is closing. The runner stops the PTY reads and forgets the id; a frame for it
+ * that is already in flight is dropped by the receiver.
+ */
+export const sessionDetachSchema = z.object({
+  type: z.literal('session.detach'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  attachmentId: attachmentIdSchema,
+});
+
+export type SessionDetachMessage = z.infer<typeof sessionDetachSchema>;
+
+/**
+ * The runner's side of the same fact: the PTY behind an attachment ended
+ * (the window closed, tmux exited, the session was killed), so the id is free.
+ */
+export const attachmentClosedSchema = z.object({
+  type: z.literal('attachment.closed'),
+  attachmentId: attachmentIdSchema,
+  reason: z.string().max(200).optional(),
+});
+
+export type AttachmentClosedMessage = z.infer<typeof attachmentClosedSchema>;
+
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -445,6 +520,10 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   helloSchema,
   heartbeatSchema,
   hintSchema,
+  welcomeSchema,
+  commandFailedSchema,
+  sessionDetachSchema,
+  attachmentClosedSchema,
   eventsAppendSchema,
   eventsAckSchema,
   sessionCreateSchema,
@@ -455,6 +534,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionWindowOpenSchema,
   sessionWindowCloseSchema,
   sessionCloseSchema,
+  sessionStopSchema,
   sessionRestartSchema,
   hostPreflightSchema,
   hostUpdateSchema,

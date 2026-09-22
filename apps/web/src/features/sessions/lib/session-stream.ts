@@ -1,20 +1,29 @@
+import {
+  ATTACH_CLOSE_CODES,
+  type AttachClientMessage,
+  attachServerMessageSchema,
+} from '@oppenheimer/shared/protocol';
+
 /**
  * The contract between the console and whatever is feeding a terminal.
  *
  * `product/versions/mvp/01-protocol.md` decides the wire: PTY bytes as binary
  * WebSocket frames, control messages as JSON on the same socket, the browser
  * acking consumed bytes. This interface is that shape with the socket left
- * out, so the screen can be built, reviewed and demonstrated before the runner
- * exists — and so swapping the fake for the real transport touches one file.
- *
- * Nothing above this knows which implementation it holds.
+ * out, so the screen holds a stream and never a socket — and so the replay in
+ * `fake-session-stream.ts` and the real transport below are interchangeable.
  */
 
-export type StreamStatus = 'connecting' | 'live' | 'closed';
+/**
+ * `offline` is the ticket's own hint (`host_offline`): the session's host holds
+ * no link right now. The stream keeps trying behind it, so it is a state rather
+ * than an end.
+ */
+export type StreamStatus = 'connecting' | 'live' | 'offline' | 'closed';
 
 export interface SessionStream {
-  /** PTY output. The returned function unsubscribes. */
-  onData(listener: (chunk: string) => void): () => void;
+  /** PTY output, as the bytes the socket carried. The returned function unsubscribes. */
+  onData(listener: (chunk: Uint8Array | string) => void): () => void;
   /** Connection state, for the status line. The returned function unsubscribes. */
   onStatus(listener: (status: StreamStatus) => void): () => void;
   /** Keystrokes, already encoded by the terminal. */
@@ -24,97 +33,173 @@ export interface SessionStream {
   dispose(): void;
 }
 
-const ESC = '[';
-const RESET = `${ESC}0m`;
-const DIM = `${ESC}90m`;
-const BOLD = `${ESC}1m`;
-const BLUE = `${ESC}34m`;
-const GREEN = `${ESC}32m`;
-const YELLOW = `${ESC}33m`;
-const RED = `${ESC}31m`;
-const CYAN = `${ESC}36m`;
+/** What the transport needs from the app: a fresh ticket per socket. */
+export interface SessionStreamOptions {
+  /**
+   * Mint an attach ticket. Called on every (re)connect, never cached: a ticket
+   * is single use and sixty seconds, so the moment to mint one is the moment a
+   * socket is about to be opened with it.
+   */
+  issueTicket: () => Promise<{ ticket: string; url: string }>;
+  /**
+   * The API's origin, or empty for same-origin (the default: the dev server and
+   * nginx both proxy `/api` so the session cookie rides along).
+   */
+  apiBaseUrl?: string;
+  /** Injected in tests; `WebSocket` otherwise. */
+  socketFactory?: (url: string, protocols: string[]) => WebSocket;
+  /** Injected in tests; `setTimeout` otherwise. */
+  schedule?: (fn: () => void, ms: number) => () => void;
+}
+
+/** The reconnect ladder, with jitter on top (`12-lessons-from-grok-bot.md`). */
+export const RECONNECT_LADDER_MS = [500, 1_000, 2_000, 5_000, 10_000, 30_000] as const;
+
+/** Close codes after which reconnecting cannot help: the answer would be the same. */
+const FINAL_CLOSE_CODES = new Set<number>([
+  ATTACH_CLOSE_CODES.UNAUTHORIZED,
+  ATTACH_CLOSE_CODES.FORBIDDEN,
+  ATTACH_CLOSE_CODES.SESSION_UNAVAILABLE,
+  ATTACH_CLOSE_CODES.REFUSED,
+]);
+
+/** Turn the ticket's path into the socket URL on the API's origin. */
+export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): string {
+  const base = apiBaseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  const url = new URL(path, base);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.toString();
+}
 
 /**
- * A recorded session, replayed. Every escape sequence here is one a real
- * agent emits, so the colours exercise the ANSI mapping in `terminal-theme.ts`
- * rather than a private vocabulary that would pass while the real thing fails.
- */
-const TRANSCRIPT: ReadonlyArray<{ after: number; text: string }> = [
-  { after: 0, text: `${DIM}[tmux] attached to session sess_7fc2 — window 0${RESET}\r\n` },
-  {
-    after: 120,
-    text: `${DIM}worktree /Users/jordi/code/oppenheimer-feat-terminal${RESET}\r\n\r\n`,
-  },
-  { after: 240, text: `${BLUE}$ ${RESET}claude\r\n` },
-  { after: 520, text: `${DIM}Claude Code — oppenheimer — feat/terminal-surface${RESET}\r\n\r\n` },
-  {
-    after: 760,
-    text: `${BOLD}●${RESET} I've mounted xterm.js on the session route. The theme bridge reads the\r\n  ${CYAN}--term-*${RESET} ramp off the document and re-applies it whenever the app\r\n  switches theme, so the grid follows instead of freezing at mount.\r\n\r\n`,
-  },
-  { after: 1400, text: `${BLUE}$ ${RESET}pnpm check:structure\r\n` },
-  {
-    after: 1750,
-    text: `${GREEN}✓${RESET} frontend layout contract — 151 files, 0 violations\r\n\r\n`,
-  },
-  { after: 2000, text: `${BLUE}$ ${RESET}pnpm arch\r\n` },
-  { after: 2380, text: `${GREEN}✓${RESET} apps/web — no boundary violations\r\n\r\n` },
-  { after: 2600, text: `${BLUE}$ ${RESET}pnpm check:bundle\r\n` },
-  {
-    after: 3000,
-    text: `${YELLOW}⚠${RESET}  session route chunk +214 KB (xterm + webgl addon)\r\n${GREEN}✓${RESET} critical path 371 KB / 385 KB — route chunks excluded\r\n\r\n`,
-  },
-  { after: 3400, text: `${BLUE}$ ${RESET}pnpm test --filter @oppenheimer/web\r\n` },
-  { after: 3900, text: `${RED}✗${RESET} use-terminal.spec.ts — expected 24 rows, received 0\r\n` },
-  {
-    after: 3960,
-    text: `${DIM}   the container has no height until the shell lays it out${RESET}\r\n\r\n`,
-  },
-  {
-    after: 4400,
-    text: `${BOLD}●${RESET} That's the fit addon measuring a collapsed box. The pane needs a\r\n  definite height before the first fit, not after it. Fixing.\r\n\r\n`,
-  },
-  { after: 5200, text: `${BLUE}$ ${RESET}` },
-];
-
-/**
- * Replays `TRANSCRIPT`, then behaves like a shell: echoes what you type,
- * handles Backspace, and answers Enter with a fresh prompt.
+ * The real transport: one attach socket per stream, reconnected through the
+ * ladder with a fresh ticket each time, and an epoch counter so a frame or a
+ * callback from a socket that has since been replaced is dropped.
  *
- * The echo is the point. `product/versions/mvp/06-step-one-spike.md` judges the
- * real thing by keystroke echo latency — a key is not drawn because the browser
- * drew it, it is drawn because the host sent it back. Building against a fake
- * that echoes locally keeps that loop honest.
+ * Output is delivered as the bytes the socket carried; the terminal decodes
+ * them, which keeps a multi-byte character that straddles two PTY reads whole.
+ * Input goes the other way as bytes too. The viewport is sent first, before
+ * the relay dispatches the attach, so the pane is not resized a frame later;
+ * a resize that arrives before the socket is open waits for it.
  */
-export function createFakeSessionStream(): SessionStream {
-  const dataListeners = new Set<(chunk: string) => void>();
+export function createSessionStream(options: SessionStreamOptions): SessionStream {
+  const dataListeners = new Set<(chunk: Uint8Array | string) => void>();
   const statusListeners = new Set<(status: StreamStatus) => void>();
-  const timers: ReturnType<typeof setTimeout>[] = [];
+  const socketFactory =
+    options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
+  const schedule =
+    options.schedule ??
+    ((fn, ms) => {
+      const timer = setTimeout(fn, ms);
+      return () => clearTimeout(timer);
+    });
+  const encoder = new TextEncoder();
+
   let status: StreamStatus = 'connecting';
   let disposed = false;
-  let line = '';
-
-  const emit = (chunk: string) => {
-    for (const listener of dataListeners) listener(chunk);
-  };
+  let epoch = 0;
+  let socket: WebSocket | null = null;
+  let attached = false;
+  let attempt = 0;
+  let cancelRetry: (() => void) | null = null;
+  let viewport: { cols: number; rows: number } | null = null;
 
   const setStatus = (next: StreamStatus) => {
+    if (status === next) return;
     status = next;
     for (const listener of statusListeners) listener(next);
   };
 
-  timers.push(
-    setTimeout(() => {
-      if (!disposed) setStatus('live');
-    }, 80),
-  );
+  const tell = (message: AttachClientMessage) => {
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+  };
 
-  for (const step of TRANSCRIPT) {
-    timers.push(
-      setTimeout(() => {
-        if (!disposed) emit(step.text);
-      }, step.after),
-    );
-  }
+  const retry = (after: StreamStatus) => {
+    if (disposed) return;
+    setStatus(after);
+    const base = RECONNECT_LADDER_MS[Math.min(attempt, RECONNECT_LADDER_MS.length - 1)];
+    attempt += 1;
+    const jitter = base * (Math.random() * 0.4 - 0.2);
+    cancelRetry = schedule(() => void connect(), Math.max(0, Math.round(base + jitter)));
+  };
+
+  const connect = async () => {
+    if (disposed) return;
+    const thisEpoch = ++epoch;
+    attached = false;
+    let ticket: { ticket: string; url: string };
+    try {
+      ticket = await options.issueTicket();
+    } catch {
+      // The session is gone or the API is unreachable; the ladder decides how
+      // soon to ask again, and the screen's own query says which it was.
+      retry('offline');
+      return;
+    }
+    if (disposed || thisEpoch !== epoch) return;
+
+    const ws = socketFactory(attachSocketUrl(ticket.url, options.apiBaseUrl), [ticket.ticket]);
+    ws.binaryType = 'arraybuffer';
+    socket = ws;
+
+    ws.onopen = () => {
+      if (thisEpoch !== epoch) return;
+      // The viewport first, so the attach the relay dispatches carries it.
+      if (viewport) tell({ type: 'resize', ...viewport });
+    };
+    ws.onmessage = (event: MessageEvent) => {
+      if (thisEpoch !== epoch) return;
+      if (typeof event.data === 'string') {
+        onControl(event.data);
+        return;
+      }
+      const bytes = new Uint8Array(event.data as ArrayBuffer);
+      for (const listener of dataListeners) listener(bytes);
+      // Consumed-byte credit: what lets the runner resume a paused pane.
+      if (bytes.byteLength > 0) tell({ type: 'credit', bytes: bytes.byteLength });
+    };
+    ws.onclose = (event: CloseEvent) => {
+      if (thisEpoch !== epoch) return;
+      socket = null;
+      attached = false;
+      if (disposed) return;
+      if (FINAL_CLOSE_CODES.has(event.code)) {
+        setStatus('closed');
+        return;
+      }
+      // Host offline, link lost, a relay restart, a dropped radio: the ladder.
+      retry(event.code === ATTACH_CLOSE_CODES.HOST_OFFLINE ? 'offline' : 'connecting');
+    };
+    ws.onerror = () => {
+      // `onclose` follows every error and carries the code; nothing to do here.
+    };
+  };
+
+  const onControl = (raw: string) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    const message = attachServerMessageSchema.safeParse(parsed);
+    if (!message.success) return;
+    switch (message.data.type) {
+      case 'attached':
+        attached = true;
+        attempt = 0;
+        setStatus('live');
+        return;
+      case 'hint':
+        if (message.data.kind === 'host_offline') setStatus('offline');
+        return;
+      case 'refused':
+        // The close that follows carries a final code; the status lands there.
+        return;
+    }
+  };
+
+  void connect();
 
   return {
     onData(listener) {
@@ -122,39 +207,35 @@ export function createFakeSessionStream(): SessionStream {
       return () => dataListeners.delete(listener);
     },
     onStatus(listener) {
+      // The current state first, so a subscriber never waits for a change to
+      // learn where things stand.
       listener(status);
       statusListeners.add(listener);
       return () => statusListeners.delete(listener);
     },
     send(data) {
-      if (disposed) return;
-      if (data === '\r') {
-        line = '';
-        emit(`\r\n${BLUE}$ ${RESET}`);
-        return;
-      }
-      if (data === '') {
-        if (line.length === 0) return;
-        line = line.slice(0, -1);
-        emit('\b \b');
-        return;
-      }
-      // Control characters other than the two handled above are swallowed:
-      // the real PTY decides what Ctrl-C does, and guessing here would teach
-      // the screen a behaviour the host does not have.
-      if (data < ' ') return;
-      line += data;
-      emit(data);
+      if (!attached || socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
+      socket.send(encoder.encode(data));
     },
-    resize() {
-      // The real stream sends a resize control message here. A replay has no
-      // reflow to do, and pretending otherwise would hide that the message is
-      // still unwritten.
+    resize(cols, rows) {
+      if (cols < 1 || rows < 1) return;
+      viewport = { cols, rows };
+      tell({ type: 'resize', cols, rows });
     },
     dispose() {
+      if (disposed) return;
       disposed = true;
-      for (const timer of timers) clearTimeout(timer);
+      epoch += 1;
+      cancelRetry?.();
       dataListeners.clear();
+      const open = socket;
+      socket = null;
+      if (
+        open &&
+        (open.readyState === WebSocket.OPEN || open.readyState === WebSocket.CONNECTING)
+      ) {
+        open.close(1000, 'terminal closed');
+      }
       setStatus('closed');
       statusListeners.clear();
     },

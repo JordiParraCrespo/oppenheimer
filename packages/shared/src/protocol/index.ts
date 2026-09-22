@@ -1,3 +1,4 @@
+export * from './attach';
 /**
  * The wire, and only the wire.
  *

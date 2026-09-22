@@ -54,6 +54,17 @@ export interface RegisterHostProps {
 }
 
 /** A 64-character lowercase hex digest — SHA-256 of the raw key. */
+/** What a link report says about the machine, already reduced to columns. */
+export interface HostReport {
+  facts?: {
+    hostname?: string | null;
+    os?: string | null;
+    arch?: string | null;
+    runnerVersion?: string | null;
+    capabilities?: HostCapabilities | null;
+  } | null;
+}
+
 const FINGERPRINT = /^[0-9a-f]{64}$/;
 
 /**
@@ -169,6 +180,25 @@ export class HostEntity extends AggregateRoot<HostProps> {
    * trusts, and the machine itself says so when the runner is uninstalled.
    * The row is kept either way.
    */
+  /**
+   * The runner reported in: on hello and on every heartbeat. `online` is derived
+   * from `lastSeenAt` by the repository's read, so this is the only writer of
+   * the fact the sidebar dot reads. The facts are kept whole on `capabilities`,
+   * as registration does, and the columns worth their own name follow them.
+   */
+  observe(report: HostReport, at: Date = new Date()): void {
+    if (report.facts) {
+      this.props.hostname = report.facts.hostname ?? this.props.hostname;
+      this.props.os = report.facts.os ?? this.props.os;
+      this.props.arch = report.facts.arch ?? this.props.arch;
+      this.props.runnerVersion = report.facts.runnerVersion ?? this.props.runnerVersion;
+      this.props.capabilities = report.facts.capabilities ?? this.props.capabilities;
+    }
+    this.props.lastSeenAt = at;
+    this.setUpdatedAt(at);
+    this.validate();
+  }
+
   unpair(at: Date = new Date()): void {
     if (this.props.unpairedAt) return;
     this.props.unpairedAt = at;

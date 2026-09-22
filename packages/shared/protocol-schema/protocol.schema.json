@@ -142,6 +142,105 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "welcome"
+        },
+        "protocol": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "keyFingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "hostId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "type",
+        "protocol",
+        "keyFingerprint",
+        "hostId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "command.failed"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "code"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.detach"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.closed"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "events.append"
         },
         "batchId": {
@@ -564,6 +663,26 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "session.stop"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "session.restart"
         },
         "commandId": {
@@ -918,18 +1037,24 @@
       "maximum": 9007199254740991,
       "id": "windowIndex"
     },
+    "commandId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
+      "id": "commandId"
+    },
+    "attachmentId": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295,
+      "id": "attachmentId"
+    },
     "eventIdempotencyKey": {
       "type": "string",
       "minLength": 3,
       "maxLength": 128,
       "pattern": "^[A-Za-z0-9_-]+:\\d+$",
       "id": "eventIdempotencyKey"
-    },
-    "commandId": {
-      "type": "string",
-      "format": "uuid",
-      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$",
-      "id": "commandId"
     },
     "gitRef": {
       "type": "string",
@@ -948,12 +1073,6 @@
       "exclusiveMinimum": 0,
       "maximum": 9007199254740991,
       "id": "githubRepoId"
-    },
-    "attachmentId": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 4294967295,
-      "id": "attachmentId"
     }
   }
 }

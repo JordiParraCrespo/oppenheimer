@@ -101,12 +101,14 @@ type Session struct {
 	BaseBranch string `json:"baseBranch"`
 	Branch     string `json:"branch"`
 	// Worktree is the absolute path the tmux session runs in.
-	Worktree string    `json:"worktree"`
-	Agent    Agent     `json:"agent"`
-	State    State     `json:"state"`
-	Windows  []Window  `json:"windows"`
-	Created  time.Time `json:"created"`
-	Updated  time.Time `json:"updated"`
+	Worktree string `json:"worktree"`
+	Agent    Agent  `json:"agent"`
+	// Launch is how window 0 was started, kept so Restart reproduces it.
+	Launch  Launch    `json:"launch,omitzero"`
+	State   State     `json:"state"`
+	Windows []Window  `json:"windows"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 	// LoginURL is the vendor login link the classifier saw, if any. The
 	// console turns it into a button; nothing else is ever linkified (F3).
 	LoginURL string `json:"loginUrl,omitempty"`

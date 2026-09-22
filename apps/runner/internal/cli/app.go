@@ -11,6 +11,7 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	hostapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/controlplane"
 	pairfile "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/file"
 	pairtoken "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/adapters/token"
@@ -55,6 +56,8 @@ type App struct {
 	// Terminals is the tmux server, exposed so `sessions attach` can hand
 	// the terminal over to tmux directly.
 	Terminals *tmux.Server
+	// Link is the control-plane link while `run` holds one, for `status`.
+	Link *link.Client
 }
 
 // New wires the host agent. It reads the identity when there is one, which is

@@ -55,8 +55,21 @@ runner does with it and point back.
 
 ### What rides the link
 
-- `session.create | attach | input | resize | window.open |
-  window.close | close | restart`
+- `session.create | attach | input | resize | detach | window.open |
+  window.close | stop | close | restart`. `stop` ends the agent and the
+  tmux session and keeps every checkout (02 §5, "Stop is not close");
+  `detach` frees an attachment the browser let go of.
+- **`welcome`** is the control plane's answer to `hello`: the protocol
+  version the two will speak and the fingerprint of the control plane's
+  signing key, which the runner compares against the one it pinned at
+  registration and refuses on mismatch (F6). A runner below
+  `min_supported` never sees one — it gets the `update_required` hint.
+- **`command.failed`** is the runner's only reply to a command, and only
+  for a failure to carry it out (`commandId`, a catalog code, a detail).
+  Success is never reported this way: a created session says so with
+  `session.started` in its log, an attachment says so with its first
+  frame. **`attachment.closed`** is the runner freeing an id whose PTY
+  ended on its own.
 - **`session.create` carries the launch**, because how a session is
   started is part of what the runner is being asked to start. Three
   fields beyond the checkouts: `launch` (`{ model?, permission, effort? }`),

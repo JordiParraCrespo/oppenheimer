@@ -16,4 +16,15 @@ export abstract class CacheService {
    * expiry is a leak, because nothing ever removes it.
    */
   abstract setIfAbsent<T>(key: string, value: T, ttlSeconds: number): Promise<boolean>;
+
+  /**
+   * Read `key` and delete it in the same command, answering the value that was
+   * there or `undefined`.
+   *
+   * This is the other single-use primitive, the consumer's half of
+   * `setIfAbsent`: a ticket that is read and then deleted in two round trips can
+   * be redeemed twice by two sockets racing on it, and a ticket is worth exactly
+   * one redemption.
+   */
+  abstract take<T>(key: string): Promise<T | undefined>;
 }

@@ -70,6 +70,15 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     sessions: [snapshot],
   },
   hint: { type: 'hint', kind: 'update_required', detail: 'below min_supported' },
+  welcome: {
+    type: 'welcome',
+    protocol: 1,
+    keyFingerprint: 'a'.repeat(64),
+    hostId: '4a2f0c9e-5b1d-4a7c-9e3f-2b8d6c1a0f47',
+  },
+  'command.failed': { type: 'command.failed', commandId, code: 'SESS_003', detail: 'stopped' },
+  'session.detach': { type: 'session.detach', commandId, sessionId, attachmentId: 7 },
+  'attachment.closed': { type: 'attachment.closed', attachmentId: 7, reason: 'pty closed' },
   'events.append': {
     type: 'events.append',
     batchId: 'run-7f3a-b12',
@@ -139,6 +148,7 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'session.window.open': { type: 'session.window.open', commandId, sessionId, name: 'tests' },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
   'session.close': { type: 'session.close', commandId, sessionId, acceptUnpushedWork: false },
+  'session.stop': { type: 'session.stop', commandId, sessionId },
   'session.restart': { type: 'session.restart', commandId, sessionId },
   'host.preflight': { type: 'host.preflight', commandId },
   'host.update': { type: 'host.update', commandId, version: '0.5.0', channel: 'stable' },

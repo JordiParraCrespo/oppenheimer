@@ -26,10 +26,10 @@ type RunOptions struct {
 // Run is the host agent: the process the service unit starts and keeps alive.
 //
 // It takes the single-instance lock, closes out any update that was in flight
-// when the previous process was replaced, serves the local Unix socket, and
-// keeps itself current. The control-plane link and the session contexts are
-// the next slice; until they land this process is what makes a host pair,
-// report and update, and it deliberately opens no TCP port.
+// when the previous process was replaced, dials the control-plane link and
+// keeps it open, serves the local Unix socket, and keeps itself current. It
+// deliberately opens no TCP port: everything the browser asks for arrives on
+// the link.
 func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) error {
 	release, err := Lock(a.Paths.Lock())
 	if err != nil {
@@ -89,6 +89,14 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	go func() {
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
+	}()
+	// The link: one outbound socket, redialled for as long as this process
+	// lives. Sessions do not wait for it — tmux does not care whether the
+	// control plane can see it.
+	loops.Add(1)
+	go func() {
+		defer loops.Done()
+		a.linkLoop(ctx, logger, identity)
 	}()
 
 	if facts, err := a.Host.Collect(ctx); err == nil {

@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
-import type { CreateSessionInput, SessionEntity } from './session.entity';
+import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
 import type { SessionsRepository } from './sessions.repository';
 
 @injectable()
@@ -32,5 +32,10 @@ export class SessionsService {
 
   stop(id: string): Promise<SessionEntity> {
     return this.repository.stop(id);
+  }
+
+  /** A single-use pass to one window's terminal; see the repository. */
+  issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
+    return this.repository.issueAttachTicket(id, window);
   }
 }

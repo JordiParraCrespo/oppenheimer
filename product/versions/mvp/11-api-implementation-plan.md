@@ -300,6 +300,16 @@ stays fake until slice 6. Each is a feature under
 
 ## Slice 6 — `relay/`: the two sockets
 
+**As built (pull request for issue #41):** two modules rather than one, so
+the dependency runs one way. `links/` holds the per-host link registry and
+the `SessionDispatchPort` implementation and is imported by `sessions/`;
+`relay/` holds the two sockets, the frame codec and the events processor and
+imports `sessions/`, `hosts/` and `links/`. The sockets are `upgrade`
+listeners on the API's own HTTP server (`relay-upgrade.gateway.ts`) over
+`ws`, not Nest gateways, because each takes its credential from the
+handshake. `credentials.processor.ts`, `attachment.credit` flow control and
+hello reconciliation are deferred to the next slice.
+
 ```
 apps/api/src/relay/
   relay.module.ts  relay.di-tokens.ts

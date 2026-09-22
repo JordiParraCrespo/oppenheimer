@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const RedisCtor = vi.fn();
 const redisSet = vi.fn();
+const redisGetdel = vi.fn();
 
 vi.mock('ioredis', () => ({
   default: class {
     set = redisSet;
+    getdel = redisGetdel;
 
     constructor(options: unknown) {
       RedisCtor(options);
@@ -28,6 +30,7 @@ describe('RedisCacheService', () => {
   beforeEach(() => {
     RedisCtor.mockClear();
     redisSet.mockReset();
+    redisGetdel.mockReset();
   });
 
   it('passes the configured password to the client', () => {
@@ -84,6 +87,21 @@ describe('RedisCacheService', () => {
       ]);
 
       expect(results.filter(Boolean)).toHaveLength(1);
+    });
+  });
+
+  describe('take', () => {
+    it('reads and deletes in one command, so a ticket is redeemed once', async () => {
+      redisGetdel.mockResolvedValue(JSON.stringify({ sessionId: 's-1' }));
+
+      await expect(service().take('attach:abc')).resolves.toEqual({ sessionId: 's-1' });
+      expect(redisGetdel).toHaveBeenCalledWith('attach:abc');
+    });
+
+    it('answers undefined for a key that is gone', async () => {
+      redisGetdel.mockResolvedValue(null);
+
+      await expect(service().take('attach:abc')).resolves.toBeUndefined();
     });
   });
 });

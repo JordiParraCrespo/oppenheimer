@@ -6,7 +6,12 @@ import {
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
 import { injectable } from 'inversify';
-import { type CreateSessionInput, SessionCheckoutEntity, SessionEntity } from './session.entity';
+import {
+  type AttachTicket,
+  type CreateSessionInput,
+  SessionCheckoutEntity,
+  SessionEntity,
+} from './session.entity';
 import { SessionsErrors } from './sessions.errors';
 
 /**
@@ -145,5 +150,32 @@ export class SessionsRepository {
     const { data, error } = await heyApiSdk.stopSession({ path: { id } });
     if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
     return toEntity(data);
+  }
+
+  /**
+   * A pass to open one window's terminal.
+   *
+   * Never cached and never retried on its own: the ticket is single use and
+   * sixty seconds, so the only right time to mint one is the moment a socket is
+   * about to be opened with it.
+   */
+  @MapApiError(SessionsErrors.ATTACH_TICKET_FAILED)
+  async issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
+    const { data, error, response } = await heyApiSdk.issueAttachTicket({
+      path: { id },
+      body: { window },
+    });
+    if (error || !data) {
+      throw toAppError(
+        { status: response?.status, body: error },
+        SessionsErrors.ATTACH_TICKET_FAILED,
+      );
+    }
+    return {
+      ticket: data.ticket,
+      url: data.url,
+      expiresAt: new Date(data.expiresAt),
+      window: data.window,
+    };
   }
 }
