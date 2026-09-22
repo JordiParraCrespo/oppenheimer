@@ -18,6 +18,7 @@ src/
 ├── tags.ts                      # the two tags every machine carries
 ├── user-data.ts                 # the cloud-config that pairs a fresh machine
 ├── create-provider.ts           # factory by provider kind
+├── live.integration.spec.ts     # the live smoke test, gated by MACHINES_LIVE
 ├── providers/
 │   ├── aws-ec2.provider.ts      # @aws-sdk/client-ec2
 │   ├── oci.provider.ts          # oci-core, oci-common, oci-identity
@@ -39,6 +40,9 @@ src/
   the request it sends.
 - **Prices are a dated catalog** (`PRICE_CATALOG_DATE`); update the date when
   updating a number, and quote `null` for what the catalog does not know.
+- **The live test never runs by accident**: `pnpm test` excludes
+  `*.integration.spec.ts`, and `test:integration` skips unless
+  `MACHINES_LIVE` names a provider. It always destroys what it made.
 - Ships **CommonJS**.
 
 ## Commands

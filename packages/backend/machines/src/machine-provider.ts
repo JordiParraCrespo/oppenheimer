@@ -151,4 +151,11 @@ export interface MachineProvider {
 
   /** A per-hour price for the host chip, or null when the catalog has none. */
   quote(spec: MachineSpec): Promise<MachineQuote | null>;
+
+  /**
+   * The machine's serial console, decoded, or an empty string while the
+   * provider has none yet. The one way to read a machine that has no inbound
+   * port: the boot trace, and the smoke test's proof that `/dev/kvm` exists.
+   */
+  consoleOutput(ref: MachineRef): Promise<string>;
 }

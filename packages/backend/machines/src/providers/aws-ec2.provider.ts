@@ -12,6 +12,7 @@ import {
   DescribeSubnetsCommand,
   DescribeVpcsCommand,
   EC2Client,
+  GetConsoleOutputCommand,
   ModifyVpcAttributeCommand,
   RunInstancesCommand,
   type RunInstancesCommandInput,
@@ -360,6 +361,15 @@ export class AwsEc2Provider implements MachineProvider {
           source: 'catalog',
           asOf: PRICE_CATALOG_DATE,
         };
+  }
+
+  async consoleOutput(ref: MachineRef): Promise<string> {
+    const result = await this.call(() =>
+      this.client(ref.region).send(
+        new GetConsoleOutputCommand({ InstanceId: ref.id, Latest: true }),
+      ),
+    );
+    return result.Output ? Buffer.from(result.Output, 'base64').toString('utf8') : '';
   }
 
   private async resolveImage(

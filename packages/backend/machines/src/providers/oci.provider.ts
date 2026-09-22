@@ -30,6 +30,9 @@ export interface OciClients {
     | 'getInstance'
     | 'listInstances'
     | 'listImages'
+    | 'captureConsoleHistory'
+    | 'getConsoleHistory'
+    | 'getConsoleHistoryContent'
   >;
   network: Pick<
     core.VirtualNetworkClient,
@@ -63,6 +66,9 @@ export interface OciProviderOptions {
   clientFactory?: (region: string) => OciClients;
   vcnCidr?: string;
   subnetCidr?: string;
+  /** Console history is captured asynchronously; how long to wait for it. */
+  consoleTimeoutMs?: number;
+  sleep?: (ms: number) => Promise<void>;
 }
 
 const DEFAULT_DISK_GIB = 50;
@@ -320,6 +326,35 @@ export class OciProvider implements MachineProvider {
           source: 'catalog',
           asOf: PRICE_CATALOG_DATE,
         };
+  }
+
+  async consoleOutput(ref: MachineRef): Promise<string> {
+    const { compute } = this.client(ref.region);
+    const sleep = this.options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+    const captured = await this.call(() =>
+      compute.captureConsoleHistory({ captureConsoleHistoryDetails: { instanceId: ref.id } }),
+    );
+    const historyId = captured.consoleHistory.id;
+    const deadline = Date.now() + (this.options.consoleTimeoutMs ?? 120_000);
+    while (Date.now() < deadline) {
+      const history = await this.call(() =>
+        compute.getConsoleHistory({ instanceConsoleHistoryId: historyId }),
+      );
+      const state = history.consoleHistory.lifecycleState;
+      if (state === 'SUCCEEDED') {
+        const content = await this.call(() =>
+          compute.getConsoleHistoryContent({
+            instanceConsoleHistoryId: historyId,
+            offset: 0,
+            length: 1_000_000,
+          }),
+        );
+        return content.value ?? '';
+      }
+      if (state === 'FAILED') return '';
+      await sleep(3000);
+    }
+    return '';
   }
 
   private async resolveImage(spec: MachineSpec, shapeName: string): Promise<string> {

@@ -17,7 +17,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests"
   },
   "dependencies": {
     "@alicloud/credentials": "^2.4.7",

@@ -116,6 +116,19 @@ describe('AlibabaEcsProvider', () => {
     });
   });
 
+  it('decodes the serial console', async () => {
+    const ecs = fakeEcs({
+      getInstanceConsoleOutput: vi.fn(async () => ({
+        body: { consoleOutput: Buffer.from('oppenheimer-smoke kvm=no').toString('base64') },
+      })),
+    } as unknown as Partial<EcsApi>);
+    const provider = new AlibabaEcsProvider({ credentials, clientFactory: () => ecs });
+
+    await expect(
+      provider.consoleOutput({ kind: 'alibaba', region: 'eu-central-1', id: 'i-abc' }),
+    ).resolves.toBe('oppenheimer-smoke kvm=no');
+  });
+
   it('says a machine the provider does not know is not found', async () => {
     const provider = new AlibabaEcsProvider({ credentials, clientFactory: () => fakeEcs() });
     await expect(

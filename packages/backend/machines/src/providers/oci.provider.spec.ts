@@ -41,6 +41,18 @@ function fakeClients(
       })),
       listInstances: vi.fn(async () => ({ items: [], opcNextPage: undefined })),
       listImages: vi.fn(async () => ({ items: [{ id: 'ocid1.image' }] })),
+      captureConsoleHistory: vi.fn(async () => ({
+        consoleHistory: { id: 'ocid1.history', lifecycleState: 'REQUESTED' },
+      })),
+      getConsoleHistory: vi
+        .fn()
+        .mockResolvedValueOnce({
+          consoleHistory: { id: 'ocid1.history', lifecycleState: 'GETTING-HISTORY' },
+        })
+        .mockResolvedValue({
+          consoleHistory: { id: 'ocid1.history', lifecycleState: 'SUCCEEDED' },
+        }),
+      getConsoleHistoryContent: vi.fn(async () => ({ value: 'oppenheimer-smoke kvm=yes' })),
       ...overrides.compute,
     } as unknown as OciClients['compute'],
     network: { ...overrides.network } as unknown as OciClients['network'],
@@ -128,6 +140,24 @@ describe('OciProvider', () => {
 
     expect(machines.map((m) => m.ref.id)).toEqual(['a']);
     expect(listInstances).toHaveBeenCalledTimes(2);
+  });
+
+  it('captures console history, waits for it, and returns its content', async () => {
+    const clients = fakeClients();
+    const sleep = vi.fn(async () => {});
+    const provider = new OciProvider({ credentials, clientFactory: () => clients, sleep });
+
+    const output = await provider.consoleOutput({
+      kind: 'oci',
+      region: 'eu-frankfurt-1',
+      id: 'ocid1.instance',
+    });
+
+    expect(output).toBe('oppenheimer-smoke kvm=yes');
+    expect(clients.compute.captureConsoleHistory).toHaveBeenCalledWith({
+      captureConsoleHistoryDetails: { instanceId: 'ocid1.instance' },
+    });
+    expect(sleep).toHaveBeenCalledTimes(1);
   });
 
   it('quotes the flex shape from the OCPU and memory rates', async () => {

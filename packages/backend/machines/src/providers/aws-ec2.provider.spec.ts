@@ -1,6 +1,7 @@
 import {
   DescribeImagesCommand,
   DescribeInstancesCommand,
+  GetConsoleOutputCommand,
   RunInstancesCommand,
   StopInstancesCommand,
   TerminateInstancesCommand,
@@ -186,6 +187,18 @@ describe('AwsEc2Provider', () => {
       ['i-2', 'stopped'],
     ]);
     expect(machines[0].tags).toEqual({ 'oppenheimer:machine': 'm1' });
+  });
+
+  it('decodes the serial console and returns nothing while there is none', async () => {
+    const outputs = [undefined, Buffer.from('oppenheimer-smoke kvm=yes').toString('base64')];
+    const fake = fakeEc2(
+      new Map<unknown, Handler>([[GetConsoleOutputCommand, () => ({ Output: outputs.shift() })]]),
+    );
+    const provider = new AwsEc2Provider({ clientFactory: () => fake.client });
+    const ref = { kind: 'aws' as const, region: 'eu-central-1', id: 'i-1' };
+
+    await expect(provider.consoleOutput(ref)).resolves.toBe('');
+    await expect(provider.consoleOutput(ref)).resolves.toBe('oppenheimer-smoke kvm=yes');
   });
 
   it('quotes from the catalog and says when it has no number', async () => {

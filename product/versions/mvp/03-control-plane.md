@@ -444,6 +444,7 @@ The port, named once:
 | `describe(ref)`, `list(region, tag)` | the host's state as the provider sees it, and every instance carrying our tag, which is the sweeper's view |
 | `capabilities()` | the facts the policy reads: `suspend`, `stopMayNotRestart` (Alibaba's economical mode, Oracle capacity), `userDataMutable`, `kvm: 'nested' \| 'metal'` and the shapes that have it |
 | `quote(spec)` | a per-hour price for the host chip, or nothing |
+| `consoleOutput(ref)` | the machine's serial console, decoded: the boot trace of a host with no inbound port, and how the live smoke test proves `/dev/kvm` exists (`packages/backend/machines/README.md`) |
 
 Errors are one short catalog: `MACHINE_CAPACITY` (retryable: the
 provider has no host), `MACHINE_QUOTA` (needs a person: a limit),

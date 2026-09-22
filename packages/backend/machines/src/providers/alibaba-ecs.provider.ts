@@ -31,6 +31,7 @@ export type EcsApi = Pick<
   | 'describeSecurityGroups'
   | 'createSecurityGroup'
   | 'describeZones'
+  | 'getInstanceConsoleOutput'
 >;
 
 export interface AlibabaCredentials {
@@ -304,6 +305,16 @@ export class AlibabaEcsProvider implements MachineProvider {
           source: 'catalog',
           asOf: PRICE_CATALOG_DATE,
         };
+  }
+
+  async consoleOutput(ref: MachineRef): Promise<string> {
+    const result = await this.call(() =>
+      this.client(ref.region).getInstanceConsoleOutput(
+        new $Ecs.GetInstanceConsoleOutputRequest({ regionId: ref.region, instanceId: ref.id }),
+      ),
+    );
+    const output = result.body?.consoleOutput;
+    return output ? Buffer.from(output, 'base64').toString('utf8') : '';
   }
 
   private async waitForVpc(region: string, vpcId: string): Promise<void> {
