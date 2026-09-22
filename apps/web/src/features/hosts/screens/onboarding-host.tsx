@@ -30,9 +30,17 @@ const CODE_MAX_LINES = 12;
  */
 export function OnboardingHostScreen({
   installationId,
+  walk,
 }: {
   /** What Connect GitHub connected, passed through so Ready can name it. */
   installationId?: string;
+  /**
+   * Set when this visit is the first-run walk. Ready turns away anyone who
+   * arrives without it, which is how a reader New session sent here to pair a
+   * second machine lands back in the console rather than on first-run's
+   * landing (`organizations/lib/first-run.ts`).
+   */
+  walk?: true;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
@@ -145,7 +153,7 @@ export function OnboardingHostScreen({
           render={
             <Link
               to="/onboarding/ready"
-              search={{ installation: installationId, host: host?.id }}
+              search={{ installation: installationId, host: host?.id, walk }}
             />
           }
         >
@@ -158,7 +166,7 @@ export function OnboardingHostScreen({
             sign-up now walks would have no exit. It is also what makes Ready's
             "no host yet" row reachable. */}
         <div className="flex flex-col items-start gap-1.5">
-          <AuthLink to="/onboarding/ready" search={{ installation: installationId }}>
+          <AuthLink to="/onboarding/ready" search={{ installation: installationId, walk }}>
             {t('onboarding.flow.host.skip')}
           </AuthLink>
           <p className="text-xs leading-normal text-fg-subtle">

@@ -290,16 +290,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
-- 2026-09-22: **the shown-once rule covers the whole first-run flow**,
-  not just the step that names the workspace (08). The gate was on step
-  2 alone, because that was the step that could do damage twice; Ready
-  was left standing, so a finished account could press Back out of the
-  console and be congratulated again on a walk it had no way to re-take.
-  What the gate needed was a second fact: the claimed address says the
-  *account* is finished, and a per-tab `sessionStorage` marker, opened
-  when step 2 submits and closed when Ready hands the reader to the
-  console, says whether *this visit* is still walking. Connect GitHub
-  and Add host are exempt and stay reachable for good: they are also the
-  console's only way to fill those two gaps (05), which is why the
-  exemption is route `staticData` on those two steps rather than a rule
-  written into the gate.
+- 2026-09-22: **shown-once covers the whole first-run flow**, not only
+  the step that names the workspace (08). The landing could be re-opened
+  by pressing Back out of the console, so an account that finished days
+  ago was congratulated again on a walk it had no way to re-take. Ready
+  now asks whether the navigation is the walk rather than whether the
+  account is finished, which every arrival there is. Connect GitHub and
+  Add host stay ungated: they are also New session's install-the-App and
+  pair-a-machine screens (05).

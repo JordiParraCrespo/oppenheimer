@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { newUser } from '../../support/auth';
 import { findOrganizationsForUser, findUserByEmail, query } from '../../support/db';
-import { registerThroughUi } from '../../support/web';
+import { claimWorkspaceThroughUi, registerThroughUi } from '../../support/web';
 
 /**
  * The walk a new account actually takes: register → name the workspace →
@@ -31,14 +31,7 @@ test('a new account walks the first-run flow into the console', async ({ page })
   const before = await findOrganizationsForUser(account?.id ?? '');
   expect(before).toHaveLength(1);
 
-  // Naming it: the address follows the name, and the availability check is the
-  // API's — `POST /organizations/check-slug`, not a timer.
-  const name = `Walk ${Date.now().toString(36)}`;
-  await page.getByLabel(/workspace name/i).fill(name);
-  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
-
-  await page.getByRole('button', { name: /continue/i }).click();
-  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+  const name = await claimWorkspaceThroughUi(page, 'Walk');
 
   // Renamed, not duplicated. The account still owns exactly one workspace, and
   // its address is no longer the provisional one sign-up minted.
@@ -74,70 +67,70 @@ test('a new account walks the first-run flow into the console', async ({ page })
  * The gate: a workspace that has been named is finished with this step.
  * Without it, every visit to the flow re-opens the slug form over an address
  * `check-slug` now counts as taken — its own.
+ *
+ * And that redirect is the path that used to leave the flow half-open. Step
+ * 3's Back is a link to this step, so a mid-walk reader lands in the console
+ * through it on the happy path — after which Ready must be shut too, or
+ * shown-once holds only for readers who left by the button.
  */
 test('a named workspace is not sent back through the slug form', async ({ page }) => {
   const user = newUser('firstrunagain');
 
   await registerThroughUi(page, user);
-  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
-
-  await page.getByLabel(/workspace name/i).fill(`Once ${Date.now().toString(36)}`);
-  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: /continue/i }).click();
-  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+  await claimWorkspaceThroughUi(page, 'Once');
 
   await page.goto('/onboarding/workspace');
+  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+
+  await page.goto('/onboarding/ready');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 });
 
 /**
- * The flow is shown once, and that holds for the whole flow, not just the step
- * that names the workspace.
+ * Shown once, and the whole flow — not just the step that names the workspace.
  *
  * Ready is where it showed: an account that had finished days ago could press
  * Back out of the console, or type the URL, and be congratulated all over
- * again on a walk it had no way to re-take. What separates that reader from
- * one still walking is not the account — both have claimed an address — but
- * whether this tab is between step 2 and Ready.
+ * again on a walk it had no way to re-take. Being finished cannot be the test,
+ * because every legitimate arrival at Ready is finished too — the address is
+ * claimed by the end of step 2. Having walked there is.
  *
- * Connect GitHub and Add a host are deliberately not in this: they are also
- * the console's only way to fill those two gaps, and `new-session.spec.ts`
- * walks New session into both.
+ * Connect GitHub and Add host stay open on purpose: they are also New
+ * session's install-the-App and pair-a-machine screens, and `new-session.spec.ts`
+ * walks the console into both.
  */
 test('a finished account cannot walk back into the flow', async ({ page }) => {
   const user = newUser('firstrunover');
 
   await registerThroughUi(page, user);
-  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
+  await claimWorkspaceThroughUi(page, 'Over');
 
-  await page.getByLabel(/workspace name/i).fill(`Over ${Date.now().toString(36)}`);
-  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: /continue/i }).click();
-  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
-
-  // Mid-walk the steps are open, claimed address and all — that is the whole
-  // reason the claim cannot be the test on its own.
+  // Mid-walk the landing is reachable, claimed address and all.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
 
-  // Going to the console ends the walk.
+  // Going to the console ends the walk, and replaces the landing in history so
+  // Back cannot return to it.
   await page.getByRole('link', { name: /go to the console/i }).click();
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
-
-  // Back out of the console, and by URL: neither re-opens the landing.
   await page.goBack();
-  await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
+  await expect(page).not.toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
 
+  // And the address itself is refused, with or without what the walk carried.
   await page.goto('/onboarding/ready');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
   await page.goto('/onboarding');
   await expect(page).toHaveURL(/\/sessions/, { timeout: 30_000 });
 
-  // The two steps the console shares stay reachable, or a reader who skipped
-  // them could never pair a host or connect a repository.
+  // The two steps the console shares stay reachable once the walk is over —
+  // New session's empty states link straight at them, and version 1 draws no
+  // other screen that pairs a machine or installs the App.
+  await page.goto('/onboarding/github');
+  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+
   await page.goto('/onboarding/host');
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
 });

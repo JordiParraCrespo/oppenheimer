@@ -32,23 +32,21 @@ history) to work on the MVP.
   `/onboarding/workspace` returns it to `/sessions`. Signing *in* never
   enters the flow. (Decided 2026-09-21; the flow previously ended at
   sign-up and the four steps were unreachable.)
-- **The flow is walked once, and the gate covers all of it.** The claim
-  cannot be the whole test, because steps 3 and 4 run *after* it: an
-  account is finished the moment it names its workspace, with Connect
-  GitHub and Add host still in front of it. So the gate over
-  `/onboarding` is the claim **and** whether this browser tab is between
-  step 2's submit and Ready — a walk is one tab and one visit, so it is
-  `sessionStorage` rather than a row, and it survives a reload mid-step
-  without following the reader into next week. A finished account
-  arriving from anywhere else — Back out of the console, a typed URL, a
-  second tab — is returned to `/sessions` rather than congratulated on a
-  walk it took days ago. The two exceptions are Connect GitHub and Add
-  host, which grew a second job: New session links straight to them from
-  its empty states and its chips, and version 1 draws no other screen
-  that pairs a machine or installs the App (05), so they stay open for
-  good and say so in their route `staticData`. (Decided 2026-09-22;
-  before it only step 2 was gated, and Ready could be re-opened by
-  pressing Back.)
+- **The flow is walked once, and Ready is what says so.** The claimed
+  address finishes the *account*, and two steps still run after it, so
+  it cannot also be the test for the rest of the flow — every
+  legitimate arrival at the landing is finished too. What the landing
+  asks is whether this navigation is the walk: step 2's claim opens
+  one, the flow's own links carry it, and `/onboarding/ready` reached
+  any other way — Back out of the console, a typed address, a second
+  tab — returns the reader to `/sessions` instead of congratulating
+  them again. Connect GitHub and Add host are not gated and are not
+  meant to be: New session links straight at them from its empty states
+  and its chips, and version 1 draws no other screen that installs the
+  App or pairs a machine (05). A reader the console sent to one of them
+  is not walking, so finishing there lands them back in the console.
+  (Decided 2026-09-22; before it, only step 2 was gated and the landing
+  could be re-opened by pressing Back.)
 - **The console creates exactly one organization: your own.** Sign-up's
   hook is best-effort, so `/onboarding` is the recovery path for an
   account that ended up with no workspace — it creates one and makes the

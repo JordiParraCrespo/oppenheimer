@@ -14,7 +14,6 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { closeFirstRun } from '@/features/organizations/lib/first-run';
 import { workspaceAddress } from '@/features/organizations/lib/workspace-address';
 
 /**
@@ -105,10 +104,11 @@ export function OnboardingReadyScreen({
         </SummaryRow>
       </SummaryCard>
 
-      {/* The one exit, and the end of the walk: closing it here is what makes
-          the flow shown-once, so Back out of the console lands on the console
-          again rather than on this page congratulating the reader twice. */}
-      <Button size="lg" block render={<Link to="/sessions" onClick={closeFirstRun} />}>
+      {/* `replace`: the walk ends here, so the landing should not be the entry
+          Back returns to. The route's own guard is what makes that a rule
+          rather than a habit — a typed or bookmarked `/onboarding/ready`
+          without the walk never mounts this page at all. */}
+      <Button size="lg" block render={<Link to="/sessions" replace />}>
         {t('onboarding.flow.ready.go')}
       </Button>
     </div>
