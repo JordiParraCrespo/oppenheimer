@@ -207,7 +207,7 @@ App — which is exactly why the existing `e2e/tests/api/sessions.spec.ts` skips
 its create path. Two ways out:
 
 - **(A) A fake GitHub, recommended.** The REST adapter hardcodes
-  `https://api.github.com`; make it a config value (`GITHUB_API_URL`, defaulting
+  `https://api.github.com`; make it a config value (`GITHUB_APP_API_URL`, defaulting
   to the same) and point the e2e API at a small stub that serves the App's
   installation, repository and branch endpoints. Everything else in the test —
   browser, web app, API, guards, Zod pipe, Postgres — is the real thing. The env
@@ -231,7 +231,7 @@ place later.
 | 2 | `lib/session-options.ts` + its tests | `pnpm test` |
 | 3 | The seven `components/` and their render specs | `pnpm test`, `pnpm check:structure` |
 | 4 | `hooks/` + `sections/new-session-form.tsx` + the screen, translations | `pnpm check`, `pnpm check:bundle` |
-| 5 | `GITHUB_API_URL` + the e2e GitHub stub | API integration tests still green |
+| 5 | `GITHUB_APP_API_URL` + the e2e GitHub stub | API integration tests still green |
 | 6 | The stack up, the web e2e spec, the full check run | everything above, green |
 | 7 | Changesets, push, PR | CI |
 
@@ -240,7 +240,7 @@ place later.
 - **The consumer re-alignment is wider than the screen.** It touches the
   sidebar, the session screen and the provisioning pane. Unavoidable: they read
   a shape the API stopped sending.
-- **`GITHUB_API_URL` is a production change made for a test.** It is small and
+- **`GITHUB_APP_API_URL` is a production change made for a test.** It is small and
   independently useful, but it is a change, and it belongs in its own commit.
 - **A created session sits at `host_offline` forever** without a runner, so the
   e2e assertion stops at "the row exists, the pane is provisioning". The agent

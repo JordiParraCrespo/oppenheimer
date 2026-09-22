@@ -45,7 +45,7 @@ problem-document filter and its Postgres are all the real ones.
 
 | Stub | Stands in for | Pointed at by | Why it cannot be real |
 | --- | --- | --- | --- |
-| `support/github-stub.ts` | GitHub's REST API | `GITHUB_API_URL`, `GITHUB_OAUTH_URL` | Repositories and branches are answered live through a GitHub App installation. Without an App, `POST /sessions` cannot validate a repository and New session has nothing to pick |
+| `support/github-stub.ts` | GitHub's REST API | `GITHUB_APP_API_URL`, `GITHUB_APP_OAUTH_URL` | Repositories and branches are answered live through a GitHub App installation. Without an App, `POST /sessions` cannot validate a repository and New session has nothing to pick |
 | `support/namer-stub.ts` | The model that names a session | `SESSION_NAMER_BASE_URL` | The namer is an OpenAI-compatible server (Groq, vLLM, a local Ollama). Its stub answers a title derived from the prompt it was given, so a request carrying the wrong text fails visibly |
 
 Both run before the API, because the API reads their URLs at boot — and the

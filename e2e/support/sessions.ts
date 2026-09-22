@@ -13,7 +13,7 @@ import { claimInstallation } from './github-stub';
  *
  * The GitHub half needs a stub (`support/github-stub.ts`), because repositories
  * and branches are answered live by GitHub and this deployment has no App. The
- * API is pointed at it with `GITHUB_API_URL`; everything else in the run is
+ * API is pointed at it with `GITHUB_APP_API_URL`; everything else in the run is
  * real.
  */
 export const GITHUB_STUB_URL = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';

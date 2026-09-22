@@ -11,7 +11,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
  * beside it would have nothing to click.
  *
  * So this serves the six endpoints the REST adapter calls, and the API is
- * pointed at it with `GITHUB_API_URL` / `GITHUB_OAUTH_URL`
+ * pointed at it with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
  * (`product/versions/mvp/12-session-launch.md`). **Everything else in the run
  * is the real thing**: a browser, the built console, the API with its guards,
  * its Zod pipe and its problem-document filter, and a real Postgres. The fake
@@ -200,7 +200,7 @@ export async function startGithubStub(
 /**
  * Run it on its own: `node --experimental-strip-types e2e/support/github-stub.ts`.
  *
- * The API has to be started **with** `GITHUB_API_URL` already pointing at this,
+ * The API has to be started **with** `GITHUB_APP_API_URL` already pointing at this,
  * so the stub cannot be something a test spins up after the fact — it is part
  * of standing the stack up, like the database.
  */
