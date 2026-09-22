@@ -32,9 +32,26 @@ feature lands.
       screen, the token's one-hour single use, and keeping the script
       host separate from the control plane (03)
 
-Deferred to later slices, with the VMs: F13 account volumes, F14 host
-egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
-retention. Also deferred: Tailscale mode for the control plane itself.
+**v0.2, with microVM sessions (02 §14, note 15):**
+
+- [ ] F14 the egress proxy is the only way out: the guest has no
+      network device, only vsock to the host proxy; allowlist modes
+      trusted / limited / none; credentials injected in flight, never
+      held in the guest
+- [ ] F15 `vm` is reported only after a jailed Firecracker guest has
+      booted on that host; a host without KVM offers `host` only
+- [ ] F16 the jailer on every VM: chroot, uid and gid, cgroup, seccomp;
+      no host device in a guest but its disks and its vsock
+- [ ] F17 the guest holds no control-plane credential; the host trusts a
+      VM by the CID it assigned and nothing else can reach the device
+- [ ] F18 session disks deleted on Delete and after the sleep window,
+      with the confirmation; a rented host's disks pushed before every
+      stop
+- [ ] F26, rootfs half: the image and the kernel are signed artifacts
+      of the runner's release pipeline, verified before the first boot
+
+Still deferred: F13 account volumes (the accounts slice). Also deferred:
+Tailscale mode for the control plane itself.
 F26 was deferred and is now in the list above: self-update landed in the
 MVP with 09, and an unsigned update path would be the widest hole
 in it.

@@ -1,5 +1,13 @@
 # 14 — Ephemeral cloud machines: one interface, three providers
 
+> **Read with note 15.** This note researched one provider VM per
+> session; the decision that followed (2026-09-22) is that a session is
+> a Firecracker microVM on a KVM host, and the port below rents the
+> *host*, sized for several sessions, on AWS and Oracle — the two
+> providers with nested virtualisation on ordinary VMs. The provider
+> facts in §4 and §6 stand; §5's sizes and §7's per-session pause table
+> describe the superseded shape and are kept as the record of why.
+
 Question: can a session run on a machine that exists only for that
 task, the way a Claude Code on the web session gets a fresh VM and
 loses it when it goes idle, and can we drive that through one interface
@@ -13,7 +21,7 @@ login gap, and the order of work — AWS first, Oracle second while the
 $300 trial is live, Alibaba when somebody needs it. The decisions it
 led to live in the MVP design notes that own them, not here: the port,
 the routes and the pause, resume, delete policy in
-[`versions/mvp/03`](versions/mvp/03-control-plane.md) §Cloud machines,
+[`versions/mvp/03`](versions/mvp/03-control-plane.md) §Cloud hosts,
 the tables in `versions/mvp/10`, the wire and the runner in
 `versions/mvp/01` and `02`, the screens in `05`, the cloud-init path
 in `09`.
@@ -108,11 +116,11 @@ it does, the smaller design is:
 - The provider driver never touches a session: it creates, starts,
   stops, destroys and lists machines, and says what it can do.
   Everything session-shaped — dispatch, idle, the push before a stop,
-  the log — is `sessions/` as built plus one fact: this host has a
-  lifetime.
+  the log — is `sessions/` as built. (Note 15 makes the machine a
+  *host* holding several microVM sessions; the sentence still holds.)
 
 What it changes in the control plane is written where the control plane
-is designed, `versions/mvp/03` §Cloud machines and `10`: `hosts/` is
+is designed, `versions/mvp/03` §Cloud hosts and `10`: `hosts/` is
 the host factory — two person-owned rows, `cloud_account` and
 `machine`, a `MachineProviderPort` with an adapter per provider in its
 `infrastructure/`, `machine.hostId` set at registration and
@@ -161,7 +169,7 @@ log, so the sidebar's boot trace is the same component.
 ## 3. What the research says the port must express
 
 The port itself — verbs, errors, routes — is named once, in
-`versions/mvp/03` §Cloud machines, and lives in `hosts/`. What the
+`versions/mvp/03` §Cloud hosts, and lives in `hosts/`. What the
 provider research below fixes about it, so three drivers cannot drift:
 
 - **Idempotency is a provider primitive on all three**, and the key
@@ -503,7 +511,7 @@ that changes. Stopped compute is free on all three providers (§4), so
 the default on a cloud machine is the same as on an own host: **Keep**,
 paused when idle, resumed when opened, deleted when you say so or after
 a long sleep. Ephemeral stays as an option for one-task work. The
-policy and its routes are `versions/mvp/03` §Cloud machines; this
+policy and its routes are `versions/mvp/03` §Cloud hosts; this
 section is what each verb *is* on each provider and why the policy has
 the shape it has.
 
@@ -572,7 +580,7 @@ running ──(idle 30 min)──► paused ──(asleep 7 d, or Delete)──�
 
 ### Never leaking a machine
 
-The ladder in `versions/mvp/03` §Cloud machines, and why each rung is
+The ladder in `versions/mvp/03` §Cloud hosts, and why each rung is
 there:
 
 1. **The event.** `session.stopped` on a cloud host is followed by the
@@ -663,14 +671,12 @@ platform a holder of vendor credentials.
 
 ## 10. Order of work: v0.2
 
-1. **The port, the AWS driver, and pause, resume, delete**, all in
-   `hosts/`: the two rows, connect with an access key pair first (the
-   cross-account role is a CloudFormation template and a settings
-   screen, a week on its own), the sweeper, the boot-trace rows, the
-   `push` flag on stop and the cold resume in the runner (relaunch
-   tmux, agent `--resume`, token rotation on wake) and the warm one on
-   AWS (hibernate: AL2023 arm64 image, encrypted root sized root +
-   RAM).
+1. **The port and the AWS driver**, all in `hosts/`, renting an m8i
+   with nested virtualisation as a host for microVM sessions (note 15
+   §10 has the order in full): the two rows, connect with an access
+   key pair first (the cross-account role is a CloudFormation template
+   and a settings screen, a week on its own), the sweeper, the
+   boot-trace rows, the host-level stop ladder.
    Done means: New session on `AWS eu-central-1`, a t4g.xlarge boots and
    pairs, runs the demo scene; stop typing for thirty minutes and the
    machine hibernates and the sidebar shows the moon; open it from the

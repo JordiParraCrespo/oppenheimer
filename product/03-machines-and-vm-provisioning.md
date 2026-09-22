@@ -155,14 +155,13 @@ Other hosts, same interface:
   Linux guests boot in seconds, Docker works, and the persistent home
   volume is a shared directory. Same lifecycle, different backend.
 - **Cloud**: an ordinary host that pairs itself. The control plane asks
-  the provider (AWS, Oracle Cloud, Alibaba Cloud) for a VM whose
+  the provider (AWS, Oracle Cloud) for a KVM-capable machine whose
   cloud-init runs the ordinary install command with a one-hour pairing
-  token; the runner registers and the machine is a host like any
-  other, driven over the link. The provider sits behind a
-  machine-lifecycle port that knows nothing about sessions (note 14;
-  `versions/mvp/03` §Cloud machines). No guest agent and no daemon of
-  ours resident on any provider host; the Firecracker guest path above
-  is mode B on a host we own, not the cloud path.
+  token; the runner registers, the machine is a host like any other,
+  driven over the link, and it runs the Firecracker sessions of the
+  table above, several per host (notes 14 and 15; `versions/mvp/03`
+  §Cloud hosts). The provider sits behind a machine-lifecycle port that
+  knows nothing about sessions.
 - **Docker-only host** (no KVM, e.g. a cheap VPS): a container instead of
   a VM, with the same in-guest agent. Weaker isolation, clearly labelled
   in the UI as "container, not VM".

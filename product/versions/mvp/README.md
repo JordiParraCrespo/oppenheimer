@@ -302,3 +302,18 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   the tables; 01 a `push` flag on `stop`; 02 the push-on-stop and the
   cold resume; 05 the host chip, the boot-trace rows and the session
   menu; 09 the cloud-init path with the lingering user manager.
+- 2026-09-22: **v0.2, sessions as microVMs, the way Claude Code on the
+  web runs them** (research note 15, read off the session that wrote
+  it). A session on a host with KVM is a Firecracker VM that exists
+  only while active, on a disk that is kept; a wake boots a fresh VM on
+  that disk in about two seconds and the agent resumes by its own id;
+  the guest has no network device and reaches the host over vsock and
+  the network only through the runner's proxy. 02 §14 replaces "deferred
+  to the VM slice" with the runtime; 04 is un-deferred as a
+  Dockerfile-built raw ext4 with the guest agent as `init`; 03's cloud
+  section becomes "Cloud hosts and microVM sessions": the port rents a
+  KVM-capable *host* for several sessions, `suspend` is never sent in
+  v0.2, and pause, resume, delete are the session's first and the
+  host's second; 10 gains `work_session.runtime` and `capabilities.vm`;
+  01 `runtime` on `session.create`; 05 the runtime control and the VM
+  rows; 07 takes F14 to F18 and F26's rootfs half into the list.

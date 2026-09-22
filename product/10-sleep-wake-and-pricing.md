@@ -56,6 +56,13 @@ running ──(idle 10 min)──► paused ──(idle 2 h)──► suspended 
 
 Timeouts are per-user settings with those defaults.
 
+**For a microVM session the tiers collapse to two states** (v0.2, note
+15): running, or stopped with the disk kept, because a Firecracker VM
+boots on its kept disk in about two seconds and the agent resumes by
+its own id — the hibernate column of §1 with a boot short enough that
+the RAM tiers buy nothing. The three tiers above remain the design for
+a libvirt guest, which v0.2 no longer builds.
+
 ## 3. What makes it work, and what to watch
 
 - **Disk must not change while suspended.** libvirt restores memory
@@ -109,6 +116,10 @@ three times the running slots, NVMe turns suspend into seconds, and the
 same monthly money or less. The runner is a fresh install on the new
 box; account volumes and hibernated overlays copy across as files. If
 the auction box is not ordered yet, skip it and start on the AX42.
+(Prices re-checked 2026-09-22 in note 15 §5: after the June 2026
+repricing the AX42-1 is €97.30 a month plus setup, the AX42-1-LTD
+€77.30, and the cheap KVM box is the AX41-1-LTD at €57.30 with no setup
+fee; the figures above predate the change.)
 
 Cloud comparison: one always-on 4 vCPU, 8 GB Hetzner cloud VM (CPX31
 class) is €16 to €25 a month, so even two of them with no sleep cost
@@ -131,17 +142,20 @@ true on the cost side because they cost disk only.
 
 ## 6. The same tiers on cloud machines
 
-A session can run on a cloud machine instead of the host: an ordinary
-runner, installed by cloud-init with an ordinary pairing token, on a VM
-the control plane created through a machine-lifecycle port (note 14;
-`versions/mvp/03` §Cloud machines). No guest agent, no vsock, nothing
-of ours resident on any provider host. The session lifecycle is the one
-above; what changes per provider is which tiers exist and what each
-costs, and that is the whole story of cloud sessions. The drivers, in
-the order they are built: **AWS, then Oracle Cloud, then Alibaba
-Cloud** (v0.2). GCP, Azure, Fly Machines and Hetzner Cloud are further
-drivers of the same port, unscheduled; their rows below say what each
-would be.
+When the person has no KVM host, the control plane rents one: an
+ordinary runner, installed by cloud-init with an ordinary pairing
+token, on a KVM-capable machine the control plane created through a
+machine-lifecycle port (note 14; `versions/mvp/03` §Cloud hosts), and
+sessions run on it as microVMs, several per host (note 15). The
+session's own pause and resume are the microVM's (two states, §2); the
+table below is about the **host** underneath, which is stopped when no
+session on it runs and started when one is opened. The drivers, in the
+order they are built: **AWS, then Oracle Cloud** (v0.2), the two
+providers with nested virtualisation on ordinary VMs; Alibaba only
+sells KVM on bare metal and waits for a user who has it. GCP, Azure and
+Fly Machines are further drivers of the same port, unscheduled;
+Hetzner Cloud has no nested virtualisation and is out as a session
+host.
 
 | Provider | Suspend (RAM kept) | Pause (disk kept) | Cost while asleep | Notes |
 |---|---|---|---|---|
@@ -344,8 +358,10 @@ is visible.
   set by measured load with 2:1 CPU overcommit: about four running on
   the i7-6700 host, eight to twelve on an AX42. The paused tier plus
   balloon reclaim is what lets many more sessions stay warm.
-- The cloud port gets an order: AWS, Oracle, Alibaba (note 14). It is
-  v0.2, the slice after the MVP; the MVP host is the Hetzner machine.
+- The cloud port gets an order: AWS, Oracle (note 14, note 15), renting
+  KVM-capable hosts for microVM sessions. It is v0.2, the slice after
+  the MVP; the MVP host is the Hetzner machine, and for a microVM
+  session the tiers above collapse to running or stopped (§2).
 
 ## Sources
 

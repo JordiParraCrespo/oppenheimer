@@ -88,7 +88,7 @@ rather than producing a second one.
    the version, and the preflight table. The same table is what the
    console shows on the host's row.
 
-**From cloud-init (v0.2).** A cloud machine (03 §Cloud machines) runs
+**From cloud-init (v0.2).** A cloud machine (03 §Cloud hosts) runs
 this same installer, with two things cloud-init has to get right.
 cloud-init runs as root and step 1 refuses root; and steps 7 and 8 need
 a systemd user session that a plain `runuser` has not got — `runner

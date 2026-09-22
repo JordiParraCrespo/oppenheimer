@@ -241,7 +241,7 @@ the agent's own resume flag and the session id §9 recorded
 (`claude --resume <id>`, `codex resume <id>`), which is what a cold
 resume on a cloud machine is. The runner never decides that a host is
 idle and never powers a host off: it reports, and the control plane
-acts (03 §Cloud machines).
+acts (03 §Cloud hosts).
 
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
@@ -402,15 +402,68 @@ in the root `.env.example` under "Runner (apps/runner)" when the code
 lands; a paired host needs no environment at all, which is what lets the
 service unit be three lines.
 
-### 14. Deferred to the VM slice
+### 14. The microVM runtime (v0.2)
 
-Guest agent, vsock, libvirt lifecycle, sleep tiers, account volumes,
-capacity gate, the egress proxy, and the `hypervisor`, `guest` and
-`proxy` subcommands. None of it changes a boundary above.
+Decided 2026-09-22 (research note 15). On a host with `/dev/kvm` a
+session can run as a **Firecracker microVM** instead of a tmux session
+on the host. The VM exists only while the session is active, its disk
+is kept between activations, a wake boots a fresh VM on that disk in
+about two seconds, and the guest has no network device: it reaches the
+host over vsock and the network only through the runner's proxy. Two
+new contexts, one new adapter:
 
-The v0.2 cloud machine needs none of this: it is an ordinary host that
-paired itself (03 §Cloud machines), and the two things it asks of the
-runner are in §5.
+```
+internal/
+  microvm/                  the aggregate: a session's disk, its VM, its jailer
+    adapters/firecracker    the REST API over the VM's socket, the jailer, kernel and disk files
+    adapters/disk           reflink of the base image, sparse allowance, discard, delete
+  guest/                    the in-guest agent binary, built into the image as /init
+    proxy                   the CONNECT forwarder on 127.0.0.1 → vsock → the host's egress proxy
+    pty                     tmux inside the guest, the same bridge as sessions/adapters/tmux
+  sessions/adapters/vsock   the runtime adapter: session.create and friends carried to the guest
+  egress/                   the host-side proxy: allowlist modes, TLS re-termination, credential injection (F14)
+```
+
+- **`sessions` keeps its aggregate; the runtime is an adapter.** A
+  session created with `runtime: microvm` (01) is the same worktree,
+  tmux session and windows, inside the guest instead of on the host;
+  `sessions/adapters/vsock` speaks the vocabulary `sessions` already
+  speaks to `adapters/tmux`, over the control port the host dials. The
+  link, the snapshot on reconnect and the event batches do not change.
+- **The guest agent is `init`.** It mounts, brings up the vsock
+  listener first, takes the session bundle from the host (ids, layout,
+  launch, first task, the proxy CA), runs clone and setup through the
+  proxy, starts tmux and the agent, and streams PTY bytes and the
+  screen manifest back. It never holds a control-plane credential: the
+  host identifies the VM by its CID and only the host can reach the
+  device (F17). On `session.stop` it pushes (`push: true`), `sync`s,
+  unmounts, and reports; the runner then kills the VM. On a boot with a
+  kept disk it relaunches window 0 with the agent's own resume flag and
+  the id §9 recorded — the cold resume of §5, which on a microVM is
+  the only resume in v0.2.
+- **Disks.** Firecracker takes raw images only. The base image (04) is
+  a raw ext4 file; a session disk is a **reflink** of it on an XFS or
+  btrfs volume, a sparse file of the session's allowance, journal kept
+  so a VM that died without the unmount replays rather than boots
+  unchecked. Delete removes the file (F18). The account volume, later,
+  is a second device (F13).
+- **The jailer, always** (F16): chroot, uid and gid, cgroup and seccomp
+  per VM; no host device in a guest but its disks and its vsock. The
+  runner reports the `vm` capability only after it has booted a jailed
+  guest on that host (F15); a host without KVM offers `host` only.
+- **No NIC.** There is no tap, bridge or NAT to configure and nothing
+  for a firewall to filter; `egress/` is the only way out, with the
+  three modes note 02 named. Docker inside the guest uses the same
+  proxy.
+- **Idle is not the runner's call** and the guest never powers itself
+  off; the runner reports and the control plane acts (03). The runner's
+  own reconcile on boot lists VM sockets and disks the way it lists
+  tmux sessions today, and reports rather than reaps.
+- **Snapshots** (memory restore) are not in v0.2: the boot on the kept
+  disk is the resume, as it is for Claude Code on the web.
+
+Still deferred: the account volume, the shared workspace VM of note 11
+§2, Firecracker snapshots, `tart` on macOS.
 
 ## Open questions
 

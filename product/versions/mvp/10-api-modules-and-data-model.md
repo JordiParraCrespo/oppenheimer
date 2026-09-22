@@ -139,13 +139,15 @@ lives on the aggregate rather than a child table) and
 `HostPairingTokenEntity`.
 
 **v0.2 adds the host factory here, not a module.** A cloud account a
-person connects and the machines it makes are two more person-owned
-rows — `cloud_account` and `machine`, below — and the provider behind
-them is a port `hosts/` owns, with an adapter per provider in its
-`infrastructure/` (03 §Cloud machines). A machine that pairs is a
-`host` row like any other; `machine.hostId` points at it, and a pairing
-token carries the `machineId` it was minted for so registration can
-join the two.
+person connects and the KVM-capable hosts it rents are two more
+person-owned rows — `cloud_account` and `machine`, below — and the
+provider behind them is a port `hosts/` owns, with an adapter per
+provider in its `infrastructure/` (03 §Cloud hosts). A machine that
+pairs is a `host` row like any other, holding several microVM sessions;
+`machine.hostId` points at it, and a pairing token carries the
+`machineId` it was minted for so registration can join the two. The
+`capabilities` jsonb gains `vm` (reported only after a proven jailed
+boot, F15) and `kvm: 'metal' | 'nested'`.
 
 **`github/`** owns which App installations belong to the workspace, how
 to list what they cover **when asked**, and how to turn one repository
@@ -758,13 +760,16 @@ on the workspace-owned tables, exactly as `lead` does (all but
   `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
   `host`: no `organizationId`, `keys: { owner, id }`.
 - `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
-  paired, `providerRef` (the instance id), `spec` jsonb (size, arch,
-  image, disk, market), `state` (`provisioning` | `running` | `stopped`
-  | `suspended` | `destroyed`), `lifetime` (`keep` | `ephemeral`),
-  `perHourUsd` snapshot, `stoppedAt`, `destroyedAt`, timestamps. Unique
-  `(providerRef)`; index `(cloudAccountId)`, `(hostId)`. Its id is the
-  provider's idempotency key and is never reused: a recreate is a new
-  row pointing at the same session's new host.
+  paired, `providerRef` (the instance id), `spec` jsonb (the host's
+  shape, arch, image, disk, market, and the session capacity it was
+  sized for), `state` (`provisioning` | `running` | `stopped` |
+  `destroyed`), `perHourUsd` snapshot, `stoppedAt`, `destroyedAt`,
+  timestamps. Unique `(providerRef)`; index `(cloudAccountId)`,
+  `(hostId)`. A rented **host**, not a session's VM: the lifetime is
+  the session's (`work_session`), and a host is stopped when none of
+  its sessions runs. Its id is the provider's idempotency key and is
+  never reused: a recreate is a new row, a new host, and every session
+  that lived on the old one resumes on it from its pushed branches.
 - `host_pairing_token` gains `machineId` null (v0.2).
 
 **`github/`**
@@ -870,7 +875,8 @@ there.
 
 - `work_session` — `id` (UUID v4, unguessable per F25, and also the tmux
   session name), `organizationId`, `projectId`, `createdByUserId`,
-  `hostId`, `name`, `slug`, `agent`, `cwdCheckoutId` null,
+  `hostId`, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
+  a check constraint), `cwdCheckoutId` null,
   `idempotencyKey` null, then the fold: `state`, `stateSeq`,
   `agentSessionId`, `lastEventAt`, `stoppedAt`, timestamps.
   Index `(organizationId, state, createdAt DESC)` for the sidebar;
@@ -1275,7 +1281,13 @@ Each step is a vertical slice that can land alone.
   for the provider drivers; the review folded both into `hosts/`, the
   same way the GitHub App key stayed a port instead of becoming
   `tokens/`. Two person-owned tables and one port; the surface is 03
-  §Cloud machines.
+  §Cloud hosts.
+- **v0.2: a session is a microVM, and a rented machine is a host that
+  holds several.** Note 15 moved the unit from "one provider VM per
+  session" to "one Firecracker VM per session on a KVM host": the
+  `machine` row describes a host and its capacity, `work_session` gains
+  `runtime`, and the lifetime stays on the session. No new table: the
+  session's disk is the runner's, on the host, like its worktree.
 
 ## Open questions
 

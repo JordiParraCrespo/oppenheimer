@@ -96,7 +96,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
-  <li><a href="#cloud">Ephemeral cloud machines</a></li>
+  <li><a href="#cloud">MicroVM sessions and cloud hosts</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
@@ -233,7 +233,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
       <li>Runner acts as a provisioner on a hypervisor host. Each task gets a VM with 4 to 8 GB RAM and 2 to 4 vCPUs, Docker preinstalled, the repo cloned at the requested branch.</li>
       <li>The setup script runs inside the VM, then the PTY opens inside it. The agent can bring up Postgres or Redis for the task without touching the host.</li>
       <li>Created on session start, paused when idle, destroyed after retention. A persistent per-target home volume keeps <code>claude</code> logged in across fresh VMs.</li>
-      <li>Linux host: Firecracker microVM. macOS host: Apple Virtualization via tart. Cloud: an ordinary host that pairs itself, behind a machine-lifecycle port (v0.2).</li>
+      <li>Linux host: Firecracker microVM. macOS host: Apple Virtualization via tart. Cloud: a rented KVM host that pairs itself and runs the same microVMs (v0.2).</li>
     </ul>
   </div>
 </div>
@@ -624,11 +624,12 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </svg>
 <p class="caption">Website and runners in different places. The host keeps its no-public-services property; guests are reachable from nowhere.</p>
 </div>
-<div class="note"><strong>Trade made:</strong> a cloud-init KVM guest boots in tens of seconds where Firecracker boots in one. For a session that starts once and lives for days, with fast resume from managedsave, that is acceptable, and it removes a month of provisioner work. Firecracker stays as a later cold-start optimization behind the same runner interface.</div>
+<div class="note"><strong>Trade reversed (v0.2, note 15):</strong> a session is now a Firecracker microVM that exists only while active and is booted again on its kept disk at every wake, so the boot time is the product and a cloud-init KVM guest is too slow for it. The controller's ideas (verified image, capacity gate, reconcile on start, nothing of the host in a guest) carry over; its libvirt, qcow2 and managedsave code does not.</div>
 
 
 <h2 id="sleep">Sleep, wake, and what it costs</h2>
 <p>Yes, sessions can sleep and wake like a Claude Code on the web session that expires and comes back. On our own KVM host it is better, because there are two kinds of sleep and we get both.</p>
+<div class="note"><strong>v0.2 (note 15):</strong> for a microVM session the tiers below collapse to two states, running or stopped with the disk kept, because a Firecracker VM boots on its kept disk in about two seconds and the agent resumes by its own id. The tiers remain the design for a libvirt guest, which v0.2 no longer builds.</div>
 <div class="grid2">
   <div class="panel">
     <span class="tag">Suspend · like closing a laptop lid</span>
@@ -674,22 +675,22 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 
 
-<h2 id="cloud">Ephemeral cloud machines</h2>
-<p>v0.2. A machine that exists only for one task, the way a Claude Code on the web session gets a fresh VM and loses it when idle, on AWS, Oracle Cloud and Alibaba Cloud. Own host first, the cloud as overflow and as the no-host-yet path. The decision that keeps it small: <b>a cloud box is a host that pairs itself</b>. The control plane asks the provider for a VM whose cloud-init runs the ordinary install command with a one-hour, single-use pairing token; the runner registers, the VM is a host the person owns, and the session runs on it like on a Mac Studio. The provider sits behind a machine-lifecycle port that knows nothing about sessions; no guest agent, no sixth module (research in note 14, decisions in the MVP design notes).</p>
-<p>The headline is <b>pause, resume, and delete later</b>. A session on a cloud machine pauses after thirty idle minutes and costs only its disk while paused; it resumes when opened, with the cursor where it was on AWS, which hibernates, or after a boot and an agent resume on Oracle and Alibaba, which only stop; it is deleted when you say so or after seven days asleep. Pause pushes the branch first, so a resume the provider refuses becomes a recreate rather than a loss. Teardown is always the control plane's API call, because on Oracle and Alibaba an OS shutdown does not stop billing.</p>
+<h2 id="cloud">Sessions in microVMs, and cloud hosts</h2>
+<p>v0.2, designed the way Claude Code on the web runs a session, read off the session that wrote it: a Firecracker microVM with a process API on vsock, a kept disk, an uptime of 46 seconds an hour into the conversation, tokens rewritten at every resume. <b>A session is a microVM on a host with KVM.</b> It exists only while the session is active; its disk is kept; a wake boots a fresh VM on that disk in about two seconds and the agent resumes by its own id; the guest has no network device and reaches the host over vsock and the network only through our proxy, which enforces the allowlist and injects the repository token in flight. Two states instead of three tiers. Firecracker, not libvirt; the controller's ideas carry over, its code does not.</p>
+<p>The host is your own Hetzner box first. When you have none, <b>a cloud box is a host that pairs itself</b>: the control plane asks the provider for a KVM-capable machine whose cloud-init runs the ordinary install command with a one-hour pairing token, the runner registers, and the host runs the same microVMs, six to eight of them. The provider sits behind a machine-lifecycle port that knows nothing about sessions; no guest agent of a second kind, no sixth module. Pause, resume and delete are the session's first (kill, boot, drop the disk) and the host's second (stop when nothing runs on it, start on the next message). Teardown is always the control plane's API call, because on Oracle an OS shutdown does not stop billing.</p>
 <table>
-  <thead><tr><th></th><th>AWS EC2</th><th>Oracle Cloud</th><th>Alibaba Cloud</th></tr></thead>
+  <thead><tr><th></th><th>Own Hetzner box</th><th>AWS EC2 m8i</th><th>Oracle E5.Flex</th></tr></thead>
   <tbody>
-    <tr><td>4 vCPU / 16 GB, per hour</td><td>t4g.xlarge $0.154 Frankfurt</td><td>A1.Flex $0.064</td><td>g7a.xlarge $0.196 Frankfurt</td></tr>
-    <tr><td>880 running hours a month</td><td>$135, $63 spot</td><td>$56</td><td>$172, or $121 on the 4 / 8 c7a</td></tr>
-    <tr><td>Paused</td><td>hibernated, EBS only</td><td>stopped, boot volume only, about $2 a month</td><td>stopped, disks only, and it may not restart</td></tr>
-    <tr><td>Free money</td><td>$100 to $200 credits, six months, 5 vCPU quota</td><td>$300 for 30 days, then 2 OCPU / 12 GB forever</td><td>$300+ credits for 60 days</td></tr>
-    <tr><td>Watch out</td><td>Ubuntu 24.04 cannot hibernate; new-account quota is one xlarge</td><td>"Out of host capacity" on A1; paused machines count against limits</td><td>Arm only in Singapore; the most paperwork</td></tr>
+    <tr><td>KVM</td><td>metal</td><td>nested virtualisation on ordinary instances since February 2026, Intel only</td><td>nested virtualisation on E5 and Standard3 shapes, not on A1</td></tr>
+    <tr><td>Host for 6 to 8 sessions</td><td>AX41-1-LTD 12 threads / 64 GB, €57.30 a month</td><td>m8i.2xlarge 8 / 32, $0.51 an hour Frankfurt, $0.20 spot</td><td>4 OCPU / 32 GB, $0.18 an hour, $0.09 preemptible</td></tr>
+    <tr><td>Month, ten sessions four hours a day</td><td>€57 flat</td><td>about $60 to $75, $30 on spot</td><td>about $25; the $300 trial covers a year</td></tr>
+    <tr><td>Watch out</td><td>always on</td><td>no Graviton; quota request on day one</td><td>random I/O 79 % slower than bare metal: worktrees on tmpfs</td></tr>
   </tbody>
 </table>
 <div class="rule">
-  <span class="k">login</span><span>The one place this is worse than Claude Code on the web: an ephemeral machine has no Claude login, and the platform stores no vendor credential. Version one is the login button once per machine, ten seconds on a phone. Version two is the account volume: a small block volume in the person's own cloud account holding the login directory, attached to one machine at a time, with the accounts slice.</span>
-  <span class="k">order</span><span>AWS first, with pause, resume and delete; Oracle second, and do not start the $300 trial until that driver is a week away, since the clock is 30 days; Ephemeral as an option; prebaked images; Alibaba when someone needs it; the account volume with accounts.</span>
+  <span class="k">out</span><span>Hetzner Cloud has no nested virtualisation and stays the control plane's home. Alibaba sells KVM only on 104-vCPU bare metal and waits for a user who has it. Per-session cloud VMs, EC2 hibernation as the warm resume, and the shared workspace VM are all off the v0.2 list. Firecracker snapshots are the later warm resume, loaded once and never twice.</span>
+  <span class="k">login</span><span>The one place this is worse than Claude Code on the web: a fresh machine has no Claude login, and the platform stores no vendor credential. Version one is the login button once per session disk, ten seconds on a phone. Version two is the account volume: a second block device holding the login directory, attached to one VM at a time, with the accounts slice.</span>
+  <span class="k">order</span><span>The image and the guest agent; the microVM runtime in the runner on the Hetzner box; the egress proxy; then rented hosts, AWS first and Oracle second with the $300 trial started when that driver is a week away; snapshots, squashfs drives for the agent CLIs and the account volume later.</span>
 </div>
 
 <h2 id="layout">Workspace layout</h2>
@@ -776,6 +777,6 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
-  <li><a href="https://code.claude.com/docs/en/self-hosted-environments">Claude Code self-hosted environments</a>, <a href="https://code.claude.com/docs/en/self-hosted-environments-configuration">the spawn-runner hook</a>; <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-hibernate-overview.html">EC2 hibernation</a>, <a href="https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm">OCI Always Free</a>, <a href="https://www.alibabacloud.com/help/en/ecs/user-guide/economical-mode">Alibaba economical mode</a></li>
+  <li><a href="https://code.claude.com/docs/en/self-hosted-environments">Claude Code self-hosted environments</a>, <a href="https://code.claude.com/docs/en/self-hosted-environments-configuration">the spawn-runner hook</a>; <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-hibernate-overview.html">EC2 hibernation</a>, <a href="https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm">OCI Always Free</a>, <a href="https://www.alibabacloud.com/help/en/ecs/user-guide/economical-mode">Alibaba economical mode</a>; <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md">Firecracker snapshots</a>, <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/vsock.md">vsock</a>, <a href="https://www.anthropic.com/engineering/how-we-contain-claude">How we contain Claude</a>, <a href="https://aws.amazon.com/about-aws/whats-new/2026/02/amazon-ec2-nested-virtualization-on-virtual">EC2 nested virtualization</a>, <a href="https://blogs.oracle.com/cloud-infrastructure/firecracker-oci-vm-vs-bm">Firecracker on OCI</a></li>
 </ul>
 </div>
