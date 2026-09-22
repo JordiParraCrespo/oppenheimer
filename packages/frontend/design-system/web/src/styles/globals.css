@@ -1,4 +1,46 @@
 /* =============================================================================
+   Terminal symbols
+   =============================================================================
+   A terminal is the product's primary surface, and coding agents draw their
+   turns with glyphs no stock monospace face carries in full — the Powerline
+   and private-use ranges most of all. Without a face that has them, every
+   agent line opens with a substitute mark instead of its bullet.
+
+   `unicode-range` is the whole point: the browser fetches this 1.1MB file
+   only when a session actually prints a character inside these ranges, and
+   every other glyph — all of Latin, every digit, every accent — keeps coming
+   from the platform's own monospace face at its own metrics.
+
+   The ranges are the symbol blocks a terminal program draws furniture from,
+   plus the private-use planes. The private-use planes alone are not enough,
+   which is the trap: Powerline and oh-my-posh live there, but the marks a
+   coding agent opens a turn with do not. `⏺` is U+23FA (Miscellaneous
+   Technical), `✻` and `❯` are U+273B and U+276F (Dingbats), and a box is
+   drawn from U+2500. Claim only the private-use planes and every one of those
+   still falls through to a face that has no glyph for it, which is what drew
+   a stray mark at the start of every agent line.
+   ========================================================================== */
+@font-face {
+  font-family: 'Oppenheimer Symbols';
+  src: url('../assets/fonts/SymbolsNerdFontMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2190-21FF, /* arrows */
+    U+2300-23FF, /* miscellaneous technical — the turn marker lives here */
+    U+2500-257F, /* box drawing */
+    U+2580-259F, /* block elements */
+    U+25A0-25FF, /* geometric shapes */
+    U+2600-26FF, /* miscellaneous symbols */
+    U+2700-27BF, /* dingbats — the prompt chevron and the spinner */
+    U+2B00-2BFF, /* miscellaneous symbols and arrows */
+    U+E000-F8FF, /* private use — Powerline, oh-my-posh, Nerd Font icons */
+    U+F0000-FFFFD,
+    U+100000-10FFFD;
+}
+
+/* =============================================================================
    Oppenheimer design system — foundations
    =============================================================================
    Ported from the Claude Design export in `product/versions/mvp/design/_ds/`
@@ -61,7 +103,13 @@
        ================================================================== */
 
     /* ---- Surfaces ---------------------------------------------------- */
-    --canvas: var(--op-gray-50); /* the page; light mode is never white */
+    /* The page. It was `--op-gray-50` on the principle that light mode is
+       never white, which gave every full-bleed surface — the console pane,
+       the terminal frame, the composer page — a grey ground with white cards
+       floating on it. The console is one surface, so the ground is white and
+       the card no longer reads as a card. Dark mode is unchanged: there the
+       lift between `--canvas` and `--card` is what separates them. */
+    --canvas: var(--op-white);
     --background: var(--canvas);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs

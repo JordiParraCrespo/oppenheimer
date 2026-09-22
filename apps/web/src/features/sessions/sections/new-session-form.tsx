@@ -1,5 +1,3 @@
-import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { Cpu, FolderGit2 } from '@oppenheimer/design-system-web/icons';
 import {
   useCreateSession,
   useHosts,
@@ -37,9 +35,9 @@ import {
  * not re-render a branch pane and a keystroke in the composer re-renders
  * nothing but the composer.
  *
- * Add host is the one dialog on this screen, and it belongs here rather than
- * to the chip: pairing a machine ends with that machine selected, and the draft
- * the chip writes to is this component's.
+ * Add host is this component's dialog rather than the chip's: the chip's foot
+ * action only says "open it", and where the machine it pairs lands — the draft
+ * — is here.
  *
  * Three reads, and they are not the same read four times: the hosts, the
  * installations' repositories, and the branches of the repositories somebody
@@ -51,9 +49,6 @@ export function NewSessionForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { draft, update, setEngine } = useNewSessionDraft();
-  // Whether Add host is open. It is this component's because both of the
-  // things that open it are here — the host chip's foot action and the
-  // empty state below — and because what it pairs lands in the draft above.
   const [addingHost, setAddingHost] = useState(false);
 
   const hosts = useHosts();
@@ -81,66 +76,6 @@ export function NewSessionForm() {
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
-
-  /**
-   * One element, rendered as the second child of whichever branch below is
-   * showing — never a second component, and never at a different index.
-   *
-   * The first machine a reader pairs empties the no-host state while they are
-   * still standing in the dialog: the list this screen reads is the one the
-   * dialog polls. Reconciled at the same position, the dialog survives that
-   * swap; moved, it would remount, mint a second token and throw away the
-   * pairing it was showing.
-   */
-  const addHostDialog = addingHost ? (
-    <AddHostDialog
-      onClose={() => setAddingHost(false)}
-      onUseHost={(hostId) => {
-        update({ hostId });
-        setAddingHost(false);
-      }}
-    />
-  ) : null;
-
-  if (!hosts.isPending && hosts.data?.length === 0) {
-    return (
-      <>
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Media variant="icon">
-              <Cpu />
-            </EmptyState.Media>
-            <EmptyState.Title>{t('sessions.new.noHosts.title')}</EmptyState.Title>
-            <EmptyState.Description>{t('sessions.new.noHosts.description')}</EmptyState.Description>
-          </EmptyState.Header>
-          <Button onClick={() => setAddingHost(true)}>{t('sessions.new.noHosts.action')}</Button>
-        </EmptyState>
-        {addHostDialog}
-      </>
-    );
-  }
-
-  if (!installations.isPending && installations.data?.length === 0) {
-    return (
-      <>
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Media variant="icon">
-              <FolderGit2 />
-            </EmptyState.Media>
-            <EmptyState.Title>{t('sessions.new.noRepositories.title')}</EmptyState.Title>
-            <EmptyState.Description>
-              {t('sessions.new.noRepositories.description')}
-            </EmptyState.Description>
-          </EmptyState.Header>
-          <Button onClick={() => navigate({ to: '/onboarding/github' })}>
-            {t('sessions.new.noRepositories.action')}
-          </Button>
-        </EmptyState>
-        {addHostDialog}
-      </>
-    );
-  }
 
   const repositoryOptions = toRepositoryOptions(repositories.repositories, branches.byRepository, {
     archived: t('sessions.new.repository.archived'),
@@ -188,7 +123,7 @@ export function NewSessionForm() {
             value={draft.scope}
             onValueChange={(scope) => update({ scope })}
             onConnect={() => navigate({ to: '/onboarding/github' })}
-            disabled={repositoryOptions.length === 0}
+            disabled={repositories.isPending}
           />
           {onlyScope ? (
             <BranchSelect
@@ -233,7 +168,16 @@ export function NewSessionForm() {
           </p>
         ) : null}
       </div>
-      {addHostDialog}
+
+      {addingHost ? (
+        <AddHostDialog
+          onClose={() => setAddingHost(false)}
+          onUseHost={(hostId) => {
+            update({ hostId });
+            setAddingHost(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }

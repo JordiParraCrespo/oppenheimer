@@ -1,7 +1,5 @@
 {
   "home": {
-    "emptyTitle": "No sessions open",
-    "emptyDescription": "Start one and the terminal takes over this pane.",
     "openTitle": "No session open",
     "openDescription": "Pick one from the sidebar, or start another."
   },
@@ -97,20 +95,9 @@
     "composer": {
       "placeholder": "Describe a task or ask a question"
     },
-    "noHosts": {
-      "title": "No host yet",
-      "description": "A session runs on a machine you own. Pair one and it appears here.",
-      "action": "Add a host"
-    },
-    "noRepositories": {
-      "title": "No repository yet",
-      "description": "Connect GitHub and pick the repositories a session may check out.",
-      "action": "Connect GitHub"
-    },
     "queued": "Your first task is queued for this host."
   },
   "session": {
-    "composerPlaceholder": "Ask the agent, or run a command",
     "status": {
       "connecting": "Connecting",
       "live": "Live",

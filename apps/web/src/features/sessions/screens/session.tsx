@@ -57,9 +57,16 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   return (
     /* The artboard frames the terminal rather than bleeding it: 14px of canvas
        around a 1040px card, so mono output keeps a readable measure on a wide
-       display instead of stretching across it. */
+       display instead of stretching across it.
+       The frame has **no radius**. `SessionsConsole.dc.html` sets
+       `border-radius: 0` on this element, and the corners are the whole
+       difference between a console surface and a widget sitting on a page:
+       rounded, it read as a floating card with the canvas showing round its
+       corners, which is the one thing `terminal.css` opens by ruling out —
+       "not a widget tucked into a card: it is the whole right-hand side of
+       the app". */
     <div className="flex min-h-0 flex-1 flex-col p-3.5">
-      <div className="mx-auto flex min-h-0 w-full max-w-[1040px] flex-1 flex-col overflow-hidden rounded-lg">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1040px] flex-1 flex-col overflow-hidden">
         <SessionTerminal sessionId={session.id} />
       </div>
     </div>
@@ -70,7 +77,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
 function SessionSkeleton() {
   return (
     <div className="flex min-h-0 flex-1 flex-col p-3.5">
-      <Skeleton className="mx-auto min-h-0 w-full max-w-[1040px] flex-1 rounded-lg" />
+      <Skeleton className="mx-auto min-h-0 w-full max-w-[1040px] flex-1 rounded-none" />
     </div>
   );
 }
