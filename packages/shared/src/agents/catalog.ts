@@ -61,7 +61,7 @@ export type SessionEffort = (typeof SESSION_EFFORTS)[number];
 
 /** One model the engine button offers, inside its agent's pane. */
 export interface CodingAgentModel {
-  /** Passed to the agent verbatim, so an alias the CLI documents is preferred. */
+  /** Passed to the agent verbatim, so it is a name that CLI's `--model` takes. */
   readonly id: string;
   /** What the button and the row read ("Claude Opus 5"). */
   readonly label: string;
@@ -169,14 +169,26 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'working-directory',
     }),
     configDirEnv: 'CLAUDE_CONFIG_DIR',
-    // Aliases rather than pinned ids, because `claude --help` documents them as
-    // "an alias for the latest model": a pinned id here would be a model list
-    // this repository has to keep current, which is the drift the catalog's own
-    // header warns about.
+    // The family, one row per model, named as the person choosing it knows it.
+    //
+    // Pinned ids rather than the aliases `claude --help` also takes (`opus`,
+    // `sonnet`, `fable`): a row's label names a generation, so its id has to
+    // name the same one. An alias under a versioned label is the pair that can
+    // drift apart silently — the day the alias moves, the button keeps saying
+    // "Claude Opus 5" while the host runs something else. A pinned id can only
+    // go stale in the open: the row still runs what it says, and the list is
+    // one edit behind until somebody adds the next model here.
+    //
+    // This is the **seed**. Whether a given host's `claude` knows a given id is
+    // a host fact, and the probe that would report it is open question 6 in
+    // `product/versions/mvp/05-screens.md`; until it lands, an id this list
+    // names and that CLI does not fails in the session's own terminal, where
+    // the person can see it.
     models: Object.freeze([
-      Object.freeze({ id: 'opus', label: 'Claude Opus', default: true as const }),
-      Object.freeze({ id: 'sonnet', label: 'Claude Sonnet' }),
-      Object.freeze({ id: 'fable', label: 'Claude Fable' }),
+      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
+      Object.freeze({ id: 'claude-opus-5', label: 'Claude Opus 5', default: true as const }),
+      Object.freeze({ id: 'claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),

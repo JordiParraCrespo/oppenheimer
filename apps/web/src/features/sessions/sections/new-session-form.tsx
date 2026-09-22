@@ -142,25 +142,30 @@ export function NewSessionForm() {
           decision — where this session runs — and a screen reader announces
           the legend once for all of them. */}
       <fieldset aria-label={t('sessions.new.title')} className="flex flex-wrap gap-2">
+        {/* A query in flight is `loading`, never `disabled`. A chip greyed out
+            while its list loads is the same chip as one this workspace may not
+            use, and on a cold open every one of these is empty for a moment —
+            which is how New session came to look switched off. */}
         <HostSelect
           hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
           value={draft.hostId}
           onValueChange={(hostId) => update({ hostId })}
           onAddHost={() => navigate({ to: '/onboarding/host' })}
-          disabled={hosts.isPending}
+          loading={hosts.isPending}
         />
         <RepositoryBranchSelect
           repositories={repositoryOptions}
           value={draft.scope}
           onValueChange={(scope) => update({ scope })}
           onConnect={() => navigate({ to: '/onboarding/github' })}
-          disabled={repositoryOptions.length === 0}
+          loading={installations.isPending || repositories.isPending}
         />
         {onlyScope ? (
           <BranchSelect
             branches={toBranchOptions(onlyBranches, { default: t('sessions.new.branch.default') })}
             value={onlyScope.branch}
             onValueChange={(branch) => update({ scope: [{ id: onlyScope.id, branch }] })}
+            loading={branches.isPending}
           />
         ) : null}
       </fieldset>

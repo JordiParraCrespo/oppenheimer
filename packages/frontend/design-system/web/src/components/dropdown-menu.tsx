@@ -254,7 +254,13 @@ function DropdownMenuRadioItem({
           </span>
         ) : null}
       </span>
-      <span className="pointer-events-none absolute top-2 right-2.5 flex h-[1.4em] items-center text-link">
+      <span
+        data-slot="radio-indicator"
+        // `top` matches the row's own top padding, so the check sits on the
+        // first line whatever the row's density is. A denser menu — the
+        // composer's, at 5px — moves it with a `[&_[data-slot=radio-indicator]]:top-…`.
+        className="pointer-events-none absolute top-2 right-2.5 flex h-[1.4em] items-center text-link"
+      >
         <MenuPrimitive.RadioItemIndicator>
           <CheckIcon className="size-3.5!" strokeWidth={2.5} />
         </MenuPrimitive.RadioItemIndicator>

@@ -29,6 +29,7 @@
       "placeholder": "Host",
       "search": "Buscar hosts…",
       "empty": "Ningún host coincide.",
+      "loading": "Cargando hosts…",
       "add": "Añadir host…",
       "offline": "Desconectado"
     },
@@ -37,6 +38,7 @@
       "placeholder": "Repositorio",
       "search": "Buscar repositorios…",
       "empty": "Ningún repositorio coincide.",
+      "loading": "Cargando repositorios…",
       "branchSearch": "Buscar ramas…",
       "branchEmpty": "Ninguna rama coincide.",
       "branchPane": "Rama de {{name}}",
@@ -49,6 +51,7 @@
       "placeholder": "Rama",
       "search": "Buscar ramas…",
       "empty": "Ninguna rama coincide.",
+      "loading": "Cargando ramas…",
       "default": "Por defecto"
     },
     "agent": {

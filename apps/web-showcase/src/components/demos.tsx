@@ -307,9 +307,10 @@ export const HARNESSES: AgentOption[] = [
     id: 'claude-code',
     label: 'Claude Code',
     models: [
-      { value: 'opus', label: 'Claude Opus 4.6' },
-      { value: 'sonnet', label: 'Claude Sonnet 4.6' },
-      { value: 'haiku', label: 'Claude Haiku 4.5' },
+      { value: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
+      { value: 'claude-opus-5', label: 'Claude Opus 5' },
+      { value: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
+      { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
     ],
   },
   {
@@ -354,7 +355,7 @@ export const PERMISSIONS = [
 ];
 
 export function AgentModelDemo() {
-  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'sonnet' });
+  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-sonnet-5' });
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 

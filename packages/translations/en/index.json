@@ -320,6 +320,7 @@
         "placeholder": "Host",
         "search": "Search hosts…",
         "empty": "No host matches.",
+        "loading": "Loading hosts…",
         "add": "Add host…",
         "offline": "Offline"
       },
@@ -328,6 +329,7 @@
         "placeholder": "Repository",
         "search": "Search repositories…",
         "empty": "No repository matches.",
+        "loading": "Loading repositories…",
         "branchSearch": "Search branches…",
         "branchEmpty": "No branch matches.",
         "branchPane": "Branch for {{name}}",
@@ -340,6 +342,7 @@
         "placeholder": "Branch",
         "search": "Search branches…",
         "empty": "No branch matches.",
+        "loading": "Loading branches…",
         "default": "Default"
       },
       "agent": {

@@ -164,6 +164,25 @@ describe('launch mapping', () => {
     }
   });
 
+  it('seeds Claude Code with the family, each row naming the model it runs', () => {
+    const models = CODING_AGENTS['claude-code'].models;
+
+    // The list a person chooses from, in display order. The labels name a
+    // generation, so the ids have to name the same one: an alias moves under
+    // its label and the two go out of step silently, which is the whole reason
+    // these are full model names rather than `opus` / `sonnet` / `fable`.
+    expect(models.map((model) => model.label)).toEqual([
+      'Claude Fable 5.1',
+      'Claude Opus 5',
+      'Claude Sonnet 5',
+      'Claude Haiku 4.5',
+    ]);
+    for (const model of models) {
+      expect(model.id, `${model.label} is offered under an alias`).toMatch(/^claude-/);
+    }
+    expect(models.find((model) => model.default)?.id).toBe('claude-opus-5');
+  });
+
   it('is frozen, like the rest of the catalog', () => {
     for (const id of CODING_AGENT_IDS) {
       expect(Object.isFrozen(CODING_AGENTS[id].launch)).toBe(true);

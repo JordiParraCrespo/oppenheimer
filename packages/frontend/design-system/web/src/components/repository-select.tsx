@@ -9,6 +9,7 @@ import {
   ChipSelectBack,
   ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectLoading,
   ChipSelectPopup,
   ChipSelectSearch,
   ChipSelectTrigger,
@@ -71,6 +72,8 @@ function RepositorySelect({
   branchSearchPlaceholder = 'Search branches…',
   emptyText = 'No repository matches.',
   branchEmptyText = 'No branch matches.',
+  loading = false,
+  loadingText = 'Loading…',
   branchPaneTitle = (name) => `Branch for ${name}`,
   changeBranchLabel = 'Change branch',
   action,
@@ -87,6 +90,9 @@ function RepositorySelect({
   branchSearchPlaceholder?: string;
   emptyText?: string;
   branchEmptyText?: string;
+  /** The repositories are still being fetched: the chip stays live and says so. */
+  loading?: boolean;
+  loadingText?: string;
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
   action?: { label: string; icon?: React.ReactNode; onSelect: () => void };
@@ -205,7 +211,9 @@ function RepositorySelect({
               onChange={(event) => setQuery(event.target.value)}
             />
             <div role="listbox" aria-multiselectable aria-label={ariaLabel}>
-              {visibleRepos.length > 0 ? (
+              {visibleRepos.length === 0 && loading ? (
+                <ChipSelectLoading>{loadingText}</ChipSelectLoading>
+              ) : visibleRepos.length > 0 ? (
                 visibleRepos.map((repo) => {
                   const scope = value.find((item) => item.id === repo.id);
                   return (

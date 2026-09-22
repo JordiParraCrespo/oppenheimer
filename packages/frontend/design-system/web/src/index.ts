@@ -99,6 +99,7 @@ export {
   ChipSelectBack,
   ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectLoading,
   ChipSelectPopup,
   ChipSelectSearch,
   ChipSelectTrigger,

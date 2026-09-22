@@ -136,15 +136,26 @@ function ChipSelectPopup({
   );
 }
 
-/** The sticky search row: glyph, borderless input, hairline under it. */
+/**
+ * The sticky search row: glyph, borderless input, hairline under it.
+ *
+ * `className` styles the input, as everywhere else; `rowClassName` styles the
+ * row around it, which the engine button's pane needs — the export draws that
+ * one full-bleed and hairlined on both edges (`SessionsConsole`'s model pane)
+ * rather than as the chips' underlined row.
+ */
 function ChipSelectSearch({
   className,
+  rowClassName,
   ...props
-}: Omit<React.ComponentProps<'input'>, 'type'>) {
+}: Omit<React.ComponentProps<'input'>, 'type'> & { rowClassName?: string }) {
   return (
     <div
       data-slot="chip-select-search"
-      className="sticky top-0 z-1 mb-[5px] flex items-center gap-[7px] border-b border-border-subtle bg-popover px-[9px] py-1.5"
+      className={cn(
+        'sticky top-0 z-1 mb-1 flex items-center gap-[7px] border-b border-border-subtle bg-popover px-[9px] py-1.5',
+        rowClassName,
+      )}
     >
       <SearchIcon className="size-3.5 shrink-0 text-fg-subtle" />
       <input
@@ -168,7 +179,7 @@ function ChipSelectBack({ className, children, ...props }: React.ComponentProps<
       type="button"
       data-slot="chip-select-back"
       className={cn(
-        'mb-[5px] flex w-full items-center gap-[7px] border-b border-border-subtle bg-popover px-[9px] py-1.5 text-left text-[12.5px] text-fg outline-none hover:text-fg focus-visible:bg-hover-surface',
+        'mb-1 flex w-full items-center gap-[7px] border-b border-border-subtle bg-popover px-[9px] py-1.5 text-left text-[12.5px] text-fg outline-none hover:text-fg focus-visible:bg-hover-surface',
         className,
       )}
       {...props}
@@ -228,6 +239,26 @@ function ChipSelectItem({
   );
 }
 
+/**
+ * "Loading hosts…" — the line a list that has not arrived yet shows in place of
+ * the empty one.
+ *
+ * It exists because the alternative reads as broken: a chip disabled until its
+ * query settles is indistinguishable from a chip the workspace is not allowed
+ * to use, and "No repository matches." while the repositories are still in
+ * flight is simply false. The chip stays live and says what it is doing.
+ */
+function ChipSelectLoading({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="chip-select-loading"
+      aria-live="polite"
+      className={cn('px-3 py-3.5 text-center text-[12.5px] text-fg-muted', className)}
+      {...props}
+    />
+  );
+}
+
 /** "No host matches." */
 function ChipSelectEmpty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -249,7 +280,7 @@ function ChipSelectActionRow({
   return (
     <div
       data-slot="chip-select-footer"
-      className="-mx-1 -mb-1 mt-[3px] border-t border-border-subtle px-1 py-[3px]"
+      className="-mx-1 -mb-1 mt-1 border-t border-border-subtle p-1"
     >
       <button
         type="button"
@@ -296,6 +327,8 @@ function ChipSelect({
   placeholder,
   searchPlaceholder = 'Search…',
   emptyText = 'No matches.',
+  loading = false,
+  loadingText = 'Loading…',
   action,
   width,
   maxHeight,
@@ -310,6 +343,9 @@ function ChipSelect({
   placeholder?: React.ReactNode;
   searchPlaceholder?: string;
   emptyText?: string;
+  /** The options are still being fetched: the chip stays live and says so. */
+  loading?: boolean;
+  loadingText?: string;
   action?: ChipSelectAction;
   width?: number;
   maxHeight?: number;
@@ -378,7 +414,9 @@ function ChipSelect({
           onKeyDown={onKeyDown}
         />
         <div role="listbox" aria-label={ariaLabel}>
-          {visible.length > 0 ? (
+          {visible.length === 0 && loading ? (
+            <ChipSelectLoading>{loadingText}</ChipSelectLoading>
+          ) : visible.length > 0 ? (
             visible.map((option, index) => (
               <ChipSelectItem
                 key={option.value}
@@ -420,6 +458,7 @@ export {
   ChipSelectBack,
   ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectLoading,
   ChipSelectPopup,
   ChipSelectSearch,
   ChipSelectTrigger,
