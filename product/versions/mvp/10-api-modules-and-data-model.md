@@ -1281,7 +1281,9 @@ Each step is a vertical slice that can land alone.
   for the provider drivers; the review folded both into `hosts/`, the
   same way the GitHub App key stayed a port instead of becoming
   `tokens/`. Two person-owned tables and one port; the surface is 03
-  §Cloud hosts.
+  §Cloud hosts. The drivers are a library package,
+  `@oppenheimer/backend-machines`, by the owner's later call; the module
+  stays `hosts/`.
 - **v0.2: a session is a microVM, and a rented machine is a host that
   holds several.** Note 15 moved the unit from "one provider VM per
   session" to "one Firecracker VM per session on a KVM host": the

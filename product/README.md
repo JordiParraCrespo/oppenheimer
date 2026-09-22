@@ -161,8 +161,10 @@ earlier note:
   identity. Both passages are rewritten (v0.2, researched in note 14): a
   cloud machine is an ordinary host whose cloud-init runs the ordinary
   install command with a one-hour pairing token, and the provider sits
-  behind a machine-lifecycle port that `hosts/` owns — no sixth module
-  and no package; the five modules of `versions/mvp/10` stand. The port,
+  behind a machine-lifecycle port that `hosts/` owns — no sixth module;
+  the five modules of `versions/mvp/10` stand. The port and its drivers
+  are the library package `@oppenheimer/backend-machines` (built
+  2026-09-22), which `hosts/` consumes. The port,
   the routes and the pause, resume, delete policy are
   `versions/mvp/03` §Cloud hosts; the two tables are in `10`. Note
   10 §6's provider order "AWS, Fly, GCP, Azure" is now AWS, Oracle,

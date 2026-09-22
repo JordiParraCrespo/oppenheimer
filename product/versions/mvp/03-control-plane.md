@@ -423,9 +423,15 @@ a person connects and the hosts it makes are person-owned rows next to
 `host` and `host_pairing_token` (10), and the provider is a port
 `hosts/` owns, `MachineProviderPort`, with one adapter per provider in
 `hosts/infrastructure/providers/` — the same shape as the GitHub App
-key, which stayed a port instead of growing a `tokens/` module. No
-package of its own: three adapters of about a hundred lines each over
-the providers' official SDKs.
+key, which stayed a port instead of growing a `tokens/` module. The
+port and its three drivers are the library package
+`@oppenheimer/backend-machines` (`packages/backend/machines`), which
+depends on nothing in the workspace and knows nothing about sessions;
+`hosts/` holds one driver per connected cloud account and is the only
+consumer. (The review of 2026-09-22 first folded the drivers into
+`hosts/infrastructure/`; the owner then asked for the package, so the
+adapters there are the thin binding, and the drivers live in the
+package.)
 
 The port, named once:
 

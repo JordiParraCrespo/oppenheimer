@@ -317,3 +317,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   host's second; 10 gains `work_session.runtime` and `capabilities.vm`;
   01 `runtime` on `session.create`; 05 the runtime control and the VM
   rows; 07 takes F14 to F18 and F26's rootfs half into the list.
+- 2026-09-22: **the provider port is a package.** The review had folded
+  the drivers into `hosts/infrastructure/`; the owner then asked for a
+  package, so `@oppenheimer/backend-machines` holds the port, the three
+  drivers (AWS EC2, Oracle Cloud, Alibaba Cloud ECS), the size and price
+  catalog and the cloud-config that pairs a fresh machine. `hosts/` is
+  its only consumer and still owns the rows and the policy (03 §Cloud
+  hosts, 10).

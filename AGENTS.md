@@ -72,6 +72,7 @@ oppenheimer/
 │   │   ├── ddd/          # DDD/hexagon building blocks (@oppenheimer/backend-ddd)
 │   │   ├── email/        # Pluggable email + React Email templates (@oppenheimer/backend-email)
 │   │   ├── i18n/         # Server-side translation + Intl formatting (@oppenheimer/backend-i18n)
+│   │   ├── machines/     # One port to rent KVM hosts on AWS, Oracle, Alibaba (@oppenheimer/backend-machines)
 │   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
 │   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
 │   ├── tsconfig/         # Shared TypeScript configs + build helpers (@oppenheimer/tsconfig)
@@ -313,6 +314,7 @@ packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api
 packages/backend/storage  → used by api
+packages/backend/machines → used by api (hosts/, v0.2; depends on nothing in the workspace)
 packages/backend/queue    → used by api
 packages/translations        → used by web, mobile, api (email copy via backend/i18n)
 packages/frontend/design-system/web    → used by web, admin-web, web-showcase, frontend/web

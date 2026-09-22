@@ -34,4 +34,5 @@ Reusable NestJS modules under `packages/backend/`, each following a pluggable se
 - **@oppenheimer/backend-email** — Pluggable email (Console / Nodemailer / Resend) with React Email templates
 - **@oppenheimer/backend-cache** — Redis cache abstraction
 - **@oppenheimer/backend-storage** — File storage (Local / S3)
+- **@oppenheimer/backend-machines** — One port to rent KVM-capable hosts on AWS, Oracle Cloud and Alibaba Cloud
 - **@oppenheimer/backend-queue** — BullMQ async jobs + Bull Board admin UI
