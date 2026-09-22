@@ -15,6 +15,14 @@ terminal at least once**, the CLI writes its own state (`~/.claude`,
 Settings → Agents you give each detected account a label ("personal",
 "work"). Orca is a viewer over files the vendor CLI already owns.
 
+*Corrected by note 14 after reading the source:* that holds for the
+system-default login only. A *managed* account is captured out of a
+throwaway login dir, stored under Orca's own root, refreshed by Orca
+against the OAuth token endpoint, and written back before each launch.
+Orca is a credential manager on that host, not a viewer. §3's "the
+platform never reads the credential file's contents" is a deliberate
+difference from Orca, not a copy of it.
+
 ### Switching: per-account runtime homes
 
 The docs say Orca "rewrites the active credential pointer" and "mirrors

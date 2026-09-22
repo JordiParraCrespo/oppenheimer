@@ -17,6 +17,13 @@ fact. Both answers confirm the MVP's current design (00-scope, 08-auth,
 note 01 §7). The rest of this note is the detail, the vendor rules that
 bound the space, and the small things we can add.
 
+Read from the source, not only the docs: `stablyai/orca` at
+`60c43695` (2026-09-22, v1.4.197), `src/main/runtime/` for pairing and
+the web client, `src/main/claude-accounts/` and `src/main/codex-accounts/`
+for logins, `cloud/` for the relay, `docs/site/content/docs/` for the
+published pages. Where the source says more than the docs, the source
+wins below and is cited by path.
+
 ## 1. How Orca authenticates in the web
 
 Orca has three ways to reach a runtime that is not the machine in front
@@ -30,32 +37,55 @@ switched on, or headless with `orca serve --pairing-address <ip>`. The
 server owns "projects, worktrees, terminals, tabs, provider accounts,
 and agent sessions"; the client "shows the UI and sends your input".
 
-Authentication is a **pairing link**:
+Authentication is a **pairing link**, and the source says exactly what
+is in it (`src/shared/mobile-relay-pairing-offer.ts`,
+`src/main/runtime/runtime-rpc/runtime-rpc-pairing.ts`):
 
-- The server mints a link in Settings → Remote Orca Servers → New Link
-  (or prints one from `orca serve`), bound to an address the server
-  chooses — its Tailscale address by default.
-- The client pastes the link into Add Server. "Orca creates a separate,
-  revocable token for each paired client." Grants are listed on the
-  server and revoked with a trash button.
+- The runtime keeps a **device registry** (`device-registry.ts`). A
+  pairing offer creates a *pending* device with a 24-byte random
+  `token`, a scope (`runtime` for desktop and browser clients, `mobile`
+  for phones) and a *reach* (network or this-computer-only). The offer
+  is a JSON object — version, WebSocket endpoint, the device token, the
+  runtime's **Curve25519 public key**, the device id, the scope, and
+  optionally a relay invite — base64url-encoded into
+  `orca://pair?code=…`. So the link is not a bearer token alone: it also
+  pins the runtime's key, and the client later proves the pairing by
+  ECDH against it.
+- The WebSocket listener **binds to loopback until a device is paired**
+  and widens to all interfaces only on explicit pairing or under
+  `orca serve` (`runtime-rpc-pairing-types.ts`, "STA-2370"). An operator
+  can pin it to loopback for good. It speaks `wss://` with a
+  self-signed certificate generated on first run, whose fingerprint the
+  mobile app pins from the QR (`tls-certificate.ts`); the transport
+  comment is blunt that "auth is per-device tokens, independent of
+  transport encryption".
+- The socket is authenticated by the device token; an unknown token is
+  closed with `4001 Unauthorized`, and revoking a device terminates its
+  live sockets (`revokeRuntimeAccess`, `mobile-socket-wiring.ts`).
+  "Orca creates a separate, revocable token for each paired client";
+  generating a new link replaces only the *unused* pending one.
 - The docs say what the link is: "The pairing URL grants access to this
   Orca runtime. Treat it like a password and send it only to the client
   you intend to pair."
 
 There is no user account in this path. The runtime is the identity
 provider, the link is the credential, and the network is the perimeter:
-the recommended setup is Tailscale on both ends, and the docs recommend
-nothing else.
+the recommended setup is Tailscale on both ends, and the docs say "Do
+not forward the Orca port directly to the public internet."
+
 
 ### The browser client: the runtime serves its own web bundle
 
-The web client is the same renderer, served by the runtime itself at
-`/web-index.html`. *Share this host* mints an access link of the form
-`http://<address>:6768/web-index.html#pairing=…`; opening it in a
-browser pairs that browser the same way a desktop client is paired, and
-the grant is kept in `localStorage` under a single-slot key
-(`orca.web.runtimeEnvironment.v1`), so a browser can hold one paired
-server at a time (issue #18846).
+The web client is the same renderer, served by the runtime itself:
+`static-web-client-handler.ts` serves exactly `/web-index.html` plus
+`/assets/`, `/cmaps/`, `/standard_fonts/` and `/wasm/`, nothing else.
+`createWebClientUrl` turns a runtime-scoped pairing offer into
+`http(s)://<endpoint>/web-index.html#pairing=<orca://pair?code=…>`; the
+comment explains the fragment: "pairing URLs carry full credentials; the
+fragment keeps them out of proxy logs and Referer headers". Opening it
+pairs that browser as a `runtime`-scope device, and the grant is kept in
+`localStorage` under a single-slot key (`orca.web.runtimeEnvironment.v1`),
+so a browser holds one paired server at a time (issue #18846).
 
 The limits follow from the design, and Orca's own issue tracker states
 them:
@@ -75,13 +105,23 @@ them:
 
 ### Mobile: a one-time code, and the one place Orca has a cloud account
 
-The phone app pairs with a one-time code shown on the desktop, gets a
-device token, and then needs a path to the desktop: the LAN address, or
-**Orca Relay**, Orca's hosted relay. "Sign-in is required for Relay
-only", and both ends must be "signed into the same Orca account". The
-same account family also gates artifact publishing. That is the whole of
-Orca's hosted identity: a relay you may opt into, never the thing that
-authorises a runtime.
+The phone app pairs with the same offer (scope `mobile`, shown as a QR),
+gets a device token, and then needs a path to the desktop: the LAN
+address, or **Orca Relay**, Orca's hosted relay. The relay is in the
+open repo under `cloud/`: "Phones and desktops never talk to each other
+directly: each opens an outbound WebSocket to a relay cell, the relay
+pairs the two sessions, and it splices frames between them", with a
+director assigning hosts to cells, PostgreSQL, GCP, Terraform. Frames are
+end-to-end encrypted with the X25519 key from the pairing offer, so the
+relay splices ciphertext. A relay-mode offer carries a short-lived invite
+(ten minutes) minted by the cell; "Anywhere" pairing fails closed rather
+than silently shipping a LAN-only QR. The desktop authenticates to the
+relay and to the push gateway with that same key, answering an encrypted
+challenge. "Sign-in is required for Relay only", and both ends must be
+"signed into the same Orca account"; the API and auth services behind
+that sign-in live in the private `stablyai/orca-cloud`. That is the
+whole of Orca's hosted identity: a relay you may opt into, never the
+thing that authorises a runtime.
 
 ### What we take, and what we already have
 
@@ -131,32 +171,92 @@ Users with two hosts therefore register every account on every host
 sync, no copy, no vault. Orca's "sharing" is per-host discovery plus a
 UI that switches which host's accounts you are looking at.
 
-### The mechanics inside one host, for completeness
+### The mechanics inside one host: Orca holds and refreshes the credential
 
-Note 06 covers this; the newer issues sharpen it:
+Note 06 described Orca as "a viewer over files the vendor CLI already
+owns". The source says otherwise, and the correction matters for what
+we copy. On one host, for a *managed* account:
 
-- A *managed* account has its own runtime home. Orca materialises the
-  account's credential into that home and launches agents with
-  `CLAUDE_CONFIG_DIR` / `CODEX_HOME` pointing at it. On macOS the
-  Keychain item is scoped to that directory. Orca's WSL runtime does it
-  right — "WSL managed accounts are isolated by their Linux
-  `CLAUDE_CONFIG_DIR`; materializing into Windows `~/.claude` would mix
-  two auth stores" — while the host runtime once wrote the selected
-  account into the user's **default** `~/.claude`, so a personal
-  terminal billed a work account for hours after Orca closed (#16016).
-  Lesson: the selection must be an environment variable on the
-  processes we spawn, never a write to the host's default config dir.
+- **Login runs in a throwaway config dir and the credential is
+  captured.** `claude-login-session.ts` creates a temporary
+  `CLAUDE_CONFIG_DIR`, runs `claude auth login --claudeai` in it, then
+  `claude auth status --json`, and `claude-auth-capture.ts` reads the
+  resulting `.credentials.json` (or the config-dir-scoped Keychain item
+  on macOS) plus the `oauthAccount` block of `.claude.json`. Codex is
+  the same shape: `codex login` into a managed `CODEX_HOME`, then
+  `auth.json` is read; `importAuthFromHome` copies an `auth.json` from
+  any already-authenticated home into a managed one.
+- **The credential is stored by Orca**, under its own root as
+  `<accounts>/<id>/auth/.credentials.json` and `oauth-account.json`
+  (`claude-managed-auth-storage.ts`), or in a Keychain item Orca names
+  per account on macOS.
+- **Orca refreshes the OAuth token itself.** `oauth-refresh.ts` posts
+  `grant_type=refresh_token` to `https://platform.claude.com/v1/oauth/token`
+  with Claude Code's public client id, "verified against the installed
+  `claude` binary (2.1.177)", five minutes ahead of expiry, so that "a
+  single-use refresh token is rotated and persisted atomically, instead
+  of being scraped back after the CLI rotates it".
+- **Selection materialises the credential into the runtime config dir**
+  (`runtime-auth-sync.ts`): the chosen account's blob is written where
+  the launched `claude` will read it, and on switch the runtime's blob
+  is *read back* into the managed store so a refresh the CLI performed
+  is not lost. Launches set `CLAUDE_CONFIG_DIR` and
+  `CLAUDE_SECURESTORAGE_CONFIG_DIR` to that dir and, when a managed
+  account is active, **strip** `ANTHROPIC_API_KEY`-style variables from
+  the child environment (`environment.ts`, `stripAuthEnv`). The Keychain
+  service name is derived exactly as the CLI does it, "first 8 hex chars
+  of sha256(NFC(CLAUDE_CONFIG_DIR))" (`keychain.ts`).
+- The WSL runtime keeps the selection as a variable only — "WSL managed
+  accounts are isolated by their Linux `CLAUDE_CONFIG_DIR`; materializing
+  into Windows `~/.claude` would mix two auth stores" — while the host
+  runtime once wrote the selected account into the user's **default**
+  `~/.claude`, so a personal terminal billed a work account for hours
+  after Orca closed (#16016).
+
+So Orca is a credential *manager* for the CLIs on one machine: it
+captures the token, owns the file, performs the refresh, and swaps
+tokens under the CLI. That is a lot of surface, and every item in
+Orca's tracker about stale tokens, wrong-account billing and lost
+refreshes (#16016, #13746, #20118, PR #21931) is that surface. Two
+things it still never does: it never sends a credential off the host,
+and it never lets a client machine log a server in. Lessons for us: the
+selection must be an environment variable on the processes we spawn,
+never a write to the host's default config dir; and we should not take
+on the manager role at all (§4).
 - Codex account selection was for a while coupled to whether Orca's
   status-hook trust could be granted; when it could not, Orca silently
   swapped `CODEX_HOME` to its managed home and a stale credential could
   be used (#13746). Lesson: credential routing and status-hook plumbing
   are separate concerns.
+- **No other runtime gets the credential.** SSH worktrees (Orca's
+  laptop-owned mode where a remote box runs selected worktrees) and the
+  per-workspace cloud VMs from `orca.yaml` recipes carry none of this:
+  `src/main/ssh/` and the `ephemeral-vm-*` services never mention
+  `CLAUDE_CONFIG_DIR`, `CODEX_HOME` or a managed account, and the
+  managed-account preparation is only wired into local launches and the
+  local commit-message agent (`main-process-runtime-launch.ts`,
+  `commit-message-agent-environment.ts`). The structured-launch policy
+  says it outright: "Structured Claude always spawns a native local-host
+  child — the launch resolver refuses any record with a remote execution
+  host or a WSL distro". The docs match: an SSH target is a "good fit
+  when the remote already has your repo, tools, and credentials".
 - Sign-in links: Orca extracts the Codex login URL from the child
   process's stdout and shows a *Copy link / Open* notice; the notice is
   dropped when the login ends "since it dies with Codex's local callback
   server", and it is hidden in a remote account scope because it "would
-  name a login running on this desktop" (#21372). Claude's `orca account
-  add --json` prints the authorize URL and waits for the pasted code.
+  name a login running on this desktop" (#21372). The CLI reference
+  states the rule for the headless path: "`account add` runs
+  `claude login` / `codex login` in **this** terminal on the host, then
+  registers the captured credentials with the local runtime. Codex uses
+  device authorization so the browser can finish on another machine.
+  Run these on the machine that owns the accounts — not through a
+  client-only remote session."
+- The Accounts pane names the scope from `activeRuntimeEnvironmentId`
+  (`provider-account-scope.ts`): "Credentials and account checks for
+  this provider are owned by this remote server" versus "owned by this
+  desktop client", and while a server owns the roster, "Accounts managed
+  on this desktop are unchanged."
+
 - Usage meters were repeatedly read from the *desktop's* credentials
   while the active account was on the remote host (#16466, #21466). Any
   per-account figure we show must be produced on the host it belongs
@@ -249,6 +349,20 @@ things are added.
    is the bug we avoid by construction: our runner launches the agent
    inside the session's tmux with the variable set once (02-runner §6)
    and never edits the host's own directory.
+   **And the runner does not become the credential manager Orca is.**
+   Orca captures the token out of the login dir, stores it under its own
+   root, refreshes it against the OAuth endpoint with the CLI's client
+   id, and materialises it back before each launch. We do none of that:
+   the login writes into the account's config dir directly, the CLI
+   refreshes its own token, and the runner reads only presence, mtime
+   and expiry. That keeps note 06's "the platform never reads the
+   credential file's contents" true, keeps F23 trivially true, and skips
+   the whole family of stale-token and lost-refresh bugs. The one thing
+   we lose is Orca's atomic refresh across concurrent sessions on one
+   account, which Orca needed because it swaps a blob under a running
+   CLI; with one config dir per account and the CLI owning it, two
+   sessions on the same account share one file the CLI already
+   coordinates, the same as two terminals on a laptop.
 
 ### Added
 
@@ -296,16 +410,34 @@ things are added.
 | | Orca | Us (MVP) |
 |---|---|---|
 | Who authenticates the browser | the runtime, via a pairing link it mints; Tailscale or LAN for reach | the control plane (Better Auth); the browser never reaches a host |
-| Client credential | one revocable token per paired client, in `localStorage` | cookie session; short-lived attach ticket per session socket (01) |
-| Host credential | none: the server *is* the trust root | runner key pair bound to the host row; pairing token minted by a signed-in user (08, 09) |
+| Client credential | one revocable 24-byte device token per paired client plus the runtime's pinned X25519 key, in `localStorage` for the browser | cookie session; short-lived attach ticket per session socket (01) |
+| Host credential | none: the server *is* the trust root; listener on loopback until paired, self-signed `wss` | runner key pair bound to the host row; pairing token minted by a signed-in user (08, 09) |
+| Relay | optional hosted relay for phones, outbound WebSocket both ends, end-to-end encrypted, code in `cloud/` | the control plane relays every session; the runner dials out (01, 02) |
 | Hosted account | optional, only for Orca Relay (mobile) and artifact publishing | required; it is the product |
 | Agent login | once per host, on the host; `orca account add` headless; *Add account* disabled in remote scope | once per host, in the session terminal; link becomes a button, code gets a paste box |
 | Sharing logins across hosts | none, by design and by docs | none, by design and by terms (F23) |
-| Several accounts on one host | managed runtime homes + `CLAUDE_CONFIG_DIR` / `CODEX_HOME`; once wrote into the default dir by mistake | note 06, later slice; env var on the spawned process only |
+| Several accounts on one host | Orca captures, stores, refreshes and materialises the token per managed account; `CLAUDE_CONFIG_DIR` / `CODEX_HOME` on launch; once wrote into the default dir by mistake | note 06, later slice; env var on the spawned process only, the CLI owns and refreshes its own file |
+| Credential on SSH hosts and cloud VMs | none carried; the remote must already be logged in | none carried (F23) |
 | Where usage/login state is read | on the host that owns the account (after several bugs where it was not) | on the host, in the runner's heartbeat, labelled with the host |
 
 ## Sources
 
+- Orca source, `stablyai/orca` at `60c43695` (v1.4.197, 2026-09-22):
+  `src/shared/pairing.ts`, `src/shared/mobile-relay-pairing-offer.ts`,
+  `src/main/runtime/device-registry.ts`, `e2ee-keypair.ts`,
+  `tls-certificate.ts`, `runtime-rpc/runtime-rpc-pairing.ts`,
+  `runtime-rpc/runtime-rpc-pairing-types.ts`,
+  `runtime-rpc/runtime-rpc-mobile-pairing.ts`,
+  `rpc/static-web-client-handler.ts`, `rpc/mobile-socket-wiring.ts`;
+  `src/main/claude-accounts/claude-login-session.ts`,
+  `claude-auth-capture.ts`, `claude-managed-auth-storage.ts`,
+  `oauth-refresh.ts`, `keychain.ts`, `environment.ts`,
+  `claude-structured-auth-policy.ts`, `runtime-auth/runtime-auth-sync.ts`;
+  `src/main/codex-accounts/codex-login-session.ts`,
+  `codex-managed-home-lifecycle.ts`;
+  `src/renderer/src/components/settings/provider-account-scope.ts`;
+  `cloud/README.md`; `docs/site/content/docs/remote-servers.mdx`,
+  `cli/reference.mdx`, `ways-to-run.mdx`
 - Orca docs: [Remote Orca Servers](https://www.onorca.dev/docs/remote-servers),
   [Ways to run Orca](https://www.onorca.dev/docs/ways-to-run),
   [Mobile companion](https://www.onorca.dev/docs/mobile),
