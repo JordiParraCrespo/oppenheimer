@@ -35,9 +35,10 @@
   holds appearance, language and log out, and nothing else. The console
   is one screen: a sidebar beside the pane a session opens in. The
   settings drawer above is a later slice, and a drawer is not a route;
-  hosts are paired in onboarding until it arrives. (Decided 2026-09-21
-  with the version-1 frames; the starter's Settings and Profile screens
-  were deleted rather than left unnavigated.)
+  until it arrives the machines a workspace owns are *listed* nowhere —
+  a new one is paired from the Add host dialog below, or in onboarding.
+  (Decided 2026-09-21 with the version-1 frames; the starter's Settings
+  and Profile screens were deleted rather than left unnavigated.)
 - New session: chips for host, repository, branch; a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
@@ -54,7 +55,18 @@
   two forms behind a Command / Agent prompt switch, a copyable panel,
   the token line, and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
-  enabled then. The model list is the harness's own (a blank
+  enabled then. **Registered, not online**, and that is the difference
+  from onboarding: the step's Continue waits for the runner to dial in,
+  because a first-run flow that ends on a machine which never came up
+  has claimed something the console cannot use; the dialog is picking
+  the host of a session, and a session may be started on a machine
+  whose runner is still coming up — the control plane records it and
+  owes it to that host the moment it connects, which is what the
+  chip's offline rows mean too (01, 03). The status row says what the
+  API says — the runner is connected, or it is still coming up. The
+  capability line the artboard draws (✓ git, ✓ tmux) arrives with the
+  capabilities themselves; nothing on the wire carries a host's tools
+  to the console yet. The model list is the harness's own (a blank
   terminal has no model): the catalog seeds it, one row per model the
   CLI documents, each row carrying the model's full name rather than an
   alias that moves under it. The foot row's two menus are denser than

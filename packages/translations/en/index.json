@@ -3,6 +3,7 @@
     "appName": "Oppenheimer",
     "back": "Back",
     "cancel": "Cancel",
+    "close": "Close",
     "confirm": "Confirm",
     "controlAppName": "Oppenheimer Control",
     "copied": "Copied",
@@ -322,6 +323,16 @@
         "add": "Add host…",
         "offline": "Offline"
       },
+      "addHost": {
+        "title": "Add a host",
+        "description": "A server you control — a cloud VM, a build box, or your own workstation.",
+        "instruction": "Run this on it, once",
+        "format": "How to read it",
+        "command": "Command",
+        "agentPrompt": "Agent prompt",
+        "use": "Use this host",
+        "defaultName": "New host"
+      },
       "repository": {
         "label": "Repositories",
         "placeholder": "Repository",
@@ -403,6 +414,17 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    }
+  },
+  "hosts": {
+    "pairing": {
+      "tokenExpires": "Token expires in {{time}} · single use",
+      "tokenExpired": "Token expired — generate a new one.",
+      "newToken": "New token",
+      "waiting": "Listening for this host…",
+      "registered": "Registered — waiting for its runner",
+      "online": "Runner connected",
+      "mintFailed": "We could not create a registration token."
     }
   },
   "home": {
@@ -604,14 +626,7 @@
         "installCommand": "Install command",
         "agentPrompt": "Prompt for an AI agent",
         "agentNote": "Paste into Claude Code or Codex already running on that machine.",
-        "tokenExpires": "Token expires in {{time}} · single use",
-        "newToken": "Generate new token",
-        "waiting": "Waiting for the host to connect…",
-        "ready": "git, tmux, claude ready",
-        "mintFailed": "We could not create a registration token.",
-        "tokenExpired": "Token expired — generate a new one.",
         "defaultName": "My first host",
-        "registered": "Registered — waiting for its runner",
         "skip": "Skip for now",
         "skipNote": "You can pair a machine later. Sessions need one before they can run."
       },

@@ -10,6 +10,7 @@
 export * from './analytics';
 export * from './auth';
 export * from './forms';
+export * from './hosts';
 export * from './i18n';
 export * from './layout';
 export * from './platform';

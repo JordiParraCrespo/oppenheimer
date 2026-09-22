@@ -31,6 +31,16 @@
       "add": "Add host…",
       "offline": "Offline"
     },
+    "addHost": {
+      "title": "Add a host",
+      "description": "A server you control — a cloud VM, a build box, or your own workstation.",
+      "instruction": "Run this on it, once",
+      "format": "How to read it",
+      "command": "Command",
+      "agentPrompt": "Agent prompt",
+      "use": "Use this host",
+      "defaultName": "New host"
+    },
     "repository": {
       "label": "Repositories",
       "placeholder": "Repository",

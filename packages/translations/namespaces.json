@@ -4,6 +4,7 @@
   "errors",
   "auth",
   "sessions",
+  "hosts",
   "home",
   "nav",
   "control",

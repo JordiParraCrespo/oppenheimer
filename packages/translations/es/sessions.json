@@ -31,6 +31,16 @@
       "add": "Añadir host…",
       "offline": "Desconectado"
     },
+    "addHost": {
+      "title": "Añadir un host",
+      "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
+      "instruction": "Ejecuta esto en él, una vez",
+      "format": "Cómo leerlo",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente",
+      "use": "Usar este host",
+      "defaultName": "Nuevo host"
+    },
     "repository": {
       "label": "Repositorios",
       "placeholder": "Repositorio",

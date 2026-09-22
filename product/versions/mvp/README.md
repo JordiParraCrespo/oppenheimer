@@ -290,6 +290,17 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
+- 2026-09-22: **Add host is armed on a registered host, not an online
+  one** (05). The dialog picks the machine a session will run on, and
+  the control plane already records a session against a host whose
+  runner is still coming up — that is what the create response's
+  `host_offline` hint and the chip's offline rows mean (01, 03). The
+  onboarding step keeps waiting for `online`, because a first-run flow
+  that ends on a machine which never came up has claimed something the
+  console cannot use. The step's capability card (✓ git, ✓ tmux) stays
+  on the artboard until the wire carries a host's tools: the status row
+  says the runner is connected, or that it is still coming up, and
+  nothing more.
 - 2026-09-22: **the engine button offers each harness's models by name,
   from a pinned seed.** Claude Code's three aliases under generic labels
   ("Claude Opus") and Codex's empty list are both gone: the catalog now
