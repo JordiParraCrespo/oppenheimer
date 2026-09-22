@@ -1,9 +1,29 @@
-import { Button, SessionItem, SessionList, Skeleton } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  EmptyState,
+  SessionItem,
+  SessionList,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
-import { useSessions } from '@oppenheimer/frontend-consumer/react';
+import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SessionFilterChips } from '../components/session-filter-chips';
+import { SessionsFilterMenu } from '../components/sessions-filter-menu';
+import {
+  ALL,
+  activeFilters,
+  agentOptions,
+  applyFilters,
+  DEFAULT_FILTERS,
+  hostOptions,
+  isFiltered,
+  repositoryOptions,
+  type SessionFilters,
+} from '../lib/session-filters';
 
 /**
  * How a session's **group** reads as a dot.
@@ -44,18 +64,37 @@ function dotFor(session: SessionEntity) {
  *
  * The measurements are the export's, so this composes rather than styles: the
  * button block sits in 12px with 10px under it, the list head is
- * `.op-listhead` (2px/12px/6px, an 11px uppercase title against a mono count),
+ * `.op-listhead` (2px/12px/6px, an 11px uppercase title against a mono count
+ * and the filter button), the chips for whatever is being hidden sit under it,
  * and only the list scrolls, inside `.op-sidebar__scroll`'s 8px/12px/20px. The
  * rows themselves are the design system's `SessionList` and `SessionItem`,
  * which are already cut to this artboard.
  *
- * The filter menu the artboard puts beside the count (repository, agent, host,
- * sort) is not here yet: the count is, because it is the list's own length.
+ * The filters live here rather than in the menu because this is what they
+ * narrow, and in state rather than the URL because they are a view of the
+ * navigation, not a destination: the console's URL is the session that is
+ * open, and a filter must not change which one that is.
  */
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const { data: sessions, isPending } = useSessions();
+  // Named by the host list, because a session carries only the host's id and
+  // an id is not a filter anyone can read.
+  const { data: hosts } = useHosts();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
+
+  const all = sessions ?? [];
+  const options = {
+    repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
+    agent: agentOptions(all, t('sessions.filters.allAgents'), (agent) =>
+      t(`sessions.agents.${agent}` as 'sessions.agents.claude-code'),
+    ),
+    host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
+  };
+  const visible = applyFilters(all, filters);
+  const dirty = isFiltered(filters);
+  const chips = activeFilters(filters, options);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -71,11 +110,28 @@ export function SessionsSidebar() {
         </span>
         {/* No count until the list has settled: a zero under a request that
             has not answered reads as "you have none", which is a different
-            thing from "not yet known". */}
+            thing from "not yet known". The count is what is on screen, so a
+            filtered list counts what it shows. */}
         {sessions ? (
-          <span className="figures text-[11px] text-fg-muted">{sessions.length}</span>
+          <span className="figures text-[11px] text-fg-muted">{visible.length}</span>
+        ) : null}
+        {sessions ? (
+          <SessionsFilterMenu
+            filters={filters}
+            options={options}
+            dirty={dirty}
+            onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+            onClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
+          />
         ) : null}
       </div>
+
+      {dirty ? (
+        <SessionFilterChips
+          chips={chips}
+          onClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+        />
+      ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pt-2 pb-5">
         {isPending ? (
@@ -86,11 +142,18 @@ export function SessionsSidebar() {
           </SessionList>
         ) : (
           // Nothing when there are none: the empty case is the pane's to
-          // explain, and a sidebar that argues with it says it twice.
+          // explain, and a sidebar that argues with it says it twice. A list
+          // emptied by a filter is the one case the pane cannot explain, so
+          // that one says so here, in `.op-emptylist`.
           <SessionList>
-            {sessions?.map((session) => (
+            {visible.map((session) => (
               <SessionRow key={session.id} session={session} pathname={pathname} />
             ))}
+            {dirty && visible.length === 0 ? (
+              <EmptyState compact>
+                <EmptyState.Description>{t('sessions.filters.noMatches')}</EmptyState.Description>
+              </EmptyState>
+            ) : null}
           </SessionList>
         )}
       </div>

@@ -17,26 +17,32 @@ import {
   IconButton,
   SidebarMenuButton,
 } from '@oppenheimer/design-system-web';
-import { ChevronDown, LogOut } from '@oppenheimer/design-system-web/icons';
+import { ChevronDown, Globe, LogOut, Moon } from '@oppenheimer/design-system-web/icons';
 import { useLogout, useProfile } from '@oppenheimer/frontend-core/react';
 import { type Locale, locales } from '@oppenheimer/translations/locales';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../theme';
+import { type ThemePreference, useTheme } from '../../theme';
 import { useShell } from '../hooks/use-shell';
 
 /** The appearances the menu offers, in the order the artboard lists them. */
-const THEMES = ['light', 'dark'] as const;
+const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 
 /**
  * The account row at the foot of the sidebar, and the menu it opens.
  *
- * Both are the artboard's: a 32px row of avatar, name and a chevron — no
- * second line, because the role under someone's own name is a fact about them
- * they already know — over a menu that is the account's email, appearance,
- * language and the way out. Appearance and language open sideways rather than
- * unrolling in place, so the menu is four rows tall whatever is in it, and the
- * console loses nothing by having no chrome bar to put a theme toggle in.
+ * Both are the artboard's, down to the measurements
+ * (`product/versions/mvp/design/version1/SessionsConsole.dc.html`): a 32px
+ * `.op-navitem` of 22px accent avatar, name and a 14px chevron — no second
+ * line, because the role under someone's own name is a fact about them they
+ * already know — over a 250px `.op-accountmenu` that is the account's e-mail,
+ * appearance, language and the way out. The two middle rows carry the 15px
+ * moon and globe the export draws in the `.op-menu__icon` slot, and "Log out"
+ * the 15px door, in the one tone the menu is allowed to colour.
+ *
+ * Appearance and language open sideways rather than unrolling in place, so
+ * the menu is four rows tall whatever is in it, and the console loses nothing
+ * by having no chrome bar to put a theme toggle in.
  */
 export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avatar' }) {
   const { t, i18n } = useTranslation();
@@ -66,16 +72,16 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             />
           }
         >
-          <Avatar size={28}>
-            <AvatarFallback gradient="purple">{initials}</AvatarFallback>
+          <Avatar size="md" variant="accent">
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
       ) : (
         <DropdownMenuTrigger render={<SidebarMenuButton aria-label={name} />}>
-          <Avatar size={22}>
-            <AvatarFallback gradient="purple" className="text-[10px]">
-              {initials}
-            </AvatarFallback>
+          {/* The one tinted thing in the sidebar: `.op-avatar--accent`, which
+              is what tells the row apart from the session list above it. */}
+          <Avatar size="sm" variant="accent">
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <span className="min-w-0 flex-1 truncate text-left">{name}</span>
           <ChevronDown className="size-3.5! text-sidebar-muted" />
@@ -86,7 +92,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
         side={trigger === 'avatar' ? 'bottom' : 'top'}
         align={trigger === 'avatar' ? 'end' : 'start'}
         sideOffset={6}
-        className="w-62"
+        className="min-w-62.5"
       >
         {/* The identity line, not a second avatar: which account this is, is
             the one thing the row below the menu cannot already show. */}
@@ -112,6 +118,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
         <DropdownMenuGroup>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
+              <Moon />
               {t('theme.label')}
               <DropdownMenuValue>{t(`theme.${theme}`)}</DropdownMenuValue>
             </DropdownMenuSubTrigger>
@@ -120,7 +127,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
                   saying which appearance is on, not which are. */}
               <DropdownMenuRadioGroup
                 value={theme}
-                onValueChange={(next) => setTheme(next as (typeof THEMES)[number])}
+                onValueChange={(next) => setTheme(next as ThemePreference)}
               >
                 {THEMES.map((option) => (
                   <DropdownMenuRadioItem key={option} value={option}>
@@ -133,6 +140,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
 
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
+              <Globe />
               {t('language.label')}
               <DropdownMenuValue>{t(`language.${currentLocale}`)}</DropdownMenuValue>
             </DropdownMenuSubTrigger>

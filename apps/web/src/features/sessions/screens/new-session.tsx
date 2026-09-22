@@ -21,7 +21,7 @@ export function NewSessionScreen() {
           <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.021em] text-fg">
             {t('sessions.new.title')}
           </h1>
-          <p className="mt-1.5 text-lg text-fg-muted">{t('sessions.new.subtitle')}</p>
+          <p className="mt-1.5 text-base text-fg-muted">{t('sessions.new.subtitle')}</p>
         </div>
 
         <NewSessionForm />

@@ -390,6 +390,28 @@
         "live": "Live",
         "closed": "Disconnected"
       }
+    },
+    "filters": {
+      "label": "Filter sessions",
+      "repository": "Repository",
+      "agent": "Agent",
+      "host": "Host",
+      "sort": "Sort by",
+      "clear": "Clear filters",
+      "remove": "Clear filter",
+      "allRepositories": "All repositories",
+      "allAgents": "All agents",
+      "allHosts": "All hosts",
+      "noMatches": "No sessions match these filters."
+    },
+    "sort": {
+      "recent": "Last activity",
+      "oldest": "Oldest first",
+      "name": "Name"
+    },
+    "agents": {
+      "claude-code": "Claude Code",
+      "codex": "Codex"
     }
   },
   "home": {
@@ -923,7 +945,8 @@
     "toggle": "Toggle theme",
     "label": "Appearance",
     "light": "Light",
-    "dark": "Dark"
+    "dark": "Dark",
+    "system": "Match system"
   },
   "toasts": {
     "copied": "Copied to clipboard.",

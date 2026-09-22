@@ -2,5 +2,6 @@
   "toggle": "Toggle theme",
   "label": "Appearance",
   "light": "Light",
-  "dark": "Dark"
+  "dark": "Dark",
+  "system": "Match system"
 }

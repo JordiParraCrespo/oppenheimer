@@ -66,12 +66,12 @@ export function App() {
   // The design system's `Toaster` reads `next-themes`, which this app does not
   // run — left to itself it would fall back to `system` and light up against
   // `prefers-color-scheme` while the rest of the product follows the toggle.
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   return (
     <>
       <AppRoutes />
-      <Toaster theme={theme} position="bottom-right" />
+      <Toaster theme={resolvedTheme} position="bottom-right" />
     </>
   );
 }

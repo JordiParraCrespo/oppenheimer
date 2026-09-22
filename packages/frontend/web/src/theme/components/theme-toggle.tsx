@@ -10,8 +10,10 @@ import { useTheme } from './theme-provider';
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark';
+  // The resolution, not the preference: the pill shows which half is lit,
+  // and under "Match system" that is whatever the OS is wearing.
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   const half = 'relative flex flex-1 items-center justify-center rounded-full transition-colors';
   const knob = 'bg-theme-toggle-knob';
