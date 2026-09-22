@@ -1,5 +1,3 @@
-import { Button, EmptyState } from '@oppenheimer/design-system-web';
-import { Cpu, FolderGit2 } from '@oppenheimer/design-system-web/icons';
 import {
   useCreateSession,
   useHosts,
@@ -72,42 +70,6 @@ export function NewSessionForm() {
       navigate({ to: '/sessions/$sessionId', params: { sessionId: session.id } });
     },
   });
-
-  if (!hosts.isPending && hosts.data?.length === 0) {
-    return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <Cpu />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.new.noHosts.title')}</EmptyState.Title>
-          <EmptyState.Description>{t('sessions.new.noHosts.description')}</EmptyState.Description>
-        </EmptyState.Header>
-        <Button onClick={() => navigate({ to: '/onboarding/host' })}>
-          {t('sessions.new.noHosts.action')}
-        </Button>
-      </EmptyState>
-    );
-  }
-
-  if (!installations.isPending && installations.data?.length === 0) {
-    return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <FolderGit2 />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.new.noRepositories.title')}</EmptyState.Title>
-          <EmptyState.Description>
-            {t('sessions.new.noRepositories.description')}
-          </EmptyState.Description>
-        </EmptyState.Header>
-        <Button onClick={() => navigate({ to: '/onboarding/github' })}>
-          {t('sessions.new.noRepositories.action')}
-        </Button>
-      </EmptyState>
-    );
-  }
 
   const repositoryOptions = toRepositoryOptions(repositories.repositories, branches.byRepository, {
     archived: t('sessions.new.repository.archived'),
