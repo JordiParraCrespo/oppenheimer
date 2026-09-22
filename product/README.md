@@ -95,6 +95,15 @@ earlier note:
   onboarding names the workspace and lands on a Ready summary, and a
   session may span several repositories, one worktree each. Recorded in
   00, 05, 08 and the MVP decision log.
+- `versions/mvp/08-auth.md` said first-run's gate is the claimed address
+  off step 2. That still ends step 2, and it cannot end the flow: two
+  steps run after the claim, so every legitimate arrival at the Ready
+  landing is finished too. The landing asks instead whether the
+  navigation *is* the walk, and `/onboarding/ready` reached any other way
+  — Back out of the console, a typed address — returns the reader to the
+  console. Connect GitHub and Add host are not gated, because they are
+  also New session's install-the-App and pair-a-machine screens
+  (`versions/mvp/05-screens.md`).
 - Note 02's open question about screen manifests is answered by note 13:
   lifecycle hooks are authoritative where an agent has them, screen reading
   is the fallback, and rules carry a priority and negative guards rather than
