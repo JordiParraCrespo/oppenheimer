@@ -92,14 +92,18 @@ export { ChatMarkdown } from './components/chat-markdown';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
-export type { ChipSelectAction, ChipSelectOption } from './components/chip-select';
+export type {
+  ChipSelectAction,
+  ChipSelectDensity,
+  ChipSelectOption,
+} from './components/chip-select';
 export {
   ChipSelect,
   ChipSelectActionRow,
   ChipSelectBack,
   ChipSelectEmpty,
   ChipSelectItem,
-  ChipSelectLoading,
+  ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
   ChipSelectTrigger,

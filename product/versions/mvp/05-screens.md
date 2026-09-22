@@ -55,11 +55,10 @@
   the token line, and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
   enabled then. The model list is the harness's own (a blank
-  terminal has no model), and the catalog seeds it with the family as a
-  reader knows it — Claude Fable 5.1, Claude Opus 5, Claude Sonnet 5,
-  Claude Haiku 4.5 — each row carrying the full model name rather than
-  the CLI's moving alias, so the generation the button says and the one
-  the host runs cannot drift apart. Runtime
+  terminal has no model): the catalog seeds it, one row per model the
+  CLI documents, each row carrying the model's full name rather than an
+  alias that moves under it. The foot row's two menus are denser than
+  the sidebar's, and the design system owns that density. Runtime
   and lifetime chips arrive with the VM slice.
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
@@ -127,14 +126,11 @@
 5. **A policy that forbids `full`.** A host is somebody's laptop. Should
    a workspace be able to refuse full access outright, and is that a host
    setting or a workspace one?
-6. **Model discovery.** Codex ships an empty model list rather than
-   invented ids, so its engine pane names the agent and offers nothing.
-   Orca probes the CLI and degrades to the catalog seed on a failed
-   probe. Do we probe at pairing time and put the result on
-   `host.capabilities`, or stay with the seed for version 1? Still open,
-   and the seed being pinned model names rather than aliases is what
-   makes it worth answering: a name this repository lists and a given
-   host's `claude` does not know fails in that session's terminal, which
-   a probe would have caught before the row was offered.
-5. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
+6. **Model discovery.** Orca probes the CLI and degrades to the catalog
+   seed on a failed probe. Do we probe at pairing time and put the result
+   on `host.capabilities`, or stay with the seed for version 1? Pinned
+   model names raise the cost of staying on the seed: a name the catalog
+   lists and a given host's CLI does not know fails in that session's
+   terminal, where a probe would have kept the row off the list.
+7. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
    frames and the design system carry both, "Match system" the default.

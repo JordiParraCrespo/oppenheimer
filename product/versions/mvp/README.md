@@ -290,18 +290,19 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
-- 2026-09-22: **the engine button offers the model family, by name.**
-  The catalog's Claude Code seed was three aliases under generic labels
-  ("Claude Opus"); it is now one row per model — Claude Fable 5.1,
-  Claude Opus 5, Claude Sonnet 5, Claude Haiku 4.5 — with the full model
-  name as the id. A label that names a generation and an alias that
-  moves under it are the pair that can drift apart silently, and this is
-  the list a reader chooses from; a pinned name can only go stale in the
-  open. Codex stays empty (05, open question 6, which the pinning makes
-  more worth answering, not less). The composer's two menus were also
-  taken back to the export's own measurements — the permission menu's
-  296px rows at 5px/13px/11.5px, the engine menu's 252px pane at 6px/13px
-  with its full-bleed search row and its list sized in rows — and a chip
-  whose list has not arrived says "Loading repositories…" instead of
-  greying itself out, which is what made New session read as switched off
-  on a cold open (05).
+- 2026-09-22: **the engine button offers each harness's models by name,
+  from a pinned seed.** Claude Code's three aliases under generic labels
+  ("Claude Opus") and Codex's empty list are both gone: the catalog now
+  carries one row per model the CLI documents, keyed by the model's full
+  name. A versioned label over an alias that moves under it is the pair
+  that drifts apart silently, and this is the list a reader chooses
+  from; a pinned name can only go stale in the open. The roster itself
+  lives in `CODING_AGENTS` and nowhere else — 05 says "the harness's
+  own", and open question 6 (the probe) is what the pinning makes more
+  worth answering. Two console decisions came with it: the composer's
+  menus are **denser than the sidebar's**, which the design system owns
+  as a density on the parts rather than as measurements in the two
+  menus; and a scope chip whose list has not arrived is **loading, not
+  disabled** — pending says so, settled-and-empty offers the chip's foot
+  action, and greying out is reserved for a chip the screen forbids,
+  which is what made New session read as switched off on a cold open.

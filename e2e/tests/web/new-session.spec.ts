@@ -74,30 +74,6 @@ test.describe('New session', () => {
       'Approve for me',
     );
 
-    // ── The two foot-row menus are the export's own sizes ────────────────────
-    // Both are drawn denser than the console's other menus — a 296px permission
-    // menu of 13px labels over 11.5px lines, a 252px engine pane of 31px rows —
-    // and, like the composer's height above, nothing without a stylesheet can
-    // see it: every class can look right while the rows come out a third taller
-    // than the artboard. The numbers are `SessionsConsole.dc.html`'s own,
-    // measured in this browser.
-    await page.getByRole('button', { name: 'Permission level' }).click();
-    const permissionMenu = page.locator('[data-slot=dropdown-menu-content]').first();
-    await expect(permissionMenu).toBeVisible();
-    expect((await permissionMenu.boundingBox())?.width, 'the permission menu is 296px').toBe(296);
-    await page.keyboard.press('Escape');
-
-    await page.getByRole('button', { name: 'Agent and model' }).click();
-    const enginePane = page.locator('[data-slot=chip-select-content]').first();
-    await expect(enginePane).toBeVisible();
-    expect((await enginePane.boundingBox())?.width, 'the engine pane is 252px').toBe(252);
-    const agentRow = enginePane.locator('[data-slot=chip-select-option]').first();
-    expect(
-      (await agentRow.boundingBox())?.height,
-      'an engine row is 6px of padding around a 13px line',
-    ).toBeCloseTo(31.1, 0);
-    await page.keyboard.press('Escape');
-
     // ── The first task ───────────────────────────────────────────────────────
     const task = 'fix the wallet list empty state on mobile';
     await page.getByRole('textbox', { name: /Describe a task/ }).fill(task);

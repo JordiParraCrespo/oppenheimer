@@ -211,14 +211,49 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
 }
 
 /**
+ * The two shapes a two-line choice row is drawn in.
+ *
+ * `default` is the console's menus, which hang off the sidebar and the account
+ * button. `compact` is the composer's: it hangs off a 30px button in a foot row
+ * and the export draws it a size down throughout — 5px of padding, a 13px label
+ * over an 11.5px line, a 16px glyph, the check on that first line, and a right
+ * gutter the width of the tick rather than of a menu's.
+ *
+ * It is a density on the row rather than a class list in `PermissionMenu`
+ * because every one of those numbers is *this row* in another size, and the
+ * last time they lived in the consumer, the indicator's offset had to be
+ * reached through a slot selector to keep up.
+ */
+type DropdownMenuDensity = 'default' | 'compact';
+
+const RADIO_DENSITY: Record<DropdownMenuDensity, string> = {
+  default: 'pr-8 [&_[data-slot=radio-description]]:text-[12.5px]',
+  compact:
+    'py-[5px] pr-7 text-[13px] [&_[data-slot=radio-description]]:text-[11.5px] [&_[data-slot=radio-description]]:leading-[1.47]',
+};
+
+const RADIO_ICON: Record<DropdownMenuDensity, string> = {
+  default: '[&_svg:not([class*=size-])]:size-3.75',
+  compact: '[&_svg:not([class*=size-])]:size-4',
+};
+
+/** Where the check sits: on the first line, which is the row's own top padding. */
+const RADIO_INDICATOR: Record<DropdownMenuDensity, string> = {
+  default: 'top-2',
+  compact: 'top-[5px]',
+};
+
+/**
  * A choice row. With `description` it becomes the two-line option (name,
- * then a muted line), the check aligned to the first line. `icon` is a 15px
- * mark before the text; `tone="warning"` colours the whole row, label and
- * description, for the one choice that changes a machine unattended.
+ * then a muted line), the check aligned to the first line. `icon` is the mark
+ * before the text, sized by the density; `tone="warning"` colours the whole
+ * row, label and description, for the one choice that changes a machine
+ * unattended.
  */
 function DropdownMenuRadioItem({
   className,
   children,
+  density = 'default',
   description,
   icon,
   tone,
@@ -226,6 +261,7 @@ function DropdownMenuRadioItem({
   ...props
 }: MenuPrimitive.RadioItem.Props & {
   inset?: boolean;
+  density?: DropdownMenuDensity;
   description?: React.ReactNode;
   icon?: React.ReactNode;
   tone?: 'default' | 'warning';
@@ -235,31 +271,33 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       data-tone={tone}
+      data-density={density}
       className={cn(
         ITEM_CLASSES,
-        'items-start pr-8 data-inset:pl-9.5',
+        'items-start data-inset:pl-9.5',
+        RADIO_DENSITY[density],
         tone === 'warning' && 'text-warning [&_[data-slot=radio-description]]:text-warning',
         className,
       )}
       {...props}
     >
       {icon ? (
-        <span className="flex shrink-0 pt-px [&_svg:not([class*=size-])]:size-3.75">{icon}</span>
+        <span className={cn('flex shrink-0 pt-px', RADIO_ICON[density])}>{icon}</span>
       ) : null}
       <span className="flex min-w-0 flex-1 flex-col gap-px text-left">
         <span className="truncate">{children}</span>
         {description ? (
-          <span data-slot="radio-description" className="text-[12.5px] leading-snug text-fg-muted">
+          <span data-slot="radio-description" className="leading-snug text-fg-muted">
             {description}
           </span>
         ) : null}
       </span>
       <span
         data-slot="radio-indicator"
-        // `top` matches the row's own top padding, so the check sits on the
-        // first line whatever the row's density is. A denser menu — the
-        // composer's, at 5px — moves it with a `[&_[data-slot=radio-indicator]]:top-…`.
-        className="pointer-events-none absolute top-2 right-2.5 flex h-[1.4em] items-center text-link"
+        className={cn(
+          'pointer-events-none absolute right-2.5 flex h-[1.4em] items-center text-link',
+          RADIO_INDICATOR[density],
+        )}
       >
         <MenuPrimitive.RadioItemIndicator>
           <CheckIcon className="size-3.5!" strokeWidth={2.5} />

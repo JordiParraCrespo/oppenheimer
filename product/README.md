@@ -154,3 +154,14 @@ earlier note:
   `command`, not a column per agent. The surface itself is in the notes
   that own it — `versions/mvp/03-control-plane.md` for the route and the
   fold, `01-protocol.md` for the wire.
+- The coding-agent catalog seeded Claude Code with the aliases its CLI
+  documents (`opus`, `sonnet`, `fable`) and gave Codex no models at all,
+  on the argument that a pinned id is a list this repository has to keep
+  current. Both halves changed: the seed is now one row per model each
+  CLI documents, keyed by the model's full name, because the engine
+  button shows a person a *generation* and an alias that moves under a
+  versioned label is a pair that goes out of step on the host with
+  nothing on screen saying so. `versions/mvp/05-screens.md` keeps "the
+  model list is the harness's own" and holds no roster; the list lives
+  in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
+  pinning raises what it is worth.

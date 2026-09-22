@@ -317,9 +317,10 @@ export const HARNESSES: AgentOption[] = [
     id: 'codex',
     label: 'Codex',
     models: [
-      { value: 'gpt', label: 'GPT-5.2' },
-      { value: 'gpt-codex', label: 'GPT-5.2 Codex' },
-      { value: 'gpt-mini', label: 'GPT-5.2 mini' },
+      { value: 'gpt-6-astra', label: 'GPT-6 Astra' },
+      { value: 'gpt-5.6-sol', label: 'GPT-5.6 Sol' },
+      { value: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' },
+      { value: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' },
     ],
   },
   {
@@ -355,7 +356,7 @@ export const PERMISSIONS = [
 ];
 
 export function AgentModelDemo() {
-  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-sonnet-5' });
+  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5' });
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 
