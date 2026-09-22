@@ -247,6 +247,94 @@ second naming, since the *first* prompt is the one it names from and there is
 only one of those. The one line that leaves the host is the person's own
 prompt.
 
+## The relay, as built
+
+The link's server half and the browser's attach socket, as two modules so
+the dependency runs one way and neither `sessions/` nor `relay/` imports
+the other:
+
+- **`links/`** — the per-host link registry (in-process, open question 4)
+  and `RelayDispatchAdapter`, the `SessionDispatchPort` implementation
+  bound to `SESSION_DISPATCH`. `sessions/` imports it to dispatch;
+  `relay/` imports it to register the sockets it accepts; it imports no
+  module and no table, and knows the two through their ports and tokens.
+  It **writes nothing**: `delivered` means the frame was queued on a live
+  link, `host_offline` means the host holds none, and `not_supported`
+  means the host is reachable and the operation has no frame on the wire
+  yet (`addCheckout`, `removeCheckout` today) — so a caller is never
+  handed a delivery that did not happen.
+- **`relay/`** — the two sockets, mounted as `upgrade` listeners on the
+  API's own HTTP server over `ws`, not as Nest gateways: neither is a
+  request/response pair, and each takes its credential from the
+  handshake where Nest's pipeline would not look. What it sees of the
+  other modules is their published ports and nothing of their tables.
+
+```
+GET    /api/v1/relay/runner    Authorization: Bearer <boot JWT>   the runner link (01)
+GET    /api/v1/relay/attach    Sec-WebSocket-Protocol: <ticket>   the browser attach socket (01)
+```
+
+**The runner link.** The boot assertion is verified through `hosts/`'
+`HOST_ASSERTION` exactly once per dial (verifying burns the `jti`); a
+socket presenting none is refused before the upgrade. The first frame must
+be `hello` within 10 s. A runner whose range tops out below
+`min_supported` is refused **with** `update_required`; one whose floor is
+above this control plane's version is told `blocked` with a retry-after.
+Then **`welcome`**: the protocol version, the fingerprint of the control
+plane's signing key — the one registration returned, so the runner's pin
+(F6) has something to compare against; a control plane with no signing
+key refuses every upgrade rather than advertise an empty pin — and the
+**epoch**, the reconnect generation the registry allocates per accepted
+link on this host and both peers use from then on, so a log line on either
+side names the same link. Every outbound frame is parsed through the same
+union inbound frames are, so what this process sends is what the shared
+package says it sends. A newer link from the same host replaces the older
+one, whose socket is closed. Hello and every heartbeat record presence
+through `HOST_PRESENCE`, the one writer of `lastSeenAt`, stamped with the
+control plane's receipt time — never the runner's clock, which a skewed
+host would use to take itself offline — and carrying the same
+`hostFactsSchema` registration validated, which **replaces** what was
+there. `events.append` goes through `RECORD_SESSION_EVENTS` and is
+acknowledged by key. `credentials.token` is answered by `github/`'
+`RepositoryAccessPort`, minted live and sealed to the host's key (F7:
+Ed25519 → its X25519 twin, ephemeral ECDH, HKDF-SHA256, AES-256-GCM; the
+runner's half opens it), or refused with a `command.failed` carrying the
+ask's id. A dropped link closes its attachments with `host_offline`.
+
+**Hello reconciliation** is `sessions/`' `SESSION_RECONCILIATION`, called
+with the snapshot: a `starting` session on this host the runner does not
+hold is dispatched again, with its prompt read back from the log (the
+runner is idempotent by session id); an `open` one it does not hold is
+recorded `session.stopped` with `source: api`, keyed by the runner's
+`runId` so a replayed hello writes it once; anything the runner holds that
+the rows do not know is logged and left alone.
+
+**The attach socket.** The ticket in the subprotocol is redeemed with a
+`GETDEL` (single use), and what it authorised is re-checked at redemption:
+the session through `SESSION_LOOKUP`, which answers `live`, `stopped` or
+`resolved` — three answers, because they end differently — and the
+person's membership through `organizations/`' `WORKSPACE_LOOKUP`. Every
+refusal after the handshake is a `closed` control frame naming the reason
+and then a final close code on an **established** socket, never a refused
+upgrade: a browser's WebSocket cannot see the status of a refused
+upgrade, only a 1006 it would take for a dropped radio and retry. Only a
+request with no ticket, or from an origin this API does not serve, is
+refused before the upgrade. A stopped session closes with its own code, so
+the console offers Restart rather than a reconnect ladder. Then the
+session's host either holds a link — the relay allocates the attachment
+id on it (01, open question 7), waits for the browser's viewport and sends
+`session.attach` carrying it — or it does not, and the socket is told
+`host_offline` and closed. PTY frames reach the browser bare; keystrokes
+leave as bare binary frames and are copied onto the link under the
+attachment id; a `resize` is per attachment; a `credit` is relayed as
+`attachment.credit`; closing the tab frees the id and sends
+`session.detach`.
+
+The routes are guarded by the handshake rather than by a policy
+decorator, so `route-policy-coverage.spec.ts` does not see them; the
+gateway specs, which run both sockets on a real HTTP server, are the
+coverage they get.
+
 ## Data model, first cut
 
 users, installations, repositories (**not a table**: listed live from
@@ -315,8 +403,9 @@ is what `hosts/` publishes.
 3. Webhook receiver placement: in the control plane process (it is
    public anyway in the MVP) or a separate tiny receiver as note 04
    suggests for the Tailscale-only future?
-4. Relay fan-out: in-process only for the MVP, Redis when the relay
-   splits. Confirm.
+4. ~~Relay fan-out: in-process only for the MVP, Redis when the relay
+   splits. Confirm.~~ Confirmed: `links/`' registry is an in-process map,
+   and it is the one file that changes when the relay splits.
 5. Backups: Postgres dump nightly to Hetzner object storage. Enough?
 6. Where the release host lives, and whether it is the same origin as
    the install script (see "Hosting split"). Cheapest that is still

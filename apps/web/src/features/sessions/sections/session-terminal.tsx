@@ -1,8 +1,9 @@
 import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { SessionComposer } from '../components/session-composer';
+import { useSessionRefresh } from '../hooks/use-session-refresh';
+import { useSessionStream } from '../hooks/use-session-stream';
 import { useTerminal } from '../hooks/use-terminal';
-import { createFakeSessionStream } from '../lib/session-stream';
 
 /**
  * The session's terminal: scrollback, the pinned prompt row, and the status
@@ -12,18 +13,20 @@ import { createFakeSessionStream } from '../lib/session-stream';
  * the design system's tab CSS is kept "for when the console supports several
  * at once", which is a later slice.
  *
- * The scrollback is xterm.js, mounted by `useTerminal`, fed for now by the
- * replay in `session-stream.ts`. Swapping in the runner's WebSocket is that
- * one import: everything above holds a `SessionStream`, not a socket.
+ * The scrollback is xterm.js, mounted by `useTerminal` and fed by the attach
+ * socket `session-stream.ts` opens with a ticket for this session. Everything
+ * above holds a `SessionStream`, not a socket.
  *
  * What the grid *contains* is drawn by the program on the far end. The
  * artboard's scrollback is hand-written DOM in the design's own vocabulary,
  * so plain output lands close to it and an agent drawing a full-screen TUI
  * does not. That is a property of terminals, not of this component.
  */
-export function SessionTerminal() {
+export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
-  const { containerRef, status, submit } = useTerminal(createFakeSessionStream);
+  const createStream = useSessionStream(sessionId);
+  const refresh = useSessionRefresh(sessionId);
+  const { containerRef, status, submit } = useTerminal(createStream, refresh);
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">
@@ -41,7 +44,7 @@ export function SessionTerminal() {
         <TerminalStatusItem>
           <span
             data-status={status}
-            className="size-1.5 rounded-pill bg-term-dim data-[status=live]:bg-term-success"
+            className="size-1.5 rounded-pill bg-term-dim data-[status=live]:bg-term-success data-[status=offline]:bg-term-warning"
           />
           {t(`sessions.session.status.${status}`)}
         </TerminalStatusItem>

@@ -26,10 +26,10 @@ type RunOptions struct {
 // Run is the host agent: the process the service unit starts and keeps alive.
 //
 // It takes the single-instance lock, closes out any update that was in flight
-// when the previous process was replaced, serves the local Unix socket, and
-// keeps itself current. The control-plane link and the session contexts are
-// the next slice; until they land this process is what makes a host pair,
-// report and update, and it deliberately opens no TCP port.
+// when the previous process was replaced, dials the control-plane link and
+// keeps it open, serves the local Unix socket, and keeps itself current. It
+// deliberately opens no TCP port: everything the browser asks for arrives on
+// the link.
 func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) error {
 	release, err := Lock(a.Paths.Lock())
 	if err != nil {
@@ -89,6 +89,14 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	go func() {
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
+	}()
+	// The link: one outbound socket, redialled for as long as this process
+	// lives. Sessions do not wait for it — tmux does not care whether the
+	// control plane can see it.
+	loops.Add(1)
+	go func() {
+		defer loops.Done()
+		a.linkLoop(ctx, logger, identity)
 	}()
 
 	if facts, err := a.Host.Collect(ctx); err == nil {
@@ -179,9 +187,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 	})
 	router.HandleFunc("POST /v1/credentials", func(w http.ResponseWriter, r *http.Request) error {
 		// The token comes from the control plane, per session and per
-		// repository, and the link that fetches it is the next slice. Until
-		// then this answers honestly rather than inventing a credential:
-		// the helper turns a 404 into git's "I have none".
+		// repository, over the link. A 404 is the helper's "I have none":
+		// no link, no session id in the environment, or a refusal.
 		var request map[string]string
 		if err := httpx.DecodeJSON(r, &request); err != nil {
 			return err
@@ -189,8 +196,16 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 		logger.Info("credential requested",
 			slog.String("session", request["session"]),
 			slog.String("host", request["host"]))
-		return problem.ErrNotFound.WithDetail(
-			"this runner has no credential for %s yet: the control-plane link is not implemented", request["host"])
+		if a.Credentials == nil || request["host"] != "github.com" {
+			return problem.ErrNotFound.WithDetail("this runner has no credential for %s", request["host"])
+		}
+		token, err := a.Credentials.Get(r.Context(), request["session"])
+		if err != nil {
+			return problem.ErrNotFound.WithDetail("no credential for this session: %v", err)
+		}
+		// GitHub's installation tokens go over HTTPS basic auth with this
+		// fixed username; the token is the password and is never logged.
+		return httpx.WriteJSON(w, http.StatusOK, map[string]string{"username": "x-access-token", "password": token})
 	})
 	router.HandleFunc("GET /v1/updates", func(w http.ResponseWriter, _ *http.Request) error {
 		if a.Updates == nil {

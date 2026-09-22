@@ -10,3 +10,5 @@ export const HOST_REPOSITORY = Symbol('HOST_REPOSITORY');
 export const HOST_PAIRING_TOKEN_REPOSITORY = Symbol('HOST_PAIRING_TOKEN_REPOSITORY');
 export const HOST_ASSERTION = Symbol('HOST_ASSERTION');
 export const HOST_ACCESS = Symbol('HOST_ACCESS');
+export const HOST_PRESENCE = Symbol('HOST_PRESENCE');
+export const HOST_KEY = Symbol('HOST_KEY');

@@ -4,11 +4,11 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
+import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionNamingResolver } from '../../application/session-naming.resolver';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import type { SessionCommandResult } from '../../domain/session-command.types';
-import { sessionBranchName } from '../../domain/session-layout.policy';
 import { mintSessionSlug } from '../../domain/session-slug.policy';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../domain/work-session.entity';
@@ -40,6 +40,7 @@ export class CreateSessionCommandHandler
     @Inject(SESSION_DISPATCH)
     private readonly dispatch: SessionDispatchPort,
     private readonly plan: SessionPlanFactory,
+    private readonly launches: SessionLaunchSpecFactory,
     private readonly naming: SessionNamingResolver,
     private readonly mapper: WorkSessionMapper,
   ) {}
@@ -93,11 +94,10 @@ export class CreateSessionCommandHandler
     }
     if (!created.created) return { session: created.session, hints: [] };
 
-    const { hints } = await this.dispatch.create(created.session, {
-      projectSlug: project.slug,
-      branch: sessionBranchName(project.slug, session.slug),
-      prompt: input.prompt,
-    });
+    const { hints } = await this.dispatch.create(
+      created.session,
+      await this.launches.build(created.session, project.slug, { prompt: input.prompt }),
+    );
 
     // Naming is deliberately not awaited: it is a call to a model, and a title is
     // never what makes creating a session slow. The name lands in the log a moment

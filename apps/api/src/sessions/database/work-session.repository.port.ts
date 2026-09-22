@@ -62,7 +62,21 @@ export interface SessionEventPage {
  * `work_session_event` declare no resource and are only ever read through their
  * session, which is what keeps one tenant predicate in the system instead of three.
  */
+/**
+ * A session on a host as the link's hello reconciliation reads it: the row,
+ * the project's slug (a path segment on the host) and the first prompt if the
+ * log holds one — everything a re-dispatched `session.create` needs.
+ */
+export interface HostSessionRow {
+  session: WorkSessionEntity;
+  projectSlug: string;
+  prompt?: string;
+}
+
 export interface WorkSessionRepositoryPort {
+  /** Every unresolved session on a host, unscoped: the host proved who it is. */
+  findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]>;
+
   /**
    * Insert the session, its checkouts and the first entries of its log in one
    * transaction, unless the caller's `Idempotency-Key` already created it — or the

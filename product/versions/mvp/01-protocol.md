@@ -55,8 +55,26 @@ runner does with it and point back.
 
 ### What rides the link
 
-- `session.create | attach | input | resize | window.open |
-  window.close | close | restart`
+- `session.create | attach | input | resize | detach | window.open |
+  window.close | stop | close | restart`. `stop` ends the agent and the
+  tmux session and keeps every checkout (02 §5, "Stop is not close");
+  `detach` frees an attachment the browser let go of. `input` is the
+  control plane's own path for a window nobody is watching (the
+  composer's line on a session with no pane open); an attached browser's
+  keystrokes are **not** it — they are binary frames on the attach socket,
+  copied onto the link as binary frames under the attachment id, the
+  same layout as the PTY output the other way.
+- **`welcome`** is the control plane's answer to `hello`: the protocol
+  version the two will speak and the fingerprint of the control plane's
+  signing key, which the runner compares against the one it pinned at
+  registration and refuses on mismatch (F6). A runner below
+  `min_supported` never sees one — it gets the `update_required` hint.
+- **`command.failed`** is the runner's only reply to a command, and only
+  for a failure to carry it out (`commandId`, a catalog code, a detail).
+  Success is never reported this way: a created session says so with
+  `session.started` in its log, an attachment says so with its first
+  frame. **`attachment.closed`** is the runner freeing an id whose PTY
+  ended on its own.
 - **`session.create` carries the launch**, because how a session is
   started is part of what the runner is being asked to start. Three
   fields beyond the checkouts: `launch` (`{ model?, permission, effort? }`),
@@ -132,14 +150,18 @@ grounds can still fetch, verify and install the version that fixes it
 - **Heartbeat**, every 15 s: per-session state, host load, free disk on
   the workspaces filesystem, the versions of `git`, `tmux` and the
   agent, and the update channel.
-- **Hints** may ride a heartbeat reply or an attach ticket, and the
+- **Hints** may ride a heartbeat reply or the attach socket, and the
   vocabulary is closed: `update_available`, `update_required`,
-  `blocked` with a retry-after (`../../12-lessons-from-grok-bot.md`). An attach ticket may
-  additionally carry `host_offline`, for a session whose host has no link
-  right now. That kind is the ticket's alone and is **not** a link hint:
-  a runner connected enough to send a frame cannot coherently report
-  itself offline. So the two sockets share three kinds and the ticket has
-  a fourth.
+  `blocked` with a retry-after (`../../12-lessons-from-grok-bot.md`). The
+  attach socket may additionally say `host_offline`, for a session whose
+  host has no link right now — said **on the socket**, after the ticket
+  is redeemed, and never on the ticket itself: the issuer does not ask a
+  dispatcher, so any hint it put on a ticket would be a guess about a
+  link it cannot see, and whether the host is reachable is the relay's
+  answer on the socket that tries. That kind is the attach socket's alone
+  and is **not** a link hint: a runner connected enough to send a frame
+  cannot coherently report itself offline. So the two sockets share three
+  kinds and the attach socket has a fourth.
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).
@@ -177,6 +199,9 @@ grounds can still fetch, verify and install the version that fixes it
    link.
 6. ~~Do the two sockets share one schema?~~ Decided above: they do not,
    and the hint vocabulary is the only thing they share.
-7. Whether the attach ticket carries the attachment id or the control
-   plane assigns it on the upgrade. Leaning: assign on upgrade, so a
-   ticket that is never redeemed costs nothing.
+7. ~~Whether the attach ticket carries the attachment id or the control
+   plane assigns it on the upgrade.~~ **Decided: assigned on the upgrade**,
+   by the relay, per link, once the ticket is redeemed and the session's
+   host has a link — so a ticket that is never redeemed costs nothing, and
+   the ticket carries no id, no hint and nothing the relay decides later
+   (03, "The relay, as built").

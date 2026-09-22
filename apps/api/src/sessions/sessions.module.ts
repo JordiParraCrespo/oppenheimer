@@ -6,11 +6,16 @@ import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
+import { LinksModule } from '../links/links.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { SessionLaunchSpecFactory } from './application/session-launch.factory';
+import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
 import { SessionPlanFactory } from './application/session-plan.factory';
 import { SessionProjectUsage } from './application/session-project-usage.resolver';
+import { SessionReconciliationResolver } from './application/session-reconciliation.resolver';
 import { AddCheckoutCommandHandler } from './commands/add-checkout/add-checkout.command-handler';
 import { AddCheckoutHttpController } from './commands/add-checkout/add-checkout.http.controller';
 import { CloseSessionCommandHandler } from './commands/close-session/close-session.command-handler';
@@ -35,7 +40,6 @@ import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-ent
 import { AnthropicSessionNamerAdapter } from './infrastructure/anthropic-session-namer.adapter';
 import { NoopSessionNamerAdapter } from './infrastructure/noop-session-namer.adapter';
 import { OpenAiCompatibleSessionNamerAdapter } from './infrastructure/openai-compatible-session-namer.adapter';
-import { PendingSessionDispatchAdapter } from './infrastructure/pending-session-dispatch.adapter';
 import { SessionNamerConfig } from './infrastructure/session-namer.config';
 import type { SessionNamerPort } from './infrastructure/session-namer.port';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
@@ -46,8 +50,9 @@ import { FindSessionsHttpController } from './queries/find-sessions/find-session
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import {
   RECORD_SESSION_EVENTS,
-  SESSION_DISPATCH,
+  SESSION_LOOKUP,
   SESSION_NAMER,
+  SESSION_RECONCILIATION,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
 import { SessionResource } from './sessions.resource';
@@ -110,11 +115,9 @@ const adapters: Provider[] = [
         : new AnthropicSessionNamerAdapter(config);
     },
   },
-  // Bound to the adapter that records the job as owed until there is a link to
-  // send it over. It is a real implementation of the port, not a stub: "this work
-  // never reached a host" is a durable entry in the session's log.
-  { provide: SESSION_DISPATCH, useClass: PendingSessionDispatchAdapter },
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
+  { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
+  { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },
 ];
 
 /**
@@ -147,6 +150,12 @@ const adapters: Provider[] = [
     ProjectsModule,
     HostsModule,
     GithubModule,
+    // `SESSION_DISPATCH` is bound there: the dispatcher over the runner link.
+    // Importing it is what makes the port's implementation the relay's rather
+    // than this module's, without this module knowing a socket exists.
+    LinksModule,
+    // The workspace's slug for a launch, and nothing else of organizations'.
+    OrganizationsModule,
   ],
   controllers: [...httpControllers],
   providers: [
@@ -155,6 +164,7 @@ const adapters: Provider[] = [
     ...adapters,
     WorkSessionMapper,
     SessionPlanFactory,
+    SessionLaunchSpecFactory,
     SessionNamingResolver,
     // Contributed rather than exported: the implementation is built here, in this
     // module's injector, so it injects this module's repository port while
@@ -165,6 +175,6 @@ const adapters: Provider[] = [
   // The two application ports, and nothing else. The repository is this module's
   // persistence adapter: publishing it would let the next slice read and append
   // past `RECORD_SESSION_EVENTS`, which is the door that checks the host.
-  exports: [SESSION_DISPATCH, RECORD_SESSION_EVENTS],
+  exports: [RECORD_SESSION_EVENTS, SESSION_LOOKUP, SESSION_RECONCILIATION],
 })
 export class SessionsModule {}

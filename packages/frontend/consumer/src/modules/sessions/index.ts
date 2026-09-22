@@ -1,4 +1,5 @@
 export {
+  type AttachTicket,
   type CreateSessionCheckout,
   type CreateSessionInput,
   type SessionAgent,

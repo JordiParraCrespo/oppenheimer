@@ -49,6 +49,7 @@ import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
 import { ProjectsModule } from './projects/projects.module';
 import { QueueModule } from './queue/queue.module';
+import { RelayModule } from './relay/relay.module';
 import { RolesModule } from './roles/roles.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { CredentialThrottlerGuard } from './throttling/guards/credential-throttler.guard';
@@ -201,6 +202,7 @@ import { UsersModule } from './users/user.module';
     // The module the other three feed into: the sessions themselves, their
     // checkouts, and the append-only log the row is a fold of.
     SessionsModule,
+    RelayModule,
     HealthModule,
     QueueModule,
   ],

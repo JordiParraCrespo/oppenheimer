@@ -74,8 +74,24 @@ func New(opts Options) (*Service, error) {
 	return s, nil
 }
 
+// SetPublisher swaps the publisher after construction: the link that
+// forwards state changes is built after the service, by the composition
+// root, and until it exists the service publishes to nobody.
+func (s *Service) SetPublisher(publisher Publisher) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if publisher == nil {
+		publisher = NopPublisher{}
+	}
+	s.publisher = publisher
+}
+
 // CreateInput is what the console sends to open a session.
 type CreateInput struct {
+	// ID is the control plane's session id when the create arrives over the
+	// link, so an attach that names it finds it; the CLI leaves it empty and
+	// one is minted.
+	ID   string
 	Repo string
 	// Remote is where the mirror is cloned from. The control plane supplies
 	// it with a credential-helper-backed URL; nothing is written to disk.
@@ -88,6 +104,13 @@ type CreateInput struct {
 	Existing bool
 	Name     string
 	Agent    domain.Agent
+	// Launch is the model, permission, effort and first task, as argv, from
+	// the catalog (02-runner §5). Zero for a CLI-created session.
+	Launch domain.Launch
+	// CheckoutID and GithubRepoID are the control plane's names for the
+	// repository, kept for the credential helper.
+	CheckoutID   string
+	GithubRepoID int64
 }
 
 // Create makes a session: mirror, worktree, tmux session, agent in window 0.
@@ -115,9 +138,17 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
 
-	id, err := domain.NewID()
-	if err != nil {
-		return domain.Session{}, domain.ErrInvalidInput.WithDetail("generate a session id: %v", err).WithCause(err)
+	id := in.ID
+	if id == "" {
+		minted, err := domain.NewID()
+		if err != nil {
+			return domain.Session{}, domain.ErrInvalidInput.WithDetail("generate a session id: %v", err).WithCause(err)
+		}
+		id = minted
+	} else if existing, err := s.Get(id); err == nil {
+		// Idempotent by session id: a create the link redelivered after a
+		// reconnect finds the session it already made.
+		return existing, nil
 	}
 	branch := in.Branch
 	if branch == "" {
@@ -138,11 +169,12 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	now := s.now().UTC()
 	session := domain.Session{
 		ID: id, Name: nameOr(in.Name, branch), Repo: in.Repo,
-		BaseBranch: base, Branch: branch, Worktree: worktree, Agent: agent,
+		BaseBranch: base, Branch: branch, Worktree: worktree, Agent: agent, Launch: in.Launch,
+		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
 		State: domain.StateStarting, Created: now, Updated: now,
 		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
 	}
-	if err := s.terminals.Create(ctx, session.TmuxName(), worktree, agent.Command(), s.env(session)); err != nil {
+	if err := s.terminals.Create(ctx, session.TmuxName(), worktree, in.Launch.CommandLine(agent), s.env(session)); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
 		return domain.Session{}, err
@@ -297,11 +329,28 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	} else if alive {
 		return session, nil
 	}
-	if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, session.Agent.Command(), s.env(session)); err != nil {
+	if err := s.terminals.Create(ctx, session.TmuxName(), session.Worktree, session.Launch.CommandLine(session.Agent), s.env(session)); err != nil {
 		return domain.Session{}, err
 	}
 	session.Windows = []domain.Window{{Index: 0, Name: string(session.Agent), Agent: true}}
 	return s.transition(session, domain.StateStarting, ""), nil
+}
+
+// Stop ends the agent and the tmux session and leaves every checkout on disk,
+// which is what Restart needs afterwards. It is not Close: nothing is pushed
+// and nothing is removed (02-runner §5, "Stop is not close").
+func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
+	session, err := s.Get(id)
+	if err != nil {
+		return domain.Session{}, err
+	}
+	if !session.State.Live() {
+		return session, nil
+	}
+	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+		return domain.Session{}, err
+	}
+	return s.transition(session, domain.StateStopped, ""), nil
 }
 
 // CloseInput tunes what closing does.
@@ -417,7 +466,10 @@ func (s *Service) transition(session domain.Session, state domain.State, loginUR
 	}
 	s.put(session)
 	if changed {
-		s.publisher.SessionChanged(session)
+		s.mu.Lock()
+		publisher := s.publisher
+		s.mu.Unlock()
+		publisher.SessionChanged(session)
 	}
 	return session
 }

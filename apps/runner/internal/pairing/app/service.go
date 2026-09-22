@@ -17,16 +17,19 @@ type Options struct {
 	Store        Store
 	ControlPlane ControlPlane
 	Signer       TokenSigner
+	// Unsealer is optional; without one, Unseal answers PAIR_004.
+	Unsealer Unsealer
 	// Now is injectable so token expiry is testable.
 	Now func() time.Time
 }
 
 // Service is the pairing use cases.
 type Service struct {
-	store  Store
-	cp     ControlPlane
-	signer TokenSigner
-	now    func() time.Time
+	store    Store
+	cp       ControlPlane
+	signer   TokenSigner
+	now      func() time.Time
+	unsealer Unsealer
 }
 
 // New builds the service.
@@ -35,7 +38,7 @@ func New(opts Options) *Service {
 	if now == nil {
 		now = time.Now
 	}
-	return &Service{store: opts.Store, cp: opts.ControlPlane, signer: opts.Signer, now: now}
+	return &Service{store: opts.Store, cp: opts.ControlPlane, signer: opts.Signer, unsealer: opts.Unsealer, now: now}
 }
 
 // RegisterInput is what the `register` subcommand collects.
@@ -140,6 +143,24 @@ func (s *Service) BootToken(_ context.Context) (string, error) {
 		return "", domain.ErrKeyStore.WithDetail("sign the boot token: %v", err).WithCause(err)
 	}
 	return token, nil
+}
+
+// Unseal opens something the control plane sealed to this host's key — an
+// installation token on `credentials.grant`. The key never leaves this
+// package: the caller gets the plaintext, not the means to make more.
+func (s *Service) Unseal(sealed []byte) ([]byte, error) {
+	if s.unsealer == nil {
+		return nil, domain.ErrKeyStore.WithDetail("this runner cannot open sealed credentials")
+	}
+	_, key, err := s.store.Load()
+	if err != nil {
+		return nil, domain.ErrNotRegistered.WithCause(err)
+	}
+	plain, err := s.unsealer.Unseal(key, sealed)
+	if err != nil {
+		return nil, domain.ErrKeyStore.WithDetail("the sealed credential could not be opened").WithCause(err)
+	}
+	return plain, nil
 }
 
 // SetChannel and SetPin are the two settings a user changes after pairing.

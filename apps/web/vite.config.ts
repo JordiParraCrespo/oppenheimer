@@ -48,6 +48,8 @@ export default defineConfig({
       // The coding-agent catalog: New session reads the models, the launch
       // flags and the effort stops out of it.
       '@oppenheimer/shared/agents',
+      // The attach socket's control vocabulary and close codes.
+      '@oppenheimer/shared/protocol',
     ],
   },
   build: {
@@ -73,6 +75,9 @@ export default defineConfig({
         // same-origin and keeps cookie auth identical to the default setup.
         target: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
         changeOrigin: true,
+        // The attach socket (`/api/v1/relay/attach`) is a WebSocket on the
+        // same prefix; without this the dev server answers the upgrade itself.
+        ws: true,
       },
     },
   },

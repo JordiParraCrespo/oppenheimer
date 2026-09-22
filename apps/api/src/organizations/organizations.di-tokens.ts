@@ -4,3 +4,4 @@
  * TypeORM adapter.
  */
 export const PERSONAL_WORKSPACE_REPOSITORY = Symbol('PERSONAL_WORKSPACE_REPOSITORY');
+export const WORKSPACE_LOOKUP = Symbol('WORKSPACE_LOOKUP');

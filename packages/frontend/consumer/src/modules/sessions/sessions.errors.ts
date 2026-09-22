@@ -21,4 +21,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_004',
     message: 'Failed to stop the session',
   },
+  ATTACH_TICKET_FAILED: {
+    code: 'SESSIONS_CLIENT_005',
+    message: 'Failed to open the terminal',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

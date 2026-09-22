@@ -44,6 +44,13 @@ export class RedisCacheService extends CacheService {
     return stored === 'OK';
   }
 
+  /** `GETDEL` — one round trip, so two redeemers cannot both read the value. */
+  async take<T>(key: string): Promise<T | undefined> {
+    const value = await this.redis.getdel(key);
+    if (!value) return undefined;
+    return JSON.parse(value) as T;
+  }
+
   async del(key: string): Promise<void> {
     await this.redis.del(key);
   }

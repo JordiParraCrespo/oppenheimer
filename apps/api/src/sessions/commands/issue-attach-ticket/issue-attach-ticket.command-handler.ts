@@ -3,6 +3,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError } from '@oppenheimer/backend-core';
+import { ATTACH_TICKET_PREFIX, type AttachTicket } from '../../application/session-lookup.port';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
 import { SessionErrors } from '../../domain/sessions.errors';
 import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
@@ -13,7 +14,6 @@ import { IssueAttachTicketCommand } from './issue-attach-ticket.command';
  * is valid for, and a row whose whole life is shorter than a request timeout earns
  * no table.
  */
-export const ATTACH_TICKET_PREFIX = 'attach:';
 /**
  * Sixty seconds, not thirty. Single use is the real control, so the lifetime should
  * buy reliability rather than shave a risk that is already bounded to one attach:
@@ -24,14 +24,6 @@ export const ATTACH_TICKET_PREFIX = 'attach:';
 export const ATTACH_TICKET_TTL_SECONDS = 60;
 /** The path the console opens the socket on, on this API's own origin. */
 const ATTACH_URL = '/api/v1/relay/attach';
-
-/** What the ticket authorises, read back by whoever consumes it. */
-export interface AttachTicket {
-  sessionId: string;
-  organizationId: string;
-  window: number;
-  userId: string;
-}
 
 export interface IssuedAttachTicket {
   ticket: string;
