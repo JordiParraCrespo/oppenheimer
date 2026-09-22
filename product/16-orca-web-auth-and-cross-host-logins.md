@@ -1,4 +1,4 @@
-# 14 — Orca in the browser, and agent logins across hosts
+# 16 — Orca in the browser, and agent logins across hosts
 
 Two questions from the owner, researched together because Orca answers
 them with the same primitive:

@@ -15,7 +15,7 @@ terminal at least once**, the CLI writes its own state (`~/.claude`,
 Settings → Agents you give each detected account a label ("personal",
 "work"). Orca is a viewer over files the vendor CLI already owns.
 
-*Corrected by note 14 after reading the source:* that holds for the
+*Corrected by note 16 after reading the source:* that holds for the
 system-default login only. A *managed* account is captured out of a
 throwaway login dir, stored under Orca's own root, refreshed by Orca
 against the OAuth token endpoint, and written back before each launch.
