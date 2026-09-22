@@ -1,0 +1,11 @@
+{
+  "pairing": {
+    "tokenExpires": "El token caduca en {{time}} · un solo uso",
+    "tokenExpired": "Token caducado: genera uno nuevo.",
+    "newToken": "Nuevo token",
+    "waiting": "Escuchando a este host…",
+    "registered": "Registrado: esperando a su runner",
+    "online": "Runner conectado",
+    "mintFailed": "No hemos podido crear un token de registro."
+  }
+}
