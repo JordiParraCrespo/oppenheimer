@@ -21,9 +21,11 @@ each component needs, and how the result is verified.
 | `apps/web` `/sessions/new` | **Placeholder.** An `EmptyState` saying "the session form lands once a host is paired". |
 | Relay (browser ⇄ host PTY) | **Not built.** `PendingSessionDispatchAdapter` answers every dispatch with `host_offline`, and the terminal is a recorded replay. |
 
-Two consequences worth stating up front: the consumer package has to be
-re-aligned before the screen can read anything true, and **the first prompt
-cannot reach an agent yet** — there is no socket to write it to (see §5).
+Two consequences worth stating up front. The consumer package has to be
+re-aligned before the screen can read anything true. And the screen's foot row
+sets four things `POST /sessions` had no field for, so **the API slice comes
+first** (§5) — including the first task, which is a field on create rather than
+something that waits for the relay.
 
 ---
 
@@ -56,8 +58,10 @@ pending flag and the error down.
 | --- | --- | --- |
 | `components/host-select.tsx` | `ChipSelect` | `hosts: HostEntity[]`, `value`, `onValueChange`, `isPending`, `onAddHost` |
 | `components/repository-branch-select.tsx` | `RepositorySelect` | `repositories: RepositoryOptionInput[]`, `value: CheckoutDraft[]`, `onValueChange`, `isPending`, `onConnectMore` |
-| `components/branch-select.tsx` | `ChipSelect` | `branches`, `value`, `onValueChange` — rendered **only** while exactly one repository is selected, which is the only time a lone branch chip tells the truth |
+| `components/branch-select.tsx` | `ChipSelect` | `branches`, `value`, `onValueChange` — the **sibling** chip beside the repository chip, which `RepositorySelect`'s own contract asks the caller to supply and render only while exactly one repository is selected |
 | `components/agent-select.tsx` | `AgentModelSelect` | `value`, `onValueChange`, `hostCapabilities?` |
+| `components/permission-select.tsx` | `PermissionMenu` | `value`, `onValueChange` |
+| `components/effort-select.tsx` | `EffortSlider` | `value`, `onValueChange`, hidden when the agent declares no stops |
 | `components/new-session-composer.tsx` | `Composer` | `onSubmit(text)`, `busy`, `disabled`, and the chip row as `tools`/`engine` slots |
 
 Three notes on specific ones:
@@ -70,11 +74,20 @@ Three notes on specific ones:
   merged and keyed by `installationId:githubRepoId` — `githubRepoId` alone is
   not unique across two installations, and the create call needs both halves
   anyway.
+- **`branch-select`** is not a second repository picker and not a duplicate of
+  the branch cell inside `RepositorySelect`. The cell sets the base for **one**
+  selected row, inside the repository pane; this chip is the sibling that sits
+  next to the repository chip on the scope row, and the design system's own
+  header says the decision to show it is the caller's: *only while exactly one
+  repository is selected does a branch chip tell the truth*. Supplying it is
+  what the kit asks of a caller, so this file is where that judgement lives.
 - **`agent-select`** feeds `AgentModelSelect` from the frozen
-  `CODING_AGENTS` catalog in `@oppenheimer/shared`. The catalog carries no
-  model lists, so each agent is the component's "picked outright" case and the
-  button names the agent. Whether *this host* has the agent on `PATH` is a host
-  capability and is shown as a hint, never a gate — the catalog's own rule.
+  `CODING_AGENTS` catalog in `@oppenheimer/shared`, which carries a `models`
+  list per agent: Claude Code's documented aliases, and an empty list for Codex
+  until a discovery probe lands — an agent with no models is the component's
+  "picked outright" case and the button names the agent. Whether *this host* has
+  the agent on `PATH` is a host capability and is shown as a hint, never a gate
+  — the catalog's own rule.
 
 **The composer owns its text.** The draft never becomes a prop of the section,
 or every keystroke re-renders three lists. It calls `onSubmit(text)` and the
@@ -90,11 +103,18 @@ no React. This is where the "which id is which" confusion is contained, and
 
 ### 2.3 `hooks/` — state and the queries that depend on state
 
-- `hooks/use-new-session-draft.ts` — the draft (`hostId`, `checkouts`,
-  `cwdGithubRepoId`, `agent`) and its **last-choice memory**: the artboard says
-  chips remember, so the draft is seeded from `localStorage` and validated
-  against what the queries actually returned (a remembered host that has been
-  unpaired must not stick).
+- `hooks/use-new-session-draft.ts` — the draft (`hostId`, `scope`, `agent`,
+  `model`, `permission`, `effort`) and its **last-choice memory**. The memory is
+  the browser's and nothing else's: `localStorage`, on the device that chose,
+  seeded at mount and validated against what the queries actually returned (a
+  remembered host that has been unpaired must not stick). It carries the host,
+  the agent, the model and the effort. It never carries the scope, because the
+  repositories one visit is about are not the next visit's, and it never carries
+  `full` — a stored `full` reads back as `ask`, which is
+  [`05-screens.md`](../product/versions/mvp/05-screens.md)'s rule and
+  `product/04-security-review.md`'s reason. The folded `launch*` columns on
+  `work_session` are **not** this memory's source; they exist so `restart` can
+  relaunch a session the way it was launched, which is a different question.
 - `hooks/use-checkout-branches.ts` — branches are per repository and only matter
   once a repository is selected, so this is a `useQueries` over the *selected*
   checkouts, not a read of every repo on the account.
@@ -127,8 +147,9 @@ The screen cannot be connected to a module that models a different product.
    `slug`, `projectId`, `agent`, `state` (the derived **group**: `working`,
    `waiting-on-you`, `ready-for-review`, `landing`, `idle`, `resolved`),
    `lifecycle` (`starting`, `open`, `failed`, `resolved`), `cwdCheckoutId`,
-   `checkouts: SessionCheckout[]`, `hints`. `CreateSessionInput` becomes the
-   shape of `createSessionSchema`: `{ hostId, agent, checkouts[], cwdGithubRepoId?, name?, projectId? }`.
+   `checkouts: SessionCheckout[]`, `hints`, `launch`. `CreateSessionInput`
+   becomes the shape of `createSessionSchema` as stage 0 leaves it:
+   `{ hostId, agent, checkouts[], cwdGithubRepoId?, name?, projectId?, launch?, prompt? }`.
 2. **`modules/sessions/sessions.repository.ts`** — drop the hand-written DTO and
    the raw URLs; call the generated `createSession` / `findSessions` /
    `findSession` / `stopSession`, and pass the idempotency key through.
@@ -141,9 +162,9 @@ The screen cannot be connected to a module that models a different product.
    `isLive`), `sections/session-provisioning.tsx`, and the `sessions.state.*`
    translations. This is a required consequence of (1), not extra scope.
 
-No API change is needed for the create path. `projectId` is optional and the
-control plane creates the project on the spot from the first checkout's
-repository.
+`projectId` stays optional: the control plane creates the project on the spot
+from the first checkout's repository. The create path itself does change, and
+that change is stage 0 (§5).
 
 ---
 
@@ -157,33 +178,48 @@ labelled by the heading.
 
 ---
 
-## 5. Settled: the API comes first
+## 5. Stage 0: the API the foot row needs
 
-The three questions this plan opened with are answered, and the answers
-move work **before** the screen rather than around it. They are designed
-in [`product/versions/mvp/12-session-launch.md`](../product/versions/mvp/12-session-launch.md):
+The version-1 screen sets four things `POST /sessions` had no field for, so
+the API slice is work **before** the screen rather than around it. It is
+designed in the notes that own each surface — the wire in
+[`01-protocol.md`](../product/versions/mvp/01-protocol.md), what the runner
+does with it in [`02-runner.md`](../product/versions/mvp/02-runner.md) §5 and
+§7, the route, the fold and the namer in
+[`03-control-plane.md`](../product/versions/mvp/03-control-plane.md), the
+controls themselves in
+[`05-screens.md`](../product/versions/mvp/05-screens.md).
 
-- **The foot row is built in full**, so `POST /sessions` grows a `launch`
-  object — model, permission level, effort — folded onto `work_session`
-  so a restart and the engine button can read it per row.
-- **The composer's text is the session's first task.** `POST /sessions`
-  grows `prompt`: appended as `prompt.first` by the API (keyed so the
-  runner's own later report dedupes against it) and carried on
-  `session.create`, so the host types it into window 0 at launch. Nothing
-  about the composer waits on the relay.
-- **The name comes from that prompt**, through a new
-  `openai-compatible` namer provider — one adapter for Groq, Together,
-  vLLM, Ollama and the rest — called after the 201 and never awaited.
-- **The agent chip gets real model lists**: the shared catalog grows
-  `models` and a `launch` record mapping each permission level and effort
-  stop to that CLI's own flags. No endpoint; the console already imports
+- **The foot row is built in full.** `POST /sessions` grows a `launch` object
+  — model, permission level, effort — carried whole across the route, the log
+  payload, `session.create` and the response. It is folded onto `work_session`
+  as three columns for one reader: `restart`, which has to relaunch a session
+  the way it was launched and would otherwise walk the log to find out.
+- **Permission is the product's own three words**, and what each means to a
+  given CLI is catalog data beside `command`, read off that CLI's `--help`
+  rather than written from memory. Effort is the five stops the slider draws,
+  with an agent whose vocabulary is coarser collapsing the ones it cannot
+  express.
+- **The composer's text is the session's first task**, and it is a **launch
+  option**: `POST /sessions` grows `prompt`, the control plane appends it as
+  `prompt.first` in the same transaction as the row, and it rides
+  `session.create` so the runner appends it to the agent's argv — both CLIs
+  document the first task as a trailing positional
+  (`claude [options] [command] [prompt]`, `codex [OPTIONS] [PROMPT]`). Nothing
+  types into a live TUI and nothing waits for one to be ready, so the composer
+  does not wait on the relay. A session created with no prompt is the other
+  case, and there the runner reports the first message off the transcript;
+  exactly one end ever writes that entry.
+- **The name comes from that prompt**, through a new `openai-compatible` namer
+  provider — one adapter for Groq, Together, vLLM, Ollama and the rest —
+  called after the 201 and never awaited.
+- **The agent chip gets real model lists** from the same catalog, which also
+  grows the `launch` record above. No endpoint: the console already imports
   the catalog.
 
-So stage 0 below is the API slice, and the component work in §2 is
-unchanged except that `components/agent-select.tsx` now has models to
-show, and two more components join it:
-`components/permission-select.tsx` (`PermissionMenu`) and
-`components/effort-select.tsx` (`EffortSlider`).
+The component work in §2 is unchanged by this except that `agent-select` has
+models to show and two more components join it, `permission-select` and
+`effort-select` — both already in the table above.
 
 ## 6. Verifying it end to end
 
@@ -226,7 +262,7 @@ place later.
 
 | Stage | Deliverable | Gate |
 | --- | --- | --- |
-| 0 | The API slice of note 12: shared schemas + catalog + protocol, the migration and the fold, the create handler's prompt entry and naming call, the `openai-compatible` namer, then `pnpm generate:api-client` | `pnpm test`, `pnpm test:integration`, `pnpm check:api-structure` |
+| 0 | The API slice (§5): shared schemas + catalog + protocol, the migration and the fold, the create handler's prompt entry and naming call, the `openai-compatible` namer, then `pnpm generate:api-client` | `pnpm test`, `pnpm test:integration`, `pnpm check:api-structure` |
 | 1 | Consumer package re-aligned (entity, repository, branches, hooks) + callers fixed | `pnpm test`, `pnpm arch` |
 | 2 | `lib/session-options.ts` + its tests | `pnpm test` |
 | 3 | The seven `components/` and their render specs | `pnpm test`, `pnpm check:structure` |
@@ -244,4 +280,10 @@ place later.
   independently useful, but it is a change, and it belongs in its own commit.
 - **A created session sits at `host_offline` forever** without a runner, so the
   e2e assertion stops at "the row exists, the pane is provisioning". The agent
-  actually starting is the relay's slice.
+  actually starting is the relay's slice — which is also the only thing the
+  first task is waiting on: it is already in the log and already on the
+  `session.create` the relay will one day deliver.
+- **Four slices are described here as one screen.** Stage 0 is the API, stage 1
+  is the stale consumer module, stages 5–6 are test infrastructure. They landed
+  together because each is unusable without the ones before it; a repeat of this
+  shape should be split at those seams.

@@ -186,7 +186,7 @@ describe('the fold as a property', () => {
  * They exist as columns because a restart must reproduce the launch and the
  * console shows the engine button on a session that already exists — so the
  * property that matters is the same one every other column here has: the log
- * alone rebuilds them (`product/versions/mvp/12-session-launch.md`).
+ * alone rebuilds them (`product/versions/mvp/03-control-plane.md`).
  */
 describe('the launch the fold projects', () => {
   it('takes the launch from the request that stated it', () => {

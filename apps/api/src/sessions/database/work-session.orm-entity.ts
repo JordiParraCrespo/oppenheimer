@@ -137,7 +137,7 @@ export class WorkSessionOrmEntity {
    * They are folded from `session.requested` like every column below, and they
    * are columns at all because a restart must reproduce the launch and the
    * console shows it on a session that already exists
-   * (`product/versions/mvp/12-session-launch.md`).
+   * (`product/versions/mvp/03-control-plane.md`).
    */
   @Column({ type: 'varchar', nullable: true })
   launchModel!: string | null;

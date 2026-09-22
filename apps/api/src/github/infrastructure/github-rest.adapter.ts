@@ -18,7 +18,7 @@ import type {
  * Where GitHub is. Configuration rather than a constant since GitHub Enterprise
  * Server exists and serves the same API on somebody else's host — and since an
  * end-to-end run has to reach a stub to exercise a path that needs a repository
- * without registering an App (`product/versions/mvp/12-session-launch.md`).
+ * without registering an App (`e2e/README.md`).
  * Both default to github.com, so a deployment that sets neither is unchanged.
  */
 const OAUTH_TOKEN_PATH = '/login/oauth/access_token';

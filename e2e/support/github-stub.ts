@@ -12,7 +12,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
  *
  * So this serves the six endpoints the REST adapter calls, and the API is
  * pointed at it with `GITHUB_APP_API_URL` / `GITHUB_APP_OAUTH_URL`
- * (`product/versions/mvp/12-session-launch.md`). **Everything else in the run
+ * (`product/versions/mvp/03-control-plane.md`). **Everything else in the run
  * is the real thing**: a browser, the built console, the API with its guards,
  * its Zod pipe and its problem-document filter, and a real Postgres. The fake
  * stops at the network boundary the product does not own.

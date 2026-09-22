@@ -46,7 +46,7 @@ export interface SessionLaunchSpec {
    *
    * It travels here rather than on the session because it is **not** a column:
    * a prompt is the person's own sentence, and the log and the host are the two
-   * places it belongs (`product/versions/mvp/12-session-launch.md`). An
+   * places it belongs (`product/versions/mvp/03-control-plane.md`). An
    * implementation reads the launch options off the session itself, which are
    * folded.
    */

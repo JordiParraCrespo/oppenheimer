@@ -144,10 +144,13 @@ earlier note:
   rather than hidden. The drawer is still the answer for hosts; it is a
   later slice, and it is a drawer, not a destination.
 - `versions/mvp/10-api-modules-and-data-model.md` said a model was a
-  launch option "recorded in the log, not a column". `versions/mvp/12-session-launch.md`
-  makes the promotion that note said would be a replay: the New session
-  screen sets a model, a permission level and an effort, and a restart,
-  the engine button and the remembered last choice each read them per
-  row, so the fold projects them onto `work_session`. "No table, no
-  endpoint" is unchanged, and the flag strings each permission level maps
-  to are catalog data beside `command`, not a column per agent.
+  launch option "recorded in the log, not a column", and made the
+  promotion conditional on a reader needing it per row. `restart` is that
+  reader, so the note now records the promotion as decided: the three
+  launch options the composer's foot row sets are folded onto
+  `work_session`, which is a projection of the log and so was a replay
+  rather than a backfill. "No table, no endpoint" is unchanged, and the
+  flag strings each permission level maps to are catalog data beside
+  `command`, not a column per agent. The surface itself is in the notes
+  that own it — `versions/mvp/03-control-plane.md` for the route and the
+  fold, `01-protocol.md` for the wire.

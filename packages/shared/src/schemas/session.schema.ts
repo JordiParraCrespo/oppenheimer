@@ -42,7 +42,7 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
  * Four controls that always travel together — the route body, the log payload,
  * `session.create` and the response all carry this same shape — so it is named
  * once rather than spelled four times in four places
- * (`product/versions/mvp/12-session-launch.md`).
+ * (`product/versions/mvp/03-control-plane.md`).
  *
  * `agent` is deliberately **not** in here. The agent is what the session is;
  * the launch is how it was started, and only the second is something a later

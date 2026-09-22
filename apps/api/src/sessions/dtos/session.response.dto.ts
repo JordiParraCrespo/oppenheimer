@@ -70,7 +70,7 @@ export class SessionCheckoutResponseDto {
  *
  * It is on the read as well as the write because the console shows the engine
  * button on a session that already exists, and because a restart has to
- * reproduce the launch (`product/versions/mvp/12-session-launch.md`). What each
+ * reproduce the launch (`product/versions/mvp/03-control-plane.md`). What each
  * value means to a given CLI is catalog data in `@oppenheimer/shared`, not
  * something this API translates.
  */

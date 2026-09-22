@@ -57,6 +57,22 @@
   enabled then. The model list is the harness's own (a blank
   terminal has no model). Runtime
   and lifetime chips arrive with the VM slice.
+- **What the foot row sets, and what it remembers.** The permission
+  level is the product's own three words (`ask` / `auto` / `full`
+  stored; "Ask for approval" / "Approve for me" / "Full access" on the
+  control), and each agent's catalog entry says what they mean to its
+  CLI. Effort is the five stops the slider draws; an agent whose own
+  vocabulary is coarser collapses the ones it cannot express, and one
+  that has no notion of effort hides the control. **Chips remember the
+  last choice, except `full`**: a permission level that escalated itself
+  because it was used once is the failure
+  [`../../04-security-review.md`](../../04-security-review.md) exists to
+  prevent, so a stored `full` reads back as `ask` and every new session
+  starts there. The memory is the browser's — the host, the agent, the
+  model and the effort, in `localStorage`, on the device that chose
+  them. It is a convenience, not a record: the scope is never
+  remembered, because the repositories one visit is about are not the
+  next visit's.
 - The pane beside the sidebar has four states, and each is a URL:
   `/sessions/new` (the composer), `/sessions/{id}` (the terminal, or the
   provisioning pane while the session is starting, or a closed session),
@@ -90,12 +106,27 @@
 
 ## Open questions
 
-1. Session naming: user-typed, derived from the first task, or from the
-   branch? Sidebar shows which?
+1. ~~Session naming: user-typed, derived from the first task, or from
+   the branch?~~ **Decided: derived from the first task**, and the
+   sidebar shows that. A session is minted with a slug, because the
+   directory and the branch have to exist before anything has been
+   typed; the first prompt then names it through a configured model, and
+   a name a person typed is never overwritten by one a model derived
+   (03). The branch was the alternative and says less: several sessions
+   on one repository would read alike, and the branch is already on the
+   status line.
 2. State dot colors and what "blocked" looks like on the card: a dot,
    a badge, or the last line of output?
 3. Phone key bar contents: Esc, Tab, Ctrl, arrows, paste. Anything
    else?
 4. Where do usage meters go later, so the status line leaves room?
+5. **A policy that forbids `full`.** A host is somebody's laptop. Should
+   a workspace be able to refuse full access outright, and is that a host
+   setting or a workspace one?
+6. **Model discovery.** Codex ships an empty model list rather than
+   invented ids, so its engine pane names the agent and offers nothing.
+   Orca probes the CLI and degrades to the catalog seed on a failed
+   probe. Do we probe at pairing time and put the result on
+   `host.capabilities`, or stay with the seed for version 1?
 5. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
    frames and the design system carry both, "Match system" the default.

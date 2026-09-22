@@ -107,7 +107,7 @@ export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION
  * A projection like every other column here, and a column for the same reason
  * they are: a restart has to relaunch the session the way it was launched, and
  * the console shows the engine button on a session that already exists. Neither
- * can walk a log (`product/versions/mvp/12-session-launch.md`).
+ * can walk a log (`product/versions/mvp/03-control-plane.md`).
  *
  * `permission` has no null: a session was launched at some level, and `ask` is
  * what an absent choice meant.

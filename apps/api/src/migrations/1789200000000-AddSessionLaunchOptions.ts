@@ -15,7 +15,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * has to relaunch a session the way it was launched, the console shows the engine
  * button on a session that already exists, and New session seeds from the last
  * choice. Three per-row readers, and none of them can walk a log
- * (`product/versions/mvp/12-session-launch.md`).
+ * (`product/versions/mvp/03-control-plane.md`).
  *
  * No backfill. A row written before this existed was launched with no model, no
  * effort and the level that asks before every action, which is exactly what the

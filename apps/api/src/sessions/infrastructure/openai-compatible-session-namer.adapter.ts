@@ -16,7 +16,7 @@ const PROMPT_MAX_CHARS = 2_000;
  * OpenRouter, a vLLM deployment and a local Ollama all serve
  * `POST {baseUrl}/chat/completions` with the same body, so "name a session with a
  * fast open-weights model" is a matter of three environment variables rather than
- * a vendor adapter each (`product/versions/mvp/12-session-launch.md`). It is also
+ * a vendor adapter each (`product/versions/mvp/03-control-plane.md`). It is also
  * what makes a self-hosted, nothing-leaves-the-building deployment possible: point
  * it at a model on your own machine and the prompt never crosses the network.
  *

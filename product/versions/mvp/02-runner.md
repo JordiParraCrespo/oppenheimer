@@ -171,14 +171,47 @@ one is observable on disk:
    and login. The login URL it prints is detected by the classifier and
    sent to the browser as a button, linkified only for known vendor
    hosts (F3).
+
+   **The launch is argv, assembled from the catalog, and never a string.**
+   `session.create` carries what the person chose — a model, a permission
+   level, an effort, a first task (01) — as structured fields, and the
+   runner turns each into arguments by looking its value up in that
+   agent's `launch` map in `packages/shared/src/agents/catalog.ts`. The
+   maps hold argument *vectors*, so the runner concatenates and never
+   parses, and a value that would need quoting cannot become a second
+   word. It **drops** a stop it has no entry for rather than failing the
+   launch: a thinking budget is never worth refusing a session over, and
+   the console has already hidden a control the catalog declares nothing
+   for.
+
+   **The first task is the trailing positional, not something typed at a
+   running process.** Both CLIs take it that way and say so in their own
+   help — `claude [options] [command] [prompt]` ("Your prompt"), and
+   `codex [OPTIONS] [PROMPT]` ("Optional user prompt to start the
+   session") — so the task is in the process's arguments before it
+   starts. Writing into window 0 once the TUI is up was the alternative
+   and is rejected: it is not how either CLI takes a first task, and "the
+   TUI is ready" is the moment this design avoids needing to name
+   anywhere else. Nothing about the composer waits on a readiness signal
+   that does not exist.
 6. The control plane hears `session.created` with each checkout's
    branch, path and mode, and the initial state.
-7. The first user message is read from the agent's own transcript
-   (Claude Code keeps one under `~/.claude/projects/`, keyed by cwd;
-   Codex under `~/.codex/sessions/`), never scraped from the PTY, and
-   sent once as `prompt.first`, at most 2 KB. The control plane names
-   the session from it (10); the transcript itself never leaves the
-   host.
+7. **When the launch carried no task**, the first user message is read
+   from the agent's own transcript (Claude Code keeps one under
+   `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`),
+   never scraped from the PTY, and sent once as `prompt.first`, at most
+   2 KB. The control plane names the session from it (10); the transcript
+   itself never leaves the host.
+
+   **When the launch carried one, the runner reports nothing.** It
+   already knows the first message — it put it there — and the control
+   plane wrote that entry in the same transaction as the session row
+   (03). A second report would be a duplicate the two writers cannot
+   dedupe against each other: the runner keys its entries `<runId>:<n>`
+   and the control plane keys its by command id, so a key is exactly what
+   they do not share. The `prompt` field on `session.create` is therefore
+   what decides which of the two writes the entry, and there is never a
+   moment when both do.
 
 Close pushes each checkout's branch if it has commits and a remote, then
 `git worktree remove` (or removes the directory, for a clone), prunes,

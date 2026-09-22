@@ -24,7 +24,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Session launch](12-session-launch.md) | The launch options (model, permission, effort), the first prompt, and naming a session from it |
 
 ## Decision log
 
@@ -268,19 +267,26 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and a per-route `pane` (`measure` or `full`, so a terminal gets the
   whole content area). Hosts are paired in onboarding until the settings
   drawer arrives (05).
-- 2026-09-21: **the New session screen's controls get API fields** (12).
-  The composer's foot row sets a model, a permission level and an effort,
-  and the composer itself is the session's first task, so `POST /sessions`
-  grows `launch` and `prompt`. Three of those decisions are new; one
-  changes note 10. `launch` is folded into columns on `work_session`
-  rather than living only in the log — the promotion note 10 said would be
-  "a replay, not a backfill", now that a restart, the engine button and
-  the remembered last choice all read it per row. The flag strings each
-  level maps to are catalog data, read off the CLIs at implementation
-  time rather than written from memory. The first prompt is appended as
-  `prompt.first` by the API, keyed so the runner's own later report
-  dedupes against it, and rides `session.create` to the host, so nothing
-  about the composer waits on the relay. The namer gains an
+- 2026-09-21: **the New session screen's controls get API fields**, in
+  the four notes that own them (01, 02, 03, 05) rather than a note of
+  their own. The composer's foot row sets a model, a permission level and
+  an effort, and the composer itself is the session's first task, so
+  `POST /sessions` and `session.create` both grow `launch` and `prompt`
+  (03, 01). One of those changes note 10: the launch is **folded into
+  columns** on `work_session` rather than living only in the log — the
+  promotion note 10 said would be "a replay, not a backfill" — because
+  `restart` has to relaunch a session the way it was launched and would
+  otherwise walk its log to find out. The flag strings each permission
+  level and effort stop maps to are catalog data beside `command`, read
+  off each CLI's own `--help` at implementation time rather than written
+  from memory. **The first task is a launch option, not something typed
+  at a running process**: the runner appends it to the agent's argv,
+  which both CLIs document as a trailing positional, so there is no
+  "the TUI is ready" moment to race with (02 §5). Exactly one end writes
+  `prompt.first` — the control plane when the composer supplied a task,
+  the runner off the transcript when it did not — so the two writers
+  never need a shared key (02 §7). The namer gains an
   `openai-compatible` provider — one adapter for Groq, Together, vLLM,
   Ollama and the rest — so a session is named by a fast open-weights
-  model, never on the critical path of creating it.
+  model, never on the critical path of creating it. 05's first open
+  question, how a session is named, is closed by the same change.

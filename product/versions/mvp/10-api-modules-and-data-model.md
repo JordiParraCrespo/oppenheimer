@@ -24,7 +24,7 @@ whose contract the API serves.
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
-| **Models** | no table — a field on the shared catalog entry and on the session's launch spec. *The "no column" half is superseded by [12](12-session-launch.md): the launch options are folded onto `work_session`.* | no table |
+| **Models** | no table and no endpoint — a list on the shared catalog entry; the chosen one is a launch option, recorded in the log and folded onto the row with the rest of the launch (03) | no table |
 
 Four of these resolve to "not a table". Each is argued below; none is
 an oversight.
@@ -417,11 +417,16 @@ Claude Code on the web gives its branches (`claude/amazing-clarke-p631o4`)
 — because the directory and the branch must exist before anything has
 been typed, and a directory name is never reused (rule 4 above), so a
 name-derived slug would have to be right the first time. `name` starts
-equal to the slug and is **derived from the first prompt**: the runner
-reads the first user message from the agent's own transcript — Claude
-Code keeps one under `~/.claude/projects/`, keyed by working directory;
-Codex under `~/.codex/sessions/` — never by scraping the PTY, and
-reports it as a `prompt.first` event carrying at most its first 2 KB.
+equal to the slug and is **derived from the first prompt**, which reaches
+the log from exactly one of two writers. When the composer supplied a
+task, the control plane appends it as `prompt.first` in the same
+transaction as the session row and sends it on to the host as a launch
+option (03). When it did not, the runner reads the first user message
+from the agent's own transcript — Claude Code keeps one under
+`~/.claude/projects/`, keyed by working directory; Codex under
+`~/.codex/sessions/` — never by scraping the PTY, and reports it as a
+`prompt.first` event carrying at most its first 2 KB. The `prompt` field
+on `session.create` is what decides which, so the two never both write.
 The `name-session` command in `sessions/` then asks a model for a title
 of at most six words. **Which model is configuration, not a decision in
 this note**: the call goes through a `SessionNamerPort` in
@@ -610,20 +615,27 @@ nothing outside `relay/` reads either.
 
 ### The two "not a table" decisions
 
-**Models.** No table and no endpoint. A model is a launch option
-of an agent, and [`07-mvp.md`](../../07-mvp.md) says a model picker is
-explicitly a later idea — the New session screen has four chips and none
-is a model. The seam is an optional `model` in the session's launch
-spec, recorded in the log; because the log is the source of truth,
-promoting it to a column later is a replay, not a backfill of data we
-never captured.
+**Models.** No table and no endpoint. A model is a launch option of an
+agent, so the list of them is a field on that agent's catalog entry: the
+console already imports the catalog, opening the engine button's second
+pane costs no round trip, and a deployment that adds an agent adds it in
+one place. Claude Code's entry lists the aliases its own `--help`
+documents rather than pinned ids, which are a moving target this
+repository is in no position to keep current; Codex ships an empty list,
+because inventing ids would be a second model list that drifts from the
+CLI's own — and an agent with no models is a case the engine button
+already has, since it is picked outright and the button names the agent.
+What a *host* can actually run may narrow the list later through
+`host.capabilities`: a hint on the chip, never a gate, which is the rule
+the agent itself already follows.
 
-> **Superseded in part, 2026-09-21.** [12](12-session-launch.md) makes
-> that promotion: the New session screen sets a model, a permission level
-> and an effort, and a restart, the engine button and the remembered last
-> choice each read them per row, so the fold projects them onto
-> `work_session` as `launchModel`, `launchPermission` and `launchEffort`.
-> "No table, no endpoint" stands.
+The **chosen** model is not a column of its own either. It is one of the
+three launch options the composer's foot row sets, it is recorded in the
+log by `session.requested`, and the fold projects all three onto
+`work_session` together so a restart can relaunch a session the way it
+was launched without walking its log (03). That is a projection of the
+log rather than a second truth, which is why it could be done as a replay
+and needed no backfill.
 
 Orca's own source is the argument here. Its agent spec carries
 `modelSource: 'static' | 'dynamic'` and a `modelDiscovery.parse(stdout)`

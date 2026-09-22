@@ -179,7 +179,7 @@ export class WorkSessionMapper
    *
    * An absent level is `ask` — the one that asks before every action — and never
    * anything else: a default that escalated is the single mistake this field must
-   * not make (`product/versions/mvp/12-session-launch.md`).
+   * not make (`product/versions/mvp/03-control-plane.md`).
    */
   toLaunch(launch: CreateSessionDto['launch']): SessionLaunchFold {
     return {
