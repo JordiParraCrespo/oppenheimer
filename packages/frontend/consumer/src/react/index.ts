@@ -11,6 +11,7 @@ export { useConsumerApp } from './context';
 export {
   hostsKeys,
   useCurrentPairing,
+  useHostPairing,
   useHosts,
   usePairHost,
   usePairingTokens,

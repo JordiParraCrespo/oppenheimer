@@ -35,9 +35,10 @@
   holds appearance, language and log out, and nothing else. The console
   is one screen: a sidebar beside the pane a session opens in. The
   settings drawer above is a later slice, and a drawer is not a route;
-  hosts are paired in onboarding until it arrives. (Decided 2026-09-21
-  with the version-1 frames; the starter's Settings and Profile screens
-  were deleted rather than left unnavigated.)
+  until it arrives the machines a workspace owns are *listed* nowhere —
+  a new one is paired from the Add host dialog below, or in onboarding.
+  (Decided 2026-09-21 with the version-1 frames; the starter's Settings
+  and Profile screens were deleted rather than left unnavigated.)
 - New session: chips for host, repository, branch; a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for

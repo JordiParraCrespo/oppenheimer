@@ -9,11 +9,11 @@ import {
   StepHeader,
   Link as TextLink,
 } from '@oppenheimer/design-system-web';
+import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { AuthLink } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { usePairingToken } from '@/features/hosts/hooks/use-pairing-token';
 
 /** How much of either block is shown before it scrolls; the rest is one copy away. */
 const CODE_MAX_LINES = 12;
@@ -36,7 +36,7 @@ export function OnboardingHostScreen({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { pairing, countdown, expired, host, isPending, error, regenerate } = usePairingToken(
+  const { pairing, countdown, expired, host, isPending, error, regenerate } = useHostPairing(
     t('onboarding.flow.host.defaultName'),
   );
 

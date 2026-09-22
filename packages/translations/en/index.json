@@ -3,6 +3,7 @@
     "appName": "Oppenheimer",
     "back": "Back",
     "cancel": "Cancel",
+    "close": "Close",
     "confirm": "Confirm",
     "controlAppName": "Oppenheimer Control",
     "copied": "Copied",
@@ -322,6 +323,23 @@
         "empty": "No host matches.",
         "add": "Add host…",
         "offline": "Offline"
+      },
+      "addHost": {
+        "title": "Add a host",
+        "description": "A server you control — a cloud VM, a build box, or your own workstation.",
+        "instruction": "Run this on it, once",
+        "format": "How to read it",
+        "command": "Command",
+        "agentPrompt": "Agent prompt",
+        "tokenExpires": "Token expires in {{time}} · single use",
+        "tokenExpired": "Token expired — generate a new one.",
+        "newToken": "New token",
+        "waiting": "Listening for this host…",
+        "registered": "Registered — waiting for its runner",
+        "ready": "git, tmux, claude ready",
+        "mintFailed": "We could not create a registration token.",
+        "use": "Use this host",
+        "defaultName": "New host"
       },
       "repository": {
         "label": "Repositories",

@@ -8,7 +8,7 @@ import {
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
 import { BranchSelect } from '../components/branch-select';
@@ -17,6 +17,7 @@ import { HostSelect } from '../components/host-select';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { PermissionSelect } from '../components/permission-select';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
+import { AddHostDialog } from '../dialogs/add-host';
 import { useNewSessionDraft } from '../hooks/use-new-session-draft';
 import {
   hasEffort,
@@ -36,6 +37,10 @@ import {
  * not re-render a branch pane and a keystroke in the composer re-renders
  * nothing but the composer.
  *
+ * Add host is the one dialog on this screen, and it belongs here rather than
+ * to the chip: pairing a machine ends with that machine selected, and the draft
+ * the chip writes to is this component's.
+ *
  * Three reads, and they are not the same read four times: the hosts, the
  * installations' repositories, and the branches of the repositories somebody
  * has actually picked. The last is deliberately last — the API answers branches
@@ -46,6 +51,10 @@ export function NewSessionForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { draft, update, setEngine } = useNewSessionDraft();
+  // Whether Add host is open. It is this component's because both of the
+  // things that open it are here — the host chip's foot action and the
+  // empty state below — and because what it pairs lands in the draft above.
+  const [addingHost, setAddingHost] = useState(false);
 
   const hosts = useHosts();
   const installations = useInstallations();
@@ -73,39 +82,63 @@ export function NewSessionForm() {
     },
   });
 
+  /**
+   * One element, rendered as the second child of whichever branch below is
+   * showing — never a second component, and never at a different index.
+   *
+   * The first machine a reader pairs empties the no-host state while they are
+   * still standing in the dialog: the list this screen reads is the one the
+   * dialog polls. Reconciled at the same position, the dialog survives that
+   * swap; moved, it would remount, mint a second token and throw away the
+   * pairing it was showing.
+   */
+  const addHostDialog = addingHost ? (
+    <AddHostDialog
+      onClose={() => setAddingHost(false)}
+      onUseHost={(hostId) => {
+        update({ hostId });
+        setAddingHost(false);
+      }}
+    />
+  ) : null;
+
   if (!hosts.isPending && hosts.data?.length === 0) {
     return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <Cpu />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.new.noHosts.title')}</EmptyState.Title>
-          <EmptyState.Description>{t('sessions.new.noHosts.description')}</EmptyState.Description>
-        </EmptyState.Header>
-        <Button onClick={() => navigate({ to: '/onboarding/host' })}>
-          {t('sessions.new.noHosts.action')}
-        </Button>
-      </EmptyState>
+      <>
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <Cpu />
+            </EmptyState.Media>
+            <EmptyState.Title>{t('sessions.new.noHosts.title')}</EmptyState.Title>
+            <EmptyState.Description>{t('sessions.new.noHosts.description')}</EmptyState.Description>
+          </EmptyState.Header>
+          <Button onClick={() => setAddingHost(true)}>{t('sessions.new.noHosts.action')}</Button>
+        </EmptyState>
+        {addHostDialog}
+      </>
     );
   }
 
   if (!installations.isPending && installations.data?.length === 0) {
     return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Media variant="icon">
-            <FolderGit2 />
-          </EmptyState.Media>
-          <EmptyState.Title>{t('sessions.new.noRepositories.title')}</EmptyState.Title>
-          <EmptyState.Description>
-            {t('sessions.new.noRepositories.description')}
-          </EmptyState.Description>
-        </EmptyState.Header>
-        <Button onClick={() => navigate({ to: '/onboarding/github' })}>
-          {t('sessions.new.noRepositories.action')}
-        </Button>
-      </EmptyState>
+      <>
+        <EmptyState>
+          <EmptyState.Header>
+            <EmptyState.Media variant="icon">
+              <FolderGit2 />
+            </EmptyState.Media>
+            <EmptyState.Title>{t('sessions.new.noRepositories.title')}</EmptyState.Title>
+            <EmptyState.Description>
+              {t('sessions.new.noRepositories.description')}
+            </EmptyState.Description>
+          </EmptyState.Header>
+          <Button onClick={() => navigate({ to: '/onboarding/github' })}>
+            {t('sessions.new.noRepositories.action')}
+          </Button>
+        </EmptyState>
+        {addHostDialog}
+      </>
     );
   }
 
@@ -137,65 +170,70 @@ export function NewSessionForm() {
   }
 
   return (
-    <div className="flex flex-col gap-4.5">
-      {/* A fieldset rather than a div with `role="group"`: the chips are one
+    <>
+      <div className="flex flex-col gap-4.5">
+        {/* A fieldset rather than a div with `role="group"`: the chips are one
           decision — where this session runs — and a screen reader announces
           the legend once for all of them. */}
-      <fieldset aria-label={t('sessions.new.title')} className="flex flex-wrap gap-2">
-        <HostSelect
-          hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
-          value={draft.hostId}
-          onValueChange={(hostId) => update({ hostId })}
-          onAddHost={() => navigate({ to: '/onboarding/host' })}
-          disabled={hosts.isPending}
-        />
-        <RepositoryBranchSelect
-          repositories={repositoryOptions}
-          value={draft.scope}
-          onValueChange={(scope) => update({ scope })}
-          onConnect={() => navigate({ to: '/onboarding/github' })}
-          disabled={repositoryOptions.length === 0}
-        />
-        {onlyScope ? (
-          <BranchSelect
-            branches={toBranchOptions(onlyBranches, { default: t('sessions.new.branch.default') })}
-            value={onlyScope.branch}
-            onValueChange={(branch) => update({ scope: [{ id: onlyScope.id, branch }] })}
+        <fieldset aria-label={t('sessions.new.title')} className="flex flex-wrap gap-2">
+          <HostSelect
+            hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
+            value={draft.hostId}
+            onValueChange={(hostId) => update({ hostId })}
+            onAddHost={() => setAddingHost(true)}
+            disabled={hosts.isPending}
           />
-        ) : null}
-      </fieldset>
-
-      <NewSessionComposer
-        onSubmit={start}
-        busy={create.isPending}
-        disabled={!draft.hostId}
-        tools={
-          <PermissionSelect
-            value={draft.permission}
-            onValueChange={(permission) => update({ permission })}
+          <RepositoryBranchSelect
+            repositories={repositoryOptions}
+            value={draft.scope}
+            onValueChange={(scope) => update({ scope })}
+            onConnect={() => navigate({ to: '/onboarding/github' })}
+            disabled={repositoryOptions.length === 0}
           />
-        }
-        engine={
-          <>
-            <AgentSelect
-              agents={toAgentOptions()}
-              value={{ agent: draft.agent, model: draft.model }}
-              onValueChange={(engine) =>
-                setEngine(engine.agent as typeof draft.agent, engine.model)
-              }
+          {onlyScope ? (
+            <BranchSelect
+              branches={toBranchOptions(onlyBranches, {
+                default: t('sessions.new.branch.default'),
+              })}
+              value={onlyScope.branch}
+              onValueChange={(branch) => update({ scope: [{ id: onlyScope.id, branch }] })}
             />
-            {hasEffort(draft.agent) ? (
-              <EffortSelect value={draft.effort} onValueChange={(effort) => update({ effort })} />
-            ) : null}
-          </>
-        }
-      />
+          ) : null}
+        </fieldset>
 
-      {create.isError ? (
-        <p role="alert" className="text-sm text-danger">
-          {create.error.message}
-        </p>
-      ) : null}
-    </div>
+        <NewSessionComposer
+          onSubmit={start}
+          busy={create.isPending}
+          disabled={!draft.hostId}
+          tools={
+            <PermissionSelect
+              value={draft.permission}
+              onValueChange={(permission) => update({ permission })}
+            />
+          }
+          engine={
+            <>
+              <AgentSelect
+                agents={toAgentOptions()}
+                value={{ agent: draft.agent, model: draft.model }}
+                onValueChange={(engine) =>
+                  setEngine(engine.agent as typeof draft.agent, engine.model)
+                }
+              />
+              {hasEffort(draft.agent) ? (
+                <EffortSelect value={draft.effort} onValueChange={(effort) => update({ effort })} />
+              ) : null}
+            </>
+          }
+        />
+
+        {create.isError ? (
+          <p role="alert" className="text-sm text-danger">
+            {create.error.message}
+          </p>
+        ) : null}
+      </div>
+      {addHostDialog}
+    </>
   );
 }
