@@ -323,6 +323,10 @@ month on demand or $45 on spot**, and $0 on the days you do not use it.
 On your own host the same sessions are free either way, so Keep is the
 default there and Ephemeral is just a tidiness option.
 
+*Superseded by note 14 (v0.2)*: the default on a cloud host is Keep,
+paused when idle and resumed when opened, since stopped compute is free
+on AWS, Oracle and Alibaba; Ephemeral is the option.
+
 Placement follows the same logic: the **host chip** lists your own
 hosts and any connected cloud accounts. Own host first; cloud when the
 host is full, marked with its per-hour price on the chip so the choice

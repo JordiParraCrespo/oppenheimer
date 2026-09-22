@@ -20,7 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
-| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | A per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba behind one `MachineProvider` port; a cloud machine is a host that pairs itself; each provider's SDK, sleep, price, free money and quotas checked; the teardown ladder; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand |
+| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | A per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba behind one `MachineProvider` port; a cloud machine is a host that pairs itself; each provider's SDK, sleep, price, free money and quotas checked; pause, resume and delete later as the v0.2 headline, with the warm and cold resume paths; the teardown ladder; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -163,3 +163,8 @@ earlier note:
   machine-lifecycle port (create, start, stop, destroy, describe, list)
   that knows nothing about sessions. Note 10 §6's provider order "AWS,
   Fly, GCP, Azure" becomes AWS, Oracle, Alibaba.
+- Note 10 §10 made Ephemeral the default lifetime on cloud hosts. Note
+  14 (the v0.2 design) makes it Keep: a session on a cloud machine is
+  paused when idle, resumed when opened and deleted later, because a
+  stopped machine costs only its disk on AWS, Oracle and Alibaba.
+  Ephemeral stays as the option for one-task work.

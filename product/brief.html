@@ -675,7 +675,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 
 <h2 id="cloud">Ephemeral cloud machines</h2>
-<p>A machine that exists only for one task, the way a Claude Code on the web session gets a fresh VM and loses it when idle, on AWS, Oracle Cloud and Alibaba Cloud behind one interface. Smaller than the cloud adapter sketched earlier, because the MVP runner already does the work: <b>a cloud machine is a host that pairs itself</b>. The control plane asks the provider for a VM whose cloud-init runs the ordinary install command with a one-hour, single-use pairing token; the runner registers, the VM is a host the person owns, and the session is dispatched to it like to a Mac Studio. The provider driver knows five verbs and a status and nothing about sessions (note 14).</p>
+<p>A machine that exists only for one task, the way a Claude Code on the web session gets a fresh VM and loses it when idle, on AWS, Oracle Cloud and Alibaba Cloud behind one interface. Smaller than the cloud adapter sketched earlier, because the MVP runner already does the work: <b>a cloud machine is a host that pairs itself</b>. The control plane asks the provider for a VM whose cloud-init runs the ordinary install command with a one-hour, single-use pairing token; the runner registers, the VM is a host the person owns, and the session is dispatched to it like to a Mac Studio. The provider driver knows five verbs and a status and nothing about sessions. This is the v0.2 slice, and its headline is <b>pause, resume, and delete later</b>: a session on a cloud machine pauses after thirty idle minutes, costs only its disk while paused, resumes when you open it (with the cursor where it was on AWS, which hibernates; after a boot and an agent resume on Oracle and Alibaba, which only stop), and is deleted when you say so or after seven days asleep. Pause pushes the branch first, so a resume the provider refuses becomes a recreate rather than a loss (note 14).</p>
 <div class="grid2">
   <div class="panel">
     <span class="tag">The port, one package</span>
@@ -709,7 +709,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </table>
 <div class="rule">
   <span class="k">login</span><span>The one place this is worse than Claude Code on the web: an ephemeral machine has no Claude login, and the platform stores no vendor credential. Version one is the login button once per machine, ten seconds on a phone. Version two is the account volume: a small block volume in the person's own cloud account holding the login directory, attached to one machine at a time, with the accounts slice.</span>
-  <span class="k">order</span><span>The port and the AWS driver first; Oracle second, and do not start the $300 trial until that driver is a week away, since the clock is 30 days; Keep-on-cloud with hibernate; prebaked images; Alibaba when someone needs it; the account volume with accounts. The dedicated host stays the daily answer, the cloud is the overflow and the no-host-yet path.</span>
+  <span class="k">order</span><span>The port, the AWS driver and pause, resume, delete first; Oracle second, and do not start the $300 trial until that driver is a week away, since the clock is 30 days; Ephemeral as an option; prebaked images; Alibaba when someone needs it; the account volume with accounts. The dedicated host stays the daily answer, the cloud is the overflow and the no-host-yet path.</span>
 </div>
 
 
