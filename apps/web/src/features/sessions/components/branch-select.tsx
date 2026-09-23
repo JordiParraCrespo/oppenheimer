@@ -16,11 +16,13 @@ export function BranchSelect({
   branches,
   value,
   onValueChange,
+  loading,
   disabled,
 }: {
   branches: ChipSelectOption[];
   value: string | null;
   onValueChange: (value: string) => void;
+  loading?: boolean;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -31,6 +33,8 @@ export function BranchSelect({
       onValueChange={onValueChange}
       options={branches}
       icon={<GitBranch />}
+      loading={loading}
+      loadingText={t('sessions.new.branch.loading')}
       disabled={disabled}
       aria-label={t('sessions.new.branch.label')}
       placeholder={t('sessions.new.branch.placeholder')}

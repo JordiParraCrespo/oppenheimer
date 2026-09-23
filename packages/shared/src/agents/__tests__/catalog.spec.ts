@@ -164,6 +164,31 @@ describe('launch mapping', () => {
     }
   });
 
+  it('seeds each agent with its family, every row naming the model it runs', () => {
+    // The pair is the assertion. A label names a generation, so its id has to
+    // name the same one: an alias (`opus`, `gpt-5.6`) moves under a versioned
+    // label and the two go out of step on the host, with nothing on screen
+    // saying so.
+    expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
+      ['claude-fable-5-1', 'Claude Fable 5.1'],
+      ['claude-opus-5', 'Claude Opus 5'],
+      ['claude-sonnet-5', 'Claude Sonnet 5'],
+      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
+    ]);
+    expect(CODING_AGENTS.codex.models.map((model) => [model.id, model.label])).toEqual([
+      ['gpt-6-astra', 'GPT-6 Astra'],
+      ['gpt-5.6-sol', 'GPT-5.6 Sol'],
+      ['gpt-5.6-terra', 'GPT-5.6 Terra'],
+      ['gpt-5.6-luna', 'GPT-5.6 Luna'],
+    ]);
+
+    // Each agent's default is the one its own CLI would have run.
+    expect(CODING_AGENTS['claude-code'].models.find((model) => model.default)?.id).toBe(
+      'claude-opus-5',
+    );
+    expect(CODING_AGENTS.codex.models.find((model) => model.default)?.id).toBe('gpt-5.6-sol');
+  });
+
   it('is frozen, like the rest of the catalog', () => {
     for (const id of CODING_AGENT_IDS) {
       expect(Object.isFrozen(CODING_AGENTS[id].launch)).toBe(true);

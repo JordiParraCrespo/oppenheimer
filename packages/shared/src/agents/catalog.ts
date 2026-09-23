@@ -61,7 +61,7 @@ export type SessionEffort = (typeof SESSION_EFFORTS)[number];
 
 /** One model the engine button offers, inside its agent's pane. */
 export interface CodingAgentModel {
-  /** Passed to the agent verbatim, so an alias the CLI documents is preferred. */
+  /** Passed to the agent verbatim, so it is a name that CLI's `--model` takes. */
   readonly id: string;
   /** What the button and the row read ("Claude Opus 5"). */
   readonly label: string;
@@ -144,10 +144,11 @@ export interface CodingAgentDefinition {
    * The models the engine button offers for this agent, in display order.
    *
    * Empty is a real answer and not a gap: the console picks such an agent
-   * outright and the button names the agent itself. Codex is empty here until
-   * the model-discovery probe lands (`product/versions/mvp/05-screens.md`,
-   * open question 6) — inventing
-   * ids would be a second model list that drifts from the CLI's own.
+   * outright and the button names the agent itself, which is what a blank
+   * terminal wants. Both agents here carry a **seed** — the models their CLI
+   * documents, not ids invented for the picker — and which of them a given
+   * machine's CLI actually knows is the probe still open in
+   * `product/versions/mvp/05-screens.md`.
    */
   readonly models: readonly CodingAgentModel[];
   /** What the person's three choices mean to this CLI. */
@@ -169,14 +170,26 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'working-directory',
     }),
     configDirEnv: 'CLAUDE_CONFIG_DIR',
-    // Aliases rather than pinned ids, because `claude --help` documents them as
-    // "an alias for the latest model": a pinned id here would be a model list
-    // this repository has to keep current, which is the drift the catalog's own
-    // header warns about.
+    // The family, one row per model, named as the person choosing it knows it.
+    //
+    // Pinned ids rather than the aliases `claude --help` also takes (`opus`,
+    // `sonnet`, `fable`): a row's label names a generation, so its id has to
+    // name the same one. An alias under a versioned label is the pair that can
+    // drift apart silently — the day the alias moves, the button keeps saying
+    // "Claude Opus 5" while the host runs something else. A pinned id can only
+    // go stale in the open: the row still runs what it says, and the list is
+    // one edit behind until somebody adds the next model here.
+    //
+    // This is the **seed**. Whether a given host's `claude` knows a given id is
+    // a host fact, and the probe that would report it is open question 6 in
+    // `product/versions/mvp/05-screens.md`; until it lands, an id this list
+    // names and that CLI does not fails in the session's own terminal, where
+    // the person can see it.
     models: Object.freeze([
-      Object.freeze({ id: 'opus', label: 'Claude Opus', default: true as const }),
-      Object.freeze({ id: 'sonnet', label: 'Claude Sonnet' }),
-      Object.freeze({ id: 'fable', label: 'Claude Fable' }),
+      Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
+      Object.freeze({ id: 'claude-opus-5', label: 'Claude Opus 5', default: true as const }),
+      Object.freeze({ id: 'claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
@@ -214,10 +227,21 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       keyedBy: 'session-id',
     }),
     configDirEnv: 'CODEX_HOME',
-    // Empty until a probe reports what this machine's codex offers. The engine
-    // button then picks the agent outright and names it, which is the case it
-    // already has for an agent with no models.
-    models: Object.freeze([]),
+    // The four OpenAI ships for Codex, in capability order, with the slugs
+    // `codex --model` takes. Sol is the default because it is the CLI's own
+    // (`model = "gpt-5.6-sol"` in the documented starting `config.toml`), and
+    // Astra is not: it wants Codex 0.153.1 and Trusted Access, so defaulting to
+    // it would hand most hosts a row their CLI refuses.
+    //
+    // Same seed argument as Claude Code above, and the same limit: a probe is
+    // still what would tell the console which of these *this* machine's codex
+    // knows (`product/versions/mvp/05-screens.md`, open question 6).
+    models: Object.freeze([
+      Object.freeze({ id: 'gpt-6-astra', label: 'GPT-6 Astra' }),
+      Object.freeze({ id: 'gpt-5.6-sol', label: 'GPT-5.6 Sol', default: true as const }),
+      Object.freeze({ id: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' }),
+      Object.freeze({ id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' }),
+    ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
       permission: Object.freeze({
@@ -229,18 +253,19 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         full: Object.freeze(['--dangerously-bypass-approvals-and-sandbox']),
       }),
       // Codex has no effort flag; it is the `model_reasoning_effort` config key,
-      // set per invocation with `-c`. Its vocabulary stops at `high`, so the top
-      // two stops land on the same level — the honest place for a collapse.
+      // set per invocation with `-c`. Its config reference runs to `xhigh`, so
+      // the slider's top two stops are distinct and only `minimal` is below
+      // what the reference lists.
       //
-      // These four names are the one thing in this file that was not read off a
-      // `--help`: the CLI accepts an unrecognised value without failing, so a
-      // wrong name costs the setting rather than the launch.
+      // These names are the one thing in this file not read off a `--help`: the
+      // CLI accepts an unrecognised value without failing, so a wrong name costs
+      // the setting rather than the launch.
       effort: Object.freeze({
         minimal: Object.freeze(['-c', 'model_reasoning_effort=minimal']),
         low: Object.freeze(['-c', 'model_reasoning_effort=low']),
         medium: Object.freeze(['-c', 'model_reasoning_effort=medium']),
         high: Object.freeze(['-c', 'model_reasoning_effort=high']),
-        max: Object.freeze(['-c', 'model_reasoning_effort=high']),
+        max: Object.freeze(['-c', 'model_reasoning_effort=xhigh']),
       }),
       // `codex [OPTIONS] [PROMPT]`, documented as "Optional user prompt to
       // start the session". Not the `exec` subcommand, which is the

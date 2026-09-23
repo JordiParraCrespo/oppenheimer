@@ -12,7 +12,7 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 		t.Fatalf("claude argv = %q, want %q", got, want)
 	}
 	got = Launch{Permission: "full", Effort: "max"}.Args(AgentCodex)
-	want = []string{"--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=high"}
+	want = []string{"--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=xhigh"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("codex argv = %q, want %q", got, want)
 	}
