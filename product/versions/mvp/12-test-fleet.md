@@ -7,9 +7,10 @@ and realism second, in the lab, where the things a container cannot
 fake (launchd, systemd user units, lingering, a real macOS login, real
 wifi latency) are exercised on real operating systems.
 
-Status: **proposal**. The tiers and the topology are recommended below;
-the open questions at the end are the owner's to decide before any of it
-is built.
+Status: **proposal**, except Tier 1's fleet suite, which is built and
+passes locally (§2, "As built"). The rest of the tiers and the topology are
+recommended below; the open questions at the end are the owner's to decide
+before they are built.
 
 ## What we need to prove, and where each thing can be proved
 
@@ -114,6 +115,35 @@ one, plus a host image, `docker/runner-host.Dockerfile`:
   A test can add latency, cut the link, or slice bandwidth per host,
   which is what the reconnect ladder, the epoch counter and
   `attachment.credit` need to be exercised honestly.
+
+**As built** (`e2e/fleet/`, `e2e/support/fleet.ts`, `e2e/tests/fleet/`),
+with three departures from the above, each forced by something the first run
+found:
+
+- **Plain `docker`, not Compose.** CI's runner has the daemon but not the
+  Compose plugin, and a test wants to start and break hosts one at a time.
+  The suite builds the runner for the daemon's architecture, bakes it into
+  the image, and starts a network, the git server and each test's own hosts.
+- **The API is forwarded onto each host's loopback**, by `socat`. The runner
+  refuses plain HTTP to anything but loopback (`pairing/domain/identity.go`),
+  which is right, so the host dials `http://localhost:3001` as a developer's
+  machine would. The forwarder doubles as the network cable: `fleet-host cut`
+  kills it with its connections. That covers link loss without toxiproxy;
+  latency and bandwidth shaping are left for when a test needs them.
+- **A host is matched by the name its token was minted with**, because that
+  is the name the API keeps, not the one `runner register --name` sends.
+
+Also as built, and a gap rather than a departure: the git server is
+`git daemon` over `git://`, which asks for no credentials, so the
+credential helper and `credentials.grant` are **not** exercised by the
+fleet yet. Serving the repositories over HTTP with `git http-backend`
+closes it. The CI job (§5 item 4) is not wired yet either; the suite runs
+with `pnpm --filter @oppenheimer/e2e e2e:fleet` against a running API.
+
+Three runs in a row, four specs, about a minute each. The run also recorded
+that the runner still lays sessions out as `<owner>/<repo>/worktrees/<slug>`
+rather than 10's `projects/` tree (02 §4 says so; R3 is the change), so the
+suite asserts a session's branch, not its path.
 
 A new Playwright project, `fleet`, next to `api` and `web`, drives it:
 

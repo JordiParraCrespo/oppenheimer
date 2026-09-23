@@ -320,3 +320,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   not the Mac Studio, so the tested topology is the product's: hosts
   behind a NAT dialling out. Several hosts on one Mac are several Unix
   users, because the tmux socket is per user by design.
+- 2026-09-23: 12's Tier 1 is built as the `fleet` Playwright project: real
+  runners in Debian containers pairing with the real API, driven with plain
+  `docker` rather than Compose (CI has no Compose plugin), the API forwarded
+  onto each host's loopback because the runner rightly refuses plain HTTP
+  elsewhere, and hosts matched by the name their token was minted with.

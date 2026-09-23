@@ -76,6 +76,45 @@ can say where it is instead of downloading the build this Playwright pins:
 PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium pnpm e2e:web
 ```
 
+## The fleet: real runners, several machines
+
+`tests/fleet/` is a third project, and the only one where a host is a real
+runner rather than a keypair and a row. Each host is a Debian container
+(`fleet/Dockerfile`) with its own Unix account, home, tmux server and host key,
+running the runner binary built from this checkout. It pairs through `runner
+register` with a token minted by the API, holds the link, clones from a
+`git daemon` container seeded with the repositories the GitHub stub lists, and
+runs sessions in tmux. The only fake on a host is `claude`, a shim that prints
+its argv and hands the pane to a shell.
+
+What it covers: three machines on one account, each session running on the
+machine it names (the shell prints its own hostname through the relay); one
+machine losing its network going offline alone and coming back to the same
+screen; a runner killed with SIGKILL, restarted by the supervisor, adopting its
+tmux sessions; another account neither seeing a machine nor starting anything
+on it.
+
+```bash
+# with the API and the stubs running as below, plus Docker and Go:
+pnpm --filter @oppenheimer/e2e e2e:fleet     # builds the image, ~1 minute
+KEEP_FLEET=1 pnpm --filter @oppenheimer/e2e e2e:fleet   # leave the hosts up afterwards
+docker ps --filter label=dev.oppenheimer.fleet=1
+docker exec -it <host> fleet-host cut|restore|kill-runner
+```
+
+It is opt-in (`E2E_FLEET=1`, which `e2e:fleet` sets), so `e2e` and `e2e:api`
+never select it. Two things about the hosts are deliberate:
+
+- **The API is reached on the host's loopback.** The runner speaks plain HTTP
+  only to loopback, so each container forwards `127.0.0.1:3001` to the API with
+  `socat`, and that forwarder is the host's network cable: `fleet-host cut`
+  pulls it, existing connections included.
+- **The host's name is the one its token was minted with**, because that is the
+  name the API keeps. `uniqueHostName()` makes one per worker and rerun.
+
+Design and the tiers above it (a lab on real macOS and Linux, a staging
+control plane): `product/versions/mvp/12-test-fleet.md`.
+
 ## Running it
 
 ```bash

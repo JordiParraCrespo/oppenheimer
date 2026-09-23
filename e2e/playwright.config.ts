@@ -18,6 +18,34 @@ export const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 export const WEB_URL = process.env.WEB_URL ?? 'http://localhost:3000';
 /** A Chromium the environment already has, for images that ship one. */
 const CHROMIUM_PATH = process.env.PLAYWRIGHT_CHROMIUM_PATH;
+// oppenheimer:begin runner
+/**
+ * Real runners in containers, paired with the API under test. Opt-in with
+ * `E2E_FLEET=1` (what `e2e:fleet` sets): it needs Docker and Go on the machine
+ * running the suite, so a plain `playwright test` never selects it. See
+ * `support/fleet.ts`.
+ */
+const FLEET = Boolean(process.env.E2E_FLEET);
+
+function fleetProjects() {
+  return [
+    {
+      name: 'fleet-setup',
+      testDir: './tests/fleet',
+      testMatch: /fleet\.setup\.ts/,
+      teardown: 'fleet-teardown',
+    },
+    { name: 'fleet-teardown', testDir: './tests/fleet', testMatch: /fleet\.teardown\.ts/ },
+    {
+      name: 'fleet',
+      testDir: './tests/fleet',
+      testMatch: /\.spec\.ts/,
+      dependencies: ['fleet-setup'],
+      use: { baseURL: API_URL },
+    },
+  ];
+}
+// oppenheimer:end runner
 
 export default defineConfig({
   testDir: './tests',
@@ -51,6 +79,9 @@ export default defineConfig({
       testDir: './tests/api',
       use: { baseURL: API_URL },
     },
+    // oppenheimer:begin runner
+    ...(FLEET ? fleetProjects() : []),
+    // oppenheimer:end runner
     // oppenheimer:begin web
     {
       name: 'web',
