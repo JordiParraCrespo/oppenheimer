@@ -334,3 +334,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   is (05). The same change names the console's keymap in 05, and moves
   resize coalescing to the console at 50 ms, with the runner applying
   each size as it arrives (02 §5, §7).
+- 2026-09-23: **multi-host behaviour is proved through the real register
+  path, in the cheapest place that is honest about it.** A test that needs a
+  host pairs one the way a user does — mint, `runner register`, the link —
+  rather than writing a host row, and it runs in the lowest tier that can
+  prove the property: containers for pairing, routing, link loss and
+  adoption; a real OS only for what a container cannot fake (09's service
+  units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.

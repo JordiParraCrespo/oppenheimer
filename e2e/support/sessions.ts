@@ -160,10 +160,17 @@ export function tokenFrom(installCommand: string): string {
  * the way a runner does — anonymously, with its own keypair.
  */
 export async function pairHost(api: APIRequestContext, name: string): Promise<string> {
+  return redeemPairingToken(await mintPairingToken(api, name), name);
+}
+
+/**
+ * Mint the registration token an install command carries, without spending it —
+ * for a real runner to redeem (`support/fleet.ts`).
+ */
+export async function mintPairingToken(api: APIRequestContext, name: string): Promise<string> {
   const minted = await withoutTripping(() =>
     api.post('/api/v1/hosts/pairing', { data: { name }, failOnStatusCode: false }),
   );
   expect(minted.status(), await minted.text()).toBe(201);
-  const command = ((await minted.json()) as { installCommand: string }).installCommand;
-  return redeemPairingToken(tokenFrom(command), name);
+  return tokenFrom(((await minted.json()) as { installCommand: string }).installCommand);
 }
