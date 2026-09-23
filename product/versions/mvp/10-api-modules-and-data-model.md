@@ -1022,7 +1022,8 @@ not be able to say it about itself, so the two are two schemas.
 
 `POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
 [{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
-several repositories named by GitHub's own ids, since the picker is a
+repositories named by GitHub's own ids — at most one in the MVP (00,
+`SESSIONS_010` on adding a second later) — since the picker is a
 live listing and a row may not exist yet, each with its base branch,
 the agent launched in the first unless `cwdGithubRepoId` says
 otherwise, and no branch name, because the branch is always the

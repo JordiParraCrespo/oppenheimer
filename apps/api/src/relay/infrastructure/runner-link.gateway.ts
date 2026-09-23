@@ -236,9 +236,15 @@ export class RunnerLinkGateway {
         return this.events.onHeartbeat(link, message);
       case 'events.append':
         return this.events.onEventsAppend(link, message);
-      case 'command.failed':
-        link.attachmentByCommand(message.commandId)?.refused(message.code, message.detail);
-        return;
+      case 'command.failed': {
+        // An attach's refusal is its browser's; any other is the session's.
+        const sink = link.attachmentByCommand(message.commandId);
+        if (sink) {
+          sink.refused(message.code, message.detail);
+          return;
+        }
+        return this.events.onCommandFailed(link, message);
+      }
       case 'attachment.closed':
         link.attachment(message.attachmentId)?.closed('runner_closed', message.reason);
         link.closeAttachment(message.attachmentId);

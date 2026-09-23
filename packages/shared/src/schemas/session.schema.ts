@@ -90,13 +90,21 @@ export const sessionCheckoutInputSchema = z.object({
 
 export type SessionCheckoutInputDto = z.infer<typeof sessionCheckoutInputSchema>;
 
+/** How many repositories a session may check out: one, until runners make several. */
+export const MAX_SESSION_CHECKOUTS = 1;
+
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
   agent: codingAgentSchema,
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
-  /** Zero or more. Empty is a session with no git at all, on purpose. */
-  checkouts: z.array(sessionCheckoutInputSchema),
+  /**
+   * At most one in the MVP: a runner makes one worktree per session, so a
+   * second repository is refused here, before a row is written and the first
+   * prompt spent on a session no host can make (#56, 00). Empty is a session
+   * with no git at all, on purpose.
+   */
+  checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */

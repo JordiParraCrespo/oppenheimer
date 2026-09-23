@@ -343,6 +343,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.
 - 2026-09-23: the provisioning pane draws the host's own steps, from
   `session.step` on the log (01, 05).
+- 2026-09-23: **a session is one repository in the MVP** (#56). 2026-09-19's
+  several repositories per session is deferred to the runner slice that
+  makes several worktrees (11's R3): the runner makes one, and a session
+  that asked for two was accepted, refused by the host and left spinning.
+  The create body takes at most one checkout, adding a second is
+  `SESSIONS_010`, and the composer's chip holds one (00, 05, 10). With
+  it, a runner's refusal of a session command is recorded on the
+  session's log instead of dropped, so a start the host refuses fails
+  visibly (03).
 - 2026-09-23: **a session is named by a model if it is quick, by its prompt's
   own words if not, and create waits for the name** (03, "A session is named
   from its first prompt").

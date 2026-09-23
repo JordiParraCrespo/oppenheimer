@@ -1,7 +1,7 @@
 import type { SessionStartStep } from '@oppenheimer/frontend-consumer';
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { provisioningSteps } from '../lib/provisioning-steps';
+import { failureReason, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
  * A step says what it is doing while it runs and what came of it once it
@@ -80,5 +80,18 @@ describe('provisioningSteps', () => {
       t,
     );
     expect(clone.meta).toBe('repository not found');
+  });
+});
+
+describe('failureReason', () => {
+  it('says a code a person can act on in the console’s words', () => {
+    expect(failureReason({ code: 'SESS_002', detail: 'the frame carried 2' }, t)).toBe(
+      'sessions.provisioning.codes.SESS_002',
+    );
+  });
+
+  it('keeps the host’s own words for anything else', () => {
+    expect(failureReason({ code: 'SESS_004', detail: 'clone refused' }, t)).toBe('clone refused');
+    expect(failureReason(null, t)).toBeNull();
   });
 });

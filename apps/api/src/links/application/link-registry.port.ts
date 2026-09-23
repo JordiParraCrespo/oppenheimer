@@ -20,6 +20,12 @@ export interface AttachmentSink {
 
 export type AttachmentClosedReason = 'link_lost' | 'runner_closed';
 
+/** A session command this link sent, remembered so a refusal of it can be recorded. */
+export interface SentSessionCommand {
+  type: string;
+  sessionId: string;
+}
+
 export interface RunnerLink {
   readonly hostId: string;
   /** The runner's process id for idempotency keys; new on every runner start. */
@@ -44,6 +50,11 @@ export interface RunnerLink {
   attachment(attachmentId: number): AttachmentSink | undefined;
   /** The number of attachments open, for the heartbeat log and the tests. */
   readonly attachmentCount: number;
+  /**
+   * The session command this link sent under `commandId`, forgotten as it is
+   * read: what a `command.failed` no attachment claims was a refusal of.
+   */
+  takeSessionCommand(commandId: string): SentSessionCommand | undefined;
 }
 
 export interface LinkRegistryPort {
