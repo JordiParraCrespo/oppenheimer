@@ -742,7 +742,7 @@ export default function Page() {
         title="AgentModelSelect"
         meta="agent-model-select.tsx"
         desc="The engine button: the agent's mark and the model's name. Opening lands on the agent pane with the current harness checked; choosing one slides the same 252px popup to its models, with a back row, a search row and the check on the current model. Harness first, then its models, so the pair is always valid. A blank terminal has no models and is picked outright."
-        code={`<AgentModelSelect agents={harnesses} value={{ agent: 'claude-code', model: 'sonnet' }} onValueChange={setEngine} />`}
+        code={`<AgentModelSelect agents={harnesses} value={{ agent: 'claude-code', model: 'claude-opus-5' }} onValueChange={setEngine} />`}
       >
         <AgentModelDemo />
       </Spec>

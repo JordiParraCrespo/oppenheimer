@@ -4,7 +4,12 @@ import { type AnchorBuffer, emptyRowsBelowContent } from '../lib/terminal-anchor
 /** A screen of `rows` rows with `lines` written from the top. */
 function screen(
   lines: string[],
-  { rows = 10, cursorY = lines.length - 1, baseY = 0, viewportY = baseY } = {},
+  {
+    rows = 10,
+    cursorY = lines.length - 1,
+    baseY = 0,
+    viewportY = baseY,
+  }: Partial<Omit<AnchorBuffer, 'rowText'>> = {},
 ): AnchorBuffer {
   return { rows, baseY, viewportY, cursorY, rowText: (y) => (lines[y] ?? '').trimEnd() };
 }

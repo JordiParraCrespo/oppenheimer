@@ -16,6 +16,12 @@ import { useTranslation } from 'react-i18next';
  * control: picking a repository lands it on its default branch, and its row
  * then grows the cell that opens its own branch pane.
  *
+ * Two reads, so two flags: `loading` is the repositories, `branchesLoading` the
+ * branches of the ones already picked — a slower read, because the API asks
+ * GitHub live, and the pane that shows it is inside this same popup. Both are
+ * `loading` rather than `disabled`: an empty list is a list that has not
+ * arrived, and a greyed chip says the opposite.
+ *
  * Every row carries the branches the section has loaded for it. Until that read
  * lands the picker falls back to the repository's `defaultBranch`, which is the
  * branch it would have chosen anyway.
@@ -25,12 +31,16 @@ export function RepositoryBranchSelect({
   value,
   onValueChange,
   onConnect,
+  loading,
+  branchesLoading,
   disabled,
 }: {
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
   onConnect: () => void;
+  loading?: boolean;
+  branchesLoading?: boolean;
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
@@ -41,6 +51,10 @@ export function RepositoryBranchSelect({
       value={value}
       onValueChange={onValueChange}
       icon={<Folder />}
+      loading={loading}
+      loadingText={t('sessions.new.repository.loading')}
+      branchesLoading={branchesLoading}
+      branchesLoadingText={t('sessions.new.branch.loading')}
       disabled={disabled}
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
