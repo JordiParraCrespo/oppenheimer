@@ -189,9 +189,7 @@ What that policy encodes:
     run — the app would render as signed in with no session behind it.
   - `apiTokens` is never persisted — the consumer product names it in
     `CONSUMER_NON_PERSISTED_FEATURES`. Token prefixes, scopes and the
-    permission catalog are credential metadata, and neither `localStorage` nor
-    `AsyncStorage` is encrypted at rest. Tokens themselves live in
-    `expo-secure-store` on mobile and never touch the query cache.
+    permission catalog are credential metadata, and `localStorage` is not encrypted at rest.
   - Only **successful** queries are written; restoring an error or a pending
     fetch would replay a failure the user has already moved past.
 

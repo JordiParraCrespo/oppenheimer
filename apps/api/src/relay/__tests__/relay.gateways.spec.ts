@@ -125,7 +125,6 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
         'hosts.signingKeyFingerprint':
           options.fingerprint === undefined ? FINGERPRINT : options.fingerprint,
         'app.frontendUrl': 'http://localhost:3000',
-        'app.adminFrontendUrl': 'http://localhost:3003',
       })[key],
   } as unknown as ConfigService;
 
