@@ -94,21 +94,29 @@ func (o *outbox) pushFrame(ctx context.Context, id uint32, frame []byte) error {
 	}
 }
 
-// next blocks until a frame is waiting and returns it: control first, then the
-// attachment whose turn it is.
+// poll returns the next frame without blocking: control first, then the
+// attachment whose turn it is. With nothing waiting it returns a nil frame and
+// a channel that closes when there may be one, so the writer can select on it
+// alongside its ping ticker.
+func (o *outbox) poll() ([]byte, <-chan struct{}, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if frame, ok := o.popLocked(); ok {
+		return frame, nil, nil
+	}
+	if o.closed {
+		return nil, nil, errOutboxClosed
+	}
+	return nil, o.ready, nil
+}
+
+// next blocks until a frame is waiting and returns it.
 func (o *outbox) next(ctx context.Context) ([]byte, error) {
 	for {
-		o.mu.Lock()
-		if frame, ok := o.popLocked(); ok {
-			o.mu.Unlock()
-			return frame, nil
+		frame, ready, err := o.poll()
+		if frame != nil || err != nil {
+			return frame, err
 		}
-		if o.closed {
-			o.mu.Unlock()
-			return nil, errOutboxClosed
-		}
-		ready := o.ready
-		o.mu.Unlock()
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()

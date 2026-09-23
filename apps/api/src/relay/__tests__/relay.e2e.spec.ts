@@ -179,7 +179,7 @@ async function boot(): Promise<World> {
     isMember: vi.fn().mockResolvedValue(true),
   };
 
-  const registry = new InProcessLinkRegistry();
+  const registry = new InProcessLinkRegistry(() => 0);
   const assertions = new HostAssertionResolver(hosts, cache, config);
   const runners = new RunnerLinkGateway(
     assertions,

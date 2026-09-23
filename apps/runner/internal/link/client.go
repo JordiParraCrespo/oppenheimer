@@ -265,10 +265,9 @@ func (c *Client) dialOnce(ctx context.Context) error {
 	c.logger.Info("control-plane link up", slog.String("host", welcome.HostID), slog.Uint64("epoch", epoch))
 	c.opts.Handler.Connected(linkCtx, epoch)
 
-	errc := make(chan error, 4)
+	errc := make(chan error, 3)
 	go func() { errc <- c.writeLoop(linkCtx, conn, out) }()
 	go func() { errc <- c.heartbeatLoop(linkCtx) }()
-	go func() { errc <- c.pingLoop(linkCtx, conn) }()
 	go func() { errc <- c.readLoop(linkCtx, conn) }()
 	err = <-errc
 	stop()
@@ -332,12 +331,42 @@ func (c *Client) readLoop(ctx context.Context, conn *websocket.Conn) error {
 
 // writeLoop is the one goroutine that writes: every send is queued, so a PTY
 // reader and a heartbeat never interleave a frame, and the outbox decides the
-// order (control first, then attachments in turn).
+// order (control first, then attachments in turn). Pings are written here too,
+// on the loop's own ticker, so nothing else ever writes to the socket
+// (`.agents/rules/go.md`, as `packages/go/ws/conn.go` does).
+//
+// A ping waits for its pong, which holds the writer for one round trip every
+// interval; on a link that has died it holds it until the timeout, which is
+// what ends the link.
 func (c *Client) writeLoop(ctx context.Context, conn *websocket.Conn, out *outbox) error {
+	ticker := time.NewTicker(c.opts.Ping)
+	defer ticker.Stop()
 	for {
-		frame, err := out.next(ctx)
+		frame, ready, err := out.poll()
 		if err != nil {
 			return err
+		}
+		if frame == nil {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ready:
+				continue
+			case <-ticker.C:
+				if err := c.ping(ctx, conn); err != nil {
+					return err
+				}
+				continue
+			}
+		}
+		// A busy link still pings: a tick that fired while frames were
+		// waiting is served between two of them.
+		select {
+		case <-ticker.C:
+			if err := c.ping(ctx, conn); err != nil {
+				return err
+			}
+		default:
 		}
 		kind := websocket.MessageText
 		if frame[0] == 0 {
@@ -352,24 +381,15 @@ func (c *Client) writeLoop(ctx context.Context, conn *websocket.Conn, out *outbo
 	}
 }
 
-// pingLoop proves the link is alive in both directions. The read loop is what
+// ping proves the link is alive in both directions. The read loop is what
 // receives the pong, so a ping cannot complete on a link nobody reads.
-func (c *Client) pingLoop(ctx context.Context, conn *websocket.Conn) error {
-	ticker := time.NewTicker(c.opts.Ping)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			pingCtx, cancel := context.WithTimeout(ctx, 2*c.opts.Ping)
-			err := conn.Ping(pingCtx)
-			cancel()
-			if err != nil {
-				return fmt.Errorf("ping: %w", err)
-			}
-		}
+func (c *Client) ping(ctx context.Context, conn *websocket.Conn) error {
+	pingCtx, cancel := context.WithTimeout(ctx, 2*c.opts.Ping)
+	defer cancel()
+	if err := conn.Ping(pingCtx); err != nil {
+		return fmt.Errorf("ping: %w", err)
 	}
+	return nil
 }
 
 func (c *Client) heartbeatLoop(ctx context.Context) error {
