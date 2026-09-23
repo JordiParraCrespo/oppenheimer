@@ -28,7 +28,7 @@ const GROUPS = {
     '@tanstack/query-core',
     '@tanstack/react-query-persist-client',
     '@tanstack/query-persist-client-core',
-    '@tanstack/query-sync-storage-persister',
+    '@tanstack/query-async-storage-persister',
   ],
   'vendor-i18n': [
     'i18next',

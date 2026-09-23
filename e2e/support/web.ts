@@ -57,6 +57,30 @@ export async function provisionedUser(prefix = 'user') {
   return { api, user, userId, organizationId };
 }
 
+/**
+ * Registers through the UI and walks first-run as far as Connect GitHub.
+ *
+ * Three specs want an account that has just claimed its address, and typing
+ * the name into the same two fields three times hid where they actually
+ * differ. It returns the claimed address so a caller can assert on it.
+ *
+ * It stops on step 3 on purpose: the claim is the moment the account becomes
+ * finished, so everything the shown-once rule has to say starts here.
+ */
+export async function claimWorkspaceThroughUi(page: Page, label: string): Promise<string> {
+  const name = `${label} ${Date.now().toString(36)}`;
+
+  await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
+  await page.getByLabel(/workspace name/i).fill(name);
+  // The availability check is the API's — `POST /organizations/check-slug`,
+  // not a timer — so Continue waits for its verdict, not for a delay.
+  await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: /continue/i }).click();
+  await expect(page).toHaveURL(/\/onboarding\/github/, { timeout: 30_000 });
+
+  return name;
+}
+
 /** Invites `email` into the organization and returns the invitation id. */
 export async function inviteByApi(
   api: APIRequestContext,

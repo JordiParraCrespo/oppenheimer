@@ -17,10 +17,19 @@ import { useEffect, useRef } from 'react';
  * to tell a refusal from never having tried. The guard already stops a refresh
  * from re-posting a dead code.
  *
+ * Clearing them means writing the search, and the search is also where the
+ * first-run walk lives, so `walk` is put back rather than swept away with the
+ * spent code — otherwise installing the App mid-walk is the one path through
+ * the flow that loses it, and Ready turns the reader away two clicks later.
+ *
  * Returns the installation it connected, so the caller renders the row it just
  * wrote rather than guessing at the head of a list.
  */
-export function useConnectInstallationCallback(installationId?: number, code?: string) {
+export function useConnectInstallationCallback(
+  installationId?: number,
+  code?: string,
+  walk?: true,
+) {
   const navigate = useNavigate();
   const { mutate, data: connected, isPending, error } = useConnectInstallation();
   const exchanged = useRef<string | null>(null);
@@ -33,10 +42,11 @@ export function useConnectInstallationCallback(installationId?: number, code?: s
     mutate(
       { githubInstallationId: installationId, code },
       {
-        onSuccess: () => navigate({ to: '/onboarding/github', search: {}, replace: true }),
+        onSuccess: () =>
+          navigate({ to: '/onboarding/github', search: walk ? { walk } : {}, replace: true }),
       },
     );
-  }, [installationId, code, mutate, navigate]);
+  }, [installationId, code, walk, mutate, navigate]);
 
   return {
     /** True while the code is being exchanged, so the step can hold its place. */

@@ -348,3 +348,20 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   on the artboard until the wire carries a host's tools: the status row
   says the runner is connected, or that it is still coming up, and
   nothing more.
+- 2026-09-22: **shown-once covers the whole first-run flow**, not only
+  the step that names the workspace (08). The landing could be re-opened
+  by pressing Back out of the console, so an account that finished days
+  ago was congratulated again on a walk it had no way to re-take. Ready
+  and Add host now ask whether the navigation *is* the walk rather than
+  whether the account is finished, which every arrival there is. Add
+  host could not be gated while it was also the console's pairing
+  screen; the dialog above took that job, so the step went back to
+  first-run's. Connect GitHub stays ungated: New session's repository
+  chip still sends a finished account to it to install the App.
+- 2026-09-23: **the agent's prompt sits on the pane's last rows**, the
+  way a chat composer does, instead of under the banner with the pane
+  blank below it. There is still no prompt row of ours (it gave the pane
+  two carets). A full screen, or a reader scrolled back, stays where it
+  is (05). The same change names the console's keymap in 05, and moves
+  resize coalescing to the console at 50 ms, with the runner applying
+  each size as it arrives (02 §5, §7).
