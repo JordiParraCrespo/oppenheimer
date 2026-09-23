@@ -327,3 +327,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   disabled** — pending says so, settled-and-empty offers the chip's foot
   action, and greying out is reserved for a chip the screen forbids,
   which is what made New session read as switched off on a cold open.
+- 2026-09-23: **the agent's prompt sits on the pane's last rows**, the
+  way a chat composer does, instead of under the banner with the pane
+  blank below it. There is still no prompt row of ours (it gave the pane
+  two carets). A full screen, or a reader scrolled back, stays where it
+  is (05). The same change names the console's keymap in 05, and moves
+  resize coalescing to the console at 50 ms, with the runner applying
+  each size as it arrives (02 §5, §7).
