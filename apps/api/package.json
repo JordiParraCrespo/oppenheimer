@@ -41,6 +41,7 @@
     "@oppenheimer/backend-ddd": "workspace:*",
     "@oppenheimer/backend-email": "workspace:*",
     "@oppenheimer/backend-i18n": "workspace:*",
+    "@oppenheimer/backend-llm": "workspace:*",
     "@oppenheimer/backend-queue": "workspace:*",
     "@oppenheimer/backend-storage": "workspace:*",
     "@oppenheimer/env": "workspace:*",

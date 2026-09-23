@@ -16,6 +16,7 @@ COPY packages/backend/ddd/package.json ./packages/backend/ddd/
 COPY packages/backend/cache/package.json ./packages/backend/cache/
 COPY packages/backend/email/package.json ./packages/backend/email/
 COPY packages/backend/i18n/package.json ./packages/backend/i18n/
+COPY packages/backend/llm/package.json ./packages/backend/llm/
 COPY packages/backend/queue/package.json ./packages/backend/queue/
 COPY packages/backend/storage/package.json ./packages/backend/storage/
 RUN pnpm install --frozen-lockfile --filter @oppenheimer/api...

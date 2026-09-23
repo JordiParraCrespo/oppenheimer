@@ -228,24 +228,29 @@ check and the write share a transaction that locks the project row, and creating
 a session takes a share lock on the same row, so an archive and a create cannot
 both win.
 
-**Naming is configuration.** A session keeps its minted slug until its first
+**A session is named from its first prompt: a model if it is quick, the
+prompt's own words if not.** A session keeps its minted slug until its first
 prompt exists — from the composer at create, or reported off the transcript
-later. `SESSION_NAMER_PROVIDER` (`none` by default) chooses what titles it:
-`anthropic`, or `openai-compatible`, which is one adapter over
-`POST {baseUrl}/chat/completions` and therefore covers Groq, Together,
-Fireworks, DeepInfra, OpenRouter, vLLM and a local Ollama alike — so "a fast
-open-weights model" is a matter of `SESSION_NAMER_BASE_URL`,
-`SESSION_NAMER_MODEL` and an optional `SESSION_NAMER_API_KEY` rather than a
-third adapter per vendor. A deployment with none configured names nothing.
-Both adapters have the same posture: a 5-second timeout, a 32-token budget,
-and every failure swallowed into `null`, because the fallback is the session's
-own slug and a title is not worth failing a request over. Naming is **never
-awaited** on the create path — the name lands in the log a moment later and the
-console reads it on its next listing. A model-derived title never overwrites a
-name a person typed, and that rule is in the fold; it is also what stops a
-second naming, since the *first* prompt is the one it names from and there is
-only one of those. The one line that leaves the host is the person's own
-prompt.
+later. Then the namer asks the deployment's LLM for a title, through
+`@oppenheimer/backend-llm`: one `LlmService` contract over `openrouter`
+(the default recommendation, for open-weights models), `together`,
+`anthropic`, and `openai-compatible` for anything else serving
+`POST {baseUrl}/chat/completions` (Groq, vLLM, a local Ollama). Which
+provider is `LLM_PROVIDER` (`none` by default), and the model is `LLM_MODEL`
+or the naming job's own `SESSION_NAMER_MODEL`. The call has a short
+deadline, `SESSION_NAMER_TIMEOUT_MS` (2 s by default), and a 32-token budget.
+When it misses the deadline, fails, or no provider is configured, the
+session is named from the prompt's opening words instead — at most six
+words and 40 characters, pleasantries and pasted code dropped — which needs
+no network and names the same prompt the same way every time. The `named`
+entry records which it was: `source` is `model` or `prompt`. On the create
+path the name is **awaited, overlapping the dispatch**: the model is asked
+while the host is told about the session, and the response carries the name.
+A deadline of 2 s bounds what that can add to a create. The runner's path
+stays unawaited. A derived title, from either source, never overwrites a name
+a person typed, and that rule is in the fold; it is also what stops a second
+naming, since the *first* prompt is the one it names from and there is only
+one of those. The one line that leaves the host is the person's own prompt.
 
 ## The relay, as built
 

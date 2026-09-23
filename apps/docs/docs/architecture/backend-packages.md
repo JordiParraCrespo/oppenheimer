@@ -92,6 +92,37 @@ import { CacheModule } from "@oppenheimer/backend-cache";
 export class AppModule {}
 ```
 
+## `@oppenheimer/backend-llm`
+
+One `LlmService` contract over several LLM providers, for short best-effort
+calls such as naming a session from its first prompt.
+
+| `LLM_PROVIDER`      | Needs                               |
+| ------------------- | ----------------------------------- |
+| `none` (default)    | —                                   |
+| `openrouter`        | `LLM_API_KEY`                       |
+| `together`          | `LLM_API_KEY`                       |
+| `anthropic`         | `LLM_API_KEY`                       |
+| `openai-compatible` | `LLM_BASE_URL` (`LLM_API_KEY` optional) |
+
+`LLM_MODEL` is the default model and `LLM_TIMEOUT_MS` the default end-to-end
+deadline; a request may override both. Every failure throws an `LlmError`
+with a `code` (`not_configured`, `timeout`, `aborted`, `network`, `http`,
+`invalid_response`), and the caller decides the fallback.
+
+```typescript
+import { LlmService } from "@oppenheimer/backend-llm";
+
+constructor(private readonly llm: LlmService) {}
+
+const { text } = await this.llm.complete({
+  system: "Answer in one word.",
+  messages: [{ role: "user", content: "Is the sky blue?" }],
+  maxTokens: 8,
+  timeoutMs: 2_000,
+});
+```
+
 ## `@oppenheimer/backend-storage`
 
 File storage abstraction with local filesystem and S3 implementations.

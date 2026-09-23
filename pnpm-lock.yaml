@@ -395,6 +395,9 @@ importers:
       '@oppenheimer/backend-i18n':
         specifier: workspace:*
         version: link:../../packages/backend/i18n
+      '@oppenheimer/backend-llm':
+        specifier: workspace:*
+        version: link:../../packages/backend/llm
       '@oppenheimer/backend-queue':
         specifier: workspace:*
         version: link:../../packages/backend/queue
@@ -1482,6 +1485,31 @@ importers:
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(jsdom@30.0.1(@noble/hashes@2.2.0))(vite@8.3.0(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.21.0)(yaml@2.9.1))
+
+  packages/backend/llm:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+    devDependencies:
+      '@oppenheimer/tsconfig':
+        specifier: workspace:^
+        version: link:../../tsconfig
+      '@types/node':
+        specifier: 22.20.1
+        version: 22.20.1
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       typescript:
         specifier: ^6.0.3
         version: 6.0.3

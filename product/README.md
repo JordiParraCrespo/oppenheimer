@@ -176,3 +176,13 @@ earlier note:
   model list is the harness's own" and holds no roster; the list lives
   in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
   pinning raises what it is worth.
+- `versions/mvp/10` and `11` put session naming behind a
+  `SESSION_NAMER_PROVIDER` with an adapter per vendor, a slug as the
+  fallback, and naming never awaited on create. It changed: the provider
+  code is now a package, `@oppenheimer/backend-llm`, one `LlmService`
+  over OpenRouter, Together, Anthropic and any OpenAI-compatible server,
+  configured by `LLM_*`; the create path awaits the name under a 2 s
+  deadline, overlapping the dispatch; and a model that is not quick is
+  replaced by a deterministic title from the prompt's own words rather
+  than the slug. `versions/mvp/03-control-plane.md` holds the current
+  rule.

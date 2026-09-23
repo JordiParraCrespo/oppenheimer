@@ -33,5 +33,6 @@ Reusable NestJS modules under `packages/backend/`, each following a pluggable se
 - **@oppenheimer/backend-core** — Errors, filters, interceptors, pipes, mapper interface
 - **@oppenheimer/backend-email** — Pluggable email (Console / Nodemailer / Resend) with React Email templates
 - **@oppenheimer/backend-cache** — Redis cache abstraction
+- **@oppenheimer/backend-llm** — One interface over LLM providers (OpenRouter, Together, Anthropic, any OpenAI-compatible server)
 - **@oppenheimer/backend-storage** — File storage (Local / S3)
 - **@oppenheimer/backend-queue** — BullMQ async jobs + Bull Board admin UI
