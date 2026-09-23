@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
+import { isSessionStartSettled, type SessionEvent } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
 /**
@@ -20,6 +21,7 @@ export const sessionsKeys = {
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
   detail: (id: string) => [...sessionsKeys.details(), id] as const,
+  events: (id: string) => [...sessionsKeys.detail(id), 'events'] as const,
 };
 
 /**
@@ -61,6 +63,30 @@ export function useSession(
     queryFn: () => app.sessions.findById(id),
     enabled: Boolean(id),
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    ...options,
+  });
+}
+
+/**
+ * A session's log, which is what its provisioning steps are drawn from.
+ *
+ * It polls until the log says how the start ended (`session.started` or
+ * `session.failed`) and then stops: a live or finished session never reads its
+ * log in a loop, and a failed one still gets the entry carrying the host's
+ * reason, which can land a read after the row turned `failed`.
+ */
+export function useSessionEvents(
+  id: string,
+  options?: Omit<UseQueryOptions<SessionEvent[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: sessionsKeys.events(id),
+    queryFn: () => app.sessions.findEvents(id),
+    enabled: Boolean(id),
+    refetchInterval: (query) =>
+      isSessionStartSettled(query.state.data) ? false : PROVISIONING_POLL_MS,
     ...options,
   });
 }

@@ -293,3 +293,48 @@ func TestTheSessionMapIsPersistedOnEveryChange(t *testing.T) {
 		t.Fatalf("stored = %+v", h.store.sessions)
 	}
 }
+
+// The steps are what the console draws while a session starts, so their order
+// is the contract: each starts, then finishes, before the next begins.
+func TestCreateReportsEachStepAsItStartsAndFinishes(t *testing.T) {
+	h := newFakeHarness(t)
+	var seen []string
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Progress: func(step domain.Step, status domain.StepStatus) {
+			seen = append(seen, string(step)+":"+string(status))
+		},
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	want := []string{
+		"clone:running", "clone:done",
+		"worktree:running", "worktree:done",
+		"agent:running", "agent:done",
+	}
+	if strings.Join(seen, " ") != strings.Join(want, " ") {
+		t.Fatalf("steps = %v, want %v", seen, want)
+	}
+}
+
+// A failure is reported by the caller as `session.failed`; what the steps say
+// is which one it was — the last to start and never finish.
+func TestCreateThatFailsLeavesTheFailingStepRunning(t *testing.T) {
+	h := newFakeHarness(t)
+	h.worktrees.EnsureErr = domain.ErrWorktree.WithDetail("clone refused")
+	var last string
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		Progress: func(step domain.Step, status domain.StepStatus) {
+			last = string(step) + ":" + string(status)
+		},
+	})
+	if err == nil {
+		t.Fatal("create succeeded over a failed clone")
+	}
+	if last != "clone:running" {
+		t.Fatalf("last step = %q, want clone:running", last)
+	}
+}

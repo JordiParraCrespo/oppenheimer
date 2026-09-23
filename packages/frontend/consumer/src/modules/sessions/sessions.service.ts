@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
+import type { SessionEvent } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
 
 @injectable()
@@ -16,6 +17,11 @@ export class SessionsService {
 
   findById(id: string): Promise<SessionEntity> {
     return this.repository.findById(id);
+  }
+
+  /** The session's log, which the provisioning steps are derived from. */
+  findEvents(id: string): Promise<SessionEvent[]> {
+    return this.repository.findEvents(id);
   }
 
   /**

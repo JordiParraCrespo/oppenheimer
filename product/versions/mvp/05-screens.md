@@ -98,7 +98,19 @@
   (container or host, clone, checkout, start the agent), an elapsed
   clock and a status word, so a slow step is diagnosable. With several
   repositories the steps read "Clone N repositories" and "Check out
-  branches".
+  branches". The eyebrow is the host, the title "Starting your
+  session", the line under it the scope (repository · branch), as in
+  the export. The steps are the host's own account — the `session.step`
+  events 01 describes, read back off the session's log — and nothing
+  advances on a timer: a step nobody reported is pending. Each reads as
+  an action while it runs ("Fetching the repository…") and as a result
+  once it lands, and every result is something the host reported: how
+  long the clone took, the branch the worktree is on, the host
+  connected, the agent ready. The export's stand-in figures ("8 vCPU",
+  "42 MB") are not invented to fill the line. A host that is offline
+  says so under the first step. A start that failed turns the step in
+  hand red with the host's own error under it, and the title to "The
+  session did not start".
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

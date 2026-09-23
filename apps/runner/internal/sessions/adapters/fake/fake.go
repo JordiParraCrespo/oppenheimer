@@ -248,6 +248,8 @@ type Worktrees struct {
 	DirtyPaths map[string]bool
 	// PushErr, when set, is what Push returns.
 	PushErr error
+	// EnsureErr, when set, is what Ensure returns: a clone that failed.
+	EnsureErr error
 	// Pushed records the branches that reached the remote.
 	Pushed []string
 }
@@ -264,6 +266,9 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	if w.EnsureErr != nil {
+		return w.EnsureErr
+	}
 	w.Mirrors[repo]++
 	return nil
 }

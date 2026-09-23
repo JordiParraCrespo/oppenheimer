@@ -341,3 +341,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   prove the property: containers for pairing, routing, link loss and
   adoption; a real OS only for what a container cannot fake (09's service
   units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.
+- 2026-09-23: **the provisioning pane draws the host's own steps.** The
+  runner logs `session.step` (`host`, `clone`, `worktree`, `agent`, each
+  `running` then `done`) as it starts a session, the control plane keeps
+  it without folding it, and the console reads it back off the log
+  until the log says how the start ended. The pane follows the export
+  (host eyebrow, "Starting your session", the scope line, four named
+  steps) with one rule the export's placeholders did not have: every
+  result under a step is something the host reported, never a figure
+  invented to fill the line. Recorded in 01, 02 §5 and 05.

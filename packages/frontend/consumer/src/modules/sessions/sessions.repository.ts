@@ -12,6 +12,7 @@ import {
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
+import type { SessionEvent } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
 
 /**
@@ -143,6 +144,26 @@ export class SessionsRepository {
     });
     if (error || !data) throw new AppError(SessionsErrors.CREATE_FAILED);
     return toEntity(data);
+  }
+
+  /**
+   * The session's log, from the start: what the provisioning pane draws its
+   * steps from (`session-steps.ts`). A starting session has a handful of
+   * entries, so one page is the whole of it; nothing here walks a long log.
+   */
+  @MapApiError(SessionsErrors.FETCH_EVENTS_FAILED)
+  async findEvents(id: string): Promise<SessionEvent[]> {
+    const { data, error } = await heyApiSdk.listSessionEvents({
+      path: { id },
+      query: { limit: 100 },
+    });
+    if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
+    return data.data.map((event) => ({
+      seq: event.seq,
+      kind: event.kind,
+      payload: event.payload,
+      occurredAt: new Date(event.occurredAt),
+    }));
   }
 
   @MapApiError(SessionsErrors.STOP_FAILED)

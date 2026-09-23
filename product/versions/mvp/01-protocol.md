@@ -117,7 +117,15 @@ runner does with it and point back.
   keeps a batch until an ack accounts for every key in it and resends
   otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
   what makes the resend free. The log the batch lands in is 03's; the
-  wire that carries it is this note's.
+  wire that carries it is this note's. While a session starts, the
+  runner logs **`session.step`** with `{ step, status }` — `step` one of
+  `host`, `clone`, `worktree`, `agent`, `status` `running` or `done` —
+  as each stage starts and lands, `host: done` the moment the create
+  frame arrives. The control plane keeps it and folds nothing from it
+  (an unknown kind moves only `lastEventAt`); the console reads it back
+  off the log to draw 05's provisioning steps. A failure is not a step
+  status: it is `session.failed`, and the step still running is the one
+  that failed.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

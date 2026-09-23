@@ -53,6 +53,7 @@ export {
   sessionsKeys,
   useCreateSession,
   useSession,
+  useSessionEvents,
   useSessions,
   useStopSession,
 } from './sessions.queries';
