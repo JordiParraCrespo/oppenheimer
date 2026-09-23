@@ -311,3 +311,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   screen; the dialog above took that job, so the step went back to
   first-run's. Connect GitHub stays ungated: New session's repository
   chip still sends a finished account to it to install the App.
+- 2026-09-23: **the agent's prompt sits on the pane's last rows**, the
+  way a chat composer does, instead of under the banner with the pane
+  blank below it. There is still no prompt row of ours (it gave the pane
+  two carets). A full screen, or a reader scrolled back, stays where it
+  is (05). The same change names the console's keymap in 05, and moves
+  resize coalescing to the console at 50 ms, with the runner applying
+  each size as it arrives (02 §5, §7).

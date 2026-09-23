@@ -243,7 +243,8 @@ is gone: every session shows stopped with a Restart button that
 recreates window 0 in the same worktree, which survived.
 
 **Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
-PTY read buffer, resize events coalesced over 50 ms.
+PTY read buffer. Resize is coalesced once, by the console, over 50 ms;
+the runner applies each size as it arrives.
 
 ### 6. tmux topology
 
@@ -275,8 +276,9 @@ the runner, so a runner restart or upgrade loses nothing.
   is a cache of tmux's own scrollback, not a second copy of record, and
   it is rehydrated from `capture-pane -e` on adoption. Nothing is
   written to disk (F12).
-- Resize goes straight through to the tmux window, coalesced during a
-  drag.
+- Resize goes straight through to the tmux window. The console holds a
+  drag's sizes for 50 ms and sends the one it settles on, so the runner
+  adds no timer of its own.
 
 ### 8. Git and credentials
 

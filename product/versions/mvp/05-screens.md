@@ -96,10 +96,18 @@
   clock and a status word, so a slow step is diagnosable. With several
   repositories the steps read "Clone N repositories" and "Check out
   branches".
-- Session: terminal full-bleed, tabs (tmux windows, window 0 the
+- Session: terminal full-bleed, the agent's prompt on the pane's last
+  rows whatever its height (a full screen, or a reader scrolled back,
+  stays put), tabs (tmux windows, window 0 the
   agent, the rest shells in the same worktree), thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
+- The terminal's keymap is the program's, except three chords the
+  console answers: **Shift+Enter** is a newline in the agent's prompt
+  (window 0 only; a shell window gets the chord as typed), **Ctrl+C**
+  copies when text is selected and interrupts otherwise, and
+  **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
+  on macOS), because tmux owns plain drags.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here
