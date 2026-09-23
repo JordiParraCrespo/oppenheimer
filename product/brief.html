@@ -99,6 +99,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
+  <li><a href="#chat">Chat view</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -731,8 +732,17 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 <div class="verdict"><p><strong>The architecture holds.</strong> What we take is not structure but craft: manifests as versioned data, hooks over scraping, and the terminal title as a first-class signal.</p></div>
 
+<h2 id="chat">Chat view, next version</h2>
+<p>Synara and OpenClaw show a conversation with Claude Code or Codex far better than a terminal can, and their source says why (note 14). Neither renders a terminal. Both drive the agent through its machine interface — <code>claude</code> in stream-json mode or through the Agent SDK, <code>codex app-server</code> over JSON-RPC — and draw every pixel from typed events.</p>
+<div class="rule">
+  <span class="k">events</span><span>One neutral model with an adapter per agent: typed text deltas, items with a started, updated and completed lifecycle, approval requests, diffs, todos and plans. Claude's tools are classified into those kinds, so Bash is a command card, TodoWrite a checklist, ExitPlanMode a plan.</span>
+  <span class="k">craft</span><span>Collapsible tool cards filled in while their arguments stream. Deltas paced on the server and revealed smoothly in the browser. Streaming markdown split into a stable head and a repaired tail. Virtualized transcripts that follow the end, Shiki and worker-rendered diffs. Approvals as a panel that answers the agent's waiting request.</span>
+  <span class="k">cost</span><span>The agent becomes a child of whoever holds its pipes, so a server restart kills a turn in flight. That is herdr's trade, and the one our tmux layer exists to avoid.</span>
+</div>
+<div class="verdict"><p><strong>Next version: a session chooses Terminal or Chat.</strong> A Chat session runs a small driver inside its tmux session that owns the agent's pipes and serves events on a Unix socket, so the agent still survives a runner update. Claude goes through the CLI's stream-json mode, since the runner is Go; Codex goes through <code>app-server</code>. The deltas are relayed live and stored nowhere, and the agent's own transcript is the record. The terminal stays the default and the escape hatch.</p></div>
+
 <h2 id="phases">Phases</h2>
-<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, Codex and the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
+<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: the chat view (note 14), VMs on the runner host with sleep tiers, Codex and the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
 <p>TypeScript for the web app and control plane, Go for the runner. pnpm and Turborepo monorepo. The web framework is not locked in: the recommendation is a Vite + React SPA, and Next.js used as a client app is also fine. The firm point is that the console is a real-time client over a WebSocket, so server components stay out of the session and sidebar screens. NestJS control plane with TypeORM on Postgres (from the Flama starter), a single static Go runner binary, and a shared protocol package that both languages generate from. Rejected: Python on targets (second toolchain on user machines), Electron (state must live server-side), Kubernetes (targets are pets, not cattle).</p>
 
@@ -754,6 +764,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://code.claude.com/docs/en/web-quickstart">Claude Code on the web quickstart</a>, <a href="https://code.claude.com/docs/en/claude-code-on-the-web">reference</a>, <a href="https://code.claude.com/docs/en/cloud-environments">cloud environments</a>, <a href="https://code.claude.com/docs/en/routines">routines</a></li>
   <li><a href="https://www.onorca.dev/docs/agents/codex-hot-swap">Orca hot-swap accounts</a>, <a href="https://www.onorca.dev/docs/agents/usage-tracking">usage tracking</a>, <a href="https://learn.chatgpt.com/docs/config-file/config-reference">Codex config reference</a>, <a href="https://www.kimi-cli.com/en/configuration/data-locations.html">Kimi data locations</a>, <a href="https://opencode.ai/docs/providers/">OpenCode providers</a>, <a href="https://code.claude.com/docs/en/authentication">Claude Code authentication</a></li>
   <li><a href="https://github.com/b-nnett/grok-bot-0.18-reconstructed">Grok Bot 0.18 reconstructed</a></li>
+  <li><a href="https://github.com/Emanuele-web04/synara">Synara</a>, <a href="https://github.com/openclaw/openclaw">OpenClaw</a></li>
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>

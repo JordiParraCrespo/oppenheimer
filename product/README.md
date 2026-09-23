@@ -20,6 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
+| 14 | [Lessons from Synara and OpenClaw](14-lessons-from-synara-and-openclaw.md) | Both drive Claude Code and Codex through their machine interfaces (stream-json, `app-server`) and render typed events, never a terminal; what makes the result look good; the next version adds a Chat mode per session with the driver inside tmux so the agent still survives a runner update |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -154,3 +155,11 @@ earlier note:
   `command`, not a column per agent. The surface itself is in the notes
   that own it — `versions/mvp/03-control-plane.md` for the route and the
   fold, `01-protocol.md` for the wire.
+- Note 01 made the terminal the product and kept the Agent SDK for
+  unattended runs only, and the MVP out-list names chat rendering.
+  Note 14 keeps both for the MVP and puts a **Chat mode** in the next
+  version: a session chooses Terminal or Chat at creation, and a Chat
+  session drives `claude` through its stream-json mode and Codex
+  through `app-server`, from a driver inside the session's tmux
+  session, so the process-survival guarantee of note 13 still holds.
+  The terminal stays the default and the escape hatch.
