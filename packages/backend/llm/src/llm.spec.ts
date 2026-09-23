@@ -1,8 +1,9 @@
 import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { llmIsConfigured } from './llm.config';
 import { LlmError } from './llm.errors';
-import { createLlmService, llmIsConfigured } from './llm.factory';
+import { createLlmService } from './llm.factory';
 import { AnthropicLlmService } from './providers/anthropic.llm-service';
 import { NoopLlmService } from './providers/noop.llm-service';
 import { OpenAiCompatibleLlmService } from './providers/openai-compatible.llm-service';
@@ -23,7 +24,7 @@ interface Seen {
 let server: Server;
 let baseUrl: string;
 let seen: Seen[];
-let reply: { status: number; body: unknown; delayMs?: number };
+let reply: { status: number; body: unknown; delayMs?: number; stallBodyMs?: number };
 
 beforeAll(async () => {
   server = createServer((request, response) => {
@@ -40,7 +41,11 @@ beforeAll(async () => {
       const send = () => {
         const payload = typeof reply.body === 'string' ? reply.body : JSON.stringify(reply.body);
         response.writeHead(reply.status, { 'content-type': 'application/json' });
-        response.end(payload);
+        // Headers now, body later: the case where only reading the body is slow.
+        if (reply.stallBodyMs) {
+          response.flushHeaders();
+          setTimeout(() => response.end(payload), reply.stallBodyMs);
+        } else response.end(payload);
       };
       if (reply.delayMs) setTimeout(send, reply.delayMs);
       else send();
@@ -197,6 +202,15 @@ describe('OpenAiCompatibleLlmService', () => {
     expect(error.message).toContain('slow down');
   });
 
+  it('reports a stalled error body as a timeout, not an HTTP failure', async () => {
+    reply = { status: 503, body: { error: 'busy' }, stallBodyMs: 500 };
+    const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
+    const error = await failure(
+      llm.complete({ messages: [{ role: 'user', content: 'Hi' }], timeoutMs: 50 }),
+    );
+    expect(error.code).toBe('timeout');
+  });
+
   it('treats a body of the wrong shape as an invalid response', async () => {
     reply = { status: 200, body: { choices: [] } };
     const llm = createLlmService({ provider: 'openai-compatible', baseUrl, model: 'm' });
@@ -232,6 +246,20 @@ describe('OpenRouterLlmService', () => {
     expect(seen[0].headers['x-title']).toBe('Oppenheimer');
     expect(seen[0].headers['http-referer']).toBe('https://example.test');
     expect(completion.provider).toBe('openrouter');
+  });
+});
+
+describe('a provider without what it needs', () => {
+  it('refuses before reaching its host', async () => {
+    // A preset has its base URL built in, so the key is what decides — and
+    // `complete` asks the same predicate `isConfigured()` does.
+    for (const provider of ['openrouter', 'together', 'anthropic'] as const) {
+      const llm = createLlmService({ provider, baseUrl, model: 'm' });
+      expect(llm.isConfigured()).toBe(false);
+      const error = await failure(llm.complete({ messages: [{ role: 'user', content: 'Hi' }] }));
+      expect(error.code).toBe('not_configured');
+    }
+    expect(seen).toHaveLength(0);
   });
 });
 

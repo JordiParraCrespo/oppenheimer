@@ -1,8 +1,9 @@
 import { postJson } from '../http';
+import { llmIsConfigured } from '../llm.config';
 import { LlmError } from '../llm.errors';
 import { LlmService } from '../llm.service';
 import type { LlmCompletion, LlmCompletionRequest, LlmConfig } from '../llm.types';
-import { asRecord, DEFAULT_MAX_TOKENS, usageFrom } from './openai-compatible.llm-service';
+import { asRecord, DEFAULT_MAX_TOKENS, usageFrom } from '../parse';
 
 export const ANTHROPIC_BASE_URL = 'https://api.anthropic.com/v1';
 /** The version header the Messages API requires. It is a date, not a model. */
@@ -24,7 +25,7 @@ export class AnthropicLlmService extends LlmService {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.config.apiKey);
+    return llmIsConfigured({ ...this.config, provider: this.provider });
   }
 
   async complete(request: LlmCompletionRequest): Promise<LlmCompletion> {

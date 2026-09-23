@@ -341,13 +341,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   prove the property: containers for pairing, routing, link loss and
   adoption; a real OS only for what a container cannot fake (09's service
   units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.
-- 2026-09-23: **naming asks a model with a deadline and falls back to the
-  prompt's own words.** The two namer adapters became one client package,
-  `@oppenheimer/backend-llm`, with a shared `LlmService` over OpenRouter,
-  Together, Anthropic and any OpenAI-compatible server, configured by
-  `LLM_*` (the `SESSION_NAMER_PROVIDER`/`_BASE_URL`/`_API_KEY` and
-  `ANTHROPIC_API_KEY` variables are gone). The create path now awaits the
-  name, overlapping the dispatch, under a 2 s deadline; a model that misses
-  it, or no model at all, gives way to a deterministic title from the
-  prompt, recorded as `source: prompt`. A session with a first prompt is
-  therefore never left on its slug (03).
+- 2026-09-23: **a session is named by a model if it is quick, by its prompt's
+  own words if not, and create waits for the name** (03, "A session is named
+  from its first prompt").

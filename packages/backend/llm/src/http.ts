@@ -41,7 +41,14 @@ export async function postJson(
   if (!response.ok) {
     // The body is read for the message only; a provider's error shape is not
     // worth modelling, and a body that will not read is not worth failing on.
-    const detail = await response.text().catch(() => '');
+    let detail = '';
+    try {
+      detail = await response.text();
+    } catch (error) {
+      // A stalled body that the deadline or the caller cut off is a timeout or a
+      // cancellation, not an HTTP failure a caller might retry on status.
+      if (signal?.aborted) throw failureFrom(provider, error, options);
+    }
     throw new LlmError(
       'http',
       provider,

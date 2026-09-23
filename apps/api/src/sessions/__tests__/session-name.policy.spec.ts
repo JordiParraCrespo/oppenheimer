@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cleanModelTitle,
   SESSION_NAME_MAX_LENGTH,
+  sessionTitleRequest,
   titleFromPrompt,
 } from '../domain/session-name.policy';
 
@@ -93,5 +94,16 @@ describe('cleanModelTitle', () => {
     expect(cleanModelTitle('')).toBeNull();
     expect(cleanModelTitle('<think>hmm</think>')).toBeNull();
     expect(cleanModelTitle('""')).toBeNull();
+  });
+});
+
+describe('sessionTitleRequest', () => {
+  it('asks for a short title on a small, deterministic budget', () => {
+    const request = sessionTitleRequest('x'.repeat(10_000));
+    expect(request.maxTokens).toBe(32);
+    expect(request.temperature).toBe(0);
+    expect(request.system).toContain(`At most ${SESSION_NAME_MAX_LENGTH} characters`);
+    // Only what is worth sending of a long prompt leaves the host.
+    expect(request.messages[0].content).toHaveLength(2_000);
   });
 });

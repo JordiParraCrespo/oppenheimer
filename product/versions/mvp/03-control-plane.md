@@ -231,26 +231,17 @@ both win.
 **A session is named from its first prompt: a model if it is quick, the
 prompt's own words if not.** A session keeps its minted slug until its first
 prompt exists — from the composer at create, or reported off the transcript
-later. Then the namer asks the deployment's LLM for a title, through
-`@oppenheimer/backend-llm`: one `LlmService` contract over `openrouter`
-(the default recommendation, for open-weights models), `together`,
-`anthropic`, and `openai-compatible` for anything else serving
-`POST {baseUrl}/chat/completions` (Groq, vLLM, a local Ollama). Which
-provider is `LLM_PROVIDER` (`none` by default), and the model is `LLM_MODEL`
-or the naming job's own `SESSION_NAMER_MODEL`. The call has a short
-deadline, `SESSION_NAMER_TIMEOUT_MS` (2 s by default), and a 32-token budget.
-When it misses the deadline, fails, or no provider is configured, the
-session is named from the prompt's opening words instead — at most six
-words and 40 characters, pleasantries and pasted code dropped — which needs
-no network and names the same prompt the same way every time. The `named`
-entry records which it was: `source` is `model` or `prompt`. On the create
-path the name is **awaited, overlapping the dispatch**: the model is asked
-while the host is told about the session, and the response carries the name.
-A deadline of 2 s bounds what that can add to a create. The runner's path
-stays unawaited. A derived title, from either source, never overwrites a name
-a person typed, and that rule is in the fold; it is also what stops a second
-naming, since the *first* prompt is the one it names from and there is only
-one of those. The one line that leaves the host is the person's own prompt.
+later. A model is then asked for a short title, with a short deadline; when it
+misses the deadline, fails, or the deployment has none, the title is the
+prompt's own opening words, which needs no network and names the same prompt
+the same way every time. The `session.named` entry records which it was:
+`source` is `model` or `prompt`. Creating a session **waits for the name**,
+asking the model while the host is told about the session, and returns it; the
+runner's path does not wait. A derived title, from either source, never
+overwrites a name a person typed, and that rule is in the fold; it is also
+what stops a second naming, since the *first* prompt is the one it names from
+and there is only one of those. The one line that leaves the host is the
+person's own prompt.
 
 ## The relay, as built
 

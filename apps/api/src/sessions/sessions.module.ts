@@ -35,8 +35,6 @@ import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
-import { LlmSessionNamerAdapter } from './infrastructure/llm-session-namer.adapter';
-import { SessionNamerConfig } from './infrastructure/session-namer.config';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
@@ -46,7 +44,6 @@ import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.
 import {
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
-  SESSION_NAMER,
   SESSION_RECONCILIATION,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
@@ -91,11 +88,6 @@ const queryHandlers: Provider[] = [
 ];
 
 const adapters: Provider[] = [
-  SessionNamerConfig,
-  // One adapter over the deployment's `LlmService` (`LLM_PROVIDER`): which
-  // provider answers is the LLM module's decision, not this one's. With none
-  // configured it answers `null`, and sessions are named from their prompt.
-  { provide: SESSION_NAMER, useClass: LlmSessionNamerAdapter },
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },

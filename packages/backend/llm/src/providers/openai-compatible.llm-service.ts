@@ -1,16 +1,9 @@
 import { postJson } from '../http';
+import { llmIsConfigured } from '../llm.config';
 import { LlmError } from '../llm.errors';
 import { LlmService } from '../llm.service';
-import type {
-  LlmCompletion,
-  LlmCompletionRequest,
-  LlmConfig,
-  LlmProviderId,
-  LlmUsage,
-} from '../llm.types';
-
-/** Without a budget a provider picks its own, which can be thousands of tokens. */
-export const DEFAULT_MAX_TOKENS = 1024;
+import type { LlmCompletion, LlmCompletionRequest, LlmConfig, LlmProviderId } from '../llm.types';
+import { asRecord, DEFAULT_MAX_TOKENS, usageFrom } from '../parse';
 
 /**
  * Any server that speaks OpenAI's `POST {baseUrl}/chat/completions`.
@@ -40,7 +33,7 @@ export class OpenAiCompatibleLlmService extends LlmService {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.baseUrl());
+    return llmIsConfigured({ ...this.config, provider: this.provider });
   }
 
   /** Where the server lives. The presets override this with their own default. */
@@ -54,9 +47,16 @@ export class OpenAiCompatibleLlmService extends LlmService {
   }
 
   async complete(request: LlmCompletionRequest): Promise<LlmCompletion> {
+    // The same predicate `isConfigured()` answers, so a preset with no key never
+    // reaches its host: a caller treating `not_configured` as its fallback must
+    // not have to hope nobody called `complete` directly.
     const baseUrl = this.baseUrl();
-    if (!baseUrl) {
-      throw new LlmError('not_configured', this.provider, `${this.provider} has no base URL`);
+    if (!this.isConfigured() || !baseUrl) {
+      throw new LlmError(
+        'not_configured',
+        this.provider,
+        `${this.provider} is missing its ${this.provider === 'openai-compatible' ? 'base URL' : 'API key'}`,
+      );
     }
     const model = request.model ?? this.config.model;
     if (!model) {
@@ -114,21 +114,4 @@ export class OpenAiCompatibleLlmService extends LlmService {
       usage: usageFrom(asRecord(record?.usage), 'prompt_tokens', 'completion_tokens'),
     };
   }
-}
-
-export function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-export function usageFrom(
-  usage: Record<string, unknown> | undefined,
-  inputKey: string,
-  outputKey: string,
-): LlmUsage | null {
-  const input = usage?.[inputKey];
-  const output = usage?.[outputKey];
-  if (typeof input !== 'number' || typeof output !== 'number') return null;
-  return { inputTokens: input, outputTokens: output };
 }

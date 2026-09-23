@@ -12,9 +12,11 @@ src/
 ├── llm.service.ts        # abstract LlmService (the port)
 ├── llm.types.ts          # request, completion, config, provider ids
 ├── llm.errors.ts         # LlmError and its codes
-├── llm.factory.ts        # createLlmService / llmIsConfigured (no Nest)
+├── llm.config.ts         # llmIsConfigured: a pure read of the config
+├── llm.factory.ts        # createLlmService: the only thing that news a provider
 ├── llm.module.ts         # @Global LlmModule.forRoot / forRootAsync
 ├── http.ts               # the one JSON POST with a deadline
+├── parse.ts              # shared body-reading helpers, for every wire format
 ├── providers/            # one class per provider; presets extend openai-compatible
 └── index.ts
 ```
@@ -22,8 +24,11 @@ src/
 ## Conventions
 
 - **Pluggable service pattern**: consumers inject the abstract `LlmService`;
-  the module picks the class from `config.provider`. Never import a provider
-  class in consumer code.
+  the module picks the class from `config.provider`. The root export is the
+  contract (`LlmService`, `LlmModule`, `createLlmService`, `llmIsConfigured`,
+  `LlmError`, the types); provider classes and base URLs stay internal.
+- `complete` refuses with `not_configured` on the same predicate
+  `isConfigured()` answers, before any network call.
 - **Throw, don't swallow.** Every failure is an `LlmError` with a `code`. The
   caller decides the fallback.
 - **`fetch`, no vendor SDKs.** A new provider that speaks the OpenAI shape is

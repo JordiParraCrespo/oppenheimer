@@ -28,6 +28,32 @@ const FILLER = [
   /^help me\b\s*/i,
 ];
 
+/** What a model is asked to title: a request, in the shape every LLM client takes. */
+export interface SessionTitleRequest {
+  system: string;
+  messages: { role: 'user'; content: string }[];
+  maxTokens: number;
+  temperature: number;
+}
+
+/** The prompt is capped on the wire; this is what is worth sending of it. */
+const PROMPT_MAX_CHARS = 2_000;
+
+/**
+ * The request that asks a model for this prompt's title. Strict, because the
+ * answer goes straight into a column; a 32-token budget, because a title is a
+ * handful of words; temperature 0, because the same prompt naming two sessions
+ * two different things is noise.
+ */
+export function sessionTitleRequest(prompt: string): SessionTitleRequest {
+  return {
+    system: `Write a title for a software task, from the request that follows. At most ${SESSION_NAME_MAX_LENGTH} characters and at most ${MAX_WORDS} words. Reply with the title alone: no quotes, no punctuation at the end, no explanation.`,
+    messages: [{ role: 'user', content: prompt.slice(0, PROMPT_MAX_CHARS) }],
+    maxTokens: 32,
+    temperature: 0,
+  };
+}
+
 /**
  * A title made from the prompt's own words, or `null` when it has none worth
  * using (only a code block, only a link).

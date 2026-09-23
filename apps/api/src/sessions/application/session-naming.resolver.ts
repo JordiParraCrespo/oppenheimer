@@ -1,11 +1,16 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { LlmService } from '@oppenheimer/backend-llm';
 import type { WorkSessionRepositoryPort } from '../database/work-session.repository.port';
-import { titleFromPrompt } from '../domain/session-name.policy';
+import {
+  cleanModelTitle,
+  sessionTitleRequest,
+  titleFromPrompt,
+} from '../domain/session-name.policy';
 import { SESSION_EVENT_KINDS, type SessionNameSource } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { WorkSessionEventEntity } from '../domain/work-session-event.entity';
-import type { SessionNamerPort } from '../infrastructure/session-namer.port';
-import { SESSION_NAMER, WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
+import { WORK_SESSION_REPOSITORY } from '../sessions.di-tokens';
 
 /** A name for a session, and who chose it. */
 export interface SessionNameProposal {
@@ -16,26 +21,24 @@ export interface SessionNameProposal {
 /**
  * Names a session from its first prompt.
  *
- * **Model first, the prompt's own words if it is not quick.** The namer is asked
- * with a short deadline (`SESSION_NAMER_TIMEOUT_MS`); when it answers in time the
- * title is the model's, and when it does not — no provider, a timeout, a rate
- * limit, an empty answer — the title is the prompt's opening words, which needs
- * no network and names the same prompt the same way every time. Either way a
- * session with a first prompt ends up with a readable name rather than its slug.
+ * **Model first, the prompt's own words if it is not quick.** The deployment's
+ * `LlmService` is asked with a short deadline (`SESSION_NAMER_TIMEOUT_MS`); when
+ * it answers in time the title is the model's, and when it does not — no
+ * provider, a timeout, a rate limit, an empty answer — the title is the prompt's
+ * opening words, which needs no network and names the same prompt the same way
+ * every time. This is the one place that knows the budget and the one place that
+ * decides the fallback.
  *
- * It is two steps, {@link propose} and {@link record}, so the create path can
- * ask the model *while* it dispatches the session to its host and then write the
- * answer onto the aggregate it already holds. There is no second command, no
- * second load and no unscoped read, and the append goes through the same path
- * every other write does, which takes the row lock and re-seats the fold, so a
- * runner batch arriving meanwhile cannot be overwritten.
+ * It is two steps, {@link propose} and {@link record}, so the create path can ask
+ * the model *while* it dispatches the session and then write the answer onto the
+ * aggregate it already holds. The append goes through the repository, which
+ * takes the row lock and folds the entry onto that same instance.
  *
  * **Two writers reach it.** The console sends the first task with the create
- * request; the runner reports `prompt.first` when it reads that message out of
- * the agent's own transcript, which is the only path for a prompt typed into the
- * terminal. The two mint their idempotency keys differently, so a key cannot be
- * what stops the second naming the session again. {@link alreadyNamed} is: a
- * session that carries a name from anybody has had its first prompt.
+ * request; the runner reports `prompt.first` off the agent's transcript, which is
+ * the only path for a prompt typed into the terminal. {@link alreadyNamed} is what
+ * stops the second naming the session again: a session that carries a name from
+ * anybody has had its first prompt.
  *
  * Nothing here throws. A title is not worth failing a create or a runner's
  * acknowledgement over.
@@ -47,30 +50,42 @@ export class SessionNamingResolver {
   constructor(
     @Inject(WORK_SESSION_REPOSITORY)
     private readonly sessions: WorkSessionRepositoryPort,
-    @Inject(SESSION_NAMER)
-    private readonly namer: SessionNamerPort,
+    private readonly llm: LlmService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
-   * The name this prompt gives the session, or `null` when it already has one
-   * or the prompt has nothing to name it by. Resolves within the namer's
-   * deadline and never rejects.
+   * The name this prompt gives the session, or `null` when it already has one or
+   * the prompt has nothing to name it by. Resolves within the naming deadline and
+   * never rejects.
    */
   async propose(session: WorkSessionEntity, text: string): Promise<SessionNameProposal | null> {
     if (this.alreadyNamed(session) || !text.trim()) return null;
-    try {
-      const fromModel = await this.namer.nameFor(text);
-      if (fromModel) return { name: fromModel, source: 'model' };
-    } catch (error) {
-      // The port promises `null` rather than a throw; this is the belt to that.
-      this.logger.warn(`The session namer threw: ${(error as Error).message}`);
+
+    const model = this.namerModel;
+    if (this.llm.isConfigured() && model) {
+      try {
+        const completion = await this.llm.complete({
+          ...sessionTitleRequest(text),
+          model,
+          timeoutMs: this.namerTimeoutMs,
+        });
+        const name = cleanModelTitle(completion.text);
+        if (name) return { name, source: 'model' };
+      } catch (error) {
+        this.logger.warn(
+          `No model title; naming the session from its prompt: ${(error as Error).message}`,
+        );
+      }
     }
+
     const fromPrompt = titleFromPrompt(text);
     return fromPrompt ? { name: fromPrompt, source: 'prompt' } : null;
   }
 
   /**
-   * Writes a proposal onto the session as a `session.named` entry.
+   * Writes a proposal onto the session as a `session.named` entry, folding it
+   * onto this same instance.
    *
    * `promptKey` is whatever keyed the `prompt.first` entry the name came from, so
    * a replayed batch names the session once however many times it is resent.
@@ -106,12 +121,20 @@ export class SessionNamingResolver {
     await this.record(session, await this.propose(session, text), prompt.idempotencyKey);
   }
 
+  /** `SESSION_NAMER_MODEL`, else the provider's default (`LLM_MODEL`). */
+  private get namerModel(): string | undefined {
+    return this.config.get<string>('sessions.namerModel') ?? this.llm.defaultModel;
+  }
+
+  /** How long a create waits for the model before the prompt's words stand in. */
+  private get namerTimeoutMs(): number | undefined {
+    return this.config.get<number>('sessions.namerTimeoutMs');
+  }
+
   /**
-   * Whether this session already has a name somebody or something chose.
-   *
-   * A name a person typed is never overwritten — the fold enforces that as well —
-   * and a derived name is not re-derived, because it came from this session's
-   * first prompt and there is only one of those.
+   * Whether this session already has a name somebody or something chose. A name
+   * a person typed is never overwritten — the fold enforces that as well — and a
+   * derived name is not re-derived, because there is only one first prompt.
    */
   private alreadyNamed(session: WorkSessionEntity): boolean {
     return session.nameSource !== null;

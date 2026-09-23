@@ -12,10 +12,6 @@ export class TogetherLlmService extends OpenAiCompatibleLlmService {
     super(config, 'together');
   }
 
-  isConfigured(): boolean {
-    return Boolean(this.config.apiKey);
-  }
-
   protected baseUrl(): string {
     return this.config.baseUrl ?? TOGETHER_BASE_URL;
   }

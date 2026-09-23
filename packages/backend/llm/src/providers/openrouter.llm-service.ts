@@ -18,10 +18,6 @@ export class OpenRouterLlmService extends OpenAiCompatibleLlmService {
     super(config, 'openrouter');
   }
 
-  isConfigured(): boolean {
-    return Boolean(this.config.apiKey);
-  }
-
   protected baseUrl(): string {
     return this.config.baseUrl ?? OPENROUTER_BASE_URL;
   }

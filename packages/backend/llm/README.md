@@ -8,15 +8,16 @@ behind it.
 - `LlmService` — the abstract contract consumers inject: `complete(request)`
   returns `{ text, model, provider, finishReason, usage }` or throws an
   `LlmError`.
-- Providers, all over `fetch` (no vendor SDKs):
+- Providers, all over `fetch` (no vendor SDKs), chosen by `provider` and
+  internal to the package:
 
-  | `provider`          | Class                        | Needs                  |
-  | ------------------- | ---------------------------- | ---------------------- |
-  | `openrouter`        | `OpenRouterLlmService`       | `apiKey`               |
-  | `together`          | `TogetherLlmService`         | `apiKey`               |
-  | `anthropic`         | `AnthropicLlmService`        | `apiKey`               |
-  | `openai-compatible` | `OpenAiCompatibleLlmService` | `baseUrl` (key optional) |
-  | `none` (default)    | `NoopLlmService`             | —                      |
+  | `provider`          | Needs                    |
+  | ------------------- | ------------------------ |
+  | `openrouter`        | `apiKey`                 |
+  | `together`          | `apiKey`                 |
+  | `anthropic`         | `apiKey`                 |
+  | `openai-compatible` | `baseUrl` (key optional) |
+  | `none` (default)    | —                        |
 
   OpenRouter and Together are presets of the OpenAI-compatible client (the
   base URL filled in, and OpenRouter's `X-Title` / `HTTP-Referer` headers).
@@ -24,8 +25,8 @@ behind it.
   `POST {baseUrl}/chat/completions`: Groq, Fireworks, vLLM, a local Ollama.
 - `LlmError` — one error type, with a `code`: `not_configured`, `timeout`,
   `aborted`, `network`, `http` (with `status`) or `invalid_response`.
-- `createLlmService(config)` / `llmIsConfigured(config)` — plain functions, no
-  Nest, for building a second client or checking configuration.
+- `createLlmService(config)` builds a client without Nest; `llmIsConfigured(config)`
+  answers whether one could make a call, without building anything.
 - `LlmModule.forRoot(config)` / `forRootAsync({ inject, useFactory })` — a
   `@Global` module binding `LlmService` to the configured provider.
 

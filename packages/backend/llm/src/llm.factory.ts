@@ -29,8 +29,3 @@ export function createLlmService(config: LlmConfig): LlmService {
       return new NoopLlmService();
   }
 }
-
-/** Whether this configuration can make a call — the same answer the client gives. */
-export function llmIsConfigured(config: LlmConfig | undefined): boolean {
-  return config ? createLlmService(config).isConfigured() : false;
-}
