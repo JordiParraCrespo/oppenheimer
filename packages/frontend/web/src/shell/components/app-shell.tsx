@@ -31,7 +31,7 @@ const PANE = {
  * body, its brand row, its account-menu links), then mounts this around its
  * `Outlet`.
  *
- * The bar and the palette are the control plane's, and an app says whether it
+ * The bar and the palette are the full chrome, and an app says whether it
  * wears them with `chrome` (`use-shell.ts` says why the console does not).
  */
 export function AppShell({ children, ...config }: ShellConfig & { children: ReactNode }) {

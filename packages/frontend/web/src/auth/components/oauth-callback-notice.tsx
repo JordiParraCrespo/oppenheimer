@@ -41,7 +41,7 @@ export function OAuthCallbackNotice({
 }: {
   code?: string;
   className?: string;
-  /** The guidance for a provider identity with no account here; the control plane words it differently. */
+  /** The guidance for a provider identity with no account here; an app may word it its own way. */
   noAccountKey?: 'auth.oauth.noAccount' | 'control.auth.noAccount';
 }) {
   const { t } = useTranslation();

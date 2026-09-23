@@ -27,8 +27,8 @@ and the full "add a module" cookbook are
   prefix in `onSuccess`; export both by name from `src/react/index.ts`.
 - Data that must not be written to storage → its key prefix in
   `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`).
-- Something the control plane also needs → promote it to
-  `@oppenheimer/frontend-core` rather than copying it here.
+- Something that is not product logic (every app would need it) → promote it
+  to `@oppenheimer/frontend-core` rather than keeping it here.
 
 ## Before pushing
 

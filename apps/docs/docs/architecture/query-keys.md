@@ -153,7 +153,7 @@ The in-memory cache dies with the tab, so the app also writes it to
 A reload renders from the restored cache and refetches in the
 background instead of showing spinners.
 
-The policy is shared by both apps from `@oppenheimer/frontend-core/react` so it can
+The policy ships from `@oppenheimer/frontend-core/react` so it can
 only drift in one place:
 
 ```typescript

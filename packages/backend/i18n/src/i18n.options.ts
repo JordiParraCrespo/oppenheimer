@@ -8,7 +8,7 @@ export interface I18nModuleOptions {
    * Message bundles keyed by locale.
    *
    * Supplied by the application, not imported by this package: the same JSON
-   * the web and mobile apps load is the one the server renders from, so a
+   * the web app loads is the one the server renders from, so a
    * string is written once and a translator edits one file.
    */
   bundles: MessageBundles;
