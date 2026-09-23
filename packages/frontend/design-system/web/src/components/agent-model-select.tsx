@@ -3,15 +3,14 @@
 import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '../lib/utils';
 import { AgentMark } from './agent-mark';
-import { ChipSelectBack, ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import { ChipSelectBack, ChipSelectItem, ChipSelectList, ChipSelectPopup, ChipSelectSearch } from './chip-select';
 import { ComposerToolButton } from './composer';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
  * AgentModelSelect — the engine button in the composer's foot row: the
- * agent's mark and the model's name ("Claude Sonnet 4.6"). Opening lands on
+ * agent's mark and the model's name ("Claude Opus 5"). Opening lands on
  * the agent pane, the harness the session already uses checked and every
  * other one a step away; choosing one slides the same 252px popup to its
  * models, with a back row naming the agent, a search row and the check on
@@ -24,8 +23,8 @@ import { Popover, PopoverTrigger } from './popover';
  *
  * ```tsx
  * <AgentModelSelect
- *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'sonnet', label: 'Claude Sonnet 4.6' }] }]}
- *   value={{ agent: 'claude-code', model: 'sonnet' }}
+ *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5', label: 'Claude Opus 5' }] }]}
+ *   value={{ agent: 'claude-code', model: 'claude-opus-5' }}
  *   onValueChange={setEngine}
  * />
  * ```
@@ -104,10 +103,11 @@ function AgentModelSelect({
           </ComposerToolButton>
         }
       />
-      <ChipSelectPopup width={252} maxHeight={360} side="top" align="end">
+      <ChipSelectPopup density="menu" side="top" align="end">
         {sub ? (
           <>
             <ChipSelectBack
+              density="menu"
               onClick={() => {
                 setPane(null);
                 setQuery('');
@@ -119,44 +119,60 @@ function AgentModelSelect({
               </span>
             </ChipSelectBack>
             <ChipSelectSearch
+              density="menu"
               value={query}
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
             />
-            <div
+            <ChipSelectList
+              density="menu"
               role="listbox"
               aria-label={sub.label}
-              className="overflow-y-auto [scrollbar-width:none]"
-              style={{ maxHeight: VISIBLE_ROWS * 31 + 2 }}
+              rows={VISIBLE_ROWS}
+              total={sub.models.length}
+              empty={models.length === 0}
+              emptyText={emptyText(query)}
             >
-              {models.length > 0 ? (
-                models.map((model) => (
-                  <ChipSelectItem
-                    key={model.value}
-                    selected={value.agent === sub.id && value.model === model.value}
-                    onClick={() => {
-                      onValueChange({ agent: sub.id, model: model.value });
-                      close();
-                    }}
-                  >
-                    {model.label}
-                  </ChipSelectItem>
-                ))
-              ) : (
-                <ChipSelectEmpty className="text-left text-fg-subtle">{emptyText(query)}</ChipSelectEmpty>
-              )}
-            </div>
+              {models.map((model) => (
+                <ChipSelectItem
+                  key={model.value}
+                  density="menu"
+                  selected={value.agent === sub.id && value.model === model.value}
+                  onClick={() => {
+                    onValueChange({ agent: sub.id, model: model.value });
+                    close();
+                  }}
+                >
+                  {model.label}
+                </ChipSelectItem>
+              ))}
+            </ChipSelectList>
           </>
         ) : (
-          <div role="menu" aria-label={ariaLabel}>
+          <ChipSelectList density="menu" role="menu" aria-label={ariaLabel}>
             {agents.map((agent) => (
               <ChipSelectItem
                 key={agent.id}
+                density="menu"
                 role="menuitem"
                 aria-current={agent.id === value.agent || undefined}
                 leading={<AgentMark agent={agent.id} />}
-                className="[&>span:last-child]:hidden"
+                // A row that ends in a way into its models rather than in a
+                // check: the check says which agent is current, the chevron
+                // that there is a pane behind it.
+                trailing={
+                  <span className="flex shrink-0 items-center gap-2">
+                    {agent.id === value.agent ? (
+                      <CheckIcon className="size-3.5 text-link" strokeWidth={2.5} aria-hidden />
+                    ) : null}
+                    {agent.models.length > 0 ? (
+                      <ChevronRightIcon className="size-3.5 text-fg-subtle" aria-hidden />
+                    ) : (
+                      <span className="size-3.5" />
+                    )}
+                  </span>
+                }
                 onClick={() => {
                   if (agent.models.length === 0) {
                     onValueChange({ agent: agent.id, model: null });
@@ -167,20 +183,10 @@ function AgentModelSelect({
                   }
                 }}
               >
-                <span className="flex items-center gap-2">
-                  <span className="flex-1 truncate">{agent.label}</span>
-                  {agent.id === value.agent ? (
-                    <CheckIcon className="size-3.5 shrink-0 text-link" strokeWidth={2.5} aria-hidden />
-                  ) : null}
-                  {agent.models.length > 0 ? (
-                    <ChevronRightIcon className={cn('size-3.5 shrink-0 text-fg-subtle')} aria-hidden />
-                  ) : (
-                    <span className="size-3.5 shrink-0" />
-                  )}
-                </span>
+                {agent.label}
               </ChipSelectItem>
             ))}
-          </div>
+          </ChipSelectList>
         )}
       </ChipSelectPopup>
     </Popover>

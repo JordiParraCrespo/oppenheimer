@@ -67,7 +67,10 @@
   capability line the artboard draws (✓ git, ✓ tmux) arrives with the
   capabilities themselves; nothing on the wire carries a host's tools
   to the console yet. The model list is the harness's own (a blank
-  terminal has no model). Runtime
+  terminal has no model): the catalog seeds it, one row per model the
+  CLI documents, each row carrying the model's full name rather than an
+  alias that moves under it. The foot row's two menus are denser than
+  the sidebar's, and the design system owns that density. Runtime
   and lifetime chips arrive with the VM slice.
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
@@ -96,10 +99,18 @@
   clock and a status word, so a slow step is diagnosable. With several
   repositories the steps read "Clone N repositories" and "Check out
   branches".
-- Session: terminal full-bleed, tabs (tmux windows, window 0 the
+- Session: terminal full-bleed, the agent's prompt on the pane's last
+  rows whatever its height (a full screen, or a reader scrolled back,
+  stays put), tabs (tmux windows, window 0 the
   agent, the rest shells in the same worktree), thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
+- The terminal's keymap is the program's, except three chords the
+  console answers: **Shift+Enter** is a newline in the agent's prompt
+  (window 0 only; a shell window gets the chord as typed), **Ctrl+C**
+  copies when text is selected and interrupts otherwise, and
+  **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
+  on macOS), because tmux owns plain drags.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here
@@ -135,10 +146,11 @@
 5. **A policy that forbids `full`.** A host is somebody's laptop. Should
    a workspace be able to refuse full access outright, and is that a host
    setting or a workspace one?
-6. **Model discovery.** Codex ships an empty model list rather than
-   invented ids, so its engine pane names the agent and offers nothing.
-   Orca probes the CLI and degrades to the catalog seed on a failed
-   probe. Do we probe at pairing time and put the result on
-   `host.capabilities`, or stay with the seed for version 1?
-5. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
+6. **Model discovery.** Orca probes the CLI and degrades to the catalog
+   seed on a failed probe. Do we probe at pairing time and put the result
+   on `host.capabilities`, or stay with the seed for version 1? Pinned
+   model names raise the cost of staying on the seed: a name the catalog
+   lists and a given host's CLI does not know fails in that session's
+   terminal, where a probe would have kept the row off the list.
+7. ~~Dark only, like the mockups, or both themes?~~ Both; the version-1
    frames and the design system carry both, "Match system" the default.

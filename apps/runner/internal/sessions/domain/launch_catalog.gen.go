@@ -37,7 +37,7 @@ var launchCatalog = map[string]launchMap{
 			"low":     {"-c", "model_reasoning_effort=low"},
 			"medium":  {"-c", "model_reasoning_effort=medium"},
 			"high":    {"-c", "model_reasoning_effort=high"},
-			"max":     {"-c", "model_reasoning_effort=high"},
+			"max":     {"-c", "model_reasoning_effort=xhigh"},
 		},
 		prompt: []string{"<prompt>"},
 	},

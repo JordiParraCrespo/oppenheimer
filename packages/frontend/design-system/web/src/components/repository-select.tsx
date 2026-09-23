@@ -7,8 +7,8 @@ import { cn } from '../lib/utils';
 import {
   ChipSelectActionRow,
   ChipSelectBack,
-  ChipSelectEmpty,
   ChipSelectItem,
+  ChipSelectList,
   ChipSelectPopup,
   ChipSelectSearch,
   ChipSelectTrigger,
@@ -71,6 +71,10 @@ function RepositorySelect({
   branchSearchPlaceholder = 'Search branches…',
   emptyText = 'No repository matches.',
   branchEmptyText = 'No branch matches.',
+  loading = false,
+  loadingText = 'Loading…',
+  branchesLoading = false,
+  branchesLoadingText = 'Loading…',
   branchPaneTitle = (name) => `Branch for ${name}`,
   changeBranchLabel = 'Change branch',
   action,
@@ -87,6 +91,16 @@ function RepositorySelect({
   branchSearchPlaceholder?: string;
   emptyText?: string;
   branchEmptyText?: string;
+  /** The repositories are still being fetched: the chip stays live and says so. */
+  loading?: boolean;
+  loadingText?: string;
+  /**
+   * The branches are their own read, and a slower one — the API asks GitHub
+   * live — so the pane that shows them has its own flag rather than borrowing
+   * the repositories'.
+   */
+  branchesLoading?: boolean;
+  branchesLoadingText?: string;
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
   action?: { label: string; icon?: React.ReactNode; onSelect: () => void };
@@ -179,22 +193,25 @@ function RepositorySelect({
               aria-label={branchSearchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
             />
-            <div role="listbox" aria-label={String(branchPaneTitle(paneRepo.name))}>
-              {visibleBranches.length > 0 ? (
-                visibleBranches.map((branch) => (
-                  <ChipSelectItem
-                    key={branch.value}
-                    mono
-                    selected={value.find((scope) => scope.id === pane)?.branch === branch.value}
-                    onClick={() => chooseBranch(branch.value)}
-                  >
-                    {branch.label ?? branch.value}
-                  </ChipSelectItem>
-                ))
-              ) : (
-                <ChipSelectEmpty>{branchEmptyText}</ChipSelectEmpty>
-              )}
-            </div>
+            <ChipSelectList
+              role="listbox"
+              aria-label={String(branchPaneTitle(paneRepo.name))}
+              loading={branchesLoading}
+              loadingText={branchesLoadingText}
+              emptyText={branchEmptyText}
+              empty={visibleBranches.length === 0}
+            >
+              {visibleBranches.map((branch) => (
+                <ChipSelectItem
+                  key={branch.value}
+                  mono
+                  selected={value.find((scope) => scope.id === pane)?.branch === branch.value}
+                  onClick={() => chooseBranch(branch.value)}
+                >
+                  {branch.label ?? branch.value}
+                </ChipSelectItem>
+              ))}
+            </ChipSelectList>
           </>
         ) : (
           <>
@@ -204,9 +221,16 @@ function RepositorySelect({
               aria-label={searchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
             />
-            <div role="listbox" aria-multiselectable aria-label={ariaLabel}>
-              {visibleRepos.length > 0 ? (
-                visibleRepos.map((repo) => {
+            <ChipSelectList
+              role="listbox"
+              aria-multiselectable
+              aria-label={ariaLabel}
+              loading={loading}
+              loadingText={loadingText}
+              emptyText={emptyText}
+              empty={visibleRepos.length === 0}
+            >
+              {visibleRepos.map((repo) => {
                   const scope = value.find((item) => item.id === repo.id);
                   return (
                     <div
@@ -243,11 +267,8 @@ function RepositorySelect({
                       ) : null}
                     </div>
                   );
-                })
-              ) : (
-                <ChipSelectEmpty>{emptyText}</ChipSelectEmpty>
-              )}
-            </div>
+                })}
+            </ChipSelectList>
             {action ? (
               <ChipSelectActionRow
                 icon={action.icon}

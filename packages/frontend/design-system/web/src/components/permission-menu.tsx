@@ -33,6 +33,11 @@ type PermissionOption = {
   description: string;
 };
 
+/**
+ * One glyph per level, unsized: the button it triggers from and the row it
+ * appears in each size it, so this file states the mark and nothing about how
+ * big it is.
+ */
 const ICONS: Record<PermissionLevel, React.ReactNode> = {
   ask: <HandIcon />,
   auto: <ShieldCheckIcon />,
@@ -70,7 +75,10 @@ function PermissionMenu({
       >
         {current?.label}
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="min-w-[296px]">
+      {/* One measurement this menu owns: 296px wide, not merely at least. Its
+          rows wrap their second line rather than widening, and a fixed width
+          is the only way a translated sentence keeps doing that. */}
+      <DropdownMenuContent side="top" align="start" className="w-[296px]">
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(next) => onValueChange(next as PermissionLevel)}
@@ -82,6 +90,7 @@ function PermissionMenu({
               icon={ICONS[option.value]}
               tone={option.value === 'full' ? 'warning' : 'default'}
               description={option.description}
+              density="compact"
               // Picking a level is a decision, not a comparison, so the menu
               // closes behind it — Base UI keeps a radio item's menu open by
               // default, which left the composer's send button behind an inert

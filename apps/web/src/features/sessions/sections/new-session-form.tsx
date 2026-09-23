@@ -111,19 +111,23 @@ export function NewSessionForm() {
           decision — where this session runs — and a screen reader announces
           the legend once for all of them. */}
         <fieldset aria-label={t('sessions.new.title')} className="flex flex-wrap gap-2">
+          {/* Pending is `loading`, settled-and-empty is the empty line plus the
+              chip's own foot action, and `disabled` is only for a chip this
+              screen forbids — which none of these are. */}
           <HostSelect
             hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
             value={draft.hostId}
             onValueChange={(hostId) => update({ hostId })}
             onAddHost={() => setAddingHost(true)}
-            disabled={hosts.isPending}
+            loading={hosts.isPending}
           />
           <RepositoryBranchSelect
             repositories={repositoryOptions}
             value={draft.scope}
             onValueChange={(scope) => update({ scope })}
             onConnect={() => navigate({ to: '/onboarding/github' })}
-            disabled={repositories.isPending}
+            loading={installations.isPending || repositories.isPending}
+            branchesLoading={branches.isPending}
           />
           {onlyScope ? (
             <BranchSelect
@@ -132,6 +136,7 @@ export function NewSessionForm() {
               })}
               value={onlyScope.branch}
               onValueChange={(branch) => update({ scope: [{ id: onlyScope.id, branch }] })}
+              loading={branches.isPending}
             />
           ) : null}
         </fieldset>

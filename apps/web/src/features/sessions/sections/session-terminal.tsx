@@ -27,11 +27,17 @@ import { useTerminal } from '../hooks/use-terminal';
  * so plain output lands close to it and an agent drawing a full-screen TUI
  * does not. That is a property of terminals, not of this component.
  */
+/** Window 0 is the agent's (05); the pane shows only that one today. */
+const AGENT_WINDOW = 0;
+
 export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
-  const createStream = useSessionStream(sessionId);
+  const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
-  const { containerRef, status } = useTerminal(createStream, refresh);
+  const { containerRef, status } = useTerminal(createStream, {
+    onEnd: refresh,
+    agentWindow: true,
+  });
 
   return (
     <Terminal className="min-h-0 flex-1 overflow-hidden">

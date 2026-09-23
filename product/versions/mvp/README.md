@@ -312,6 +312,29 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   screen; the dialog above took that job, so the step went back to
   first-run's. Connect GitHub stays ungated: New session's repository
   chip still sends a finished account to it to install the App.
+- 2026-09-22: **the engine button offers each harness's models by name,
+  from a pinned seed.** Claude Code's three aliases under generic labels
+  ("Claude Opus") and Codex's empty list are both gone: the catalog now
+  carries one row per model the CLI documents, keyed by the model's full
+  name. A versioned label over an alias that moves under it is the pair
+  that drifts apart silently, and this is the list a reader chooses
+  from; a pinned name can only go stale in the open. The roster itself
+  lives in `CODING_AGENTS` and nowhere else — 05 says "the harness's
+  own", and open question 6 (the probe) is what the pinning makes more
+  worth answering. Two console decisions came with it: the composer's
+  menus are **denser than the sidebar's**, which the design system owns
+  as a density on the parts rather than as measurements in the two
+  menus; and a scope chip whose list has not arrived is **loading, not
+  disabled** — pending says so, settled-and-empty offers the chip's foot
+  action, and greying out is reserved for a chip the screen forbids,
+  which is what made New session read as switched off on a cold open.
+- 2026-09-23: **the agent's prompt sits on the pane's last rows**, the
+  way a chat composer does, instead of under the banner with the pane
+  blank below it. There is still no prompt row of ours (it gave the pane
+  two carets). A full screen, or a reader scrolled back, stays where it
+  is (05). The same change names the console's keymap in 05, and moves
+  resize coalescing to the console at 50 ms, with the runner applying
+  each size as it arrives (02 §5, §7).
 - 2026-09-23: 12-test-fleet.md added as a **proposal**: three tiers — a
   hermetic fleet of runner containers against the real API in compose
   (laptop and CI), the Mac Studio as the lab of real macOS and Linux
