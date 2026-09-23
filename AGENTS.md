@@ -237,8 +237,8 @@ The frontend is split twice, and the two splits answer different questions:
 The placement rules, the render rules (state at the lowest reader, effects
 only in `hooks/`, the React Compiler on, no manual memo) and what enforces
 them are `.agents/rules/frontend-architecture.md`. The layer model and the
-cookbooks are `packages/frontend/ARCHITECTURE.md` and each app's
-`ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
+cookbooks are `packages/frontend/ARCHITECTURE.md` and
+`apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
 `pnpm check:structure` and Biome hold it.
 
 ### Web (apps/web)

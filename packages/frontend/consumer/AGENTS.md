@@ -9,8 +9,7 @@ chrome it keeps. `organizations` is the *personal workspace* only — read it,
 rename it, create one for an account that has none. Workspaces have no roster
 (`product/versions/mvp/08-auth.md`): there is no member or invitation hook
 here, on purpose, and the teams slice adds them when it arrives. Platform-free
-logic only; the UI that renders it lives in `apps/web`, `apps/mobile` or the
-platform kits. The layer model
+logic only; the UI that renders it lives in `apps/web` or the web kit. The layer model
 and the full "add a module" cookbook are
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
@@ -46,11 +45,11 @@ pnpm --filter @oppenheimer/frontend-consumer build   # the apps import dist/
   knows kernel services; a consumer hook reads `useConsumerApp().sessions`.
 - Adding a member or invitation hook to `organizations` because the API has
   the endpoint. The console has no roster; that surface is the teams slice's.
-- Importing `@oppenheimer/frontend-admin` to reuse a role type or invalidate a list.
-  `products-never-meet` fails; the meeting point is a kernel contract, the way
-  member lists meet on `MEMBER_LISTS_KEY` from `@oppenheimer/frontend-core/react`.
-- Putting a component or a React Native/DOM import here. A product package is
-  loaded by both platforms; `domain-knows-no-platform` fails.
+- Defining a query key or type here that the kernel owns, such as the member
+  list prefix: use the kernel contract (`MEMBER_LISTS_KEY` from
+  `@oppenheimer/frontend-core/react`).
+- Putting a component or a DOM import here. A product package holds no
+  platform code; `domain-knows-no-platform` fails.
 - Importing `src/react/` from `src/modules/`. Services know nothing of React;
   the bindings sit on top.
 

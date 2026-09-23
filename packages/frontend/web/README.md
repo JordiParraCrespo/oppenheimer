@@ -1,9 +1,9 @@
 # @oppenheimer/frontend-web
 
-What both Vite apps — `apps/web` and `apps/admin-web` — share below their
-routes: the authenticated shell, the auth chrome, the data table, page
+The web platform kit: what `apps/web` builds on below its routes — the
+authenticated shell, the auth chrome, the data table, page
 layout, form plumbing, theming, i18n, analytics and browser glue. It is
-source-exported (`main` points at `src/index.ts`), so each app's Vite build
+source-exported (`main` points at `src/index.ts`), so the app's Vite build
 compiles it and tree-shakes what it does not use.
 
 The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
@@ -43,21 +43,14 @@ configures i18next at import.
 
 ## How to use it
 
-`apps/admin-web/src/features/admin-users/screens/users.tsx` builds its table
-out of the kit:
+`apps/web/src/features/auth/forms/login-form.tsx` builds its form out of the
+kit:
 
 ```tsx
-import {
-  DataTable,
-  type DataTableColumn,
-  formatMediumDate,
-  PageHead,
-  RolePill,
-  useTableQuery,
-} from '@oppenheimer/frontend-web';
+import { AuthField, AuthFormError, useZodResolver } from '@oppenheimer/frontend-web';
 
-const query = useTableQuery<SortKey>({
-  sort: { key: 'createdAt', order: 'desc', keys: ['name', 'email', 'createdAt'] },
+const form = useForm<LoginDto>({
+  resolver: useZodResolver(loginSchema),
 });
 ```
 
@@ -81,4 +74,4 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # tsc --noEmit; there is no 
 Depends on `@oppenheimer/design-system-web`, `@oppenheimer/frontend-core`,
 `@oppenheimer/shared` and `@oppenheimer/translations`; React, React Hook Form, i18next,
 nuqs and TanStack Query/Router are peer dependencies the app provides. Used
-by `apps/web` and `apps/admin-web`.
+by `apps/web`.

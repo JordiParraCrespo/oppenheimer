@@ -1,13 +1,12 @@
 # design-system — Agent Instructions
 
-Shared design system. This directory is a **container of two publishable
-packages**:
+Shared design system. This directory is a **container for the publishable
+package**, one per platform:
 
-- [`web/`](./web) → `@oppenheimer/design-system-web` — Base UI + Tailwind v4 (used by `apps/web`, `apps/admin-web`, `apps/web-showcase`, `packages/frontend/web`)
-- [`mobile/`](./mobile) → `@oppenheimer/design-system-mobile` — React Native + NativeWind (used by `apps/mobile`, `apps/admin-mobile`, `apps/mobile-showcase`, `packages/frontend/mobile`)
+- [`web/`](./web) → `@oppenheimer/design-system-web` — Base UI + Tailwind v4 (used by `apps/web`, `apps/web-showcase`, `packages/frontend/web`)
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first. There is no package.json
-> at this level — work inside `web/` or `mobile/`.
+> at this level — work inside `web/`.
 
 ## The system
 
@@ -75,5 +74,3 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   starter and not part of the system.
 - Preview every change in `apps/web-showcase`, in **both** themes; the top
   bar carries the switch.
-- `apps/mobile/global.css` and `apps/mobile-showcase/global.css` still carry
-  the previous brand. Porting the mobile tokens is its own slice.

@@ -1,9 +1,9 @@
 # @oppenheimer/frontend-web — concerns, layered
 
-The web kit is what `apps/web` and `apps/admin-web` share below their routes.
+The web kit is what `apps/web` builds on below its routes.
 Its top level is **concerns**, not kinds: `src/<concern>/<kind>/`, where the
 kinds are the ones a feature has (`components/`, `dialogs/`, `hooks/`,
-`lib/`). A concern is a subject the apps both have — the shell, the auth
+`lib/`). A concern is a subject of the app's UI — the shell, the auth
 chrome, the table — and everything that subject needs sits in one directory.
 
 The package is source-exported: `main` and `exports` point at
@@ -108,8 +108,8 @@ hands the content area to the screen and keeps no scroll of its own.
 `AuthLayout` (`src/auth/components/auth-layout.tsx`) is the auth split: the
 column on the left, the app's own `panel` on the right, the panel dropped
 below 900px. It takes `product` (the wordmark's suffix, defaulting to the
-product name) and `panel` (`apps/web` passes its photograph carousel;
-`apps/admin-web` passes nothing, having no atmosphere to sell). An app's
+product name) and `panel` (`apps/web` passes its photograph carousel; an app
+with no atmosphere to sell passes nothing and gets the column alone). An app's
 `_auth` route mounts it around its `Outlet` — `apps/web/src/routes/_auth.tsx`.
 
 Everything else the layout needs is route `staticData`, read off the innermost
@@ -127,8 +127,8 @@ The guard is not the layout's. `apps/web` puts its sign-in screens and its
 onboarding flow under the same `_auth`, and they want opposite guards —
 `_auth/_public.tsx` calls `redirectSignedIn` so a signed-in visitor is sent
 to the console, `_auth/onboarding.tsx` sends a signed-out one to the login
-page. `apps/admin-web` has only the one half, so its `_auth` route carries
-`redirectSignedIn` itself.
+page. An app with only the sign-in half would call `redirectSignedIn` from its
+`_auth` route itself.
 
 ## Add a concern
 
@@ -155,5 +155,5 @@ page. `apps/admin-web` has only the one half, so its `_auth` route carries
 - `lib-has-no-jsx` — a concern's `lib/` may name React types but not import
   React for values.
 - `kit-knows-no-product` — nothing here imports `@oppenheimer/frontend-consumer`
-  or `@oppenheimer/frontend-admin`.
+  or any other product package.
 - `kit-knows-no-app` — nothing here imports `apps/`.

@@ -42,7 +42,7 @@ the way this host proves who it is, and they go when the link lands.
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
 | `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |
 
-Exit codes are a contract, the same one `apps/cli` publishes: 0 ok, 1 failure,
+Exit codes are a public contract that scripts branch on: 0 ok, 1 failure,
 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreachable.
 
 ## On a host

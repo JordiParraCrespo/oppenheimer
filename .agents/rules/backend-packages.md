@@ -61,8 +61,8 @@ All backend packages depend on `@oppenheimer/tsconfig` for TypeScript config. Re
 the compiled-CJS convention **on purpose**: its `./client` entry points at
 `src/client.ts` rather than a `dist/` build, because Better Auth derives the
 client's endpoint and session types from the plugin tuple through inference
-chains that do not survive `.d.ts` emission. Vite (web) and Metro (mobile)
-transpile the sources directly. Only the root `@oppenheimer/auth` entry — plain,
+chains that do not survive `.d.ts` emission. Vite (web) transpiles the
+sources directly. Only the root `@oppenheimer/auth` entry — plain,
 explicitly typed config values for the NestJS API — is compiled to CJS +
 `.d.ts` like everything else. Do not "fix" `./client` to build like a backend
 package; see `packages/auth/README.md`.

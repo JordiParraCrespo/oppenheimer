@@ -96,8 +96,8 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 const QUERY_PERSIST_REVISION = 2;
 
 /**
- * Persistence options shared by web and mobile. The apps supply the platform's
- * `persister` (localStorage on web, AsyncStorage on mobile) and spread this in.
+ * Persistence options every app shares. The app supplies the platform's
+ * `persister` (localStorage on web) and spreads this in.
  *
  * `buster` combines the app version with the cache-policy revision: releases
  * drop incompatible response shapes, while a policy fix can invalidate unsafe
@@ -115,9 +115,9 @@ export function createQueryPersistOptions(appVersion: string, config: QueryPersi
 }
 
 /**
- * Query defaults shared by web and mobile. `gcTime` is pinned to the persist
- * window; `staleTime` is per-app because "how stale is too stale" differs
- * between a tab that stays open and an app resumed from the background.
+ * Query defaults every app shares. `gcTime` is pinned to the persist window;
+ * `staleTime` is per-app because "how stale is too stale" depends on how long
+ * the app's screens stay open.
  */
 export function defaultQueryClientOptions(staleTime: number) {
   return {

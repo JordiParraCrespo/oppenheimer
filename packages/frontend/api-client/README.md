@@ -37,6 +37,5 @@ axios) here. This is deliberate; see the `"//"` note in `package.json`.
 
 ## Consumed by
 
-`@oppenheimer/frontend-core`, `@oppenheimer/frontend-consumer` and
-`@oppenheimer/frontend-admin` (each wires the client into its own data-access
+`@oppenheimer/frontend-core` and `@oppenheimer/frontend-consumer` (each wires the client into its own data-access
 layer).

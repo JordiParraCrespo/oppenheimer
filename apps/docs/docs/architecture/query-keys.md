@@ -147,10 +147,10 @@ useMutation({
 
 ## Cache persistence
 
-The in-memory cache dies with the tab or the process, so both apps also write it
-to storage — `localStorage` on web, `AsyncStorage` on mobile — via TanStack's
+The in-memory cache dies with the tab, so the app also writes it to
+`localStorage` via TanStack's
 [`PersistQueryClientProvider`](https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient).
-A reload or a cold start renders from the restored cache and refetches in the
+A reload renders from the restored cache and refetches in the
 background instead of showing spinners.
 
 The policy is shared by both apps from `@oppenheimer/frontend-core/react` so it can
@@ -195,7 +195,7 @@ What that policy encodes:
 
 Adding a feature whose data shouldn't outlive the session? Add its namespace to
 `KERNEL_NON_PERSISTED_FEATURES` in
-`packages/frontend/core/src/react/persistence.ts` when both products need it,
+`packages/frontend/core/src/react/persistence.ts` when it is kernel data,
 or to the product's own list — `CONSUMER_NON_PERSISTED_FEATURES` in
 `packages/frontend/consumer/src/react/persistence.ts`, which the app passes
 through `nonPersistedFeatures`.

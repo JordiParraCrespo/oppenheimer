@@ -1,8 +1,8 @@
 /**
  * Platform-agnostic analytics contract.
  *
- * Each platform adapts its provider SDK — `posthog-js` in the browser,
- * `posthog-react-native` on native — to this interface, which is then injected
+ * Each platform adapts its provider SDK — `posthog-js` in the browser — to
+ * this interface, which is then injected
  * into the DI container. Keeping the boundary here means the rest of the
  * frontend package never imports a vendor SDK directly, so swapping providers
  * is a change in one file per platform rather than a refactor.

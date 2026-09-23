@@ -9,12 +9,11 @@ clients must agree on, defined once.
 | --------------------------- | ------------------ | ---------------------------------------------------------------------- |
 | `userAdditionalFields`      | `.` and `./client` | Server `user.additionalFields` + client `inferAdditionalFields`        |
 | `organizationSharedOptions` | `.` and `./client` | Server `organization()` + client `organizationClient()` (`teams` flag) |
-| `sharedClientPlugins()`     | `./client`         | Web and mobile `createAuthClient` calls                                |
+| `sharedClientPlugins()`     | `./client`         | The web app's `createAuthClient` call                                  |
 | `unwrap()`                  | `.` and `./client` | `IAuthClient` adapters (normalise `{ data, error }` results)           |
 | `toAuthSession()`           | `.` and `./client` | `IAuthClient.getSession` adapters                                      |
 
-Platform-specific pieces stay in the apps: the Expo plugin and SecureStore in
-`apps/mobile`, cookie handling in `apps/web`, and everything server-only
+Platform-specific pieces stay in the apps: cookie handling in `apps/web`, and everything server-only
 (database, hooks, email, OAuth providers, admin roles) in
 `apps/api/src/auth/infrastructure/better-auth.config.ts`. The `IAuthClient` boundary itself remains in
 `@oppenheimer/frontend-core`.
@@ -53,7 +52,7 @@ betterAuth({
 });
 ```
 
-Clients (`apps/web`, `apps/mobile`):
+Clients (`apps/web`):
 
 ```ts
 import { sharedClientPlugins, toAuthSession, unwrap } from "@oppenheimer/auth/client";

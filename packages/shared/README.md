@@ -64,7 +64,6 @@ committed file has drifted from the schemas.
 
 ## Consumed by
 
-`apps/api`, `apps/web`, `apps/admin-web`, `apps/mobile`, `apps/admin-mobile`,
-`apps/cli`, `apps/mcp`, `packages/auth`, `packages/backend/core`,
-`packages/backend/authz`, and the four `packages/frontend` products
-(`core`, `consumer`, `admin`, `web`, `mobile`).
+`apps/api`, `apps/web`, `packages/auth`, `packages/backend/core`,
+`packages/backend/authz`, and the `packages/frontend` packages (`core`,
+`consumer`, `web`).

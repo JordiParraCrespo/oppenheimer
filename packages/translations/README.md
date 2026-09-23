@@ -1,7 +1,7 @@
 # @oppenheimer/translations
 
-Shared i18n resources for web and mobile. Locale JSON lives here so both
-frontends render the same copy from one source.
+Shared i18n resources for the console and the API. Locale JSON lives here so
+the web app and the server's email copy come from one source.
 
 ## What's inside
 
@@ -18,8 +18,8 @@ frontends render the same copy from one source.
 Pick the entrypoint by what the platform can afford to load.
 
 ```ts
-// Ahead-of-time bundles and the server — every catalog, no network.
-// apps/api renders email in the recipient's locale; Expo has no runtime fetch.
+// The server — every catalog, no network.
+// apps/api renders email in the recipient's locale.
 import { resources, defaultNS } from "@oppenheimer/translations";
 
 // Browsers — metadata only, no catalogs. Importing `locales` from the root
@@ -33,13 +33,9 @@ import { loadLocaleMessages } from "@oppenheimer/translations/lazy";
 import en from "@oppenheimer/translations/en";
 ```
 
-Each app wires these into its own i18next instance:
-
-- `apps/web` and `apps/admin-web` use `react-i18next`, bundling only
-  `defaultLocale` and serving the rest through a small backend module over
-  `loadLocaleMessages` (see `apps/web/src/lib/i18n.ts`).
-- `apps/mobile` uses `i18next` + `react-i18next` with the eager `resources`,
-  persisting the choice with `expo-secure-store` (see `apps/mobile/lib/i18n.ts`).
+`apps/web` wires these into its own `react-i18next` instance, bundling only
+`defaultLocale` and serving the rest through a small backend module over
+`loadLocaleMessages` (see `apps/web/src/lib/i18n.ts`).
 
 ## Adding a translation
 
@@ -56,4 +52,4 @@ bundles every match or resolves nothing.
 
 ## Consumed by
 
-`apps/web`, `apps/admin-web`, `apps/mobile`, `apps/admin-mobile`, `apps/api`.
+`apps/web`, `packages/frontend/web`, `apps/api` (through `@oppenheimer/backend-i18n`).

@@ -16,11 +16,10 @@ export const userSettingsKeys = {
 };
 
 /**
- * The query key every organization member list starts with, whatever product
- * renders it. It lives in the kernel because two products meet on it: the
- * consumer product lists members under it, and the admin product invalidates
- * it when it changes something those lists are filtered by (a user's roles).
- * Neither package imports the other; both import this.
+ * The query key every organization member list starts with, whatever renders
+ * it. It lives in the kernel so that whatever changes something those lists
+ * are filtered by (a user's roles) can invalidate them without importing the
+ * product package that lists them.
  */
 export const MEMBER_LISTS_KEY = ['organizations', 'members'] as const;
 
