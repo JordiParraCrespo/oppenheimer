@@ -1,10 +1,13 @@
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { useEffect, useRef, useState } from 'react';
+import { createResizeCoalescer } from '../lib/resize-coalescer';
 import type { SessionStream, StreamEnd, StreamStatus } from '../lib/session-stream';
+import { emptyRowsBelowContent } from '../lib/terminal-anchor';
+import { classifyKey } from '../lib/terminal-keys';
+import { attachWebglRenderer } from '../lib/terminal-renderer';
 import {
   readTerminalTheme,
   TERMINAL_FONT,
@@ -21,7 +24,8 @@ export interface TerminalGrid {
  *
  * Everything here is a synchronisation with something outside React —
  * an imperative library that owns its own DOM, a `ResizeObserver` on the
- * pane, a `MutationObserver` on the theme class, and the stream itself —
+ * pane, a `MutationObserver` on the theme class, the document's font loading,
+ * animation frames, and the stream itself —
  * which is why it is one effect in a `hooks/` file rather than anything in
  * the component tree.
  *
@@ -55,8 +59,10 @@ export function useTerminal(
       theme: readTerminalTheme(),
       cursorBlink: true,
       cursorStyle: 'block',
-      // A few thousand lines of build output is the normal case; the runner
-      // replays its own tail on attach, so this is only what the tab keeps.
+      // A few thousand lines of build output is the normal case. Under
+      // `tmux attach` the grid is tmux's alternate screen and this stays
+      // empty — tmux keeps the history — so it matters only for output
+      // written outside it.
       scrollback: 5000,
       // The ramp's bright slots repeat their normal counterparts today. This
       // keeps a program's own colour choice readable until they diverge — at
@@ -67,6 +73,9 @@ export function useTerminal(
       // agent output are wrong without it.
       allowProposedApi: true,
       convertEol: false,
+      // tmux runs with `mouse on`, so a plain drag is the program's. Shift
+      // forces a selection everywhere but macOS, where it is Option.
+      macOptionClickForcesSelection: true,
     });
 
     const fit = new FitAddon();
@@ -78,17 +87,38 @@ export function useTerminal(
 
     term.open(container);
 
-    // WebGL is the renderer the product wants — a noisy build should not cost
-    // CPU — but it is unavailable on some machines and in headless browsers,
-    // and its constructor throws there rather than degrading. The DOM renderer
-    // is the fallback, and it is correct, just slower.
-    try {
-      const webgl = new WebglAddon();
-      webgl.onContextLoss(() => webgl.dispose());
-      term.loadAddon(webgl);
-    } catch {
-      // Fallback renderer already in place.
-    }
+    // Keys the console answers before xterm encodes them (`terminal-keys.ts`).
+    term.attachCustomKeyEventHandler((event) => {
+      const verdict = classifyKey(event, { hasSelection: term.hasSelection() });
+      if (verdict.kind === 'terminal') return true;
+      if (verdict.kind === 'send') {
+        // Stops the keypress and the textarea input that would follow.
+        event.preventDefault();
+        stream.send(verdict.data);
+      }
+      return false;
+    });
+
+    // Frames, not events: a burst of output, a drag and a font arriving all
+    // collapse into one measurement per paint.
+    let frame: number | null = null;
+    let wantsFit = false;
+    const nextFrame = (fitToo: boolean) => {
+      wantsFit ||= fitToo;
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        if (wantsFit) {
+          wantsFit = false;
+          applyFit();
+        }
+        anchor();
+      });
+    };
+
+    // The PTY hears the size once a drag settles (`resize-coalescer.ts`); the
+    // grid on screen refits every frame of it.
+    const ptySize = createResizeCoalescer((cols, rows) => stream.resize(cols, rows));
 
     const applyFit = () => {
       // fit() throws if the pane has no layout yet (a hidden tab, the frame
@@ -96,16 +126,60 @@ export function useTerminal(
       try {
         fit.fit();
         setGrid({ cols: term.cols, rows: term.rows });
-        stream.resize(term.cols, term.rows);
+        ptySize.request(term.cols, term.rows);
       } catch {
         // Measured again on the next resize.
       }
     };
 
-    applyFit();
+    // Bottom-anchoring (`terminal-anchor.ts`): the picture moves down by the
+    // empty rows below the content, so the agent's prompt sits on the pane's
+    // last rows whatever height the pane is. The empty rows it pushes past the
+    // grid are clipped by the pane's own overflow.
+    let anchoredPx = 0;
+    const anchor = () => {
+      const element = term.element;
+      const screen = element?.querySelector<HTMLElement>('.xterm-screen');
+      if (!element || !screen || term.rows < 1) return;
+      const buffer = term.buffer.active;
+      const rows = emptyRowsBelowContent({
+        rows: term.rows,
+        baseY: buffer.baseY,
+        viewportY: buffer.viewportY,
+        cursorY: buffer.cursorY,
+        rowText: (y) => buffer.getLine(buffer.baseY + y)?.translateToString(true) ?? '',
+      });
+      // Pixels, not rows: a font change moves the cell height under an
+      // unchanged row count.
+      const px = Math.round((rows * screen.offsetHeight) / term.rows);
+      if (px === anchoredPx) return;
+      anchoredPx = px;
+      element.style.transform = px > 0 ? `translateY(${px}px)` : '';
+    };
 
-    const resizeObserver = new ResizeObserver(applyFit);
+    // `term.dispose()` releases the addon with every other one.
+    attachWebglRenderer(term, () => {
+      // The DOM renderer's cells are not WebGL's: refit, then repaint.
+      nextFrame(true);
+      term.refresh(0, term.rows - 1);
+    });
+
+    applyFit();
+    nextFrame(false);
+
+    const resizeObserver = new ResizeObserver(() => nextFrame(true));
     resizeObserver.observe(container);
+
+    // A face that arrives after the first paint — the bundled symbols face is
+    // fetched only when a glyph in its range is first drawn — leaves the
+    // stand-in's glyphs cached in WebGL's atlas and its metrics in the fit.
+    // Both are dropped once the document says a font finished loading.
+    const onFontsLoaded = () => {
+      term.clearTextureAtlas();
+      term.refresh(0, term.rows - 1);
+      nextFrame(true);
+    };
+    document.fonts?.addEventListener('loadingdone', onFontsLoaded);
 
     // `theme-provider.tsx` toggles `.dark` / `.light` on <html>. xterm holds
     // resolved colour strings, not the tokens, so the ramp is re-read here.
@@ -114,6 +188,12 @@ export function useTerminal(
       term.options.minimumContrastRatio = terminalMinimumContrastRatio();
     });
     themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
+
+    // What the anchor reads changes when output is parsed, when the reader
+    // scrolls, and when the grid changes shape.
+    const parsed = term.onWriteParsed(() => nextFrame(false));
+    const scrolled = term.onScroll(() => nextFrame(false));
+    const reshaped = term.onResize(() => nextFrame(false));
 
     // xterm's write callback fires once the parser has drained the chunk:
     // that is the moment the bytes are consumed, and the credit goes with it.
@@ -132,12 +212,18 @@ export function useTerminal(
     const input = term.onData((data) => stream.send(data));
 
     return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
       offData();
       offStatus();
       offEnd();
       input.dispose();
+      parsed.dispose();
+      scrolled.dispose();
+      reshaped.dispose();
+      document.fonts?.removeEventListener('loadingdone', onFontsLoaded);
       themeObserver.disconnect();
       resizeObserver.disconnect();
+      ptySize.dispose();
       term.dispose();
       stream.dispose();
       streamRef.current = null;

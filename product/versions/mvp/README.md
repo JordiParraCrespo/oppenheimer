@@ -301,3 +301,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   on the artboard until the wire carries a host's tools: the status row
   says the runner is connected, or that it is still coming up, and
   nothing more.
+- 2026-09-23: **the terminal is bottom-anchored.** The agent's prompt
+  sits on the pane's last rows like a chat composer, instead of under the
+  banner with the rest of the pane blank. The console does not add a
+  prompt row of its own (that gave the pane two carets). It moves the
+  grid's picture down by the empty rows below the content and clips them,
+  so the PTY, the program and xterm's mouse maths see nothing change.
+  A full screen, or a reader scrolled back, is not moved (05).

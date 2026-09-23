@@ -96,7 +96,9 @@
   clock and a status word, so a slow step is diagnosable. With several
   repositories the steps read "Clone N repositories" and "Check out
   branches".
-- Session: terminal full-bleed, tabs (tmux windows, window 0 the
+- Session: terminal full-bleed and bottom-anchored (the agent's prompt
+  sits on the pane's last rows whatever its height; a full screen is
+  untouched), tabs (tmux windows, window 0 the
   agent, the rest shells in the same worktree), thin status line with host,
   branch, account, state, measured echo latency; login URLs as a
   button; phone layout with a key bar.
