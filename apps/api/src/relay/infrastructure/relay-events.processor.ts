@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type {
+  CommandFailedMessage,
   EventsAppendMessage,
   HeartbeatMessage,
   HelloMessage,
@@ -59,6 +60,55 @@ export class RelayEventsProcessor {
     // Receipt time, not `sentAt`: presence is when this process heard from the
     // host, and a skewed clock on the host must not take it offline.
     await this.presence.observe(link.hostId, heartbeat.host);
+  }
+
+  /**
+   * A runner refused a session command no attachment was waiting on.
+   *
+   * The refusal is the runner's answer, so it goes into the session's log
+   * through the same door as the runner's own events, keyed by the command so
+   * a repeat is the same entry. A refused `session.create` is `session.failed`,
+   * which moves the row off `starting`; any other refusal is `command.failed`,
+   * which the fold keeps without acting on. Either way the host's code and
+   * detail are on the log instead of nowhere (#56).
+   */
+  async onCommandFailed(link: RunnerLink, refusal: CommandFailedMessage): Promise<void> {
+    const command = link.takeSessionCommand(refusal.commandId);
+    if (!command) {
+      this.logger.warn({
+        message: 'a runner refused a command this link did not send',
+        hostId: link.hostId,
+        commandId: refusal.commandId,
+        code: refusal.code,
+      });
+      return;
+    }
+    const payload = {
+      command: command.type,
+      code: refusal.code,
+      ...(refusal.detail ? { detail: refusal.detail } : {}),
+    };
+    const ack = await this.events.record({
+      batchId: `refused-${refusal.commandId}`,
+      sessionId: command.sessionId,
+      hostId: link.hostId,
+      events: [
+        {
+          idempotencyKey: `refused-${refusal.commandId}:1`,
+          kind: command.type === 'session.create' ? 'session.failed' : 'command.failed',
+          payload: JSON.stringify(payload),
+          occurredAt: new Date().toISOString(),
+        },
+      ],
+    });
+    this.logger.warn({
+      message: 'a runner refused a session command',
+      hostId: link.hostId,
+      sessionId: command.sessionId,
+      command: command.type,
+      code: refusal.code,
+      recorded: ack.accepted.length > 0,
+    });
   }
 
   async onEventsAppend(link: RunnerLink, batch: EventsAppendMessage): Promise<void> {

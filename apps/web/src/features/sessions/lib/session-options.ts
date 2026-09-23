@@ -18,6 +18,7 @@ import {
   SESSION_EFFORTS,
   type SessionEffort,
 } from '@oppenheimer/shared/agents';
+import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
 
 /**
  * Entities in, option shapes out. Nothing here renders, and nothing here
@@ -154,4 +155,18 @@ export function toCheckouts(scope: readonly RepositoryScope[]): CreateSessionChe
     const ref = parseRepositoryKey(selected.id);
     return ref ? [{ ...ref, baseBranch: selected.branch }] : [];
   });
+}
+
+/**
+ * The repository selection capped at `MAX_SESSION_CHECKOUTS`, keeping what was
+ * just picked: a row added past the cap takes the place of the ones already
+ * there. One repository per session in the MVP (#56).
+ */
+export function capRepositories(
+  previous: RepositoryScope[],
+  next: RepositoryScope[],
+): RepositoryScope[] {
+  if (next.length <= MAX_SESSION_CHECKOUTS) return next;
+  const added = next.filter((scope) => !previous.some((kept) => kept.id === scope.id));
+  return (added.length ? added : next).slice(-MAX_SESSION_CHECKOUTS);
 }

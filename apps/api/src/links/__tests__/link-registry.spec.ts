@@ -13,6 +13,7 @@ function link(hostId: string, epoch: number): RunnerLink {
     closeAttachment: vi.fn(),
     attachment: vi.fn(),
     attachmentCount: 0,
+    takeSessionCommand: vi.fn(),
   };
 }
 

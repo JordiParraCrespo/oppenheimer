@@ -5,16 +5,21 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Folder } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
+import { capRepositories } from '../lib/session-options';
 
 /**
- * The repository chip, which multi-selects, and the branch pane that hangs off
- * each selected row.
+ * The repository chip, and the branch pane that hangs off the selected row.
  *
- * A session may span several repositories, one worktree each
- * (`product/versions/mvp/05-screens.md`), so a branch is a fact about a
- * repository rather than about the session — which is why the two are one
- * control: picking a repository lands it on its default branch, and its row
- * then grows the cell that opens its own branch pane.
+ * A session checks out one repository in the MVP (`capRepositories`,
+ * `product/versions/mvp/00-scope.md`): a runner makes one worktree per
+ * session, and a second repository used to be accepted here and then refused
+ * by the host, leaving a session that spun forever (#56). So picking a second
+ * repository replaces the first rather than adding to it; the design system's
+ * picker keeps its multi-select for the day runners make several.
+ *
+ * A branch is a fact about a repository rather than about the session — which
+ * is why the two are one control: picking a repository lands it on its default
+ * branch, and its row then grows the cell that opens its own branch pane.
  *
  * Two reads, so two flags: `loading` is the repositories, `branchesLoading` the
  * branches of the ones already picked — a slower read, because the API asks
@@ -49,7 +54,7 @@ export function RepositoryBranchSelect({
     <RepositorySelect
       repositories={repositories}
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={(next) => onValueChange(capRepositories(value, next))}
       icon={<Folder />}
       loading={loading}
       loadingText={t('sessions.new.repository.loading')}

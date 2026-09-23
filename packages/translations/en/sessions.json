@@ -32,7 +32,10 @@
         "done": "Ready"
       }
     },
-    "progressFailed": "Could not load how the start is going."
+    "progressFailed": "Could not load how the start is going.",
+    "codes": {
+      "SESS_002": "This host makes sessions with one repository."
+    }
   },
   "group": {
     "working": "Working",
