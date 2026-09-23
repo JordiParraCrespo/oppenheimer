@@ -48,9 +48,9 @@
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
   (Minimal to Max) in a popover, not a list. Chips remember last choice. Every chip filters (a search row, an empty
-  line). The repository chip multi-selects; each selected row carries
-  its branch, which opens a branch pane for that repository; the branch
-  chip shows only while one repository is selected. The host chip's
+  line). The repository chip holds one repository in the MVP (00);
+  picking another replaces it. The selected row carries its branch,
+  which opens a branch pane for that repository. The host chip's
   foot action opens the **Add host dialog**: the same instruction in
   two forms behind a Command / Agent prompt switch, a copyable panel,
   the token line, and a status line that resolves in place from
@@ -96,16 +96,16 @@
   bare page).
 - Provisioning: named steps with a ring, a check and a mono meta line
   (container or host, clone, checkout, start the agent), an elapsed
-  clock and a status word, so a slow step is diagnosable. With several
-  repositories the steps read "Clone N repositories" and "Check out
-  branches". The eyebrow is the host, the title "Starting your
+  clock and a status word, so a slow step is diagnosable. The eyebrow is the host, the title "Starting your
   session", the line under it the scope (repository · branch). The
   steps are the host's `session.step` events read off the log, and a
   step the host has not reported is pending. A running step says what
   it is doing; a landed one its result: the time the host measured, the
   branch, "Connected", "Ready". An offline host says so under the first
   step. A failed start turns the step in hand red with the host's error
-  under it, and the title to "The session did not start".
+  under it, and the title to "The session did not start". A refusal
+  the console can name reads in its words: `SESS_002` is "This host
+  makes sessions with one repository".
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

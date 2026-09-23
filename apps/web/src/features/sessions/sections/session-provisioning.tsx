@@ -5,7 +5,7 @@ import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { useElapsed } from '../hooks/use-elapsed';
-import { PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
+import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
  * A session that is not a terminal yet.
@@ -41,7 +41,7 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
       repo: checkout?.repositoryName ?? session.slug,
       branch: checkout?.branch ?? session.slug,
       agent: CODING_AGENTS[session.agent].label,
-      failure: progress.data?.failure?.detail ?? null,
+      failure: failureReason(progress.data?.failure, t),
     },
     t,
   );

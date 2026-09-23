@@ -59,6 +59,11 @@ export class AddCheckoutHttpController {
     code: 'SESSIONS_004',
   })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'A session checks out one repository',
+    code: 'SESSIONS_010',
+  })
   async add(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

@@ -64,3 +64,27 @@ function meta(step: SessionStartStep, context: ProvisioningContext, t: TFunction
         : t('sessions.provisioning.took', { seconds: (step.durationMs / 1000).toFixed(1) });
   }
 }
+
+/**
+ * The runner codes a person can act on, said in the console's words rather
+ * than the host's. Anything else keeps the host's own detail.
+ */
+const KNOWN_FAILURE_CODES = ['SESS_002'] as const;
+
+type KnownFailureCode = (typeof KNOWN_FAILURE_CODES)[number];
+
+function isKnownFailureCode(code: string): code is KnownFailureCode {
+  return (KNOWN_FAILURE_CODES as readonly string[]).includes(code);
+}
+
+/** What to put under a failed step: the code's meaning when there is one, else the host's words. */
+export function failureReason(
+  failure: { code: string | null; detail: string | null } | null | undefined,
+  t: TFunction,
+): string | null {
+  if (!failure) return null;
+  if (failure.code && isKnownFailureCode(failure.code)) {
+    return t(`sessions.provisioning.codes.${failure.code}`);
+  }
+  return failure.detail;
+}

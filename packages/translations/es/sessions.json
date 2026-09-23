@@ -32,7 +32,10 @@
         "done": "Listo"
       }
     },
-    "progressFailed": "No se pudo cargar el progreso del inicio."
+    "progressFailed": "No se pudo cargar el progreso del inicio.",
+    "codes": {
+      "SESS_002": "Este host crea sesiones con un solo repositorio."
+    }
   },
   "group": {
     "working": "Trabajando",
