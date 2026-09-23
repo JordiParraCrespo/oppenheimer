@@ -2,6 +2,7 @@ package link_test
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -95,5 +96,27 @@ func TestUnackedBatchesAreResentAfterAReconnect(t *testing.T) {
 	}
 	if !keys["run:1"] || !keys["run:2"] {
 		t.Fatalf("resent keys = %v", keys)
+	}
+}
+
+// A session's log is ordered by arrival, so a resend replays batches in the
+// order they were made — a start's `running` never lands after its `done`.
+func TestResendKeepsTheOrderTheBatchesWereMadeIn(t *testing.T) {
+	sender := &fakeSender{fail: true}
+	r := link.NewReporter("run", sender, nil)
+	for i := 0; i < 20; i++ {
+		r.Append("s1", "session.step", map[string]any{"i": i})
+	}
+	sender.mu.Lock()
+	sender.fail = false
+	sender.mu.Unlock()
+	r.Resend()
+	if len(sender.sent) != 20 {
+		t.Fatalf("resend sent %d batches, want 20", len(sender.sent))
+	}
+	for i, batch := range sender.sent {
+		if want := fmt.Sprintf("run:%d", i+1); batch.Events[0].IdempotencyKey != want {
+			t.Fatalf("batch %d carries %s, want %s", i, batch.Events[0].IdempotencyKey, want)
+		}
 	}
 }

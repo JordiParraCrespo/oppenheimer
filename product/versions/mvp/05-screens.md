@@ -98,7 +98,14 @@
   (container or host, clone, checkout, start the agent), an elapsed
   clock and a status word, so a slow step is diagnosable. With several
   repositories the steps read "Clone N repositories" and "Check out
-  branches".
+  branches". The eyebrow is the host, the title "Starting your
+  session", the line under it the scope (repository · branch). The
+  steps are the host's `session.step` events read off the log, and a
+  step the host has not reported is pending. A running step says what
+  it is doing; a landed one its result: the time the host measured, the
+  branch, "Connected", "Ready". An offline host says so under the first
+  step. A failed start turns the step in hand red with the host's error
+  under it, and the title to "The session did not start".
 - Session: terminal full-bleed, the agent's prompt on the pane's last
   rows whatever its height (a full screen, or a reader scrolled back,
   stays put), tabs (tmux windows, window 0 the

@@ -293,3 +293,50 @@ func TestTheSessionMapIsPersistedOnEveryChange(t *testing.T) {
 		t.Fatalf("stored = %+v", h.store.sessions)
 	}
 }
+
+// The stages are what the console draws while a session starts, so their
+// order is the contract: each starts, then lands, before the next begins.
+func TestCreateReportsEachStageAsItStartsAndLands(t *testing.T) {
+	h := newFakeHarness(t)
+	var seen []string
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		BaseBranch: "main", Agent: domain.AgentClaude,
+		Progress: func(ev domain.StageEvent) {
+			state := "started"
+			if ev.Done {
+				state = "landed"
+			}
+			seen = append(seen, string(ev.Stage)+":"+state)
+		},
+	})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	want := []string{
+		"clone:started", "clone:landed",
+		"worktree:started", "worktree:landed",
+		"agent:started", "agent:landed",
+	}
+	if strings.Join(seen, " ") != strings.Join(want, " ") {
+		t.Fatalf("stages = %v, want %v", seen, want)
+	}
+}
+
+// A failure is reported by the caller as `session.failed`; what the stages
+// say is which one it was — the last to start, and it never lands.
+func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
+	h := newFakeHarness(t)
+	h.worktrees.EnsureErr = domain.ErrWorktree.WithDetail("clone refused")
+	var seen []domain.StageEvent
+	_, err := h.svc.Create(context.Background(), app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
+		Progress: func(ev domain.StageEvent) { seen = append(seen, ev) },
+	})
+	if err == nil {
+		t.Fatal("create succeeded over a failed clone")
+	}
+	if len(seen) != 1 || seen[0].Stage != domain.StageClone || seen[0].Done {
+		t.Fatalf("stages = %+v, want only clone started", seen)
+	}
+}

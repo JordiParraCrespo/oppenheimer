@@ -111,6 +111,9 @@ type CreateInput struct {
 	// repository, kept for the credential helper.
 	CheckoutID   string
 	GithubRepoID int64
+	// Progress, when set, hears each stage start and land, in order. It must
+	// not block.
+	Progress func(domain.StageEvent)
 }
 
 // Create makes a session: mirror, worktree, tmux session, agent in window 0.
@@ -158,11 +161,31 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
 
-	if err := s.worktrees.Ensure(ctx, in.Repo, in.Remote); err != nil {
+	// Every stage runs through run, so "started, then landed or failed" is
+	// the one shape a stage can have, and a new stage cannot report half of it.
+	run := func(stage domain.Stage, fn func() error) error {
+		started := s.now()
+		if in.Progress != nil {
+			in.Progress(domain.StageEvent{Stage: stage})
+		}
+		if err := fn(); err != nil {
+			return err
+		}
+		if in.Progress != nil {
+			in.Progress(domain.StageEvent{Stage: stage, Done: true, Took: s.now().Sub(started)})
+		}
+		return nil
+	}
+
+	if err := run(domain.StageClone, func() error {
+		return s.worktrees.Ensure(ctx, in.Repo, in.Remote)
+	}); err != nil {
 		return domain.Session{}, err
 	}
 	worktree := s.layout.Worktree(in.Repo, domain.Slug(branch, id))
-	if err := s.worktrees.Add(ctx, in.Repo, worktree, branch, base, !in.Existing); err != nil {
+	if err := run(domain.StageWorktree, func() error {
+		return s.worktrees.Add(ctx, in.Repo, worktree, branch, base, !in.Existing)
+	}); err != nil {
 		return domain.Session{}, err
 	}
 
@@ -174,7 +197,9 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 		State: domain.StateStarting, Created: now, Updated: now,
 		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
 	}
-	if err := s.terminals.Create(ctx, session.TmuxName(), worktree, in.Launch.CommandLine(agent), s.env(session)); err != nil {
+	if err := run(domain.StageAgent, func() error {
+		return s.terminals.Create(ctx, session.TmuxName(), worktree, in.Launch.CommandLine(agent), s.env(session))
+	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
 		return domain.Session{}, err

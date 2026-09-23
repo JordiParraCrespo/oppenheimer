@@ -25,4 +25,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_005',
     message: 'Failed to open the terminal',
   },
+  FETCH_EVENTS_FAILED: {
+    code: 'SESSIONS_CLIENT_006',
+    message: "Failed to load the session's progress",
+  },
 } as const satisfies Record<string, ErrorDefinition>;

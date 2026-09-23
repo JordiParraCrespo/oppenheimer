@@ -12,6 +12,7 @@ import {
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
+import { type SessionStartEntry, settlesStart, toStartEntry } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
 
 /**
@@ -25,6 +26,10 @@ import { SessionsErrors } from './sessions.errors';
  * noticed, because nothing called it. That is the whole argument for calling the
  * generated operations rather than composing URLs by hand.
  */
+/** Entries per page of the start log, and how many pages a start may span. */
+const START_LOG_PAGE = 50;
+const MAX_START_LOG_PAGES = 20;
+
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
   return new SessionCheckoutEntity(
     data.id,
@@ -143,6 +148,34 @@ export class SessionsRepository {
     });
     if (error || !data) throw new AppError(SessionsErrors.CREATE_FAILED);
     return toEntity(data);
+  }
+
+  /**
+   * The start of the session's log, up to the entry that says how the start
+   * ended, parsed against the schema the runner writes. It walks the log's
+   * pages rather than trusting one to hold it: a start is a handful of entries
+   * today, and a namer event or a retry is how that stops being true.
+   */
+  @MapApiError(SessionsErrors.FETCH_EVENTS_FAILED)
+  async findStartLog(id: string): Promise<SessionStartEntry[]> {
+    const entries: SessionStartEntry[] = [];
+    let afterSeq: number | undefined;
+    for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
+      const { data, error } = await heyApiSdk.listSessionEvents({
+        path: { id },
+        query: { limit: START_LOG_PAGE, afterSeq },
+      });
+      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
+      for (const raw of data.data) {
+        const entry = toStartEntry(raw);
+        if (!entry) continue;
+        entries.push(entry);
+        if (settlesStart(entry)) return entries;
+      }
+      if (data.nextSeq === null || data.nextSeq === undefined) return entries;
+      afterSeq = data.nextSeq;
+    }
+    return entries;
   }
 
   @MapApiError(SessionsErrors.STOP_FAILED)
