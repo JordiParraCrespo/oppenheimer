@@ -42,13 +42,13 @@ const TRANSCRIPT: ReadonlyArray<{ after: number; text: string }> = [
     text: `${GREEN}✓${RESET} frontend layout contract — 151 files, 0 violations\r\n\r\n`,
   },
   { after: 2000, text: `${BLUE}$ ${RESET}pnpm arch\r\n` },
-  { after: 2380, text: `${GREEN}✓${RESET} apps/web — no boundary violations\r\n\r\n` },
-  { after: 2600, text: `${BLUE}$ ${RESET}pnpm check:bundle\r\n` },
+  { after: 2380, text: `${GREEN}✓${RESET} packages/frontend — no boundary violations\r\n\r\n` },
+  { after: 2600, text: `${BLUE}$ ${RESET}pnpm build\r\n` },
   {
     after: 3000,
     text: `${YELLOW}⚠${RESET}  session route chunk +214 KB (xterm + webgl addon)\r\n${GREEN}✓${RESET} critical path 371 KB / 385 KB — route chunks excluded\r\n\r\n`,
   },
-  { after: 3400, text: `${BLUE}$ ${RESET}pnpm test --filter @oppenheimer/web\r\n` },
+  { after: 3400, text: `${BLUE}$ ${RESET}pnpm test --filter @oppenheimer/frontend-consumer\r\n` },
   { after: 3900, text: `${RED}✗${RESET} use-terminal.spec.ts — expected 24 rows, received 0\r\n` },
   {
     after: 3960,

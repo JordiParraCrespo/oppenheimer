@@ -35,6 +35,7 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
       headers: () => config.authClient.getAuthHeaders(),
     });
 
+    bind<string>(TOKENS.ApiBaseUrl).toConstantValue(config.apiBaseUrl);
     bind<IStorageService>(TOKENS.StorageService).toConstantValue(config.storage);
     bind<IAuthClient>(TOKENS.AuthClient).toConstantValue(config.authClient);
     bind<IAnalyticsClient>(TOKENS.AnalyticsClient).toConstantValue(

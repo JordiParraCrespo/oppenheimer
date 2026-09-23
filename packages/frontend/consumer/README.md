@@ -27,7 +27,12 @@ An app becomes the consumer product by loading `consumerModules` into
   `HostsService`, `HostsRepository`, `HostsModule`, `HostsErrors`.
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
   `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
-  `SessionsModule`, `SessionsErrors`.
+  `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's
+  transport lives here too, with no platform in it:
+  `SessionsService.openStream(id, window)` returns a `SessionStream` (the
+  attach socket, its reconnect ladder, a fresh ticket per dial and the
+  byte credit). `createResizeCoalescer` and `createFakeSessionStream` sit
+  beside it. The app only renders what the stream delivers.
 - **modules/organizations** — `OrganizationEntity`, `OrganizationsService`,
   `OrganizationsRepository`, `OrganizationsModule`, `OrganizationsErrors`.
 - **modules/profile** — `ProfileEntity`, `UserSessionEntity`,
@@ -41,7 +46,8 @@ An app becomes the consumer product by loading `consumerModules` into
 - `useConsumerApp` — the product's services off the kernel container.
 - Hosts: `useHosts`, `usePairHost`, `useRemoveHost`, `hostsKeys`.
 - Sessions: `useSessions`, `useSession`, `useCreateSession`,
-  `useStopSession`, `sessionsKeys`.
+  `useStopSession`, `sessionsKeys`, `useSessionStream` (a stable factory
+  over `openStream`, for the effect that mounts a terminal).
 - Organizations (personal workspace only): `useOrganizations`,
   `useCreateOrganization`, `useUpdateOrganization`, `organizationsKeys`.
 - Profile: `useMyProfile`, `useUpdateMyProfile`, `useChangeOwnPassword`,

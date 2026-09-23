@@ -6,6 +6,8 @@
  * way a kernel one does.
  */
 export const TOKENS = {
+  /** The API's origin, or empty for same-origin: what a socket URL is built on. */
+  ApiBaseUrl: Symbol.for('ApiBaseUrl'),
   StorageService: Symbol.for('StorageService'),
   AnalyticsClient: Symbol.for('AnalyticsClient'),
   AnalyticsService: Symbol.for('AnalyticsService'),

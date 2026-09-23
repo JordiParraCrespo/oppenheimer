@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createFakeSessionStream } from '../lib/fake-session-stream';
+import { createFakeSessionStream } from '../fake-session-stream';
 
 /**
  * The replay stands in for the runner until it exists, so what is asserted
