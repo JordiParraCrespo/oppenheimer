@@ -34,7 +34,11 @@ Installing it and keeping it current are their own document:
   that is when to add one.
 - **One runner per host.** A `flock` on `~/.oppenheimer/run/runner.lock`
   makes a second start fail loudly instead of fighting over the tmux
-  server and the worktrees.
+  server and the worktrees. "Host" means one Unix user on one machine:
+  the tmux socket name is the constant `oppenheimer`, so a second runner
+  under the same user — even with its own `RUNNER_HOME` — shares the tmux
+  server and would report the first one's sessions as unclaimed. Two
+  hosts on one machine are two users.
 - **The tmux server is a sibling, not a child.** The runner can die,
   restart or be replaced by a new version without touching a session
   (§6). That single fact is what makes updates cheap (09 §5).
@@ -151,7 +155,12 @@ A session is a directory of checkouts plus a tmux session plus its
 windows. The layout and every name in it are 10's
 (`workspaces/<org>/projects/<project>/{repos,sessions}`; it supersedes
 note 11 §1). Create, in order, each step resumable because the previous
-one is observable on disk:
+one is observable on disk, and each reported as a `session.step` (01)
+as it starts and lands: `host` running when the frame arrives and done
+once create accepts it, then `clone` (the stores), `worktree` (the
+checkouts) and `agent` (tmux and window 0), each landing with the time
+it took on the host. A failure is `session.failed`; the step that
+started last is the one that failed:
 
 1. Write the `.oppenheimer` marker into
    `projects/<project>/sessions/<slug>/` **before** anything else. Only

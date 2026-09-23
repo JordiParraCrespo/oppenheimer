@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
 import { requireActiveProject } from '../../application/require-active-project.policy';
@@ -63,6 +64,12 @@ export class AddCheckoutCommandHandler
     ) {
       throw new AppError(SessionErrors.CHECKOUT_ALREADY_PRESENT, {
         detail: `Repository ${command.input.githubRepoId} is already checked out here`,
+      });
+    }
+
+    if (session.liveCheckouts.length >= MAX_SESSION_CHECKOUTS) {
+      throw new AppError(SessionErrors.ONE_REPOSITORY, {
+        detail: `Session ${session.slug} already checks out a repository`,
       });
     }
 

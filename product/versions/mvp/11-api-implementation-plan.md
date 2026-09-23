@@ -322,6 +322,16 @@ is the order of work.
       seeing an upgrade. `relay.e2e.spec.ts` (`RELAY_E2E=1`) runs the real
       runner binary against them: a real boot assertion, a real clone and
       worktree, window 0 with the launch argv, bytes both ways, stop.
+- [x] Several hosts through the real register path: the `fleet` e2e
+      project (`E2E_FLEET=1`, `e2e/README.md`) pairs real runners in
+      containers with the real API — mint, `runner register`, the link — and
+      proves a session runs on the host it names, one host's link loss leaves
+      the others online and returns to the same screen, a killed runner
+      adopts its tmux sessions, and another account cannot see or use a
+      host. Its git server is anonymous, so `credentials.grant` is not
+      covered there yet: the runner builds `https://github.com/<full name>`
+      itself (`internal/cli/link_sessions.go`) and the fleet rewrites it with
+      `url.insteadOf`, a URL the helper refuses to answer for.
 - [ ] Multi-window in the console (the runner handles
       `session.window.open|close`; no route yet).
 - [ ] `addCheckout` / `removeCheckout` on the wire (no frame in 01 yet;

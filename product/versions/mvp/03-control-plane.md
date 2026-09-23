@@ -148,7 +148,15 @@ cannot create gaps; it is read in a **second statement after** that lock,
 because under READ COMMITTED a statement's snapshot is taken before it blocks,
 and the fold likewise re-reads the locked row rather than the instance the
 caller loaded. Idempotency is per row — `<runId>:<n>` from a runner, the command
-id from the API — and the append and the fold commit together.
+id from the API — and the append and the fold commit together. A link's
+`events.append` batches are applied in the order they arrived, so the log's
+order is the order the runner wrote. The log keeps kinds the fold does not act
+on: `session.step` (01) moves only `lastEventAt`, and
+`GET /sessions/{id}/events` is where the console reads it back. A runner's
+refusal of a session command — a `command.failed` no attachment claims — goes on
+that session's log through the same door: a refused create is `session.failed`
+with the runner's code and detail, which moves the row off `starting`, and any
+other refusal is `command.failed`, kept without folding.
 
 **One action is one entry.** A command appends exactly one event in the
 transaction that makes the row change it implies; what could not be delivered to

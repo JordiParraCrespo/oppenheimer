@@ -106,7 +106,10 @@
         ".agents/rules/go.md",
         ".github/workflows/release-runner.yml",
         "apps/docs/docs/architecture/go-services.md",
-        "helm/oppenheimer/templates/runner-deployment.yaml"
+        "helm/oppenheimer/templates/runner-deployment.yaml",
+        "e2e/fleet",
+        "e2e/support/fleet.ts",
+        "e2e/tests/fleet"
       ],
       "scripts": ["dev:mvp"]
     },

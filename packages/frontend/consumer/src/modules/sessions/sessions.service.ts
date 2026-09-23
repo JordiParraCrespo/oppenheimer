@@ -1,6 +1,7 @@
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
+import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
 import { createSessionStream, type SessionStream } from './stream/session-stream';
 
@@ -20,6 +21,14 @@ export class SessionsService {
 
   findById(id: string): Promise<SessionEntity> {
     return this.repository.findById(id);
+  }
+
+  /**
+   * How a session's start is going, as the host reported it. `failed` is the
+   * row's lifecycle, which can run a read ahead of the log's reason.
+   */
+  async startProgress(id: string, { failed }: { failed: boolean }): Promise<SessionStartProgress> {
+    return deriveSessionStartProgress(await this.repository.findStartLog(id), { failed });
   }
 
   /**

@@ -144,6 +144,7 @@
       "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
       "SESSIONS_009": "Choose a project, or add a repository to take one from.",
+      "SESSIONS_010": "A session works on one repository. Start a new session for another.",
       "HOSTS_001": "That host could not be found.",
       "HOSTS_002": "That pairing token could not be found.",
       "HOSTS_003": "That registration token was refused. Mint a new one and try again.",
@@ -296,9 +297,38 @@
       "openDescription": "Pick one from the sidebar, or start another."
     },
     "provisioning": {
-      "lead": "Setting up the worktree on your host.",
+      "title": "Starting your session",
+      "failedTitle": "The session did not start",
       "failedLead": "The host could not start this session.",
-      "step": "Starting the session"
+      "working": "Working…",
+      "failed": "Failed",
+      "took": "{{seconds}}s",
+      "steps": {
+        "host": {
+          "label": "Connect to {{host}}",
+          "doing": "Waiting for the host to pick it up…",
+          "offline": "{{host}} is offline — it starts when the host is back",
+          "done": "Connected",
+          "fallback": "the host"
+        },
+        "clone": {
+          "label": "Clone {{repo}}",
+          "doing": "Fetching the repository…"
+        },
+        "worktree": {
+          "label": "Check out the branch",
+          "doing": "Creating the worktree…"
+        },
+        "agent": {
+          "label": "Start {{agent}}",
+          "doing": "Launching in tmux…",
+          "done": "Ready"
+        }
+      },
+      "progressFailed": "Could not load how the start is going.",
+      "codes": {
+        "SESS_002": "This host makes sessions with one repository."
+      }
     },
     "group": {
       "working": "Working",

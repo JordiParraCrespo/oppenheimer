@@ -101,6 +101,7 @@
     "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
     "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
     "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
+    "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
     "HOSTS_001": "No se ha encontrado ese equipo.",
     "HOSTS_002": "No se ha encontrado ese token de vinculación.",
     "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",

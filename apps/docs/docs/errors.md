@@ -372,6 +372,7 @@ are never reissued.
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
+| `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -380,6 +381,11 @@ scoped read cannot see it, and distinguishing the two would confirm the id.
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
 already keys conversation state by.
+
+`SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
+per session, so a second repository is refused here — on create by the body's own
+limit, and on adding one to a session that has one — rather than by the host after
+the session was written.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

@@ -334,3 +334,21 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   is (05). The same change names the console's keymap in 05, and moves
   resize coalescing to the console at 50 ms, with the runner applying
   each size as it arrives (02 §5, §7).
+- 2026-09-23: **multi-host behaviour is proved through the real register
+  path, in the cheapest place that is honest about it.** A test that needs a
+  host pairs one the way a user does — mint, `runner register`, the link —
+  rather than writing a host row, and it runs in the lowest tier that can
+  prove the property: containers for pairing, routing, link loss and
+  adoption; a real OS only for what a container cannot fake (09's service
+  units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.
+- 2026-09-23: the provisioning pane draws the host's own steps, from
+  `session.step` on the log (01, 05).
+- 2026-09-23: **a session is one repository in the MVP** (#56). 2026-09-19's
+  several repositories per session is deferred to the runner slice that
+  makes several worktrees (11's R3): the runner makes one, and a session
+  that asked for two was accepted, refused by the host and left spinning.
+  The create body takes at most one checkout, adding a second is
+  `SESSIONS_010`, and the composer's chip holds one (00, 05, 10). With
+  it, a runner's refusal of a session command is recorded on the
+  session's log instead of dropped, so a start the host refuses fails
+  visibly (03).

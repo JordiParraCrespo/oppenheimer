@@ -329,6 +329,144 @@ describe('runner link', () => {
     );
   });
 
+  it("applies a link's event batches in the order they arrived, however long each takes", async () => {
+    // A start's steps are consecutive batches, and the log's order is the order
+    // they are recorded in: `running` must not land after `done`.
+    const finished: string[] = [];
+    vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
+      await new Promise((resolve) => setTimeout(resolve, batch.batchId === 'b1' ? 50 : 0));
+      finished.push(batch.batchId);
+      return {
+        batchId: batch.batchId,
+        accepted: batch.events.map((event) => event.idempotencyKey),
+        rejected: [],
+      };
+    });
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    for (const [batchId, n, status] of [
+      ['b1', 1, 'running'],
+      ['b2', 2, 'done'],
+    ] as const) {
+      runner.send(
+        JSON.stringify({
+          type: 'events.append',
+          batchId,
+          sessionId: SESSION,
+          events: [
+            {
+              idempotencyKey: `run-1:${n}`,
+              kind: 'session.step',
+              payload: JSON.stringify({ step: 'clone', status }),
+              occurredAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      );
+    }
+    await nextMessage(runner);
+    await nextMessage(runner);
+    expect(finished).toEqual(['b1', 'b2']);
+  });
+
+  it('records a refused session.create as the session failing, with the runner’s code and detail', async () => {
+    // #56: a create the runner cannot make used to vanish, leaving the row
+    // `starting` and the console spinning.
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const commandId = 'c0ffee00-0000-4000-8000-000000000001';
+    h.registry.find(HOST)?.send({
+      type: 'session.create',
+      commandId,
+      sessionId: SESSION,
+      organizationSlug: 'jordi',
+      projectSlug: 'xrp',
+      sessionSlug: 'swift-wren-7gyezw',
+      agent: 'claude-code',
+      launch: { permission: 'ask' },
+      branch: 'oppenheimer/xrp/swift-wren-7gyezw',
+      checkouts: [],
+      cwdCheckoutId: null,
+    } as never);
+    await nextMessage(runner);
+    runner.send(
+      JSON.stringify({
+        type: 'command.failed',
+        commandId,
+        code: 'SESS_002',
+        detail: 'this runner makes sessions with exactly one checkout; the frame carried 2',
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(h.events.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hostId: HOST,
+          sessionId: SESSION,
+          events: [
+            expect.objectContaining({
+              idempotencyKey: `refused-${commandId}:1`,
+              kind: 'session.failed',
+            }),
+          ],
+        }),
+      ),
+    );
+    const recorded = vi.mocked(h.events.record).mock.calls.at(-1)?.[0];
+    expect(JSON.parse(recorded?.events[0].payload ?? '{}')).toEqual({
+      command: 'session.create',
+      code: 'SESS_002',
+      detail: 'this runner makes sessions with exactly one checkout; the frame carried 2',
+    });
+  });
+
+  it('records any other refused session command as command.failed on its session', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const commandId = 'c0ffee00-0000-4000-8000-000000000002';
+    h.registry.find(HOST)?.send({ type: 'session.stop', commandId, sessionId: SESSION });
+    await nextMessage(runner);
+    runner.send(JSON.stringify({ type: 'command.failed', commandId, code: 'SESS_001' }));
+    await vi.waitFor(() =>
+      expect(h.events.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: SESSION,
+          events: [expect.objectContaining({ kind: 'command.failed' })],
+        }),
+      ),
+    );
+  });
+
+  it('records nothing for a refusal of a command this link never sent', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    runner.send(
+      JSON.stringify({
+        type: 'command.failed',
+        commandId: 'c0ffee00-0000-4000-8000-000000000003',
+        code: 'SESS_001',
+      }),
+    );
+    // A batch after it: by its ack, the refusal has long been handled.
+    runner.send(
+      JSON.stringify({
+        type: 'events.append',
+        batchId: 'b-after',
+        sessionId: SESSION,
+        events: [
+          {
+            idempotencyKey: 'run-1:1',
+            kind: 'agent.observed',
+            payload: '{}',
+            occurredAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+    await nextMessage(runner);
+    expect(h.events.record).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(h.events.record).mock.calls[0][0].batchId).toBe('b-after');
+  });
+
   it('replaces an older link from the same host and unregisters it on close', async () => {
     const first = await runnerUp(h);
     sockets.push(first);

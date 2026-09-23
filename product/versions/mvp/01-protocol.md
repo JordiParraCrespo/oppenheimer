@@ -117,7 +117,11 @@ runner does with it and point back.
   keeps a batch until an ack accounts for every key in it and resends
   otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
   what makes the resend free. The log the batch lands in is 03's; the
-  wire that carries it is this note's.
+  wire that carries it is this note's. While a session starts, the
+  runner logs `session.step`: its kind and `{ step, status, durationMs }`
+  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
+  twin is generated from it. A failure is `session.failed`, not a step
+  status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

@@ -58,6 +58,9 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  */
 @Injectable()
 export class RunnerLinkGateway {
+  /** Each link's `events.append` messages, applied in arrival order (see `onControl`). */
+  private readonly appendChains = new WeakMap<SocketRunnerLink, Promise<void>>();
+
   private readonly logger = new Logger(RunnerLinkGateway.name);
   private readonly server = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 * 1024 });
 
@@ -221,13 +224,31 @@ export class RunnerLinkGateway {
       this.logger.warn({ message: 'unparseable control frame from runner', hostId: link.hostId });
       return;
     }
+    const message = parsed.data;
+    if (message.type === 'events.append') {
+      // A session's log is ordered by the `seq` this control plane assigns on
+      // append, and a runner sends a start's steps as consecutive batches. Taken
+      // concurrently, two appends race for the row lock and `running` can land
+      // after `done`. So a link's appends are applied one after another, in the
+      // order they arrived; every other message still runs on its own, so a
+      // credential ask never queues behind the log.
+      const previous = this.appendChains.get(link) ?? Promise.resolve();
+      const next = previous.then(() => this.process(link, message));
+      this.appendChains.set(link, next);
+      return next;
+    }
+    return this.process(link, message);
+  }
+
+  /** Dispatch one message; a failure is logged, never thrown, so a chain keeps going. */
+  private async process(link: SocketRunnerLink, message: ProtocolMessage): Promise<void> {
     try {
-      await this.dispatch(link, parsed.data);
+      await this.dispatch(link, message);
     } catch (error) {
       this.logger.error({
         message: 'a runner message could not be processed',
         hostId: link.hostId,
-        type: parsed.data.type,
+        type: message.type,
         error: String(error),
       });
     }
@@ -239,9 +260,15 @@ export class RunnerLinkGateway {
         return this.events.onHeartbeat(link, message);
       case 'events.append':
         return this.events.onEventsAppend(link, message);
-      case 'command.failed':
-        link.attachmentByCommand(message.commandId)?.refused(message.code, message.detail);
-        return;
+      case 'command.failed': {
+        // An attach's refusal is its browser's; any other is the session's.
+        const sink = link.attachmentByCommand(message.commandId);
+        if (sink) {
+          sink.refused(message.code, message.detail);
+          return;
+        }
+        return this.events.onCommandFailed(link, message);
+      }
       case 'attachment.closed':
         link.attachment(message.attachmentId)?.closed('runner_closed', message.reason);
         link.closeAttachment(message.attachmentId);
