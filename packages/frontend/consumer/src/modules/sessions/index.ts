@@ -9,14 +9,11 @@ export {
   type SessionLaunch,
   type SessionState,
 } from './session.entity';
-export {
-  deriveSessionStartSteps,
-  isSessionStartSettled,
-  SESSION_START_STEPS,
-  type SessionEvent,
-  type SessionStartStep,
-  type SessionStartStepId,
-  type SessionStartStepState,
+export type {
+  SessionStartProgress,
+  SessionStartStep,
+  SessionStartStepId,
+  SessionStartStepState,
 } from './session-steps';
 export { SessionsErrors } from './sessions.errors';
 export { SessionsModule } from './sessions.module';

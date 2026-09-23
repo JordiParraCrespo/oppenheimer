@@ -1,120 +1,142 @@
+import {
+  SESSION_FAILED_EVENT_KIND,
+  SESSION_START_STEPS,
+  SESSION_STARTED_EVENT_KIND,
+  SESSION_STEP_EVENT_KIND,
+  type SessionStartStepId,
+  sessionFailedPayloadSchema,
+  sessionStepPayloadSchema,
+} from '@oppenheimer/shared/protocol';
+
 /**
  * What the console draws while a session starts: the host's own account of it,
- * read back off the session's event log.
+ * read off the session's log.
  *
- * The runner logs each step as it starts and finishes (`session.step`, payload
- * `{ step, status }`), the host step first — the moment the create frame reached
- * it. `session.started` means every step landed; `session.failed` means the one
- * still running did not. Nothing here is timed on the client: a step that has
- * not been reported is pending, never "probably nearly done".
+ * The runner logs `session.step` (`@oppenheimer/shared/protocol`) as each step
+ * starts and lands; `session.started` means every step landed, and
+ * `session.failed` carries the host's reason. A step nobody reported is
+ * pending: nothing here advances on its own.
  */
 
-/** One entry of a session's append-only log, as the console reads it. */
-export interface SessionEvent {
+export type { SessionStartStepId };
+
+/** One entry of the start log, parsed against the schema the runner writes. */
+export type SessionStartEntry =
+  | {
+      seq: number;
+      kind: 'step';
+      step: SessionStartStepId;
+      status: 'running' | 'done';
+      durationMs: number | null;
+    }
+  | { seq: number; kind: 'started' }
+  | { seq: number; kind: 'failed'; detail: string | null; code: string | null };
+
+/** A raw log entry as the API returns it: the kind and a payload of unknown shape. */
+export interface RawSessionLogEntry {
   seq: number;
   kind: string;
   payload: unknown;
-  occurredAt: Date;
 }
 
-/** The steps, in the order the host runs them. */
-export const SESSION_START_STEPS = ['host', 'clone', 'worktree', 'agent'] as const;
+/**
+ * Parse the entries that concern a start, dropping everything else — other
+ * kinds, and a step payload the schema refuses — rather than guessing at them.
+ */
+export function toStartEntry(entry: RawSessionLogEntry): SessionStartEntry | null {
+  switch (entry.kind) {
+    case SESSION_STEP_EVENT_KIND: {
+      const parsed = sessionStepPayloadSchema.safeParse(entry.payload);
+      if (!parsed.success) return null;
+      return {
+        seq: entry.seq,
+        kind: 'step',
+        step: parsed.data.step,
+        status: parsed.data.status,
+        durationMs: parsed.data.durationMs ?? null,
+      };
+    }
+    case SESSION_STARTED_EVENT_KIND:
+      return { seq: entry.seq, kind: 'started' };
+    case SESSION_FAILED_EVENT_KIND: {
+      const parsed = sessionFailedPayloadSchema.safeParse(entry.payload);
+      const payload = parsed.success ? parsed.data : {};
+      return {
+        seq: entry.seq,
+        kind: 'failed',
+        detail: payload.detail?.trim() || null,
+        code: payload.code ?? null,
+      };
+    }
+    default:
+      return null;
+  }
+}
 
-export type SessionStartStepId = (typeof SESSION_START_STEPS)[number];
+/** Whether the log already says how the start ended. */
+export function settlesStart(entry: SessionStartEntry): boolean {
+  return entry.kind === 'started' || entry.kind === 'failed';
+}
 
 export type SessionStartStepState = 'pending' | 'running' | 'done' | 'failed';
 
 export interface SessionStartStep {
   id: SessionStartStepId;
   state: SessionStartStepState;
-  /** When the host reported it started, if it did. */
-  startedAt: Date | null;
-  /** When it finished, if it did. */
-  finishedAt: Date | null;
+  /** How long the step took, as the host measured it; null until it landed. */
+  durationMs: number | null;
 }
 
-const STEP_KIND = 'session.step';
-const STARTED_KIND = 'session.started';
-const FAILED_KIND = 'session.failed';
-
-/**
- * Whether the log already says how the start ended. The row's lifecycle is
- * folded from this same log, so a start that ended always has one of the two
- * here — which makes this, not the row, the thing to stop polling on: the row
- * can turn `failed` one read before the page holding the host's reason does.
- */
-export function isSessionStartSettled(events: readonly SessionEvent[] | undefined): boolean {
-  return Boolean(
-    events?.some((event) => event.kind === STARTED_KIND || event.kind === FAILED_KIND),
-  );
-}
-
-function isStepId(value: unknown): value is SessionStartStepId {
-  return (SESSION_START_STEPS as readonly unknown[]).includes(value);
-}
-
-function stepPayload(payload: unknown): { step: SessionStartStepId; status: string } | null {
-  if (!payload || typeof payload !== 'object') return null;
-  const { step, status } = payload as Record<string, unknown>;
-  return isStepId(step) && typeof status === 'string' ? { step, status } : null;
+export interface SessionStartProgress {
+  steps: SessionStartStep[];
+  /** The host's reason, once the log carries it; null while it has not arrived. */
+  failure: { detail: string | null; code: string | null } | null;
+  /** The log says how the start ended: nothing more will arrive for it. */
+  settled: boolean;
 }
 
 /**
- * Fold the log into the four steps.
+ * Fold the start log into the four steps.
  *
- * The step the host is waiting on next is `running` even before it says so: once
- * the clone has finished, the worktree is what is happening, and a pane that
- * showed nothing running between two events would flicker for no reason. A
- * runner too old to log steps therefore reads as "waiting for the host" until
- * `session.started` lands, which is exactly what it is.
+ * `failed` is the session row's lifecycle. The row and the log are two reads,
+ * and the row can say `failed` a read before the page carrying the reason
+ * does; the step in hand is marked failed either way, and the reason follows
+ * when the log has it.
  */
-export function deriveSessionStartSteps(events: readonly SessionEvent[]): SessionStartStep[] {
+export function deriveSessionStartProgress(
+  entries: readonly SessionStartEntry[],
+  { failed }: { failed: boolean },
+): SessionStartProgress {
   const steps = new Map<SessionStartStepId, SessionStartStep>(
-    SESSION_START_STEPS.map((id) => [
-      id,
-      { id, state: 'pending', startedAt: null, finishedAt: null } as SessionStartStep,
-    ]),
+    SESSION_START_STEPS.map((id) => [id, { id, state: 'pending', durationMs: null }]),
   );
-  let failed = false;
   let started = false;
+  let failure: SessionStartProgress['failure'] = null;
 
-  for (const event of [...events].sort((a, b) => a.seq - b.seq)) {
-    if (event.kind === STEP_KIND) {
-      const reported = stepPayload(event.payload);
-      if (!reported) continue;
-      const step = steps.get(reported.step) as SessionStartStep;
-      if (reported.status === 'running') {
-        step.state = 'running';
-        step.startedAt = event.occurredAt;
-      } else if (reported.status === 'done') {
-        step.state = 'done';
-        step.startedAt ??= event.occurredAt;
-        step.finishedAt = event.occurredAt;
-      }
-    } else if (event.kind === STARTED_KIND) {
+  for (const entry of [...entries].sort((a, b) => a.seq - b.seq)) {
+    if (entry.kind === 'step') {
+      const step = steps.get(entry.step) as SessionStartStep;
+      step.state = entry.status;
+      step.durationMs = entry.status === 'done' ? entry.durationMs : null;
+    } else if (entry.kind === 'started') {
       started = true;
-      for (const step of steps.values()) {
-        if (step.state !== 'done') {
-          step.state = 'done';
-          step.finishedAt = event.occurredAt;
-        }
-      }
-    } else if (event.kind === FAILED_KIND) {
-      failed = true;
+    } else {
+      failure = { detail: entry.detail, code: entry.code };
     }
   }
 
   const ordered = SESSION_START_STEPS.map((id) => steps.get(id) as SessionStartStep);
-  if (started) return ordered;
-
-  // The first step that has not landed is the one in hand: running, or — when
-  // the log says the start failed — the one that failed.
-  const current = ordered.find((step) => step.state !== 'done');
-  if (current) current.state = failed ? 'failed' : 'running';
-  // Anything after it that was reported running cannot still be; only one step
-  // is ever in hand.
-  for (const step of ordered.slice(current ? ordered.indexOf(current) + 1 : ordered.length)) {
-    if (step.state === 'running') step.state = 'pending';
+  if (started) {
+    for (const step of ordered) if (step.state !== 'done') step.state = 'done';
+    return { steps: ordered, failure: null, settled: true };
   }
-  return ordered;
+  if (failed || failure) {
+    // The step in hand is the one the host last said it started; before it
+    // said anything, the first step, which is where the start stopped.
+    const inHand =
+      [...ordered].reverse().find((step) => step.state === 'running') ??
+      ordered.find((step) => step.state !== 'done');
+    if (inHand) inHand.state = 'failed';
+  }
+  return { steps: ordered, failure, settled: failure !== null };
 }

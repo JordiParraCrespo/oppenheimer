@@ -1,114 +1,145 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deriveSessionStartSteps,
-  isSessionStartSettled,
-  type SessionEvent,
+  deriveSessionStartProgress,
+  type SessionStartEntry,
+  settlesStart,
+  toStartEntry,
 } from '../session-steps';
 
 /**
- * The provisioning pane draws what the host said, and nothing it did not. These
- * are the logs a starting session actually produces, from "the control plane
- * asked" to "the agent is up", plus the two ways it goes wrong.
+ * The provisioning pane draws what the host said, and nothing it did not: a
+ * step nobody reported is pending. These are the logs a start produces, from
+ * the host receiving the frame to the agent being up, and the ways it fails.
  */
 
 let seq = 0;
-function event(kind: string, payload: unknown = {}, at = 0): SessionEvent {
-  seq += 1;
-  return { seq, kind, payload, occurredAt: new Date(1_000_000 + at) };
-}
-const step = (id: string, status: string, at = 0) =>
-  event('session.step', { step: id, status }, at);
-const states = (events: SessionEvent[]) =>
-  deriveSessionStartSteps(events).map((s) => `${s.id}:${s.state}`);
+const step = (
+  id: 'host' | 'clone' | 'worktree' | 'agent',
+  status: 'running' | 'done',
+  durationMs: number | null = null,
+): SessionStartEntry => ({ seq: ++seq, kind: 'step', step: id, status, durationMs });
+const started = (): SessionStartEntry => ({ seq: ++seq, kind: 'started' });
+const failedEntry = (detail: string | null = null): SessionStartEntry => ({
+  seq: ++seq,
+  kind: 'failed',
+  detail,
+  code: null,
+});
+const states = (entries: SessionStartEntry[], failed = false) =>
+  deriveSessionStartProgress(entries, { failed }).steps.map((s) => `${s.id}:${s.state}`);
 
-describe('deriveSessionStartSteps', () => {
-  it('waits on the host until the host says it has the session', () => {
-    expect(states([event('session.requested')])).toEqual([
-      'host:running',
+describe('deriveSessionStartProgress', () => {
+  it('draws nothing in hand before the host has said anything', () => {
+    expect(states([])).toEqual([
+      'host:pending',
       'clone:pending',
       'worktree:pending',
       'agent:pending',
     ]);
   });
 
-  it('moves to the step in hand as each one lands', () => {
-    const events = [event('session.requested'), step('host', 'done'), step('clone', 'running')];
-    expect(states(events)).toEqual([
-      'host:done',
-      'clone:running',
+  it('shows the step the host says it is on', () => {
+    expect(states([step('host', 'running')])).toEqual([
+      'host:running',
+      'clone:pending',
       'worktree:pending',
       'agent:pending',
     ]);
+    expect(
+      states([step('host', 'running'), step('host', 'done'), step('clone', 'running')]),
+    ).toEqual(['host:done', 'clone:running', 'worktree:pending', 'agent:pending']);
   });
 
-  it('treats the next step as running between one landing and the next starting', () => {
-    const events = [step('host', 'done'), step('clone', 'running'), step('clone', 'done')];
-    expect(states(events)).toEqual([
-      'host:done',
-      'clone:done',
-      'worktree:running',
-      'agent:pending',
-    ]);
+  it('leaves the next step pending until the host reports it', () => {
+    expect(states([step('host', 'done'), step('clone', 'running'), step('clone', 'done')])).toEqual(
+      ['host:done', 'clone:done', 'worktree:pending', 'agent:pending'],
+    );
   });
 
-  it('is all done once the session started, even from a runner that logs no steps', () => {
-    expect(states([event('session.requested'), event('session.started')])).toEqual([
-      'host:done',
-      'clone:done',
-      'worktree:done',
-      'agent:done',
-    ]);
+  it('keeps the duration the host measured, and only once the step landed', () => {
+    const { steps } = deriveSessionStartProgress(
+      [step('clone', 'running'), step('clone', 'done', 1340), step('worktree', 'running')],
+      { failed: false },
+    );
+    expect(steps.find((s) => s.id === 'clone')?.durationMs).toBe(1340);
+    expect(steps.find((s) => s.id === 'worktree')?.durationMs).toBeNull();
   });
 
-  it('marks the step in hand as the one that failed', () => {
-    const events = [
-      step('host', 'done'),
-      step('clone', 'running'),
-      event('session.failed', { code: 'SESS_004' }),
-    ];
-    expect(states(events)).toEqual([
+  it('is all done and settled once the session started, even from a runner that logs no steps', () => {
+    const progress = deriveSessionStartProgress([started()], { failed: false });
+    expect(progress.steps.every((s) => s.state === 'done')).toBe(true);
+    expect(progress.settled).toBe(true);
+  });
+
+  it('fails the step in hand and carries the host’s reason', () => {
+    const progress = deriveSessionStartProgress(
+      [step('host', 'done'), step('clone', 'running'), failedEntry('clone refused')],
+      { failed: true },
+    );
+    expect(progress.steps.map((s) => `${s.id}:${s.state}`)).toEqual([
       'host:done',
       'clone:failed',
       'worktree:pending',
       'agent:pending',
     ]);
+    expect(progress.failure).toEqual({ detail: 'clone refused', code: null });
+    expect(progress.settled).toBe(true);
   });
 
-  it('keeps when each step started and finished, for the durations', () => {
-    const steps = deriveSessionStartSteps([
-      step('host', 'done', 0),
-      step('clone', 'running', 10),
-      step('clone', 'done', 1_310),
-    ]);
-    const clone = steps.find((s) => s.id === 'clone');
-    expect(
-      clone?.finishedAt && clone.startedAt
-        ? clone.finishedAt.getTime() - clone.startedAt.getTime()
-        : null,
-    ).toBe(1_300);
+  it('fails the step in hand from the row alone, and waits for the reason', () => {
+    // The row turned failed a read before the log page with the reason did.
+    const progress = deriveSessionStartProgress([step('host', 'done'), step('clone', 'running')], {
+      failed: true,
+    });
+    expect(progress.steps[1].state).toBe('failed');
+    expect(progress.failure).toBeNull();
+    expect(progress.settled).toBe(false);
   });
 
-  it('ignores a step it has never heard of rather than inventing a row', () => {
-    const events = [step('host', 'done'), step('warm-cache', 'running')];
-    expect(deriveSessionStartSteps(events)).toHaveLength(4);
-    expect(states(events)[1]).toBe('clone:running');
+  it('fails the host step when the start was refused before it was accepted', () => {
+    expect(states([step('host', 'running'), failedEntry('tmux is missing')], true)[0]).toBe(
+      'host:failed',
+    );
   });
 
   it('reads the log in sequence order, not arrival order', () => {
-    const late = step('clone', 'done');
-    const early = step('clone', 'running');
-    early.seq = late.seq - 1;
-    expect(states([late, early, step('host', 'done')])[1]).toBe('clone:done');
+    const running = step('clone', 'running');
+    const done = step('clone', 'done', 10);
+    expect(states([done, running])[1]).toBe('clone:done');
   });
 });
 
-describe('isSessionStartSettled', () => {
-  it('is settled once the log says how the start ended, and not before', () => {
-    expect(isSessionStartSettled(undefined)).toBe(false);
-    expect(isSessionStartSettled([event('session.requested'), step('clone', 'running')])).toBe(
-      false,
-    );
-    expect(isSessionStartSettled([event('session.started')])).toBe(true);
-    expect(isSessionStartSettled([event('session.failed')])).toBe(true);
+describe('toStartEntry', () => {
+  it('parses the runner’s payloads against the shared schema', () => {
+    expect(
+      toStartEntry({
+        seq: 1,
+        kind: 'session.step',
+        payload: { step: 'clone', status: 'done', durationMs: 5 },
+      }),
+    ).toEqual({ seq: 1, kind: 'step', step: 'clone', status: 'done', durationMs: 5 });
+    expect(
+      toStartEntry({ seq: 2, kind: 'session.failed', payload: { detail: ' no repo ' } }),
+    ).toEqual({
+      seq: 2,
+      kind: 'failed',
+      detail: 'no repo',
+      code: null,
+    });
+  });
+
+  it('drops a step the schema does not know, and every other kind', () => {
+    expect(
+      toStartEntry({ seq: 1, kind: 'session.step', payload: { step: 'warm', status: 'done' } }),
+    ).toBeNull();
+    expect(toStartEntry({ seq: 2, kind: 'agent.observed', payload: {} })).toBeNull();
+  });
+
+  it('knows which entries settle a start', () => {
+    expect(settlesStart({ seq: 1, kind: 'started' })).toBe(true);
+    expect(settlesStart({ seq: 1, kind: 'failed', detail: null, code: null })).toBe(true);
+    expect(
+      settlesStart({ seq: 1, kind: 'step', step: 'host', status: 'done', durationMs: 1 }),
+    ).toBe(false);
   });
 });

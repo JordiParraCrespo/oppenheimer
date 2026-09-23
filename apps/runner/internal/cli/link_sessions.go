@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -14,13 +15,10 @@ import (
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 )
 
-// sessionStepKind is the event a step of a starting session is logged as,
-// with the payload `{ step, status }`. The control plane keeps it without
-// folding it (an unknown kind moves nothing but `lastEventAt`); the console
-// reads it back off the log to draw the provisioning steps.
-const sessionStepKind = "session.step"
-
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
+	steps := newStartSteps(func(p link.SessionStepPayload) {
+		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
+	}, time.Now)
 	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
 	if !ok {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
@@ -37,12 +35,6 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		return
 	}
 	first := m.Checkouts[0]
-	// The host has the session: the first of the steps the console draws
-	// while it starts (05). The rest are reported by the service as they run.
-	step := func(s sessionsdomain.Step, status sessionsdomain.StepStatus) {
-		h.reporter.Append(m.SessionID, sessionStepKind, map[string]any{"step": s, "status": status})
-	}
-	step(sessionsdomain.StepHost, sessionsdomain.StepDone)
 	session, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
 		ID:         m.SessionID,
 		Repo:       first.RepositoryFullName,
@@ -55,7 +47,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
 		},
 		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
-		Progress: step,
+		Progress: steps.stage,
 	})
 	if err != nil {
 		h.fail(m.CommandID, err)

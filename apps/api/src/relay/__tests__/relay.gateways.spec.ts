@@ -329,6 +329,46 @@ describe('runner link', () => {
     );
   });
 
+  it("applies a link's event batches in the order they arrived, however long each takes", async () => {
+    // A start's steps are consecutive batches, and the log's order is the order
+    // they are recorded in: `running` must not land after `done`.
+    const finished: string[] = [];
+    vi.mocked(h.events.record).mockImplementation(async (batch: RunnerEventBatch) => {
+      await new Promise((resolve) => setTimeout(resolve, batch.batchId === 'b1' ? 50 : 0));
+      finished.push(batch.batchId);
+      return {
+        batchId: batch.batchId,
+        accepted: batch.events.map((event) => event.idempotencyKey),
+        rejected: [],
+      };
+    });
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    for (const [batchId, n, status] of [
+      ['b1', 1, 'running'],
+      ['b2', 2, 'done'],
+    ] as const) {
+      runner.send(
+        JSON.stringify({
+          type: 'events.append',
+          batchId,
+          sessionId: SESSION,
+          events: [
+            {
+              idempotencyKey: `run-1:${n}`,
+              kind: 'session.step',
+              payload: JSON.stringify({ step: 'clone', status }),
+              occurredAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      );
+    }
+    await nextMessage(runner);
+    await nextMessage(runner);
+    expect(finished).toEqual(['b1', 'b2']);
+  });
+
   it('replaces an older link from the same host and unregisters it on close', async () => {
     const first = await runnerUp(h);
     sockets.push(first);

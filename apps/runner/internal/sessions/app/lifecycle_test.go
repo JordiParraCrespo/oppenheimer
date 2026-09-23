@@ -294,47 +294,49 @@ func TestTheSessionMapIsPersistedOnEveryChange(t *testing.T) {
 	}
 }
 
-// The steps are what the console draws while a session starts, so their order
-// is the contract: each starts, then finishes, before the next begins.
-func TestCreateReportsEachStepAsItStartsAndFinishes(t *testing.T) {
+// The stages are what the console draws while a session starts, so their
+// order is the contract: each starts, then lands, before the next begins.
+func TestCreateReportsEachStageAsItStartsAndLands(t *testing.T) {
 	h := newFakeHarness(t)
 	var seen []string
 	_, err := h.svc.Create(context.Background(), app.CreateInput{
 		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
 		BaseBranch: "main", Agent: domain.AgentClaude,
-		Progress: func(step domain.Step, status domain.StepStatus) {
-			seen = append(seen, string(step)+":"+string(status))
+		Progress: func(ev domain.StageEvent) {
+			state := "started"
+			if ev.Done {
+				state = "landed"
+			}
+			seen = append(seen, string(ev.Stage)+":"+state)
 		},
 	})
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
 	want := []string{
-		"clone:running", "clone:done",
-		"worktree:running", "worktree:done",
-		"agent:running", "agent:done",
+		"clone:started", "clone:landed",
+		"worktree:started", "worktree:landed",
+		"agent:started", "agent:landed",
 	}
 	if strings.Join(seen, " ") != strings.Join(want, " ") {
-		t.Fatalf("steps = %v, want %v", seen, want)
+		t.Fatalf("stages = %v, want %v", seen, want)
 	}
 }
 
-// A failure is reported by the caller as `session.failed`; what the steps say
-// is which one it was — the last to start and never finish.
-func TestCreateThatFailsLeavesTheFailingStepRunning(t *testing.T) {
+// A failure is reported by the caller as `session.failed`; what the stages
+// say is which one it was — the last to start, and it never lands.
+func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 	h := newFakeHarness(t)
 	h.worktrees.EnsureErr = domain.ErrWorktree.WithDetail("clone refused")
-	var last string
+	var seen []domain.StageEvent
 	_, err := h.svc.Create(context.Background(), app.CreateInput{
 		Repo: "jordi/oppenheimer", Remote: "https://github.test/jordi/oppenheimer.git",
-		Progress: func(step domain.Step, status domain.StepStatus) {
-			last = string(step) + ":" + string(status)
-		},
+		Progress: func(ev domain.StageEvent) { seen = append(seen, ev) },
 	})
 	if err == nil {
 		t.Fatal("create succeeded over a failed clone")
 	}
-	if last != "clone:running" {
-		t.Fatalf("last step = %q, want clone:running", last)
+	if len(seen) != 1 || seen[0].Stage != domain.StageClone || seen[0].Done {
+		t.Fatalf("stages = %+v, want only clone started", seen)
 	}
 }

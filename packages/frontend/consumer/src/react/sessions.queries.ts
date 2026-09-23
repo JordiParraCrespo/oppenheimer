@@ -8,7 +8,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
-import { isSessionStartSettled, type SessionEvent } from '../modules/sessions/session-steps';
+import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
 /**
@@ -21,7 +21,8 @@ export const sessionsKeys = {
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
   detail: (id: string) => [...sessionsKeys.details(), id] as const,
-  events: (id: string) => [...sessionsKeys.detail(id), 'events'] as const,
+  start: (id: string, failed: boolean) =>
+    [...sessionsKeys.detail(id), 'start', { failed }] as const,
 };
 
 /**
@@ -68,25 +69,26 @@ export function useSession(
 }
 
 /**
- * A session's log, which is what its provisioning steps are drawn from.
+ * How a session's start is going: the steps the host reported, and its reason
+ * when the start failed.
  *
- * It polls until the log says how the start ended (`session.started` or
- * `session.failed`) and then stops: a live or finished session never reads its
- * log in a loop, and a failed one still gets the entry carrying the host's
- * reason, which can land a read after the row turned `failed`.
+ * It reads while the session is starting, at the row's own pace, and stops the
+ * moment the log says how the start ended. A failed row keeps reading until the
+ * log carries the host's reason, which can land a read after the row turned
+ * `failed`. A live or finished session never reads it at all.
  */
-export function useSessionEvents(
+export function useSessionStartProgress(
   id: string,
-  options?: Omit<UseQueryOptions<SessionEvent[], Error>, 'queryKey' | 'queryFn'>,
+  { starting, failed }: { starting: boolean; failed: boolean },
+  options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
   return useQuery({
-    queryKey: sessionsKeys.events(id),
-    queryFn: () => app.sessions.findEvents(id),
-    enabled: Boolean(id),
-    refetchInterval: (query) =>
-      isSessionStartSettled(query.state.data) ? false : PROVISIONING_POLL_MS,
+    queryKey: sessionsKeys.start(id, failed),
+    queryFn: () => app.sessions.startProgress(id, { failed }),
+    enabled: Boolean(id) && (starting || failed),
+    refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
     ...options,
   });
 }

@@ -12,7 +12,7 @@ import {
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
-import type { SessionEvent } from './session-steps';
+import { type SessionStartEntry, settlesStart, toStartEntry } from './session-steps';
 import { SessionsErrors } from './sessions.errors';
 
 /**
@@ -26,6 +26,10 @@ import { SessionsErrors } from './sessions.errors';
  * noticed, because nothing called it. That is the whole argument for calling the
  * generated operations rather than composing URLs by hand.
  */
+/** Entries per page of the start log, and how many pages a start may span. */
+const START_LOG_PAGE = 50;
+const MAX_START_LOG_PAGES = 20;
+
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
   return new SessionCheckoutEntity(
     data.id,
@@ -147,23 +151,31 @@ export class SessionsRepository {
   }
 
   /**
-   * The session's log, from the start: what the provisioning pane draws its
-   * steps from (`session-steps.ts`). A starting session has a handful of
-   * entries, so one page is the whole of it; nothing here walks a long log.
+   * The start of the session's log, up to the entry that says how the start
+   * ended, parsed against the schema the runner writes. It walks the log's
+   * pages rather than trusting one to hold it: a start is a handful of entries
+   * today, and a namer event or a retry is how that stops being true.
    */
   @MapApiError(SessionsErrors.FETCH_EVENTS_FAILED)
-  async findEvents(id: string): Promise<SessionEvent[]> {
-    const { data, error } = await heyApiSdk.listSessionEvents({
-      path: { id },
-      query: { limit: 100 },
-    });
-    if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
-    return data.data.map((event) => ({
-      seq: event.seq,
-      kind: event.kind,
-      payload: event.payload,
-      occurredAt: new Date(event.occurredAt),
-    }));
+  async findStartLog(id: string): Promise<SessionStartEntry[]> {
+    const entries: SessionStartEntry[] = [];
+    let afterSeq: number | undefined;
+    for (let page = 0; page < MAX_START_LOG_PAGES; page += 1) {
+      const { data, error } = await heyApiSdk.listSessionEvents({
+        path: { id },
+        query: { limit: START_LOG_PAGE, afterSeq },
+      });
+      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_EVENTS_FAILED);
+      for (const raw of data.data) {
+        const entry = toStartEntry(raw);
+        if (!entry) continue;
+        entries.push(entry);
+        if (settlesStart(entry)) return entries;
+      }
+      if (data.nextSeq === null || data.nextSeq === undefined) return entries;
+      afterSeq = data.nextSeq;
+    }
+    return entries;
   }
 
   @MapApiError(SessionsErrors.STOP_FAILED)

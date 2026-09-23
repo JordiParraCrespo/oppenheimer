@@ -155,12 +155,12 @@ A session is a directory of checkouts plus a tmux session plus its
 windows. The layout and every name in it are 10's
 (`workspaces/<org>/projects/<project>/{repos,sessions}`; it supersedes
 note 11 §1). Create, in order, each step resumable because the previous
-one is observable on disk, and each **reported** as it starts and lands
-— `session.step` on the link (01): `host` when the frame arrives, then
-`clone` (the stores), `worktree` (the checkouts) and `agent` (tmux and
-window 0), which is what the console's provisioning steps are (05). As
-built, the service takes a progress callback on create and the link
-handler turns it into events; the service knows nothing of the wire:
+one is observable on disk, and each reported as a `session.step` (01)
+as it starts and lands: `host` running when the frame arrives and done
+once create accepts it, then `clone` (the stores), `worktree` (the
+checkouts) and `agent` (tmux and window 0), each landing with the time
+it took on the host. A failure is `session.failed`; the step that
+started last is the one that failed:
 
 1. Write the `.oppenheimer` marker into
    `projects/<project>/sessions/<slug>/` **before** anything else. Only

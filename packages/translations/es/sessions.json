@@ -23,7 +23,7 @@
         "doing": "Descargando el repositorio…"
       },
       "worktree": {
-        "label": "Crear la rama",
+        "label": "Crear el worktree",
         "doing": "Creando el worktree…"
       },
       "agent": {
@@ -31,7 +31,8 @@
         "doing": "Lanzando en tmux…",
         "done": "Listo"
       }
-    }
+    },
+    "progressFailed": "No se pudo cargar el progreso del inicio."
   },
   "group": {
     "working": "Trabajando",
