@@ -32,6 +32,24 @@ history) to work on the MVP.
   `/onboarding/workspace` returns it to `/sessions`. Signing *in* never
   enters the flow. (Decided 2026-09-21; the flow previously ended at
   sign-up and the four steps were unreachable.)
+- **The flow is walked once, and Ready is what says so.** The claimed
+  address finishes the *account*, and two steps still run after it, so
+  it cannot also be the test for the rest of the flow — every
+  legitimate arrival at the landing is finished too. What the landing
+  asks is whether this navigation is the walk: step 2's claim opens
+  one, the flow's own links carry it, and `/onboarding/ready` reached
+  any other way — Back out of the console, a typed address, a second
+  tab — returns the reader to `/sessions` instead of congratulating
+  them again. Add host asks the same question, for the same reason: the
+  console pairs a machine in its own dialog now, so nothing links at
+  step 4 and it is first-run's alone. Connect GitHub is the one step
+  that is not gated and is not meant to be — New session's repository
+  chip still sends a finished account there to install the App, and
+  version 1 draws no other screen that does (05). A reader the console
+  sent there is not walking, so continuing lands them back in the
+  console rather than in the rest of the flow. (Decided 2026-09-22;
+  before it, only step 2 was gated and the landing could be re-opened by
+  pressing Back.)
 - **The console creates exactly one organization: your own.** Sign-up's
   hook is best-effort, so `/onboarding` is the recovery path for an
   account that ended up with no workspace — it creates one and makes the

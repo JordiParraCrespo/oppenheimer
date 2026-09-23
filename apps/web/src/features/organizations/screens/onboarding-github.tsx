@@ -17,6 +17,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/organizations/components/installation-card';
 import { useConnectInstallationCallback } from '@/features/organizations/hooks/use-connect-installation-callback';
+import { installUrlCarryingWalk } from '@/features/organizations/lib/first-run';
 
 /**
  * Onboarding step 3: install the GitHub App. One primary button that sends the
@@ -31,11 +32,14 @@ import { useConnectInstallationCallback } from '@/features/organizations/hooks/u
 export function OnboardingGithubScreen({
   installationId,
   code,
+  walk,
 }: {
   /** GitHub's installation id, present only on the return leg. */
   installationId?: number;
   /** The one-shot code from the same redirect. */
   code?: string;
+  /** Set when this visit is the first-run walk, and handed on to the next step. */
+  walk?: true;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
@@ -43,13 +47,17 @@ export function OnboardingGithubScreen({
   // unreachable read leaves it undefined, which renders a disabled offer
   // rather than a link to a page that may not exist.
   const { data: deployment } = useDeploymentCapabilities();
-  const installUrl = deployment?.github_app_install_url ?? undefined;
+  const address = deployment?.github_app_install_url ?? undefined;
+  // Leaving for GitHub loses the query this step was opened with, so a walk
+  // travels as `state` and comes back under that name. A reader New session
+  // sent here is not walking and pins nothing.
+  const installUrl = address && walk ? installUrlCarryingWalk(address) : address;
 
   const {
     isExchanging,
     connected,
     error: connectError,
-  } = useConnectInstallationCallback(installationId, code);
+  } = useConnectInstallationCallback(installationId, code, walk);
   const { data: installations, isPending, error: listError } = useInstallations();
 
   // The installation this visit connected, when there was one — the callback
@@ -104,7 +112,9 @@ export function OnboardingGithubScreen({
           <Button
             size="lg"
             block
-            render={<Link to="/onboarding/host" search={{ installation: installation.id }} />}
+            render={
+              <Link to="/onboarding/host" search={{ installation: installation.id, walk }} />
+            }
           >
             {t('onboarding.flow.continue')}
           </Button>
@@ -122,7 +132,9 @@ export function OnboardingGithubScreen({
             {t('onboarding.flow.github.connect')}
           </Button>
           <div className="flex flex-col items-start gap-1.5">
-            <AuthLink to="/onboarding/host">{t('onboarding.flow.github.skip')}</AuthLink>
+            <AuthLink to="/onboarding/host" search={{ walk }}>
+              {t('onboarding.flow.github.skip')}
+            </AuthLink>
             <p className="text-xs leading-normal text-fg-subtle">
               {t('onboarding.flow.github.skipNote')}
             </p>
