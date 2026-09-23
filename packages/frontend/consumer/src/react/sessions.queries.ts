@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
+import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
 /**
@@ -20,6 +21,8 @@ export const sessionsKeys = {
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
   detail: (id: string) => [...sessionsKeys.details(), id] as const,
+  start: (id: string, failed: boolean) =>
+    [...sessionsKeys.detail(id), 'start', { failed }] as const,
 };
 
 /**
@@ -61,6 +64,31 @@ export function useSession(
     queryFn: () => app.sessions.findById(id),
     enabled: Boolean(id),
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    ...options,
+  });
+}
+
+/**
+ * How a session's start is going: the steps the host reported, and its reason
+ * when the start failed.
+ *
+ * It reads while the session is starting, at the row's own pace, and stops the
+ * moment the log says how the start ended. A failed row keeps reading until the
+ * log carries the host's reason, which can land a read after the row turned
+ * `failed`. A live or finished session never reads it at all.
+ */
+export function useSessionStartProgress(
+  id: string,
+  { starting, failed }: { starting: boolean; failed: boolean },
+  options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: sessionsKeys.start(id, failed),
+    queryFn: () => app.sessions.startProgress(id, { failed }),
+    enabled: Boolean(id) && (starting || failed),
+    refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
     ...options,
   });
 }
