@@ -112,8 +112,11 @@ never select it. Two things about the hosts are deliberate:
 - **The host's name is the one its token was minted with**, because that is the
   name the API keeps. `uniqueHostName()` makes one per worker and rerun.
 
-Design and the tiers above it (a lab on real macOS and Linux, a staging
-control plane): `product/versions/mvp/12-test-fleet.md`.
+The container entrypoint's restart loop is a test recipe standing in for
+launchd `KeepAlive` and systemd `Restart=always`, not a third way to run the
+runner; install, the service units and the signed swap are proved on a real OS
+(`product/versions/mvp/09-runner-install-and-update.md`). What the fleet covers
+is recorded in `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
 
 ## Running it
 

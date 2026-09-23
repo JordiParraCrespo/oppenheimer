@@ -19,7 +19,7 @@ import { API_URL, WEB_URL } from '../playwright.config';
  *
  * Plain `docker`, not Compose: CI's runner has the daemon but not the plugin,
  * and a test wants to start and break hosts one at a time anyway.
- * Design: `product/versions/mvp/12-test-fleet.md`.
+ * What it covers: `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
  */
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 export const FLEET_IMAGE = process.env.FLEET_IMAGE ?? 'oppenheimer-fleet-host:dev';

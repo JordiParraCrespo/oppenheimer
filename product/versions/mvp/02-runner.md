@@ -34,7 +34,11 @@ Installing it and keeping it current are their own document:
   that is when to add one.
 - **One runner per host.** A `flock` on `~/.oppenheimer/run/runner.lock`
   makes a second start fail loudly instead of fighting over the tmux
-  server and the worktrees.
+  server and the worktrees. "Host" means one Unix user on one machine:
+  the tmux socket name is the constant `oppenheimer`, so a second runner
+  under the same user — even with its own `RUNNER_HOME` — shares the tmux
+  server and would report the first one's sessions as unclaimed. Two
+  hosts on one machine are two users.
 - **The tmux server is a sibling, not a child.** The runner can die,
   restart or be replaced by a new version without touching a session
   (§6). That single fact is what makes updates cheap (09 §5).

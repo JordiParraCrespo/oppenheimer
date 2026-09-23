@@ -24,7 +24,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Test fleet](12-test-fleet.md) | How the MVP is tested with many hosts: a fleet of runner containers in compose, the Mac Studio as the lab of real macOS and Linux hosts, staging on Hetzner (proposal) |
 
 ## Decision log
 
@@ -335,16 +334,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   is (05). The same change names the console's keymap in 05, and moves
   resize coalescing to the console at 50 ms, with the runner applying
   each size as it arrives (02 §5, §7).
-- 2026-09-23: 12-test-fleet.md added as a **proposal**: three tiers — a
-  hermetic fleet of runner containers against the real API in compose
-  (laptop and CI), the Mac Studio as the lab of real macOS and Linux
-  hosts (Lima, tart, a self-hosted Actions runner), and one Hetzner
-  staging control plane the lab pairs with. The main server is staging,
-  not the Mac Studio, so the tested topology is the product's: hosts
-  behind a NAT dialling out. Several hosts on one Mac are several Unix
-  users, because the tmux socket is per user by design.
-- 2026-09-23: 12's Tier 1 is built as the `fleet` Playwright project: real
-  runners in Debian containers pairing with the real API, driven with plain
-  `docker` rather than Compose (CI has no Compose plugin), the API forwarded
-  onto each host's loopback because the runner rightly refuses plain HTTP
-  elsewhere, and hosts matched by the name their token was minted with.
+- 2026-09-23: **multi-host behaviour is proved through the real register
+  path, in the cheapest place that is honest about it.** A test that needs a
+  host pairs one the way a user does — mint, `runner register`, the link —
+  rather than writing a host row, and it runs in the lowest tier that can
+  prove the property: containers for pairing, routing, link loss and
+  adoption; a real OS only for what a container cannot fake (09's service
+  units, linger, the signed swap; 06's gate). Recorded in 11, slice 6.
