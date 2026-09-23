@@ -8,7 +8,6 @@ package cli
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -45,10 +44,15 @@ func (h *linkHandler) pump(ctx context.Context, att *attachment) {
 		}
 		n, err := att.pty.Read(buf)
 		if n > 0 {
-			att.flow.sent(n)
-			if sendErr := h.client.SendFrame(att.id, buf[:n]); sendErr != nil && !errors.Is(sendErr, link.ErrBackpressure) {
+			// Counted only once queued: a frame that never left must not hold
+			// window the browser can never credit back.
+			if sendErr := h.client.SendFrame(ctx, att.id, buf[:n]); sendErr != nil {
+				if ctx.Err() != nil {
+					return
+				}
 				break
 			}
+			att.flow.sent(n)
 		}
 		if err != nil {
 			break

@@ -296,11 +296,9 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 		t.Fatalf("frame = %d %q", id, bytes)
 	}
 
-	// Runner → control plane: a PTY frame and a command.failed, in order.
-	if err := c.SendFrame(7, []byte("$ ")); err != nil {
-		t.Fatal(err)
-	}
-	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
+	// Runner → control plane: a PTY frame, then a command.failed. Control
+	// frames jump the PTY queue, so each is read before the next is sent.
+	if err := c.SendFrame(ctx, 7, []byte("$ ")); err != nil {
 		t.Fatal(err)
 	}
 	kind, data, err := conn.Read(ctx)
@@ -309,6 +307,9 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	}
 	if id, bytes, _ := link.DecodeFrame(data); id != 7 || string(bytes) != "$ " {
 		t.Fatalf("frame = %d %q", id, bytes)
+	}
+	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
+		t.Fatal(err)
 	}
 	kind, data, err = conn.Read(ctx)
 	if err != nil || kind != websocket.MessageText || !strings.Contains(string(data), `"command.failed"`) {

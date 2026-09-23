@@ -17,7 +17,8 @@ import { LINK_REGISTRY } from './links.di-tokens';
  */
 @Module({
   providers: [
-    { provide: LINK_REGISTRY, useClass: InProcessLinkRegistry },
+    // A factory, so the registry's clock parameter is not mistaken for a dependency.
+    { provide: LINK_REGISTRY, useFactory: () => new InProcessLinkRegistry() },
     { provide: SESSION_DISPATCH, useClass: RelayDispatchAdapter },
   ],
   exports: [LINK_REGISTRY, SESSION_DISPATCH],
