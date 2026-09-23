@@ -24,6 +24,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
+| 12 | [Test fleet](12-test-fleet.md) | How the MVP is tested with many hosts: a fleet of runner containers in compose, the Mac Studio as the lab of real macOS and Linux hosts, staging on Hetzner (proposal) |
 
 ## Decision log
 
@@ -311,3 +312,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   screen; the dialog above took that job, so the step went back to
   first-run's. Connect GitHub stays ungated: New session's repository
   chip still sends a finished account to it to install the App.
+- 2026-09-23: 12-test-fleet.md added as a **proposal**: three tiers — a
+  hermetic fleet of runner containers against the real API in compose
+  (laptop and CI), the Mac Studio as the lab of real macOS and Linux
+  hosts (Lima, tart, a self-hosted Actions runner), and one Hetzner
+  staging control plane the lab pairs with. The main server is staging,
+  not the Mac Studio, so the tested topology is the product's: hosts
+  behind a NAT dialling out. Several hosts on one Mac are several Unix
+  users, because the tmux socket is per user by design.
