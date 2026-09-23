@@ -13,8 +13,9 @@ function chord(key: string, mods: Partial<KeyChord> = {}): KeyChord {
   };
 }
 
-const none = { hasSelection: false };
-const selected = { hasSelection: true };
+const none = { hasSelection: false, agentWindow: true };
+const selected = { hasSelection: true, agentWindow: true };
+const shell = { hasSelection: false, agentWindow: false };
 
 describe('classifyKey', () => {
   it('turns Shift+Enter into a newline in the prompt, not a submit', () => {
@@ -22,6 +23,10 @@ describe('classifyKey', () => {
       kind: 'send',
       data: '\n',
     });
+  });
+
+  it('leaves Shift+Enter alone in a shell window', () => {
+    expect(classifyKey(chord('Enter', { shiftKey: true }), shell)).toEqual({ kind: 'terminal' });
   });
 
   it('keeps the keypress after Shift+Enter away from xterm too', () => {

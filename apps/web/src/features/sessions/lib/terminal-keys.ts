@@ -1,5 +1,5 @@
 /**
- * The keys the console decides before xterm does.
+ * The console's keymap (05), decided before xterm encodes the key.
  *
  * xterm encodes every key it is given, which is right for almost all of them
  * and wrong for three: a copy the reader meant for the clipboard, a paste the
@@ -26,20 +26,24 @@ const TERMINAL: KeyVerdict = { kind: 'terminal' };
 const BROWSER: KeyVerdict = { kind: 'browser' };
 
 /**
- * Shift+Enter is a newline in the message rather than sending it. Claude Code
- * and Codex both read a line feed (Ctrl+J) that way, and it is what their own
- * `/terminal-setup` binds the chord to; xterm alone would send a carriage
- * return, which submits.
+ * In the agent's window, Shift+Enter is a newline in the message rather than
+ * sending it: Claude Code and Codex both read a line feed (Ctrl+J) that way,
+ * and it is what their own `/terminal-setup` binds the chord to. A shell
+ * window gets the chord as typed — a line feed is not what a shell or an
+ * editor asked for.
  */
 const NEWLINE_IN_PROMPT = '\n';
 
-export function classifyKey(event: KeyChord, context: { hasSelection: boolean }): KeyVerdict {
+export function classifyKey(
+  event: KeyChord,
+  context: { hasSelection: boolean; agentWindow: boolean },
+): KeyVerdict {
   const onlyShift = event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
   const onlyCtrl = event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey;
   const ctrlShift = event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey;
   const key = event.key.toLowerCase();
 
-  if (event.key === 'Enter' && onlyShift) {
+  if (event.key === 'Enter' && onlyShift && context.agentWindow) {
     // Every phase of the key is claimed, not just keydown, or the keypress
     // that follows still reaches xterm and submits the prompt.
     return event.type === 'keydown' ? { kind: 'send', data: NEWLINE_IN_PROMPT } : BROWSER;

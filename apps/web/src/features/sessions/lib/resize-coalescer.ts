@@ -1,17 +1,13 @@
 /**
- * The PTY's size, told once a drag has settled rather than on every frame of it.
- *
- * Every resize reaches the program as a SIGWINCH, and an agent answers one by
- * redrawing its whole screen: a window edge dragged across a second was dozens
- * of full redraws racing each other through the link. `02-runner.md` §5 caps
- * this at a coalesce over 50 ms; the console holds a little longer, because
- * the grid on screen refits at once and only the far end waits. Synara lands
- * on 120 ms for the same reason.
+ * The PTY's size, told once a drag has settled rather than on every frame of
+ * it. The console is the one place resizes are coalesced (02 §5): every size
+ * reaches the program as a SIGWINCH and an agent answers one by redrawing its
+ * whole screen, so the runner applies what arrives as it arrives.
  *
  * The first size goes straight out — it is the viewport the attach is opened
  * with — and a size equal to the last one sent is not sent again.
  */
-export const RESIZE_SETTLE_MS = 100;
+export const RESIZE_SETTLE_MS = 50;
 
 export interface ResizeCoalescer {
   request(cols: number, rows: number): void;

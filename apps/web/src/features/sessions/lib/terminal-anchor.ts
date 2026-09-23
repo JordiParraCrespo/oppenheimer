@@ -1,23 +1,23 @@
+import type { Terminal } from '@xterm/xterm';
+
 /**
- * Bottom-anchoring: the agent's prompt sits on the pane's last rows, the way a
- * chat composer does, rather than under the banner with the rest of the pane
- * blank below it.
+ * The agent's prompt sits on the pane's last visible rows; a full screen, or a
+ * viewport scrolled back, does not move (05).
  *
- * A terminal fills from the top. A fresh session is a banner and a prompt box
- * on the first dozen rows of a forty-row grid, and after `clear` a shell is one
- * line at the very top. The grid is the program's — tmux paints every row, and
- * the agent decides where its prompt goes — so nothing is moved *in* it; the
- * console only moves the grid's picture down by however many rows below the
- * content are empty, and the pane's own clipping hides the empty rows that
- * slide out of view. When output fills the screen the offset is zero and the
- * terminal is exactly what it always was.
+ * A terminal fills from the top, so a fresh session is a banner and a prompt
+ * on the first rows of a tall grid with the rest blank. The grid is the
+ * program's, so nothing moves *in* it: what moves is the picture of it.
  *
- * It is a picture moved with a CSS transform, so the PTY's size, the program's
- * idea of where its cursor is and xterm's mouse and selection maths (which read
- * the transformed rectangle) are all untouched.
+ * How, today: xterm's screen layer is shifted down by the empty rows below
+ * the content, and the pane clips what slides past the grid. Only the screen
+ * layer moves — xterm's scrollable element, its scrollbar and the surface
+ * that takes clicks and the wheel stay the size of the pane — and xterm reads
+ * the screen's transformed rectangle for mouse and selection maths. This
+ * leans on xterm's DOM (`.xterm-screen`), which is why it is kept here, next
+ * to the rule, and nowhere else.
  */
 
-/** The slice of an xterm buffer this reads, so the rule is testable without a DOM. */
+/** The slice of an xterm buffer the rule reads, so it is testable without a DOM. */
 export interface AnchorBuffer {
   /** Rows in the grid. */
   rows: number;
@@ -49,4 +49,33 @@ export function emptyRowsBelowContent(buffer: AnchorBuffer): number {
     }
   }
   return buffer.rows - 1 - last;
+}
+
+/**
+ * Clip what the anchor pushes past the grid, on the element xterm is opened
+ * in. `clip` rather than `hidden`: a `hidden` box is still a scroll container,
+ * and xterm's input textarea follows the cursor, so the moment it took focus
+ * the browser scrolled that box to reveal it and undid the shift.
+ */
+export function clipAnchoredPane(container: HTMLElement): void {
+  container.style.overflow = 'clip';
+}
+
+/** Put `term`'s content on the last visible rows, or back at the top. */
+export function anchorToBottom(term: Terminal): void {
+  const screen = term.element?.querySelector<HTMLElement>('.xterm-screen');
+  if (!screen || term.rows < 1) return;
+  const buffer = term.buffer.active;
+  const rows = emptyRowsBelowContent({
+    rows: term.rows,
+    baseY: buffer.baseY,
+    viewportY: buffer.viewportY,
+    cursorY: buffer.cursorY,
+    rowText: (y) => buffer.getLine(buffer.baseY + y)?.translateToString(true) ?? '',
+  });
+  // Pixels, not rows: a font change moves the cell height under an unchanged
+  // row count.
+  const px = Math.round((rows * screen.offsetHeight) / term.rows);
+  const transform = px > 0 ? `translateY(${px}px)` : '';
+  if (screen.style.transform !== transform) screen.style.transform = transform;
 }

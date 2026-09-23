@@ -130,26 +130,36 @@ export function readTerminalTheme(): ITheme {
  * Shipping a webfont is a size and licensing decision this has not taken, so
  * the chain relies on what the host already has.
  */
+const TERMINAL_FONT_STACK = [
+  'ui-monospace',
+  '"SF Mono"',
+  'Menlo',
+  'Monaco',
+  '"Cascadia Mono"',
+  'Consolas',
+  '"DejaVu Sans Mono"',
+  '"Liberation Mono"',
+  // Bundled, so it is the one fallback that is always there. It claims only
+  // the private-use ranges (`@font-face` in the design system), so it never
+  // wins a character a real font should draw.
+  "'Oppenheimer Symbols'",
+  '"Symbols Nerd Font Mono"',
+  '"MesloLGS Nerd Font"',
+  '"JetBrainsMono Nerd Font"',
+  '"Hack Nerd Font"',
+  'monospace',
+];
+
+/**
+ * The families the stack names, unquoted, so a font that finishes loading can
+ * be told apart from one the terminal never asked for.
+ */
+export const TERMINAL_FONT_FAMILIES: ReadonlySet<string> = new Set(
+  TERMINAL_FONT_STACK.map((family) => family.replace(/^["']|["']$/g, '')),
+);
+
 export const TERMINAL_FONT = {
-  fontFamily: [
-    'ui-monospace',
-    '"SF Mono"',
-    'Menlo',
-    'Monaco',
-    '"Cascadia Mono"',
-    'Consolas',
-    '"DejaVu Sans Mono"',
-    '"Liberation Mono"',
-    // Bundled, so it is the one fallback that is always there. It claims only
-    // the private-use ranges (`@font-face` in the design system), so it never
-    // wins a character a real font should draw.
-    "'Oppenheimer Symbols'",
-    '"Symbols Nerd Font Mono"',
-    '"MesloLGS Nerd Font"',
-    '"JetBrainsMono Nerd Font"',
-    '"Hack Nerd Font"',
-    'monospace',
-  ].join(', '),
+  fontFamily: TERMINAL_FONT_STACK.join(', '),
   fontSize: 13,
   /**
    * 1, not the ramp's 1.55.
