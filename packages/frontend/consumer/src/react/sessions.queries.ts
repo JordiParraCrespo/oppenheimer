@@ -22,6 +22,19 @@ export const sessionsKeys = {
   detail: (id: string) => [...sessionsKeys.details(), id] as const,
 };
 
+/**
+ * How often a session that is still starting is asked about again.
+ *
+ * Nothing pushes a session's lifecycle to the console yet: the host builds the
+ * worktree and opens the PTY, the control plane flips the row to `open`, and a
+ * screen that read it as `starting` would sit on the provisioning pane until a
+ * reload. So a query holding a starting session polls until it holds none — a
+ * clone from GitHub takes seconds, and polling past that would be a request
+ * every two seconds that can only answer "still open". When session events are
+ * streamed to the console this goes.
+ */
+const PROVISIONING_POLL_MS = 2000;
+
 /** The sessions in the caller's workspace: the sidebar and the sessions list. */
 export function useSessions(
   options?: Omit<UseQueryOptions<SessionEntity[], Error>, 'queryKey' | 'queryFn'>,
@@ -31,6 +44,8 @@ export function useSessions(
   return useQuery({
     queryKey: sessionsKeys.list(),
     queryFn: () => app.sessions.findAll(),
+    refetchInterval: (query) =>
+      query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
     ...options,
   });
 }
@@ -45,6 +60,7 @@ export function useSession(
     queryKey: sessionsKeys.detail(id),
     queryFn: () => app.sessions.findById(id),
     enabled: Boolean(id),
+    refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
     ...options,
   });
 }
