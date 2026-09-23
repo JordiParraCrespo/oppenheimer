@@ -78,10 +78,14 @@ export function OnboardingWorkspaceScreen() {
   const edit = (changes: Partial<{ name: string; address: string }>) =>
     setDraft({ name, address, ...changes });
 
+  // The claim is what opens a walk, so it is what mints `walk` — and it mints
+  // it on success, not on click, because a claim that failed has opened
+  // nothing. From here the flow's own links carry it to Ready, which is the
+  // step that turns away anyone who did not walk (`lib/first-run.ts`).
   const submit = () =>
     claim.mutate(
       { existing, name: name.trim(), slug: address },
-      { onSuccess: () => navigate({ to: '/onboarding/github' }) },
+      { onSuccess: () => navigate({ to: '/onboarding/github', search: { walk: true } }) },
     );
 
   return (

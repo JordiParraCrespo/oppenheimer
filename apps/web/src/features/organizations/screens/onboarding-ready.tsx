@@ -104,7 +104,11 @@ export function OnboardingReadyScreen({
         </SummaryRow>
       </SummaryCard>
 
-      <Button size="lg" block render={<Link to="/sessions" />}>
+      {/* `replace`: the walk ends here, so the landing should not be the entry
+          Back returns to. The route's own guard is what makes that a rule
+          rather than a habit — a typed or bookmarked `/onboarding/ready`
+          without the walk never mounts this page at all. */}
+      <Button size="lg" block render={<Link to="/sessions" replace />}>
         {t('onboarding.flow.ready.go')}
       </Button>
     </div>

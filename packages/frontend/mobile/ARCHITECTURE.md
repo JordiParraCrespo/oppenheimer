@@ -60,7 +60,7 @@ in `src/i18n/lib/i18n.ts`, never `'../../platform/lib/mmkv'`.
 `createQueryPersistence` (`src/platform/lib/query.ts`) is the mobile half of
 the kernel's persistence policy. It builds a `QueryClient` from
 `defaultQueryClientOptions`, wraps MMKV (`oppenheimer.query-cache`) in a
-`createSyncStoragePersister`, and takes the version from
+`createAsyncStoragePersister`, and takes the version from
 `Constants.expoConfig?.version`, so a new build or an OTA update starts from
 a clean cache instead of hydrating stale response shapes. The app passes its
 product's sensitive features through:

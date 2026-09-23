@@ -1,5 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
+  type FirstRunWalk,
+  parseWalk,
+  WALK_STATE,
+} from '@/features/organizations/lib/first-run';
+import {
   type GithubInstallCallback,
   parseInstallCallback,
 } from '@/features/organizations/lib/github-install';
@@ -10,13 +15,20 @@ export const Route = createFileRoute('/_auth/onboarding/github')({
   // the query string. They are parsed at the boundary so the screen never sees
   // a half-typed id, and dropped from the URL once exchanged — the code is
   // one-shot, and leaving it in the address bar invites a replay that fails.
-  validateSearch: (search: Record<string, unknown>): GithubInstallCallback =>
-    parseInstallCallback(search),
+  // `walk` rides along with the callback keys: this step sits in the middle of
+  // the flow, so it has to hand the fact on to Ready, and `validateSearch`
+  // *replaces* the search — a key it does not return is gone by the next
+  // navigation. On the return leg it comes back under `state`, the one value
+  // GitHub echoes, because the install round trip chooses its own query.
+  validateSearch: (search: Record<string, unknown>): GithubInstallCallback & FirstRunWalk => ({
+    ...parseInstallCallback(search),
+    ...parseWalk(search.state === WALK_STATE ? { walk: true } : search),
+  }),
   component: GithubStep,
 });
 
 function GithubStep() {
-  const { installation_id, code } = Route.useSearch();
+  const { installation_id, code, walk } = Route.useSearch();
 
-  return <OnboardingGithubScreen installationId={installation_id} code={code} />;
+  return <OnboardingGithubScreen installationId={installation_id} code={code} walk={walk} />;
 }
