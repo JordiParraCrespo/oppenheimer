@@ -134,8 +134,14 @@ export function useTerminal(
 
     // Bottom-anchoring (`terminal-anchor.ts`): the picture moves down by the
     // empty rows below the content, so the agent's prompt sits on the pane's
-    // last rows whatever height the pane is. The empty rows it pushes past the
-    // grid are clipped by the pane's own overflow.
+    // last rows whatever height the pane is.
+    //
+    // The empty rows it pushes past the grid are clipped here, with `clip`
+    // rather than `hidden`. A `hidden` box is still a scroll container, and
+    // xterm's input textarea follows the cursor: the moment it took focus the
+    // browser scrolled that box to reveal it, which undid most of the shift.
+    // `clip` clips the same pixels and leaves nothing to scroll.
+    container.style.overflow = 'clip';
     let anchoredPx = 0;
     const anchor = () => {
       const element = term.element;
