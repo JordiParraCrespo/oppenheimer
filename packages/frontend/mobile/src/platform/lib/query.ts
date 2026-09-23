@@ -3,7 +3,7 @@ import {
   defaultQueryClientOptions,
   type QueryPersistConfig,
 } from '@oppenheimer/frontend-core/react';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { createMMKV } from 'react-native-mmkv';
@@ -25,7 +25,7 @@ export function createQueryPersistence(config: QueryPersistConfig = {}) {
 
   const queryCache = createMMKV({ id: 'oppenheimer.query-cache' });
 
-  const persister = createSyncStoragePersister({
+  const persister = createAsyncStoragePersister({
     storage: {
       getItem: (key) => queryCache.getString(key) ?? null,
       setItem: (key, value) => {
