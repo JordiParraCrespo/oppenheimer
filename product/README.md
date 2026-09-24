@@ -188,7 +188,7 @@ earlier note:
   without time zone`, and so did every date column that did not say
   otherwise: 74 of 80. The value reached the browser with no offset and
   was read as local time, so the console was out by the reader's offset
-  (#61). Every date column is now `timestamptz`, declared through
-  `TimestampColumn`, `CreatedAtColumn` and `UpdatedAtColumn` from
-  `@oppenheimer/backend-ddd`, and `pnpm check:api-structure` fails an ORM
-  entity that declares one any other way.
+  (#61). Every date column is now `timestamptz`: it names
+  `TIMESTAMP_COLUMN_TYPE` from `@oppenheimer/backend-ddd` as its type, and
+  `pnpm check:api-structure` fails an ORM entity whose date column does
+  not.

@@ -1,6 +1,6 @@
-import { CreatedAtColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Locale, TableDensity, Theme } from '@oppenheimer/shared';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Persistence model for a user's workspace preferences. Infrastructure — the
@@ -31,9 +31,9 @@ export class UserSettingsOrmEntity {
   @Column({ type: 'boolean', default: false })
   productUpdates!: boolean;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

@@ -20,36 +20,36 @@ resetPasswordToken!: string | null;
 resetPasswordToken!: string | null;
 ```
 
-A `Date | null` column is the same trap, and is declared through
-`TimestampColumn` (below), which supplies the type.
+A `Date` column, nullable or not, is covered by the next section.
 
-Non-union types (`string`, `number`, `boolean`) reflect correctly and don't need an explicit `type`. A date, nullable or not, always goes through the decorators below.
+Non-union types (`string`, `number`, `boolean`) reflect correctly and don't need an explicit `type`.
 
-## Points in time are `timestamptz`, through the shared decorators
+## Points in time are `timestamptz`
 
-Every date column is declared with a decorator from `@oppenheimer/backend-ddd`,
-never with TypeORM's own or a hand-written `type`:
+Every date column names `TIMESTAMP_COLUMN_TYPE` from `@oppenheimer/backend-ddd`
+as its `type`, on TypeORM's own decorators:
 
 ```typescript
-import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 
-@TimestampColumn({ nullable: true })
+@Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
 stoppedAt!: Date | null;
 
-@CreatedAtColumn()
+@CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
 createdAt!: Date;
 
-@UpdatedAtColumn()
+@UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
 updatedAt!: Date;
 ```
 
-They fix the type to `timestamptz`. TypeORM's default for a date column is
-`timestamp without time zone`, whose value goes out with no offset and is read
-by the browser as local time, so every date was out by the reader's offset
-(#61). `pnpm check:api-structure` fails an `*.orm-entity.ts` that uses
-`CreateDateColumn`, `UpdateDateColumn`, `DeleteDateColumn` or spells a
-timestamp type itself. A migration that adds a date column writes
-`timestamptz`.
+Left to itself TypeORM picks `timestamp without time zone`, for its date
+decorators and for a plain `@Column` on a `Date` field alike. That value goes
+out with no offset and the browser reads it as local time, so every date was
+out by the reader's offset (#61). `pnpm check:api-structure` fails an
+`*.orm-entity.ts` with a date column that does not name the constant, or that
+spells a timestamp type as a string. A tombstone such as `deletedAt` is a plain
+`@Column` like any other date; TypeORM soft-delete is not used. A migration that
+adds a date column writes `timestamptz`.
 
 ## Entity conventions
 

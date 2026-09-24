@@ -1,6 +1,6 @@
-import { CreatedAtColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { PermissionDefinition } from '@oppenheimer/shared';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Persistence model for the application-owned `role` table. The domain
@@ -34,9 +34,9 @@ export class RoleOrmEntity {
   @Column({ type: 'jsonb', default: () => "'[]'" })
   permissions!: PermissionDefinition[];
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

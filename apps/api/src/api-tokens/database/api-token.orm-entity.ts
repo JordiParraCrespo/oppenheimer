@@ -1,6 +1,6 @@
-import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Scope } from '@oppenheimer/shared';
-import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Persistence model for the application-owned `api_token` table.
@@ -41,18 +41,18 @@ export class ApiTokenOrmEntity {
   @Column({ type: 'jsonb', nullable: true })
   ipAllowlist!: string[] | null;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   expiresAt!: Date | null;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastUsedAt!: Date | null;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   revokedAt!: Date | null;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

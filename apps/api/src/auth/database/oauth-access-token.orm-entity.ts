@@ -1,5 +1,5 @@
-import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
-import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Maps the Better Auth `oauthAccessToken` table (MCP / OIDC provider plugin).
@@ -18,10 +18,10 @@ export class OAuthAccessTokenOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   refreshToken!: string | null;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   accessTokenExpiresAt!: Date | null;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   refreshTokenExpiresAt!: Date | null;
 
   @Index()
@@ -35,9 +35,9 @@ export class OAuthAccessTokenOrmEntity {
   @Column({ type: 'text' })
   scopes!: string;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

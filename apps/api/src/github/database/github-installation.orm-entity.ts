@@ -1,5 +1,13 @@
-import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
-import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * The only table in `github/`. A repository is never a row: the picker asks
@@ -44,17 +52,17 @@ export class GithubInstallationOrmEntity {
   @Column({ type: 'uuid' })
   installedByUserId!: string;
 
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   suspendedAt!: Date | null;
 
   /** Disconnected here, or uninstalled on GitHub. Never hard-deleted: the row
    *  is what lets the console say why repositories stopped resolving. */
-  @TimestampColumn({ nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   deletedAt!: Date | null;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

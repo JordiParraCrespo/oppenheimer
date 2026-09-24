@@ -1,5 +1,4 @@
 import { EntitySchema } from 'typeorm';
-import { TIMESTAMP_COLUMN_TYPE } from '../persistence/timestamp-columns';
 
 /**
  * Delivery channel for an outbox row. `event` rows are re-emitted in-process
@@ -54,6 +53,18 @@ export interface OutboxMessageRecord {
   createdAt: Date;
   processedAt: Date | null;
 }
+
+/**
+ * The column type every point in time is stored as, in the outbox and in the
+ * API's tables alike: `timestamptz`.
+ *
+ * TypeORM's default for a date column is `timestamp without time zone`. A value
+ * in one goes out with no offset and the browser reads it as local time, which
+ * put every date in the console out by the reader's offset (#61). A date column
+ * names this constant as its `type`; `pnpm check:api-structure` fails an API
+ * ORM entity whose date column does not.
+ */
+export const TIMESTAMP_COLUMN_TYPE = 'timestamptz';
 
 /**
  * Persistence model for the outbox, declared as an `EntitySchema` so this

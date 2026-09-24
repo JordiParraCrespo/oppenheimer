@@ -54,22 +54,30 @@ const fail = (path, kind, message) => errors.push({ path, kind, message });
 const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 
 /**
- * A date column an ORM entity declares for itself rather than through the
- * shared decorators in `@oppenheimer/backend-ddd`: TypeORM's own date
- * decorators, whose default is `timestamp without time zone`; any timestamp
- * type spelt out by hand; or a plain `@Column` on a `Date` field, which TypeORM
- * infers as the same zoneless type. One way to declare a point in time, so
- * leaving out the zone is not something a new table can do by omission (#61).
+ * Every date column of an ORM entity names `TIMESTAMP_COLUMN_TYPE` from
+ * `@oppenheimer/backend-ddd` as its type, so it is stored as `timestamptz`
+ * (#61). Left to itself TypeORM picks `timestamp without time zone` — for its
+ * date decorators and for a plain `@Column` on a `Date` field alike — and a
+ * value in that column reaches the browser as local time.
+ *
+ * A column is a date column if its decorator is one of TypeORM's date
+ * decorators or the field it decorates is typed `Date`. Its options may hold
+ * one level of parentheses (`default: () => 'now()'`). A timestamp type spelt
+ * as a string is refused wherever it appears: one spelling, the constant.
  */
-const BARE_DATE_COLUMN = new RegExp(
-  [
-    /\b(CreateDateColumn|UpdateDateColumn|DeleteDateColumn)\b/.source,
-    /type:\s*['"`](timestamp|timestamptz)\b/.source,
-    // `@Column(…)` then the field it decorates, typed `Date` (or `Date | null`).
-    // The options may hold one level of parentheses: `default: () => 'now()'`.
-    /@Column\((?:[^()]|\([^()]*\))*\)\s*(?:readonly\s+)?\w+[!?]?\s*:\s*Date\b/.source,
-  ].join('|'),
-);
+const COLUMN_DECLARATION =
+  /@(Column|CreateDateColumn|UpdateDateColumn|DeleteDateColumn)\(((?:[^()]|\([^()]*\))*)\)\s*(?:readonly\s+)?\w+[!?]?\s*:\s*([^;=\n]+)/g;
+const TIMESTAMP_TYPE_OPTION = /\btype:\s*TIMESTAMP_COLUMN_TYPE\b/;
+const TIMESTAMP_TYPE_LITERAL = /type:\s*['"`](timestamp|timestamptz)\b/;
+
+function hasZonelessDateColumn(source) {
+  if (TIMESTAMP_TYPE_LITERAL.test(source)) return true;
+  for (const [, decorator, options, fieldType] of source.matchAll(COLUMN_DECLARATION)) {
+    const isDate = decorator !== 'Column' || /^Date\b/.test(fieldType.trim());
+    if (isDate && !TIMESTAMP_TYPE_OPTION.test(options)) return true;
+  }
+  return false;
+}
 
 const CONTROLLER_LINE_CAP = 110;
 const HANDLER_LINE_CAP = 120;
@@ -494,11 +502,11 @@ function checkModule(name) {
         `${rel(file)}: ${lineCount(file)} lines; a controller dispatches and maps (cap ${CONTROLLER_LINE_CAP}). The work belongs in the handler`,
       );
     }
-    if (file.endsWith('.orm-entity.ts') && BARE_DATE_COLUMN.test(source)) {
+    if (file.endsWith('.orm-entity.ts') && hasZonelessDateColumn(source)) {
       fail(
         rel(file),
-        'bare-date-column',
-        `${rel(file)}: declares a date column itself. TypeORM's date decorators and a hand-written timestamp type both default to or allow \`timestamp without time zone\`, which the browser reads as local time — declare it with TimestampColumn, CreatedAtColumn or UpdatedAtColumn from @oppenheimer/backend-ddd, which store timestamptz`,
+        'zoneless-date-column',
+        `${rel(file)}: a date column without \`type: TIMESTAMP_COLUMN_TYPE\`. TypeORM's default is \`timestamp without time zone\`, which the browser reads as local time — give every date column \`type: TIMESTAMP_COLUMN_TYPE\` from @oppenheimer/backend-ddd (timestamptz), and never spell a timestamp type as a string`,
       );
     }
     if (

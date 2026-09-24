@@ -17,9 +17,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * The list is the schema as the migrations before this one leave it, every
  * `timestamp without time zone` column and no other. One `ALTER TABLE` per
  * table, so each table is rewritten once. New columns cannot repeat this: the
- * entities declare dates through `TimestampColumn`, `CreatedAtColumn` and
- * `UpdatedAtColumn` from `@oppenheimer/backend-ddd`, which fix the type, and
- * `pnpm check:api-structure` fails an entity that does not.
+ * entities type every date column `TIMESTAMP_COLUMN_TYPE` from
+ * `@oppenheimer/backend-ddd`, and `pnpm check:api-structure` fails an entity
+ * that does not.
  */
 const COLUMNS: ReadonlyArray<readonly [table: string, columns: readonly string[]]> = [
   ['access_grant', ['createdAt']],

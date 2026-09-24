@@ -375,8 +375,8 @@ graph can still be unnavigable.
 - **`scripts/check-api-structure.mjs`** is the module contract above, executable
   — the closed directory set, the file names each admits, use-case slice
   completeness, the dissolved buckets, the route rule, the line caps, and the
-  rule that an ORM entity declares dates only through the `timestamptz`
-  decorators of `@oppenheimer/backend-ddd`. Run
+  rule that every date column of an ORM entity is typed
+  `TIMESTAMP_COLUMN_TYPE` (`timestamptz`). Run
   `pnpm check:api-structure`.
 - **`.dependency-cruiser.cjs`** encodes the boundaries (domain purity, no
   outward domain imports, handlers use ports not adapters, controllers go

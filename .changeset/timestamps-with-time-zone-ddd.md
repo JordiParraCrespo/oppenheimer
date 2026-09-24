@@ -2,4 +2,4 @@
 "@oppenheimer/backend-ddd": minor
 ---
 
-`TimestampColumn`, `CreatedAtColumn` and `UpdatedAtColumn` declare a date column as `timestamptz`, and the outbox table's dates are `timestamptz`.
+`TIMESTAMP_COLUMN_TYPE` (`timestamptz`) is the type a date column is stored as; the outbox table's dates use it.

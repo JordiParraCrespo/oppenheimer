@@ -1,5 +1,5 @@
-import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';
-import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `invitation` table — a pending
@@ -31,9 +31,9 @@ export class InvitationOrmEntity {
   @Column({ type: 'uuid' })
   inviterId!: string;
 
-  @TimestampColumn()
+  @Column({ type: TIMESTAMP_COLUMN_TYPE })
   expiresAt!: Date;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 }

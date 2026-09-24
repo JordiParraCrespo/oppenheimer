@@ -173,28 +173,31 @@ test('the caps bite, and only on the file kind they name', () => {
   assert.deepEqual(kinds(check(handler)), ['handler-over-cap']);
 });
 
-test('an ORM entity declares a date only through the shared decorators', () => {
+test('every date column of an ORM entity is typed TIMESTAMP_COLUMN_TYPE', () => {
   const entity = (body) => ({ ...CONFORMING, 'widget/database/widget.orm-entity.ts': body });
-  for (const bare of [
-    "import { CreateDateColumn } from 'typeorm';\n@CreateDateColumn()\ncreatedAt!: Date;",
-    "import { UpdateDateColumn } from 'typeorm';\n@UpdateDateColumn()\nupdatedAt!: Date;",
-    "@Column({ type: 'timestamp', nullable: true })\nstoppedAt!: Date | null;",
-    "@Column({ nullable: true, type: 'timestamptz' })\nstoppedAt!: Date | null;",
-    "@Column({ type: 'timestamp with time zone' })\nexpiresAt!: Date;",
+  for (const zoneless of [
+    '@CreateDateColumn()\ncreatedAt!: Date;',
+    '@UpdateDateColumn()\nupdatedAt!: Date;',
+    '@DeleteDateColumn({ nullable: true })\ndeletedAt!: Date | null;',
     '@Column()\ncreatedAt!: Date;',
     '@Column({ nullable: true })\n  stoppedAt?: Date | null;',
     "@Column({ default: () => 'now()' })\nseenAt!: Date;",
+    "@Column({ type: 'timestamp', nullable: true })\nstoppedAt!: Date | null;",
+    "@Column({ nullable: true, type: 'timestamptz' })\nstoppedAt!: Date | null;",
+    "@Column({ type: 'timestamp with time zone' })\nexpiresAt!: Date;",
   ]) {
-    assert.deepEqual(kinds(check(entity(bare))), ['bare-date-column'], bare);
+    assert.deepEqual(kinds(check(entity(zoneless))), ['zoneless-date-column'], zoneless);
   }
-  const shared = [
-    "import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';",
-    '@TimestampColumn({ nullable: true })\nstoppedAt!: Date | null;',
-    '@CreatedAtColumn()\ncreatedAt!: Date;',
+  const typed = [
+    "import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';",
+    '@Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })\nstoppedAt!: Date | null;',
+    "@Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })\nseenAt!: Date;",
+    '@CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })\ncreatedAt!: Date;',
+    '@UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })\nupdatedAt!: Date;',
     "@Column({ type: 'varchar' })\nname!: string;",
     "@Column({ type: 'jsonb' })\nfacts!: { seenAt: Date };",
   ].join('\n');
-  assert.deepEqual(kinds(check(entity(shared))), []);
+  assert.deepEqual(kinds(check(entity(typed))), []);
   // The rule is about persistence models; a domain entity may say "timestamp".
   const domain = { ...CONFORMING, 'widget/domain/widget.entity.ts': "// type: 'timestamp'" };
   assert.deepEqual(kinds(check(domain)), []);

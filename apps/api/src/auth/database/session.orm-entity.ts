@@ -1,5 +1,5 @@
-import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
  * Maps the Better Auth `session` table. Owned by Better Auth; declared here so
@@ -16,7 +16,7 @@ export class Session {
   @Column({ type: 'varchar', unique: true })
   token!: string;
 
-  @TimestampColumn()
+  @Column({ type: TIMESTAMP_COLUMN_TYPE })
   expiresAt!: Date;
 
   @Column({ type: 'varchar', nullable: true })
@@ -52,9 +52,9 @@ export class Session {
   @Column({ type: 'uuid', nullable: true })
   activeTeamId!: string | null;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdatedAtColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

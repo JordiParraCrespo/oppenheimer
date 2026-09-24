@@ -1,5 +1,5 @@
-import { CreatedAtColumn } from '@oppenheimer/backend-ddd';
-import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `member` table — the user ↔ organization
@@ -22,6 +22,6 @@ export class MemberOrmEntity {
   @Column({ type: 'varchar', default: 'member' })
   role!: string;
 
-  @CreatedAtColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 }
