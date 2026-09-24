@@ -164,18 +164,28 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
-  it('accepts a host, an agent and several checkouts with their own base branches', () => {
+  it('accepts a host, an agent and one checkout with its own base branch', () => {
     const parsed = createSessionSchema.parse({
+      hostId: uuid,
+      agent: 'claude-code',
+      checkouts: [{ installationId: otherUuid, githubRepoId: 43, baseBranch: 'develop' }],
+      cwdGithubRepoId: 43,
+    });
+    expect(parsed.checkouts).toHaveLength(1);
+    expect(parsed.checkouts[0].baseBranch).toBe('develop');
+  });
+
+  it('refuses a second repository: a session checks out one in the MVP (#56)', () => {
+    const result = createSessionSchema.safeParse({
       hostId: uuid,
       agent: 'claude-code',
       checkouts: [
         { installationId: otherUuid, githubRepoId: 42 },
-        { installationId: otherUuid, githubRepoId: 43, baseBranch: 'develop' },
+        { installationId: otherUuid, githubRepoId: 43 },
       ],
-      cwdGithubRepoId: 43,
     });
-    expect(parsed.checkouts).toHaveLength(2);
-    expect(parsed.checkouts[1].baseBranch).toBe('develop');
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0].path).toEqual(['checkouts']);
   });
 
   it('accepts no checkouts at all — a session with no git is a real session', () => {

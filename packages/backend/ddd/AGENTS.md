@@ -20,7 +20,7 @@ src/
 ├── repository.port.ts          # repository port interface
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
 ├── outbox/
-│   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message)
+│   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message), TIMESTAMP_COLUMN_TYPE
 │   ├── outbox.service.ts       # transactional staging + SKIP LOCKED leasing
 │   └── outbox-relay.ts         # drain loop (wake + poll), publisher contract
 ├── request-context.service.ts  # request-scoped context

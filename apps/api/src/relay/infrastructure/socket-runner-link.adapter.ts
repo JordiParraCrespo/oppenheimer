@@ -1,6 +1,10 @@
 import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
 import type { WebSocket } from 'ws';
-import type { AttachmentSink, RunnerLink } from '../../links/application/link-registry.port';
+import type {
+  AttachmentSink,
+  RunnerLink,
+  SentSessionCommand,
+} from '../../links/application/link-registry.port';
 import { encodeFrame } from './frame.util';
 import { LinkAttachments } from './link-attachments.util';
 
@@ -12,12 +16,34 @@ import { LinkAttachments } from './link-attachments.util';
 export const LINK_MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
 
 /**
+ * The session commands whose refusal belongs in the session's log. An attach
+ * is not one of them: its refusal belongs to the browser that asked, and the
+ * attachment table already routes it there.
+ */
+const SESSION_COMMANDS = new Set([
+  'session.create',
+  'session.stop',
+  'session.restart',
+  'session.close',
+  'session.window.open',
+  'session.window.close',
+]);
+
+/**
+ * How many sent commands a link remembers. A runner answers a command it can
+ * do by doing it, so a success never clears an entry; the oldest go first, and
+ * a refusal arrives within a heartbeat of the command, never hundreds later.
+ */
+const MAX_REMEMBERED_COMMANDS = 256;
+
+/**
  * A `RunnerLink` over one accepted `ws` socket. Everything the rest of the
  * control plane may do to a link goes through here, so the socket and the
  * frame layout never leave the relay module.
  */
 export class SocketRunnerLink implements RunnerLink {
   private readonly attachments = new LinkAttachments();
+  private readonly commands = new Map<string, SentSessionCommand>();
 
   constructor(
     readonly hostId: string,
@@ -29,7 +55,24 @@ export class SocketRunnerLink implements RunnerLink {
   send(message: ProtocolMessage): boolean {
     if (!this.writable) return false;
     this.socket.send(JSON.stringify(message));
+    this.remember(message);
     return true;
+  }
+
+  takeSessionCommand(commandId: string): SentSessionCommand | undefined {
+    const command = this.commands.get(commandId);
+    this.commands.delete(commandId);
+    return command;
+  }
+
+  private remember(message: ProtocolMessage): void {
+    if (!SESSION_COMMANDS.has(message.type)) return;
+    if (!('commandId' in message) || !('sessionId' in message)) return;
+    this.commands.set(message.commandId, { type: message.type, sessionId: message.sessionId });
+    if (this.commands.size > MAX_REMEMBERED_COMMANDS) {
+      const oldest = this.commands.keys().next().value;
+      if (oldest !== undefined) this.commands.delete(oldest);
+    }
   }
 
   sendBinary(attachmentId: number, bytes: Uint8Array): boolean {
@@ -72,10 +115,18 @@ export class SocketRunnerLink implements RunnerLink {
     }
   }
 
+  /**
+   * Whether a frame may be written. A runner past the buffer bound is closed
+   * rather than skipped: dropping one frame silently would lose a keystroke or
+   * a credit — and a lost credit stalls its pane for good — while a close sends
+   * every browser through the reconnect ladder onto a fresh link.
+   */
   private get writable(): boolean {
-    return (
-      this.socket.readyState === this.socket.OPEN &&
-      this.socket.bufferedAmount < LINK_MAX_BUFFERED_BYTES
-    );
+    if (this.socket.readyState !== this.socket.OPEN) return false;
+    if (this.socket.bufferedAmount >= LINK_MAX_BUFFERED_BYTES) {
+      this.close(1013, 'slow consumer');
+      return false;
+    }
+    return true;
   }
 }

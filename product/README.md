@@ -98,6 +98,13 @@ earlier note:
   onboarding names the workspace and lands on a Ready summary, and a
   session may span several repositories, one worktree each. Recorded in
   00, 05, 08 and the MVP decision log.
+- `versions/mvp/00-scope.md` and `05-screens.md` said, from 2026-09-19, that a
+  session may span several repositories. The runner makes one worktree per
+  session, and a two-repository session was accepted, refused by the host and
+  left spinning (#56); on 2026-09-23 the owner set the MVP to one repository
+  per session. The model keeps checkouts as a list with a primary, so several
+  repositories returns with the runner slice that makes several worktrees.
+  Recorded in 00, 05, 10 and the MVP decision log.
 - `versions/mvp/08-auth.md` said first-run's gate is the claimed address
   off step 2. That still ends step 2, and it cannot end the flow: two
   steps run after the claim, so every legitimate arrival at the Ready
@@ -214,3 +221,10 @@ earlier note:
   model list is the harness's own" and holds no roster; the list lives
   in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
   pinning raises what it is worth.
+- `versions/mvp/01-protocol.md` said the epoch was "a counter bumped on
+  every successful connect". The in-process counter restarted at 1 with
+  the API. The runner refuses an epoch that is not newer than its last,
+  so after a deploy a host needed dozens of redials to get back on. The
+  epoch's floor is now the control plane's clock in milliseconds. The
+  same note now also says that PTY bytes are never dropped, how the
+  runner's writer orders frames, and that liveness is ping/pong.

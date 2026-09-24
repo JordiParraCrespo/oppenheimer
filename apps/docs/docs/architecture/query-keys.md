@@ -12,7 +12,9 @@ patterns from TkDodo (a TanStack Query maintainer).
 
 This guide explains the rules and shows how to write a compliant **query key
 factory**. The reference implementations live in
-`packages/frontend/core/src/react/users.queries.ts` and `auth.queries.ts`.
+`packages/frontend/core/src/react/users.queries.ts` (lists, details, filters)
+and `packages/frontend/consumer/src/react/installations.queries.ts` (resources
+nested under a detail).
 
 ## The rules
 
@@ -36,10 +38,13 @@ Order the entries in a key from the broadest scope to the narrowest. This
 mirrors how React Query matches keys: a partial key fuzzy-matches every more
 specific key beneath it.
 
-```typescript
-["users"][("users", "list")][("users", "list", { search: "jane" })][ // everything users-related // every list // one specific list
-  ("users", "detail")
-][("users", "detail", "42")]; // every detail // one specific detail
+```text
+['users']                               everything users-related
+['users', 'list']                       every list
+['users', 'list', { search: 'jane' }]   one specific list
+['users', 'detail']                     every detail
+['users', 'detail', '42']               one specific detail
+['users', 'detail', '42', 'sessions']   something that belongs to user 42
 ```
 
 ### 3. Colocate keys with their queries
@@ -144,16 +149,44 @@ useMutation({
 - **Don't hardcode the namespace.** `list: () => ['users', 'list']` won't pick
   up a rename of `all`. Spread instead: `[...usersKeys.lists()]`.
 - **Don't share one global key file.** Colocate per feature.
+- **Don't hand the root to `useQuery`.** `all` means "everything this feature
+  caches"; the day a second query joins a feature whose only query was keyed
+  `all`, invalidating `all` stops meaning what it did. Give the leaf its own
+  segment: `capabilitiesKeys.deployment()`, not `capabilitiesKeys.all`.
+- **Don't alias a key.** `export const profileQueryKey = usersKeys.me()` is a
+  second name for the same entry that drifts the moment either side changes.
+  Call the factory.
+- **Nest what belongs to an entity under its `detail(id)`, and repeat the
+  `list` / `detail` split below it.** An installation's repositories are
+  `[...detail(id), 'repositories', 'list']`; one repository's branches are
+  `[...detail(id), 'repositories', 'detail', repoId, 'branches']`. Removing the
+  installation is one `removeQueries({ queryKey: installationsKeys.detail(id) })`,
+  and refreshing its repository list does not refetch every branch, because a
+  list leaf is never the prefix of a detail.
+- **Share a prefix only when invalidating one must refetch the other.** A
+  factory level is an invitation to invalidate it. `hostsKeys.currentPairing()`
+  mints a token and `hostsKeys.pairingTokens()` polls the ones already minted,
+  so they are siblings with no factory above them: a parent key would let
+  "refresh the pairing flow" mint again under the command on screen.
+- **Put every input of the `queryFn` in the key.** A variable the fetch reads
+  but the key omits serves one answer for two questions. Several inputs go in
+  an object at the end (`[...detail(id), 'start', { failed }]`), so order
+  doesn't matter and fuzzy matching still works on the prefix.
+- **An input that isn't known yet stays `undefined` in the key, and the fetch
+  is `skipToken`.** `queryFn: id ? () => fetch(id) : skipToken`, with the
+  factory taking `string | undefined`. Never `enabled: !!id` with a cast in the
+  `queryFn`, and never a made-up id (`''`, `0`) in the key: it addresses a
+  cache entry the API never issued, and two empty pickers share it.
 
 ## Cache persistence
 
-The in-memory cache dies with the tab or the process, so both apps also write it
-to storage — `localStorage` on web, `AsyncStorage` on mobile — via TanStack's
+The in-memory cache dies with the tab, so the app also writes it to
+`localStorage` via TanStack's
 [`PersistQueryClientProvider`](https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient).
-A reload or a cold start renders from the restored cache and refetches in the
+A reload renders from the restored cache and refetches in the
 background instead of showing spinners.
 
-The policy is shared by both apps from `@oppenheimer/frontend-core/react` so it can
+The policy ships from `@oppenheimer/frontend-core/react` so it can
 only drift in one place:
 
 ```typescript
@@ -189,15 +222,13 @@ What that policy encodes:
     run — the app would render as signed in with no session behind it.
   - `apiTokens` is never persisted — the consumer product names it in
     `CONSUMER_NON_PERSISTED_FEATURES`. Token prefixes, scopes and the
-    permission catalog are credential metadata, and neither `localStorage` nor
-    `AsyncStorage` is encrypted at rest. Tokens themselves live in
-    `expo-secure-store` on mobile and never touch the query cache.
+    permission catalog are credential metadata, and `localStorage` is not encrypted at rest.
   - Only **successful** queries are written; restoring an error or a pending
     fetch would replay a failure the user has already moved past.
 
 Adding a feature whose data shouldn't outlive the session? Add its namespace to
 `KERNEL_NON_PERSISTED_FEATURES` in
-`packages/frontend/core/src/react/persistence.ts` when both products need it,
+`packages/frontend/core/src/react/persistence.ts` when it is kernel data,
 or to the product's own list — `CONSUMER_NON_PERSISTED_FEATURES` in
 `packages/frontend/consumer/src/react/persistence.ts`, which the app passes
 through `nonPersistedFeatures`.

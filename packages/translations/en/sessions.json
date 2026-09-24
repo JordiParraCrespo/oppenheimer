@@ -4,9 +4,38 @@
     "openDescription": "Pick one from the sidebar, or start another."
   },
   "provisioning": {
-    "lead": "Setting up the worktree on your host.",
+    "title": "Starting your session",
+    "failedTitle": "The session did not start",
     "failedLead": "The host could not start this session.",
-    "step": "Starting the session"
+    "working": "Working…",
+    "failed": "Failed",
+    "took": "{{seconds}}s",
+    "steps": {
+      "host": {
+        "label": "Connect to {{host}}",
+        "doing": "Waiting for the host to pick it up…",
+        "offline": "{{host}} is offline — it starts when the host is back",
+        "done": "Connected",
+        "fallback": "the host"
+      },
+      "clone": {
+        "label": "Clone {{repo}}",
+        "doing": "Fetching the repository…"
+      },
+      "worktree": {
+        "label": "Check out the branch",
+        "doing": "Creating the worktree…"
+      },
+      "agent": {
+        "label": "Start {{agent}}",
+        "doing": "Launching in tmux…",
+        "done": "Ready"
+      }
+    },
+    "progressFailed": "Could not load how the start is going.",
+    "codes": {
+      "SESS_002": "This host makes sessions with one repository."
+    }
   },
   "group": {
     "working": "Working",

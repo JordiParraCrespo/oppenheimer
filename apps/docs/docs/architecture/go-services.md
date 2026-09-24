@@ -61,8 +61,8 @@ builds and tidies on its own, which is what the Docker build relies on.
   [error reference](../errors.md#runner-service).
 - **Authentication** by API key (`opr_…`, SHA-256 at rest, revocable,
   scoped) or HS256 service token, both resolving to one `Principal`.
-- **Scopes** in the `resource:read|write` vocabulary of the
-  [permission catalog](../tooling/permissions.md): `keys`, `events`.
+- **Scopes** in the `resource:read|write` vocabulary of the API's scope
+  catalog (`packages/shared/src/scopes/`): `keys`, `events`.
 - **REST** on the standard library router with request ids, panic recovery,
   structured access logs, body limits and a trusted-proxy setting.
 - **WebSocket** hub with topic subscriptions, per-connection backpressure,

@@ -3,8 +3,8 @@ import type en from './en';
 /**
  * Locale metadata, deliberately free of catalog imports.
  *
- * `index.ts` imports every locale's JSON eagerly, which is what the API and the
- * Expo apps want. The web apps do not: a browser needs one catalog, and pulling
+ * `index.ts` imports every locale's JSON eagerly, which is what the API wants.
+ * The web app does not: a browser needs one catalog, and pulling
  * `locales` or `Messages` from the root barrel used to drag all of them into the
  * entry chunk — the Spanish catalog was measurably inside the bundle a
  * first-time English visitor downloads before anything renders.

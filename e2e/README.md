@@ -22,16 +22,15 @@ ran it:
 - six `team.spec.ts` specs, and the profile spec that opens the team page, drive
   a `/team` route that `apps/web` no longer has. Organization surfaces now live
   in `apps/web/src/features/organizations/` — the onboarding and
-  accept-invitation screens, and the general pane of `/settings` — while roles
-  and users moved to the control plane (`apps/admin-web`, over
-  `@oppenheimer/frontend-admin`). The specs did not follow
+  accept-invitation screens, and the general pane of `/settings` — and the
+  console has no roles or users screens at all. The specs did not follow
 - `nav-permissions.spec.ts` asserts a nav catalog that has the same problem
 - the rest — an avatar upload, a password change signing other devices out, a
   wrong-password error, the language switch — are individually stale or broken
   and need diagnosing one at a time
 
-Fixing that is its own piece of work: port the specs to whichever app owns each
-surface now, then add `--project=web` to the CI job. Until then a green CI says
+Fixing that is its own piece of work: port or retire each spec against the
+surface the console has now, then add `--project=web` to the CI job. Until then a green CI says
 nothing about the browser journeys, so run `pnpm --filter @oppenheimer/e2e e2e:web`
 locally when you touch them.
 
@@ -46,7 +45,7 @@ problem-document filter and its Postgres are all the real ones.
 | Stub | Stands in for | Pointed at by | Why it cannot be real |
 | --- | --- | --- | --- |
 | `support/github-stub.ts` | GitHub's REST API | `GITHUB_APP_API_URL`, `GITHUB_APP_OAUTH_URL` | Repositories and branches are answered live through a GitHub App installation. Without an App, `POST /sessions` cannot validate a repository and New session has nothing to pick |
-| `support/namer-stub.ts` | The model that names a session | `SESSION_NAMER_BASE_URL` | The namer is an OpenAI-compatible server (Groq, vLLM, a local Ollama). Its stub answers a title derived from the prompt it was given, so a request carrying the wrong text fails visibly |
+| `support/namer-stub.ts` | The model that names a session | `LLM_BASE_URL` | The namer asks the deployment's LLM, here as an `openai-compatible` server (Groq, vLLM, a local Ollama). Its stub answers a title derived from the prompt it was given, so a request carrying the wrong text fails visibly |
 
 Both run before the API, because the API reads their URLs at boot — and the
 configuration that points it at them is generated rather than committed, since
@@ -75,6 +74,73 @@ can say where it is instead of downloading the build this Playwright pins:
 ```bash
 PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium pnpm e2e:web
 ```
+
+## The fleet: real runners, several machines
+
+`tests/fleet/` is a third project, and the only one where a host is a real
+runner rather than a keypair and a row. Each host is a Debian container
+(`fleet/Dockerfile`) with its own Unix account, home, tmux server and host key,
+running the runner binary built from this checkout. It pairs through `runner
+register` with a token minted by the API, holds the link, clones from a
+`git daemon` container seeded with the repositories the GitHub stub lists, and
+runs sessions in tmux. The only fake on a host is `claude`, a shim that prints
+its argv and hands the pane to a shell.
+
+What it covers: three machines on one account, each session running on the
+machine it names (the shell prints its own hostname through the relay); one
+machine losing its network going offline alone and coming back to the same
+screen; a runner killed with SIGKILL, restarted by the supervisor, adopting its
+tmux sessions; another account neither seeing a machine nor starting anything
+on it.
+
+```bash
+# with the API and the stubs running as below, plus Docker and Go:
+pnpm --filter @oppenheimer/e2e e2e:fleet     # builds the image, ~1 minute
+KEEP_FLEET=1 pnpm --filter @oppenheimer/e2e e2e:fleet   # leave the hosts up afterwards
+docker ps --filter label=dev.oppenheimer.fleet=1
+docker exec -it <host> fleet-host cut|restore|kill-runner
+```
+
+It is opt-in (`E2E_FLEET=1`, which `e2e:fleet` sets), so `e2e` and `e2e:api`
+never select it. Two things about the hosts are deliberate:
+
+- **The API is reached on the host's loopback.** The runner speaks plain HTTP
+  only to loopback, so each container forwards `127.0.0.1:3001` to the API with
+  `socat`, and that forwarder is the host's network cable: `fleet-host cut`
+  pulls it, existing connections included.
+- **The host's name is the one its token was minted with**, because that is the
+  name the API keeps. `uniqueHostName()` makes one per worker and rerun.
+
+The container entrypoint's restart loop is a test recipe standing in for
+launchd `KeepAlive` and systemd `Restart=always`, not a third way to run the
+runner; install, the service units and the signed swap are proved on a real OS
+(`product/versions/mvp/09-runner-install-and-update.md`). What the fleet covers
+is recorded in `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
+
+## The local stack: one real runner, no containers
+
+`scripts/stack/stack.mjs` stands the whole product up on one machine and
+pairs **one** real runner with it: the fleet's approach without the fleet's
+image, for machines (a cloud sandbox, typically) where Docker runs containers
+but cannot build one. The host is the runner built from this checkout, under
+a Unix account of its own, cloning from a local `git daemon` seeded as the
+fleet's `git-server` is, with the same `claude` shim.
+
+```bash
+node scripts/stack/stack.mjs up --web   # Docker, Postgres, Redis, both stubs, API, console
+node scripts/stack/stack.mjs host       # pair a runner with a fresh account
+pnpm --filter @oppenheimer/e2e e2e:local       # tests/local, against that host
+node scripts/stack/stack.mjs down       # --purge also drops volumes and the host account
+```
+
+`e2e:local` is opt-in (`E2E_LOCAL=1`) and runs two projects. `local` puts ten
+sessions on the host and checks they share one connection to the API, that
+typing in one pane stays fast while three others each print ~40 MB, and that
+the flooded panes finish and still answer. `local-web` opens a session in the
+console and types into it. Their terminals credit what they read
+(`support/local-host.ts`), which the fleet's `attach` does not, so they can
+print past the 256 KB window. When to reach for this and what goes wrong is
+the `local-stack` skill (`.agents/skills/local-stack/SKILL.md`).
 
 ## Running it
 

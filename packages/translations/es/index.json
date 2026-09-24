@@ -144,6 +144,7 @@
       "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
       "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
+      "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
       "HOSTS_002": "No se ha encontrado ese token de vinculación.",
       "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",
@@ -296,9 +297,38 @@
       "openDescription": "Elige una en la barra lateral o inicia otra."
     },
     "provisioning": {
-      "lead": "Preparando el worktree en tu host.",
+      "title": "Iniciando tu sesión",
+      "failedTitle": "La sesión no se inició",
       "failedLead": "El host no pudo iniciar esta sesión.",
-      "step": "Iniciando la sesión"
+      "working": "Trabajando…",
+      "failed": "Error",
+      "took": "{{seconds}} s",
+      "steps": {
+        "host": {
+          "label": "Conectar con {{host}}",
+          "doing": "Esperando a que el host la recoja…",
+          "offline": "{{host}} está desconectado; empezará cuando vuelva",
+          "done": "Conectado",
+          "fallback": "el host"
+        },
+        "clone": {
+          "label": "Clonar {{repo}}",
+          "doing": "Descargando el repositorio…"
+        },
+        "worktree": {
+          "label": "Crear el worktree",
+          "doing": "Creando el worktree…"
+        },
+        "agent": {
+          "label": "Iniciar {{agent}}",
+          "doing": "Lanzando en tmux…",
+          "done": "Listo"
+        }
+      },
+      "progressFailed": "No se pudo cargar el progreso del inicio.",
+      "codes": {
+        "SESS_002": "Este host crea sesiones con un solo repositorio."
+      }
     },
     "group": {
       "working": "Trabajando",

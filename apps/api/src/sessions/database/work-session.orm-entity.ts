@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { SessionEffortDto, SessionPermissionDto, SessionState } from '@oppenheimer/shared';
 import {
   Column,
@@ -101,11 +102,11 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   agentSessionId!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastEventAt!: Date | null;
 
   /** When the agent and the tmux session last ended. The checkouts stay on disk. */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   stoppedAt!: Date | null;
 
   /**
@@ -125,7 +126,7 @@ export class WorkSessionOrmEntity {
    * report, which is what makes the group's debounce unfakeable: one sighting is
    * not evidence of having been stuck.
    */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   observedSince!: Date | null;
 
   /**
@@ -157,9 +158,9 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   ackedReportHash!: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

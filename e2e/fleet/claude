@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stands in for Claude Code: prints the argv the runner built, then hands the
+# pane to an interactive shell so a test can type into it. The same shim the
+# relay's own e2e spec uses.
+printf 'CLAUDE-SHIM argv=%s\n' "$*"
+exec sh -i

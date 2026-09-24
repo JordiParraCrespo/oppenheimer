@@ -1,6 +1,8 @@
 'use client';
 
+import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -8,6 +10,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
+import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
 /**
@@ -19,8 +22,23 @@ export const sessionsKeys = {
   lists: () => [...sessionsKeys.all, 'list'] as const,
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
-  detail: (id: string) => [...sessionsKeys.details(), id] as const,
+  detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
+  start: (id: string | undefined, failed: boolean) =>
+    [...sessionsKeys.detail(id), 'start', { failed }] as const,
 };
+
+/**
+ * How often a session that is still starting is asked about again.
+ *
+ * Nothing pushes a session's lifecycle to the console yet: the host builds the
+ * worktree and opens the PTY, the control plane flips the row to `open`, and a
+ * screen that read it as `starting` would sit on the provisioning pane until a
+ * reload. So a query holding a starting session polls until it holds none — a
+ * clone from GitHub takes seconds, and polling past that would be a request
+ * every two seconds that can only answer "still open". When session events are
+ * streamed to the console this goes.
+ */
+const PROVISIONING_POLL_MS = 2000;
 
 /** The sessions in the caller's workspace: the sidebar and the sessions list. */
 export function useSessions(
@@ -31,20 +49,47 @@ export function useSessions(
   return useQuery({
     queryKey: sessionsKeys.list(),
     queryFn: () => app.sessions.findAll(),
+    refetchInterval: (query) =>
+      query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
     ...options,
   });
 }
 
 export function useSession(
-  id: string,
+  id: string | undefined,
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
   return useQuery({
     queryKey: sessionsKeys.detail(id),
-    queryFn: () => app.sessions.findById(id),
-    enabled: Boolean(id),
+    queryFn: id ? () => app.sessions.findById(id) : skipToken,
+    refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    ...options,
+  });
+}
+
+/**
+ * How a session's start is going: the steps the host reported, and its reason
+ * when the start failed.
+ *
+ * It reads while the session is starting, at the row's own pace, and stops the
+ * moment the log says how the start ended. A failed row keeps reading until the
+ * log carries the host's reason, which can land a read after the row turned
+ * `failed`. A live or finished session never reads it at all.
+ */
+export function useSessionStartProgress(
+  id: string | undefined,
+  { starting, failed }: { starting: boolean; failed: boolean },
+  options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn'>,
+) {
+  const app = useConsumerApp();
+
+  return useQuery({
+    queryKey: sessionsKeys.start(id, failed),
+    queryFn:
+      id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
+    refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
     ...options,
   });
 }
@@ -73,11 +118,9 @@ export function useCreateSession(
   return useMutation({
     mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
       app.sessions.create(input, idempotencyKey),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -87,10 +130,8 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
 
   return useMutation({
     mutationFn: (id: string) => app.sessions.stop(id),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }

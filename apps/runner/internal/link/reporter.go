@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -27,8 +28,16 @@ type Reporter struct {
 	seq    atomic.Uint64
 
 	mu      sync.Mutex
-	pending map[string]EventsAppend // batchId → batch, until fully acked
+	pending map[string]pendingBatch // batchId → batch, until fully acked
 	batches atomic.Uint64
+}
+
+// pendingBatch is a batch awaiting its ack, with the order it was made in: a
+// resend replays batches in that order, because a session's log is ordered by
+// arrival and a start's `running` must not land after its `done`.
+type pendingBatch struct {
+	n     uint64
+	batch EventsAppend
 }
 
 // NewReporter builds a reporter for one process.
@@ -36,7 +45,7 @@ func NewReporter(runID string, sender Sender, logger *slog.Logger) *Reporter {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Reporter{runID: runID, sender: sender, logger: logger, now: time.Now, pending: map[string]EventsAppend{}}
+	return &Reporter{runID: runID, sender: sender, logger: logger, now: time.Now, pending: map[string]pendingBatch{}}
 }
 
 // RunID is the id every key starts with.
@@ -52,9 +61,10 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 		return
 	}
 	n := r.seq.Add(1)
+	ordinal := r.batches.Add(1)
 	batch := EventsAppend{
 		Type:      "events.append",
-		BatchID:   fmt.Sprintf("%s-b%d", r.runID, r.batches.Add(1)),
+		BatchID:   fmt.Sprintf("%s-b%d", r.runID, ordinal),
 		SessionID: sessionID,
 		Events: []Event{{
 			IdempotencyKey: fmt.Sprintf("%s:%d", r.runID, n),
@@ -64,7 +74,7 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 		}},
 	}
 	r.mu.Lock()
-	r.pending[batch.BatchID] = batch
+	r.pending[batch.BatchID] = pendingBatch{n: ordinal, batch: batch}
 	r.mu.Unlock()
 	r.send(batch)
 }
@@ -75,7 +85,7 @@ func (r *Reporter) Append(sessionID, kind string, payload any) {
 func (r *Reporter) Ack(ack EventsAck) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	batch, ok := r.pending[ack.BatchID]
+	entry, ok := r.pending[ack.BatchID]
 	if !ok {
 		return
 	}
@@ -88,6 +98,7 @@ func (r *Reporter) Ack(ack EventsAck) {
 		r.logger.Warn("event rejected by the control plane",
 			slog.String("key", rejected.IdempotencyKey), slog.String("reason", rejected.Reason))
 	}
+	batch := entry.batch
 	kept := batch.Events[:0]
 	for _, event := range batch.Events {
 		if !settled[event.IdempotencyKey] {
@@ -99,20 +110,23 @@ func (r *Reporter) Ack(ack EventsAck) {
 		return
 	}
 	batch.Events = kept
-	r.pending[ack.BatchID] = batch
+	r.pending[ack.BatchID] = pendingBatch{n: entry.n, batch: batch}
 }
 
 // Resend replays every batch still waiting on an ack: what a reconnect calls
 // after hello, because a WebSocket cannot tell "persisted" from "never arrived".
 func (r *Reporter) Resend() {
 	r.mu.Lock()
-	batches := make([]EventsAppend, 0, len(r.pending))
-	for _, batch := range r.pending {
-		batches = append(batches, batch)
+	entries := make([]pendingBatch, 0, len(r.pending))
+	for _, entry := range r.pending {
+		entries = append(entries, entry)
 	}
 	r.mu.Unlock()
-	for _, batch := range batches {
-		r.send(batch)
+	// In the order they were made, never the map's: the control plane records
+	// a link's batches as they arrive, and that is the log's order.
+	sort.Slice(entries, func(i, j int) bool { return entries[i].n < entries[j].n })
+	for _, entry := range entries {
+		r.send(entry.batch)
 	}
 }
 

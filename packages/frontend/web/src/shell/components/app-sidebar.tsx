@@ -47,9 +47,9 @@ export function AppSidebar() {
   // Only the routes this user's permissions actually reach — a restricted user
   // never sees a row that would answer with "No tienes permiso para hacer eso".
   const entries = useAuthorizedNav();
-  // What the app calls the workspace: the consumer app passes the caller's
+  // What the app calls the workspace: the console passes the caller's
   // organization (from the same query General Settings reads, so a saved name
-  // or logo shows here at once); the control plane passes its own label.
+  // or logo shows here at once); an app with none falls back to its name.
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
@@ -102,8 +102,8 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      {/* The hairline above the account row is the control plane's, like the
-          bar at the top: the console's list scrolls to the foot and the
+      {/* The hairline above the account row belongs to the full chrome, like
+          the bar at the top: the console's list scrolls to the foot and the
           artboard draws no line there. */}
       <SidebarFooter className={chrome ? undefined : 'border-t-0'}>
         <UserMenu />

@@ -19,14 +19,10 @@ Analytics is off by default. Set a project key to enable it:
 
 ```bash
 # .env (repo root — there is a single .env for the whole monorepo)
-# web
 VITE_POSTHOG_KEY=phc_your_project_key
-# mobile
-EXPO_PUBLIC_POSTHOG_KEY=phc_your_project_key
 ```
 
-Both default to the EU cloud region. Set `VITE_POSTHOG_HOST` /
-`EXPO_PUBLIC_POSTHOG_HOST` to `https://us.i.posthog.com` for a US project, or to
+It defaults to the EU cloud region. Set `VITE_POSTHOG_HOST` to `https://us.i.posthog.com` for a US project, or to
 your own origin when self-hosting.
 
 With no key set the app falls back to `NoopAnalyticsClient`: events are dropped
@@ -96,11 +92,10 @@ sign-out and both password-reset steps. It also calls `identify()` on login and
 `reset()` on logout, so events are attributed correctly and a shared device
 doesn't leak one user's activity into another's profile.
 
-Page views are driven from the router by a tracker component in each app's
-analytics module — `PageViewTracker` in `apps/web/src/lib/analytics/` and
-`ScreenViewTracker` in `apps/mobile/lib/analytics/`, both wrapping
-`usePageView` and mounted at the app root. Neither router emits navigations a
-provider can observe on its own, so without this only the first load would ever
+Page views are driven from the router by `PageViewTracker` in
+`apps/web/src/lib/analytics/`, which wraps `usePageView` and is mounted at the
+app root. The router does not emit navigations a provider can observe on its
+own, so without this only the first load would ever
 be counted.
 
 ## Query strings never leave the app

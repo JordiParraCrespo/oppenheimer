@@ -25,8 +25,7 @@ its documentation. Never add a per-package `.env` or `.env.example`.
   it resolves `.env` against `process.cwd()`, which is exactly the fragility
   `@oppenheimer/env` replaces.
 - `apps/web` does not use the loader: `vite.config.ts` points `envDir` at the
-  workspace root. `apps/mobile` calls `loadEnv()` in `app.config.ts` so Metro
-  inlines `EXPO_PUBLIC_*` values from the root file.
+  workspace root.
 
 ## Optional capabilities: a missing key removes a feature, it never throws
 

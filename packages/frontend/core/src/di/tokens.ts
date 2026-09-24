@@ -1,11 +1,13 @@
 /**
  * DI tokens of the kernel: what every product package and every app can rely
  * on being bound. A product package declares its own tokens next to its
- * modules (`@oppenheimer/frontend-consumer`, `@oppenheimer/frontend-admin`) and spreads
+ * modules (`@oppenheimer/frontend-consumer`) and spreads
  * these in, so a product service injects `TOKENS.AnalyticsService` the same
  * way a kernel one does.
  */
 export const TOKENS = {
+  /** The API's origin, or empty for same-origin: what a socket URL is built on. */
+  ApiBaseUrl: Symbol.for('ApiBaseUrl'),
   StorageService: Symbol.for('StorageService'),
   AnalyticsClient: Symbol.for('AnalyticsClient'),
   AnalyticsService: Symbol.for('AnalyticsService'),

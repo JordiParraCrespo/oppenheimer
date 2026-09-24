@@ -11,10 +11,8 @@ For personal projects and MVPs.
 | App              | Where                                 | Cost   |
 | ---------------- | ------------------------------------- | ------ |
 | Web              | Vercel / Cloudflare Pages (free tier) | €0     |
-| Admin Web        | Vercel / Cloudflare Pages (free tier) | €0     |
 | API + DB + Redis | Hetzner CX22 VPS                      | ~€4/mo |
 | Docs             | Cloudflare Pages / GitHub Pages       | €0     |
-| Mobile           | EAS Build (free tier)                 | €0     |
 
 ## Setup
 
@@ -32,9 +30,6 @@ docker compose -f docker/docker-compose.prod.yml up -d
 ### 3. Deploy Web
 
 Connect your repo to Vercel or Cloudflare Pages. Set the root directory to `apps/web`.
-
-Deploy `apps/admin-web` as a second site and set `ADMIN_FRONTEND_URL` on the API
-to its public origin. Keep the two apps on separate hostnames.
 
 ### 4. Deploy Docs
 

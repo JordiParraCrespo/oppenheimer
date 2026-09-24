@@ -156,8 +156,8 @@ export interface CodingAgentDefinition {
 }
 
 /**
- * The catalog. Frozen because it is shared mutable state otherwise: the API,
- * the console and the CLI all read the same object.
+ * The catalog. Frozen because it is shared mutable state otherwise: the API
+ * and the console both read the same object.
  */
 export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition>> = Object.freeze({
   'claude-code': Object.freeze({

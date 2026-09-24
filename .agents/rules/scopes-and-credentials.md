@@ -1,8 +1,6 @@
 ---
 paths:
   - "apps/api/**/*"
-  - "apps/mcp/**/*"
-  - "apps/cli/**/*"
   - "packages/shared/**/*"
 ---
 
@@ -32,8 +30,7 @@ and must not be broken:
 
 `packages/shared/src/scopes/catalog.ts` defines fifteen permission groups, each
 with a Read and an Edit level. **Add a resource there and nowhere else** — the
-API guard, the MCP tool registry, the CLI and the web permission picker all
-read from it.
+API guard and the web permission picker both read from it.
 
 - `write` implies `read` on the same resource (`expandScopes`). Never grant both
   explicitly; grant `write`.
@@ -121,37 +118,3 @@ plugin). It is cached per credential for ten minutes.
 
 If you add a façade that calls `auth.api.*` with the incoming headers, this
 already works. If you bypass the guard, it will not.
-
-## Adding an MCP tool
-
-Tools live in `apps/mcp/src/tools/` and declare `requiredScopes` matching the
-endpoint's `@RequireScopes`. Mismatched scopes mean a tool that is offered but
-then refused — the one failure mode the design exists to prevent.
-
-`inputSchema` is a Zod **object schema** (`z.object({ … })`), not a raw shape,
-and `apps/mcp` is on Zod 4 while the rest of the repo is on Zod 3 — the MCP SDK
-v2 requires it. Do not import Zod schemas from `@oppenheimer/shared` here; that is
-what keeps the two versions from meeting.
-
-One caveat until it is resolved: `@oppenheimer/shared`'s `src/protocol/` is itself on
-`zod/v4`, because only that entry point can emit JSON Schema. Its DTO schemas are
-still Zod 3, so the rule above stands as written — but the isolation is now one
-module thin, and the fix is to put the whole package on one Zod line with a
-build-only converter rather than to relax this.
-
-The server is built **per request** from the calling credential, because
-protocol revision `2026-07-28` removed sessions: there is nowhere to cache the
-decision, and nowhere it could go stale. `tools/list` is sorted by name (the
-spec asks for a deterministic order) and returned with `cacheScope: 'private'`,
-since the list is derived from one credential's permissions.
-
-Annotate honestly: `readOnlyHint` only for tools whose scopes are all `:read`,
-`destructiveHint` for anything that deletes or is irreversible. Tests in
-`apps/mcp/src/__tests__/server.spec.ts` enforce both.
-
-## Changing the CLI
-
-Exit codes in `apps/cli/src/lib/errors.ts` are a public contract (scripts
-branch on them); a test pins the numbering. Commands never read the config or
-environment directly — `contextFor()` resolves the profile so precedence lives
-in one place.

@@ -90,14 +90,17 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 
 /**
  * Increment when the persistence policy changes in a way that makes an
- * already-stored cache unsafe to hydrate. This revision drops profile/session
- * entities written before they were excluded from persistence.
+ * already-stored cache unsafe to hydrate, or changes the shape of a persisted
+ * key so an old entry would sit in storage that nothing reads. Revision 2
+ * dropped profile/session entities written before they were excluded from
+ * persistence; revision 3 drops the `['capabilities']` entry written before
+ * the query moved to `capabilitiesKeys.deployment()`.
  */
-const QUERY_PERSIST_REVISION = 2;
+const QUERY_PERSIST_REVISION = 3;
 
 /**
- * Persistence options shared by web and mobile. The apps supply the platform's
- * `persister` (localStorage on web, AsyncStorage on mobile) and spread this in.
+ * Persistence options every app shares. The app supplies the platform's
+ * `persister` (localStorage on web) and spreads this in.
  *
  * `buster` combines the app version with the cache-policy revision: releases
  * drop incompatible response shapes, while a policy fix can invalidate unsafe
@@ -115,9 +118,9 @@ export function createQueryPersistOptions(appVersion: string, config: QueryPersi
 }
 
 /**
- * Query defaults shared by web and mobile. `gcTime` is pinned to the persist
- * window; `staleTime` is per-app because "how stale is too stale" differs
- * between a tab that stays open and an app resumed from the background.
+ * Query defaults every app shares. `gcTime` is pinned to the persist window;
+ * `staleTime` is per-app because "how stale is too stale" depends on how long
+ * the app's screens stay open.
  */
 export function defaultQueryClientOptions(staleTime: number) {
   return {

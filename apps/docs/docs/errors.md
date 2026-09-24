@@ -372,6 +372,7 @@ are never reissued.
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
+| `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -380,6 +381,11 @@ scoped read cannot see it, and distinguishing the two would confirm the id.
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
 already keys conversation state by.
+
+`SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
+per session, so a second repository is refused here — on create by the body's own
+limit, and on adding one to a session that has one — rather than by the host after
+the session was written.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a
@@ -399,7 +405,7 @@ catalog. `RUNNER_*` codes are the generic layer shared by every route; the
 others belong to one bounded context each — `APIKEY_*` to credentials,
 `HOST_*` to the host inventory, `PAIR_*` to pairing, `SVC_*` to the service
 unit, `UPD_*` to self-update, and `SESS_*`, `TMUX_*` and `GIT_*` to sessions. The host-agent codes also reach a person
-through the CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
+through the runner's own CLI, where they set the exit code: 3 for a 401, 4 for a 403, 5
 for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 
 | Code                                   | Title                                        | HTTP |
@@ -465,13 +471,7 @@ with their own codes rather than as a blanket 500:
 
 ## Handling errors as a client
 
-**CLI.** Failures map onto exit codes (`3` auth, `4` forbidden, `5` not found,
-`1` everything else) and print `CODE: detail`, listing any rejected fields.
-
-**MCP.** Tools throw `OppenheimerApiError`, which carries `status`, `code`,
-`correlationId` and the whole `problem` document.
-
-**Web / mobile.** `@oppenheimer/frontend` normalises failures into `AppError` via
+**Web.** `@oppenheimer/frontend-core` normalises failures into `AppError` via
 `toAppError`, which keeps the server's `detail`, exposes `fieldErrors` for form
 handling, and falls back to the module's own error catalog when the API could
 not be reached at all.
@@ -495,7 +495,7 @@ not be reached at all.
 4. Add a row to this page — the problem `type` URI is an anchor here, so an
    undocumented code points at a dead link.
 5. Add a message for the code under `errors.byCode` in **every** locale in
-   `packages/translations`, so the web and mobile apps can show it in the
+   `packages/translations`, so the console can show it in the
    user's language. A code with no entry falls back to a generic sentence.
 
 The catalog `message` becomes the problem `title`, so keep it stable and put

@@ -135,7 +135,11 @@ runner does with it and point back.
   keeps a batch until an ack accounts for every key in it and resends
   otherwise; the append is `ON CONFLICT DO NOTHING` per row, which is
   what makes the resend free. The log the batch lands in is 03's; the
-  wire that carries it is this note's.
+  wire that carries it is this note's. While a session starts, the
+  runner logs `session.step`: its kind and `{ step, status, durationMs }`
+  payload are `packages/shared/src/protocol/session-step.ts`, and the Go
+  twin is generated from it. A failure is `session.failed`, not a step
+  status.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather
@@ -190,9 +194,32 @@ grounds can still fetch, verify and install the version that fixes it
   and the runner pauses that attachment's PTY reads when its window
   (256 KB) is exhausted. A runaway build stalls its own pane, never the
   link.
+- **PTY bytes are never dropped**, on either side of the link. A frame
+  lost in the middle cuts an escape sequence in half and leaks its bytes
+  from the credit window, which stalls the pane for good. The runner's
+  PTY reader blocks while its attachment's queue is full (64 frames),
+  and it counts bytes against the window only once they are queued. The
+  control plane closes a runner link it cannot write to (8 MB buffered,
+  close code 1013) rather than skipping a frame. That close sends every
+  browser on the link through the ladder.
+- **The runner's one writer sends frames in a fixed order**: every
+  control frame first, then one PTY frame per attachment in turn. With
+  one FIFO, a keystroke's echo would wait behind every other pane's
+  queued output. Round-robin bounds that wait to one frame per busy
+  attachment. A heartbeat that cannot be queued is skipped, not fatal.
+- **Liveness is WebSocket ping/pong, both ways, every 15 s.** The runner
+  redials when a pong takes longer than 30 s, and the control plane
+  terminates a link that has not answered the previous ping. A TCP
+  connection that died without a close (a NAT timeout, a sleeping
+  laptop) is otherwise invisible until a write happens to time out.
 - Reconnect ladder 0.5 s, 1, 2, 5, 10, 30 with jitter, and an epoch
-  counter bumped on every successful connect; frames and callbacks from
-  an older epoch are dropped (`../../12-lessons-from-grok-bot.md`).
+  that the control plane allocates on every accepted link and hands over
+  in `welcome`; frames and callbacks from an older epoch are dropped
+  (`../../12-lessons-from-grok-bot.md`). The runner refuses a welcome
+  whose epoch is not newer than its last one, so an epoch must rise
+  across control-plane restarts too. Its floor is the control plane's
+  clock in milliseconds, so the first epoch after a restart is already
+  above every earlier one.
 
 ## Open questions
 

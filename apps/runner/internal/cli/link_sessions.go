@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -15,6 +16,9 @@ import (
 )
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
+	steps := newStartSteps(func(p link.SessionStepPayload) {
+		h.reporter.Append(m.SessionID, link.SessionStepKind, p)
+	}, time.Now)
 	agent, ok := sessionsdomain.AgentFromCatalogID(m.Agent)
 	if !ok {
 		h.fail(m.CommandID, sessionsdomain.ErrInvalidInput.WithDetail("unknown agent %q", m.Agent))
@@ -43,6 +47,7 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 			Model: m.Launch.Model, Permission: m.Launch.Permission, Effort: m.Launch.Effort, Prompt: m.Prompt,
 		},
 		CheckoutID: first.CheckoutID, GithubRepoID: first.GithubRepoID,
+		Progress: steps.stage,
 	})
 	if err != nil {
 		h.fail(m.CommandID, err)

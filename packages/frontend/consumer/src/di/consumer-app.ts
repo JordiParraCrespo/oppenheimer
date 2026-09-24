@@ -15,8 +15,7 @@ import { TOKENS } from './tokens';
 
 /**
  * What a consumer app loads into `OppenheimerApp.create({ modules })`. Loading these
- * is what makes an app the consumer product; the admin product loads
- * `adminModules` instead, and no app loads both.
+ * is what makes an app the consumer product.
  */
 export const consumerModules = [
   SessionsModule,

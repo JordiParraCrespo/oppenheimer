@@ -150,7 +150,6 @@ async function boot(): Promise<World> {
         'hosts.controlPlaneUrl': origin,
         'hosts.signingKeyFingerprint': CP_FINGERPRINT,
         'app.frontendUrl': 'http://localhost:3000',
-        'app.adminFrontendUrl': 'http://localhost:3003',
       })[key],
   } as unknown as ConfigService;
 
@@ -179,7 +178,7 @@ async function boot(): Promise<World> {
     isMember: vi.fn().mockResolvedValue(true),
   };
 
-  const registry = new InProcessLinkRegistry();
+  const registry = new InProcessLinkRegistry(() => 0);
   const assertions = new HostAssertionResolver(hosts, cache, config);
   const runners = new RunnerLinkGateway(
     assertions,

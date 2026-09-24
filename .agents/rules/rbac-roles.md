@@ -114,8 +114,8 @@ build would notice. `GET /users/me/permissions` serves the caller's effective
 rules so the client can apply the same catalog.
 
 The catalog is keyed by **endpoint**, and holds no client's route paths: a URL
-belongs to the app that mounts it, and the web, control-plane and mobile apps
-reach these handlers under different names. A nav row that gates on one of
+belongs to the app that mounts it, and different clients may reach these
+handlers under different names. A nav row that gates on one of
 these reads `ENDPOINT_POLICIES[<endpoint>]` where the row is declared.
 
 If an endpoint's data moves to a different handler, move its entry in

@@ -59,9 +59,9 @@ const lines = [
   '',
   '# The namer, so a session named from its first prompt is covered rather than',
   '# assumed. The stub answers a title derived from the prompt it was given.',
-  'SESSION_NAMER_PROVIDER=openai-compatible',
-  'SESSION_NAMER_MODEL=a-stub-model',
-  `SESSION_NAMER_BASE_URL=${NAMER_STUB}/v1`,
+  'LLM_PROVIDER=openai-compatible',
+  'LLM_MODEL=a-stub-model',
+  `LLM_BASE_URL=${NAMER_STUB}/v1`,
   '',
 ].join('\n');
 

@@ -22,20 +22,23 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 - **A session is a worktree plus a terminal on a host.** No VM, no
   container. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
-  to the browser. A session may span **several repositories**: one
-  worktree per repository, each on its own branch, the tmux session
-  rooted in the primary one (decided 2026-09-19; the console shows the
-  extra repositories as a count on the chip and the boot trace clones
-  them one by one).
+  to the browser. A session checks out **one repository** in the MVP
+  (changed 2026-09-23, #56): the runner makes one worktree per session,
+  and a session that asked for two was accepted, refused by the host and
+  left spinning. The API refuses a second repository before a row is
+  written. The model still keeps checkouts as a list with a primary
+  (the `cwd` checkout, where the agent launches), so several
+  repositories, one worktree each, is the next runner slice (11's R3)
+  rather than a schema change; it was decided on 2026-09-19 and is
+  deferred, not dropped.
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
   (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
   personalities and the like come later (note 11 §1).
 - **Create session chips:** host, repository, branch, agent, every one
-  of them searchable. The repository chip multi-selects and carries a
-  branch per selected repository; the branch chip shows only while one
-  repository is selected. The agent chip lists Claude Code, Codex,
+  of them searchable. The repository chip picks one repository and
+  carries its branch; picking another replaces it (above). The agent chip lists Claude Code, Codex,
   OpenCode and a blank terminal with the vendors' marks where they
   exist; Claude Code is the one wired end to end in the MVP, the others
   are pickable so the flow is honest about where they go next.

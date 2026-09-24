@@ -39,6 +39,7 @@ export {
   type OutboxMessageRecord,
   OutboxMessageSchema,
   type OutboxMessageStatus,
+  TIMESTAMP_COLUMN_TYPE,
 } from './outbox/outbox-message';
 export {
   type OutboxPublisher,

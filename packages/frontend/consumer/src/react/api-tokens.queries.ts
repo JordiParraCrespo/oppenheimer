@@ -1,5 +1,6 @@
 'use client';
 
+import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateApiTokenDto } from '@oppenheimer/shared';
 import {
   type UseMutationOptions,
@@ -78,11 +79,9 @@ export function useCreateApiToken(
 
   return useMutation({
     mutationFn: (dto: CreateApiTokenDto) => app.apiTokens.create(dto),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: apiTokensKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -92,10 +91,8 @@ export function useRevokeApiToken(options?: UseMutationOptions<void, Error, stri
 
   return useMutation({
     mutationFn: (id: string) => app.apiTokens.revoke(id),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: apiTokensKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }

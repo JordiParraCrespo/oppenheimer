@@ -11,8 +11,7 @@ tsconfig.base.json      # shared compiler options every other preset extends
 tsconfig.library.json   # base for shared library packages
 tsconfig.nestjs.json    # backend (apps/api, backend/*)
 tsconfig.nextjs.json    # Next.js apps (showcases)
-tsconfig.expo.json      # Expo apps (mobile, admin-mobile)
-vite-chunks.mjs         # Rollup manualChunks shared by the Vite SPAs
+vite-chunks.mjs         # Rollup manualChunks for the Vite SPA
 vitest-frontend.mjs     # shared Vitest project config for the frontend apps/kits
 ```
 
@@ -20,8 +19,8 @@ Consumers reference the tsconfigs via
 `"extends": "@oppenheimer/tsconfig/tsconfig.*.json"` in their own `tsconfig.json`, and
 `vite-chunks.mjs` via `import { vendorChunks } from '@oppenheimer/tsconfig/vite-chunks.mjs'`
 in `vite.config.ts` (typed by the `.d.mts` beside it). It lives here rather than
-in either app because `apps/web` and `apps/admin-web` ship the same dependency
-set and must chunk it the same way.
+in `apps/web` so that any Vite SPA in the repo chunks the same dependency set
+the same way.
 
 ## When modifying
 

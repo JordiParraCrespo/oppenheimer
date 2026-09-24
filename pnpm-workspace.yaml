@@ -6,9 +6,6 @@ packages:
   # oppenheimer:begin e2e
   - "e2e"
   # oppenheimer:end e2e
-  # oppenheimer:begin qa
-  - "qa"
-  # oppenheimer:end qa
   - "apps/*"
   - "packages/*"
   # oppenheimer:begin runner

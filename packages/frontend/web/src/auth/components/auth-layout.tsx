@@ -32,8 +32,8 @@ export interface AuthLayoutProps {
   /** The wordmark's product suffix; defaults to `common.product`. */
   product?: string;
   /**
-   * What fills the right half above 900px: the consumer app's photograph
-   * carousel, or nothing for a control plane that has no atmosphere to sell.
+   * What fills the right half above 900px: the console's photograph carousel,
+   * or nothing for an app that has no atmosphere to sell.
    */
   panel?: ReactNode;
   children: ReactNode;

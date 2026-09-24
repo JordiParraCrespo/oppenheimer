@@ -48,6 +48,7 @@ export default defineConfig({
       // The coding-agent catalog: New session reads the models, the launch
       // flags and the effort stops out of it.
       '@oppenheimer/shared/agents',
+      '@oppenheimer/shared/schemas/session',
       // The attach socket's control vocabulary and close codes.
       '@oppenheimer/shared/protocol',
     ],

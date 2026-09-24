@@ -14,6 +14,9 @@ export class InProcessLinkRegistry implements LinkRegistryPort {
   private readonly links = new Map<string, RunnerLink>();
   private readonly epochs = new Map<string, number>();
 
+  /** Injected in tests; the wall clock otherwise. */
+  constructor(private readonly now: () => number = Date.now) {}
+
   register(link: RunnerLink): RunnerLink | undefined {
     const previous = this.links.get(link.hostId);
     this.links.set(link.hostId, link);
@@ -28,8 +31,15 @@ export class InProcessLinkRegistry implements LinkRegistryPort {
     return this.links.get(hostId);
   }
 
+  /**
+   * Upward per host, and upward across restarts of this process: the runner
+   * refuses a welcome whose epoch is not newer than the last one it accepted,
+   * and a counter that restarted at 1 would keep a host off the link for as
+   * many redials as it had epochs. The wall clock in milliseconds is the floor,
+   * so the first epoch after a restart is already past every epoch before it.
+   */
   nextEpoch(hostId: string): number {
-    const epoch = (this.epochs.get(hostId) ?? 0) + 1;
+    const epoch = Math.max((this.epochs.get(hostId) ?? 0) + 1, this.now());
     this.epochs.set(hostId, epoch);
     return epoch;
   }

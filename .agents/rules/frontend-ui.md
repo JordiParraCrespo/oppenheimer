@@ -1,7 +1,6 @@
 ---
 paths:
   - "apps/web/**/*"
-  - "apps/admin-web/**/*"
   - "apps/web-showcase/**/*"
   - "packages/frontend/design-system/web/**/*"
   - "packages/frontend/web/**/*"
@@ -43,8 +42,8 @@ Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
 and a whole second table was built beside `DataTable`.
 
-`DataTable` ships in `@oppenheimer/frontend-web`, so that row is the apps' only;
-`apps/web-showcase` builds on the `Table` primitives. In the apps every table
+`DataTable` ships in `@oppenheimer/frontend-web`, so that row is `apps/web`'s only;
+`apps/web-showcase` builds on the `Table` primitives. In `apps/web` every table
 goes through `DataTable`, and a direct `Table` import needs a comment saying
 why. Everything placed in the table's header bar takes
 `TABLE_HEADER_CONTROL_SIZE` from the kit; a heading or description goes above
@@ -107,7 +106,7 @@ and the bullet after this one is why.
 
 ## A gated nav row's permissions are the endpoint's own
 
-A row in an app's `lib/nav.ts` that needs a permission takes its `policies`
+A row in `apps/web/src/lib/nav.ts` that needs a permission takes its `policies`
 from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint
 the screen reads — `policies: ENDPOINT_POLICIES['/tokens']`. Never a literal
 `[{ action, subject }]`: that is a second copy of a rule the server already
@@ -116,12 +115,11 @@ controller to the catalog entry, not to your copy. Why: a row declared
 `policies: []` while its endpoint demanded `read Member`, so members got a link
 to a 403.
 
-The route string lives in the app that mounts it. `apps/web` and
-`apps/admin-web` have different URLs over the same endpoints, and `apps/mobile`
-different again, so there is no shared route list to look one up in — the nav
-row names the endpoint directly. Today both `apps/web` rows are ungated
-(`policies: []`) and `apps/admin-web` sits behind one `canAccessControlPlane`
-gate, so the first gated row is still to be written.
+The route string lives in the app that mounts it, and another client may mount
+the same endpoints under different URLs, so there is no shared route list to
+look one up in — the nav row names the endpoint directly. Today both
+`apps/web` rows are ungated (`policies: []`), so the first gated row is still
+to be written.
 
 A screen the product picks for the reader (the dashboard `/` redirects to)
 checks its own policies through `useLandingRoute` and answers `null` rather
@@ -130,7 +128,7 @@ the `_authenticated` layout.
 
 ## One colour vocabulary: the brand primitives
 
-In the apps, use the semantic tokens from `globals.css`: `text-fg`,
+In `apps/web`, use the semantic tokens from `globals.css`: `text-fg`,
 `text-fg-muted`, `text-fg-subtle`, `text-link`, `bg-canvas`, `bg-surface-*`,
 `bg-control-*`, `border-border` / `border-border-subtle`, `--accent-*`,
 `--status-*`. The older `text-ink-*` and `bg-surface-*` aliases still resolve
@@ -147,8 +145,9 @@ variant that is not a colour swap (`avatar.tsx` switches blend modes,
 
 ## The design-system linter enforces the two rules above
 
-`pnpm lint:design` runs `@shadcn/lint` through oxlint; each app points at the
-config its design system ships (`packages/frontend/design-system/{web,mobile}/oxlint.design.json`).
+`pnpm lint:design` runs `@shadcn/lint` through oxlint; `apps/web` and
+`apps/web-showcase` point at the config the design system ships
+(`packages/frontend/design-system/web/oxlint.design.json`).
 Biome owns correctness; oxlint's own categories are off.
 
 - `no-raw-colors` / `no-unknown-classes`: a class the theme does not declare.
@@ -159,9 +158,6 @@ Biome owns correctness; oxlint's own categories are off.
 - `no-inline-styles`: a `style` attribute. Data-driven values (a column width,
   a role colour from the database) get a line-level disable, not a rewrite.
 - `require-static-classes` is off: shared class constants are the convention.
-- Mobile runs the same rules minus `no-unknown-classes` and `no-inline-styles`
-  (Tailwind 3 and React Native's `style` prop). `apps/mobile-showcase` lints
-  `app` and `lib` only.
 
 Rules sit at `warn` while inherited findings are worked off. Promote a rule to
 `error` in `oxlint.design.json` once its count reaches zero; never lower one
@@ -180,8 +176,8 @@ exported from its own module either.
 ## Where code goes
 
 Placement is [`frontend-architecture.md`](./frontend-architecture.md): a
-feature per module with kind directories, the platform kit for what both apps
-share, the design system for primitives. This file is about what the markup
+feature per module with kind directories, the platform kit for what sits below
+the routes, the design system for primitives. This file is about what the markup
 looks like once it is in the right place.
 
 - **Dates.** Format through the kit's `dateFormatter` with the locale from

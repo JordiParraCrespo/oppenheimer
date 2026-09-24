@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { BillingInterval, SubscriptionStatus } from '@oppenheimer/shared';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
@@ -40,25 +41,25 @@ export class SubscriptionOrmEntity {
   @Column({ type: 'varchar' })
   status!: SubscriptionStatus;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   currentPeriodEnd!: Date | null;
 
   @Column({ type: 'boolean', default: false })
   cancelAtPeriodEnd!: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   canceledAt!: Date | null;
 
   /**
    * `created` timestamp of the last Stripe event applied to this row. Guards
    * against out-of-order webhook delivery (Stripe does not guarantee order).
    */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastEventAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

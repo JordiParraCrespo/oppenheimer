@@ -1,9 +1,6 @@
 ---
 paths:
   - "apps/web/**/*"
-  - "apps/admin-web/**/*"
-  - "apps/mobile/**/*"
-  - "apps/admin-mobile/**/*"
   - "packages/frontend/**/*"
 ---
 
@@ -15,7 +12,7 @@ for names, shapes and where a query is subscribed to, Biome for effects and
 memo, and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
 runs all three. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
-and each app's `ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
+and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.
 
 Each rule below was written after finding the thing it forbids in a project
 built from this starter.
@@ -24,15 +21,14 @@ built from this starter.
 
 | Question | Answer | Goes in |
 | --- | --- | --- |
-| Is it logic (an entity, a repository, a service, a query hook)? | used by both products | `packages/frontend/core` |
-| | used by one product | `packages/frontend/consumer` or `/admin` |
-| Is it UI or platform glue shared by both apps of a platform? | web | `packages/frontend/web` |
-| | mobile | `packages/frontend/mobile` |
-| Is it a primitive with the same API on both platforms? | | `packages/frontend/design-system/web` and `/mobile` |
-| Everything else | | `apps/<app>/features/<module>/<kind>/` |
+| Is it logic (an entity, a repository, a service, a query hook)? | kernel: session, users, settings, anything any app needs | `packages/frontend/core` |
+| | the product's domain: sessions, hosts, the account chrome | `packages/frontend/consumer` |
+| Is it UI or platform glue below the routes that needs no product hook? | | `packages/frontend/web` |
+| Is it a design-system primitive? | | `packages/frontend/design-system/web` |
+| Everything else | | `apps/web/src/features/<module>/<kind>/` |
 
-Two cells are never filled: logic in a platform kit (mobile would have to copy
-it) and UI in a product package (it would need `react-dom` or `react-native`).
+Two cells are never filled: logic in the platform kit (it would be tied to one
+platform) and UI in a product package (it would need `react-dom`).
 When something seems to need one of them it is two things glued together: the
 hook goes down to a product package, the component sideways to the kit.
 
@@ -71,20 +67,20 @@ features/<module>/
 
 ```
 design system ─► platform kit ─► features ─► routes
-shared ─► core ─► consumer | admin ─► apps
+shared ─► core ─► consumer ─► apps/web
 ```
 
 - `features/<a>` never imports `features/<b>`. Forty-one such imports grew in
   one project before anyone noticed. What two features need moves to the
   kit when the second consumer appears, never before.
 - `forms/` and `components/` never import `@oppenheimer/frontend-*/react`,
-  `@tanstack/react-query`, `@tanstack/react-router` or `expo-router`. The
+  `@tanstack/react-query` or `@tanstack/react-router`. The
   section, dialog or screen above them fetches and passes the result down.
 - A route file composes: it imports `screens/`, `sections/` and `dialogs/`,
   reads `lib/` for a search schema, and stays under 120 lines. A 680-line route was a page that had moved
   in.
-- An app imports exactly one product package. `apps/web` loading
-  `@oppenheimer/frontend-admin` fails `pnpm arch`.
+- The kernel never imports the product package, and the kit imports only the
+  kernel. `pnpm arch` fails either way.
 - The kit is imported by its package name (`@oppenheimer/frontend-web`), never by a
   path into its `src/`.
 - An app never keeps a file the kit ships. `pnpm check:structure` compares
@@ -167,7 +163,7 @@ name the jobs and split *those*.
   Never deriving state, resetting on a prop change, chaining updates or
   fetching. It lives in a `hooks/` file with a one-line comment naming the
   system. Biome forbids `useEffect` anywhere else.
-- **The React Compiler is on** in every app. No manual `useMemo`,
+- **The React Compiler is on** in the app. No manual `useMemo`,
   `useCallback` or `memo` outside `hooks/` (where a library may need a stable
   identity). Biome forbids the import.
 
@@ -198,13 +194,13 @@ name the jobs and split *those*.
 
 ## Routing is its own skill
 
-`apps/web` and `apps/admin-web` route with TanStack Router, where a file's
+`apps/web` routes with TanStack Router, where a file's
 name decides both its URL and the layout chain that renders it. Before adding,
 moving or guarding a route — or touching `routeTree.gen.ts`, `beforeLoad`,
 `validateSearch` or route `staticData` — read the `/tanstack-routing` skill
 (`.agents/skills/tanstack-routing/`). It carries the file-name table, the
 guard and search-param rules, and the check that proves a restructure did not
-change a URL. `apps/mobile` and `apps/admin-mobile` use expo-router instead.
+change a URL.
 
 ## Patterns agents get wrong
 

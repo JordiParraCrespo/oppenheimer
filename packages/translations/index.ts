@@ -7,8 +7,7 @@ import { namespaces } from './namespaces';
  * The eager barrel: importing anything from here pulls in *every* catalog.
  *
  * That is what the API (which renders email in whichever locale the recipient
- * chose) and the Expo apps (bundled ahead of time, no network) want. Browsers
- * want one catalog, so the web apps import metadata from
+ * chose) wants. Browsers want one catalog, so the web app imports metadata from
  * `@oppenheimer/translations/locales` and catalogs from `@oppenheimer/translations/lazy`
  * instead — see the note in `locales.ts`.
  */

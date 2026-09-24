@@ -127,7 +127,11 @@ export interface SessionLogEntry {
   occurredAt: Date;
 }
 
-export type SessionNameSource = 'user' | 'model';
+/**
+ * Who chose the name: a person, a model reading the first prompt, or the first
+ * prompt's own words when no model answered in time.
+ */
+export type SessionNameSource = 'user' | 'model' | 'prompt';
 
 /**
  * Everything the fold produces, and every one of these is a column on
@@ -145,7 +149,7 @@ export interface SessionFold {
   stoppedAt: Date | null;
   /** Null until something names the session; the slug stands in until then. */
   name: string | null;
-  /** A model-derived title never overwrites one a person typed. */
+  /** A derived title (`model` or `prompt`) never overwrites one a person typed. */
   nameSource: SessionNameSource | null;
   /** Which checkout the agent was launched in. Null is the session directory itself. */
   cwdCheckoutId: string | null;
@@ -262,11 +266,12 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     case SESSION_EVENT_KINDS.NAMED: {
       const name = stringField(event.payload, 'name');
       if (!name) return next;
+      const recorded = stringField(event.payload, 'source');
       const source: SessionNameSource =
-        stringField(event.payload, 'source') === 'model' ? 'model' : 'user';
-      // A title a model derived from the first prompt never overwrites a name a
-      // person typed, whichever order the two arrive in.
-      if (source === 'model' && next.nameSource === 'user') return next;
+        recorded === 'model' || recorded === 'prompt' ? recorded : 'user';
+      // A title derived from the first prompt — by a model or from its words —
+      // never overwrites a name a person typed, whichever order the two arrive in.
+      if (source !== 'user' && next.nameSource === 'user') return next;
       next.name = name;
       next.nameSource = source;
       return next;

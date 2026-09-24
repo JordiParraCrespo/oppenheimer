@@ -438,24 +438,22 @@ from the agent's own transcript — Claude Code keeps one under
 `~/.codex/sessions/` — never by scraping the PTY, and reports it as a
 `prompt.first` event carrying at most its first 2 KB. The `prompt` field
 on `session.create` is what decides which, so the two never both write.
-The `name-session` command in `sessions/` then asks a model for a title
-of at most six words. **Which model is configuration, not a decision in
-this note**: the call goes through a `SessionNamerPort` in
-`sessions/infrastructure/` whose adapter and model id come from
-`SESSION_NAMER_PROVIDER` and `SESSION_NAMER_MODEL`, with a no-op adapter
-when neither is set — the abstract-class-plus-factory pattern
-`packages/backend/email` already follows, where the provider is likewise
-an environment variable. The first adapter is the Anthropic one on
-`@anthropic-ai/sdk`, because it is the SDK the repo already carries;
-any small, cheap model does the job, and a deployment picks its own. The result is a `session.named` event, and `PATCH
-/sessions/{id}` can overwrite it at any time. A failed or absent call
-leaves the slug as the name, which reads fine ("bold-otter-3f9a7k") and
-costs nothing. Reading the transcript is the posture note 06 already
+`SessionNamingResolver` in `sessions/application/` then names the session.
+It asks the deployment's LLM for a title of at most six words, with a short
+deadline; **which provider and model is configuration, not a decision in this
+note**: the resolver injects `LlmService` from `@oppenheimer/backend-llm`, bound
+once for the whole API. When the model misses the deadline, fails, or none is
+configured, the title is the prompt's own opening words instead. The result is a
+`session.named` event recording `source: model | prompt`, and `PATCH
+/sessions/{id}` can overwrite it at any time. The create path waits for the name,
+asking while it dispatches, so its response carries it (03); the runner's path
+does not wait. A session with a first prompt is never left on its slug.
+Reading the transcript is the posture note 06 already
 takes with the CLIs' usage files: the runner reads what the CLI writes
 and sends one line of it; the transcript never leaves the host. The one
 line that does leave is the person's own prompt, sent to whichever
 provider is configured under the platform's key — a sentence for the privacy note, and the
-reason a deployment with no key simply names nothing.
+reason a deployment with no provider names sessions from the prompt alone.
 
 ### One login per machine, and why that settles whose the host is
 
@@ -711,7 +709,7 @@ writes a status that is idempotent to rewrite), and a
 inline on the checkout, as `account` carries its provider ids).
 
 Uniform across all seven: `id` uuid primary key minted with
-`randomUUID()`, `@CreateDateColumn`/`@UpdateDateColumn`, snake_case name
+`randomUUID()`, `createdAt`/`updatedAt` as `timestamptz`, snake_case name
 (the convention `api_token`, `user_role`, `access_grant` and
 `user_settings` already follow), and an owner column — `organizationId`
 on the workspace-owned tables, exactly as `lead` does (all but
@@ -1056,7 +1054,8 @@ not be able to say it about itself, so the two are two schemas.
 
 `POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
 [{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
-several repositories named by GitHub's own ids, since the picker is a
+repositories named by GitHub's own ids — at most one in the MVP (00,
+`SESSIONS_010` on adding a second later) — since the picker is a
 live listing and a row may not exist yet, each with its base branch,
 the agent launched in the first unless `cwdGithubRepoId` says
 otherwise, and no branch name, because the branch is always the
@@ -1126,12 +1125,12 @@ code execution on a host.
 5. `pnpm generate:api-client`, plus a changeset. Three consumers
    regenerate: `packages/frontend/consumer` (which drops its hand-rolled
    DTOs), `apps/cli/src/lib/api-types.ts`, and `apps/mcp/src/tools/`.
-6. The root `.env.example` gains `SESSION_NAMER_PROVIDER`,
-   `SESSION_NAMER_MODEL` and the provider's key (`ANTHROPIC_API_KEY` for
-   the first adapter), all optional, with the note that they only name
-   sessions and that leaving them unset disables naming and nothing
-   else. `apps/api` gains `@anthropic-ai/sdk`,
-   `@nestjs/websockets` and `@nestjs/platform-ws`.
+6. The root `.env.example` gains the `LLM_*` provider settings and the
+   naming job's own `SESSION_NAMER_MODEL` and `SESSION_NAMER_TIMEOUT_MS`,
+   all optional, with the note that leaving them unset names sessions from
+   their prompt and changes nothing else. `apps/api` gains
+   `@oppenheimer/backend-llm`, `@nestjs/websockets` and
+   `@nestjs/platform-ws`.
 7. `packages/backend/cache` gains `take<T>(key)` over `GETDEL`, the one
    primitive the single-use attach ticket needs.
 
@@ -1253,8 +1252,8 @@ Each step is a vertical slice that can land alone.
   The multi-replica fence is a named slice inside `relay/`.
 
 - **Sessions are named by their first prompt**, by a model chosen in
-  configuration behind a port, with the minted slug as the fallback
-  name; the slug is opaque
+  configuration when it answers quickly, and by the prompt's own words
+  when it does not; the slug is opaque
   because it is a directory before it is a name.
 
 - **Each checkout picks a base branch; the working branch is always

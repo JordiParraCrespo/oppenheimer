@@ -2,6 +2,7 @@ package link
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,9 +28,14 @@ const HeartbeatInterval = 15 * time.Second
 // (`12-lessons-from-grok-bot.md`).
 var Ladder = []time.Duration{500 * time.Millisecond, time.Second, 2 * time.Second, 5 * time.Second, 10 * time.Second, 30 * time.Second}
 
-// sendQueue bounds what a slow link can hold; a full queue drops the frame
-// rather than the process, and a dropped PTY read is a repaint away.
-const sendQueue = 1024
+// PingInterval is how often the runner pings the control plane, and
+// PingTimeout how long a pong may take. A link whose TCP connection died
+// without a close (a NAT that forgot it, a laptop lid) otherwise looks up until
+// a write happens to time out; two missed intervals are enough to redial.
+const (
+	PingInterval = 15 * time.Second
+	PingTimeout  = 2 * PingInterval
+)
 
 // Handler is what the composition root supplies: what each control-plane
 // message does, and what happens when the link comes and goes.
@@ -67,6 +73,8 @@ type Options struct {
 	Ladder []time.Duration
 	// Heartbeat overrides the interval, for tests.
 	Heartbeat time.Duration
+	// Ping overrides the ping interval, for tests; the timeout is twice it.
+	Ping time.Duration
 }
 
 // Client keeps one link open to the control plane for the life of a context.
@@ -76,7 +84,7 @@ type Client struct {
 
 	mu    sync.Mutex
 	conn  *websocket.Conn
-	send  chan []byte
+	out   *outbox
 	epoch atomic.Uint64
 	// connected is closed-and-replaced per link so callers can wait for one.
 	live atomic.Bool
@@ -95,6 +103,9 @@ func New(opts Options) (*Client, error) {
 	}
 	if opts.Heartbeat == 0 {
 		opts.Heartbeat = HeartbeatInterval
+	}
+	if opts.Ping == 0 {
+		opts.Ping = PingInterval
 	}
 	if opts.HTTP == nil {
 		opts.HTTP = &http.Client{Timeout: 30 * time.Second}
@@ -234,18 +245,20 @@ func (c *Client) dialOnce(ctx context.Context) error {
 	}
 	epoch := welcome.Epoch
 	c.epoch.Store(epoch)
-	send := make(chan []byte, sendQueue)
+	out := newOutbox()
 	c.mu.Lock()
-	c.conn, c.send = conn, send
+	c.conn, c.out = conn, out
 	c.mu.Unlock()
 	c.live.Store(true)
 	defer func() {
 		c.live.Store(false)
 		c.mu.Lock()
 		if c.conn == conn {
-			c.conn, c.send = nil, nil
+			c.conn, c.out = nil, nil
 		}
 		c.mu.Unlock()
+		// Wakes every pump blocked on a full queue: the link they wrote to is gone.
+		out.close()
 		c.opts.Handler.Disconnected(epoch)
 	}()
 
@@ -253,7 +266,7 @@ func (c *Client) dialOnce(ctx context.Context) error {
 	c.opts.Handler.Connected(linkCtx, epoch)
 
 	errc := make(chan error, 3)
-	go func() { errc <- c.writeLoop(linkCtx, conn, send) }()
+	go func() { errc <- c.writeLoop(linkCtx, conn, out) }()
 	go func() { errc <- c.heartbeatLoop(linkCtx) }()
 	go func() { errc <- c.readLoop(linkCtx, conn) }()
 	err = <-errc
@@ -317,25 +330,66 @@ func (c *Client) readLoop(ctx context.Context, conn *websocket.Conn) error {
 }
 
 // writeLoop is the one goroutine that writes: every send is queued, so a PTY
-// reader and a heartbeat never interleave a frame.
-func (c *Client) writeLoop(ctx context.Context, conn *websocket.Conn, send <-chan []byte) error {
+// reader and a heartbeat never interleave a frame, and the outbox decides the
+// order (control first, then attachments in turn). Pings are written here too,
+// on the loop's own ticker, so nothing else ever writes to the socket
+// (`.agents/rules/go.md`, as `packages/go/ws/conn.go` does).
+//
+// A ping waits for its pong, which holds the writer for one round trip every
+// interval; on a link that has died it holds it until the timeout, which is
+// what ends the link.
+func (c *Client) writeLoop(ctx context.Context, conn *websocket.Conn, out *outbox) error {
+	ticker := time.NewTicker(c.opts.Ping)
+	defer ticker.Stop()
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case frame := <-send:
-			kind := websocket.MessageText
-			if frame[0] == 0 {
-				kind = websocket.MessageBinary
-			}
-			writeCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-			err := conn.Write(writeCtx, kind, frame[1:])
-			cancel()
-			if err != nil {
-				return fmt.Errorf("write: %w", err)
+		frame, ready, err := out.poll()
+		if err != nil {
+			return err
+		}
+		if frame == nil {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-ready:
+				continue
+			case <-ticker.C:
+				if err := c.ping(ctx, conn); err != nil {
+					return err
+				}
+				continue
 			}
 		}
+		// A busy link still pings: a tick that fired while frames were
+		// waiting is served between two of them.
+		select {
+		case <-ticker.C:
+			if err := c.ping(ctx, conn); err != nil {
+				return err
+			}
+		default:
+		}
+		kind := websocket.MessageText
+		if frame[0] == 0 {
+			kind = websocket.MessageBinary
+		}
+		writeCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		err = conn.Write(writeCtx, kind, frame[1:])
+		cancel()
+		if err != nil {
+			return fmt.Errorf("write: %w", err)
+		}
 	}
+}
+
+// ping proves the link is alive in both directions. The read loop is what
+// receives the pong, so a ping cannot complete on a link nobody reads.
+func (c *Client) ping(ctx context.Context, conn *websocket.Conn) error {
+	pingCtx, cancel := context.WithTimeout(ctx, 2*c.opts.Ping)
+	defer cancel()
+	if err := conn.Ping(pingCtx); err != nil {
+		return fmt.Errorf("ping: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) heartbeatLoop(ctx context.Context) error {
@@ -352,7 +406,14 @@ func (c *Client) heartbeatLoop(ctx context.Context) error {
 				continue
 			}
 			beat.Type = "heartbeat"
+			// A heartbeat that cannot be queued is skipped, not fatal: the next
+			// one says the same thing, and the ping loop is what decides the link
+			// is dead.
 			if err := c.Send(beat); err != nil {
+				if errors.Is(err, ErrBackpressure) {
+					c.logger.Warn("heartbeat skipped; control queue full")
+					continue
+				}
 				return err
 			}
 		}
@@ -362,37 +423,54 @@ func (c *Client) heartbeatLoop(ctx context.Context) error {
 // ErrNotConnected is what Send answers between links.
 var ErrNotConnected = errors.New("link: not connected")
 
-// ErrBackpressure is what Send answers when the queue is full: the frame is
-// dropped, the link is not.
+// ErrBackpressure is what Send answers when the control queue is full: the
+// frame is not queued, the link stays up.
 var ErrBackpressure = errors.New("link: send queue full")
 
-// Send queues a JSON control frame.
+// Send queues a JSON control frame. It never blocks.
 func (c *Client) Send(message any) error {
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
-	return c.enqueue(append([]byte{1}, body...))
-}
-
-// SendFrame queues a PTY frame for an attachment.
-func (c *Client) SendFrame(attachmentID uint32, bytes []byte) error {
-	return c.enqueue(append([]byte{0}, EncodeFrame(attachmentID, bytes)...))
-}
-
-func (c *Client) enqueue(tagged []byte) error {
-	c.mu.Lock()
-	send := c.send
-	c.mu.Unlock()
-	if send == nil {
+	out := c.outbox()
+	if out == nil {
 		return ErrNotConnected
 	}
-	select {
-	case send <- tagged:
-		return nil
-	default:
-		return ErrBackpressure
+	if err := out.pushControl(append([]byte{1}, body...)); err != nil {
+		if errors.Is(err, errOutboxClosed) {
+			return ErrNotConnected
+		}
+		return err
 	}
+	return nil
+}
+
+// SendFrame queues a PTY frame for an attachment. It blocks while that
+// attachment already has a full queue — the bytes are never dropped — and
+// answers ErrNotConnected when there is no link or the link goes while it
+// waits.
+func (c *Client) SendFrame(ctx context.Context, attachmentID uint32, bytes []byte) error {
+	out := c.outbox()
+	if out == nil {
+		return ErrNotConnected
+	}
+	frame := make([]byte, 1+FrameHeader+len(bytes))
+	binary.BigEndian.PutUint32(frame[1:], attachmentID)
+	copy(frame[1+FrameHeader:], bytes)
+	if err := out.pushFrame(ctx, attachmentID, frame); err != nil {
+		if errors.Is(err, errOutboxClosed) {
+			return ErrNotConnected
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *Client) outbox() *outbox {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.out
 }
 
 func writeJSON(ctx context.Context, conn *websocket.Conn, v any) error {

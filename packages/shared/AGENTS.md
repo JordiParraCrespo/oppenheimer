@@ -76,8 +76,7 @@ src/
 
 A client's own vocabulary, even when it is derived from a contract that does.
 Route paths are the clearest case: a URL belongs to the app that mounts it, and
-`apps/web`, `apps/admin-web` and `apps/mobile` reach the same endpoints under
-different names. A nav row that gates on a permission names its endpoint where
+two clients may reach the same endpoint under different names. A nav row that gates on a permission names its endpoint where
 the row is declared and reads `ENDPOINT_POLICIES[<endpoint>]`; there is no
 shared route list, and the API takes no dependency on a frontend package to
 check itself against the catalog.

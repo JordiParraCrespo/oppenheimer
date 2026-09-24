@@ -89,4 +89,15 @@ export const SessionErrors = {
     message: 'A session with no repositories must name its project',
     httpStatus: 400,
   },
+  /**
+   * A second repository on a session that has one. A runner makes one worktree
+   * per session in the MVP, so a session is one repository (00); the create
+   * body is capped by its schema, and this is the same rule for adding one
+   * later, refused before a row is written rather than by the host (#56).
+   */
+  ONE_REPOSITORY: {
+    code: 'SESSIONS_010',
+    message: 'A session checks out one repository',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

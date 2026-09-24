@@ -10,12 +10,12 @@ import {
 } from '@tanstack/react-query';
 import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.client';
 import { useOppenheimerApp } from './context';
+import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
 import { authKeys } from './query-keys';
+import { usersKeys } from './users.queries';
 
 export { authKeys };
-
-import { profileQueryKey } from './users.queries';
 
 export function useSessionRestore(
   options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
@@ -75,11 +75,9 @@ export function useLogin(options?: Omit<UseMutationOptions<void, Error, LoginDto
 
   return useMutation({
     mutationFn: (dto: LoginDto) => app.auth.login(dto),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });
-      options?.onSuccess?.(...args);
-    },
-    ...options,
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+    }),
   });
 }
 
@@ -89,11 +87,9 @@ export function useLogout(options?: Omit<UseMutationOptions<void, Error, void>, 
 
   return useMutation({
     mutationFn: () => app.auth.logout(),
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.clear();
-      options?.onSuccess?.(...args);
-    },
-    ...options,
+    }),
   });
 }
 

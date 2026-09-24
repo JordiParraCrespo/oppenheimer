@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import {
   Column,
   CreateDateColumn,
@@ -51,17 +52,17 @@ export class GithubInstallationOrmEntity {
   @Column({ type: 'uuid' })
   installedByUserId!: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   suspendedAt!: Date | null;
 
   /** Disconnected here, or uninstalled on GitHub. Never hard-deleted: the row
    *  is what lets the console say why repositories stopped resolving. */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   deletedAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

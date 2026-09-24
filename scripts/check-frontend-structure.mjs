@@ -62,45 +62,12 @@ const APPS = [
     kit: 'web',
   },
   // oppenheimer:end web
-  // oppenheimer:begin admin-web
-  {
-    app: 'apps/admin-web',
-    routes: 'src/routes',
-    features: 'src/features',
-    product: 'admin',
-    allow: [],
-    kit: 'web',
-  },
-  // oppenheimer:end admin-web
-  // oppenheimer:begin mobile
-  {
-    app: 'apps/mobile',
-    routes: 'app',
-    features: 'features',
-    product: 'consumer',
-    allow: ['dashboard'],
-    kit: 'mobile',
-  },
-  // oppenheimer:end mobile
-  // oppenheimer:begin admin-mobile
-  {
-    app: 'apps/admin-mobile',
-    routes: 'app',
-    features: 'features',
-    product: 'admin',
-    allow: [],
-    kit: 'mobile',
-  },
-  // oppenheimer:end admin-mobile
 ];
 /** The platform kits, documented like the apps they serve. */
 const KITS = [
-  // oppenheimer:begin web|admin-web
+  // oppenheimer:begin web
   'packages/frontend/web',
-  // oppenheimer:end web|admin-web
-  // oppenheimer:begin mobile|admin-mobile
-  'packages/frontend/mobile',
-  // oppenheimer:end mobile|admin-mobile
+  // oppenheimer:end web
 ];
 
 function* walk(dir) {
