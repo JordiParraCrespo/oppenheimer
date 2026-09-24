@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query';
 import type { UserSettingsEntity } from '../modules/user-settings/user-settings.entity';
 import { useOppenheimerApp } from './context';
+import { withCacheOnSuccess } from './mutations';
 import { userSettingsKeys } from './query-keys';
 
 export { userSettingsKeys };
@@ -34,11 +35,8 @@ export function useUpdateUserSettings(
 
   return useMutation({
     mutationFn: (dto: UpdateUserSettingsDto) => app.userSettings.update(dto),
-    ...options,
-    onSuccess: (...args) => {
-      const [settings] = args;
+    ...withCacheOnSuccess(options, (settings) => {
       queryClient.setQueryData(userSettingsKeys.me(), settings);
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }

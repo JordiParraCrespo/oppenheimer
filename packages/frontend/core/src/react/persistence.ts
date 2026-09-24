@@ -90,10 +90,13 @@ export function reconcileCacheOwner(queryClient: QueryClient, ownerId: string | 
 
 /**
  * Increment when the persistence policy changes in a way that makes an
- * already-stored cache unsafe to hydrate. This revision drops profile/session
- * entities written before they were excluded from persistence.
+ * already-stored cache unsafe to hydrate, or changes the shape of a persisted
+ * key so an old entry would sit in storage that nothing reads. Revision 2
+ * dropped profile/session entities written before they were excluded from
+ * persistence; revision 3 drops the `['capabilities']` entry written before
+ * the query moved to `capabilitiesKeys.deployment()`.
  */
-const QUERY_PERSIST_REVISION = 2;
+const QUERY_PERSIST_REVISION = 3;
 
 /**
  * Persistence options every app shares. The app supplies the platform's

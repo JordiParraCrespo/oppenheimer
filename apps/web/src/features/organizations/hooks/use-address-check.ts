@@ -29,9 +29,9 @@ export function useAddressCheck(address: string): { status: SlugStatus; error: E
   }, [address]);
 
   const settled = debounced === address;
-  const { data, isFetching, error } = useCheckSlug(debounced, {
-    enabled: settled && debounced.length > 0,
-  });
+  // Nothing to ask until the reader stops typing, and nothing to ask about an
+  // empty address: the query holds `undefined` and does not fetch.
+  const { data, isFetching, error } = useCheckSlug(settled && debounced ? debounced : undefined);
 
   if (!address) return { status: 'idle', error: null };
   if (error && settled) return { status: 'idle', error };
