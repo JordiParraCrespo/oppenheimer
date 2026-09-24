@@ -4,17 +4,8 @@
     {
       "id": "host-rename",
       "title": "Rename a host",
-      "prompt": "Settings → Hosts is getting a Rename action. Wire up the data layer for it in `@oppenheimer/frontend-consumer`:\n\n- `HostsService.rename(id: string, name: string): Promise<HostEntity>`. The API is `PATCH /api/v1/hosts/{id}` with a `{ name }` body, and it answers with the renamed host.\n- A `useRenameHost(options?)` hook exported from `@oppenheimer/frontend-consumer/react`. Its variables are `{ id, name }`. The rename dialog will pass its own `onSuccess` to close itself and show a toast, and the host list must show the new name straight after.\n\nNo UI in this change."
-    },
-    {
-      "id": "session-events",
-      "title": "A session's event log",
-      "prompt": "The session screen is going to show the session's event log, a page at a time. In `@oppenheimer/frontend-consumer`:\n\n- `SessionsService.events(id: string, page?: { afterSeq?: number; limit?: number })`, returning a page of events and the `nextSeq` to read on from. The API is `GET /api/v1/sessions/{id}/events` (`listSessionEvents` in the generated SDK).\n- A `useSessionEvents(sessionId: string | undefined, page?: { afterSeq?: number; limit?: number })` hook exported from `@oppenheimer/frontend-consumer/react`. The screen mounts before it knows the session id.\n\nNo UI in this change."
-    },
-    {
-      "id": "projects-module",
-      "title": "A projects module",
-      "prompt": "Add a `projects` module to `@oppenheimer/frontend-consumer`, built like the other modules there. The API is in the generated SDK as `listProjects` (`GET /api/v1/projects`, optional `includeArchived` query), `getProject`, `updateProject` (`PATCH` with `{ name }`) and `archiveProject` (`DELETE`).\n\n- A `ProjectsService` with `findAll(filters?: { includeArchived?: boolean })`, `findById(id)`, `rename(id, name)` and `archive(id)`, bound under `TOKENS.ProjectsService` and `TOKENS.ProjectsRepository`, and reachable as `projects` on the consumer app.\n- Hooks exported from `@oppenheimer/frontend-consumer/react`: `useProjects(filters?)`, `useProject(id: string | undefined)` (a route can render before its id resolves), `useRenameProject(options?)` taking `{ id, name }`, and `useArchiveProject(options?)` taking the id. Screens will pass their own `onSuccess` to both mutations. Export the module's query key factory as `projectsKeys`.\n\nNo UI in this change."
+      "prompt": "Settings → Hosts is getting a Rename action. Wire up the data layer for it in `@oppenheimer/frontend-consumer`:\n\n- `HostsService.rename(id: string, name: string): Promise<HostEntity>`. The API is `PATCH /api/v1/hosts/{id}` with a `{ name }` body, and it answers with the renamed host.\n- A `useRenameHost(options?)` hook exported from `@oppenheimer/frontend-consumer/react`. Its variables are `{ id, name }`. The rename dialog will pass its own `onSuccess` to close itself and show a toast, and the host list must show the new name straight after.\n\nNo UI in this change.",
+      "plugins": ["mutation-on-success"]
     }
   ]
 }

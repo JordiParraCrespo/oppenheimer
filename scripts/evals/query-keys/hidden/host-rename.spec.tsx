@@ -27,7 +27,7 @@ function arrange() {
   queryClient.setQueryData(keys.list(), [host('Old box')]);
   queryClient.setQueryData(keys.pairingDetail('laptop'), { id: 'token-1' });
   queryClient.setQueryData(keys.pairingList(), []);
-  queryClient.setQueryData(['sessions', 'list'], []);
+  queryClient.setQueryData(entry.sessionsKeys.list(), []);
   return { service, queryClient, wrapper, keys };
 }
 
@@ -47,12 +47,15 @@ describe('host-rename', () => {
     expect(typeof exported(entry, 'useRenameHost')).toBe('function');
   });
 
-  it("runs a caller's onSuccess alongside the hook's cache update, not instead of it", async () => {
-    const { onSuccess, queryClient, keys } = await rename();
-    expect(onSuccess).toHaveBeenCalled();
+  it('shows the new name in the host list straight after, from the row the API answered with', async () => {
+    const { queryClient, keys } = await rename();
     const list = queryClient.getQueryData<HostEntity[]>(keys.list());
-    const listFresh = list?.some((row) => row.name === 'Renamed') ?? false;
-    expect(listFresh || invalidated(queryClient, keys.list())).toBe(true);
+    expect(list?.map((row) => row.name)).toEqual(['Renamed']);
+  });
+
+  it("still runs a caller's onSuccess: the dialog closes itself there", async () => {
+    const { onSuccess } = await rename();
+    expect(onSuccess).toHaveBeenCalled();
   });
 
   it('leaves the pairing flow alone: refreshing a pairing detail would mint a token', async () => {
@@ -63,11 +66,11 @@ describe('host-rename', () => {
   });
 
   it("invalidates the narrowest keys, not the root or another feature's cache", async () => {
-    const { queryClient } = await rename();
-    expect(invalidated(queryClient, ['sessions', 'list'])).toBe(false);
+    const { queryClient, keys } = await rename();
+    expect(invalidated(queryClient, entry.sessionsKeys.list())).toBe(false);
     const everyHostKeyStale = queryClient
       .getQueryCache()
-      .findAll({ queryKey: ['hosts'] })
+      .findAll({ queryKey: keys.all })
       .every((query) => query.state.isInvalidated);
     expect(everyHostKeyStale).toBe(false);
   });

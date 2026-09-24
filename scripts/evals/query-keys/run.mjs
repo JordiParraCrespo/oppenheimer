@@ -9,7 +9,8 @@
 // specs and reference patches below are out of its reach.
 //
 // Afterwards the grader runs, in the worktree:
-//   lint    the Biome plugins over the files the agent changed
+//   lint    the Biome plugins the task names, over the files the agent changed,
+//           with the repo's own biome.json and plugins put back first
 //   build   `pnpm --filter @oppenheimer/frontend-consumer build` (tsc)
 //   tests   the package's existing tests
 //   hidden  hidden/<task>.spec.tsx, copied in only now: one `it` per guideline,
@@ -18,9 +19,9 @@
 //   node scripts/evals/query-keys/run.mjs                      every task, the agent
 //   node scripts/evals/query-keys/run.mjs --task host-rename   one task
 //   node scripts/evals/query-keys/run.mjs --reference          the reference patches (must score 100%)
-//   node scripts/evals/query-keys/run.mjs --control            the known-bad patches (must fail)
+//   node scripts/evals/query-keys/run.mjs --control            the known-bad overlays on the reference (must fail)
 //   node scripts/evals/query-keys/run.mjs --task <id> --patch <file>   grade a saved diff, e.g. from a report
-//   options: --model <id> (default claude-sonnet-5), --keep (leave worktrees), --timeout <minutes>
+//   options: --model <id> (default claude-sonnet-5), --keep (leave the worktree), --timeout <minutes>
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
   cpSync,
@@ -41,6 +42,19 @@ const ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], {
   encoding: 'utf8',
 }).trim();
 const CONSUMER = 'packages/frontend/consumer';
+// The grader's own inputs: restored from HEAD before linting, so an agent that
+// edits them changes its diff, not its score.
+const GRADER_FILES = ['biome.json', 'biome-plugins'];
+// Each plugin's diagnostic, read from the plugin itself: Biome reports every
+// plugin finding as category `plugin`, without its name.
+const PLUGINS = Object.fromEntries(
+  readdirSync(join(ROOT, 'biome-plugins'))
+    .filter((file) => file.endsWith('.grit'))
+    .map((file) => [
+      file.slice(0, -'.grit'.length),
+      /message="([^"]+)"/.exec(readFileSync(join(ROOT, 'biome-plugins', file), 'utf8'))?.[1],
+    ]),
+);
 const TESTS_DIR = `${CONSUMER}/src/react/__tests__`;
 const AGENT_TOOLS = [
   'Read',
@@ -89,6 +103,7 @@ function run(cmd, cmdArgs, cwd, { timeoutMs = 15 * 60_000, input } = {}) {
   return {
     ok: result.status === 0,
     status: result.status,
+    stdout: result.stdout,
     out: `${result.stdout}${result.stderr}`,
   };
 }
@@ -97,12 +112,13 @@ function log(message) {
   process.stderr.write(`${message}\n`);
 }
 
-function prepareWorktree(taskId) {
-  const dir = join(tmpdir(), `qk-eval-${taskId}-${Date.now()}`);
-  run('git', ['worktree', 'add', '--detach', dir, 'HEAD'], ROOT);
-  // The agent must not see the hidden specs or the reference answers.
-  rmSync(join(dir, 'scripts/evals'), { recursive: true, force: true });
-  log(`  worktree ${dir}`);
+// One worktree for the whole run, installed and built once; `resetWorktree`
+// puts it back between tasks and keeps the git-ignored node_modules and dist.
+function prepareWorktree(dir) {
+  const added = run('git', ['worktree', 'add', '--detach', dir, 'HEAD'], ROOT);
+  if (!added.ok) throw new Error(`git worktree add failed:\n${added.out}`);
+  log(`worktree ${dir}`);
+  hideEvals(dir);
   const install = run('pnpm', ['install', '--frozen-lockfile', '--prefer-offline'], dir);
   if (!install.ok) throw new Error(`pnpm install failed:\n${install.out.slice(-2000)}`);
   const deps = run(
@@ -112,7 +128,18 @@ function prepareWorktree(taskId) {
   );
   if (!deps.ok)
     throw new Error(`building the consumer's dependencies failed:\n${deps.out.slice(-2000)}`);
-  return dir;
+}
+
+// The agent must not see the hidden specs or the reference answers.
+function hideEvals(dir) {
+  rmSync(join(dir, 'scripts/evals'), { recursive: true, force: true });
+}
+
+function resetWorktree(dir) {
+  const reset = run('git', ['reset', '--hard', '-q', 'HEAD'], dir);
+  const clean = run('git', ['clean', '-fdq'], dir);
+  if (!reset.ok || !clean.ok) throw new Error(`resetting ${dir} failed:\n${reset.out}${clean.out}`);
+  hideEvals(dir);
 }
 
 function runAgent(dir, prompt, { model, timeout }) {
@@ -155,42 +182,46 @@ function applyPatch(dir, patch) {
   if (!applied.ok) throw new Error(`could not apply ${patch}:\n${applied.out}`);
 }
 
+/** Every file the change touched, outside the hidden eval directory. */
 function changedFiles(dir) {
   run('git', ['add', '-A', '-N', '.'], dir);
   return run('git', ['diff', '--name-only', 'HEAD'], dir)
     .out.split('\n')
-    .filter((file) => /\.(ts|tsx)$/.test(file) && existsSync(join(dir, file)));
+    .filter((file) => file && !file.startsWith('scripts/evals/'));
 }
 
-function lintChecks(dir, files) {
-  if (files.length === 0)
-    return [{ group: 'lint', name: 'the agent changed TypeScript files', pass: false }];
+// A row for each plugin the task names, and one for any other plugin that
+// finds something: a plugin with nothing to look at is not a free point.
+function lintChecks(dir, files, plugins) {
+  const sources = files.filter((file) => /\.(ts|tsx)$/.test(file) && existsSync(join(dir, file)));
+  if (sources.length === 0)
+    return [{ group: 'lint', name: 'the change touches TypeScript files', pass: false }];
+  run('git', ['checkout', 'HEAD', '--', ...GRADER_FILES], dir);
   const lint = run(
     'pnpm',
-    ['exec', 'biome', 'lint', '--reporter=github', '--max-diagnostics=200', ...files],
+    ['exec', 'biome', 'lint', '--reporter=json', '--max-diagnostics=none', ...sources],
     dir,
   );
-  const findings = lint.out
-    .split('\n')
-    .filter((line) => line.startsWith('::error') && line.includes('title=plugin'))
-    .map((line) => {
-      const file = /file=([^,]+)/.exec(line)?.[1] ?? '?';
-      const lineNo = /line=(\d+)/.exec(line)?.[1] ?? '?';
-      const message = line.slice(line.indexOf('::', 2) + 2);
-      return `${file}:${lineNo} ${message}`;
-    });
-  const plugins = {
-    'query-key-factory': /key factory/,
-    'query-skip-token': /skipToken/,
-    'mutation-on-success': /withCacheOnSuccess/,
-  };
-  return Object.entries(plugins).map(([plugin, pattern]) => {
-    const hits = findings.filter((finding) => pattern.test(finding));
+  let diagnostics;
+  try {
+    diagnostics = JSON.parse(lint.stdout).diagnostics;
+  } catch {
+    return [{ group: 'lint', name: 'biome ran', pass: false, detail: lint.out.slice(-1500) }];
+  }
+  const findings = Map.groupBy(
+    diagnostics.filter((diagnostic) => diagnostic.category === 'plugin'),
+    (diagnostic) =>
+      Object.keys(PLUGINS).find((plugin) => PLUGINS[plugin] === diagnostic.message) ??
+      'an unknown plugin',
+  );
+  return [...new Set([...plugins, ...findings.keys()])].map((plugin) => {
+    const hits = findings.get(plugin) ?? [];
     return {
       group: 'lint',
       name: `no ${plugin} findings`,
       pass: hits.length === 0,
-      detail: hits.join('\n') || undefined,
+      detail:
+        hits.map((hit) => `${hit.location?.path ?? '?'}: ${hit.message}`).join('\n') || undefined,
     };
   });
 }
@@ -232,9 +263,11 @@ function hiddenChecks(dir, taskId) {
   }));
 }
 
-function grade(dir, taskId) {
+function grade(dir, task) {
   const files = changedFiles(dir);
-  const checks = [...lintChecks(dir, files)];
+  // The diff as the change left it, before the grader restores its own files.
+  const diff = run('git', ['diff', 'HEAD', '--', ...files], dir).out;
+  const checks = [...lintChecks(dir, files, task.plugins ?? [])];
   const build = run('pnpm', ['--filter', '@oppenheimer/frontend-consumer', 'build'], dir);
   checks.push({
     group: 'build',
@@ -249,8 +282,30 @@ function grade(dir, taskId) {
     pass: tests.ok,
     detail: tests.ok ? undefined : tests.out.slice(-1500),
   });
-  checks.push(...hiddenChecks(dir, taskId));
-  return { files, checks };
+  checks.push(...hiddenChecks(dir, task.id));
+  return { files, diff, checks };
+}
+
+function runTask(dir, task, args, preamble) {
+  log(`\n▶ ${task.id}${task.variant ? ` · ${task.variant}` : ''} (${args.mode})`);
+  const entry = { id: task.id, variant: task.variant, title: task.title };
+  try {
+    resetWorktree(dir);
+    if (args.mode === 'agent') entry.agent = runAgent(dir, `${task.prompt}\n\n${preamble}`, args);
+    else for (const patch of task.patches) applyPatch(dir, patch);
+    Object.assign(entry, grade(dir, task));
+  } catch (error) {
+    entry.error = String(error.message ?? error);
+  }
+  const passed = entry.checks?.filter((check) => check.pass).length ?? 0;
+  entry.score = entry.checks ? passed / entry.checks.length : 0;
+  for (const check of entry.checks ?? []) {
+    log(`  ${check.pass ? '✓' : '✗'} [${check.group}] ${check.name}`);
+    if (!check.pass && check.detail) log(check.detail.replace(/^/gm, '      '));
+  }
+  if (entry.error) log(`  ✗ ${entry.error}`);
+  log(`  score ${passed}/${entry.checks?.length ?? 0}`);
+  return entry;
 }
 
 function main() {
@@ -259,22 +314,24 @@ function main() {
   const selected = args.task ? tasks.filter((task) => task.id === args.task) : tasks;
   if (selected.length === 0) throw new Error(`No task named ${args.task}`);
 
-  // A control is a known-bad solution, `controls/<task>.<variant>.patch`, each
-  // graded on its own. Every check should be failed by at least one of them.
+  // A control is a known-bad overlay on the reference,
+  // `controls/<task>.<variant>.patch`, each graded on its own. Every check
+  // should be failed by at least one of them.
+  const reference = (task) => join(HERE, 'reference', `${task.id}.patch`);
   const runs =
     args.mode === 'agent'
       ? selected
       : args.mode === 'patch'
-        ? selected.map((task) => ({ ...task, patch: args.patch }))
+        ? selected.map((task) => ({ ...task, patches: [args.patch] }))
         : selected.flatMap((task) =>
             args.mode === 'reference'
-              ? [{ ...task, patch: join(HERE, 'reference', `${task.id}.patch`) }]
+              ? [{ ...task, patches: [reference(task)] }]
               : readdirSync(join(HERE, 'controls'))
                   .filter((file) => file.startsWith(`${task.id}.`) && file.endsWith('.patch'))
                   .map((file) => ({
                     ...task,
                     variant: file.slice(task.id.length + 1, -'.patch'.length),
-                    patch: join(HERE, 'controls', file),
+                    patches: [reference(task), join(HERE, 'controls', file)],
                   })),
           );
 
@@ -284,30 +341,13 @@ function main() {
     at: new Date().toISOString(),
     tasks: [],
   };
-  for (const task of runs) {
-    log(`\n▶ ${task.id}${task.variant ? ` · ${task.variant}` : ''} (${args.mode})`);
-    const dir = prepareWorktree(task.id);
-    const entry = { id: task.id, variant: task.variant, title: task.title };
-    try {
-      if (args.mode === 'agent') entry.agent = runAgent(dir, `${task.prompt}\n\n${preamble}`, args);
-      else applyPatch(dir, task.patch);
-      Object.assign(entry, grade(dir, task.id));
-      entry.diff = run('git', ['diff', 'HEAD', '--', ...entry.files], dir).out;
-    } catch (error) {
-      entry.error = String(error.message ?? error);
-    } finally {
-      if (args.keep) log(`  kept ${dir}`);
-      else run('git', ['worktree', 'remove', '--force', dir], ROOT);
-    }
-    const passed = entry.checks?.filter((check) => check.pass).length ?? 0;
-    entry.score = entry.checks ? passed / entry.checks.length : 0;
-    report.tasks.push(entry);
-    for (const check of entry.checks ?? []) {
-      log(`  ${check.pass ? '✓' : '✗'} [${check.group}] ${check.name}`);
-      if (!check.pass && check.detail) log(check.detail.replace(/^/gm, '      '));
-    }
-    if (entry.error) log(`  ✗ ${entry.error}`);
-    log(`  score ${passed}/${entry.checks?.length ?? 0}`);
+  const dir = join(tmpdir(), `qk-eval-${Date.now()}`);
+  try {
+    prepareWorktree(dir);
+    for (const task of runs) report.tasks.push(runTask(dir, task, args, preamble));
+  } finally {
+    if (args.keep) log(`kept ${dir}`);
+    else run('git', ['worktree', 'remove', '--force', dir], ROOT);
   }
 
   const resultsDir = join(HERE, 'results');

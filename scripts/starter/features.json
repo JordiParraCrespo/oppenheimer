@@ -11,7 +11,7 @@
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys"
       ],
-      "scripts": ["dev:mvp", "eval:query-keys"]
+      "scripts": ["dev:mvp"]
     },
     "web-showcase": {
       "title": "Web design-system showcase",
