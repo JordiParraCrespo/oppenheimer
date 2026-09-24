@@ -12,7 +12,7 @@ export interface AccessGrantProps {
   organizationId: string;
   principalType: AccessGrantPrincipalType;
   principalId: string;
-  /** A registry subject, e.g. `Lead`. */
+  /** A registry subject, e.g. `Project`. */
   resourceType: string;
   /** `null` means every resource of that type within the organization. */
   resourceId: string | null;

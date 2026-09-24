@@ -9,8 +9,7 @@ control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. The one app beyond the MVP is
-`apps/web-showcase`, the gallery of the web design system. The starter's reference modules
-(`leads`, `billing`) are on disk but not composed into the API.
+`apps/web-showcase`, the gallery of the web design system.
 
 ## Product notes
 

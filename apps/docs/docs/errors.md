@@ -44,7 +44,7 @@ An unexpected `5xx` never carries an internal message — the status is preserve
 (a readiness failure still answers `503`) but the `detail` always reads
 `"An unexpected error occurred. Quote the correlation id when reporting it."`
 The specifics are in the server log, keyed by `correlationId`. Catalog errors
-that are themselves `5xx` (e.g. `BILLING_001`) keep their curated title, since
+that are themselves `5xx` (e.g. `HOSTS_004`) keep their curated title, since
 that text was written to be shown.
 
 The `type` base is configurable with `ERROR_TYPE_BASE_URL` so a deployment can
@@ -161,16 +161,6 @@ wrong place.
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
 | `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
 
-## Leads
-
-| Code                           | Title          | HTTP |
-| ------------------------------ | -------------- | ---- |
-| `LEAD_001` <a id="lead_001" /> | Lead not found                          | 404  |
-| `LEAD_002` <a id="lead_002" /> | Leads are created inside an organization | 400  |
-
-Also returned for a lead that exists but sits outside the caller's access
-scope. Distinguishing the two would confirm the id.
-
 ## Hosts
 
 A host is a machine someone paired with this control plane. It belongs to the
@@ -207,19 +197,6 @@ unaffected.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
-
-## Billing
-
-| Code                                 | Title                                        | HTTP |
-| ------------------------------------ | -------------------------------------------- | ---- |
-| `BILLING_001` <a id="billing_001" /> | Billing is not configured on this server     | 503  |
-| `BILLING_002` <a id="billing_002" /> | No billing customer exists for this user     | 404  |
-| `BILLING_003` <a id="billing_003" /> | No subscription found                        | 404  |
-| `BILLING_004` <a id="billing_004" /> | Invalid Stripe webhook signature             | 400  |
-| `BILLING_005` <a id="billing_005" /> | Failed to create a Stripe Checkout session   | 502  |
-| `BILLING_006` <a id="billing_006" /> | This user already has an active subscription | 409  |
-| `BILLING_007` <a id="billing_007" /> | Failed to open the Stripe Customer Portal    | 502  |
-| `BILLING_008` <a id="billing_008" /> | Failed to create a Stripe customer           | 502  |
 
 ## Organizations, teams & invitations
 

@@ -252,11 +252,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -274,7 +274,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -295,7 +295,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -310,7 +310,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'billing' | 'leads' | 'hosts' | 'projects' | 'sessions' | 'repositories' | 'flags';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -328,12 +328,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -349,7 +349,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1325,10 +1325,6 @@ export type CapabilitiesResponseDto = {
      * Sign-in with GitHub is configured.
      */
     github_oauth: boolean;
-    /**
-     * Stripe billing is configured.
-     */
-    stripe_billing: boolean;
     /**
      * The sessions GitHub App is configured.
      */
@@ -5659,7 +5655,7 @@ export type DeploymentCapabilitiesData = {
 
 export type DeploymentCapabilitiesResponses = {
     /**
-     * Which client-relevant optional features (OAuth providers, Stripe billing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
+     * Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
      */
     200: CapabilitiesResponseDto;
 };

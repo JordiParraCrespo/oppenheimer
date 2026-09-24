@@ -41,7 +41,6 @@ import {
   redisConfig,
   sessionsConfig,
   storageConfig,
-  stripeConfig,
 } from './config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
@@ -72,7 +71,6 @@ import { UsersModule } from './users/user.module';
         emailConfig,
         storageConfig,
         oauthConfig,
-        stripeConfig,
         githubAppConfig,
         hostsConfig,
         llmConfig,
@@ -161,7 +159,7 @@ import { UsersModule } from './users/user.module';
       useFactory: (configService: ConfigService) => llmConfigFrom(configService),
     }),
     // `bodyParser.rawBody` attaches the raw request buffer to `req.rawBody`,
-    // which the Stripe webhook controller needs for signature verification.
+    // which the GitHub webhook controller needs for signature verification.
     //
     // `middleware` is what gets `/api/auth/*` into the request log: Better
     // Auth mounts its handler straight onto the HTTP adapter before Nest
@@ -196,10 +194,9 @@ import { UsersModule } from './users/user.module';
     RolesModule,
     // The Better Auth organization row is the personal workspace
     // (`product/versions/mvp/00-scope.md`); the roster and invitation routes
-    // it ships stay until the teams slice needs them. The starter's `leads`
-    // reference module and `billing` are not composed: they are not in the
-    // MVP and the product contexts (hosts, installations, projects, sessions,
-    // relay) take their place here as they land.
+    // it ships stay until the teams slice needs them. The product contexts
+    // (hosts, installations, projects, sessions, relay) follow it here as they
+    // land.
     OrganizationsModule,
     // What GitHub grants a workspace, and how the platform exercises it. The
     // first of the product contexts named above.

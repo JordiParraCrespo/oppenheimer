@@ -125,10 +125,6 @@
         "name": "API keys",
         "hint": "Personal API tokens"
       },
-      "billing": {
-        "name": "Billing",
-        "hint": "Subscription and invoices"
-      },
       "audit": {
         "name": "Audit log",
         "hint": "Who did what, and when"

@@ -63,14 +63,6 @@
       "ROLE_002": "A role with that name already exists.",
       "ROLE_003": "System roles cannot be deleted or renamed.",
       "ROLE_004": "This role must keep full access.",
-      "BILLING_001": "Billing is not available on this server.",
-      "BILLING_002": "No billing account exists for you yet.",
-      "BILLING_003": "No subscription was found.",
-      "BILLING_004": "The billing request could not be verified.",
-      "BILLING_005": "Checkout could not be started. Please try again.",
-      "BILLING_006": "You already have an active subscription.",
-      "BILLING_007": "The billing portal could not be opened. Please try again.",
-      "BILLING_008": "Your billing account could not be created. Please try again.",
       "ORG_001": "That organization could not be found.",
       "ORG_002": "That organization address is already taken.",
       "ORG_003": "You are not a member of this organization.",
@@ -118,8 +110,6 @@
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
       "GRANT_004": "Choose an organization before managing access grants.",
-      "LEAD_001": "That lead could not be found.",
-      "LEAD_002": "Choose an organization before creating leads.",
       "GITHUB_001": "We could not find that GitHub installation.",
       "GITHUB_002": "GitHub is not configured on this server.",
       "GITHUB_003": "Another workspace has already connected that GitHub installation.",
@@ -971,10 +961,6 @@
         "api": {
           "name": "API keys",
           "hint": "Personal API tokens"
-        },
-        "billing": {
-          "name": "Billing",
-          "hint": "Subscription and invoices"
         },
         "audit": {
           "name": "Audit log",

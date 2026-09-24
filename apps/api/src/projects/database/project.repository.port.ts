@@ -30,7 +30,7 @@ export type ArchiveOutcome =
  * compiler asks for; the adapter throws rather than falling back to an
  * unfiltered query if one is ever missing.
  *
- * As in `leads`, this deliberately does not extend `RepositoryPort<ProjectEntity>`:
+ * This deliberately does not extend `RepositoryPort<ProjectEntity>`:
  * that interface's `findAll()` and `findOneById(id)` take no scope, and offering
  * them here would reintroduce the unscoped reads the kernel exists to prevent.
  */

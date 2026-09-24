@@ -5,7 +5,7 @@ export type CapabilityMap<TCapability extends string = string> = Record<TCapabil
 /**
  * Registry of the optional capabilities a deployment resolved from its
  * configuration, once at boot. A capability is anything a self-hoster might
- * not have configured (an OAuth provider, Stripe, S3, an email transport):
+ * not have configured (an OAuth provider, S3, an email transport, an integration's key):
  * a missing key removes the capability, it never throws.
  *
  * The application declares its capability set at composition time (a factory
@@ -48,7 +48,7 @@ export class CapabilitiesService<TCapability extends string = string> {
     return this.names().filter((name) => !this.capabilities[name]);
   }
 
-  /** One-line summary for the startup log, e.g. `google_oauth=on, stripe_billing=off`. */
+  /** One-line summary for the startup log, e.g. `google_oauth=on, s3_storage=off`. */
   describe(): string {
     return this.names()
       .map((name) => `${name}=${this.capabilities[name] ? 'on' : 'off'}`)

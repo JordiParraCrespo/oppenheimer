@@ -8812,7 +8812,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Which client-relevant optional features (OAuth providers, Stripe billing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
+            "description": "Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9405,7 +9405,7 @@
           },
           "label": {
             "type": "string",
-            "example": "View leads"
+            "example": "View projects"
           },
           "sensitive": {
             "type": "boolean",
@@ -9420,15 +9420,15 @@
         "properties": {
           "subject": {
             "type": "string",
-            "example": "Lead"
+            "example": "Project"
           },
           "label": {
             "type": "string",
-            "example": "Leads"
+            "example": "Projects"
           },
           "group": {
             "type": "string",
-            "example": "crm"
+            "example": "control-plane"
           },
           "actions": {
             "type": "array",
@@ -9438,7 +9438,7 @@
           },
           "fields": {
             "description": "Attributes that may be granted or denied individually.",
-            "example": ["value", "notes"],
+            "example": ["name"],
             "type": "array",
             "items": {
               "type": "string"
@@ -9446,7 +9446,7 @@
           },
           "scopes": {
             "description": "Scope dimensions this resource can be narrowed by.",
-            "example": ["organization", "team"],
+            "example": ["organization"],
             "type": "array",
             "items": {
               "type": "string"
@@ -9455,7 +9455,7 @@
           "credentialScope": {
             "type": "string",
             "description": "Credential-scope group, when the resource is reachable by API tokens.",
-            "example": "leads"
+            "example": "projects"
           }
         },
         "required": ["subject", "label", "group", "actions", "scopes"]
@@ -9465,7 +9465,7 @@
         "properties": {
           "group": {
             "type": "string",
-            "example": "crm"
+            "example": "control-plane"
           },
           "resources": {
             "type": "array",
@@ -9485,7 +9485,7 @@
           },
           "subject": {
             "type": "string",
-            "example": "Lead"
+            "example": "Project"
           }
         },
         "required": ["action", "subject"]
@@ -9530,7 +9530,7 @@
           },
           "resourceType": {
             "type": "string",
-            "example": "Lead",
+            "example": "Project",
             "description": "A registry subject."
           },
           "resourceId": {
@@ -9631,10 +9631,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9672,10 +9668,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9752,10 +9744,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9856,10 +9844,6 @@
               "workspaces:write",
               "tokens:read",
               "tokens:write",
-              "billing:read",
-              "billing:write",
-              "leads:read",
-              "leads:write",
               "hosts:read",
               "hosts:write",
               "projects:read",
@@ -9918,8 +9902,6 @@
               "invitations",
               "workspaces",
               "tokens",
-              "billing",
-              "leads",
               "hosts",
               "projects",
               "sessions",
@@ -9981,10 +9963,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -10033,10 +10011,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -10117,10 +10091,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -12732,10 +12702,6 @@
             "type": "boolean",
             "description": "Sign-in with GitHub is configured."
           },
-          "stripe_billing": {
-            "type": "boolean",
-            "description": "Stripe billing is configured."
-          },
           "github_app": {
             "type": "boolean",
             "description": "The sessions GitHub App is configured."
@@ -12747,13 +12713,7 @@
             "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
           }
         },
-        "required": [
-          "google_oauth",
-          "github_oauth",
-          "stripe_billing",
-          "github_app",
-          "github_app_install_url"
-        ]
+        "required": ["google_oauth", "github_oauth", "github_app", "github_app_install_url"]
       }
     }
   }

@@ -97,9 +97,9 @@ client reports, so gate on flags that target identity.
 
 ## What is not a flag
 
-- **Who may use a feature** is a role (`rbac-roles.md`) or a plan (the
-  starter's `billing` module, not composed in the MVP). Entitlement in flags
-  is an unaudited second permission system.
+- **Who may use a feature** is a role (`rbac-roles.md`) or, once there is
+  one, a billing plan. Entitlement in flags is an unaudited second permission
+  system.
 - **Deployment capabilities** (is S3 configured?) are `CapabilitiesService`.
 - **Configuration** (limits, endpoints, timeouts) is the root `.env` and the
   API's config sections. It is untargeted and unaudited; never put a flag

@@ -15,7 +15,6 @@ import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
-import { LeadOrmEntity } from '../leads/database/lead.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -56,7 +55,6 @@ export default new DataSource({
     OAuthConsentOrmEntity,
     RoleOrmEntity,
     AccessGrantOrmEntity,
-    LeadOrmEntity,
     GithubInstallationOrmEntity,
     ProjectOrmEntity,
     HostOrmEntity,
