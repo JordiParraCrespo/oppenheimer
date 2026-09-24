@@ -285,6 +285,26 @@ operation, its code is folded onto the catalog, and the original survives as
 | `ADMIN_008` <a id="admin_008" /> | The admin service failed to handle this request                   | 502  |
 | `ADMIN_009` <a id="admin_009" /> | No such session for that user                                     | 404  |
 
+## Feature flags
+
+Flags are declared in code; the database holds only their targeting, so a key
+the catalog does not know is `FLAG_001` whatever the database says.
+
+| Code                           | Title                                    | HTTP |
+| ------------------------------ | ---------------------------------------- | ---- |
+| `FLAG_001` <a id="flag_001" /> | Feature flag not found                   | 404  |
+| `FLAG_002` <a id="flag_002" /> | The targeting is not valid for this flag | 422  |
+| `FLAG_003` <a id="flag_003" /> | This feature is not available            | 403  |
+| `FLAG_004` <a id="flag_004" /> | Segment not found                        | 404  |
+| `FLAG_005` <a id="flag_005" /> | A segment with this key already exists   | 409  |
+| `FLAG_006` <a id="flag_006" /> | The segment is still targeted by a flag  | 409  |
+| `FLAG_007` <a id="flag_007" /> | The segment conditions are not valid     | 422  |
+
+`FLAG_003` is what an endpoint behind `@RequireFlag` answers while its flag is
+off for the caller — minting an API token while `api_token_creation` is
+switched off, for example. `FLAG_002` and `FLAG_007` list every problem with
+the submitted targeting in `detail`.
+
 ## GitHub installations
 
 A GitHub App installation is the whole of what a workspace may reach on GitHub:

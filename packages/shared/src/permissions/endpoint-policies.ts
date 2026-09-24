@@ -44,6 +44,7 @@ export const ENDPOINT_POLICIES = {
   'GET /tokens': [{ action: 'read', subject: 'ApiToken' }],
   'GET /admin/users': [{ action: 'manage', subject: 'User' }],
   'GET /billing/subscriptions': [{ action: 'read', subject: 'Billing' }],
+  'GET /feature-flags/admin': [{ action: 'read', subject: 'FeatureFlag' }],
 
   // The control plane's projects. Archiving is `update Project`, not `delete`,
   // because nothing is deleted: the row outlives the project so its slug — a

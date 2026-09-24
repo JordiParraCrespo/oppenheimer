@@ -44,6 +44,7 @@ import {
   stripeConfig,
 } from './config';
 import { TypeOrmQueryLogger } from './config/typeorm-query.logger';
+import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
@@ -207,6 +208,7 @@ import { UsersModule } from './users/user.module';
     // person paired, and the credential a runner authenticates with.
     HostsModule,
     AdminModule,
+    FeatureFlagsModule,
     // The control plane's own modules, in the order their slices land.
     ProjectsModule,
     // The module the other three feed into: the sessions themselves, their

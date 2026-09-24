@@ -28,8 +28,9 @@ import type { FlagDefinition, FlagValue } from './types';
 export const FEATURE_FLAGS = {
   /**
    * Kill switch for minting API tokens. Live by default; switching it off stops
-   * new tokens being created (the API refuses, the web app hides the button)
-   * without touching tokens that already exist.
+   * new tokens being created (the API refuses with `FLAG_003`, and a client
+   * that offers token creation hides it) without touching tokens that already
+   * exist.
    */
   api_token_creation: {
     description: 'Allow users to create new personal API tokens.',
