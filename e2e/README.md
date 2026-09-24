@@ -117,6 +117,31 @@ runner; install, the service units and the signed swap are proved on a real OS
 (`product/versions/mvp/09-runner-install-and-update.md`). What the fleet covers
 is recorded in `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
 
+## The local stack: one real runner, no containers
+
+`scripts/stack/stack.mjs` stands the whole product up on one machine and
+pairs **one** real runner with it: the fleet's approach without the fleet's
+image, for machines (a cloud sandbox, typically) where Docker runs containers
+but cannot build one. The host is the runner built from this checkout, under
+a Unix account of its own, cloning from a local `git daemon` seeded as the
+fleet's `git-server` is, with the same `claude` shim.
+
+```bash
+node scripts/stack/stack.mjs up --web   # Docker, Postgres, Redis, both stubs, API, console
+node scripts/stack/stack.mjs host       # pair a runner with a fresh account
+pnpm --filter @oppenheimer/e2e e2e:local       # tests/local, against that host
+node scripts/stack/stack.mjs down       # --purge also drops volumes and the host account
+```
+
+`e2e:local` is opt-in (`E2E_LOCAL=1`) and runs two projects. `local` puts ten
+sessions on the host and checks they share one connection to the API, that
+typing in one pane stays fast while three others each print ~40 MB, and that
+the flooded panes finish and still answer. `local-web` opens a session in the
+console and types into it. Their terminals credit what they read
+(`support/local-host.ts`), which the fleet's `attach` does not, so they can
+print past the 256 KB window. When to reach for this and what goes wrong is
+the `local-stack` skill (`.agents/skills/local-stack/SKILL.md`).
+
 ## Running it
 
 ```bash
