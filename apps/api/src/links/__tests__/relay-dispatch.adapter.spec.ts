@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { sessionCreateSchema } from '@oppenheimer/shared/protocol';
+import { sessionCreateSchema, sessionImageSchema } from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
@@ -113,6 +113,30 @@ describe('RelayDispatchAdapter', () => {
       branch: 'x',
     });
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+    expect(link.send).not.toHaveBeenCalled();
+  });
+
+  it('sends a session.image the protocol accepts, the bytes as base64', async () => {
+    const { adapter, link } = harness(true);
+    const data = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const work = session();
+
+    const outcome = await adapter.pasteImage(work, { window: 0, mediaType: 'image/png', data });
+
+    expect(outcome).toEqual({ delivered: true, hints: [] });
+    const sent = sessionImageSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+    expect(sent).toMatchObject({ sessionId: work.id, window: 0, mediaType: 'image/png' });
+    expect(Buffer.from(sent.data, 'base64')).toEqual(data);
+  });
+
+  it('holds no image for a host that is offline', async () => {
+    const { adapter, link } = harness(false);
+    const outcome = await adapter.pasteImage(session(), {
+      window: 0,
+      mediaType: 'image/png',
+      data: Buffer.from([0x89]),
+    });
+    expect(outcome).toEqual({ delivered: false, hints: ['host_offline'] });
     expect(link.send).not.toHaveBeenCalled();
   });
 });

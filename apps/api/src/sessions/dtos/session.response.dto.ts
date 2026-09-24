@@ -238,3 +238,24 @@ export class AttachTicketResponseDto {
   })
   window!: number;
 }
+
+/**
+ * `POST /sessions/{id}/images`. Nothing is created here that the reader will
+ * see a row for: success is the image's path appearing in the window's
+ * prompt, and a runner that refuses says so in the session's log.
+ */
+export class SessionImageResponseDto {
+  @ApiProperty({
+    description: 'Whether the image reached a live link to the session’s host.',
+  })
+  delivered!: boolean;
+
+  @ApiProperty({
+    isArray: true,
+    type: String,
+    description:
+      '`host_offline` means no link to the host exists and nothing was sent: an image is not queued for later, because the prompt it was meant for will have moved on.',
+    example: [],
+  })
+  hints!: string[];
+}

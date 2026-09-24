@@ -373,6 +373,9 @@ are never reissued.
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
+| `SESSIONS_011` <a id="sessions_011" /> | That image is too large to give the session     | 413  |
+| `SESSIONS_012` <a id="sessions_012" /> | That is not an image the session can take       | 415  |
+| `SESSIONS_013` <a id="sessions_013" /> | That session is stopped                         | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -386,6 +389,12 @@ already keys conversation state by.
 per session, so a second repository is refused here — on create by the body's own
 limit, and on adding one to a session that has one — rather than by the host after
 the session was written.
+
+`SESSIONS_011`–`SESSIONS_013` belong to pasting an image into a session's prompt
+(`POST /sessions/{id}/images`). The ceiling is 5 MB, Claude's own for one image; the type
+is judged by the file's magic bytes, never by what the browser labelled it; and a stopped
+session is refused rather than sent a file there is no pane to paste into. A runner that
+refuses the image anyway answers with `SESS_005` in the session's log.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

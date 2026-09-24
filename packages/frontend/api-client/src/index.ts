@@ -123,6 +123,7 @@ export type {
   SessionCheckoutResponseDto,
   SessionEventPageResponseDto,
   SessionEventResponseDto,
+  SessionImageResponseDto,
   SessionLaunchResponseDto,
   SessionResponseDto,
   UpdateProjectRequest,

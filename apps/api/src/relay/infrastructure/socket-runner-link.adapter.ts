@@ -27,6 +27,9 @@ const SESSION_COMMANDS = new Set([
   'session.close',
   'session.window.open',
   'session.window.close',
+  // A pasted image's refusal (the bytes, the window, a stopped pane) is the
+  // only word the reader gets that the path never reached the prompt.
+  'session.image',
 ]);
 
 /**

@@ -4,6 +4,7 @@ import type {
   ProtocolMessage,
   SessionCloseMessage,
   SessionCreateMessage,
+  SessionImageMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
@@ -11,6 +12,7 @@ import type {
   SessionCloseSpec,
   SessionDispatchOutcome,
   SessionDispatchPort,
+  SessionImageSpec,
   SessionLaunchSpec,
 } from '../../sessions/application/session-dispatch.port';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
@@ -87,6 +89,23 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       commandId: randomUUID(),
       sessionId: session.id,
       acceptUnpushedWork: spec.acceptUnpushedWork,
+    };
+    return this.deliver(link, message);
+  }
+
+  async pasteImage(
+    session: WorkSessionEntity,
+    image: SessionImageSpec,
+  ): Promise<SessionDispatchOutcome> {
+    const link = this.links.find(session.hostId);
+    if (!link) return OFFLINE;
+    const message: SessionImageMessage = {
+      type: 'session.image',
+      commandId: randomUUID(),
+      sessionId: session.id,
+      window: image.window,
+      mediaType: image.mediaType,
+      data: image.data.toString('base64'),
     };
     return this.deliver(link, message);
   }

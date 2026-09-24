@@ -65,6 +65,7 @@ export const ENDPOINT_POLICIES = {
   'POST /sessions/:id/checkouts': [{ action: 'update', subject: 'Session' }],
   'DELETE /sessions/:id/checkouts/:checkoutId': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/attach-ticket': [{ action: 'update', subject: 'Session' }],
+  'POST /sessions/:id/images': [{ action: 'update', subject: 'Session' }],
 } satisfies Record<string, readonly [EndpointPolicy, ...EndpointPolicy[]]>;
 
 /** An endpoint whose rules are declared in {@link ENDPOINT_POLICIES}. */

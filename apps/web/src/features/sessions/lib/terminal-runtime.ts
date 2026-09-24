@@ -3,6 +3,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
+import { carriesFiles, imageFromTransfer } from './terminal-images';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
@@ -24,6 +25,13 @@ export interface SessionTerminalOptions {
    * Shift+Enter as a newline. A shell window gets the chord as typed.
    */
   agentWindow?: boolean;
+  /**
+   * An image was pasted or dropped onto the terminal. The agent cannot read
+   * the browser's clipboard, so the caller uploads it and the runner pastes
+   * its path into the prompt (05). Without a handler, images are left to
+   * xterm, which pastes nothing for them.
+   */
+  onImage?: (image: File) => void;
 }
 
 /**
@@ -95,6 +103,32 @@ export function mountSessionTerminal(
     }
     return false;
   });
+
+  // Images, pasted or dropped (`terminal-images.ts`). Caught on the way down,
+  // before xterm's own paste handler on its textarea: xterm would paste an
+  // image as nothing, or as the text copied beside it.
+  const onPaste = (event: ClipboardEvent) => {
+    const image = options.onImage && imageFromTransfer(event.clipboardData);
+    if (!image) return;
+    event.preventDefault();
+    event.stopPropagation();
+    options.onImage?.(image);
+  };
+  const onDragOver = (event: DragEvent) => {
+    if (!options.onImage || !carriesFiles(event.dataTransfer)) return;
+    // Without this the browser opens the dropped file in the tab.
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = (event: DragEvent) => {
+    if (!options.onImage || !carriesFiles(event.dataTransfer)) return;
+    event.preventDefault();
+    const image = imageFromTransfer(event.dataTransfer);
+    if (image) options.onImage(image);
+  };
+  container.addEventListener('paste', onPaste, { capture: true });
+  container.addEventListener('dragover', onDragOver);
+  container.addEventListener('drop', onDrop);
 
   // The wheel scrolls the session, not the program.
   //
@@ -217,6 +251,9 @@ export function mountSessionTerminal(
 
   return () => {
     if (frame !== null) cancelAnimationFrame(frame);
+    container.removeEventListener('paste', onPaste, { capture: true });
+    container.removeEventListener('dragover', onDragOver);
+    container.removeEventListener('drop', onDrop);
     offData();
     offStatus();
     input.dispose();

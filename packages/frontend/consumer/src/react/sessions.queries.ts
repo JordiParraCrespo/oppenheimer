@@ -7,7 +7,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
+import type {
+  CreateSessionInput,
+  PastedImage,
+  SessionEntity,
+} from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
@@ -136,5 +140,21 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
       queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
       options?.onSuccess?.(...args);
     },
+  });
+}
+
+/**
+ * Paste an image into one window's prompt. Nothing is cached: success is the
+ * path appearing in the terminal, which the terminal itself shows.
+ */
+export function usePasteSessionImage(
+  sessionId: string,
+  window = 0,
+  options?: UseMutationOptions<PastedImage, Error, Blob>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (image: Blob) => app.sessions.pasteImage(sessionId, image, window),
+    ...options,
   });
 }

@@ -1,6 +1,11 @@
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
-import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
+import type {
+  AttachTicket,
+  CreateSessionInput,
+  PastedImage,
+  SessionEntity,
+} from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
 import { AttachSessionStream, type SessionStream } from './stream/session-stream';
@@ -50,6 +55,11 @@ export class SessionsService {
   /** A single-use pass to one window's terminal; see the repository. */
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
+  }
+
+  /** Give one window's prompt an image; see the repository. */
+  pasteImage(id: string, image: Blob, window = 0): Promise<PastedImage> {
+    return this.repository.pasteImage(id, image, window);
   }
 
   /**

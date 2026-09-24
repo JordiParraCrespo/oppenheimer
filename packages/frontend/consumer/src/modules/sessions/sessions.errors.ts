@@ -29,4 +29,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_006',
     message: "Failed to load the session's progress",
   },
+  PASTE_IMAGE_FAILED: {
+    code: 'SESSIONS_CLIENT_007',
+    message: 'Failed to give the image to the session',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

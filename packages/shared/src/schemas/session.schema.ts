@@ -250,6 +250,34 @@ export type SessionImageMediaType = (typeof SESSION_IMAGE_MEDIA_TYPES)[number];
 export const SESSION_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
+ * The type an image's first bytes declare, or `null` when they declare none of
+ * the four. A browser's `type` is a label a file picker guessed from a name;
+ * the magic bytes are what the agent's image reader will go by. The runner
+ * holds the same rule (`apps/runner/internal/sessions/domain/image.go`).
+ */
+export function sniffSessionImage(bytes: Uint8Array): SessionImageMediaType | null {
+  const starts = (...sig: number[]) => sig.every((b, i) => bytes[i] === b);
+  if (starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'image/png';
+  if (starts(0xff, 0xd8, 0xff)) return 'image/jpeg';
+  if (
+    starts(0x47, 0x49, 0x46, 0x38) &&
+    (bytes[4] === 0x37 || bytes[4] === 0x39) &&
+    bytes[5] === 0x61
+  )
+    return 'image/gif';
+  if (
+    bytes.length >= 12 &&
+    starts(0x52, 0x49, 0x46, 0x46) &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  )
+    return 'image/webp';
+  return null;
+}
+
+/**
  * `POST /sessions/{id}/images` — the form fields beside the file. A multipart
  * field arrives as text, so the window is coerced; absent, it is the agent's.
  */

@@ -100,4 +100,32 @@ export const SessionErrors = {
     message: 'A session checks out one repository',
     httpStatus: 409,
   },
+  /**
+   * An image over `SESSION_IMAGE_MAX_BYTES`, refused by multer before it is
+   * buffered. The ceiling is Claude's own for one image, and it keeps the link
+   * message the image travels in well under the link's buffer.
+   */
+  IMAGE_TOO_LARGE: {
+    code: 'SESSIONS_011',
+    message: 'That image is too large to give the session',
+    httpStatus: 413,
+  },
+  /**
+   * No file, or bytes that are none of PNG, JPEG, GIF or WebP by their magic
+   * bytes — whatever the browser labelled them.
+   */
+  UNSUPPORTED_IMAGE: {
+    code: 'SESSIONS_012',
+    message: 'That is not an image the session can take',
+    httpStatus: 415,
+  },
+  /**
+   * An image for a session whose tmux session is gone. It would be written to
+   * the host and pasted into nothing, so it is refused before it is sent.
+   */
+  NOT_RUNNING: {
+    code: 'SESSIONS_013',
+    message: 'That session is stopped',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

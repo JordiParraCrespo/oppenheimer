@@ -1093,6 +1093,17 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
+export type SessionImageResponseDto = {
+    /**
+     * Whether the image reached a live link to the session’s host.
+     */
+    delivered: boolean;
+    /**
+     * `host_offline` means no link to the host exists and nothing was sent: an image is not queued for later, because the prompt it was meant for will have moved on.
+     */
+    hints: Array<string>;
+};
+
 export type AddCheckoutRequest = {
     installationId: string;
     githubRepoId: number;
@@ -4766,6 +4777,58 @@ export type IssueAttachTicketResponses = {
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
 
+export type PasteSessionImageData = {
+    body: {
+        file: Blob | File;
+        /**
+         * The tmux window; 0 when absent.
+         */
+        window?: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/images';
+};
+
+export type PasteSessionImageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_013 — That session is stopped
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_011 — Image too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * SESSIONS_012 — Not an image
+     */
+    415: ProblemDetailsDto;
+};
+
+export type PasteSessionImageError = PasteSessionImageErrors[keyof PasteSessionImageErrors];
+
+export type PasteSessionImageResponses = {
+    202: SessionImageResponseDto;
+};
+
+export type PasteSessionImageResponse = PasteSessionImageResponses[keyof PasteSessionImageResponses];
+
 export type StopSessionData = {
     body?: never;
     path: {
@@ -4863,6 +4926,8 @@ export type AddSessionCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_010 — A session checks out one repository
+     *
      * SESSIONS_005 — That session is closed
      *
      * SESSIONS_004 — That repository is already checked out here

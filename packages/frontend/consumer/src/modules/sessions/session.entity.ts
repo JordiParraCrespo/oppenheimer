@@ -91,6 +91,17 @@ export interface AttachTicket {
   window: number;
 }
 
+/**
+ * What became of an image pasted into a session: whether it reached a live
+ * link to the host. Success past that is the image's path appearing in the
+ * agent's prompt; a runner that refused it says so in the session's log.
+ */
+export interface PastedImage {
+  delivered: boolean;
+  /** `host_offline` when no link to the host existed and nothing was sent. */
+  hostOffline: boolean;
+}
+
 export class SessionEntity {
   constructor(
     public readonly id: string,

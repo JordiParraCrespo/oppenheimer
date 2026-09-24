@@ -7389,6 +7389,123 @@
         "tags": ["Sessions"]
       }
     },
+    "/api/v1/sessions/{id}/images": {
+      "post": {
+        "description": "The agent reads its host’s clipboard, never the browser’s, so a pasted or dropped screenshot is uploaded here instead. The runner saves it on the host and pastes its path into the window as a bracketed paste. PNG, JPEG, GIF or WebP, 5 MB at most, judged by the bytes.",
+        "operationId": "pasteSessionImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "window": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The tmux window; 0 when absent."
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionImageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_013 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "SESSIONS_011 — Image too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "SESSIONS_012 — Not an image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Paste an image into a session’s prompt",
+        "tags": ["Sessions"]
+      }
+    },
     "/api/v1/sessions/{id}/stop": {
       "post": {
         "description": "Ends the agent and the tmux session and leaves every checkout on disk, so a restart recreates window 0 in the same worktrees. Stopping is not closing: the session is exactly as unfinished as it was.",
@@ -7605,7 +7722,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "description": "SESSIONS_010 — A session checks out one repository\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11079,6 +11196,7 @@
           },
           "checkouts": {
             "type": "array",
+            "maxItems": 1,
             "items": {
               "type": "object",
               "properties": {
@@ -11235,6 +11353,24 @@
           }
         },
         "required": ["ticket", "url", "expiresAt", "window"]
+      },
+      "SessionImageResponseDto": {
+        "type": "object",
+        "properties": {
+          "delivered": {
+            "type": "boolean",
+            "description": "Whether the image reached a live link to the session’s host."
+          },
+          "hints": {
+            "description": "`host_offline` means no link to the host exists and nothing was sent: an image is not queued for later, because the prompt it was meant for will have moved on.",
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["delivered", "hints"]
       },
       "AddCheckoutRequest": {
         "type": "object",

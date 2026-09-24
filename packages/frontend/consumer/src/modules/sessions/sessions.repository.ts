@@ -9,6 +9,7 @@ import { injectable } from 'inversify';
 import {
   type AttachTicket,
   type CreateSessionInput,
+  type PastedImage,
   SessionCheckoutEntity,
   SessionEntity,
 } from './session.entity';
@@ -210,5 +211,25 @@ export class SessionsRepository {
       expiresAt: new Date(data.expiresAt),
       window: data.window,
     };
+  }
+
+  /**
+   * An image for one window's prompt. The agent reads its host's clipboard,
+   * not the browser's, so the image travels to the host and the runner pastes
+   * its path in. The API judges the type by the bytes and caps the size.
+   */
+  @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
+  async pasteImage(id: string, image: Blob, window = 0): Promise<PastedImage> {
+    const { data, error, response } = await heyApiSdk.pasteSessionImage({
+      path: { id },
+      body: { file: image, window },
+    });
+    if (error || !data) {
+      throw toAppError(
+        { status: response?.status, body: error },
+        SessionsErrors.PASTE_IMAGE_FAILED,
+      );
+    }
+    return { delivered: data.delivered, hostOffline: data.hints.includes('host_offline') };
   }
 }
