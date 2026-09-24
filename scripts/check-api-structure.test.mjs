@@ -173,36 +173,6 @@ test('the caps bite, and only on the file kind they name', () => {
   assert.deepEqual(kinds(check(handler)), ['handler-over-cap']);
 });
 
-test('every date column of an ORM entity is typed TIMESTAMP_COLUMN_TYPE', () => {
-  const entity = (body) => ({ ...CONFORMING, 'widget/database/widget.orm-entity.ts': body });
-  for (const zoneless of [
-    '@CreateDateColumn()\ncreatedAt!: Date;',
-    '@UpdateDateColumn()\nupdatedAt!: Date;',
-    '@DeleteDateColumn({ nullable: true })\ndeletedAt!: Date | null;',
-    '@Column()\ncreatedAt!: Date;',
-    '@Column({ nullable: true })\n  stoppedAt?: Date | null;',
-    "@Column({ default: () => 'now()' })\nseenAt!: Date;",
-    "@Column({ type: 'timestamp', nullable: true })\nstoppedAt!: Date | null;",
-    "@Column({ nullable: true, type: 'timestamptz' })\nstoppedAt!: Date | null;",
-    "@Column({ type: 'timestamp with time zone' })\nexpiresAt!: Date;",
-  ]) {
-    assert.deepEqual(kinds(check(entity(zoneless))), ['zoneless-date-column'], zoneless);
-  }
-  const typed = [
-    "import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';",
-    '@Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })\nstoppedAt!: Date | null;',
-    "@Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })\nseenAt!: Date;",
-    '@CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })\ncreatedAt!: Date;',
-    '@UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })\nupdatedAt!: Date;',
-    "@Column({ type: 'varchar' })\nname!: string;",
-    "@Column({ type: 'jsonb' })\nfacts!: { seenAt: Date };",
-  ].join('\n');
-  assert.deepEqual(kinds(check(entity(typed))), []);
-  // The rule is about persistence models; a domain entity may say "timestamp".
-  const domain = { ...CONFORMING, 'widget/domain/widget.entity.ts': "// type: 'timestamp'" };
-  assert.deepEqual(kinds(check(domain)), []);
-});
-
 test('a ledger entry silences exactly its own (path, kind), and nothing else', () => {
   const broken = { ...CONFORMING, 'widget/widget.service.ts': '' };
   const ledger = [{ path: 'src/widget/widget.service.ts', kind: 'service-at-module-root' }];

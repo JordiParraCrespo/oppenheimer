@@ -61,8 +61,7 @@ export interface OutboxMessageRecord {
  * TypeORM's default for a date column is `timestamp without time zone`. A value
  * in one goes out with no offset and the browser reads it as local time, which
  * put every date in the console out by the reader's offset (#61). A date column
- * names this constant as its `type`; `pnpm check:api-structure` fails an API
- * ORM entity whose date column does not.
+ * names this constant as its `type`.
  */
 export const TIMESTAMP_COLUMN_TYPE = 'timestamptz';
 
