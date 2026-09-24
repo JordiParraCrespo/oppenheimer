@@ -47,8 +47,9 @@ decorators and for a plain `@Column` on a `Date` field alike. That value goes
 out with no offset and the browser reads it as local time, so every date was
 out by the reader's offset (#61). A tombstone such as `deletedAt` is a plain
 `@Column` like any other date; TypeORM soft-delete is not used. A migration
-that adds a date column writes `timestamptz`, and the sessions integration
-suite fails if any table in the migrated schema has a column without one.
+that adds a date column writes `timestamptz`. What holds the rule is
+`apps/api/test/schema.integration.spec.ts`: it fails if any table the migration
+chain builds has a `timestamp without time zone` column.
 
 ## Entity conventions
 

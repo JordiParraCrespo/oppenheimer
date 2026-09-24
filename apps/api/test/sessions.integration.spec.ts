@@ -344,15 +344,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
   });
 
   describe('points in time (#61)', () => {
-    it('stores no column without a time zone, in any table', async () => {
-      const bare = await dataSource.query(
-        `SELECT table_name || '.' || column_name AS "column"
-           FROM information_schema.columns
-          WHERE table_schema = 'public' AND data_type = 'timestamp without time zone'`,
-      );
-      expect(bare).toEqual([]);
-    });
-
     it('reads a session touched now as now, whatever zone the writer was in', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
