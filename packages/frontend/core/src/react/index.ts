@@ -29,6 +29,7 @@ export {
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
 export { useAuthState } from './hooks';
+export { withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,
   createQueryPersistOptions,
@@ -43,7 +44,6 @@ export {
 export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
 export {
-  profileQueryKey,
   useDeleteUser,
   useMyPermissions,
   useProfile,

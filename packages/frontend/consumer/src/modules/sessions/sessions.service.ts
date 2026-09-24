@@ -1,14 +1,18 @@
-import { inject, injectable } from 'inversify';
+import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
+import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
 export class SessionsService {
   constructor(
     @inject(TOKENS.SessionsRepository)
     private readonly repository: SessionsRepository,
+    @inject(TOKENS.ApiBaseUrl)
+    @optional()
+    private readonly apiBaseUrl: string = '',
   ) {}
 
   findAll(): Promise<SessionEntity[]> {
@@ -46,5 +50,18 @@ export class SessionsService {
   /** A single-use pass to one window's terminal; see the repository. */
   issueAttachTicket(id: string, window = 0): Promise<AttachTicket> {
     return this.repository.issueAttachTicket(id, window);
+  }
+
+  /**
+   * One window's terminal, live: the attach socket, its reconnect ladder, a
+   * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is
+   * opened until this is called, and `dispose()` closes it; the platform only
+   * renders what it delivers.
+   */
+  openStream(id: string, window = 0): SessionStream {
+    return new AttachSessionStream({
+      apiBaseUrl: this.apiBaseUrl,
+      issueTicket: () => this.issueAttachTicket(id, window),
+    });
   }
 }

@@ -112,9 +112,7 @@ export function OnboardingGithubScreen({
           <Button
             size="lg"
             block
-            render={
-              <Link to="/onboarding/host" search={{ installation: installation.id, walk }} />
-            }
+            render={<Link to="/onboarding/host" search={{ installation: installation.id, walk }} />}
           >
             {t('onboarding.flow.continue')}
           </Button>

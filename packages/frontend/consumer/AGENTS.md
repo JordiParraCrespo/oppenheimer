@@ -24,7 +24,9 @@ and the full "add a module" cookbook are
   `pnpm check:structure` allows a feature name a module carries.
 - A new query hook → `src/react/things.queries.ts`, keys derived from
   `thingsKeys.all`, hooks over `useConsumerApp()`, mutations invalidating by
-  prefix in `onSuccess`; export both by name from `src/react/index.ts`.
+  prefix through `withCacheOnSuccess(options, update)` from
+  `@oppenheimer/frontend-core/react`; export both by name from
+  `src/react/index.ts`.
 - Data that must not be written to storage → its key prefix in
   `CONSUMER_NON_PERSISTED_FEATURES` (`src/react/persistence.ts`).
 - Something that is not product logic (every app would need it) → promote it

@@ -1,10 +1,10 @@
 import { Button, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
 import { CircleOff, Terminal } from '@oppenheimer/design-system-web/icons';
+import { isSessionNotFound } from '@oppenheimer/frontend-consumer';
 import { useSession } from '@oppenheimer/frontend-consumer/react';
 import { RouteError, RouteNotFound } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { isSessionNotFound } from '../lib/session-error';
 import { SessionProvisioning } from '../sections/session-provisioning';
 import { SessionTerminal } from '../sections/session-terminal';
 

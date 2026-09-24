@@ -1,6 +1,6 @@
 import '@xterm/xterm/css/xterm.css';
+import type { SessionStream, StreamEnd, StreamStatus } from '@oppenheimer/frontend-consumer';
 import { useEffect, useRef, useState } from 'react';
-import type { SessionStream, StreamEnd, StreamStatus } from '../lib/session-stream';
 import { mountSessionTerminal, type TerminalGrid } from '../lib/terminal-runtime';
 
 export type { TerminalGrid } from '../lib/terminal-runtime';

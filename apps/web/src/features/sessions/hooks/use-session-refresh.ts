@@ -1,7 +1,7 @@
+import type { StreamEnd } from '@oppenheimer/frontend-consumer';
 import { sessionsKeys } from '@oppenheimer/frontend-consumer/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import type { StreamEnd } from '../lib/session-stream';
 
 /**
  * When the stream ends for good, the row has changed under the screen: a stop,

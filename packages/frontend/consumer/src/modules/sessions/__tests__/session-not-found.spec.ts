@@ -1,6 +1,6 @@
 import { AppError } from '@oppenheimer/frontend-core';
 import { describe, expect, it } from 'vitest';
-import { isSessionNotFound } from '../lib/session-error';
+import { isSessionNotFound } from '../session-not-found';
 
 const FETCH_FAILED = { code: 'SESSIONS_CLIENT_002', message: 'Failed to load the session' };
 
