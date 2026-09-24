@@ -1,0 +1,19 @@
+diff --git a/packages/frontend/consumer/src/react/hosts.queries.ts b/packages/frontend/consumer/src/react/hosts.queries.ts
+index 3fb61e0..1a2b3c4 100644
+--- a/packages/frontend/consumer/src/react/hosts.queries.ts
++++ b/packages/frontend/consumer/src/react/hosts.queries.ts
+@@ -117,11 +117,12 @@ export function useRenameHost(
+ 
+   return useMutation({
+     mutationFn: ({ id, name }: RenameHostVariables) => app.hosts.rename(id, name),
+-    ...withCacheOnSuccess(options, (host) => {
++    ...options,
++    onSuccess: (host) => {
+       queryClient.setQueryData<HostEntity[]>(hostsKeys.list(), (current) =>
+         current?.map((row) => (row.id === host.id ? host : row)),
+       );
+-    }),
++    },
+   });
+ }
+ 
