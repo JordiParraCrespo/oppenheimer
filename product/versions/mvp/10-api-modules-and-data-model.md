@@ -700,7 +700,7 @@ writes a status that is idempotent to rewrite), and a
 inline on the checkout, as `account` carries its provider ids).
 
 Uniform across all seven: `id` uuid primary key minted with
-`randomUUID()`, `@CreateDateColumn`/`@UpdateDateColumn`, snake_case name
+`randomUUID()`, `createdAt`/`updatedAt` as `timestamptz`, snake_case name
 (the convention `api_token`, `user_role`, `access_grant` and
 `user_settings` already follow), and an owner column — `organizationId`
 on the workspace-owned tables, exactly as `lead` does (all but

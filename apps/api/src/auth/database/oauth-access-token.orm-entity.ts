@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
@@ -17,10 +18,10 @@ export class OAuthAccessTokenOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   refreshToken!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   accessTokenExpiresAt!: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   refreshTokenExpiresAt!: Date | null;
 
   @Index()
@@ -34,9 +35,9 @@ export class OAuthAccessTokenOrmEntity {
   @Column({ type: 'text' })
   scopes!: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

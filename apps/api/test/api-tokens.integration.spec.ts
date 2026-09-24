@@ -211,7 +211,7 @@ describe('API tokens & scopes (integration)', () => {
       expect(byName.get('scopes')?.data_type).toBe('jsonb');
       expect(byName.get('organizationIds')?.data_type).toBe('jsonb');
       expect(byName.get('organizationIds')?.is_nullable).toBe('YES');
-      expect(byName.get('expiresAt')?.data_type).toBe('timestamp without time zone');
+      expect(byName.get('expiresAt')?.data_type).toBe('timestamp with time zone');
       expect(byName.get('revokedAt')?.is_nullable).toBe('YES');
     });
 

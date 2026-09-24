@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import type { AccessGrantPrincipalType } from '../domain/access-grant.entity';
 
@@ -43,9 +44,9 @@ export class AccessGrantOrmEntity {
    * sweeper is welcome for table size, but it must never be the thing that
    * makes expiry correct.
    */
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   expiresAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 }

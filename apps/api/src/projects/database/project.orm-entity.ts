@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import {
   Column,
   CreateDateColumn,
@@ -58,12 +59,12 @@ export class ProjectOrmEntity {
    * sessions to answer. Nothing writes this column yet, and the listing already
    * excludes rows that carry it.
    */
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   archivedAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }
