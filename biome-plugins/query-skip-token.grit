@@ -5,11 +5,14 @@
 // key and the `queryFn` is `id ? () => fetch(id) : skipToken`.
 language js
 
-or { `useQuery({ $props })`, `useSuspenseQuery({ $props })` } where {
+or {
+  `useQuery({ $props })`,
+  `useSuspenseQuery({ $props })`
+} where {
   $props <: some `enabled: $cond`,
-  $cond <: or { `!!$_`, `Boolean($_)` },
-  register_diagnostic(
-    span=$cond,
-    message="Gate a query on a missing input with `queryFn: input ? () => fetch(input) : skipToken`, not `enabled`; keep the input (undefined included) in the key."
-  )
+  $cond <: or {
+    `!!$_`,
+    `Boolean($_)`
+  },
+  register_diagnostic(span=$cond, message="Gate a query on a missing input with `queryFn: input ? () => fetch(input) : skipToken`, not `enabled`; keep the input (undefined included) in the key.")
 }

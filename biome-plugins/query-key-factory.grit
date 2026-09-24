@@ -12,9 +12,9 @@ or {
   `queryOptions({ $props })`
 } where {
   $props <: some `queryKey: $key`,
-  $key <: or { `[$_]`, r"^\w+Keys\.all$" },
-  register_diagnostic(
-    span=$key,
-    message="Take a query's key from its feature's key factory (`thingsKeys.detail(id)`), never an inline array or the root `thingsKeys.all`."
-  )
+  $key <: or {
+    `[$_]`,
+    r"^\w+Keys\.all$"
+  },
+  register_diagnostic(span=$key, message="Take a query's key from its feature's key factory (`thingsKeys.detail(id)`), never an inline array or the root `thingsKeys.all`.")
 }

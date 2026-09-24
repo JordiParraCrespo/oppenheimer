@@ -5,11 +5,11 @@
 // how logout once navigated to /login without clearing the cache.
 language js
 
-or { `useMutation($arg)`, `useMutation<$_>($arg)` } where {
+or {
+  `useMutation($arg)`,
+  `useMutation<$_>($arg)`
+} where {
   $arg <: `{ $props }`,
   $props <: some `onSuccess: $handler`,
-  register_diagnostic(
-    span=$arg,
-    message="Write a mutation hook's cache update as `...withCacheOnSuccess(options, update)` (the kernel's react entry), not an inline `onSuccess`: beside `...options` the spread order decides whether it runs."
-  )
+  register_diagnostic(span=$arg, message="Write a mutation hook's cache update as `...withCacheOnSuccess(options, update)` (the kernel's react entry), not an inline `onSuccess`: beside `...options` the spread order decides whether it runs.")
 }
