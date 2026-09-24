@@ -39,7 +39,7 @@ LlmModule.forRootAsync({
   useFactory: (config: ConfigService) => ({
     provider: 'openrouter',
     apiKey: config.get('llm.apiKey'),
-    model: 'meta-llama/llama-3.1-8b-instruct',
+    model: 'google/gemma-3-12b-it',
   }),
 });
 
