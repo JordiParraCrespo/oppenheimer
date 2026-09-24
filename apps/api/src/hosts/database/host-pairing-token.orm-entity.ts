@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
@@ -44,22 +45,22 @@ export class HostPairingTokenOrmEntity {
   @Column({ type: 'inet', nullable: true })
   redeemedFromIp!: string | null;
 
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE })
   expiresAt!: Date;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   revokedAt!: Date | null;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   redeemedAt!: Date | null;
 
   /** The host this token created, written in the same transaction as the burn. */
   @Column({ type: 'uuid', nullable: true })
   redeemedHostId!: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

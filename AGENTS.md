@@ -8,9 +8,8 @@ terminal running Claude Code or Codex, streamed to the browser through a
 control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
-what `pnpm dev:mvp` starts. The other apps (admin, mobile, CLI, MCP, the
-showcases, Helm) are kept from day one so later slices need no porting, and
-are not built on until their slice arrives. The starter's reference modules
+what `pnpm dev:mvp` starts. The one app beyond the MVP is
+`apps/web-showcase`, the gallery of the web design system. The starter's reference modules
 (`leads`, `billing`) are on disk but not composed into the API.
 
 ## Product notes
@@ -53,13 +52,7 @@ decisions that changed along the way.
 oppenheimer/
 ├── apps/
 │   ├── api/              # NestJS REST API
-│   ├── admin-mobile/     # Expo control plane for users and roles
-│   ├── admin-web/        # Vite control plane for users and roles
-│   ├── cli/              # `oppenheimer` command-line interface
 │   ├── docs/             # Docusaurus documentation
-│   ├── mcp/              # MCP server (stdio + Streamable HTTP)
-│   ├── mobile/           # Consumer Expo app
-│   ├── mobile-showcase/  # Expo app showcasing the mobile design system
 │   ├── runner/           # The Go host agent: pairing, service install, signed self-update (+ the REST/WS service it grew from)
 │   ├── web/              # Consumer Vite + TanStack Router SPA
 │   └── web-showcase/     # Next.js app showcasing the web design system
@@ -80,19 +73,14 @@ oppenheimer/
 │   ├── frontend/         # The React tier: logic split by product, glue split by platform
 │   │   ├── core/         # Kernel every app loads: session, users, settings, DI (@oppenheimer/frontend-core)
 │   │   ├── consumer/     # The console's domain: sessions, hosts, plus the account chrome (@oppenheimer/frontend-consumer)
-│   │   ├── admin/        # The control plane's domain: admin-users, roles (@oppenheimer/frontend-admin)
 │   │   ├── api-client/   # Auto-generated typed client from Swagger (@oppenheimer/api-client)
-│   │   ├── web/          # What both Vite apps share: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
-│   │   ├── mobile/       # What both Expo apps share: config, storage, analytics… (@oppenheimer/frontend-mobile)
-│   │   ├── design-system/
-│   │   │   ├── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
-│   │   │   └── mobile/   # NativeWind + rn-primitives (@oppenheimer/design-system-mobile)
-│   │   └── nitro-app-info/ # Nitro native module exposing app info to the Expo apps (@oppenheimer/nitro-app-info)
+│   │   ├── web/          # The web platform kit: shell, auth chrome, table, i18n… (@oppenheimer/frontend-web)
+│   │   └── design-system/
+│   │       └── web/      # shadcn/ui + Base UI + Tailwind v4 (@oppenheimer/design-system-web)
 │   ├── go/               # Shared Go modules (@oppenheimer/go-*): core, config, httpx, auth, health, ws, postgres, selfupdate
 │   ├── shared/           # Zod schemas, types, CASL permissions
 │   └── translations/     # Shared i18n JSON files
 ├── docker/               # Docker Compose (dev + prod)
-├── helm/                 # Kubernetes Helm charts
 └── .github/              # GitHub Actions CI/CD
 ```
 
@@ -107,7 +95,7 @@ lists them with the paths and marked config blocks that go with each one, and
 `/starter-init` is the skill that turns the starter into a project: a short
 dialog about what the user is building, a proposal of what to keep, then
 `scripts/starter/prune.mjs` removes the rest and the skill rewrites the prose.
-When you add a file that mentions an optional app (CI, compose, Helm,
+When you add a file that mentions an optional app (CI, compose,
 `.env.example`, a sidebar), wrap the lines in `# oppenheimer:begin <id>` /
 `# oppenheimer:end <id>`; `pnpm starter:check` fails otherwise.
 <!-- oppenheimer:end starter -->
@@ -120,8 +108,7 @@ When you add a file that mentions an optional app (CI, compose, Helm,
 - **One `.env`, at the repo root**; the root `.env.example` is its
   documentation (a note per variable, nothing unread in it). Never add a
   per-package `.env`. Node apps load it via `@oppenheimer/env` (real env vars always
-  win); the web apps read it through Vite's `envDir`; the mobile apps load it in
-  `app.config.ts`
+  win); the web app reads it through Vite's `envDir`
 - Biome for linting and formatting (not ESLint/Prettier). The one exception is
   the apps' design-system linter, `@shadcn/lint`, which only ships as an
   ESLint/oxlint plugin: `pnpm lint:design` runs it through oxlint with oxlint's
@@ -154,8 +141,8 @@ loads only for the code it governs. Three are frontend:
 - `frontend-architecture.md` — the placement grid (kernel, product package,
   platform kit, feature), the kind directories and what each may import, the
   render rules, and the checks that hold them
-- `forms.md` — React Hook Form and Zod validation across `apps/web`,
-  `apps/mobile` and the shared schemas
+- `forms.md` — React Hook Form and Zod validation across `apps/web` and the
+  shared schemas
 - `frontend-ui.md` — reaching for the design system before writing markup, the
   colour vocabulary, where helpers and route files live, placeholder data,
   translating exports, and e2e coverage
@@ -184,20 +171,13 @@ Database-backed dynamic RBAC: roles and permissions live in the `role` table,
 a user holds many, and routes are guarded with `@CheckPolicies`. The full
 guide is `.agents/rules/rbac-roles.md`.
 
-### CLI (`apps/cli`) and MCP server (`apps/mcp`)
+#### Scopes (API tokens and OAuth clients)
 
-Both are governed by the **scope catalog** in `packages/shared/src/scopes/`.
-Roles say what a person may do; scopes say what a credential may do on their
-behalf, and effective access is the intersection — see
-`.agents/rules/scopes-and-credentials.md` and the "CLI & MCP" docs section.
-
-- `apps/cli` — commander-based; commands in `src/commands/`, shared plumbing in
-  `src/lib/` (config profiles, HTTP client, output, prompts). Exit codes are a
-  public contract: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found,
-  6 unreachable.
-- `apps/mcp` — one tool registry in `src/tools/`, two entrypoints in `src/bin/`.
-  Every tool declares `requiredScopes`; the tool list is filtered by the
-  credential's effective scopes.
+Credentials are governed by the **scope catalog** in `packages/shared/src/scopes/`.
+Roles say what a person may do; scopes say what a credential (an API token, or
+an OAuth client through the Better Auth `mcp` plugin) may do on their behalf,
+and effective access is the intersection — see
+`.agents/rules/scopes-and-credentials.md`.
 
 ### Go services (`apps/runner` + `packages/go/*`)
 
@@ -233,23 +213,22 @@ module" steps in `packages/go/README.md`.
 - Constants: `AUTH` (token expiry, salt rounds), `PAGINATION`, `ROLES`,
   `SYSTEM_ROLES`, `SYSTEM_ROLE_PERMISSIONS`, `QUEUE_NAMES`
 
-### Frontend (packages/frontend, the four apps)
+### Frontend (packages/frontend, apps/web)
 
 The frontend is split twice, and the two splits answer different questions:
 
 - **By product** for logic. `core` is the kernel every app loads (session,
   users, user settings, capabilities, analytics, the InversifyJS container,
   config, validation). `consumer` (`sessions`, `hosts`, and the account chrome:
-  `organizations` as the personal workspace, `profile`, `api-tokens`) and
-  `admin` (`admin-users`, `roles`) are the two products' domains
-  (entities, repositories, services, TanStack Query hooks); an app loads
-  exactly one, through `OppenheimerApp.create({ modules })`. The products never
-  import each other — where they meet, the meeting point is a kernel contract.
-- **By platform** for UI and glue. `web` and `mobile` hold what both apps of
-  a platform share below their routes, organised by concern (`shell`, `auth`,
-  `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, …),
-  each concern with the same kind directories a feature has. A kit imports the
-  kernel only; a component that needs a product hook is a feature.
+  `organizations` as the personal workspace, `profile`, `api-tokens`) is the
+  product's domain (entities, repositories, services, TanStack Query hooks);
+  the app loads it through `OppenheimerApp.create({ modules })`. The kernel
+  never imports the product package.
+- **By platform** for UI and glue. `web` is the platform kit: what sits below
+  the routes, organised by concern (`shell`, `auth`, `table`, `layout`,
+  `forms`, `theme`, `i18n`, `analytics`, `platform`, …), each concern with the
+  same kind directories a feature has. The kit imports the kernel only; a
+  component that needs a product hook is a feature.
 - **In the app**: routes compose, features contain. `features/<module>/`
   is named after a module of `core` or of the app's product package and holds
   only `screens/ sections/ dialogs/ forms/ components/ hooks/ lib/ __tests__/`.
@@ -259,8 +238,8 @@ The frontend is split twice, and the two splits answer different questions:
 The placement rules, the render rules (state at the lowest reader, effects
 only in `hooks/`, the React Compiler on, no manual memo) and what enforces
 them are `.agents/rules/frontend-architecture.md`. The layer model and the
-cookbooks are `packages/frontend/ARCHITECTURE.md` and each app's
-`ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
+cookbooks are `packages/frontend/ARCHITECTURE.md` and
+`apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
 `pnpm check:structure` and Biome hold it.
 
 ### Web (apps/web)
@@ -272,42 +251,24 @@ cookbooks are `packages/frontend/ARCHITECTURE.md` and each app's
 - Vite env vars (`import.meta.env`, `VITE_`-prefixed) for configuration, read
   from the root `.env` (`envDir` in `vite.config.ts` points at the repo root)
 
-### Control plane (apps/admin-web, apps/admin-mobile)
-
-- Separate web and Expo entrypoints for platform administration
-- Restricted to Better Auth `admin` and `superadmin` platform roles
-- Owns user lifecycle, application-role assignment, and role permissions
-- Has no public registration flow; consumer products remain in `apps/web` and
-  `apps/mobile`
-
-### Mobile (apps/mobile)
-
-- Expo with expo-router
-- NativeWind + `@oppenheimer/design-system-mobile` components for UI
-- i18next for i18n (translations from `packages/translations`)
-- React Hook Form + `zodResolver` for forms (`Controller` per field)
-- expo-secure-store for secure token storage
-
-#### Forms (both apps)
+#### Forms
 
 React Hook Form over a Zod schema from `@oppenheimer/shared`, resolver wired through
 the app's `useZodResolver`. The convention is `.agents/rules/forms.md`.
 
 ### Design system (packages/frontend/design-system)
 
-Two independently versioned packages with a mirrored component API:
 `@oppenheimer/design-system-web` (Base UI + Tailwind v4, tokens in
-`src/styles/globals.css`) for `apps/web` and `apps/web-showcase`, and
-`@oppenheimer/design-system-mobile` (NativeWind + `@rn-primitives`) for `apps/mobile`
-and `apps/mobile-showcase`. Usage rules are `.agents/rules/frontend-ui.md`.
+`src/styles/globals.css`) is the design system for `apps/web`, and
+`apps/web-showcase` is its gallery. Usage rules are `.agents/rules/frontend-ui.md`.
 
 ## Dependency flow
 
 ```
 packages/tsconfig         → used by all apps and packages (tsconfig extends)
-packages/env              → used by api, mcp, mobile, admin-mobile (root .env loader)
+packages/env              → used by api (root .env loader)
 packages/shared           → used by api, frontend, api-client, backend/core (wire types)
-packages/auth             → used by api, web, mobile (shared Better Auth config)
+packages/auth             → used by api, web (shared Better Auth config)
 packages/backend/core     → used by api, other backend packages
 packages/backend/ddd      → used by api, backend/core (depends on nothing in the workspace)
 packages/backend/email    → used by api
@@ -316,15 +277,12 @@ packages/backend/cache    → used by api
 packages/backend/llm      → used by api
 packages/backend/storage  → used by api
 packages/backend/queue    → used by api
-packages/translations        → used by web, mobile, api (email copy via backend/i18n)
-packages/frontend/design-system/web    → used by web, admin-web, web-showcase, frontend/web
-packages/frontend/design-system/mobile → used by mobile, admin-mobile, mobile-showcase, frontend/mobile
-packages/frontend/api-client  → used by frontend/core, frontend/consumer, frontend/admin
-packages/frontend/core        → used by every frontend package and app
-packages/frontend/consumer    → used by web, mobile
-packages/frontend/admin       → used by admin-web, admin-mobile
-packages/frontend/web         → used by web, admin-web
-packages/frontend/mobile      → used by mobile, admin-mobile
+packages/translations     → used by web, frontend/web, api (email copy via backend/i18n)
+packages/frontend/design-system/web → used by web, web-showcase, frontend/web
+packages/frontend/api-client  → used by frontend/core, frontend/consumer
+packages/frontend/core        → used by every frontend package and web
+packages/frontend/consumer    → used by web
+packages/frontend/web         → used by web
 packages/go/core              → used by every other packages/go module and runner
 packages/go/{config,httpx,auth,health,ws,postgres,selfupdate} → used by runner (auth ← ws, httpx ← health, auth)
 ```
@@ -347,9 +305,7 @@ pnpm changeset          # Create a changeset for versioning
 ## Deployment
 
 - **Tier 1 (~€4/mo)**: Hetzner VPS + Docker Compose for API/DB/Redis, free hosting for web/docs
-- **Tier 2 (~€15-35/mo)**: Hetzner K8s + Helm charts (`helm/oppenheimer/`)
 - Docker images built in CI (GitHub Actions), pushed to GHCR
-- Mobile: EAS Build (Expo)
 
 ## When modifying code
 
@@ -357,17 +313,16 @@ pnpm changeset          # Create a changeset for versioning
 - New env vars go in the root `.env.example` with a note on what they do; never
   add a per-package `.env` (see `.agents/rules/api-config.md`)
 - New API endpoints need Swagger decorators and `@RequireScopes`; without the
-  scope they are unreachable by API tokens and MCP clients. Afterwards run
+  scope they are unreachable by API tokens and OAuth clients. Afterwards run
   `pnpm generate:api-client`
-- New MCP tools go in `apps/mcp/src/tools/`, declaring the same scope the endpoint requires
 - Keep the pluggable service pattern: abstract class → concrete implementations → factory in module
 - New translations go in `packages/translations/{locale}/index.json`
 - Where frontend code goes — kernel, product package, platform kit, or a
   feature's kind directory — is `.agents/rules/frontend-architecture.md`;
   `/scaffold-feature` builds the shape and `pnpm check:structure` checks it
-- UI in the web apps, `apps/web-showcase` and the web design system:
+- UI in `apps/web`, `apps/web-showcase` and the web design system:
   `.agents/rules/frontend-ui.md`
-- Routes in `apps/web` and `apps/admin-web` — a new URL, a guard, a layout
+- Routes in `apps/web` — a new URL, a guard, a layout
   route, search params, or anything that regenerates `routeTree.gen.ts` — is
   the `/tanstack-routing` skill (`.agents/skills/tanstack-routing/`). A route
   file's name is its URL, so a rename is a URL change
@@ -386,13 +341,13 @@ pnpm changeset          # Create a changeset for versioning
   Import a narrow subpath (`@oppenheimer/shared/schemas/auth`) or fetch from the API.
   Anything newly imported this way needs adding to `optimizeDeps.include` in
   `apps/web/vite.config.ts` for dev
-- The same applies to `@oppenheimer/translations`: `apps/web` and `apps/admin-web`
-  import metadata from `@oppenheimer/translations/locales` and catalogs from
+- The same applies to `@oppenheimer/translations`: `apps/web`
+  imports metadata from `@oppenheimer/translations/locales` and catalogs from
   `@oppenheimer/translations/lazy`; only the default locale is bundled
-- The web apps' critical path is budgeted: `pnpm check:bundle` fails past the
+- The web app's critical path is budgeted: `pnpm check:bundle` fails past the
   number in `scripts/check-bundle-size.mjs`. Raise a budget only deliberately,
   in its own diff
-- Compression, cache headers and the Content-Security-Policy for the SPAs live
-  in `apps/web/nginx.conf` and `apps/admin-web/nginx.conf`. A new third-party
+- Compression, cache headers and the Content-Security-Policy for the SPA live
+  in `apps/web/nginx.conf`. A new third-party
   origin goes in `CSP_EXTRA_ORIGINS`; anything the browser must run before
   React is a file in `public/`, the policy admits no inline script

@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
@@ -17,6 +18,6 @@ export class TeamMemberOrmEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 }

@@ -55,6 +55,17 @@ export interface OutboxMessageRecord {
 }
 
 /**
+ * The column type every point in time is stored as, in the outbox and in the
+ * API's tables alike: `timestamptz`.
+ *
+ * TypeORM's default for a date column is `timestamp without time zone`. A value
+ * in one goes out with no offset and the browser reads it as local time, which
+ * put every date in the console out by the reader's offset (#61). A date column
+ * names this constant as its `type`.
+ */
+export const TIMESTAMP_COLUMN_TYPE = 'timestamptz';
+
+/**
  * Persistence model for the outbox, declared as an `EntitySchema` so this
  * library package stays decorator-free. Register it in the consuming app
  * (`TypeOrmModule.forFeature([OutboxMessageSchema])`); the table itself is
@@ -73,13 +84,13 @@ export const OutboxMessageSchema = new EntitySchema<OutboxMessageRecord>({
     reason: { type: 'text' },
     status: { type: 'varchar', length: 16, default: 'pending' },
     attempts: { type: 'int', default: 0 },
-    availableAt: { type: 'timestamp', default: () => 'now()' },
+    availableAt: { type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' },
     lockedBy: { type: 'varchar', nullable: true },
-    lockedUntil: { type: 'timestamp', nullable: true },
+    lockedUntil: { type: TIMESTAMP_COLUMN_TYPE, nullable: true },
     lastError: { type: 'text', nullable: true },
     correlationId: { type: 'varchar', nullable: true },
-    createdAt: { type: 'timestamp', createDate: true },
-    processedAt: { type: 'timestamp', nullable: true },
+    createdAt: { type: TIMESTAMP_COLUMN_TYPE, createDate: true },
+    processedAt: { type: TIMESTAMP_COLUMN_TYPE, nullable: true },
   },
   indices: [
     // The relay's claim query filters on exactly this pair.

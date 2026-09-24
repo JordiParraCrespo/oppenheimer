@@ -5,7 +5,7 @@ sidebar_position: 3
 # Google sign-in
 
 Oppenheimer ships with Google OAuth wired end to end — server, capability detection,
-web button, mobile button. **No code changes are needed to turn it on.** What
+and the console's button. **No code changes are needed to turn it on.** What
 is missing on a fresh clone is a pair of credentials from Google, because they
 are per-deployment secrets that cannot live in the repository.
 
@@ -22,7 +22,6 @@ provider on.
 | Capability detection  | `apps/api/src/capabilities/capabilities.module.ts` | Resolves `google_oauth` from config at boot, logs it, serves it over HTTP |
 | Capability endpoint   | `GET /api/v1/health/capabilities`                  | Tells clients whether the provider is configured                          |
 | Web button            | `apps/web/src/components/social-login-buttons.tsx` | Renders only when the capability read says Google is available            |
-| Mobile button         | `apps/mobile/app/(auth)/login.tsx`, `register.tsx` | Opens an in-app browser and deep-links back via the `oppenheimer://` scheme     |
 | Sign-up gating        | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`disableImplicitSignUp`) | Refuses a Google account with no user here, unless the caller asked to register |
 | Account linking       | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`account.accountLinking`) | Attaches Google to an existing email/password account on the same verified address |
 | Post-sign-up hooks    | `apps/api/src/auth/infrastructure/better-auth.config.ts` (`databaseHooks`)      | Welcome email, default `user` role                                       |
@@ -63,10 +62,8 @@ In **APIs & Services → OAuth consent screen** (newer consoles put this under
 
 In **APIs & Services → Credentials → Create credentials → OAuth client ID**:
 
-- **Application type**: **Web application** — even for the mobile app. Oppenheimer's
-  mobile OAuth flow redirects to the **API**, not to the device, so the API's
-  callback URL is the only redirect Google ever sees. You do not need an
-  Android or iOS client.
+- **Application type**: **Web application**. The OAuth flow redirects to the
+  **API**, so the API's callback URL is the only redirect Google ever sees.
 - **Authorized JavaScript origins**: the origin the user's browser starts the
   flow from. The exchange happens server-side, so this is not strictly required
   — fill it in anyway, it costs nothing and avoids surprises if you ever add a
@@ -76,7 +73,7 @@ In **APIs & Services → Credentials → Create credentials → OAuth client ID*
 
 | Environment               | Authorized JavaScript origin | Authorized redirect URI                            |
 | ------------------------- | ---------------------------- | -------------------------------------------------- |
-| Local dev (web + mobile)  | `http://localhost:3000`      | `http://localhost:3001/api/auth/callback/google`   |
+| Local dev                 | `http://localhost:3000`      | `http://localhost:3001/api/auth/callback/google`   |
 | Production, shared domain | `https://app.example.com`    | `https://app.example.com/api/auth/callback/google` |
 | Production, split domains | `https://app.example.com`    | `https://api.example.com/api/auth/callback/google` |
 
@@ -86,9 +83,11 @@ Google reports it as `redirect_uri_mismatch` before your app is ever reached.
 
 :::note Google rejects plain HTTP except on localhost
 `http://` redirect URIs are only allowed for `localhost` / `127.0.0.1`. A LAN
-address like `http://192.168.1.20:3001/...` or the Android emulator's
-`http://10.0.2.2:3001/...` will be refused when you save the client — see
-[Testing on a physical device](#testing-on-a-physical-device).
+address like `http://192.168.1.20:3001/...` will be refused when you save the
+client. To reach a dev API from another machine, put an HTTPS tunnel in front
+of it (`cloudflared tunnel --url http://localhost:3001`, or `ngrok http 3001`),
+set `BETTER_AUTH_URL` to the tunnel's URL and register
+`https://<tunnel-host>/api/auth/callback/google`.
 :::
 
 Copy the **Client ID** and **Client secret** from the dialog. The secret is
@@ -113,16 +112,15 @@ BETTER_AUTH_URL=http://localhost:3001
 ```
 
 Both variables are read by the API process only. Nothing about Google reaches
-the client bundles — the web and mobile apps just ask the API whether the
+the client bundle — the web app just asks the API whether the
 provider exists.
 
 :::note Containers do not inherit the root `.env`
 The API image does not ship `.env`; the process only sees what its runtime
 environment forwards. `docker/docker-compose.prod.yml` passes both variables
 through to the `api` service, so a `.env` next to the compose file (or the same
-names exported in the shell) is enough there. The Helm chart renders the API's
-environment from `api.env` in `values.yaml`; add the pair there (or reference a
-Secret). On any other target, use that platform's own secret wiring.
+names exported in the shell) is enough there. On any other target, use that
+platform's own secret wiring.
 :::
 
 ## 5. Restart the API and verify
@@ -205,46 +203,6 @@ which the login screen renders as "sign in with your password to continue".
 Clicking the link in the verification email makes the next Google sign-in link
 silently.
 
-## Mobile
-
-The mobile app needs no separate Google client. `apps/mobile/lib/auth-client.ts`
-opens an in-app browser at the API, and the Expo plugin deep-links back into
-the app with `oppenheimer://` once the API has finished the exchange. That scheme is
-already a trusted origin on the API (`MOBILE_SCHEME`).
-
-What must line up:
-
-- `EXPO_PUBLIC_API_URL` points at the same API as `BETTER_AUTH_URL`.
-- `MOBILE_SCHEME` matches the `scheme` in `apps/mobile/lib/auth-client.ts` and
-  `app.config.ts` (all `oppenheimer` by default).
-
-Unlike the web login card, the mobile login and register screens render their
-Google and GitHub buttons unconditionally — they do not read
-`GET /api/v1/health/capabilities`. On a deployment where the provider is not
-configured, the mobile button leads to a provider error rather than hiding
-itself.
-
-The refusal codes above reach mobile less usefully than they do on web: the
-Expo plugin closes the in-app browser on the redirect and keeps the URL, so a
-`signup_disabled` ends the attempt without a message rather than forwarding to
-the register screen. Somebody whose only credential is a Google account signs
-up from the register screen's own provider buttons, which ask for the sign-up
-explicitly.
-
-### Testing on a physical device
-
-A device cannot reach your machine's `localhost`, and Google will not accept a
-LAN IP as a redirect URI. Put an HTTPS tunnel in front of the API instead:
-
-```bash
-cloudflared tunnel --url http://localhost:3001   # or: ngrok http 3001
-```
-
-Then set `BETTER_AUTH_URL` and `EXPO_PUBLIC_API_URL` to the tunnel's HTTPS URL,
-add `https://<tunnel-host>/api/auth/callback/google` to the client's authorized
-redirect URIs, and restart. Simulators and emulators that share the host's
-network stack can keep using `localhost`.
-
 ## Going to production
 
 - **Register the production redirect URI** on the same OAuth client (Google
@@ -261,7 +219,7 @@ network stack can keep using `localhost`.
   topology. If you split them across domains instead, the cookie is cross-site
   and you also need CORS (`FRONTEND_URL`) and cookie attributes to agree.
 - **Treat the secret as a secret**: deployment environment or secret manager,
-  never a `VITE_`/`EXPO_PUBLIC_` variable, never committed.
+  never a `VITE_` variable, never committed.
 
 ## Optional tweaks
 
@@ -284,6 +242,5 @@ All of these go on the `google` entry in `apps/api/src/auth/infrastructure/bette
 | No Google button on the login page                      | Capability is off. `GET /api/v1/health/capabilities` and the boot log tell you; a set-but-not-restarted API is typical.    |
 | Button visible but the API says the provider is unknown | Env vars reached the shell but not the API process, or only one of the two is set.                                         |
 | Google flow succeeds, app still logged out              | Cookie never made it back: `BETTER_AUTH_URL` on a different site from the web app, or `FRONTEND_URL` not a trusted origin. |
-| Sign-in works on the simulator, not on a device         | The device cannot resolve `localhost` — use an HTTPS tunnel as above.                                                      |
 | Back on `/register` with `?error=signup_disabled`       | Working as designed: no account here uses that Google account. Press **Google** on that screen to create one.              |
 | `?error=account_not_linked` on the login page           | The address already has a password account whose email was never verified. Sign in with the password, or verify the address and retry. |

@@ -10,8 +10,8 @@ both sides must agree on, and the client-side `unwrap`/`toAuthSession` helpers.
 **`./client` ships TypeScript sources on purpose — never give it a build
 step.** Better Auth derives client endpoint/session types from the plugin
 tuple through inference chains that do not survive `.d.ts` emission. The
-`exports["./client"]` map points at `src/client.ts`; Vite and Metro transpile
-it in the consuming apps. Only the root entry (consumed by the NestJS API,
+`exports["./client"]` map points at `src/client.ts`; Vite transpiles it in
+the consuming app. Only the root entry (consumed by the NestJS API,
 whose `tsc` cannot compile sources out of `node_modules`) is built to
 CJS + `.d.ts` — and it must export only plain, explicitly typed values.
 
@@ -31,7 +31,7 @@ Consequences:
 - Config both sides must agree on (user fields, the org `teams` flag) → here.
 - Server-only options (database, hooks, emails, admin roles, OAuth) →
   `apps/api/src/auth/infrastructure/better-auth.config.ts`.
-- Platform glue (Expo plugin, SecureStore, cookies) → the apps.
+- Platform glue (cookies) → the apps.
 - The `IAuthClient` contract → `@oppenheimer/frontend-core` (this package must not
   depend on it; `AuthSession` here mirrors it structurally).
 

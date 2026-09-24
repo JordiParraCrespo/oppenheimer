@@ -796,7 +796,7 @@ The registry lives in the API process. Two consumers cannot see it, and
 pretending otherwise would ship resources that are invisible to exactly the
 credentials meant to reach them:
 
-- **`apps/mcp` is a separately deployed server** with a static `ToolDefinition`
+- **An MCP server is a separately deployed process** with a static `ToolDefinition`
   registry whose `requiredScopes` are hand-written, filtering its tool list
   against them. It never talks to the API's boot registry.
 - **`Scope` in `@oppenheimer/shared` is a compile-time union** (`SCOPE_RESOURCES` ×
@@ -810,7 +810,7 @@ defineResource(...)  ──build step──▶  packages/shared/src/scopes/catal
                                       (SCOPE_RESOURCES, PERMISSION_GROUPS, Scope)
                                               │
                         ┌─────────────────────┼─────────────────────┐
-                     apps/api              apps/mcp              apps/web
+                     apps/api             MCP server             apps/web
                 @RequireScopes(...)   requiredScopes: [...]    permission picker
                    (explicit)            (explicit)              (derived)
 ```
@@ -932,41 +932,18 @@ the header and `session.activeOrganizationId` cannot drift.
 ### 11.3 Frontend business logic
 
 Per the repo rule, role logic belongs to the control plane's product package —
-add an `authz` module in `packages/frontend/admin/src/modules/`, beside the
-existing `admin-users` and `roles`, exposing the catalog query, role mutations,
+add an `authz` module to that package, beside its `admin-users` and `roles`
+modules, exposing the catalog query, role mutations,
 and grant management. App components stay
 presentational. TanStack Query keys follow `apps/docs/docs/architecture/query-keys.md`.
 
 ### 11.4 Mobile
 
-No mobile work. `apps/mobile` consumes the API and is unaffected; the role
+No mobile work. A mobile client consumes the API and is unaffected; the role
 builder is an admin surface and stays web-only.
 
 ---
 
-<!-- oppenheimer:begin cli|mcp -->
-## Part 12 — CLI and MCP
-
-**CLI (`apps/cli`).** New `oppenheimer roles` command group: `list`, `show`, `create`,
-`edit-permissions`, `assign`. New `oppenheimer grants` group: `list`, `create`,
-`revoke`. Exit codes are a public contract (`apps/cli/src/lib/errors.ts`) —
-reuse them, do not invent: 4 for forbidden, 5 for not found. Commands resolve
-the profile through `contextFor()`; never read config or env directly.
-
-**MCP (`apps/mcp`).** New tools in `src/tools/authz.tools.ts` mirroring the
-read-only surface: `list_roles`, `get_role`, `list_grants`. Each declares
-`requiredScopes` matching its endpoint's `@RequireScopes`. Annotate honestly —
-`readOnlyHint` only when every scope is `:read`. Remember `apps/mcp` is on Zod 4
-with `inputSchema` as a `z.object({...})`, and must not import Zod schemas from
-`@oppenheimer/shared`.
-
-Write tools for roles and grants are deliberately **out of scope** for the first
-pass: an MCP client editing permissions is a large blast radius for a small
-convenience. Reads first; revisit with the audit log in place.
-
----
-
-<!-- oppenheimer:end cli|mcp -->
 ## Part 13 — Testing
 
 Five layers. The kernel is not done until all five exist.
@@ -1092,7 +1069,7 @@ a row.
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 4.1 | `pnpm generate:scope-catalog` + `catalog.generated.ts` + CI drift check                                                                                 |
 | 4.2 | Consistency test: registry ↔ `@RequireScopes` ↔ MCP `requiredScopes`                                                                                    |
-| 4.3 | Role builder UI + `packages/frontend/admin/src/modules/authz`                                                                                                 |
+| 4.3 | Role builder UI + an `authz` module in the control plane's product package                                                                                    |
 | 4.4 | Grants management UI                                                                                                                                    |
 | 4.5 | CLI `roles` + `grants` command groups                                                                                                                   |
 | 4.6 | MCP read-only authz tools                                                                                                                               |

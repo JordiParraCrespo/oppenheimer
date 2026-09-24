@@ -37,12 +37,12 @@ This allows swapping providers (e.g. console email in dev, Resend in prod) witho
 
 ## Frontend
 
-Both web and mobile consume the `@oppenheimer/frontend` package which implements clean architecture:
+The console (`apps/web`) builds on the `packages/frontend` tier, which implements clean architecture:
 
 - **Domain layer**: Entities, repository interfaces, service interfaces
 - **Presentation layer**: Zustand stores, view models
 - **Data access layer**: Repository implementations, API client adapters
 
-Dependency injection is handled by InversifyJS, allowing platform-specific implementations to be swapped in.
+Dependency injection is handled by InversifyJS, allowing platform-specific implementations (storage, auth client, analytics) to be swapped in.
 
 See [Frontend Architecture](./frontend-architecture) for details.

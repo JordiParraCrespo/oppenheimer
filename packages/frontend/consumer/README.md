@@ -7,9 +7,8 @@ members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
 and `api-tokens` are the account chrome it keeps. Each module is an entity, an
 error catalog, a repository over `@oppenheimer/api-client`, a service and an
 InversifyJS `ContainerModule`; `src/react/` turns those services into
-TanStack Query hooks. Like the kernel it is platform-free — the same code
-runs in the Vite app and the Expo app — and it never imports
-`@oppenheimer/frontend-admin`.
+TanStack Query hooks. Like the kernel it is platform-free: no DOM, no router,
+no platform kit.
 
 An app becomes the consumer product by loading `consumerModules` into
 `OppenheimerApp.create({ modules })`.
@@ -65,15 +64,15 @@ const organizations = useOrganizations();
 const organization = organizations.data?.[0];
 ```
 
-`apps/mobile/lib/query.ts` names the features that never reach the on-device
-cache:
+`apps/web/src/providers/query-provider.tsx` names the features that never
+reach the persisted cache:
 
 ```ts
 import { CONSUMER_NON_PERSISTED_FEATURES } from '@oppenheimer/frontend-consumer/react';
 
-export const { queryClient, persistOptions } = createQueryPersistence({
+...createQueryPersistOptions(__APP_VERSION__, {
   nonPersistedFeatures: CONSUMER_NON_PERSISTED_FEATURES,
-});
+}),
 ```
 
 ## How to run it
@@ -88,5 +87,4 @@ pnpm --filter @oppenheimer/frontend-consumer build   # tsc -> dist, what the app
 ## Depends on / used by
 
 Depends on `@oppenheimer/frontend-core`, `@oppenheimer/api-client`, `@oppenheimer/shared` and
-`inversify`. Used by `apps/web` and `apps/mobile`. Never used by
-`apps/admin-web` or `apps/admin-mobile`, which load `@oppenheimer/frontend-admin`.
+`inversify`. Used by `apps/web`.

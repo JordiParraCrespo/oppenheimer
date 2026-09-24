@@ -1,7 +1,7 @@
 /**
  * DI tokens of the kernel: what every product package and every app can rely
  * on being bound. A product package declares its own tokens next to its
- * modules (`@oppenheimer/frontend-consumer`, `@oppenheimer/frontend-admin`) and spreads
+ * modules (`@oppenheimer/frontend-consumer`) and spreads
  * these in, so a product service injects `TOKENS.AnalyticsService` the same
  * way a kernel one does.
  */

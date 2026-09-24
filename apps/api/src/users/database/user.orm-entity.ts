@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
@@ -53,12 +54,12 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   banReason!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   banExpires!: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

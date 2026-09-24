@@ -6,8 +6,7 @@ import { useRouterState } from '@tanstack/react-router';
  *
  * TanStack Router navigations are client-side, so the provider's own automatic
  * capture only ever sees the first hard load. Renders nothing; it exists purely
- * so the hook sits inside `OppenheimerProvider`. Mirrors `ScreenViewTracker` in the
- * mobile app.
+ * so the hook sits inside `OppenheimerProvider`.
  *
  * The pathname only — several routes carry secrets in the query string
  * (`/reset-password?token=…`). Query strings are also stripped from the URL

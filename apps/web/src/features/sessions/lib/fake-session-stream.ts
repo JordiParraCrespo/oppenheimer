@@ -70,82 +70,86 @@ const TRANSCRIPT: ReadonlyArray<{ after: number; text: string }> = [
  * drew it, it is drawn because the host sent it back. Building against a fake
  * that echoes locally keeps that loop honest.
  */
-export function createFakeSessionStream(): SessionStream {
-  const dataListeners = new Set<(chunk: string, consumed: () => void) => void>();
-  const statusListeners = new Set<(status: StreamStatus) => void>();
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  let status: StreamStatus = 'connecting';
-  let disposed = false;
-  let line = '';
+export class FakeSessionStream implements SessionStream {
+  private readonly dataListeners = new Set<(chunk: string, consumed: () => void) => void>();
+  private readonly statusListeners = new Set<(status: StreamStatus) => void>();
+  private readonly timers: ReturnType<typeof setTimeout>[] = [];
+  private status: StreamStatus = 'connecting';
+  private disposed = false;
+  private line = '';
 
-  const emit = (chunk: string) => {
-    for (const listener of dataListeners) listener(chunk, noop);
-  };
-
-  const setStatus = (next: StreamStatus) => {
-    status = next;
-    for (const listener of statusListeners) listener(next);
-  };
-
-  timers.push(
-    setTimeout(() => {
-      if (!disposed) setStatus('live');
-    }, 80),
-  );
-
-  for (const step of TRANSCRIPT) {
-    timers.push(
+  constructor() {
+    this.timers.push(
       setTimeout(() => {
-        if (!disposed) emit(step.text);
-      }, step.after),
+        if (!this.disposed) this.setStatus('live');
+      }, 80),
     );
+    for (const step of TRANSCRIPT) {
+      this.timers.push(
+        setTimeout(() => {
+          if (!this.disposed) this.emit(step.text);
+        }, step.after),
+      );
+    }
   }
 
-  return {
-    onData(listener) {
-      dataListeners.add(listener);
-      return () => dataListeners.delete(listener);
-    },
-    onEnd() {
-      // The replay never ends on its own; only dispose ends it.
-      return noop;
-    },
-    onStatus(listener) {
-      listener(status);
-      statusListeners.add(listener);
-      return () => statusListeners.delete(listener);
-    },
-    send(data) {
-      if (disposed) return;
-      if (data === '\r') {
-        line = '';
-        emit(`\r\n${BLUE}$ ${RESET}`);
-        return;
-      }
-      if (data === '') {
-        if (line.length === 0) return;
-        line = line.slice(0, -1);
-        emit('\b \b');
-        return;
-      }
-      // Control characters other than the two handled above are swallowed:
-      // the real PTY decides what Ctrl-C does, and guessing here would teach
-      // the screen a behaviour the host does not have.
-      if (data < ' ') return;
-      line += data;
-      emit(data);
-    },
-    resize() {
-      // The real stream sends a resize control message here. A replay has no
-      // reflow to do, and pretending otherwise would hide that the message is
-      // still unwritten.
-    },
-    dispose() {
-      disposed = true;
-      for (const timer of timers) clearTimeout(timer);
-      dataListeners.clear();
-      setStatus('closed');
-      statusListeners.clear();
-    },
-  };
+  onData(listener: (chunk: string, consumed: () => void) => void): () => void {
+    this.dataListeners.add(listener);
+    return () => this.dataListeners.delete(listener);
+  }
+
+  onEnd(): () => void {
+    // The replay never ends on its own; only dispose ends it.
+    return noop;
+  }
+
+  onStatus(listener: (status: StreamStatus) => void): () => void {
+    listener(this.status);
+    this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+
+  send(data: string): void {
+    if (this.disposed) return;
+    if (data === '\r') {
+      this.line = '';
+      this.emit(`\r\n${BLUE}$ ${RESET}`);
+      return;
+    }
+    if (data === '\x7f') {
+      if (this.line.length === 0) return;
+      this.line = this.line.slice(0, -1);
+      this.emit('\b \b');
+      return;
+    }
+    // Control characters other than the two handled above are swallowed:
+    // the real PTY decides what Ctrl-C does, and guessing here would teach
+    // the screen a behaviour the host does not have.
+    if (data < ' ') return;
+    this.line += data;
+    this.emit(data);
+  }
+
+  resize(): void {
+    // The real stream sends a resize control message here. A replay has no
+    // reflow to do, and pretending otherwise would hide that the message is
+    // still unwritten.
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    for (const timer of this.timers) clearTimeout(timer);
+    this.dataListeners.clear();
+    this.setStatus('closed');
+    this.statusListeners.clear();
+  }
+
+  private emit(chunk: string): void {
+    for (const listener of this.dataListeners) listener(chunk, noop);
+  }
+
+  private setStatus(next: StreamStatus): void {
+    this.status = next;
+    for (const listener of this.statusListeners) listener(next);
+  }
 }

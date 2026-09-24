@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 /**
@@ -38,9 +39,9 @@ export class OAuthApplicationOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   userId!: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   updatedAt!: Date;
 }

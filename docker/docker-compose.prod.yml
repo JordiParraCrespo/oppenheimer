@@ -46,15 +46,6 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       FRONTEND_URL: ${FRONTEND_URL}
-      # oppenheimer:begin admin-web
-      ADMIN_FRONTEND_URL: ${ADMIN_FRONTEND_URL:-http://localhost:3003}
-      # oppenheimer:end admin-web
-      # oppenheimer:begin mobile
-      MOBILE_SCHEME: ${MOBILE_SCHEME:-oppenheimer}
-      # oppenheimer:end mobile
-      # oppenheimer:begin admin-mobile
-      ADMIN_MOBILE_SCHEME: ${ADMIN_MOBILE_SCHEME:-oppenheimer-admin}
-      # oppenheimer:end admin-mobile
       # OAuth providers. The image does not ship the root `.env`, so anything
       # the API must read has to be forwarded here. Empty is the "not
       # configured" value — the provider simply stays off (see
@@ -82,16 +73,6 @@ services:
     ports:
       - "3000:3000"
   # oppenheimer:end web
-
-  # oppenheimer:begin admin-web
-  admin-web:
-    image: ${ADMIN_WEB_IMAGE:-ghcr.io/your-org/oppenheimer-admin-web:latest}
-    restart: always
-    depends_on:
-      - api
-    ports:
-      - "3003:3000"
-  # oppenheimer:end admin-web
 
   # oppenheimer:begin docs
   docs:

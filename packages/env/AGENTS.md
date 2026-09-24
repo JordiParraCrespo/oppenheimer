@@ -22,8 +22,8 @@ pnpm --filter @oppenheimer/env lint
 ## Patterns agents get wrong
 
 - Adding a per-package `.env` or a second loader. There is one `.env`, at the
-  repo root; the web apps read it through Vite's `envDir`, the mobile apps in
-  `app.config.ts`, the Node apps through this package.
+  repo root; the web apps read it through Vite's `envDir`, the Node apps
+  through this package.
 - Overwriting a value that is already set. The loader never does; CI and the
   production containers rely on it.
 - Documenting a variable nowhere. `.env.example` is the documentation and

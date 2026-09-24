@@ -27,9 +27,8 @@ export interface OppenheimerAppConfig {
    */
   analytics?: IAnalyticsClient;
   /**
-   * The product's modules: `consumerModules` from `@oppenheimer/frontend-consumer`
-   * or `adminModules` from `@oppenheimer/frontend-admin`. The kernel binds what
-   * every product shares (session, users, capabilities, analytics); the app
+   * The product's modules, such as `consumerModules` from
+   * `@oppenheimer/frontend-consumer`. The kernel binds what every product shares (session, users, capabilities, analytics); the app
    * decides which product it is by what it loads here.
    */
   modules?: ContainerModule[];

@@ -65,7 +65,6 @@ The Better Auth instance lives in `auth/infrastructure/better-auth.config.ts` an
 | Email / password   | `emailAndPassword` with `sendResetPassword` → BullMQ email queue      |
 | Email verification | `emailVerification.sendVerificationEmail` → BullMQ email queue        |
 | Social providers   | Google + GitHub (`socialProviders`), enabled when env vars are set    |
-| Mobile             | `@better-auth/expo` plugin (SecureStore cookie + deep-link callbacks) |
 | Custom user fields | `firstName`, `lastName`, `role`, `isActive` (additional fields)       |
 | Welcome email      | `databaseHooks.user.create.after` → BullMQ email queue                |
 
@@ -73,8 +72,7 @@ The Better Auth instance lives in `auth/infrastructure/better-auth.config.ts` an
 
 Better Auth exposes its own handler under `/api/auth/*` (sign-in/up, sign-out,
 OAuth callbacks, password reset, email verification, session). Sessions are
-**cookie-based**: an httpOnly cookie on web, and a SecureStore-backed cookie on
-mobile via the Expo plugin.
+**cookie-based**: an httpOnly cookie on the web.
 
 ### Sessions & guards
 

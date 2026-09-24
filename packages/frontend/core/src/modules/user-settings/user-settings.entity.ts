@@ -4,8 +4,7 @@ import type { Locale, TableDensity, Theme } from '@oppenheimer/shared/schemas/pr
  * A user's own preferences: theme, language, table density, digests.
  *
  * Kernel, not product: every app applies the theme and the language on start,
- * whichever product it is, so both the consumer and the control plane read
- * this through the same hook.
+ * whichever product it is, so it is read through a kernel hook.
  */
 export class UserSettingsEntity {
   constructor(

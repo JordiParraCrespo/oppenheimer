@@ -1,6 +1,6 @@
 import { useConsumerApp } from '@oppenheimer/frontend-consumer/react';
 import { useCallback } from 'react';
-import { createSessionStream, type SessionStream } from '../lib/session-stream';
+import { AttachSessionStream, type SessionStream } from '../lib/session-stream';
 
 // Same-origin by default; `VITE_API_URL` only when the API lives elsewhere
 // (`src/lib/oppenheimer.ts` reads the same variable for the HTTP client).
@@ -17,7 +17,7 @@ export function useSessionStream(sessionId: string, window = 0): () => SessionSt
   const app = useConsumerApp();
   return useCallback(
     () =>
-      createSessionStream({
+      new AttachSessionStream({
         apiBaseUrl,
         issueTicket: () => app.sessions.issueAttachTicket(sessionId, window),
       }),

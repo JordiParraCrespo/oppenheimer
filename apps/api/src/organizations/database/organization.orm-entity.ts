@@ -1,3 +1,4 @@
+import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 /**
@@ -31,6 +32,6 @@ export class OrganizationOrmEntity {
   @Column({ type: 'int', default: 1 })
   roleVersion!: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 }
