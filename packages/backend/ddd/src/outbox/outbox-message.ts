@@ -1,4 +1,5 @@
 import { EntitySchema } from 'typeorm';
+import { TIMESTAMP_COLUMN_TYPE } from '../persistence/timestamp-columns';
 
 /**
  * Delivery channel for an outbox row. `event` rows are re-emitted in-process
@@ -73,13 +74,13 @@ export const OutboxMessageSchema = new EntitySchema<OutboxMessageRecord>({
     reason: { type: 'text' },
     status: { type: 'varchar', length: 16, default: 'pending' },
     attempts: { type: 'int', default: 0 },
-    availableAt: { type: 'timestamp', default: () => 'now()' },
+    availableAt: { type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' },
     lockedBy: { type: 'varchar', nullable: true },
-    lockedUntil: { type: 'timestamp', nullable: true },
+    lockedUntil: { type: TIMESTAMP_COLUMN_TYPE, nullable: true },
     lastError: { type: 'text', nullable: true },
     correlationId: { type: 'varchar', nullable: true },
-    createdAt: { type: 'timestamp', createDate: true },
-    processedAt: { type: 'timestamp', nullable: true },
+    createdAt: { type: TIMESTAMP_COLUMN_TYPE, createDate: true },
+    processedAt: { type: TIMESTAMP_COLUMN_TYPE, nullable: true },
   },
   indices: [
     // The relay's claim query filters on exactly this pair.

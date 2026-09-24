@@ -1,5 +1,6 @@
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `user` table. This is infrastructure —
@@ -53,12 +54,12 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   banReason!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   banExpires!: Date | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

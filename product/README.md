@@ -183,3 +183,12 @@ earlier note:
   model list is the harness's own" and holds no roster; the list lives
   in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
   pinning raises what it is worth.
+- `10-api-modules-and-data-model.md` made every new table uniform with
+  `@CreateDateColumn`/`@UpdateDateColumn`. Those default to `timestamp
+  without time zone`, and so did every date column that did not say
+  otherwise: 74 of 80. The value reached the browser with no offset and
+  was read as local time, so the console was out by the reader's offset
+  (#61). Every date column is now `timestamptz`, declared through
+  `TimestampColumn`, `CreatedAtColumn` and `UpdatedAtColumn` from
+  `@oppenheimer/backend-ddd`, and `pnpm check:api-structure` fails an ORM
+  entity that declares one any other way.

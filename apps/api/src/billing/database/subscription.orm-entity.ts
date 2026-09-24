@@ -1,5 +1,6 @@
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
 import type { BillingInterval, SubscriptionStatus } from '@oppenheimer/shared';
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the application-owned `subscription` table — a local
@@ -40,25 +41,25 @@ export class SubscriptionOrmEntity {
   @Column({ type: 'varchar' })
   status!: SubscriptionStatus;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   currentPeriodEnd!: Date | null;
 
   @Column({ type: 'boolean', default: false })
   cancelAtPeriodEnd!: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   canceledAt!: Date | null;
 
   /**
    * `created` timestamp of the last Stripe event applied to this row. Guards
    * against out-of-order webhook delivery (Stripe does not guarantee order).
    */
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   lastEventAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

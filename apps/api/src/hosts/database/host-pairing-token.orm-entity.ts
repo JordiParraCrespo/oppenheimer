@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for `host_pairing_token` — the registration token, which is
@@ -44,22 +45,22 @@ export class HostPairingTokenOrmEntity {
   @Column({ type: 'inet', nullable: true })
   redeemedFromIp!: string | null;
 
-  @Column({ type: 'timestamp with time zone' })
+  @TimestampColumn()
   expiresAt!: Date;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @TimestampColumn({ nullable: true })
   revokedAt!: Date | null;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @TimestampColumn({ nullable: true })
   redeemedAt!: Date | null;
 
   /** The host this token created, written in the same transaction as the burn. */
   @Column({ type: 'uuid', nullable: true })
   redeemedHostId!: string | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

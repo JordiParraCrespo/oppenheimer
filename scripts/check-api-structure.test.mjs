@@ -173,6 +173,28 @@ test('the caps bite, and only on the file kind they name', () => {
   assert.deepEqual(kinds(check(handler)), ['handler-over-cap']);
 });
 
+test('an ORM entity declares a date only through the shared decorators', () => {
+  const entity = (body) => ({ ...CONFORMING, 'widget/database/widget.orm-entity.ts': body });
+  for (const bare of [
+    "import { CreateDateColumn } from 'typeorm';\n@CreateDateColumn()\ncreatedAt!: Date;",
+    "import { UpdateDateColumn } from 'typeorm';\n@UpdateDateColumn()\nupdatedAt!: Date;",
+    "@Column({ type: 'timestamp', nullable: true })\nstoppedAt!: Date | null;",
+    "@Column({ nullable: true, type: 'timestamptz' })\nstoppedAt!: Date | null;",
+    "@Column({ type: 'timestamp with time zone' })\nexpiresAt!: Date;",
+  ]) {
+    assert.deepEqual(kinds(check(entity(bare))), ['bare-date-column'], bare);
+  }
+  const shared = [
+    "import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';",
+    '@TimestampColumn({ nullable: true })\nstoppedAt!: Date | null;',
+    '@CreatedAtColumn()\ncreatedAt!: Date;',
+  ].join('\n');
+  assert.deepEqual(kinds(check(entity(shared))), []);
+  // The rule is about persistence models; a domain entity may say "timestamp".
+  const domain = { ...CONFORMING, 'widget/domain/widget.entity.ts': "// type: 'timestamp'" };
+  assert.deepEqual(kinds(check(domain)), []);
+});
+
 test('a ledger entry silences exactly its own (path, kind), and nothing else', () => {
   const broken = { ...CONFORMING, 'widget/widget.service.ts': '' };
   const ledger = [{ path: 'src/widget/widget.service.ts', kind: 'service-at-module-root' }];

@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `team` table. Teams are how the app
@@ -16,9 +17,9 @@ export class TeamOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   updatedAt!: Date | null;
 }

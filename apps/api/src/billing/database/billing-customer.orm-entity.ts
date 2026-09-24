@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the application-owned `billing_customer` table, linking
@@ -16,9 +17,9 @@ export class BillingCustomerOrmEntity {
   @Column({ type: 'varchar', unique: true })
   stripeCustomerId!: string;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

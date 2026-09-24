@@ -1,3 +1,4 @@
+import { TimestampColumn } from '@oppenheimer/backend-ddd';
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type { SessionEventSource } from '../domain/work-session-event.entity';
 
@@ -57,10 +58,10 @@ export class WorkSessionEventOrmEntity {
   payload!: unknown;
 
   /** The writer's clock. */
-  @Column({ type: 'timestamp' })
+  @TimestampColumn()
   occurredAt!: Date;
 
   /** Ours. A host with a skewed clock cannot reorder anybody's history. */
-  @Column({ type: 'timestamp', default: () => 'now()' })
+  @TimestampColumn({ default: () => 'now()' })
   recordedAt!: Date;
 }

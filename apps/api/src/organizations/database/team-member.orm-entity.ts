@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
+import { CreatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `teamMember` table — a user's
@@ -17,6 +18,6 @@ export class TeamMemberOrmEntity {
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 }

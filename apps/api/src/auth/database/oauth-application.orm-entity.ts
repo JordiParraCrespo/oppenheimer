@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Maps the Better Auth `oauthApplication` table (MCP / OIDC provider plugin) —
@@ -38,9 +39,9 @@ export class OAuthApplicationOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   userId!: string | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

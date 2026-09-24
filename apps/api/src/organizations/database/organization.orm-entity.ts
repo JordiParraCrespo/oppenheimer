@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import { CreatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `organization` table (organization
@@ -31,6 +32,6 @@ export class OrganizationOrmEntity {
   @Column({ type: 'int', default: 1 })
   roleVersion!: number;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 }

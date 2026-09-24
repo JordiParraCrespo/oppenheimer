@@ -53,6 +53,16 @@ const fail = (path, kind, message) => errors.push({ path, kind, message });
  */
 const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 
+/**
+ * A date column an ORM entity declares for itself rather than through the
+ * shared decorators in `@oppenheimer/backend-ddd`: TypeORM's own date
+ * decorators, whose default is `timestamp without time zone`, or any timestamp
+ * type spelt out by hand. One way to declare a point in time, so leaving out
+ * the zone is not something a new table can do by omission (#61).
+ */
+const BARE_DATE_COLUMN =
+  /\b(CreateDateColumn|UpdateDateColumn|DeleteDateColumn)\b|type:\s*['"`](timestamp|timestamptz)\b/;
+
 const CONTROLLER_LINE_CAP = 110;
 const HANDLER_LINE_CAP = 120;
 
@@ -474,6 +484,13 @@ function checkModule(name) {
         rel(file),
         'controller-over-cap',
         `${rel(file)}: ${lineCount(file)} lines; a controller dispatches and maps (cap ${CONTROLLER_LINE_CAP}). The work belongs in the handler`,
+      );
+    }
+    if (file.endsWith('.orm-entity.ts') && BARE_DATE_COLUMN.test(source)) {
+      fail(
+        rel(file),
+        'bare-date-column',
+        `${rel(file)}: declares a date column itself. TypeORM's date decorators and a hand-written timestamp type both default to or allow \`timestamp without time zone\`, which the browser reads as local time — declare it with TimestampColumn, CreatedAtColumn or UpdatedAtColumn from @oppenheimer/backend-ddd, which store timestamptz`,
       );
     }
     if (

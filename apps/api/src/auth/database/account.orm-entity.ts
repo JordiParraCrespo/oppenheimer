@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Maps the Better Auth `account` table (credential + OAuth provider links).
@@ -27,10 +28,10 @@ export class Account {
   @Column({ type: 'varchar', nullable: true })
   idToken!: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   accessTokenExpiresAt!: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   refreshTokenExpiresAt!: Date | null;
 
   @Column({ type: 'varchar', nullable: true })
@@ -39,9 +40,9 @@ export class Account {
   @Column({ type: 'varchar', nullable: true })
   password!: string | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

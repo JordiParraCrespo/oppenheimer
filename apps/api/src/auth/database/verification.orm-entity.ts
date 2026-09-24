@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 /**
  * Maps the Better Auth `verification` table (email verification + password
@@ -16,12 +17,12 @@ export class Verification {
   @Column({ type: 'varchar' })
   value!: string;
 
-  @Column({ type: 'timestamp' })
+  @TimestampColumn()
   expiresAt!: Date;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

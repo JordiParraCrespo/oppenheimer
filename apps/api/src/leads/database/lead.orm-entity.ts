@@ -1,11 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { CreatedAtColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * A sales lead — the worked example for the authorization kernel.
@@ -43,9 +37,9 @@ export class LeadOrmEntity {
   @Column({ type: 'text', nullable: true })
   notes!: string | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

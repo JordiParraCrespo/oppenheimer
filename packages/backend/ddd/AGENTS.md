@@ -19,6 +19,8 @@ src/
 ├── query.base.ts               # CQRS query base
 ├── repository.port.ts          # repository port interface
 ├── mapper.interface.ts         # domain <-> persistence mapper contract
+├── persistence/
+│   └── timestamp-columns.ts    # TimestampColumn, CreatedAtColumn, UpdatedAtColumn (timestamptz)
 ├── outbox/
 │   ├── outbox-message.ts       # outbox row types + EntitySchema (outbox_message)
 │   ├── outbox.service.ts       # transactional staging + SKIP LOCKED leasing

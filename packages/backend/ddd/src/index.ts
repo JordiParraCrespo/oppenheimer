@@ -45,6 +45,12 @@ export {
   OutboxRelay,
   type OutboxRelayOptions,
 } from './outbox/outbox-relay';
+export {
+  CreatedAtColumn,
+  TIMESTAMP_COLUMN_TYPE,
+  TimestampColumn,
+  UpdatedAtColumn,
+} from './persistence/timestamp-columns';
 export { QueryBase } from './query.base';
 export {
   type OrderBy,

@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type { CheckoutMode } from '../domain/session-checkout.entity';
 
 /**
@@ -75,16 +76,16 @@ export class SessionCheckoutOrmEntity {
   @Column({ type: 'varchar' })
   branch!: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   worktreeCreatedAt!: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   pushedAt!: Date | null;
 
   /** Retires the checkout. Rows are never hard-deleted. */
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   removedAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 }

@@ -1,12 +1,5 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-  Unique,
-  UpdateDateColumn,
-} from 'typeorm';
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 /**
  * A body of work, and the name its directory takes on every host.
@@ -58,12 +51,12 @@ export class ProjectOrmEntity {
    * sessions to answer. Nothing writes this column yet, and the listing already
    * excludes rows that carry it.
    */
-  @Column({ type: 'timestamp', nullable: true })
+  @TimestampColumn({ nullable: true })
   archivedAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

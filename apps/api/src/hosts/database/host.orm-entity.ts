@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { CreatedAtColumn, TimestampColumn, UpdatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 import type { HostCapabilities } from '../domain/host.entity';
 
 /**
@@ -49,16 +50,16 @@ export class HostOrmEntity {
   publicKeyFingerprint!: string;
 
   /** Last heartbeat. `online` is derived from it in the read query. */
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @TimestampColumn({ nullable: true })
   lastSeenAt!: Date | null;
 
   /** Set when the host is unpaired. Rows are never hard-deleted. */
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @TimestampColumn({ nullable: true })
   unpairedAt!: Date | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdatedAtColumn()
   updatedAt!: Date;
 }

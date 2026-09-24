@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { CreatedAtColumn } from '@oppenheimer/backend-ddd';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 /**
  * Join table linking Better Auth users to application roles.
@@ -28,6 +29,6 @@ export class UserRoleOrmEntity {
   @Column({ type: 'uuid', nullable: true })
   organizationId!: string | null;
 
-  @CreateDateColumn()
+  @CreatedAtColumn()
   createdAt!: Date;
 }

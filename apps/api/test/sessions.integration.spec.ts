@@ -343,6 +343,36 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     });
   });
 
+  describe('points in time (#61)', () => {
+    it('stores no column without a time zone, in any table', async () => {
+      const bare = await dataSource.query(
+        `SELECT table_name || '.' || column_name AS "column"
+           FROM information_schema.columns
+          WHERE table_schema = 'public' AND data_type = 'timestamp without time zone'`,
+      );
+      expect(bare).toEqual([]);
+    });
+
+    it('reads a session touched now as now, whatever zone the writer was in', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+
+      // UTC+14: a zoneless column keeps the wall clock and loses the offset, so
+      // it would come back fourteen hours in the future.
+      // An UPDATE comes back from TypeORM as [rows, affected].
+      const [[updated]]: [{ updatedAt: Date }[], number] = await dataSource.transaction(
+        async (manager) => {
+          await manager.query(`SET LOCAL TIME ZONE 'Pacific/Kiritimati'`);
+          return manager.query(
+            `UPDATE "work_session" SET "updatedAt" = now() WHERE "id" = $1 RETURNING "updatedAt"`,
+            [work.id],
+          );
+        },
+      );
+      expect(Math.abs(updated.updatedAt.getTime() - Date.now())).toBeLessThan(60_000);
+    });
+  });
+
   describe('the composite keys', () => {
     it('rejects a session in another workspace’s project', async () => {
       // Not a handler check: the constraint makes it unrepresentable.
