@@ -98,9 +98,11 @@ func (c *Classifier) Manifest(agent domain.Agent) (*Manifest, bool) {
 // login URL when the screen is showing one.
 //
 // A login prompt outranks every rule: until a person opens that link, nothing
-// else on the screen is going to change.
+// else on the screen is going to change. Only *this agent's* logins count: a
+// blank terminal has none, so a URL somebody prints in one is just text, and
+// never a snapshot the control plane would refuse.
 func (c *Classifier) Classify(screen app.Screen, agent domain.Agent) (domain.State, string) {
-	if login := LoginURL(screen.Body); login != "" {
+	if login := LoginURL(screen.Body, agent.LoginTargets()); login != "" {
 		return domain.StateBlocked, login
 	}
 	manifest, ok := c.byAgent[agent]
@@ -163,32 +165,24 @@ func edgeLines(text string, n int, fromBottom bool) string {
 	return strings.Join(lines, "\n")
 }
 
-// loginTargets is the allowlist of vendor logins whose URL becomes a button.
+var urlPattern = regexp.MustCompile(`https://[^\s"'<>)]+`)
+
+// LoginURL returns the first URL on one of targets, or "".
+//
+// The targets are the agent's catalog entry (`domain.Agent.LoginTargets`,
+// generated from `packages/shared/src/agents/catalog.ts`), which is also what
+// the link's own check is built from, so the runner and the control plane
+// cannot disagree about what a login is. It is code, not manifest data, on
+// purpose: a manifest may one day arrive over the network, and what the
+// console is allowed to turn into a clickable link must not travel with it.
+//
 // The host is compared for equality, never by substring: `claude.ai` and
 // `claude.ai.attacker.test` differ by a suffix, and a Contains check would
 // hand a person a button to the second one (F3).
-//
-// It is code rather than manifest data on purpose. A manifest is content that
-// may one day arrive over the network, and what the console is allowed to
-// turn into a clickable link is not something that should travel.
-var loginTargets = []struct {
-	host string
-	// path, when set, must prefix the URL's path: GitHub is only a login
-	// host at /login/device.
-	path string
-}{
-	{host: "claude.ai"},
-	{host: "console.anthropic.com"},
-	{host: "auth.openai.com"},
-	{host: "platform.openai.com"},
-	{host: "chatgpt.com"},
-	{host: "github.com", path: "/login/device"},
-}
-
-var urlPattern = regexp.MustCompile(`https://[^\s"'<>)]+`)
-
-// LoginURL returns the first URL on an allowlisted vendor login host, or "".
-func LoginURL(screen string) string {
+func LoginURL(screen string, targets []domain.LoginTarget) string {
+	if len(targets) == 0 {
+		return ""
+	}
 	for _, candidate := range urlPattern.FindAllString(screen, -1) {
 		trimmed := strings.TrimRight(candidate, ".,;:)]}'\"")
 		parsed, err := url.Parse(trimmed)
@@ -196,11 +190,8 @@ func LoginURL(screen string) string {
 			continue
 		}
 		host := strings.ToLower(parsed.Hostname())
-		for _, target := range loginTargets {
-			if host != target.host {
-				continue
-			}
-			if target.path != "" && !strings.HasPrefix(parsed.Path, target.path) {
+		for _, target := range targets {
+			if host != target.Host || !pathMatches(parsed.Path, target.Path) {
 				continue
 			}
 			return trimmed
@@ -229,4 +220,14 @@ func Bundled() ([]*Manifest, error) {
 		out = append(out, parsed)
 	}
 	return out, nil
+}
+
+// pathMatches reports whether path is the target's path or continues it at a
+// segment boundary, so `/login/device` admits `/login/device/abc` and not
+// `/login/devicefoo`. An empty target path admits any path.
+func pathMatches(path, target string) bool {
+	if target == "" || path == target {
+		return true
+	}
+	return strings.HasPrefix(path, strings.TrimSuffix(target, "/")+"/")
 }

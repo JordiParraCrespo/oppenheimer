@@ -31,6 +31,8 @@ const hostFacts = {
     { name: 'git', path: '/usr/bin/git', version: '2.45.0', required: true },
     { name: 'tmux', path: '/opt/homebrew/bin/tmux', version: '3.5a', required: true },
     { name: 'claude', required: false },
+    { name: 'codex', path: '/opt/homebrew/bin/codex', version: '0.155.1', required: false },
+    { name: 'opencode', path: '/opt/homebrew/bin/opencode', version: '1.18.32', required: false },
   ],
   workspacePath: '/Users/jordi/oppenheimer-ai',
   diskFreeBytes: 120_000_000_000,
@@ -296,13 +298,43 @@ describe('events.append', () => {
   });
 });
 
+describe('session.create for every catalog agent', () => {
+  const create = SAMPLES['session.create'];
+
+  it('carries OpenCode with a `provider/model` and a level', () => {
+    const parsed = protocolMessageSchema.parse({
+      ...create,
+      agent: 'opencode',
+      launch: { model: 'anthropic/claude-opus-5-5', permission: 'ask' },
+    });
+    expect(parsed).toMatchObject({ agent: 'opencode', launch: { permission: 'ask' } });
+  });
+
+  it('carries a blank terminal with no level at all', () => {
+    const parsed = protocolMessageSchema.parse({ ...create, agent: 'shell', launch: {} });
+    expect(parsed).toMatchObject({ agent: 'shell', launch: {} });
+    if (parsed.type === 'session.create') expect(parsed.launch.permission).toBeUndefined();
+  });
+
+  it('refuses an agent outside the catalog', () => {
+    expect(protocolMessageSchema.safeParse({ ...create, agent: 'cursor' }).success).toBe(false);
+  });
+});
+
 describe('host facts on the link', () => {
   it('carries the runner’s Facts struct in hello, tools and all', () => {
     const parsed = protocolMessageSchema.parse(SAMPLES.hello);
     expect(parsed).toMatchObject({ type: 'hello' });
     if (parsed.type === 'hello') {
       expect(parsed.host.platform).toBe('macos');
-      expect(parsed.host.tools.map((tool) => tool.name)).toEqual(['git', 'tmux', 'claude']);
+      // `ProbedTools` in the runner's facts.go, in its order.
+      expect(parsed.host.tools.map((tool) => tool.name)).toEqual([
+        'git',
+        'tmux',
+        'claude',
+        'codex',
+        'opencode',
+      ]);
       expect(parsed.host.workspacePath).toBe('/Users/jordi/oppenheimer-ai');
     }
   });
@@ -453,6 +485,19 @@ describe('F3: a login URL on the wire is a vendor login URL', () => {
         }).success,
       ).toBe(false);
     }
+  });
+
+  it('refuses any login URL from a plain shell, which has no vendor', () => {
+    expect(
+      sessionSnapshotSchema.safeParse({
+        ...snapshot,
+        agent: 'shell',
+        loginUrl: 'https://claude.ai/oauth/authorize',
+      }).success,
+    ).toBe(false);
+    expect(
+      sessionSnapshotSchema.safeParse({ ...snapshot, agent: 'shell', loginUrl: null }).success,
+    ).toBe(true);
   });
 
   it('refuses the other vendor’s login URL for this agent', () => {

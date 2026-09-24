@@ -394,10 +394,7 @@
                 "max"
               ]
             }
-          },
-          "required": [
-            "permission"
-          ]
+          }
         },
         "prompt": {
           "type": "string",
@@ -992,7 +989,7 @@
           "anyOf": [
             {
               "type": "string",
-              "pattern": "^(?:https:\\/\\/(claude\\.ai|console\\.anthropic\\.com)(\\/[^\\s]*)?|https:\\/\\/(auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com)(\\/[^\\s]*)?)$"
+              "pattern": "^https:\\/\\/(?:claude\\.ai(?:\\/[^\\s]*)?|console\\.anthropic\\.com(?:\\/[^\\s]*)?|auth\\.openai\\.com(?:\\/[^\\s]*)?|platform\\.openai\\.com(?:\\/[^\\s]*)?|chatgpt\\.com(?:\\/[^\\s]*)?|opencode\\.ai(?:\\/[^\\s]*)?|github\\.com\\/login\\/device(?:[/?#][^\\s]*)?)$"
             },
             {
               "type": "null"
@@ -1022,7 +1019,9 @@
       "type": "string",
       "enum": [
         "claude-code",
-        "codex"
+        "codex",
+        "opencode",
+        "shell"
       ],
       "id": "codingAgentId"
     },

@@ -76,10 +76,15 @@ runner does with it and point back.
   frame. **`attachment.closed`** is the runner freeing an id whose PTY
   ended on its own.
 - **`session.create` carries the launch**, because how a session is
-  started is part of what the runner is being asked to start. Three
-  fields beyond the checkouts: `launch` (`{ model?, permission, effort? }`),
-  `prompt` (the person's first task, optional), and the slugs and
-  checkouts the directory layout needs.
+  started is part of what the runner is being asked to start. Beyond the
+  checkouts: `agent`, one of the catalog's ids (`claude-code`, `codex`,
+  `opencode`, or `shell` for the blank terminal); `launch`
+  (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
+  optional); and the slugs and checkouts the directory layout needs.
+  `permission` is present exactly when the agent has approvals: the
+  control plane fills an absent level in as `ask` for every such agent
+  and records none for one without, so the blank terminal is sent no
+  level rather than whatever the composer last held.
 
   `launch` is **structured, not argv**. The control plane sends what the
   person chose in the composer's foot row and the host maps it to its own

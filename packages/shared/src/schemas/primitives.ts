@@ -128,10 +128,11 @@ export const hostPlatformSchema = z.enum(HOST_PLATFORMS);
  *
  * `path` absent means it is not on PATH — that is how "looked, not there" is
  * expressed, because Go omits the empty string. An agent is just a probed tool
- * (`claude`, `codex`), which is why there is no separate agents list: deriving
- * one by name costs a filter and keeps a single source for "what is installed".
- * `name` is a free-form string rather than an enum because the runner owns the
- * probe list and adding `codex` to it must not require a control-plane release.
+ * (`claude`, `codex`, `opencode`), which is why there is no separate agents
+ * list: deriving one by name costs a filter and keeps a single source for "what
+ * is installed". `name` is a free-form string rather than an enum because the
+ * runner owns the probe list and adding a tool to it must not require a
+ * control-plane release.
  */
 export const hostToolSchema = z.object({
   name: z.string(),
@@ -157,9 +158,11 @@ export type HostToolDto = z.infer<typeof hostToolSchema>;
  * runner has ever sent — a real registration would have been a 400.
  *
  *
- * Agents installed on a host are read from `tools` — the entries named `claude`
- * and `codex` — and there is no separate agents key; that is what the console
- * consumes for the agent chip.
+ * Agents installed on a host are read from `tools` — the entries named `claude`,
+ * `codex` and `opencode`, which the runner probes on every host beside `git`
+ * and `tmux` (`ProbedTools` in `facts.go`) — and there is no separate agents
+ * key; that is what the console consumes for the agent chip. The blank
+ * terminal needs no tool of its own.
  *
  * Two deliberate loosenings, both so that a truthful runner cannot be refused:
  *
@@ -182,7 +185,7 @@ export const hostFactsSchema = z.object({
   home: z.string(),
   /** True is a refusal condition, reported rather than hidden. */
   root: z.boolean(),
-  /** A probe result per tool: `git`, `tmux`, `claude`, and `codex` when it is probed. */
+  /** A probe result per tool: `git`, `tmux`, `claude`, `codex` and `opencode`. */
   tools: z
     .array(hostToolSchema)
     .nullable()

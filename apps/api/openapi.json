@@ -10832,7 +10832,8 @@
           "permission": {
             "type": "string",
             "enum": ["ask", "auto", "full"],
-            "description": "What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default."
+            "nullable": true,
+            "description": "What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal)."
           },
           "effort": {
             "type": "string",
@@ -11066,7 +11067,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex"]
+            "enum": ["claude-code", "codex", "opencode", "shell"]
           },
           "projectId": {
             "type": "string",
@@ -11079,6 +11080,7 @@
           },
           "checkouts": {
             "type": "array",
+            "maxItems": 1,
             "items": {
               "type": "object",
               "properties": {
@@ -11115,8 +11117,7 @@
               },
               "permission": {
                 "type": "string",
-                "enum": ["ask", "auto", "full"],
-                "default": "ask"
+                "enum": ["ask", "auto", "full"]
               },
               "effort": {
                 "type": "string",
