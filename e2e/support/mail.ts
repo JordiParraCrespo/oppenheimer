@@ -1,4 +1,6 @@
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Reads the transactional emails the API "sent".
@@ -8,7 +10,10 @@ import { readFile } from 'node:fs/promises';
  * what lets these tests follow a verification link end to end without an SMTP
  * server: point `API_LOG` at the file the API's stdout is captured to.
  */
-const API_LOG = process.env.API_LOG ?? '/tmp/api.log';
+const API_LOG =
+  process.env.API_LOG ??
+  // Where `scripts/stack/stack.mjs` captures it.
+  resolve(fileURLToPath(import.meta.url), '..', '..', '..', '.stack', 'api.log');
 
 /**
  * SGR colour sequences, stripped before anything is matched.

@@ -327,7 +327,13 @@ is the order of work.
       proves a session runs on the host it names, one host's link loss leaves
       the others online and returns to the same screen, a killed runner
       adopts its tmux sessions, and another account cannot see or use a
-      host. Its git server is anonymous, so `credentials.grant` is not
+      host. It also proves ten sessions on one host ride one link, that
+      panes printing tens of megabytes stall neither themselves nor typing
+      in another pane (credit flows back; the writer takes attachments in
+      turn), and that the console streams a live session. With
+      `FLEET_HOSTS=local` the same hosts run on the suite's machine, for one
+      that cannot build the image; the link-loss and hostname tests are the
+      container's alone. Its git server is anonymous, so `credentials.grant` is not
       covered there yet: the runner builds `https://github.com/<full name>`
       itself (`internal/cli/link_sessions.go`) and the fleet rewrites it with
       `url.insteadOf`, a URL the helper refuses to answer for.
