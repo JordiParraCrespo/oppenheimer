@@ -2,4 +2,4 @@
 "@oppenheimer/frontend-consumer": minor
 ---
 
-Installation repositories and branches are keyed under `installationsKeys.detail(id)` and read with `skipToken` until their ids are known; removing an installation drops its subtree. Host pairing keys share one `hostsKeys.pairings()` scope (`pairingTokens()`, `currentPairing(name)`). `useRegister` keeps its cache update when a caller passes `onSuccess`.
+`installationsKeys` gains `detail`, `repositoryList` and `repository`; `repositories(id)` is now a scope, and branches are keyed `[..., 'repositories', 'detail', repoId, 'branches']`. Hosts pairing keys are `hostsKeys.pairingTokens()` (`['hosts', 'pairing', 'tokens']`, was `pairings()`) and `currentPairing(name)` (`[..., 'current', { name }]`). `useSession`, `useSessionStartProgress`, `useCheckSlug` and the installation pickers take `undefined` for an input that isn't known yet and fetch with `skipToken`. `useRegister` also invalidates `profileKeys.me()`. Mutation hooks go through `withCacheOnSuccess`.

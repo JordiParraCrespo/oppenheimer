@@ -1,5 +1,6 @@
 'use client';
 
+import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -14,16 +15,18 @@ import { useConsumerApp } from './context';
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
  * the most specific so a whole subtree can be invalidated with one key.
  *
- * Pairing has its own scope: the token list Add host polls and the token it is
- * showing both sit under `pairings()`, so one key refreshes the whole flow.
+ * The two pairing keys are siblings with no factory above them, on purpose.
+ * `currentPairing` is a mint — its `queryFn` issues a new token — and
+ * `pairingTokens` is a poll over tokens already issued. A parent key would
+ * invite `invalidateQueries` on "the pairing flow", which would mint again
+ * under the command on screen. Refresh the poll with `pairingTokens()`.
  */
 export const hostsKeys = {
   all: ['hosts'] as const,
   lists: () => [...hostsKeys.all, 'list'] as const,
   list: () => [...hostsKeys.lists()] as const,
-  pairings: () => [...hostsKeys.all, 'pairing'] as const,
-  pairingTokens: () => [...hostsKeys.pairings(), 'tokens'] as const,
-  currentPairing: (name: string) => [...hostsKeys.pairings(), 'current', { name }] as const,
+  pairingTokens: () => [...hostsKeys.all, 'pairing', 'tokens'] as const,
+  currentPairing: (name: string) => [...hostsKeys.all, 'pairing', 'current', { name }] as const,
 };
 
 /** The hosts the caller has paired: the Settings → Hosts list and New session's host chip. */
@@ -93,10 +96,8 @@ export function useRemoveHost(options?: UseMutationOptions<void, Error, string>)
 
   return useMutation({
     mutationFn: (id: string) => app.hosts.remove(id),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }

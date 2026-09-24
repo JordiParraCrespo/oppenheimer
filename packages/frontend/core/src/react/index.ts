@@ -29,6 +29,7 @@ export {
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
 export { useAuthState } from './hooks';
+export { withCacheOnSuccess } from './mutations';
 export {
   cacheOwnerKey,
   createQueryPersistOptions,

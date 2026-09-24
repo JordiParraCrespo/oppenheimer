@@ -1,8 +1,10 @@
 'use client';
 
 import type { UpdateOrganizationRequest } from '@oppenheimer/api-client';
+import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { CreateOrganizationDto } from '@oppenheimer/shared';
 import {
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -23,7 +25,7 @@ export const organizationsKeys = {
   all: ['organizations'] as const,
   lists: () => [...organizationsKeys.all, 'list'] as const,
   list: () => [...organizationsKeys.lists()] as const,
-  slug: (slug: string) => [...organizationsKeys.all, 'slug', slug] as const,
+  slug: (slug: string | undefined) => [...organizationsKeys.all, 'slug', slug] as const,
 };
 
 /**
@@ -31,21 +33,22 @@ export const organizationsKeys = {
  * reader types, so callers debounce the value they pass — this hook is a plain
  * query over whatever it is handed.
  *
- * `enabled` is the caller's: an empty address is not a question worth asking,
- * and the step shows its neutral hint for it rather than a verdict.
+ * `undefined` is "no question yet" — the caller passes it for an empty or
+ * still-changing address, and the query does not fetch (`skipToken`). The step
+ * shows its neutral hint for it rather than a verdict.
  *
  * Deliberately not cached for long. An address is free until somebody takes
  * it, and a stale `true` sends the reader into a create that then fails.
  */
 export function useCheckSlug(
-  slug: string,
+  slug: string | undefined,
   options?: Omit<UseQueryOptions<boolean, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
   return useQuery({
     queryKey: organizationsKeys.slug(slug),
-    queryFn: () => app.organizations.checkSlug(slug),
+    queryFn: slug ? () => app.organizations.checkSlug(slug) : skipToken,
     staleTime: 0,
     gcTime: 30_000,
     retry: false,
@@ -88,16 +91,13 @@ export function useCreateOrganization(
 
   return useMutation({
     mutationFn: (dto: CreateOrganizationDto) => app.organizations.create(dto),
-    ...options,
-    onSuccess: async (...args) => {
-      const [organization] = args;
+    ...withCacheOnSuccess(options, async (organization) => {
       queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) => [
         ...(current ?? []),
         organization,
       ]);
       await queryClient.invalidateQueries();
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -125,17 +125,14 @@ export function useClaimPersonalWorkspace(
   return useMutation({
     mutationFn: (variables: ClaimPersonalWorkspaceVariables) =>
       app.organizations.claimPersonalWorkspace(variables),
-    ...options,
-    onSuccess: (...args) => {
-      const [organization] = args;
+    ...withCacheOnSuccess(options, (organization) => {
       queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
         current?.some((row) => row.id === organization.id)
           ? current.map((row) => (row.id === organization.id ? organization : row))
           : [...(current ?? []), organization],
       );
       queryClient.invalidateQueries({ queryKey: organizationsKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -161,13 +158,10 @@ export function useUpdateOrganization(
   return useMutation({
     mutationFn: ({ id, changes }: UpdateOrganizationVariables) =>
       app.organizations.update(id, changes),
-    ...options,
-    onSuccess: (...args) => {
-      const [organization] = args;
+    ...withCacheOnSuccess(options, (organization) => {
       queryClient.setQueryData<OrganizationEntity[]>(organizationsKeys.list(), (current) =>
         current?.map((entry) => (entry.id === organization.id ? organization : entry)),
       );
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }

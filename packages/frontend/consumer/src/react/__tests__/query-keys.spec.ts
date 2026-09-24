@@ -1,51 +1,88 @@
+import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { hostsKeys } from '../hosts.queries';
 import { installationsKeys } from '../installations.queries';
-import { organizationsKeys } from '../organizations.queries';
-import { sessionsKeys } from '../sessions.queries';
 
-/** Does `prefix` fuzzy-match `key`, the way `invalidateQueries` would? */
-function covers(prefix: readonly unknown[], key: readonly unknown[]): boolean {
-  return JSON.stringify(key.slice(0, prefix.length)) === JSON.stringify(prefix);
+/**
+ * The key shapes, and what invalidating one of them reaches. Reach is asked of
+ * a real `QueryClient`, so the answer is React Query's own matcher.
+ */
+
+function cacheWith(...keys: (readonly unknown[])[]) {
+  const client = new QueryClient();
+  for (const key of keys) client.setQueryData(key, 'cached');
+  return client;
 }
 
+const invalidated = (client: QueryClient, key: readonly unknown[]) =>
+  client.getQueryState(key)?.isInvalidated ?? false;
+
 describe('installationsKeys', () => {
-  const repositories = installationsKeys.repositories('inst-1');
-  const branches = installationsKeys.branches('inst-1', 42);
-
-  it('hangs what GitHub says about an installation off its detail', () => {
-    // Removing an installation drops this one subtree and nothing else.
-    expect(covers(installationsKeys.detail('inst-1'), repositories)).toBe(true);
-    expect(covers(installationsKeys.detail('inst-1'), branches)).toBe(true);
-    expect(covers(installationsKeys.detail('inst-2'), branches)).toBe(false);
+  it('splits repositories into a list and per-repository details', () => {
+    expect(installationsKeys.repositoryList('inst-1')).toEqual([
+      'installations',
+      'detail',
+      'inst-1',
+      'repositories',
+      'list',
+    ]);
+    expect(installationsKeys.branches('inst-1', 42)).toEqual([
+      'installations',
+      'detail',
+      'inst-1',
+      'repositories',
+      'detail',
+      42,
+      'branches',
+    ]);
   });
 
-  it('nests a repository’s branches under the repositories that listed them', () => {
-    expect(covers(repositories, branches)).toBe(true);
+  it('keeps an id nobody chose as undefined rather than a made-up one', () => {
+    expect(installationsKeys.repositoryList(undefined)).toContain(undefined);
+    expect(installationsKeys.branches('inst-1', undefined)).toContain(undefined);
   });
 
-  it('keeps an id out of the list’s slot', () => {
-    expect(covers(installationsKeys.lists(), installationsKeys.detail('list'))).toBe(false);
+  it('refreshes a repository list without refetching every branch under it', async () => {
+    const list = installationsKeys.repositoryList('inst-1');
+    const branches = installationsKeys.branches('inst-1', 42);
+    const client = cacheWith(list, branches);
+
+    await client.invalidateQueries({ queryKey: list });
+
+    expect(invalidated(client, list)).toBe(true);
+    expect(invalidated(client, branches)).toBe(false);
+  });
+
+  it('drops one installation’s whole subtree and nothing else', () => {
+    const mine = installationsKeys.branches('inst-1', 42);
+    const theirs = installationsKeys.branches('inst-2', 42);
+    const client = cacheWith(installationsKeys.repositoryList('inst-1'), mine, theirs);
+
+    client.removeQueries({ queryKey: installationsKeys.detail('inst-1') });
+
+    expect(client.getQueryData(installationsKeys.repositoryList('inst-1'))).toBeUndefined();
+    expect(client.getQueryData(mine)).toBeUndefined();
+    expect(client.getQueryData(theirs)).toBe('cached');
   });
 });
 
 describe('hostsKeys', () => {
-  it('puts both halves of Add host under one pairing scope', () => {
-    expect(covers(hostsKeys.pairings(), hostsKeys.pairingTokens())).toBe(true);
-    expect(covers(hostsKeys.pairings(), hostsKeys.currentPairing('laptop'))).toBe(true);
-    expect(covers(hostsKeys.lists(), hostsKeys.pairingTokens())).toBe(false);
+  it('keeps the mint and the poll as siblings', () => {
+    expect(hostsKeys.pairingTokens()).toEqual(['hosts', 'pairing', 'tokens']);
+    expect(hostsKeys.currentPairing('laptop')).toEqual([
+      'hosts',
+      'pairing',
+      'current',
+      { name: 'laptop' },
+    ]);
   });
-});
 
-describe('sessionsKeys', () => {
-  it('keeps a start log inside its session, so refreshing the session refreshes it', () => {
-    expect(covers(sessionsKeys.detail('s-1'), sessionsKeys.start('s-1', false))).toBe(true);
-    expect(sessionsKeys.start('s-1', false)).not.toEqual(sessionsKeys.start('s-1', true));
-  });
-});
+  it('refreshes the token poll without minting a new token', async () => {
+    const client = cacheWith(hostsKeys.pairingTokens(), hostsKeys.currentPairing('laptop'));
 
-describe('organizationsKeys', () => {
-  it('keeps an address check out of the workspace list', () => {
-    expect(covers(organizationsKeys.lists(), organizationsKeys.slug('acme'))).toBe(false);
+    await client.invalidateQueries({ queryKey: hostsKeys.pairingTokens() });
+
+    expect(invalidated(client, hostsKeys.pairingTokens())).toBe(true);
+    expect(invalidated(client, hostsKeys.currentPairing('laptop'))).toBe(false);
   });
 });

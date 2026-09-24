@@ -156,42 +156,27 @@ useMutation({
 - **Don't alias a key.** `export const profileQueryKey = usersKeys.me()` is a
   second name for the same entry that drifts the moment either side changes.
   Call the factory.
-- **Nest what belongs to an entity under its `detail(id)`.** An installation's
-  repositories are `[...detail(id), 'repositories']`, and a repository's
-  branches sit under those. Removing the installation is then one
-  `removeQueries({ queryKey: installationsKeys.detail(id) })`, and an id can
-  never land in the slot a scope word like `'list'` occupies.
-- **One flow, one scope.** Two keys a screen refreshes together share a
-  segment: `hostsKeys.pairingTokens()` and `hostsKeys.currentPairing(name)`
-  both sit under `hostsKeys.pairings()`.
+- **Nest what belongs to an entity under its `detail(id)`, and repeat the
+  `list` / `detail` split below it.** An installation's repositories are
+  `[...detail(id), 'repositories', 'list']`; one repository's branches are
+  `[...detail(id), 'repositories', 'detail', repoId, 'branches']`. Removing the
+  installation is one `removeQueries({ queryKey: installationsKeys.detail(id) })`,
+  and refreshing its repository list does not refetch every branch, because a
+  list leaf is never the prefix of a detail.
+- **Share a prefix only when invalidating one must refetch the other.** A
+  factory level is an invitation to invalidate it. `hostsKeys.currentPairing()`
+  mints a token and `hostsKeys.pairingTokens()` polls the ones already minted,
+  so they are siblings with no factory above them: a parent key would let
+  "refresh the pairing flow" mint again under the command on screen.
 - **Put every input of the `queryFn` in the key.** A variable the fetch reads
   but the key omits serves one answer for two questions. Several inputs go in
   an object at the end (`[...detail(id), 'start', { failed }]`), so order
   doesn't matter and fuzzy matching still works on the prefix.
-- **Not known yet? `skipToken`, not a placeholder fetch.** When an input can be
-  `undefined`, pass `skipToken` as the `queryFn` instead of `enabled: false`
-  plus a non-null assertion. The key may carry a placeholder then, because
-  nothing is ever fetched under it.
-
-## Mutations: the cache update is not optional
-
-A hook that takes `options` spreads them **before** its own `onSuccess`, and
-its `onSuccess` calls the caller's:
-
-```typescript
-return useMutation({
-  mutationFn: () => app.auth.logout(),
-  ...options,
-  onSuccess: (...args) => {
-    queryClient.clear();
-    options?.onSuccess?.(...args);
-  },
-});
-```
-
-Spread last, a caller's `onSuccess` replaces the hook's, and the cache update
-silently disappears — which is how logout once navigated to `/login` without
-clearing the cache.
+- **An input that isn't known yet stays `undefined` in the key, and the fetch
+  is `skipToken`.** `queryFn: id ? () => fetch(id) : skipToken`, with the
+  factory taking `string | undefined`. Never `enabled: !!id` with a cast in the
+  `queryFn`, and never a made-up id (`''`, `0`) in the key: it addresses a
+  cache entry the API never issued, and two empty pickers share it.
 
 ## Cache persistence
 

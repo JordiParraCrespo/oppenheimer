@@ -1,6 +1,6 @@
 'use client';
 
-import { usersKeys } from '@oppenheimer/frontend-core/react';
+import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { ChangeOwnPasswordDto, UpdateProfileDto } from '@oppenheimer/shared/schemas/profile';
 import {
   type UseMutationOptions,
@@ -56,13 +56,10 @@ function useProfileWrite<TVariables>(
 
   return useMutation({
     mutationFn,
-    ...options,
-    onSuccess: (...args) => {
-      const [profile] = args;
+    ...withCacheOnSuccess(options, (profile) => {
       queryClient.setQueryData(profileKeys.me(), profile);
       queryClient.invalidateQueries({ queryKey: usersKeys.me() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -101,11 +98,9 @@ export function useChangeOwnPassword(
 
   return useMutation({
     mutationFn: (dto: ChangeOwnPasswordDto) => app.profile.changePassword(dto),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -127,11 +122,9 @@ export function useRevokeProfileSession(options?: UseMutationOptions<void, Error
 
   return useMutation({
     mutationFn: (sessionId: string) => app.profile.revokeSession(sessionId),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -141,10 +134,8 @@ export function useRevokeOtherProfileSessions(options?: UseMutationOptions<void,
 
   return useMutation({
     mutationFn: () => app.profile.revokeOtherSessions(),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
