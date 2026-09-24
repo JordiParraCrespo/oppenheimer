@@ -1,5 +1,13 @@
 import { execFileSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { API_URL } from '../playwright.config';
@@ -29,7 +37,12 @@ import type { FleetHost } from './fleet';
  * that run on containers.
  */
 const ROOT = process.env.FLEET_LOCAL_DIR ?? join(tmpdir(), 'oppenheimer-fleet-local');
-const STATE = join(ROOT, 'hosts.json');
+/**
+ * One record per host, written once: the fleet's workers are separate
+ * processes, and a shared file rewritten by each would lose a record — and
+ * with it the host teardown has to stop.
+ */
+const RECORDS = join(ROOT, 'hosts');
 const ACCOUNT_MARK = 'oppenheimer fleet host';
 const isRoot = process.getuid?.() === 0;
 
@@ -42,11 +55,15 @@ interface LocalRecord {
 }
 
 function records(): LocalRecord[] {
-  return existsSync(STATE) ? (JSON.parse(readFileSync(STATE, 'utf8')) as LocalRecord[]) : [];
+  if (!existsSync(RECORDS)) return [];
+  return readdirSync(RECORDS)
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => JSON.parse(readFileSync(join(RECORDS, file), 'utf8')) as LocalRecord);
 }
 
 function remember(record: LocalRecord): void {
-  writeFileSync(STATE, JSON.stringify([...records(), record], null, 2));
+  mkdirSync(RECORDS, { recursive: true });
+  writeFileSync(join(RECORDS, `${record.name}.json`), JSON.stringify(record, null, 2));
 }
 
 function hostEnv(home: string): Record<string, string> {

@@ -229,7 +229,12 @@ function apiEnv() {
       run('node', ['--experimental-strip-types', 'e2e/support/stub-env.ts']),
     );
   }
+  // `@oppenheimer/env` still loads `.env.local` over this, but environment
+  // wins over both files: a default is injected only for a key `.env.local`
+  // does not set, or it would silently replace the developer's value.
   const defaults = existsSync(join(ROOT, '.env')) ? {} : parseEnv(join(ROOT, '.env.example'));
+  const local = existsSync(join(ROOT, '.env.local')) ? parseEnv(join(ROOT, '.env.local')) : {};
+  for (const key of Object.keys(local)) delete defaults[key];
   return { ...defaults, ...parseEnv(stubEnvFile) };
 }
 
@@ -279,29 +284,43 @@ async function up(flags) {
 }
 
 /** Stop a recorded process group and wait for it to go, killing it at 20 s. */
-function stop(pid) {
-  const alive = () => {
-    try {
-      process.kill(-pid, 0);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  if (!alive()) return;
-  process.kill(-pid, 'SIGTERM');
-  for (let i = 0; i < 40 && alive(); i += 1) execFileSync('sleep', ['0.5']);
-  if (alive()) process.kill(-pid, 'SIGKILL');
+/**
+ * Whether any process in the group is still running. A zombie is not: it has
+ * exited and waits only for whoever inherited it to reap it, and counting it
+ * would hold `down` for the full grace period.
+ */
+function groupAlive(pgid) {
+  try {
+    return run('ps', ['-A', '-o', 'pgid=,stat='])
+      .split('\n')
+      .map((line) => line.trim().split(/\s+/))
+      .some(([group, stat]) => Number(group) === pgid && stat && !stat.startsWith('Z'));
+  } catch {
+    return false;
+  }
 }
 
-function down() {
+async function stop(pid) {
+  if (!groupAlive(pid)) return;
+  try {
+    process.kill(-pid, 'SIGTERM');
+  } catch {
+    return;
+  }
+  for (let i = 0; i < 40 && groupAlive(pid); i += 1) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  if (groupAlive(pid)) process.kill(-pid, 'SIGKILL');
+}
+
+async function down() {
   const state = readState();
   for (const name of ['web', 'api', 'github-stub', 'namer-stub']) {
-    if (state.pids[name]) stop(state.pids[name]);
+    if (state.pids[name]) await stop(state.pids[name]);
   }
   if (state.compose && succeeds('docker', ['info'])) run('docker', [...COMPOSE, 'down']);
   // Last, and waited for: a daemon still shutting down refuses the next `up`.
-  if (state.pids.dockerd) stop(state.pids.dockerd);
+  if (state.pids.dockerd) await stop(state.pids.dockerd);
   rmSync(stateFile, { force: true });
   log('down');
 }
@@ -334,7 +353,7 @@ switch (command) {
     await status();
     break;
   case 'down':
-    down();
+    await down();
     break;
   default:
     console.error('usage: stack.mjs up [--web] [--no-build] | status | down');
