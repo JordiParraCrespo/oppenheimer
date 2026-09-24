@@ -54,7 +54,13 @@ export function mountSessionTerminal(
   const term = new Terminal({
     ...TERMINAL_FONT,
     theme: readTerminalTheme(),
-    cursorBlink: true,
+    // A steady cursor. xterm restarts the blink cycle on every cursor move,
+    // and a working agent moves it on every frame of its status line — the
+    // spinner and the timer — before putting it back at the prompt. tmux
+    // forwards those jumps bare (it drops the agent's synchronized-output
+    // markers), so a blinking cursor turned into an irregular flicker for as
+    // long as the agent was thinking.
+    cursorBlink: false,
     cursorStyle: 'block',
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
