@@ -370,6 +370,38 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Callout</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">neutral · info · success · warning · error</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">A note in the flow, not a card: flat tonal fill, hairline-free, 13px text. It never outweighs the form it sits above, and it never carries a button — if an action is needed, the action lives in the form. Neutral is the default and carries no hue — most notes are explanations, not state. The four tinted variants take a status hue at 11–14% behind full-opacity ink, and only when something actually is in that state.</p>
+</div>
+<div style="max-width:440px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Neutral</span><div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--hover-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">No account yet for that sign-in. The provider buttons create one in a single step.</p>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Info</span><div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--info-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--info)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg);text-wrap:pretty">A worktree is created per session, so two runs on one repository never share a checkout.</p>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Success</span><div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--success-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--success)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg);text-wrap:pretty">Runner connected. 12 repositories are available to this host.</p>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Warning</span><div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--warning-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--warning)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-triangle" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg);text-wrap:pretty">This host has been unreachable for 6 minutes. Sessions on it are paused.</p>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:7px"><span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Error</span><div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--danger-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--danger)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg);text-wrap:pretty">The install token expired. Generate a new one and run the command again.</p>
+</div></div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
 <h3 style="margin:0;font-size:17px;font-weight:600">Dialog</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · __head · __body · __foot · op-scrim</code>
 </div>

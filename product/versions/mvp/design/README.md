@@ -16,7 +16,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 |----------|--------|
 | [`Flow`](version1/Flow.dc.html) | Index of the first-run flow; every frame live, in order |
 | [`SignIn`](version1/SignIn.dc.html) | Sign in — GitHub, Google, email and password |
-| [`CreateAccount`](version1/CreateAccount.dc.html) | Create your account |
+| [`CreateAccount`](version1/CreateAccount.dc.html) | Create your account — first and last name, and a note when a provider sign-in found no account |
 | [`ForgotPassword`](version1/ForgotPassword.dc.html) | Reset your password |
 | [`CheckEmail`](version1/CheckEmail.dc.html) | Check your email |
 | [`SetPassword`](version1/SetPassword.dc.html) | Set a new password |
@@ -24,13 +24,18 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
-| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: sidebar, terminal, composer |
+| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: sidebar with sessions grouped by project, terminal, composer |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
 few seconds, the pairing token counts down. Onboarding steps carry a Back link
-beside the step counter.
+beside the step counter. In the console the sidebar groups sessions under
+projects (each with default repositories, host and agent), a session row
+renames, moves to another project or deletes, a new session shows a
+"Starting your session" wait, and the terminal header marks the link as
+live or reconnecting. `Components` adds the Callout (neutral, info, success,
+warning, error).
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -63,5 +68,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   design record; the showcase is the rendered one. The agent marks in the
   package are inline SVGs from the vendors' brand assets, not the PNG copies
   in `version1/assets/agents/`.
+- The 2026-09-24 export also carries a `version2/` canvas (a chat view); it
+  is not part of the MVP and was left out, as were `screens/` and
+  `screenshots/`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

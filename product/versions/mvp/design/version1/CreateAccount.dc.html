@@ -20,6 +20,10 @@
 <h1 style="font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Create your account</h1>
 <p style="margin-top:8px;font-size:15px;color:var(--fg-muted)">Three steps and your first session is running.</p>
 </div>
+<div style="display:flex;gap:9px;padding:11px 13px;border-radius:14px;background:var(--hover-surface)">
+<span style="display:flex;flex:none;margin-top:1px;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="16" hint-size="16px,16px"></x-import></span>
+<p style="margin:0;font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">No account yet for that sign-in. The provider buttons create one in a single step.</p>
+</div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <a class="op-btn op-btn--social op-btn--lg op-btn--block" href="./CreateWorkspace.dc.html" style="text-decoration:none;background:var(--card);border-color:var(--border)"><img class="op-btn__glyph op-btn__glyph--color" src="./assets/brand/google-color.svg" alt="">Continue with Google</a>
 <a class="op-btn op-btn--social op-btn--lg op-btn--block" href="./CreateWorkspace.dc.html" style="text-decoration:none;background:var(--card);border-color:var(--border)"><img class="op-btn__glyph" src="./assets/brand/github.svg" alt="">Continue with GitHub</a>
@@ -30,6 +34,16 @@
 <div class="op-sep op-sep--h" style="flex:1;width:auto"></div>
 </div>
 <div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:12px">
+<div class="op-field" style="flex:1;min-width:0">
+<label class="op-label" for="first-name">First name</label>
+<div class="op-input op-input--lg"><input class="op-input__el" id="first-name" type="text" autocomplete="given-name" placeholder="Jordi"></div>
+</div>
+<div class="op-field" style="flex:1;min-width:0">
+<label class="op-label" for="last-name">Last name</label>
+<div class="op-input op-input--lg"><input class="op-input__el" id="last-name" type="text" autocomplete="family-name" placeholder="Parra"></div>
+</div>
+</div>
 <div class="op-field">
 <label class="op-label" for="email">Email</label>
 <div class="op-input op-input--lg"><input class="op-input__el" id="email" type="email" placeholder="you@company.com"></div>
