@@ -97,10 +97,11 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     expect(invalidated(queryClient, usersKeys.list())).toBe(true);
   });
 
-  it('a delete drops the row and refreshes the lists', async () => {
+  it('a delete drops the row and refreshes the lists and the caller', async () => {
     const { wrapper, queryClient } = setup();
     queryClient.setQueryData(usersKeys.detail('user-1'), SAVED);
     queryClient.setQueryData(usersKeys.list(), [SAVED]);
+    queryClient.setQueryData(usersKeys.me(), SAVED);
     const onSuccess = vi.fn();
 
     const { result } = renderHook(() => useDeleteUser({ onSuccess }), { wrapper });
@@ -110,5 +111,6 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     expect(onSuccess).toHaveBeenCalled();
     expect(queryClient.getQueryData(usersKeys.detail('user-1'))).toBeUndefined();
     expect(invalidated(queryClient, usersKeys.list())).toBe(true);
+    expect(invalidated(queryClient, usersKeys.me())).toBe(true);
   });
 });

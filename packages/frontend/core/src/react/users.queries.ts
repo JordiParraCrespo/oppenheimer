@@ -142,6 +142,9 @@ export function useDeleteUser(
     ...withCacheOnSuccess(options, (_, id) => {
       queryClient.removeQueries({ queryKey: usersKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+      // An admin may delete their own account: the shell's "me" and its
+      // permissions must not keep rendering the identity just removed.
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
     }),
   });
 }
