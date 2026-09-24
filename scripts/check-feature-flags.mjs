@@ -93,6 +93,7 @@ function collectSources(dir, out = []) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const { FEATURE_FLAGS } = await import(pathToFileURL(join(root, CATALOG)).href);
+  // biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
   const today = process.env.FLAGS_TODAY ?? new Date().toISOString().slice(0, 10);
   const sources = SCANNED_ROOTS.flatMap((dir) => collectSources(join(root, dir)));
 
