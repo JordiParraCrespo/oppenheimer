@@ -1,15 +1,18 @@
 // A mutation hook's cache update goes through `withCacheOnSuccess`.
 //
-// Matched on the options object (a `mutationFn` beside an `onSuccess`), not on
-// a callee, so `useMutation<A, B, C>(…)` and any wrapper are covered. Written
-// inline beside `...options`, the spread order decides whether the update
-// runs: spread after it, a caller's `onSuccess` replaces it — the logout bug.
-// Call-site `mutate(vars, { onSuccess })` has no `mutationFn` and is not
-// matched. Cases: biome-plugins/fixtures/mutation-on-success.ts.
+// Matched on the options object, not on a callee, so `useMutation<A, B, C>(…)`
+// and any wrapper are covered: a `mutationFn`, an inline `onSuccess`, and a
+// spread beside them. Beside `...options` the spread order decides whether the
+// update runs — spread after it, a caller's `onSuccess` replaces it, which is
+// the logout bug. A screen's own `useMutation` with no spread has nothing to
+// override it, and call-site `mutate(vars, { onSuccess })` has no
+// `mutationFn`; neither is matched. Cases:
+// biome-plugins/fixtures/mutation-on-success.ts.
 language js
 
 `{ $props }` where {
   $props <: some `mutationFn: $_`,
   $props <: some `onSuccess: $handler`,
+  $props <: some `...$_`,
   register_diagnostic(span=$handler, message="Write a mutation hook's cache update as `...withCacheOnSuccess(options, update)`, not an inline `onSuccess`: beside `...options` the spread order decides whether it runs.")
 }

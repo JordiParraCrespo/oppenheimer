@@ -47,3 +47,14 @@ export function useCallSite() {
   const { mutate } = useThroughTheHelper();
   return (id: string) => mutate(id, { onSuccess: () => {} });
 }
+
+export function useScreenOwnMutation() {
+  // A screen's own mutation: no options spread in, so nothing can replace it.
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: logout,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+    },
+  });
+}
