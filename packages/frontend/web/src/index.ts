@@ -1,5 +1,5 @@
 /**
- * @oppenheimer/frontend-web — what both Vite apps share below their routes.
+ * @oppenheimer/frontend-web — the web platform kit, below the app's routes.
  *
  * Organised by concern, each with the same kind directories a feature has
  * (`components/`, `dialogs/`, `hooks/`, `lib/`). Leaves first: `platform`,

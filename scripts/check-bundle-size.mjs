@@ -39,14 +39,6 @@ const APPS = [
     budgetKB: 430,
   },
   // oppenheimer:end web
-  // oppenheimer:begin admin-web
-  {
-    name: '@oppenheimer/admin-web',
-    dist: 'apps/admin-web/dist',
-    // 359KB measured — the same stack over fewer screens.
-    budgetKB: 375,
-  },
-  // oppenheimer:end admin-web
 ];
 
 /** Script and stylesheet URLs the entry HTML pulls in, as site-root paths. */

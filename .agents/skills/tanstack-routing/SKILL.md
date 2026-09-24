@@ -1,14 +1,13 @@
 ---
 name: tanstack-routing
-description: Routing in the Oppenheimer Vite apps (apps/web, apps/admin-web), which use TanStack Router with file-based routing. Use this whenever you add, move, rename, split or delete a route file; add or change a route guard, redirect, layout route or search param; touch routeTree.gen.ts, beforeLoad, validateSearch, staticData or the router context; or debug a 404, a redirect loop, a route that renders the wrong layout, or a URL that changed when it should not have. Also use it when the user asks about the route tree, URL structure, protected or authenticated routes, sign-in redirects, or where a screen should live — even if they never say "router".
+description: Routing in the Oppenheimer web console (apps/web), which uses TanStack Router with file-based routing. Use this whenever you add, move, rename, split or delete a route file; add or change a route guard, redirect, layout route or search param; touch routeTree.gen.ts, beforeLoad, validateSearch, staticData or the router context; or debug a 404, a redirect loop, a route that renders the wrong layout, or a URL that changed when it should not have. Also use it when the user asks about the route tree, URL structure, protected or authenticated routes, sign-in redirects, or where a screen should live — even if they never say "router".
 ---
 
-# Routing in the Vite apps
+# Routing in the web console
 
-`apps/web` and `apps/admin-web` are TanStack Router SPAs with file-based
-routing: the files under `src/routes/` *are* the route tree, and
-`src/routeTree.gen.ts` is generated from them. `apps/mobile` and
-`apps/admin-mobile` use expo-router and are not covered here.
+`apps/web` is a TanStack Router SPA with file-based routing: the files under
+`src/routes/` *are* the route tree, and `src/routeTree.gen.ts` is generated
+from them.
 
 The single most expensive mistake in this area is changing a URL by accident.
 File-based routing means a rename is a URL change, and URLs are in bookmarks,
@@ -36,10 +35,6 @@ apps/web/src/
     ├── _authenticated/     sessions/ · settings/ · profile · $ (console catch-all)
     └── about · privacy · terms · oauth/consent   (public, no layout)
 ```
-
-`apps/admin-web` is the same shape with one product: `_auth` (guarded by
-`redirectSignedIn` directly, since it has no onboarding half) and
-`_authenticated`.
 
 ## The rules that catch most mistakes
 
@@ -210,7 +205,7 @@ node .agents/skills/tanstack-routing/scripts/generate-route-tree.mjs apps/web
 pnpm turbo run build --filter=@oppenheimer/web   # tsc -b + vite; the real check
 pnpm --filter @oppenheimer/web arch              # routes-compose and friends
 pnpm check:structure                             # the 120-line route cap
-pnpm check:bundle                                # needs a build of both web apps
+pnpm check:bundle                                # needs a build of apps/web
 pnpm starter:check                               # if you named an optional app
 ```
 

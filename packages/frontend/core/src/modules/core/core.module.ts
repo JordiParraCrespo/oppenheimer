@@ -21,9 +21,9 @@ export interface CoreModuleConfig {
 export function createCoreModule(config: CoreModuleConfig): ContainerModule {
   return new ContainerModule(({ bind }) => {
     // Authentication is cookie-based. On web the browser sends the session
-    // cookie automatically (credentials: include). On native, the Better Auth
-    // Expo client stores the cookie in SecureStore and exposes it via
-    // `getAuthHeaders()`, which we attach to every generated API request.
+    // cookie automatically (credentials: include). Whatever the auth client
+    // returns from `getAuthHeaders()` is attached to every generated API
+    // request as well, for a client that cannot rely on a cookie jar.
     OpenAPI.BASE = config.apiBaseUrl;
     OpenAPI.WITH_CREDENTIALS = true;
     OpenAPI.CREDENTIALS = 'include';

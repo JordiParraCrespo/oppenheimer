@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * Legacy: the previous system pinned auth controls at 40px through these
  * classes. Controls now take `size="lg"`; the names stay so the screens not
- * yet rebuilt on the artboards (onboarding, the control plane) keep compiling.
+ * yet rebuilt on the artboards (onboarding) keep compiling.
  */
 export const authControlClass = 'w-full';
 export const authInputClass = 'w-full';

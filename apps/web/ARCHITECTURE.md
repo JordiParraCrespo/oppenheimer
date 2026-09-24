@@ -36,8 +36,8 @@ they disagree, fix the code or update both together. The tier-wide model is
 
 Imports run one way down that list. A feature never imports another feature; a
 kit is imported by its package name, never by a path into its `src/`; this app
-loads `@oppenheimer/frontend-consumer` and would fail `pnpm arch` for touching
-`@oppenheimer/frontend-admin`.
+loads `@oppenheimer/frontend-consumer`, its product package, and nothing in
+the kernel or the kit imports it back.
 
 ## The anatomy of a feature
 
@@ -168,8 +168,8 @@ feature here yet); and the app's allowlist, `public`
   or `hooks/`.
 - `forms-and-components-stay-pure` — neither touches the query port or the router.
 - `lib-has-no-jsx` — a feature's `lib/` imports `react` for types only.
-- `one-product-per-app` — this app is the consumer product and never loads
-  `@oppenheimer/frontend-admin`.
+- `one-product-per-app` — this app is the consumer product and loads no other
+  product package.
 - `kit-through-its-entry` — `@oppenheimer/frontend-web` by its package name only.
 
 `pnpm check:structure` — feature names against the module lists above, the
@@ -188,13 +188,11 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
 
 - **`oppenheimer.ts`** — `OppenheimerApp.create({ modules: consumerModules })` with the
   kit's `LocalStorageService` and `createWebAnalyticsClient()`. Loading the
-  consumer modules is what makes this app that product; `apps/admin-web` runs
-  the same file with `adminModules`.
+  consumer modules is what makes this app that product.
 - **`auth-client.ts`** — the Better Auth browser client. `signUp` actually
   creates an account here, and `signInSocial` passes
   `requestSignUp: intent === 'sign-up'` so only `/register` lifts the API's
-  `disableImplicitSignUp`; the control plane's copy throws from `signUp`
-  instead. Its `errorCallbackURL` returns to the screen the reader started on,
+  `disableImplicitSignUp`. Its `errorCallbackURL` returns to the screen the reader started on,
   and `getSession` consumes `public/session-preload.js` when the API is
   same-origin.
 - **`nav.ts`** — the workspace's destinations, `/sessions` and
@@ -203,8 +201,7 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
   Every row is ungated (`policies: []`);
   a row that needs a permission takes it from `ENDPOINT_POLICIES` in
   `@oppenheimer/shared/permissions`, keyed by method and route
-  (`ENDPOINT_POLICIES['GET /tokens']`), never a literal rule list. `apps/admin-web`
-  lists `/users` and `/roles` instead.
+  (`ENDPOINT_POLICIES['GET /tokens']`), never a literal rule list.
 
 The query client is a provider, not a lib file: `src/providers/query-provider.tsx`
 applies the kernel's persistence policy with `CONSUMER_NON_PERSISTED_FEATURES`,

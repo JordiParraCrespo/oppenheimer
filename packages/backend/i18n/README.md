@@ -9,7 +9,7 @@ interpolation and plurals, plus `Intl` wrappers for money, dates and relative
 times.
 
 It **owns no copy**. Bundles are supplied by the application, which passes the
-same JSON it already ships to the web and mobile apps, so a string is written
+same JSON it already ships to the web app, so a string is written
 once and a translator edits one file.
 
 ## Usage

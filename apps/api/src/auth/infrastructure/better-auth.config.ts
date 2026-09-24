@@ -1,9 +1,6 @@
 import '@oppenheimer/env/load';
 import { randomUUID } from 'node:crypto';
-// oppenheimer:begin mobile|admin-mobile
-import { expo } from '@better-auth/expo';
 import { Logger } from '@nestjs/common';
-// oppenheimer:end mobile|admin-mobile
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
@@ -42,13 +39,6 @@ const superadminAc = defaultAc.newRole({
 const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', ...SCOPES];
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
-const adminFrontendUrl = process.env.ADMIN_FRONTEND_URL ?? 'http://localhost:3003';
-// oppenheimer:begin mobile
-const mobileScheme = process.env.MOBILE_SCHEME ?? 'oppenheimer';
-// oppenheimer:end mobile
-// oppenheimer:begin admin-mobile
-const adminMobileScheme = process.env.ADMIN_MOBILE_SCHEME ?? 'oppenheimer-admin';
-// oppenheimer:end admin-mobile
 
 // Read through `orUndefined` so a blank `DB_X=` means "unset" here exactly as
 // it does in `database.config.ts`. Better Auth owns its own pool rather than
@@ -104,16 +94,7 @@ export const auth = betterAuth({
   basePath: '/api/auth',
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,
-  trustedOrigins: [
-    frontendUrl,
-    adminFrontendUrl,
-    // oppenheimer:begin mobile
-    `${mobileScheme}://`,
-    // oppenheimer:end mobile
-    // oppenheimer:begin admin-mobile
-    `${adminMobileScheme}://`,
-    // oppenheimer:end admin-mobile
-  ],
+  trustedOrigins: [frontendUrl],
   // Brute-force protection on the auth surface. `/api/auth/*` is mounted on the
   // HTTP adapter before Nest binds middleware, so the NestJS ThrottlerGuard
   // never sees these routes — Better Auth's own limiter is the only thing that
@@ -389,9 +370,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    // oppenheimer:begin mobile|admin-mobile
-    expo(),
-    // oppenheimer:end mobile|admin-mobile
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own

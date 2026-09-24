@@ -7,17 +7,6 @@ build/
 # oppenheimer:begin web-showcase
 .next/
 # oppenheimer:end web-showcase
-# oppenheimer:begin mobile|admin-mobile|mobile-showcase
-.expo/
-apps/mobile/ios/
-apps/mobile/android/
-apps/admin-mobile/ios/
-apps/admin-mobile/android/
-apps/mobile-showcase/ios/
-apps/mobile-showcase/android/
-packages/frontend/nitro-app-info/android/.cxx/
-packages/frontend/design-system/mobile/assets/icons/nanoicons/
-# oppenheimer:end mobile|admin-mobile|mobile-showcase
 .docusaurus/
 *.tsbuildinfo
 node-compile-cache/
@@ -59,11 +48,6 @@ scratchpad/
 # not part of the codebase. Large, and carries third-party branding.
 /CRM SaaS Design Pages.zip
 /Adri Rodrigo - Design System.html
-
-# oppenheimer:begin qa
-# QA pack run output. The curated copy under docs/screenshots/ is committed.
-qa/artifacts/
-# oppenheimer:end qa
 
 # Redis snapshot, written when a local redis-server is used instead of docker.
 dump.rdb

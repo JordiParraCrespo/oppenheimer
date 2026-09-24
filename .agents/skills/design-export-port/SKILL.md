@@ -56,9 +56,7 @@ Find the export root the user points at (ask if unsure). Read in order:
 
 Then the repo side: `globals.css`, the package README and AGENTS.md, the
 frontend rule, and every import of the package from the apps (`apps/web`
-imports the package root; the showcase imports subpaths). Note the web /
-mobile mirror: a variant added on web needs its mobile counterpart or a
-note in the PR saying why not.
+imports the package root; the showcase imports subpaths).
 
 ## 2. Render the artboards
 
@@ -138,7 +136,6 @@ Keep the JS `tailwind.config.ts` preset in sync with the same values.
 - Existing component with the same role: **rewrite in place** and keep the
   exports callers still use. Add previous variant names only for callers
   that exist; delete what nothing imports.
-- Mirror the API change in the mobile package or record why not.
 - Restyle the shadcn `Sidebar` rather than replacing it; the showcase
   shell uses its provider and mobile sheet.
 

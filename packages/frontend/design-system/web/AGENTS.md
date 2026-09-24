@@ -1,8 +1,7 @@
 # @oppenheimer/design-system-web — Agent Instructions
 
 Web UI component library: shadcn/ui components + Tailwind, built with tsup.
-Consumed by `apps/web`, `apps/admin-web`, `apps/web-showcase` and
-`packages/frontend/web`.
+Consumed by `apps/web`, `apps/web-showcase` and `packages/frontend/web`.
 
 > Read the root [`CLAUDE.md`](../../../../CLAUDE.md) and the design-system overview
 > in [`../AGENTS.md`](../AGENTS.md) first.
@@ -22,9 +21,7 @@ tsup.config.ts    # build config
 
 ## Conventions
 
-- Components follow **shadcn** conventions. Keep the component API (props,
-  variants) mirrored with `@oppenheimer/design-system-mobile` so both platforms stay
-  consistent.
+- Components follow **shadcn** conventions.
 - Colors/spacing/typography come from the shared design tokens — don't hardcode.
 - **Export new components from `index.ts`.** This is enforced:
   `scripts/check-exports.mjs` runs as the package's `test` script and fails the

@@ -55,14 +55,12 @@
       "!**/dist",
       "!**/build",
       "!**/.next",
-      "!**/.expo",
       "!**/.turbo",
       "!**/.docusaurus",
       "!**/coverage",
       "!**/playwright-report",
       "!**/blob-report",
       "!**/test-results",
-      "!**/qa/artifacts",
       "!**/node-compile-cache",
       "!**/.agents",
       "!**/*.md",
@@ -73,7 +71,6 @@
       "!**/packages/frontend/design-system/*/src/components",
       "!**/product/versions/mvp/design",
       "!**/apps/web-showcase",
-      "!**/apps/mobile-showcase",
       "!**/packages/shared/protocol-schema"
     ]
   },

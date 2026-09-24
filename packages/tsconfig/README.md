@@ -12,12 +12,11 @@ across the monorepo.
 | `tsconfig.library.json` | Buildable TS packages (`packages/*`)                             |
 | `tsconfig.nestjs.json`  | The NestJS API (`apps/api`, backend packages)                    |
 | `tsconfig.nextjs.json`  | Next.js apps (`apps/web-showcase`)                               |
-| `tsconfig.expo.json`    | Expo / React Native apps (`apps/mobile`, `apps/mobile-showcase`) |
 
 Three build/test-time helpers ride along, for the same reason the tsconfigs do
 — one copy, extended rather than pasted: `vite-chunks.mjs` (the Rollup
-`manualChunks` the Vite SPAs share), `vitest-frontend.mjs` (the shared Vitest
-project config `apps/web`, `apps/admin-web` and `packages/frontend/web` use),
+`manualChunks` for the Vite SPA), `vitest-frontend.mjs` (the shared Vitest
+project config `apps/web` and `packages/frontend/web` use),
 and `depcruise/*.cjs` (the dependency-cruiser rule factories the frontend apps
 and kits extend).
 

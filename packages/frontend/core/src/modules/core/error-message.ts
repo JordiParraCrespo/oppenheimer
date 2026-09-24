@@ -49,7 +49,7 @@ export interface ResolvedErrorMessage {
  *
  * The server's problem document is authoritative about *what* went wrong — its
  * `code` — but not about how to say it: `detail` and `title` are English,
- * written for operators and the CLI. Rendering them straight into the UI (the
+ * written for operators and API clients. Rendering them straight into the UI (the
  * `error instanceof Error ? error.message : t(…)` pattern this replaces) means
  * a Spanish user reads English for every failure the API can actually produce,
  * because the translated fallback only fires when the throw was not an `Error`

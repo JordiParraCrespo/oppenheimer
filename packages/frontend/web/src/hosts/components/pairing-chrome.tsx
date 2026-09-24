@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
- * `HostEntity`: the kit is shared by both products and imports neither
- * (`kit-knows-no-product`), and these three fields are all a status row reads.
+ * `HostEntity`: the kit imports no product package (`kit-knows-no-product`), and these three fields are all a status row reads.
  */
 export interface PairingHost {
   name: string;

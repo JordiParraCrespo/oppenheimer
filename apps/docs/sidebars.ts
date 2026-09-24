@@ -28,30 +28,10 @@ const sidebars: SidebarsConfig = {
       ],
     },
     'errors',
-    // oppenheimer:begin cli|mcp
-    {
-      type: 'category',
-      label: 'CLI & MCP',
-      items: [
-        'tooling/permissions',
-        // oppenheimer:begin cli
-        'tooling/cli',
-        // oppenheimer:end cli
-        // oppenheimer:begin mcp
-        'tooling/mcp',
-        // oppenheimer:end mcp
-      ],
-    },
-    // oppenheimer:end cli|mcp
     {
       type: 'category',
       label: 'Deployment',
-      items: [
-        'deployment/tier-1-cheap',
-        // oppenheimer:begin helm
-        'deployment/tier-2-production',
-        // oppenheimer:end helm
-      ],
+      items: ['deployment/tier-1-cheap'],
     },
   ],
 };

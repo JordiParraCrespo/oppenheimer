@@ -4,48 +4,42 @@ sidebar_position: 2
 
 # Frontend Architecture
 
-`packages/frontend` is what the four apps (`apps/web`, `apps/admin-web`,
-`apps/mobile`, `apps/admin-mobile`) share below their routes. It is split
-twice, and the two splits answer different questions.
+`packages/frontend` is what the console (`apps/web`) loads below its routes.
+It is split twice, and the two splits answer different questions.
 
 ## The two splits
 
 **By product, for logic.** An entity, a repository, a service or a query hook
-belongs to one product or to both. **By platform, for UI and glue.** A
-component, a hook over a browser API or an i18n bootstrap belongs to web or to
-mobile.
+belongs to the kernel every app loads or to the product the app is. **By
+platform, for UI and glue.** A component, a hook over a browser API or an i18n
+bootstrap belongs to the platform kit.
 
 | Package                   | Name                      | Holds                                                                                                  |
 | ------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `packages/frontend/core`      | `@oppenheimer/frontend-core`      | The kernel every app loads: `auth`, `users`, `user-settings`, `capabilities`, `analytics`, the InversifyJS container (`OppenheimerApp`, `TOKENS`), `config/`, `validation/` |
-| `packages/frontend/consumer`  | `@oppenheimer/frontend-consumer`  | The consumer product: `api-tokens`, `organizations`, `profile`                                        |
-| `packages/frontend/admin`     | `@oppenheimer/frontend-admin`     | The control plane: `admin-users`, `roles`                                                             |
+| `packages/frontend/core`      | `@oppenheimer/frontend-core`      | The kernel: `auth`, `users`, `user-settings`, `capabilities`, `analytics`, the InversifyJS container (`OppenheimerApp`, `TOKENS`), `config/`, `validation/` |
+| `packages/frontend/consumer`  | `@oppenheimer/frontend-consumer`  | The product: `sessions`, `hosts`, `installations`, and the account chrome (`organizations`, `profile`, `api-tokens`) |
 | `packages/frontend/api-client`| `@oppenheimer/api-client`         | The typed client generated from the API's OpenAPI spec                                                |
-| `packages/frontend/web`       | `@oppenheimer/frontend-web`       | What both Vite apps share, by concern: `shell`, `auth`, `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles` |
-| `packages/frontend/mobile`    | `@oppenheimer/frontend-mobile`    | What both Expo apps share: `analytics`, `config`, `forms`, `i18n`, `layout`, `platform`, `theme`       |
+| `packages/frontend/web`       | `@oppenheimer/frontend-web`       | The web platform kit, by concern: `shell`, `auth`, `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`, `hosts` |
 
 Imports run one way:
 
 ```
-shared ─► core ─► consumer | admin ─► apps
-design-system/<platform> ─► frontend/<platform> kit ─► apps
+shared ─► core ─► consumer ─► apps/web
+design-system/web ─► frontend/web kit ─► apps/web
 ```
 
 A product package imports the kernel, `@oppenheimer/shared` and `@oppenheimer/api-client`,
-never the other product and never a kit. A kit imports its design system and
-the kernel, never a product and never an app. An app imports exactly one
-product package, one kit and one design system, each by its package name.
-Inside a product package, `modules/` never imports `react/`: the React
-bindings sit on top of the domain and read it through the container.
+never a kit. A kit imports its design system and the kernel, never a product
+and never an app. An app imports exactly one product package, one kit and one
+design system, each by its package name. Inside a product package, `modules/`
+never imports `react/`: the React bindings sit on top of the domain and read it
+through the container.
 
-Two placements are never valid. Logic in a platform kit would have to be copied
-for mobile; UI in a product package would pull `react-dom` or `react-native`
-into a package both platforms load. Something that seems to need either is two
-things glued together — the hook goes down to a product package, the component
-sideways to the kit.
-
-The split by product is also what keeps `apps/web` from bundling the control
-plane's modules.
+Two placements are never valid. Logic in the platform kit belongs to no
+product and cannot be tested without a DOM; UI in a product package would pull
+`react-dom` into code that has no platform. Something that seems to need either
+is two things glued together — the hook goes down to the product package, the
+component sideways to the kit.
 
 ## Inside an app: routes compose, features contain
 
@@ -71,7 +65,7 @@ features/<module>/
 - Features never import each other. What two of them need moves to the kit when
   the second consumer appears.
 - `forms/` and `components/` never import `@oppenheimer/frontend-*/react`,
-  `@tanstack/react-query`, `@tanstack/react-router` or `expo-router`.
+  `@tanstack/react-query` or `@tanstack/react-router`.
 - A route file composes screens, sections and dialogs and stays under 120
   lines.
 - There is no `index.ts` inside a feature; a route imports the screen by path.
@@ -93,7 +87,7 @@ features/<module>/
 ## How an app assembles itself
 
 `apps/<app>/src/lib/oppenheimer.ts` is the composition root, and the modules it loads
-are what make the app one product or the other:
+are what make the app the product it is:
 
 ```typescript
 export const app = OppenheimerApp.create({
@@ -101,14 +95,14 @@ export const app = OppenheimerApp.create({
   storage: new LocalStorageService(),      // from the kit
   authClient: webAuthClient,               // lib/auth-client.ts
   analytics: createWebAnalyticsClient(),   // from the kit
-  modules: consumerModules,                // or adminModules
+  modules: consumerModules,                // the product package
 });
 ```
 
 `OppenheimerApp` binds the kernel's modules and then whatever `modules` the app
 passes. `OppenheimerProvider` puts the app in context and `useOppenheimerApp()` reads it.
 The kernel only knows kernel services, so a product resolves its own through a
-wrapper over the same container: `useConsumerApp()` and `useAdminApp()`. A
+wrapper over the same container: `useConsumerApp()`. A
 product query hook reads `useConsumerApp().organizations` the way a kernel hook
 reads `useOppenheimerApp().auth`.
 

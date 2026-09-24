@@ -28,15 +28,9 @@ const IMAGES = {
   // oppenheimer:begin web
   web: '@oppenheimer/web',
   // oppenheimer:end web
-  // oppenheimer:begin admin-web
-  'admin-web': '@oppenheimer/admin-web',
-  // oppenheimer:end admin-web
   // oppenheimer:begin docs
   docs: '@oppenheimer/docs',
   // oppenheimer:end docs
-  // oppenheimer:begin mcp
-  mcp: '@oppenheimer/mcp',
-  // oppenheimer:end mcp
   // oppenheimer:begin runner
   runner: '@oppenheimer/runner',
   // oppenheimer:end runner

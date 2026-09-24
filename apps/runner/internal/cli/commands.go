@@ -20,8 +20,8 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
-// Exit codes are a public contract, the same one apps/cli publishes: a script
-// that wraps the installer can branch on them.
+// Exit codes are a public contract: a script that wraps the installer can
+// branch on them, so a number never changes meaning once published.
 const (
 	ExitOK          = 0
 	ExitFailure     = 1

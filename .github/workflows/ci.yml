@@ -60,16 +60,16 @@ jobs:
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      # oppenheimer:begin web|admin-web|web-showcase|mobile|admin-mobile|mobile-showcase
+      # oppenheimer:begin web|web-showcase
       # The design-system linter (`@shadcn/lint` through oxlint, scoped to its
-      # own rules — Biome keeps correctness) over every web and mobile app that
+      # own rules — Biome keeps correctness) over every web app that
       # has a `lint:design` script. Every rule is at `warn` while the findings
       # it inherited are worked off, so this step reports and never fails;
       # promote a rule to `error` in the design system's oxlint.design.json
       # once it is clean.
       - name: Design-system lint
         run: pnpm lint:design
-      # oppenheimer:end web|admin-web|web-showcase|mobile|admin-mobile|mobile-showcase
+      # oppenheimer:end web|web-showcase
       # Empty filters mean "every package" to Turborepo, so an empty affected
       # list has to skip the step rather than pass nothing.
       - name: Architecture boundaries
@@ -80,13 +80,13 @@ jobs:
       # Import rules are dependency-cruiser's, above.
       - name: API structure
         run: pnpm check:api-structure
-      # oppenheimer:begin web|admin-web|mobile|admin-mobile
+      # oppenheimer:begin web
       # The frontend layout contract: feature names, kind directories, the
       # route line cap, no copies of what a kit ships, and the docs every
       # package carries. Import rules are dependency-cruiser's, above.
       - name: Frontend structure
         run: pnpm check:structure
-      # oppenheimer:end web|admin-web|mobile|admin-mobile
+      # oppenheimer:end web
       # oppenheimer:begin starter
       # The starter's feature manifest must keep describing the repo: every
       # optional app referenced only inside its own paths or a marker block.
@@ -162,24 +162,16 @@ jobs:
       # builds what they import. Empty on main, where everything runs.
       - run: pnpm turbo run build ${{ needs.changes.outputs.filters }}
       - run: pnpm turbo run test ${{ needs.changes.outputs.filters }}
-      # oppenheimer:begin web|admin-web
+      # oppenheimer:begin web
       # What a first-time visitor downloads before anything renders, against a
       # committed budget. Vite's own chunk warning prints and passes. The
-      # check reads both SPAs' dist folders, so build both when either changed;
-      # the one already built above is a local cache hit.
+      # build above is a local cache hit.
       - name: First-load budgets
-        if: contains(needs.changes.outputs.packages, '"@oppenheimer/web"') || contains(needs.changes.outputs.packages, '"@oppenheimer/admin-web"')
+        if: contains(needs.changes.outputs.packages, '"@oppenheimer/web"')
         run: |
-          filters=()
-          # oppenheimer:begin web
-          filters+=(--filter=@oppenheimer/web)
-          # oppenheimer:end web
-          # oppenheimer:begin admin-web
-          filters+=(--filter=@oppenheimer/admin-web)
-          # oppenheimer:end admin-web
-          pnpm turbo run build "${filters[@]}"
+          pnpm turbo run build --filter=@oppenheimer/web
           pnpm check:bundle
-      # oppenheimer:end web|admin-web
+      # oppenheimer:end web
 
   test-integration:
     name: Integration Tests
@@ -306,7 +298,7 @@ jobs:
       # is the first thing worth knowing when an auth route answers 403.
       - name: Resolved origins
         run: |
-          pnpm --filter @oppenheimer/e2e exec node -e "require('@oppenheimer/env/load');console.log(JSON.stringify({FRONTEND_URL:process.env.FRONTEND_URL,ADMIN_FRONTEND_URL:process.env.ADMIN_FRONTEND_URL,BETTER_AUTH_URL:process.env.BETTER_AUTH_URL,NODE_ENV:process.env.NODE_ENV,API_URL:process.env.API_URL,WEB_URL:process.env.WEB_URL},null,2))"
+          pnpm --filter @oppenheimer/e2e exec node -e "require('@oppenheimer/env/load');console.log(JSON.stringify({FRONTEND_URL:process.env.FRONTEND_URL,BETTER_AUTH_URL:process.env.BETTER_AUTH_URL,NODE_ENV:process.env.NODE_ENV,API_URL:process.env.API_URL,WEB_URL:process.env.WEB_URL},null,2))"
       - run: pnpm --filter @oppenheimer/e2e e2e:api
       # The API log is this suite's mailbox, and it is also where Better Auth
       # writes why it refused a request. Grepped rather than tailed: the first

@@ -34,38 +34,11 @@ const APPS = {
     platform: 'web',
   },
   // oppenheimer:end web
-  // oppenheimer:begin admin-web
-  'admin-web': {
-    dir: 'apps/admin-web',
-    features: 'src/features',
-    product: 'admin',
-    allow: [],
-    platform: 'web',
-  },
-  // oppenheimer:end admin-web
-  // oppenheimer:begin mobile
-  mobile: {
-    dir: 'apps/mobile',
-    features: 'features',
-    product: 'consumer',
-    allow: ['dashboard'],
-    platform: 'mobile',
-  },
-  // oppenheimer:end mobile
-  // oppenheimer:begin admin-mobile
-  'admin-mobile': {
-    dir: 'apps/admin-mobile',
-    features: 'features',
-    product: 'admin',
-    allow: [],
-    platform: 'mobile',
-  },
-  // oppenheimer:end admin-mobile
 };
 const app = APPS[args.app];
 if (!app || !args.module) {
   console.error(
-    'usage: node scripts/scaffold-feature.mjs --app <web|admin-web|mobile|admin-mobile> --module <name> [--screen <name>]',
+    'usage: node scripts/scaffold-feature.mjs --app <web> --module <name> [--screen <name>]',
   );
   process.exit(2);
 }
@@ -121,20 +94,12 @@ for (const [kind, note] of Object.entries(KINDS)) {
 }
 const screen = args.screen ?? args.module;
 const component = screen.replace(/(^|-)([a-z])/g, (_, __, c) => c.toUpperCase());
-const isMobile = app.platform === 'mobile';
-// oppenheimer:begin mobile|admin-mobile
-const MOBILE_SCREEN = `import { View } from 'react-native';\nimport { ${component}Panel } from '@/features/${args.module}/sections/${screen}-panel';\n\n/** The ${screen} screen. Mount it from app/…/${screen}.tsx. It composes; the section below fetches. */\nexport function ${component}Screen() {\n  return (\n    <View className="flex-1 p-6">\n      <${component}Panel />\n    </View>\n  );\n}\n`;
-const MOBILE_SECTION = `import { Text } from '@oppenheimer/design-system-mobile/text';\nimport { View } from 'react-native';\nimport { useTranslation } from 'react-i18next';\n\n/**\n * The ${screen} pane.\n *\n * A query belongs to whatever draws its result, and that is not automatically\n * this file. Call it here when this pane renders the result itself; when one\n * child does, the query goes in that child rather than being threaded down.\n * See .agents/rules/frontend-architecture.md.\n */\nexport function ${component}Panel() {\n  const { t } = useTranslation();\n\n  return (\n    <View>\n      <Text>{t('common.appName')}</Text>\n    </View>\n  );\n}\n`;
-// oppenheimer:end mobile|admin-mobile
-// oppenheimer:begin web|admin-web
+// oppenheimer:begin web
 const WEB_SCREEN = `import { PageHead } from '@oppenheimer/frontend-web';\nimport { useTranslation } from 'react-i18next';\nimport { ${component}Panel } from '@/features/${args.module}/sections/${screen}-panel';\n\n/** The ${screen} screen. Mount it from a route: \`component: () => <${component}Screen />\`. It composes; the section below fetches. */\nexport function ${component}Screen() {\n  const { t } = useTranslation();\n\n  return (\n    <>\n      <PageHead title={t('common.appName')} />\n      <${component}Panel />\n    </>\n  );\n}\n`;
 const WEB_SECTION = `import { useTranslation } from 'react-i18next';\n\n/**\n * The ${screen} pane.\n *\n * A query belongs to whatever draws its result, and that is not automatically\n * this file. Call it here when this pane renders the result; when one child\n * does — a cell waiting on its own row, a dialog that needs a list only while\n * it is open — the query goes in that child, not here with the value threaded\n * down. \`pnpm check:structure\` catches the single-consumer case; the rest is\n * judgement. See .agents/rules/frontend-architecture.md.\n */\nexport function ${component}Panel() {\n  const { t } = useTranslation();\n\n  return <p>{t('common.appName')}</p>;\n}\n`;
-// oppenheimer:end web|admin-web
-writeFileSync(join(featureDir, 'screens', `${screen}.tsx`), isMobile ? MOBILE_SCREEN : WEB_SCREEN);
-writeFileSync(
-  join(featureDir, 'sections', `${screen}-panel.tsx`),
-  isMobile ? MOBILE_SECTION : WEB_SECTION,
-);
+// oppenheimer:end web
+writeFileSync(join(featureDir, 'screens', `${screen}.tsx`), WEB_SCREEN);
+writeFileSync(join(featureDir, 'sections', `${screen}-panel.tsx`), WEB_SECTION);
 console.log(
-  `Scaffolded ${app.dir}/${app.features}/${args.module}/ with a ${screen} screen and the section it composes.\n\nNext:\n  1. Mount the screen from a route (${app.dir}/${isMobile ? 'app' : 'src/routes'}/…). A route file composes; it stays under 120 lines.\n  2. Put each query in whatever draws its result — the section, or the cell or dialog inside it. Never on the screen above.\n  3. Put each piece in its kind: form → forms/, dialog → dialogs/, row → components/, effect → hooks/.\n  4. pnpm --filter @oppenheimer/${args.app} arch && pnpm check:structure\n`,
+  `Scaffolded ${app.dir}/${app.features}/${args.module}/ with a ${screen} screen and the section it composes.\n\nNext:\n  1. Mount the screen from a route (${app.dir}/src/routes/…). A route file composes; it stays under 120 lines.\n  2. Put each query in whatever draws its result — the section, or the cell or dialog inside it. Never on the screen above.\n  3. Put each piece in its kind: form → forms/, dialog → dialogs/, row → components/, effect → hooks/.\n  4. pnpm --filter @oppenheimer/${args.app} arch && pnpm check:structure\n`,
 );

@@ -11,13 +11,6 @@ const schema = z.object({
   betterAuthSecret: z.string().min(8),
   betterAuthUrl: z.string().url().default('http://localhost:3001'),
   frontendUrl: z.string().url().default('http://localhost:3000'),
-  adminFrontendUrl: z.string().url().default('http://localhost:3003'),
-  // oppenheimer:begin mobile
-  mobileScheme: z.string().default('oppenheimer'),
-  // oppenheimer:end mobile
-  // oppenheimer:begin admin-mobile
-  adminMobileScheme: z.string().default('oppenheimer-admin'),
-  // oppenheimer:end admin-mobile
   // Base of the RFC 7807 `type` URIs in error responses. Point it at wherever
   // this deployment documents its error catalog.
   errorTypeBaseUrl: z.string().url().default('https://oppenheimer.dev/errors'),
@@ -43,13 +36,6 @@ export const appConfig = registerAs('app', () =>
     betterAuthSecret: 'BETTER_AUTH_SECRET',
     betterAuthUrl: 'BETTER_AUTH_URL',
     frontendUrl: 'FRONTEND_URL',
-    adminFrontendUrl: 'ADMIN_FRONTEND_URL',
-    // oppenheimer:begin mobile
-    mobileScheme: 'MOBILE_SCHEME',
-    // oppenheimer:end mobile
-    // oppenheimer:begin admin-mobile
-    adminMobileScheme: 'ADMIN_MOBILE_SCHEME',
-    // oppenheimer:end admin-mobile
     errorTypeBaseUrl: 'ERROR_TYPE_BASE_URL',
     trustProxy: 'TRUST_PROXY',
     bullBoardUsername: 'BULL_BOARD_USERNAME',

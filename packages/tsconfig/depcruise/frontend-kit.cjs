@@ -1,6 +1,5 @@
 /**
- * Dependency-cruiser rules for a platform kit (`packages/frontend/web`,
- * `packages/frontend/mobile`). A kit is organised by concern; each concern
+ * Dependency-cruiser rules for a platform kit (`packages/frontend/web`). A kit is organised by concern; each concern
  * has the kind directories a feature has. The concerns are layered, and the
  * layering is what keeps `shell` from becoming everything's dependency.
  *
@@ -53,7 +52,7 @@ module.exports = function frontendKit({ leaves, middle, top }) {
       {
         name: 'kit-knows-no-product',
         comment:
-          'The kit is shared by both products of its platform and imports only the kernel. A component that needs a product hook is a feature, not kit.',
+          'The kit sits below the apps of its platform and imports only the kernel, never a product package. A component that needs a product hook is a feature, not kit.',
         severity: 'error',
         from: {},
         to: { path: 'packages/frontend/(consumer|admin)/' },

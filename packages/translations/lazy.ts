@@ -12,13 +12,13 @@ export type Catalog = Record<string, unknown>;
  * One dynamic import per locale, so a bundler emits one chunk per catalog and
  * the app fetches only the one its reader is using.
  *
- * Written out rather than built from a template string: both Vite and Metro
- * need a statically analysable specifier to know which files to split out, and
- * a computed `import(\`./${locale}/index.json\`)` would either bundle every
+ * Written out rather than built from a template string: the bundler needs a
+ * statically analysable specifier to know which files to split out, and a
+ * computed `import(\`./${locale}/index.json\`)` would either bundle every
  * match or resolve nothing at all.
  *
- * The default locale is listed too, even though the web apps bundle it eagerly
- * as their i18next fallback — the map stays correct if the default changes, and
+ * The default locale is listed too, even though the web app bundles it eagerly
+ * as its i18next fallback — the map stays correct if the default changes, and
  * the chunk it produces is simply never requested.
  */
 const LOADERS: Record<Locale, () => Promise<{ default: Catalog }>> = {

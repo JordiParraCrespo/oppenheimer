@@ -199,10 +199,9 @@ export function useCaptureOnMount(event: AnalyticsEvent, properties?: AnalyticsP
  * Records a page view whenever `path` changes.
  *
  * Call this once, high in the tree, wired to the router's current location.
- * Single-page and native apps don't emit navigations the provider can see on
- * its own, so without this only the first load is ever counted. Each app wires
- * it up in its own analytics module — `PageViewTracker` on web,
- * `ScreenViewTracker` on mobile.
+ * A single-page app doesn't emit navigations the provider can see on its own,
+ * so without this only the first load is ever counted. The app wires it up in
+ * its own analytics module (`PageViewTracker` on web).
  */
 export function usePageView(path: string): void {
   const { mutate } = useCapturePageView();

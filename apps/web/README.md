@@ -4,7 +4,6 @@ The console: sign-up and sign-in, the first-run flow, and then one screen —
 a sidebar of sessions beside the pane a session opens in. There is no settings
 page and no profile page; the version-1 artboards have neither, and the account
 menu at the foot of the sidebar holds appearance, language and log out.
-Platform administration is a different app, [`apps/admin-web`](../admin-web).
 
 ## Stack
 
@@ -53,15 +52,14 @@ public/
 
 ## Where the shared code lives
 
-- UI and browser glue both Vite apps share — `AppShell`, `DataTable`,
+- UI and browser glue below the routes — `AppShell`, `DataTable`,
   `useTableQuery`, `useZodResolver`, `dateFormatter` — are in
   `@oppenheimer/frontend-web` (`packages/frontend/web`).
 - Primitives are in `@oppenheimer/design-system-web`.
 - Domain logic is in `@oppenheimer/frontend-core` (session, users, user settings,
   capabilities, analytics) and `@oppenheimer/frontend-consumer` (sessions,
   hosts, and the account chrome: organizations, profile, api-tokens — the last
-  two have no screen here yet). This app loads the consumer product and never
-  the admin one.
+  two have no screen here yet).
 
 ## More
 

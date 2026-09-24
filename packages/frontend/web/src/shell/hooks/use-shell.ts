@@ -16,9 +16,9 @@ export interface ShellConfig {
    * replacing the nav list.
    *
    * The console's sidebar *is* its session list, which needs a product hook
-   * and so cannot live in a kit both apps load. An app that has something
-   * better to put there passes it; the control plane, whose sidebar is a set
-   * of destinations, passes nothing and keeps the nav.
+   * and so cannot live in the kit. An app that has something better to put
+   * there passes it; an app whose sidebar is a set of destinations passes
+   * nothing and keeps the nav.
    */
   sidebar?: ReactNode;
   /**
@@ -31,7 +31,7 @@ export interface ShellConfig {
    */
   brand?: ReactNode;
   /**
-   * Whether the app wears the control plane's chrome: the 56px bar over the
+   * Whether the app wears the full chrome: the 56px bar over the
    * content, the ⌘K command palette, and the hairline above the account row.
    * Default `true`.
    *

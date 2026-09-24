@@ -1,14 +1,13 @@
 ---
 paths:
   - "apps/web/**/*"
-  - "apps/mobile/**/*"
   - "packages/frontend/core/src/validation/**/*"
   - "packages/shared/src/schemas/**/*"
 ---
 
 # Forms Rules
 
-Every form in `apps/web` and `apps/mobile` uses **React Hook Form** validated by
+Every form in `apps/web` uses **React Hook Form** validated by
 a **Zod schema from `@oppenheimer/shared`**. Do not hand-roll form state: no
 `useState` per field, no `new FormData(event.currentTarget)`, no `safeParse` in
 a submit handler, and no relying on the browser's native `required` /
@@ -17,7 +16,7 @@ a submit handler, and no relying on the browser's native `required` /
 The resolver always comes from the app's `useZodResolver` hook, never from
 `zodResolver` directly — that hook is what keeps failure messages translated.
 
-## Web (`apps/web`)
+## Wiring a field
 
 Plain inputs take `register()`. The design system's `Field` / `FieldError`
 already speak React Hook Form's error shape, so no wrapper component is needed.
@@ -67,37 +66,6 @@ const {
   `PermissionPicker` — needs a `Controller`, because there is no ref to
   register.
 
-## Mobile (`apps/mobile`)
-
-React Native has no DOM refs, so `register()` does not work. Every field goes
-through `Controller`, wired to the app-local `FormField` (label + control +
-error, mirroring the web `Field`).
-
-```tsx
-<Controller
-  control={control}
-  name="email"
-  render={({ field, fieldState }) => (
-    <FormField
-      label={t("auth.email")}
-      nativeID="email"
-      error={fieldState.error?.message}
-    >
-      <Input
-        aria-labelledby="email"
-        value={field.value}
-        onChangeText={field.onChange}
-        onBlur={field.onBlur}
-      />
-    </FormField>
-  )}
-/>
-```
-
-Pass `field.onBlur` through, not just `onChange` — without it `touched` never
-updates and blur-mode validation silently does nothing. Report failures inline;
-do not put them in an `Alert`.
-
 ## Schemas must not carry their own messages
 
 Zod short-circuits any error map when a check states its own message, so
@@ -127,7 +95,7 @@ a `validation.*` translation key. To cover a new issue code:
 2. Add the key to `ValidationMessageKey` in the same file.
 3. Add the message to **every** locale in `packages/translations/*/index.json`.
 
-`TranslateFn` is narrow on purpose — each app hands it a `t` typed over the
+`TranslateFn` is narrow on purpose — the app hands it a `t` typed over the
 whole catalog, so a key you forget to add is a compile error rather than a raw
 key rendered to a user. Skipping step 3 breaks the build; that is the point.
 

@@ -75,9 +75,9 @@ function Alert({
   VariantProps<typeof alertVariants> & {
     /**
      * Overrides the variant's leading icon. `null` renders none — for the rare
-     * callout that is one line inside something already labelled. Mirrors the
-     * mobile package, whose `Alert` has taken an `icon` component all along;
-     * web took it as a child, which is the half nobody remembered to pass.
+     * callout that is one line inside something already labelled. A prop
+     * rather than a child, because a child is the half nobody remembers to
+     * pass.
      */
     icon?: LucideIcon | null;
   }) {
