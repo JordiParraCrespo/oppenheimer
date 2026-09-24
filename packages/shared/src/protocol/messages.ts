@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { SESSION_IMAGE_MAX_BYTES, SESSION_IMAGE_MEDIA_TYPES } from '../schemas/session.schema';
 import { hintSchema } from './hint';
 import {
   attachmentIdSchema,
@@ -283,6 +284,27 @@ export const sessionInputSchema = z.object({
 export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
 
 /**
+ * An image for a window's prompt: the runner writes it to the host and pastes
+ * its path into the window as a bracketed paste, which is how an agent takes
+ * an image from a local terminal. The path is the runner's to choose — the
+ * control plane cannot know the host's filesystem — and the file is named by
+ * the command id, so nothing the browser sent becomes part of a path.
+ *
+ * `data` is the image's bytes, capped at `SESSION_IMAGE_MAX_BYTES` before
+ * encoding: under the link's buffer ceiling with room to spare.
+ */
+export const sessionImageSchema = z.object({
+  type: z.literal('session.image'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  window: windowIndexSchema,
+  mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+  data: z.base64().max(Math.ceil(SESSION_IMAGE_MAX_BYTES / 3) * 4),
+});
+
+export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
+
+/**
  * Replenish one attachment's flow-control window.
  *
  * The browser acks the bytes it has consumed, the control plane relays that
@@ -544,6 +566,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionCreateSchema,
   sessionAttachSchema,
   sessionInputSchema,
+  sessionImageSchema,
   attachmentCreditSchema,
   sessionResizeSchema,
   sessionWindowOpenSchema,

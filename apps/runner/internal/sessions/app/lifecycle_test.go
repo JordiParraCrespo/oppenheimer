@@ -21,6 +21,7 @@ type fakeHarness struct {
 	worktrees *fake.Worktrees
 	events    *recorder
 	store     *memoryStore
+	images    *fake.Images
 }
 
 type memoryStore struct {
@@ -39,10 +40,10 @@ func (m *memoryStore) Save(sessions []domain.Session) error {
 func newFakeHarness(t *testing.T) *fakeHarness {
 	t.Helper()
 	terminals, worktrees := fake.NewTerminals(), fake.NewWorktrees()
-	events, store := &recorder{}, &memoryStore{}
+	events, store, images := &recorder{}, &memoryStore{}, fake.NewImages()
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: worktrees, Classifier: manifest.New(manifest.Options{}),
-		Store: store, Publisher: events,
+		Store: store, Publisher: events, Images: images,
 		Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
@@ -51,7 +52,7 @@ func newFakeHarness(t *testing.T) *fakeHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store}
+	return &fakeHarness{svc: svc, terminals: terminals, worktrees: worktrees, events: events, store: store, images: images}
 }
 
 func (h *fakeHarness) open(t *testing.T) domain.Session {
@@ -338,5 +339,88 @@ func TestCreateThatFailsLeavesTheFailingStageUnlanded(t *testing.T) {
 	}
 	if len(seen) != 1 || seen[0].Stage != domain.StageClone || seen[0].Done {
 		t.Fatalf("stages = %+v, want only clone started", seen)
+	}
+}
+
+// A PNG header is all the sniffing reads.
+var png = []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+
+const imageCommand = "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61"
+
+func TestPasteImageSavesItAndPastesItsPathIntoTheWindow(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	path, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(path, "/"+session.ID+"/"+imageCommand+".png") {
+		t.Fatalf("path = %q: named by the command id, under the session", path)
+	}
+	if got := h.images.Saved[session.ID][imageCommand+".png"]; string(got) != string(png) {
+		t.Fatal("the bytes were not the ones saved")
+	}
+	if len(h.terminals.Pastes) != 1 || h.terminals.Pastes[0] != path {
+		t.Fatalf("pastes = %q, want the path, pasted rather than typed", h.terminals.Pastes)
+	}
+}
+
+func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+
+	cases := map[string]struct {
+		command, mediaType string
+		data               []byte
+		code               string
+	}{
+		"bytes that are not the type":  {imageCommand, "image/jpeg", png, "SESS_005"},
+		"a type no agent reads":        {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
+		"a command id that is a path":  {"../../.ssh/authorized_keys", "image/png", png, "SESS_002"},
+		"a window that does not exist": {imageCommand, "image/png", png, "SESS_001"},
+	}
+	for name, c := range cases {
+		window := 0
+		if name == "a window that does not exist" {
+			window = 7
+		}
+		_, err := h.svc.PasteImage(context.Background(), session.ID, window, c.command, c.mediaType, c.data)
+		var prob *problem.Error
+		if !errors.As(err, &prob) || prob.Code != c.code {
+			t.Fatalf("%s: err = %v, want %s", name, err, c.code)
+		}
+	}
+	if len(h.images.Saved) != 0 || len(h.terminals.Pastes) != 0 {
+		t.Fatal("a refused image must leave nothing behind")
+	}
+}
+
+func TestPasteImageRefusesAStoppedSession(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png)
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "SESS_003" {
+		t.Fatalf("err = %v, want SESS_003", err)
+	}
+}
+
+func TestCloseDropsTheSessionsImages(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Force: true}); err != nil {
+		t.Fatal(err)
+	}
+	if len(h.images.Discarded) != 1 || h.images.Discarded[0] != session.ID {
+		t.Fatalf("discarded = %v, want the session's images dropped on close", h.images.Discarded)
 	}
 }

@@ -259,6 +259,22 @@ func (s *Server) SendKeys(ctx context.Context, target, keys string) error {
 	return err
 }
 
+// Paste puts text into a window through a tmux buffer. `-p` makes it a
+// bracketed paste when the program asked for one, which is what lets an
+// agent tell a pasted path from typed keys and take the file it names; the
+// buffer is deleted as it is pasted.
+func (s *Server) Paste(ctx context.Context, target, text string) error {
+	if _, err := s.command(ctx, "set-buffer", "-b", pasteBuffer, "--", text); err != nil {
+		return err
+	}
+	_, err := s.command(ctx, "paste-buffer", "-p", "-d", "-b", pasteBuffer, "-t", target)
+	return err
+}
+
+// pasteBuffer is the one tmux buffer the runner writes; a paste sets it and
+// deletes it straight away, so a person's own buffers are never touched.
+const pasteBuffer = "oppenheimer-paste"
+
 // Attach runs `tmux attach` on a PTY. Detaching closes the PTY and leaves the
 // session running, which is the difference between a browser closing a tab
 // and a session ending.

@@ -172,6 +172,17 @@ type SessionInput struct {
 	Data      string `json:"data"`
 }
 
+// SessionImage is a picture for a window's prompt, base64: the runner saves
+// it and pastes its path into the window.
+type SessionImage struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	Window    int    `json:"window"`
+	MediaType string `json:"mediaType"`
+	Data      string `json:"data"`
+}
+
 // SessionResize is a viewport change for one attachment.
 type SessionResize struct {
 	Type         string `json:"type"`

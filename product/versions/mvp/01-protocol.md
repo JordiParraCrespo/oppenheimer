@@ -55,15 +55,20 @@ runner does with it and point back.
 
 ### What rides the link
 
-- `session.create | attach | input | resize | detach | window.open |
-  window.close | stop | close | restart`. `stop` ends the agent and the
+- `session.create | attach | input | image | resize | detach |
+  window.open | window.close | stop | close | restart`. `stop` ends the agent and the
   tmux session and keeps every checkout (02 §5, "Stop is not close");
   `detach` frees an attachment the browser let go of. `input` is the
   control plane's own path for a window nobody is watching (the
   composer's line on a session with no pane open); an attached browser's
   keystrokes are **not** it — they are binary frames on the attach socket,
   copied onto the link as binary frames under the attachment id, the
-  same layout as the PTY output the other way.
+  same layout as the PTY output the other way. `image` is a picture for a
+  window's prompt (PNG, JPEG, GIF or WebP, 5 MB at most, base64): the
+  runner writes it under its own home and pastes the file's path into the
+  window as a bracketed paste, because an agent reads its host's
+  clipboard and never the browser's (05). The runner picks the path and
+  names the file by the command id.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at

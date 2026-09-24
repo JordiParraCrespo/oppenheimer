@@ -230,6 +230,36 @@ export const issueAttachTicketSchema = z.object({
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
+ * An image pasted or dropped onto a session's terminal (05).
+ *
+ * The agent runs on the host and reads *that* machine's clipboard, never the
+ * browser's, so a screenshot pasted in the console would otherwise go nowhere.
+ * The console uploads it instead, the runner writes it beside the session and
+ * pastes its path into the prompt — the same thing a drag-and-drop does in a
+ * local terminal.
+ *
+ * The types are the ones Claude reads, and 5 MB is its ceiling on one image.
+ */
+export const SESSION_IMAGE_MEDIA_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+] as const;
+export type SessionImageMediaType = (typeof SESSION_IMAGE_MEDIA_TYPES)[number];
+export const SESSION_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * `POST /sessions/{id}/images` — the form fields beside the file. A multipart
+ * field arrives as text, so the window is coerced; absent, it is the agent's.
+ */
+export const pasteSessionImageSchema = z.object({
+  window: z.coerce.number().int().min(0).optional(),
+});
+
+export type PasteSessionImageDto = z.infer<typeof pasteSessionImageSchema>;
+
+/**
  * `DELETE /sessions/{id}` — the close.
  *
  * Closing pushes each checkout's branch and then removes the worktrees, and it

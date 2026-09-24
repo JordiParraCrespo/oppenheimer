@@ -17,4 +17,5 @@ var (
 	ErrGitCommand    = problem.New("GIT_002", http.StatusInternalServerError, "A git command failed")
 	ErrPushRejected  = problem.New("GIT_003", http.StatusConflict, "The branch could not be pushed")
 	ErrSessionExists = problem.New("SESS_004", http.StatusConflict, "A session already exists for that worktree")
+	ErrImage         = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The image cannot be given to the session")
 )

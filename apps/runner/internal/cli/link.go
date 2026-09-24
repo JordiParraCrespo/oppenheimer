@@ -189,6 +189,11 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.input(ctx, m)
 		}
+	case "session.image":
+		var m link.SessionImage
+		if msg.Decode(&m) == nil {
+			h.image(ctx, m)
+		}
 	case "session.resize":
 		var m link.SessionResize
 		if msg.Decode(&m) == nil {

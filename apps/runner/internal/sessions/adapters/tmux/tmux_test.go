@@ -242,3 +242,26 @@ func itoa(n int) string {
 	}
 	return string(digits)
 }
+
+func TestPasteIsABracketedPasteForAProgramThatAskedForOne(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	// A program that turns bracketed paste on, as every agent's prompt does,
+	// and shows its raw input: the markers around the text are what tells
+	// an agent a path was pasted rather than typed.
+	program := `sh -c 'stty raw -echo; printf "\033[?2004hready "; exec cat -v'`
+	if err := s.Create(ctx, "opp-paste", t.TempDir(), program, nil); err != nil {
+		t.Fatal(err)
+	}
+	// Pasting before the program has asked for brackets would paste bare.
+	waitFor(t, s, "opp-paste:0", "ready")
+
+	if err := s.Paste(ctx, "opp-paste:0", "/tmp/shot.png"); err != nil {
+		t.Fatal(err)
+	}
+
+	want := "^[[200~/tmp/shot.png^[[201~"
+	if screen := waitFor(t, s, "opp-paste:0", want); !strings.Contains(screen, want) {
+		t.Fatalf("capture:\n%s", screen)
+	}
+}
