@@ -52,6 +52,7 @@ export {
   type CreateSessionVariables,
   sessionsKeys,
   useCreateSession,
+  usePrefetchSession,
   useSession,
   useSessionStartProgress,
   useSessions,

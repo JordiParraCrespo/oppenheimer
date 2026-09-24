@@ -2,6 +2,8 @@
 
 import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
+  type QueryClient,
+  queryOptions,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -9,6 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import type { ConsumerApp } from '../di/consumer-app';
 import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
@@ -55,18 +58,91 @@ export function useSessions(
   });
 }
 
-export function useSession(
-  id: string | undefined,
-  options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn'>,
-) {
-  const app = useConsumerApp();
-
-  return useQuery({
+/**
+ * The detail query for one session, shared by the screen and the prefetch so
+ * both read and write the same cache entry.
+ *
+ * **The list's row is the detail's first answer.** The sidebar has already
+ * read every session through the same mapper, so opening one from it need not
+ * wait on a second read of the same row: the row fills the detail, stamped
+ * with the list's own read time. Within the stale window the pane renders on
+ * the click with no request at all; past it, it renders the row at once and
+ * reads the session again behind it. A row that was out of date is no worse
+ * than a cached detail would be — a session stopped since then ends its
+ * stream, and `useSessionRefresh` reads it again.
+ */
+function sessionDetailOptions(app: ConsumerApp, queryClient: QueryClient, id: string | undefined) {
+  return queryOptions({
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
+    initialData: () =>
+      id
+        ? queryClient
+            .getQueryData<SessionEntity[]>(sessionsKeys.list())
+            ?.find((session) => session.id === id)
+        : undefined,
+    initialDataUpdatedAt: () => queryClient.getQueryState(sessionsKeys.list())?.dataUpdatedAt,
+  });
+}
+
+export function useSession(
+  id: string | undefined,
+  options?: Omit<
+    UseQueryOptions<SessionEntity, Error, SessionEntity, ReturnType<typeof sessionsKeys.detail>>,
+    'queryKey' | 'queryFn'
+  >,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    ...sessionDetailOptions(app, queryClient, id),
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
     ...options,
   });
+}
+
+/**
+ * How many session reads a prefetch lets run at once. A pointer swept down a
+ * long sidebar crosses a row every few milliseconds; past this, a hover is
+ * passing through, not heading for a click.
+ */
+const MAX_SESSION_PREFETCHES = 2;
+
+/**
+ * Whether the browser has asked for less data: Save-Data on, or a 2G link. A
+ * prefetch is a guess, and a guess is not worth someone's metered bytes.
+ */
+function prefersLessData(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const connection = (
+    navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection;
+  return Boolean(connection?.saveData) || /(^|-)2g$/.test(connection?.effectiveType ?? '');
+}
+
+/**
+ * Read a session before it is opened: called when the pointer or focus lands
+ * on its row, so the click finds the answer in the cache, or joins the read
+ * already on its way instead of starting a second one.
+ *
+ * It does nothing when the entry is still fresh — which, with the list's row
+ * filling it, is most of the time — nor on a connection that asked for less
+ * data, nor past {@link MAX_SESSION_PREFETCHES} reads in flight. A failure is
+ * silent: nobody asked for this read, and the screen makes its own when the
+ * click lands.
+ */
+export function usePrefetchSession(): (id: string) => void {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return (id: string) => {
+    if (prefersLessData()) return;
+    if (queryClient.isFetching({ queryKey: sessionsKeys.details() }) >= MAX_SESSION_PREFETCHES) {
+      return;
+    }
+    void queryClient.prefetchQuery(sessionDetailOptions(app, queryClient, id));
+  };
 }
 
 /**
