@@ -38,3 +38,31 @@ func TestCommandLineKeepsAPromptOneWord(t *testing.T) {
 		t.Fatalf("shell command line = %q, want empty", line)
 	}
 }
+
+func TestOpenCodeApprovalsAreEnvironmentOnWindowZero(t *testing.T) {
+	line := Launch{Model: "anthropic/claude-opus-5-5", Permission: "ask", Prompt: "go"}.CommandLine(AgentOpenCode)
+	want := `env 'OPENCODE_PERMISSION={"edit":"ask","bash":"ask","webfetch":"ask"}' opencode --model anthropic/claude-opus-5-5 --prompt go`
+	if line != want {
+		t.Fatalf("command line = %s, want %s", line, want)
+	}
+	// Full access is the one flag OpenCode has, and sets no environment.
+	line = Launch{Permission: "full"}.CommandLine(AgentOpenCode)
+	if want := "opencode --auto"; line != want {
+		t.Fatalf("command line = %s, want %s", line, want)
+	}
+	if env := (Launch{Permission: "ask"}).Env(AgentClaude); env != nil {
+		t.Fatalf("claude takes its level as a flag, got env %q", env)
+	}
+}
+
+func TestCatalogIDsRoundTrip(t *testing.T) {
+	for _, id := range []string{"claude-code", "codex", "opencode", "shell"} {
+		agent, ok := AgentFromCatalogID(id)
+		if !ok || !agent.Valid() || agent.CatalogID() != id {
+			t.Fatalf("%s -> %q (%v) -> %q", id, agent, ok, agent.CatalogID())
+		}
+	}
+	if _, ok := AgentFromCatalogID("cursor"); ok {
+		t.Fatal("an id outside the catalog maps onto an agent")
+	}
+}

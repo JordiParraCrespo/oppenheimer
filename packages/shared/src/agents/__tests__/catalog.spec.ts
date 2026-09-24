@@ -6,6 +6,7 @@ import {
   isCodingAgentId,
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
+  type SessionPermission,
 } from '../catalog';
 
 describe('coding agent catalog', () => {
@@ -21,6 +22,17 @@ describe('coding agent catalog', () => {
     expect(CODING_AGENTS['claude-code'].configDirEnv).toBe('CLAUDE_CONFIG_DIR');
     expect(CODING_AGENTS.codex.command).toBe('codex');
     expect(CODING_AGENTS.codex.configDirEnv).toBe('CODEX_HOME');
+    expect(CODING_AGENTS.opencode.command).toBe('opencode');
+    expect(CODING_AGENTS.opencode.configDirEnv).toBe('XDG_DATA_HOME');
+  });
+
+  it('offers the plain terminal as an entry with nothing to launch', () => {
+    const shell = CODING_AGENTS.shell;
+    expect(shell.command).toBe('');
+    expect(shell.models).toEqual([]);
+    expect(shell.launch).toEqual({});
+    // A shell prints any URL it is asked to; none of them is a login button.
+    expect(shell.loginUrlPattern).toBeUndefined();
   });
 
   it('records where each CLI writes the transcript the first prompt is read from', () => {
@@ -37,26 +49,44 @@ describe('coding agent catalog', () => {
   });
 
   describe('loginUrlPattern', () => {
+    function pattern(id: CodingAgentId): string {
+      const source = CODING_AGENTS[id].loginUrlPattern;
+      if (!source) throw new Error(`${id} has no login pattern`);
+      return source;
+    }
+
     it('matches the vendor login URLs the CLIs print', () => {
-      const claude = new RegExp(CODING_AGENTS['claude-code'].loginUrlPattern);
+      const claude = new RegExp(pattern('claude-code'));
       expect(claude.test('https://claude.ai/oauth/authorize?code=true')).toBe(true);
       expect(claude.test('https://console.anthropic.com/login')).toBe(true);
 
-      const codex = new RegExp(CODING_AGENTS.codex.loginUrlPattern);
+      const codex = new RegExp(pattern('codex'));
       expect(codex.test('https://auth.openai.com/authorize?x=1')).toBe(true);
       expect(codex.test('https://chatgpt.com/codex/login')).toBe(true);
+
+      // OpenCode prints whichever provider's login is picked, its own included.
+      const opencode = new RegExp(pattern('opencode'));
+      expect(opencode.test('https://opencode.ai/auth')).toBe(true);
+      expect(opencode.test('https://claude.ai/oauth/authorize?code=true')).toBe(true);
+      expect(opencode.test('https://github.com/login/device')).toBe(true);
     });
 
     it('is anchored, so a lookalike host is not a login URL (F3)', () => {
-      const claude = new RegExp(CODING_AGENTS['claude-code'].loginUrlPattern);
-      expect(claude.test('https://claude.ai.attacker.test/oauth')).toBe(false);
-      expect(claude.test('https://evil.test/?next=https://claude.ai/')).toBe(false);
-      expect(claude.test('http://claude.ai/oauth')).toBe(false);
+      for (const id of ['claude-code', 'opencode'] as const) {
+        const re = new RegExp(pattern(id));
+        expect(re.test('https://claude.ai.attacker.test/oauth')).toBe(false);
+        expect(re.test('https://evil.test/?next=https://claude.ai/')).toBe(false);
+        expect(re.test('http://claude.ai/oauth')).toBe(false);
+      }
+      const opencode = new RegExp(pattern('opencode'));
+      expect(opencode.test('https://opencode.ai.attacker.test/auth')).toBe(false);
+      expect(opencode.test('https://github.com/evil')).toBe(false);
     });
 
     it('does not cross the vendors', () => {
-      const claude = new RegExp(CODING_AGENTS['claude-code'].loginUrlPattern);
+      const claude = new RegExp(pattern('claude-code'));
       expect(claude.test('https://auth.openai.com/authorize')).toBe(false);
+      expect(claude.test('https://opencode.ai/auth')).toBe(false);
     });
   });
 });
@@ -72,6 +102,8 @@ describe('isCodingAgentId', () => {
   it('accepts catalog ids and rejects anything else', () => {
     expect(isCodingAgentId('claude-code')).toBe(true);
     expect(isCodingAgentId('codex')).toBe(true);
+    expect(isCodingAgentId('opencode')).toBe(true);
+    expect(isCodingAgentId('shell')).toBe(true);
     expect(isCodingAgentId('cursor')).toBe(false);
     expect(isCodingAgentId('')).toBe(false);
     expect(isCodingAgentId(null)).toBe(false);
@@ -99,12 +131,30 @@ describe('isCodingAgentId', () => {
  * itself.
  */
 describe('launch mapping', () => {
-  it('maps every permission level, for every agent', () => {
+  /** A level as the host receives it: its environment, then its argv. */
+  function spelled(id: CodingAgentId, level: SessionPermission): string {
+    const { permission, permissionEnv } = CODING_AGENTS[id].launch;
+    const env = Object.entries(permissionEnv?.[level] ?? {}).map(
+      ([name, value]) => `${name}=${value}`,
+    );
+    return [...env, ...(permission?.[level] ?? [])].join(' ');
+  }
+
+  it('maps every permission level, for every agent that has approvals', () => {
     for (const id of CODING_AGENT_IDS) {
-      const { permission } = CODING_AGENTS[id].launch;
-      expect(Object.keys(permission).sort()).toEqual([...SESSION_PERMISSIONS].sort());
+      const { permission, permissionEnv } = CODING_AGENTS[id].launch;
+      // A plain shell has no approvals; everything else states all three.
+      if (id === 'shell') {
+        expect(permission).toBeUndefined();
+        continue;
+      }
+      expect(permission, `${id} has no permission map`).toBeDefined();
+      expect(Object.keys(permission ?? {}).sort()).toEqual([...SESSION_PERMISSIONS].sort());
+      if (permissionEnv) {
+        expect(Object.keys(permissionEnv).sort()).toEqual([...SESSION_PERMISSIONS].sort());
+      }
       for (const level of SESSION_PERMISSIONS) {
-        expect(permission[level].length, `${id} states nothing for ${level}`).toBeGreaterThan(0);
+        expect(spelled(id, level), `${id} states nothing for ${level}`).not.toBe('');
       }
     }
   });
@@ -122,9 +172,9 @@ describe('launch mapping', () => {
 
   it('gives each level its own flags, so no two levels are the same choice', () => {
     for (const id of CODING_AGENT_IDS) {
-      const { permission } = CODING_AGENTS[id].launch;
-      const spelled = SESSION_PERMISSIONS.map((level) => permission[level].join(' '));
-      expect(new Set(spelled).size, `${id} spells two permission levels the same`).toBe(
+      if (!CODING_AGENTS[id].launch.permission) continue;
+      const levels = SESSION_PERMISSIONS.map((level) => spelled(id, level));
+      expect(new Set(levels).size, `${id} spells two permission levels the same`).toBe(
         SESSION_PERMISSIONS.length,
       );
     }
@@ -145,8 +195,8 @@ describe('launch mapping', () => {
       expect(prompt, `${id} takes a first task but names no placeholder`).toContain('<prompt>');
       // The trailing positional is the whole reason this is argv rather than
       // something typed at a running TUI: a placeholder anywhere but the end
-      // would put the person's sentence where a flag's value belongs, and both
-      // CLIs document it as the last argument.
+      // would put the person's sentence where a flag's value belongs, and every
+      // CLI here documents it as the last argument or its trailing flag's value.
       expect(prompt.at(-1), `${id} does not end on the task`).toBe('<prompt>');
     }
   });
@@ -171,7 +221,7 @@ describe('launch mapping', () => {
     // saying so.
     expect(CODING_AGENTS['claude-code'].models.map((model) => [model.id, model.label])).toEqual([
       ['claude-fable-5-1', 'Claude Fable 5.1'],
-      ['claude-opus-5', 'Claude Opus 5'],
+      ['claude-opus-5-5', 'Claude Opus 5.5'],
       ['claude-sonnet-5', 'Claude Sonnet 5'],
       ['claude-haiku-4-5', 'Claude Haiku 4.5'],
     ]);
@@ -184,15 +234,25 @@ describe('launch mapping', () => {
 
     // Each agent's default is the one its own CLI would have run.
     expect(CODING_AGENTS['claude-code'].models.find((model) => model.default)?.id).toBe(
-      'claude-opus-5',
+      'claude-opus-5-5',
     );
+    // OpenCode offers the same family under its `anthropic/` provider.
+    expect(CODING_AGENTS.opencode.models.map((model) => model.id)).toEqual([
+      'anthropic/claude-fable-5-1',
+      'anthropic/claude-opus-5-5',
+      'anthropic/claude-sonnet-5',
+      'anthropic/claude-haiku-4-5',
+      'openai/gpt-5.6-sol',
+    ]);
     expect(CODING_AGENTS.codex.models.find((model) => model.default)?.id).toBe('gpt-5.6-sol');
   });
 
   it('is frozen, like the rest of the catalog', () => {
     for (const id of CODING_AGENT_IDS) {
       expect(Object.isFrozen(CODING_AGENTS[id].launch)).toBe(true);
-      expect(Object.isFrozen(CODING_AGENTS[id].launch.permission)).toBe(true);
+      if (CODING_AGENTS[id].launch.permission) {
+        expect(Object.isFrozen(CODING_AGENTS[id].launch.permission)).toBe(true);
+      }
       expect(Object.isFrozen(CODING_AGENTS[id].models)).toBe(true);
     }
   });

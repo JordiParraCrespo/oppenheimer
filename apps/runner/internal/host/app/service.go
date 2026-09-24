@@ -51,7 +51,7 @@ func (s *Service) Collect(ctx context.Context) (domain.Facts, error) {
 		WorkspacePath: s.workspace,
 		RunnerVersion: s.version,
 	}
-	for _, name := range []string{domain.ToolGit, domain.ToolTmux, domain.ToolClaude} {
+	for _, name := range domain.ProbedTools {
 		tool := s.prober.Tool(ctx, name)
 		tool.Name = name
 		tool.Required = required(name)

@@ -90,7 +90,8 @@ export const promptTextSchema = z
  */
 const ANY_VENDOR_LOGIN_URL = new RegExp(
   `^(?:${Object.values(CODING_AGENTS)
-    .map((agent) => agent.loginUrlPattern.replace(/^\^/, '').replace(/\$$/, ''))
+    .flatMap((agent) => (agent.loginUrlPattern ? [agent.loginUrlPattern] : []))
+    .map((pattern) => pattern.replace(/^\^/, '').replace(/\$$/, ''))
     .join('|')})$`,
 );
 
@@ -213,8 +214,9 @@ export const sessionSnapshotSchema = z
   })
   .superRefine((snapshot, ctx) => {
     if (snapshot.loginUrl === null) return;
-    const pattern = new RegExp(CODING_AGENTS[snapshot.agent].loginUrlPattern);
-    if (!pattern.test(snapshot.loginUrl)) {
+    // An entry with no login pattern (the plain shell) reports no login at all.
+    const source = CODING_AGENTS[snapshot.agent].loginUrlPattern;
+    if (!source || !new RegExp(source).test(snapshot.loginUrl)) {
       ctx.addIssue({ code: 'custom', path: ['loginUrl'] });
     }
   });

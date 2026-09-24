@@ -16,8 +16,15 @@
  * union needs one at every boundary a string arrives at.
  */
 
-/** Every agent id, in display order. Extend the tuple as agents are added. */
-export const CODING_AGENT_IDS = ['claude-code', 'codex'] as const;
+/**
+ * Every agent id, in display order. Extend the tuple as agents are added.
+ *
+ * `shell` is the plain terminal: no agent at all, window 0 is the host's own
+ * login shell in the worktree. It lives here rather than beside the list
+ * because the console picks it from the same engine button and the runner
+ * reads the same id off `session.create`.
+ */
+export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'shell'] as const;
 
 /** A coding agent this product knows how to launch. */
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
@@ -63,7 +70,7 @@ export type SessionEffort = (typeof SESSION_EFFORTS)[number];
 export interface CodingAgentModel {
   /** Passed to the agent verbatim, so it is a name that CLI's `--model` takes. */
   readonly id: string;
-  /** What the button and the row read ("Claude Opus 5"). */
+  /** What the button and the row read ("Claude Opus 5.5"). */
   readonly label: string;
   /** Offered first, and what a session with no model chosen runs. */
   readonly default?: true;
@@ -84,13 +91,27 @@ export interface CodingAgentModel {
 export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
   readonly model?: readonly string[];
-  readonly permission: Readonly<Record<SessionPermission, readonly string[]>>;
+  /**
+   * Absent: this agent has no notion of approvals (a plain shell), and the
+   * console hides the permission chip.
+   */
+  readonly permission?: Readonly<Record<SessionPermission, readonly string[]>>;
+  /**
+   * Environment set on the agent's process, per permission level, for a CLI
+   * whose approvals are configuration rather than a flag.
+   *
+   * Only window 0 gets it: the runner spells it as an `env NAME=value` prefix
+   * on the command line, so a shell tab opened beside the agent does not
+   * inherit a permission level somebody chose for the agent. A level is
+   * stated here, in `permission`, or in both; the two together are the level.
+   */
+  readonly permissionEnv?: Readonly<Record<SessionPermission, Readonly<Record<string, string>>>>;
   /** Absent: this agent has no notion of effort, and the console hides the slider. */
   readonly effort?: Readonly<Record<SessionEffort, readonly string[]>>;
   /**
    * How the person's first task reaches the agent, with `<prompt>` substituted
-   * whole — always the **last** argv appended, because both CLIs take it as a
-   * trailing positional.
+   * whole — always the **last** argv appended: Claude Code and Codex take it as
+   * a trailing positional, OpenCode as the value of its trailing `--prompt`.
    *
    * It is a launch option and not a message typed at a running process, which
    * is the whole reason it is here: writing into window 0 once the TUI is up
@@ -110,7 +131,10 @@ export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
   /** Human-readable name, for the agent chip. */
   readonly label: string;
-  /** The executable the runner launches inside the session's tmux window. */
+  /**
+   * The executable the runner launches inside the session's tmux window.
+   * Empty for the plain terminal, whose window 0 is the host's login shell.
+   */
   readonly command: string;
   /**
    * `RegExp` **source** matching the vendor login URL the CLI prints when it
@@ -129,23 +153,31 @@ export interface CodingAgentDefinition {
    * in `apps/runner/internal/sessions/adapters/manifest/engine.go` is the twin
    * this replaces; it is retired when the runner consumes the generated types
    * (its own slice), and until then the two must not be edited apart.
+   *
+   * Absent: nothing this entry prints is a login, and a URL a plain shell
+   * shows is never turned into a button.
    */
-  readonly loginUrlPattern: string;
-  /** Where the CLI writes the transcript the first prompt is read from. */
-  readonly transcriptLocation: CodingAgentTranscriptLocation;
+  readonly loginUrlPattern?: string;
+  /**
+   * Where the CLI writes the transcript the first prompt is read from.
+   * Absent: there is no transcript (a plain shell).
+   */
+  readonly transcriptLocation?: CodingAgentTranscriptLocation;
   /**
    * The environment variable that scopes the agent's credential to a
    * directory. One login per configuration directory, not one per machine —
    * which is what makes the later accounts slice possible without changing
    * anything global on the host.
+   *
+   * Absent: there is no login to scope (a plain shell).
    */
-  readonly configDirEnv: string;
+  readonly configDirEnv?: string;
   /**
    * The models the engine button offers for this agent, in display order.
    *
    * Empty is a real answer and not a gap: the console picks such an agent
    * outright and the button names the agent itself, which is what a blank
-   * terminal wants. Both agents here carry a **seed** — the models their CLI
+   * terminal wants. Every agent here carries a **seed** — the models its CLI
    * documents, not ids invented for the picker — and which of them a given
    * machine's CLI actually knows is the probe still open in
    * `product/versions/mvp/05-screens.md`.
@@ -185,9 +217,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // `product/versions/mvp/05-screens.md`; until it lands, an id this list
     // names and that CLI does not fails in the session's own terminal, where
     // the person can see it.
+    //
+    // The current family, newest of each line, as Synara's model table and
+    // Orca's pricing table both list it: Opus 5.5 replaced Opus 5 as the Opus
+    // the `opus` alias names, and stays the default because it is the
+    // everyday model of the four.
     models: Object.freeze([
       Object.freeze({ id: 'claude-fable-5-1', label: 'Claude Fable 5.1' }),
-      Object.freeze({ id: 'claude-opus-5', label: 'Claude Opus 5', default: true as const }),
+      Object.freeze({ id: 'claude-opus-5-5', label: 'Claude Opus 5.5', default: true as const }),
       Object.freeze({ id: 'claude-sonnet-5', label: 'Claude Sonnet 5' }),
       Object.freeze({ id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
     ]),
@@ -272,6 +309,87 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // non-interactive one and would give the person no terminal to take over.
       prompt: Object.freeze(['<prompt>']),
     }),
+  }),
+  opencode: Object.freeze({
+    id: 'opencode',
+    label: 'OpenCode',
+    command: 'opencode',
+    // OpenCode is not one vendor: `opencode auth login` signs in to whichever
+    // provider the person picks, so the login it prints is OpenCode Zen's own,
+    // Anthropic's, OpenAI's or GitHub Copilot's device flow. Still one group
+    // and anchored at both ends, so the union in `../protocol/primitives.ts`
+    // stays anchored when it strips and re-applies them (F3).
+    loginUrlPattern:
+      '^https://(opencode\\.ai|claude\\.ai|console\\.anthropic\\.com|auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com|github\\.com/login/device)(/[^\\s]*)?$',
+    // One SQLite database for every session, keyed by OpenCode's own session
+    // id (`~/.local/share/opencode/opencode.db`, as Orca's session scanner
+    // reads it).
+    transcriptLocation: Object.freeze({
+      directory: '~/.local/share/opencode/',
+      keyedBy: 'session-id',
+    }),
+    // OpenCode keeps its logins in `$XDG_DATA_HOME/opencode/auth.json`;
+    // `OPENCODE_CONFIG_DIR` moves the config and not the credentials, so the
+    // data home is the variable that scopes a login to a directory.
+    configDirEnv: 'XDG_DATA_HOME',
+    // `provider/model`, the form `opencode --model` takes. OpenCode reaches
+    // whatever providers the host has signed in to, so this seed is the
+    // Anthropic family Claude Code offers, under OpenCode's `anthropic/`
+    // provider, plus OpenAI's Codex default. A row the host's OpenCode has
+    // no provider for fails in the session's own terminal, as for the others.
+    models: Object.freeze([
+      Object.freeze({ id: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' }),
+      Object.freeze({
+        id: 'anthropic/claude-opus-5-5',
+        label: 'Claude Opus 5.5',
+        default: true as const,
+      }),
+      Object.freeze({ id: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' }),
+      Object.freeze({ id: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' }),
+      Object.freeze({ id: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' }),
+    ]),
+    launch: Object.freeze({
+      model: Object.freeze(['--model', '<model>']),
+      // The TUI has one approval flag, `--auto` ("auto-approve permissions
+      // that are not explicitly denied"), which is Full access. The two
+      // levels below it are configuration: `OPENCODE_PERMISSION` inlines a
+      // `permission` block, and with nothing configured OpenCode allows edits
+      // and commands outright, so Ask has to say `ask` to mean it. Orca ships
+      // no bypass flag for OpenCode and Synara drives the same rules through
+      // its server session config; this is those rules as a launch.
+      permission: Object.freeze({
+        ask: Object.freeze([]),
+        auto: Object.freeze([]),
+        full: Object.freeze(['--auto']),
+      }),
+      permissionEnv: Object.freeze({
+        ask: Object.freeze({
+          OPENCODE_PERMISSION: '{"edit":"ask","bash":"ask","webfetch":"ask"}',
+        }),
+        auto: Object.freeze({
+          OPENCODE_PERMISSION: '{"edit":"allow","bash":"ask","webfetch":"ask"}',
+        }),
+        full: Object.freeze({}),
+      }),
+      // No effort: reasoning is a per-provider model variant in OpenCode, not
+      // a launch flag, so the console hides the slider.
+      //
+      // `opencode [project] --prompt <text>`, which starts the TUI with the
+      // task in it; `opencode run` is the non-interactive one.
+      prompt: Object.freeze(['--prompt', '<prompt>']),
+    }),
+  }),
+  shell: Object.freeze({
+    id: 'shell',
+    // The design's own name for it (`product/versions/mvp/design/`).
+    label: 'Blank terminal',
+    // The host's own login shell, nothing launched in it: a session that is
+    // only a worktree and a terminal. No models, no approvals, no effort, and
+    // no first task — what somebody types in the composer still names the
+    // session, and they type the first command themselves.
+    command: '',
+    models: Object.freeze([]),
+    launch: Object.freeze({}),
   }),
 });
 

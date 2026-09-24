@@ -355,3 +355,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-23: **a session is named by a model if it is quick, by its prompt's
   own words if not, and create waits for the name** (03, "A session is named
   from its first prompt").
+- 2026-09-24: **OpenCode and the blank terminal join the catalog, and Opus
+  5.5 is the Claude default** (00, 05). `CODING_AGENTS` gains `opencode`
+  (`provider/model` ids, Claude's family under `anthropic/`, `--prompt`
+  for the first task) and `shell`, the plain terminal with nothing
+  launched. OpenCode's TUI has one approval flag, `--auto`, so Ask and
+  Approve for me are an `OPENCODE_PERMISSION` block the runner sets on
+  window 0 only, with `env`. Claude Code's seed is Fable 5.1, Opus 5.5,
+  Sonnet 5 and Haiku 4.5, as Synara's model table and Orca's pricing
+  table list the current family.

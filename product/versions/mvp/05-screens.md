@@ -46,7 +46,8 @@
   machine unattended); the agent and model, the effort and dictation on
   the right. The agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
-  and a blank terminal is picked outright. Effort is a five-stop slider
+  and a blank terminal is picked outright (it hides the permission chip
+  too: a shell asks nobody). Effort is a five-stop slider
   (Minimal to Max) in a popover, not a list. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,

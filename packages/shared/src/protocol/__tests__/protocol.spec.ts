@@ -455,6 +455,19 @@ describe('F3: a login URL on the wire is a vendor login URL', () => {
     }
   });
 
+  it('refuses any login URL from a plain shell, which has no vendor', () => {
+    expect(
+      sessionSnapshotSchema.safeParse({
+        ...snapshot,
+        agent: 'shell',
+        loginUrl: 'https://claude.ai/oauth/authorize',
+      }).success,
+    ).toBe(false);
+    expect(
+      sessionSnapshotSchema.safeParse({ ...snapshot, agent: 'shell', loginUrl: null }).success,
+    ).toBe(true);
+  });
+
   it('refuses the other vendor’s login URL for this agent', () => {
     expect(
       sessionSnapshotSchema.safeParse({

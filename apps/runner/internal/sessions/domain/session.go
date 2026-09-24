@@ -58,11 +58,13 @@ func (s State) Live() bool {
 // Agent is the program window 0 runs.
 type Agent string
 
-// Agents. Claude Code is the MVP's one entry; Codex is the next.
+// Agents. Claude Code is the MVP's first entry; Codex and OpenCode are the
+// others, and the shell is the plain terminal with no agent in it.
 const (
-	AgentClaude Agent = "claude"
-	AgentCodex  Agent = "codex"
-	AgentShell  Agent = "shell"
+	AgentClaude   Agent = "claude"
+	AgentCodex    Agent = "codex"
+	AgentOpenCode Agent = "opencode"
+	AgentShell    Agent = "shell"
 )
 
 // Command is what the agent is launched as.
@@ -72,6 +74,8 @@ func (a Agent) Command() string {
 		return "claude"
 	case AgentCodex:
 		return "codex"
+	case AgentOpenCode:
+		return "opencode"
 	case AgentShell:
 		return ""
 	}
@@ -80,7 +84,7 @@ func (a Agent) Command() string {
 
 // Valid reports an agent the runner knows how to start.
 func (a Agent) Valid() bool {
-	return a == AgentClaude || a == AgentCodex || a == AgentShell
+	return a == AgentClaude || a == AgentCodex || a == AgentOpenCode || a == AgentShell
 }
 
 // Window is one tmux window in the session: window 0 is the agent, 1 and up

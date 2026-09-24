@@ -1017,7 +1017,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'shell';
     projectId?: string;
     name?: string;
     checkouts: Array<{
@@ -4863,6 +4863,8 @@ export type AddSessionCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_010 — A session checks out one repository
+     *
      * SESSIONS_005 — That session is closed
      *
      * SESSIONS_004 — That repository is already checked out here

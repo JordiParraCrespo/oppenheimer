@@ -42,6 +42,9 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   OpenCode and a blank terminal with the vendors' marks where they
   exist; Claude Code is the one wired end to end in the MVP, the others
   are pickable so the flow is honest about where they go next.
+  *Changed 2026-09-24:* all four are in the shared catalog and the
+  runner launches each of them; the blank terminal has no model,
+  approvals or effort, so the composer hides those chips for it.
 - **Agent login is the host's own.** The runner launches `claude` with
   the host's existing config; you log in once per host by typing it in
   the terminal, and the login URL becomes a button. No account objects,

@@ -190,3 +190,9 @@ earlier note:
   epoch's floor is now the control plane's clock in milliseconds. The
   same note now also says that PTY bytes are never dropped, how the
   runner's writer orders frames, and that liveness is ping/pong.
+- `versions/mvp/00-scope.md` had OpenCode and the blank terminal on the
+  agent chip only so the flow was honest about where it went next. Both
+  are now catalog entries the runner launches, OpenCode with its
+  approvals set through `OPENCODE_PERMISSION` because its CLI has no
+  flag for the two levels below Full access. The Claude seed moved from
+  Opus 5 to Opus 5.5.

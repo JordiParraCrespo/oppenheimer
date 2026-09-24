@@ -183,6 +183,9 @@ var loginTargets = []struct {
 	{host: "platform.openai.com"},
 	{host: "chatgpt.com"},
 	{host: "github.com", path: "/login/device"},
+	// OpenCode signs in to whichever provider is picked, so beside the
+	// vendors above it prints its own Zen login.
+	{host: "opencode.ai"},
 }
 
 var urlPattern = regexp.MustCompile(`https://[^\s"'<>)]+`)

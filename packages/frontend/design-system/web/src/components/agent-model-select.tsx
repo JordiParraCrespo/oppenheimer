@@ -10,7 +10,7 @@ import { Popover, PopoverTrigger } from './popover';
 
 /**
  * AgentModelSelect — the engine button in the composer's foot row: the
- * agent's mark and the model's name ("Claude Opus 5"). Opening lands on
+ * agent's mark and the model's name ("Claude Opus 5.5"). Opening lands on
  * the agent pane, the harness the session already uses checked and every
  * other one a step away; choosing one slides the same 252px popup to its
  * models, with a back row naming the agent, a search row and the check on
@@ -23,8 +23,8 @@ import { Popover, PopoverTrigger } from './popover';
  *
  * ```tsx
  * <AgentModelSelect
- *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5', label: 'Claude Opus 5' }] }]}
- *   value={{ agent: 'claude-code', model: 'claude-opus-5' }}
+ *   agents={[{ id: 'claude-code', label: 'Claude Code', models: [{ value: 'claude-opus-5-5', label: 'Claude Opus 5.5' }] }]}
+ *   value={{ agent: 'claude-code', model: 'claude-opus-5-5' }}
  *   onValueChange={setEngine}
  * />
  * ```

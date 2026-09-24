@@ -7605,7 +7605,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "description": "SESSIONS_010 — A session checks out one repository\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11066,7 +11066,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex"]
+            "enum": ["claude-code", "codex", "opencode", "shell"]
           },
           "projectId": {
             "type": "string",
@@ -11079,6 +11079,7 @@
           },
           "checkouts": {
             "type": "array",
+            "maxItems": 1,
             "items": {
               "type": "object",
               "properties": {

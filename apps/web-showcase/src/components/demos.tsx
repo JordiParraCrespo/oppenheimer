@@ -308,7 +308,7 @@ export const HARNESSES: AgentOption[] = [
     label: 'Claude Code',
     models: [
       { value: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
-      { value: 'claude-opus-5', label: 'Claude Opus 5' },
+      { value: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
       { value: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
       { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
     ],
@@ -327,11 +327,11 @@ export const HARNESSES: AgentOption[] = [
     id: 'opencode',
     label: 'OpenCode',
     models: [
-      { value: 'qwen', label: 'Qwen3 Coder 480B' },
-      { value: 'deepseek', label: 'DeepSeek V3.2' },
-      { value: 'kimi', label: 'Kimi K2' },
-      { value: 'llama', label: 'Llama 4 Maverick' },
-      { value: 'glm', label: 'GLM 4.6' },
+      { value: 'anthropic/claude-fable-5-1', label: 'Claude Fable 5.1' },
+      { value: 'anthropic/claude-opus-5-5', label: 'Claude Opus 5.5' },
+      { value: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5' },
+      { value: 'anthropic/claude-haiku-4-5', label: 'Claude Haiku 4.5' },
+      { value: 'openai/gpt-5.6-sol', label: 'GPT-5.6 Sol' },
     ],
   },
   { id: 'shell', label: 'Blank terminal', models: [] },
@@ -356,7 +356,7 @@ export const PERMISSIONS = [
 ];
 
 export function AgentModelDemo() {
-  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5' });
+  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5-5' });
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 

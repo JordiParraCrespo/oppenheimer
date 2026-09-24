@@ -41,4 +41,26 @@ var launchCatalog = map[string]launchMap{
 		},
 		prompt: []string{"<prompt>"},
 	},
+	"opencode": {
+		command: "opencode",
+		model:   []string{"--model", "<model>"},
+		permission: map[string][]string{
+			"ask":  {},
+			"auto": {},
+			"full": {"--auto"},
+		},
+		permissionEnv: map[string]map[string]string{
+			"ask": {
+				"OPENCODE_PERMISSION": "{\"edit\":\"ask\",\"bash\":\"ask\",\"webfetch\":\"ask\"}",
+			},
+			"auto": {
+				"OPENCODE_PERMISSION": "{\"edit\":\"allow\",\"bash\":\"ask\",\"webfetch\":\"ask\"}",
+			},
+			"full": {},
+		},
+		prompt: []string{"--prompt", "<prompt>"},
+	},
+	"shell": {
+		command: "",
+	},
 }

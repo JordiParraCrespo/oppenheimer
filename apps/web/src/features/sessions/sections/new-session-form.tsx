@@ -19,6 +19,7 @@ import { AddHostDialog } from '../dialogs/add-host';
 import { useNewSessionDraft } from '../hooks/use-new-session-draft';
 import {
   hasEffort,
+  hasPermission,
   parseRepositoryKey,
   toAgentOptions,
   toBranchOptions,
@@ -146,10 +147,12 @@ export function NewSessionForm() {
           busy={create.isPending}
           disabled={!draft.hostId}
           tools={
-            <PermissionSelect
-              value={draft.permission}
-              onValueChange={(permission) => update({ permission })}
-            />
+            hasPermission(draft.agent) ? (
+              <PermissionSelect
+                value={draft.permission}
+                onValueChange={(permission) => update({ permission })}
+              />
+            ) : null
           }
           engine={
             <>

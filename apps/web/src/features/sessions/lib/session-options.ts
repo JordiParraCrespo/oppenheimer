@@ -113,8 +113,8 @@ export function toBranchOptions(
  * The agents, as the engine button's two panes.
  *
  * The catalog is the source: an agent with no models is picked outright and
- * the button names the agent, which is exactly the case codex is in until a
- * probe reports what the machine's own CLI offers.
+ * the button names the agent, which is exactly the case the plain terminal is
+ * in.
  */
 export function toAgentOptions(): AgentOption[] {
   return CODING_AGENT_IDS.map((id) => ({
@@ -131,6 +131,11 @@ export function toAgentOptions(): AgentOption[] {
 export function defaultModelFor(agent: CodingAgentId): string | null {
   const models = CODING_AGENTS[agent].models;
   return (models.find((model) => model.default) ?? models[0])?.id ?? null;
+}
+
+/** Whether this agent asks for approvals at all; the plain terminal does not. */
+export function hasPermission(agent: CodingAgentId): boolean {
+  return CODING_AGENTS[agent].launch.permission !== undefined;
 }
 
 /** Whether this agent has any notion of effort at all. */
