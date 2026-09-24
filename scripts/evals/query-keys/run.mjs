@@ -19,6 +19,7 @@
 //   node scripts/evals/query-keys/run.mjs --task host-rename   one task
 //   node scripts/evals/query-keys/run.mjs --reference          the reference patches (must score 100%)
 //   node scripts/evals/query-keys/run.mjs --control            the known-bad patches (must fail)
+//   node scripts/evals/query-keys/run.mjs --task <id> --patch <file>   grade a saved diff, e.g. from a report
 //   options: --model <id> (default claude-sonnet-5), --keep (leave worktrees), --timeout <minutes>
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
@@ -31,7 +32,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -67,8 +68,12 @@ function parseArgs(argv) {
     else if (arg === '--keep') args.keep = true;
     else if (arg === '--reference') args.mode = 'reference';
     else if (arg === '--control') args.mode = 'control';
-    else throw new Error(`Unknown argument: ${arg}`);
+    else if (arg === '--patch') {
+      args.mode = 'patch';
+      args.patch = resolve(argv[++i]);
+    } else throw new Error(`Unknown argument: ${arg}`);
   }
+  if (args.mode === 'patch' && !args.task) throw new Error('--patch needs --task');
   return args;
 }
 
@@ -259,17 +264,19 @@ function main() {
   const runs =
     args.mode === 'agent'
       ? selected
-      : selected.flatMap((task) =>
-          args.mode === 'reference'
-            ? [{ ...task, patch: join(HERE, 'reference', `${task.id}.patch`) }]
-            : readdirSync(join(HERE, 'controls'))
-                .filter((file) => file.startsWith(`${task.id}.`) && file.endsWith('.patch'))
-                .map((file) => ({
-                  ...task,
-                  variant: file.slice(task.id.length + 1, -'.patch'.length),
-                  patch: join(HERE, 'controls', file),
-                })),
-        );
+      : args.mode === 'patch'
+        ? selected.map((task) => ({ ...task, patch: args.patch }))
+        : selected.flatMap((task) =>
+            args.mode === 'reference'
+              ? [{ ...task, patch: join(HERE, 'reference', `${task.id}.patch`) }]
+              : readdirSync(join(HERE, 'controls'))
+                  .filter((file) => file.startsWith(`${task.id}.`) && file.endsWith('.patch'))
+                  .map((file) => ({
+                    ...task,
+                    variant: file.slice(task.id.length + 1, -'.patch'.length),
+                    patch: join(HERE, 'controls', file),
+                  })),
+          );
 
   const report = {
     mode: args.mode,

@@ -126,10 +126,10 @@ index 0000000..518bc4c
 +});
 diff --git a/packages/frontend/consumer/src/modules/projects/projects.repository.ts b/packages/frontend/consumer/src/modules/projects/projects.repository.ts
 new file mode 100644
-index 0000000..6a61737
+index 0000000..a5cf57d
 --- /dev/null
 +++ b/packages/frontend/consumer/src/modules/projects/projects.repository.ts
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +import { heyApiSdk, type ProjectResponseDto } from '@oppenheimer/api-client';
 +import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 +import { injectable } from 'inversify';
@@ -170,14 +170,16 @@ index 0000000..6a61737
 +  }
 +
 +  @MapApiError(ProjectsErrors.ARCHIVE_FAILED)
-+  async archive(id: string): Promise<void> {
-+    const { error } = await heyApiSdk.archiveProject({ path: { id } });
-+    if (error) throw new AppError(ProjectsErrors.ARCHIVE_FAILED);
++  /** Archiving retires the row rather than deleting it; the API answers with it. */
++  async archive(id: string): Promise<ProjectEntity> {
++    const { data, error } = await heyApiSdk.archiveProject({ path: { id } });
++    if (error || !data) throw new AppError(ProjectsErrors.ARCHIVE_FAILED);
++    return toEntity(data);
 +  }
 +}
 diff --git a/packages/frontend/consumer/src/modules/projects/projects.service.ts b/packages/frontend/consumer/src/modules/projects/projects.service.ts
 new file mode 100644
-index 0000000..f97091c
+index 0000000..76a1503
 --- /dev/null
 +++ b/packages/frontend/consumer/src/modules/projects/projects.service.ts
 @@ -0,0 +1,28 @@
@@ -205,7 +207,7 @@ index 0000000..f97091c
 +    return this.repository.rename(id, name);
 +  }
 +
-+  archive(id: string): Promise<void> {
++  archive(id: string): Promise<ProjectEntity> {
 +    return this.repository.archive(id);
 +  }
 +}
@@ -230,7 +232,7 @@ index 63c50fb..db2cbf0 100644
    sessionsKeys,
 diff --git a/packages/frontend/consumer/src/react/projects.queries.ts b/packages/frontend/consumer/src/react/projects.queries.ts
 new file mode 100644
-index 0000000..b67d164
+index 0000000..91d2d70
 --- /dev/null
 +++ b/packages/frontend/consumer/src/react/projects.queries.ts
 @@ -0,0 +1,94 @@
@@ -315,15 +317,15 @@ index 0000000..b67d164
 +  });
 +}
 +
-+/** Drops the archived project's detail and refreshes the lists. */
-+export function useArchiveProject(options?: UseMutationOptions<void, Error, string>) {
++/** Writes the archived row to its detail and refreshes the lists it leaves. */
++export function useArchiveProject(options?: UseMutationOptions<ProjectEntity, Error, string>) {
 +  const app = useConsumerApp();
 +  const queryClient = useQueryClient();
 +
 +  return useMutation({
 +    mutationFn: (id: string) => app.projects.archive(id),
-+    ...withCacheOnSuccess(options, (_, id) => {
-+      queryClient.removeQueries({ queryKey: projectsKeys.detail(id) });
++    ...withCacheOnSuccess(options, (project) => {
++      queryClient.setQueryData(projectsKeys.detail(project.id), project);
 +      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
 +    }),
 +  });

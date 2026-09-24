@@ -17,12 +17,14 @@ node scripts/evals/query-keys/run.mjs --task host-rename    # one task
 node scripts/evals/query-keys/run.mjs --model claude-opus-5-5
 node scripts/evals/query-keys/run.mjs --reference           # calibration: must score 100%
 node scripts/evals/query-keys/run.mjs --control             # calibration: must fail
+node scripts/evals/query-keys/run.mjs --task host-rename --patch <file>   # grade a saved diff
 ```
 
 `--keep` leaves the worktrees in the system temp directory for inspection, and
 `--timeout <minutes>` bounds the agent (30 by default). A report with every
 check, the agent's cost, turns and final message, and its diff lands in
-`results/` (git-ignored).
+`results/` (git-ignored). The diff in a report can be saved to a file and
+re-graded with `--patch` after a spec changes, without paying for another run.
 
 ## Tasks
 

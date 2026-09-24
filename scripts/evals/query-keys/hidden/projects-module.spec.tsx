@@ -37,7 +37,8 @@ function arrange() {
     findAll: vi.fn(async () => [project('Oppenheimer')]),
     findById: vi.fn(async () => project('Oppenheimer')),
     rename: vi.fn(async (_id: string, name: string) => project(name)),
-    archive: vi.fn(async () => undefined),
+    // Archiving retires the row rather than deleting it: the API answers with it.
+    archive: vi.fn(async () => ({ ...project('Oppenheimer'), archivedAt: new Date(1) })),
   };
   const keys = exported<Keys>(entry, 'projectsKeys');
   return { service, keys, ...setup({ [TOKENS.ProjectsService]: service }) };
@@ -121,7 +122,7 @@ describe('projects-module', () => {
     expect(listFresh || invalidated(queryClient, keys.list({}))).toBe(true);
   });
 
-  it('archive drops the detail, refreshes the lists, and still runs the caller onSuccess', async () => {
+  it('archive writes or drops the detail, refreshes the lists, and still runs the caller onSuccess', async () => {
     const { keys, wrapper, queryClient } = arrange();
     queryClient.setQueryData(keys.detail('project-1'), project('Oppenheimer'));
     queryClient.setQueryData(keys.list({}), [project('Oppenheimer')]);
@@ -133,10 +134,14 @@ describe('projects-module', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(onSuccess).toHaveBeenCalled();
-    const detailGone =
-      queryClient.getQueryData(keys.detail('project-1')) === undefined ||
+    // Dropped, marked stale, or replaced by the archived row the API answered
+    // with: anything but the pre-archive row still cached as fresh.
+    const detail = queryClient.getQueryData<{ archivedAt?: Date }>(keys.detail('project-1'));
+    const detailHandled =
+      detail === undefined ||
+      detail.archivedAt !== undefined ||
       invalidated(queryClient, keys.detail('project-1'));
-    expect(detailGone).toBe(true);
+    expect(detailHandled).toBe(true);
     const list = queryClient.getQueryData<unknown[]>(keys.list({}));
     expect(invalidated(queryClient, keys.list({})) || list?.length === 0).toBe(true);
     expect(invalidated(queryClient, ['sessions', 'list'])).toBe(false);
