@@ -49,9 +49,21 @@ describe('InProcessLinkRegistry', () => {
   });
 
   it('counts epochs per host', () => {
-    const registry = new InProcessLinkRegistry();
+    const registry = new InProcessLinkRegistry(() => 0);
     expect(registry.nextEpoch('a')).toBe(1);
     expect(registry.nextEpoch('a')).toBe(2);
     expect(registry.nextEpoch('b')).toBe(1);
+  });
+
+  it('keeps epochs rising across a restart of the process', () => {
+    let now = 1_000;
+    const before = new InProcessLinkRegistry(() => now);
+    const first = before.nextEpoch('a');
+    const second = before.nextEpoch('a');
+    expect(second).toBeGreaterThan(first);
+    now += 5;
+    // A fresh registry is what a restarted API holds: no memory of the host.
+    const after = new InProcessLinkRegistry(() => now);
+    expect(after.nextEpoch('a')).toBeGreaterThan(second);
   });
 });

@@ -26,6 +26,14 @@ export const RUNNER_LINK_PATH = '/api/v1/relay/runner';
 /** How long the runner has to say hello after the upgrade. */
 export const HELLO_TIMEOUT_MS = 10_000;
 
+/**
+ * How often the control plane pings a runner. A link that has not answered the
+ * previous ping by the next one is terminated: a TCP connection that died
+ * without a close — a NAT that forgot it, a host that lost power — otherwise
+ * stays registered, and browsers attach to a host that cannot hear them.
+ */
+export const LINK_PING_INTERVAL_MS = 15_000;
+
 /** A control frame larger than this is not a control frame. */
 const MAX_CONTROL_FRAME_BYTES = 512 * 1024;
 
@@ -149,7 +157,23 @@ export class RunnerLinkGateway {
       }
       void this.onControl(link, data as Buffer);
     });
+    let alive = true;
+    ws.on('pong', () => {
+      alive = true;
+    });
+    const keepAlive = setInterval(() => {
+      if (!alive) {
+        this.logger.warn({ message: 'runner link missed a pong; terminating', hostId });
+        ws.terminate();
+        return;
+      }
+      alive = false;
+      ws.ping();
+    }, LINK_PING_INTERVAL_MS);
+    keepAlive.unref();
+
     ws.on('close', (code, reason) => {
+      clearInterval(keepAlive);
       this.links.unregister(link);
       for (const sink of link.drainAttachments()) sink.closed('link_lost');
       this.logger.log({

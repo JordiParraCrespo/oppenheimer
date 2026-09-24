@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createResizeCoalescer } from '../lib/resize-coalescer';
+import { createResizeCoalescer } from '../resize-coalescer';
 
 /** A clock the test advances by hand. */
 function manualClock() {

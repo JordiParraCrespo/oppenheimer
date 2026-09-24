@@ -15,9 +15,7 @@ import { type FirstRunWalk, parseWalk } from '@/features/organizations/lib/first
  * the same guard as the landing it leads to.
  */
 export const Route = createFileRoute('/_auth/onboarding/host')({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { installation?: string } & FirstRunWalk => ({
+  validateSearch: (search: Record<string, unknown>): { installation?: string } & FirstRunWalk => ({
     installation: typeof search.installation === 'string' ? search.installation : undefined,
     ...parseWalk(search),
   }),

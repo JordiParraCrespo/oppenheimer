@@ -1,7 +1,7 @@
 import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
+import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
-import { useSessionStream } from '../hooks/use-session-stream';
 import { useTerminal } from '../hooks/use-terminal';
 
 /**
@@ -19,8 +19,9 @@ import { useTerminal } from '../hooks/use-terminal';
  * this renders none.
  *
  * The scrollback is xterm.js, mounted by `useTerminal` and fed by the attach
- * socket `session-stream.ts` opens with a ticket for this session. Everything
- * above holds a `SessionStream`, not a socket.
+ * socket `app.sessions.openStream` opens with a ticket for this session
+ * (`@oppenheimer/frontend-consumer`). Everything here holds a `SessionStream`,
+ * not a socket.
  *
  * What the grid *contains* is drawn by the program on the far end. The
  * artboard's scrollback is hand-written DOM in the design's own vocabulary,

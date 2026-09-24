@@ -57,3 +57,4 @@ export {
   useSessions,
   useStopSession,
 } from './sessions.queries';
+export { useSessionStream } from './sessions.stream';

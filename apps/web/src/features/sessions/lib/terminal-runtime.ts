@@ -1,9 +1,8 @@
+import { createResizeCoalescer, type SessionStream } from '@oppenheimer/frontend-consumer';
 import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
-import { createResizeCoalescer } from './resize-coalescer';
-import type { SessionStream } from './session-stream';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,

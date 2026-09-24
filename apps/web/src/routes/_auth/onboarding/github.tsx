@@ -1,9 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import {
-  type FirstRunWalk,
-  parseWalk,
-  WALK_STATE,
-} from '@/features/organizations/lib/first-run';
+import { type FirstRunWalk, parseWalk, WALK_STATE } from '@/features/organizations/lib/first-run';
 import {
   type GithubInstallCallback,
   parseInstallCallback,

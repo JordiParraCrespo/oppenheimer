@@ -115,10 +115,18 @@ export class SocketRunnerLink implements RunnerLink {
     }
   }
 
+  /**
+   * Whether a frame may be written. A runner past the buffer bound is closed
+   * rather than skipped: dropping one frame silently would lose a keystroke or
+   * a credit — and a lost credit stalls its pane for good — while a close sends
+   * every browser through the reconnect ladder onto a fresh link.
+   */
   private get writable(): boolean {
-    return (
-      this.socket.readyState === this.socket.OPEN &&
-      this.socket.bufferedAmount < LINK_MAX_BUFFERED_BYTES
-    );
+    if (this.socket.readyState !== this.socket.OPEN) return false;
+    if (this.socket.bufferedAmount >= LINK_MAX_BUFFERED_BYTES) {
+      this.close(1013, 'slow consumer');
+      return false;
+    }
+    return true;
   }
 }

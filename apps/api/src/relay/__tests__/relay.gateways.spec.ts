@@ -128,7 +128,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
       })[key],
   } as unknown as ConfigService;
 
-  const registry = new InProcessLinkRegistry();
+  const registry = new InProcessLinkRegistry(() => 0);
   const reconciliation: SessionReconciliationPort = {
     reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
   };

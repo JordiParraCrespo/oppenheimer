@@ -296,11 +296,9 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 		t.Fatalf("frame = %d %q", id, bytes)
 	}
 
-	// Runner → control plane: a PTY frame and a command.failed, in order.
-	if err := c.SendFrame(7, []byte("$ ")); err != nil {
-		t.Fatal(err)
-	}
-	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
+	// Runner → control plane: a PTY frame, then a command.failed. Control
+	// frames jump the PTY queue, so each is read before the next is sent.
+	if err := c.SendFrame(ctx, 7, []byte("$ ")); err != nil {
 		t.Fatal(err)
 	}
 	kind, data, err := conn.Read(ctx)
@@ -309,6 +307,9 @@ func TestCarriesFramesAndControlMessagesBothWays(t *testing.T) {
 	}
 	if id, bytes, _ := link.DecodeFrame(data); id != 7 || string(bytes) != "$ " {
 		t.Fatalf("frame = %d %q", id, bytes)
+	}
+	if err := c.Send(link.CommandFailed{Type: "command.failed", CommandID: "c2", Code: "SESS_003"}); err != nil {
+		t.Fatal(err)
 	}
 	kind, data, err = conn.Read(ctx)
 	if err != nil || kind != websocket.MessageText || !strings.Contains(string(data), `"command.failed"`) {
@@ -345,5 +346,82 @@ func TestRejectsAControlPlaneURLThatIsNotHTTP(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected an error")
+	}
+}
+
+func pingingClient(t *testing.T, cp *controlPlane, handler link.Handler) *link.Client {
+	t.Helper()
+	c, err := link.New(link.Options{
+		ControlPlaneURL: cp.server.URL,
+		Token:           func(context.Context) (string, error) { return "token", nil },
+		Fingerprint:     cp.fingerprint,
+		Handler:         handler,
+		Logger:          slog.New(slog.NewTextHandler(testWriter{t}, &slog.HandlerOptions{Level: slog.LevelDebug})),
+		Ladder:          []time.Duration{time.Hour},
+		Heartbeat:       time.Hour,
+		Ping:            30 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
+}
+
+// A control plane that stops answering — a TCP connection that died without a
+// close — is noticed by the ping, not by waiting for a write to fail.
+func TestDropsALinkWhosePingsGoUnanswered(t *testing.T) {
+	cp := newControlPlane(t)
+	rec := &recorder{}
+	c := pingingClient(t, cp, rec)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go c.Run(ctx)
+	// Nobody reads this end, so no pong is ever sent.
+	<-cp.conns
+	eventually(t, "link", c.Live)
+	eventually(t, "the unanswered ping to end the link", func() bool {
+		return rec.count(func(r *recorder) int { return len(r.disconnected) })() == 1
+	})
+}
+
+// Pings ride the one writer between frames: a busy, healthy link keeps
+// answering them and stays up.
+func TestKeepsAHealthyBusyLinkUpAcrossPings(t *testing.T) {
+	cp := newControlPlane(t)
+	rec := &recorder{}
+	c := pingingClient(t, cp, rec)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go c.Run(ctx)
+	conn := <-cp.conns
+	eventually(t, "link", c.Live)
+
+	received := make(chan struct{}, 1024)
+	go func() {
+		for {
+			if _, _, err := conn.Read(ctx); err != nil {
+				return
+			}
+			received <- struct{}{}
+		}
+	}()
+	deadline := time.Now().Add(300 * time.Millisecond) // ten ping intervals
+	sent := 0
+	for time.Now().Before(deadline) {
+		if err := c.SendFrame(ctx, 1, []byte("x")); err != nil {
+			t.Fatalf("frame %d: %v", sent, err)
+		}
+		sent++
+		time.Sleep(2 * time.Millisecond)
+	}
+	for range sent {
+		select {
+		case <-received:
+		case <-time.After(time.Second):
+			t.Fatal("frames stopped arriving")
+		}
+	}
+	if !c.Live() || rec.count(func(r *recorder) int { return len(r.disconnected) })() != 0 {
+		t.Fatal("a healthy link was dropped")
 	}
 }

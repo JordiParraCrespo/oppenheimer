@@ -5,7 +5,7 @@ import {
   attachSocketUrl,
   type SessionStream,
   type StreamStatus,
-} from '../lib/session-stream';
+} from '../session-stream';
 
 /**
  * The real transport against a scripted socket: the contract `use-terminal`
