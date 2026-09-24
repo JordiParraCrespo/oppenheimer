@@ -181,6 +181,9 @@ test('an ORM entity declares a date only through the shared decorators', () => {
     "@Column({ type: 'timestamp', nullable: true })\nstoppedAt!: Date | null;",
     "@Column({ nullable: true, type: 'timestamptz' })\nstoppedAt!: Date | null;",
     "@Column({ type: 'timestamp with time zone' })\nexpiresAt!: Date;",
+    '@Column()\ncreatedAt!: Date;',
+    '@Column({ nullable: true })\n  stoppedAt?: Date | null;',
+    "@Column({ default: () => 'now()' })\nseenAt!: Date;",
   ]) {
     assert.deepEqual(kinds(check(entity(bare))), ['bare-date-column'], bare);
   }
@@ -188,6 +191,8 @@ test('an ORM entity declares a date only through the shared decorators', () => {
     "import { CreatedAtColumn, TimestampColumn } from '@oppenheimer/backend-ddd';",
     '@TimestampColumn({ nullable: true })\nstoppedAt!: Date | null;',
     '@CreatedAtColumn()\ncreatedAt!: Date;',
+    "@Column({ type: 'varchar' })\nname!: string;",
+    "@Column({ type: 'jsonb' })\nfacts!: { seenAt: Date };",
   ].join('\n');
   assert.deepEqual(kinds(check(entity(shared))), []);
   // The rule is about persistence models; a domain entity may say "timestamp".

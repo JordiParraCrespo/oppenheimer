@@ -56,12 +56,20 @@ const NON_MODULES = new Set(['config', 'database', 'migrations', '__tests__']);
 /**
  * A date column an ORM entity declares for itself rather than through the
  * shared decorators in `@oppenheimer/backend-ddd`: TypeORM's own date
- * decorators, whose default is `timestamp without time zone`, or any timestamp
- * type spelt out by hand. One way to declare a point in time, so leaving out
- * the zone is not something a new table can do by omission (#61).
+ * decorators, whose default is `timestamp without time zone`; any timestamp
+ * type spelt out by hand; or a plain `@Column` on a `Date` field, which TypeORM
+ * infers as the same zoneless type. One way to declare a point in time, so
+ * leaving out the zone is not something a new table can do by omission (#61).
  */
-const BARE_DATE_COLUMN =
-  /\b(CreateDateColumn|UpdateDateColumn|DeleteDateColumn)\b|type:\s*['"`](timestamp|timestamptz)\b/;
+const BARE_DATE_COLUMN = new RegExp(
+  [
+    /\b(CreateDateColumn|UpdateDateColumn|DeleteDateColumn)\b/.source,
+    /type:\s*['"`](timestamp|timestamptz)\b/.source,
+    // `@Column(…)` then the field it decorates, typed `Date` (or `Date | null`).
+    // The options may hold one level of parentheses: `default: () => 'now()'`.
+    /@Column\((?:[^()]|\([^()]*\))*\)\s*(?:readonly\s+)?\w+[!?]?\s*:\s*Date\b/.source,
+  ].join('|'),
+);
 
 const CONTROLLER_LINE_CAP = 110;
 const HANDLER_LINE_CAP = 120;
