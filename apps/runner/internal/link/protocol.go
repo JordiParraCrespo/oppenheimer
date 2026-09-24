@@ -7,6 +7,7 @@ package link
 
 import (
 	"encoding/json"
+	"regexp"
 	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -54,6 +55,9 @@ type Hello struct {
 	RunID         string            `json:"runId"`
 	Host          hostdomain.Facts  `json:"host"`
 	Sessions      []SessionSnapshot `json:"sessions"`
+	// Capabilities are the commands this runner takes beyond its protocol
+	// version's baseline.
+	Capabilities []string `json:"capabilities"`
 }
 
 // Heartbeat is sent every 15 s.
@@ -172,16 +176,26 @@ type SessionInput struct {
 	Data      string `json:"data"`
 }
 
-// SessionImage is a picture for a window's prompt, base64: the runner saves
-// it and pastes its path into the window.
+// SessionImage is a picture for a window's prompt. The bytes are not on the
+// link: the runner pulls them once, by the command id, over HTTPS.
 type SessionImage struct {
 	Type      string `json:"type"`
 	CommandID string `json:"commandId"`
 	SessionID string `json:"sessionId"`
 	Window    int    `json:"window"`
 	MediaType string `json:"mediaType"`
-	Data      string `json:"data"`
 }
+
+// CapabilitySessionImage is the hello capability that makes the control plane
+// send session.image to this runner at all.
+const CapabilitySessionImage = "session.image"
+
+// IsCommandID reports whether id is a UUID, which is all a command id is (01).
+// The runner names files by command ids, so this is checked where the id
+// arrives, before anything uses it.
+func IsCommandID(id string) bool { return commandIDPattern.MatchString(id) }
+
+var commandIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // SessionResize is a viewport change for one attachment.
 type SessionResize struct {

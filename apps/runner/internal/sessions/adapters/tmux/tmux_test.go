@@ -256,7 +256,7 @@ func TestPasteIsABracketedPasteForAProgramThatAskedForOne(t *testing.T) {
 	// Pasting before the program has asked for brackets would paste bare.
 	waitFor(t, s, "opp-paste:0", "ready")
 
-	if err := s.Paste(ctx, "opp-paste:0", "/tmp/shot.png"); err != nil {
+	if err := s.Paste(ctx, "opp-paste:0", "0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61", "/tmp/shot.png"); err != nil {
 		t.Fatal(err)
 	}
 

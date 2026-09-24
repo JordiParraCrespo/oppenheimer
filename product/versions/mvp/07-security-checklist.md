@@ -13,8 +13,7 @@ feature lands.
 - [ ] F8 runner private key 0600, rotation supported
 - [ ] F10 direct-mode hosts are labelled "full access", never "sandbox"; the runner never runs as root; secrets and tokens are env or socket-scoped to the session's shell, nothing written to disk by the runner
 - [ ] F11 a worktree is never presented as a boundary
-- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed
-- [ ] F12 pasted images are the one piece of a reader's screen the runner writes: `~/.oppenheimer/images/<session>/`, 0700 and 0600, named by command id (never by anything the browser sent), and removed when the session closes
+- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed. The one file the runner does write from a reader's screen is a pasted image, named in 02 §11
 - [ ] F20 App private key in the secret store, never the database
 - [ ] F21 installation tokens narrowed to one repo, one hour
 - [ ] F23 no vendor credential ever stored by the platform

@@ -232,7 +232,7 @@ test.describe('Sessions', () => {
     expect(created.status()).toBe(400);
   });
 
-  test('an image is handed to the host, and what is not an image is refused', async () => {
+  test('an image for an unlinked host is refused, and so is what is not an image', async () => {
     // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const { api } = await signedUpContext('sessionimage');
@@ -253,13 +253,14 @@ test.describe('Sessions', () => {
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
 
     // The host was paired by redeeming a token, not by a runner dialling in, so
-    // it holds no link: the image is accepted and nothing is owed later.
-    const sent = await api.post(images, {
-      multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
-      failOnStatusCode: false,
-    });
-    expect(sent.status(), await sent.text()).toBe(202);
-    expect(await sent.json()).toEqual({ delivered: false, hints: ['host_offline'] });
+    // it holds no link: nothing is sent, and nothing is kept for later.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
+        failOnStatusCode: false,
+      }),
+      { status: 503, code: 'SESSIONS_015' },
+    );
 
     // The label is the browser's; the bytes are what count.
     await expectProblemDocument(
@@ -273,7 +274,7 @@ test.describe('Sessions', () => {
     );
     await expectProblemDocument(
       await api.post(images, { multipart: { window: '0' }, failOnStatusCode: false }),
-      { status: 415, code: 'SESSIONS_012' },
+      { status: 400, code: 'SESSIONS_014' },
     );
 
     await api.post(`/api/v1/sessions/${session.id}/stop`);

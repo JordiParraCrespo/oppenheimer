@@ -7,6 +7,7 @@ function link(hostId: string, epoch: number): RunnerLink {
     hostId,
     runId: `run-${epoch}`,
     epoch,
+    capabilities: [],
     send: vi.fn().mockReturnValue(true),
     sendBinary: vi.fn().mockReturnValue(true),
     openAttachment: vi.fn(),

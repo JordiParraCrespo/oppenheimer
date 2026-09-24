@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"sync"
 	"time"
 
@@ -32,6 +33,10 @@ type linkHandler struct {
 	reporter *link.Reporter
 
 	credentials *credentialBroker
+	// httpClient pulls parked images; nil is a default client (link_images.go).
+	httpClient *http.Client
+	// bootToken mints the assertion an image pull carries.
+	bootToken func(ctx context.Context) (string, error)
 
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
@@ -68,7 +73,10 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		logger.Error("could not mint a run id; the link stays down", slog.Any("error", err))
 		return
 	}
-	handler := &linkHandler{app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{}}
+	handler := &linkHandler{
+		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
+		bootToken: a.Pairing.BootToken,
+	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
 		Token:           a.Pairing.BootToken,
@@ -104,6 +112,7 @@ func (h *linkHandler) Hello(ctx context.Context) (link.Hello, error) {
 		RunID:         h.reporter.RunID(),
 		Host:          facts,
 		Sessions:      h.snapshots(),
+		Capabilities:  []string{link.CapabilitySessionImage},
 	}, nil
 }
 

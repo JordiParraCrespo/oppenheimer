@@ -4,6 +4,7 @@ import {
   ArgumentInvalidException,
   ArgumentNotProvidedException,
   type CreateEntityProps,
+  type ErrorDefinition,
 } from '@oppenheimer/backend-ddd';
 import type { SessionGroup, SessionState } from '@oppenheimer/shared';
 import { SessionCreatedDomainEvent } from './events/session-created.domain-event';
@@ -22,6 +23,7 @@ import {
   type SessionLogEntry,
   type SessionNameSource,
 } from './session-state.policy';
+import { SessionErrors } from './sessions.errors';
 import type { WorkSessionEventEntity } from './work-session-event.entity';
 
 export interface WorkSessionProps extends SessionFold {
@@ -198,6 +200,17 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
   }
 
   /** Every checkout, retired ones included. */
+  /**
+   * Why this session cannot take input right now — typed keys, a pasted
+   * image — or `null` when it can. Closed is final and stopped has no window
+   * to type into; both are facts about the session, whatever the input is.
+   */
+  get inputRefusal(): ErrorDefinition | null {
+    if (this.isResolved) return SessionErrors.ALREADY_RESOLVED;
+    if (this.stoppedAt) return SessionErrors.NOT_RUNNING;
+    return null;
+  }
+
   get checkouts(): readonly SessionCheckoutEntity[] {
     return this.props.checkouts;
   }

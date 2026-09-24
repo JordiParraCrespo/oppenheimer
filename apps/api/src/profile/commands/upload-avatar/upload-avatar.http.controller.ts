@@ -28,7 +28,7 @@ import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { ProfileResponseDto } from '../../dtos/profile.response.dto';
 import type { AvatarStoragePort } from '../../infrastructure/avatar-storage.port';
-import { AvatarFileInterceptor } from '../../interceptors/avatar-file.interceptor';
+import { AvatarFileInterceptor } from '../../interceptors/file-upload.interceptor';
 import { AVATAR_STORAGE } from '../../profile.di-tokens';
 import { ProfileMapper } from '../../profile.mapper';
 import { GetProfileQuery } from '../../queries/get-profile/get-profile.query';
@@ -57,7 +57,7 @@ export class UploadAvatarHttpController {
   // only add a path to clean up. The interceptor carries multer's size limit
   // *and* maps its rejection onto PROFILE_005, which a plain `FileInterceptor`
   // would surface as a codeless 413.
-  @UseInterceptors(AvatarFileInterceptor())
+  @UseInterceptors(AvatarFileInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -87,7 +87,7 @@ export class UploadAvatarHttpController {
     @CurrentUser('id') userId: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<ProfileResponseDto> {
-    // `AvatarFileInterceptor` has already rejected a request with no file.
+    // `FileUploadInterceptor` has already rejected a request with no file.
     await this.commandBus.execute(
       new UploadAvatarCommand({
         userId,

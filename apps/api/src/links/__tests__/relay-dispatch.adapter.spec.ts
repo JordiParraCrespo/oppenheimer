@@ -1,9 +1,14 @@
 import 'reflect-metadata';
-import { sessionCreateSchema, sessionImageSchema } from '@oppenheimer/shared/protocol';
+import {
+  type RunnerCapability,
+  sessionCreateSchema,
+  sessionImageSchema,
+} from '@oppenheimer/shared/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
+import type { ParkedImagePort } from '../application/parked-image.port';
 import { RelayDispatchAdapter } from '../infrastructure/relay-dispatch.adapter';
 
 /**
@@ -39,20 +44,22 @@ function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEnt
   return entity;
 }
 
-function harness(withLink: boolean) {
+function harness(withLink: boolean, capabilities: RunnerCapability[] = ['session.image']) {
   const link = {
     hostId: HOST,
     runId: 'run-1',
     epoch: 1,
+    capabilities,
     send: vi.fn().mockReturnValue(true),
   } as unknown as RunnerLink;
+  const images = { park: vi.fn(), collect: vi.fn() } satisfies ParkedImagePort;
   const links: LinkRegistryPort = {
     register: vi.fn(),
     unregister: vi.fn(),
     nextEpoch: vi.fn(),
     find: vi.fn().mockReturnValue(withLink ? link : undefined),
   };
-  return { link, adapter: new RelayDispatchAdapter(links) };
+  return { link, images, adapter: new RelayDispatchAdapter(links, images) };
 }
 
 describe('RelayDispatchAdapter', () => {
@@ -129,21 +136,26 @@ describe('RelayDispatchAdapter', () => {
     expect(link.send).not.toHaveBeenCalled();
   });
 
-  it('sends a session.image the protocol accepts, the bytes as base64', async () => {
-    const { adapter, link } = harness(true);
+  it('parks the bytes and sends only the command, which the protocol accepts', async () => {
+    const { adapter, link, images } = harness(true);
     const data = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     const work = session();
 
     const outcome = await adapter.pasteImage(work, { window: 0, mediaType: 'image/png', data });
 
     expect(outcome).toEqual({ delivered: true, hints: [] });
-    const sent = sessionImageSchema.parse(vi.mocked(link.send).mock.calls[0]?.[0]);
+    const sent = sessionImageSchema.strict().parse(vi.mocked(link.send).mock.calls[0]?.[0]);
     expect(sent).toMatchObject({ sessionId: work.id, window: 0, mediaType: 'image/png' });
-    expect(Buffer.from(sent.data, 'base64')).toEqual(data);
+    expect(images.park).toHaveBeenCalledWith(sent.commandId, {
+      hostId: HOST,
+      sessionId: work.id,
+      mediaType: 'image/png',
+      data,
+    });
   });
 
-  it('holds no image for a host that is offline', async () => {
-    const { adapter, link } = harness(false);
+  it('parks nothing for a host that is offline', async () => {
+    const { adapter, link, images } = harness(false);
     const outcome = await adapter.pasteImage(session(), {
       window: 0,
       mediaType: 'image/png',
@@ -151,5 +163,18 @@ describe('RelayDispatchAdapter', () => {
     });
     expect(outcome).toEqual({ delivered: false, hints: ['host_offline'] });
     expect(link.send).not.toHaveBeenCalled();
+    expect(images.park).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing to a runner that did not say it takes images', async () => {
+    const { adapter, link, images } = harness(true, []);
+    const outcome = await adapter.pasteImage(session(), {
+      window: 0,
+      mediaType: 'image/png',
+      data: Buffer.from([0x89]),
+    });
+    expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });
+    expect(link.send).not.toHaveBeenCalled();
+    expect(images.park).not.toHaveBeenCalled();
   });
 });

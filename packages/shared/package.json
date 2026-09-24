@@ -119,7 +119,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs",
+    "build": "tsc -p tsconfig.json && node scripts/emit-protocol-schema.cjs && node scripts/emit-agent-catalog.cjs && node scripts/emit-session-step.cjs && node scripts/emit-session-image.cjs",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist",
     "lint": "biome check src/",

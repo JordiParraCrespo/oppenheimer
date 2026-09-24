@@ -136,13 +136,10 @@
   copies when text is selected and interrupts otherwise, and
   **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
   on macOS), because tmux owns plain drags.
-- **An image pasted or dropped onto the terminal reaches the agent.** The
-  agent reads its host's clipboard, never the browser's, so the console
-  uploads the image (PNG, JPEG, GIF or WebP, 5 MB at most), the runner
-  writes it on the host and pastes its path into the prompt — what a
-  drag-and-drop does in a local terminal (01 `session.image`). The status
-  bar says while it travels; a refusal (too large, not an image, a
-  stopped session, the host offline) stays on screen until dismissed.
+- **An image pasted or dropped onto the terminal becomes a path in the
+  prompt**, as a drag-and-drop does in a local terminal (01
+  `session.image`). The status bar says while it travels; a refusal
+  stays on screen until dismissed.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here

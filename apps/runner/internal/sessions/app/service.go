@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"regexp"
 	"sort"
 	"sync"
 	"time"
@@ -317,8 +316,9 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 // PasteImage gives a window's program an image: it is written to the host
 // and its path pasted into the window, as a drag-and-drop does in a local
 // terminal — the agent reads its host's clipboard, never the browser's. The
-// file is named by the command id, so nothing the browser sent becomes part
-// of a path, and the bytes must be the type they claim to be.
+// bytes must be the type they claim to be, the file is named by the command
+// id (checked at the link, and refused by the store if it is not a plain
+// name), and a paste that does not land takes its file with it.
 func (s *Service) PasteImage(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
 	session, err := s.Get(id)
 	if err != nil {
@@ -335,26 +335,22 @@ func (s *Service) PasteImage(ctx context.Context, id string, window int, command
 	}
 	ext, ok := domain.ImageExtension(mediaType)
 	if !ok {
-		return "", domain.ErrImage.WithDetail("%q is not an image type an agent reads", mediaType)
+		return "", domain.ErrImage.WithDetail("%q is not an image type a session takes", mediaType)
 	}
 	if sniffed := domain.SniffImage(data); sniffed != mediaType {
 		return "", domain.ErrImage.WithDetail("the bytes are not a %s image", mediaType)
 	}
-	if !commandIDPattern.MatchString(commandID) {
-		return "", domain.ErrInvalidInput.WithDetail("command id %q cannot name a file", commandID)
-	}
-	path, err := s.images.Save(session.ID, commandID+ext, data)
+	name := commandID + ext
+	path, err := s.images.Save(session.ID, name, data)
 	if err != nil {
 		return "", domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
 	}
-	if err := s.terminals.Paste(ctx, session.Target(window), path); err != nil {
+	if err := s.terminals.Paste(ctx, session.Target(window), commandID, path); err != nil {
+		_ = s.images.Delete(session.ID, name)
 		return "", err
 	}
 	return path, nil
 }
-
-// commandIDPattern is a UUID, which is all a command id is (01).
-var commandIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // Refresh re-reads window 0 and updates the state and the login URL. It is
 // what the poll loop calls: every second while a client is attached, every
@@ -443,11 +439,6 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	}
 	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
 		return domain.Session{}, err
-	}
-	// The images were the agent's to read while it ran; nothing reads them
-	// after the tmux session is gone, whether or not the worktree stays.
-	if s.images != nil {
-		_ = s.images.Discard(session.ID)
 	}
 
 	dirty, dirtyErr := s.worktrees.Dirty(ctx, session.Worktree)
@@ -541,6 +532,12 @@ func (s *Service) transition(session domain.Session, state domain.State, loginUR
 		session.Updated = s.now().UTC()
 	}
 	s.put(session)
+	// Pasted images were for the agent in the tmux session; once it is gone
+	// — stopped, closed, lost to a reboot — nothing will read them. Every way
+	// a session stops comes through here, so this is the one place they go.
+	if !state.Live() && s.images != nil {
+		_ = s.images.Discard(session.ID)
+	}
 	if changed {
 		s.mu.Lock()
 		publisher := s.publisher

@@ -146,7 +146,6 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     sessionId,
     window: 0,
     mediaType: 'image/png',
-    data: 'iVBORw0KGgo=',
   },
   'session.resize': {
     type: 'session.resize',

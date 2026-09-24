@@ -37,6 +37,18 @@ func (s *Store) Save(sessionID, name string, data []byte) (string, error) {
 	return path, nil
 }
 
+// Delete removes one image; one that is already gone is not an error.
+func (s *Store) Delete(sessionID, name string) error {
+	if !plain(sessionID) || !plain(name) {
+		return errors.New("an image is named by a plain file name")
+	}
+	err := os.Remove(filepath.Join(s.dir, sessionID, name))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
 // Discard removes a session's directory and everything in it.
 func (s *Store) Discard(sessionID string) error {
 	if !plain(sessionID) {

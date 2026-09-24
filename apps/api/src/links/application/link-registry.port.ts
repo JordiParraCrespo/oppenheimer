@@ -1,4 +1,4 @@
-import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
+import type { ProtocolMessage, RunnerCapability } from '@oppenheimer/shared/protocol';
 
 /**
  * A live runner link, as the rest of the control plane sees it: something a
@@ -32,6 +32,8 @@ export interface RunnerLink {
   readonly runId: string;
   /** Bumped per accepted link on this host; frames from an older epoch are dropped. */
   readonly epoch: number;
+  /** What the runner's hello said it takes beyond its protocol version's baseline. */
+  readonly capabilities: readonly RunnerCapability[];
   /**
    * Queue a control frame. It is the same union inbound frames are parsed with,
    * so what this process sends is what the shared package says it sends.

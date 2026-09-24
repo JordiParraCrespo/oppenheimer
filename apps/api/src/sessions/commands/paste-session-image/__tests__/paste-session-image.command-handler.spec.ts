@@ -2,6 +2,7 @@ import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { SessionDispatchPort } from '../../../application/session-dispatch.port';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
+import { SessionErrors } from '../../../domain/sessions.errors';
 import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { PasteSessionImageCommand } from '../paste-session-image.command';
 import { PasteSessionImageCommandHandler } from '../paste-session-image.command-handler';
@@ -33,12 +34,15 @@ function openSession() {
   });
 }
 
-function harness(session: WorkSessionEntity | null) {
+function harness(
+  session: WorkSessionEntity | null,
+  outcome: { delivered: boolean; hints: string[] } = { delivered: true, hints: [] },
+) {
   const sessions = {
     findOneById: vi.fn().mockResolvedValue(session ? Some(session) : None),
   } as unknown as WorkSessionRepositoryPort;
   const dispatch = {
-    pasteImage: vi.fn().mockResolvedValue({ delivered: true, hints: [] }),
+    pasteImage: vi.fn().mockResolvedValue(outcome),
   } as unknown as SessionDispatchPort;
   return { dispatch, handler: new PasteSessionImageCommandHandler(sessions, dispatch) };
 }
@@ -51,10 +55,7 @@ describe('PasteSessionImageCommandHandler', () => {
     const session = openSession();
     const { handler, dispatch } = harness(session);
 
-    await expect(handler.execute(paste(session.id, PNG, 1))).resolves.toEqual({
-      delivered: true,
-      hints: [],
-    });
+    await expect(handler.execute(paste(session.id, PNG, 1))).resolves.toBeUndefined();
     expect(dispatch.pasteImage).toHaveBeenCalledWith(session, {
       window: 1,
       mediaType: 'image/png',
@@ -83,16 +84,32 @@ describe('PasteSessionImageCommandHandler', () => {
     expect(dispatch.pasteImage).not.toHaveBeenCalled();
   });
 
-  it('refuses a closed session with SESSIONS_005 and a stopped one with SESSIONS_013', async () => {
-    const closed = { id: 'closed', slug: 'a', isResolved: true, stoppedAt: null };
-    const stopped = { id: 'stopped', slug: 'b', isResolved: false, stoppedAt: new Date() };
-    for (const [session, code] of [
-      [closed, 'SESSIONS_005'],
-      [stopped, 'SESSIONS_013'],
-    ] as const) {
-      const { handler, dispatch } = harness(session as unknown as WorkSessionEntity);
-      await expect(handler.execute(paste(session.id, PNG))).rejects.toMatchObject({ code });
-      expect(dispatch.pasteImage).not.toHaveBeenCalled();
-    }
+  it('refuses a session that cannot take input, with the reason the session gives', async () => {
+    const stopped = {
+      id: 'stopped',
+      slug: 'b',
+      inputRefusal: SessionErrors.NOT_RUNNING,
+    } as unknown as WorkSessionEntity;
+    const { handler, dispatch } = harness(stopped);
+    await expect(handler.execute(paste(stopped.id, PNG))).rejects.toMatchObject({
+      code: 'SESSIONS_013',
+    });
+    expect(dispatch.pasteImage).not.toHaveBeenCalled();
+  });
+
+  it('answers SESSIONS_015 for a host with no link, rather than a paste that never lands', async () => {
+    const session = openSession();
+    const { handler } = harness(session, { delivered: false, hints: ['host_offline'] });
+    await expect(handler.execute(paste(session.id, PNG))).rejects.toMatchObject({
+      code: 'SESSIONS_015',
+    });
+  });
+
+  it('answers SESSIONS_016 for a runner that predates images', async () => {
+    const session = openSession();
+    const { handler } = harness(session, { delivered: false, hints: ['not_supported'] });
+    await expect(handler.execute(paste(session.id, PNG))).rejects.toMatchObject({
+      code: 'SESSIONS_016',
+    });
   });
 });

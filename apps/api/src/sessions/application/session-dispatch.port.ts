@@ -1,4 +1,4 @@
-import type { SessionImageMediaType } from '@oppenheimer/shared';
+import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 

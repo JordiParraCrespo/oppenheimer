@@ -2,7 +2,6 @@ export {
   type AttachTicket,
   type CreateSessionCheckout,
   type CreateSessionInput,
-  type PastedImage,
   type SessionAgent,
   SessionCheckoutEntity,
   SessionEntity,

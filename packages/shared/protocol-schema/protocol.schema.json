@@ -48,6 +48,17 @@
           "items": {
             "$ref": "#/$defs/sessionSnapshot"
           }
+        },
+        "capabilities": {
+          "default": [],
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "session.image"
+            ]
+          }
         }
       },
       "required": [
@@ -554,13 +565,6 @@
             "image/gif",
             "image/webp"
           ]
-        },
-        "data": {
-          "type": "string",
-          "maxLength": 6990508,
-          "format": "base64",
-          "contentEncoding": "base64",
-          "pattern": "^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$"
         }
       },
       "required": [
@@ -568,8 +572,7 @@
         "commandId",
         "sessionId",
         "window",
-        "mediaType",
-        "data"
+        "mediaType"
       ]
     },
     {

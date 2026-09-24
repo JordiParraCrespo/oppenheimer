@@ -185,6 +185,7 @@ would confirm the id.
 | `HOSTS_003` <a id="hosts_003" /> | The registration token was rejected          | 401  |
 | `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
+| `HOSTS_006` <a id="hosts_006" /> | No image is waiting for that command         | 404  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -376,6 +377,9 @@ are never reissued.
 | `SESSIONS_011` <a id="sessions_011" /> | That image is too large to give the session     | 413  |
 | `SESSIONS_012` <a id="sessions_012" /> | That is not an image the session can take       | 415  |
 | `SESSIONS_013` <a id="sessions_013" /> | That session is stopped                         | 409  |
+| `SESSIONS_014` <a id="sessions_014" /> | No image was attached                           | 400  |
+| `SESSIONS_015` <a id="sessions_015" /> | The session’s host is offline                   | 503  |
+| `SESSIONS_016` <a id="sessions_016" /> | The session’s host cannot take images until its runner is updated | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -390,11 +394,14 @@ per session, so a second repository is refused here — on create by the body's 
 limit, and on adding one to a session that has one — rather than by the host after
 the session was written.
 
-`SESSIONS_011`–`SESSIONS_013` belong to pasting an image into a session's prompt
-(`POST /sessions/{id}/images`). The ceiling is 5 MB, Claude's own for one image; the type
-is judged by the file's magic bytes, never by what the browser labelled it; and a stopped
-session is refused rather than sent a file there is no pane to paste into. A runner that
-refuses the image anyway answers with `SESS_005` in the session's log.
+`SESSIONS_011`–`SESSIONS_016` belong to pasting an image into a session's prompt
+(`POST /sessions/{id}/images`). `011` is the upload's cap; `012` is bytes that are not
+an image, whatever the browser labelled them, and `014` a request with no file at all;
+`013` is a stopped session, which has no window to paste into. `015` and `016` are the
+host: no link right now, or a runner too old to take the command. An image is never
+queued for a host that comes back. A runner that refuses the image anyway answers with
+`SESS_005` in the session's log, and `HOSTS_006` is the runner's own pull finding
+nothing waiting.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

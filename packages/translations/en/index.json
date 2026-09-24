@@ -163,7 +163,11 @@
       "PROFILE_007": "You cannot sign out the device you are using right now.",
       "PROFILE_008": "We could not reach the account service. Please try again.",
       "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
-      "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB."
+      "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB.",
+      "SESSIONS_014": "No image was attached. Paste or drop the image again.",
+      "SESSIONS_015": "This session's host is offline, so the image was not sent.",
+      "SESSIONS_016": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
+      "HOSTS_006": "No image is waiting for that command."
     },
     "notFound": {
       "title": "That page does not exist",

@@ -9,11 +9,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type {
-  CreateSessionInput,
-  PastedImage,
-  SessionEntity,
-} from '../modules/sessions/session.entity';
+import type { CreateSessionInput, SessionEntity } from '../modules/sessions/session.entity';
 import type { SessionStartProgress } from '../modules/sessions/session-steps';
 import { useConsumerApp } from './context';
 
@@ -158,13 +154,14 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
 }
 
 /**
- * Paste an image into one window's prompt. Nothing is cached: success is the
- * path appearing in the terminal, which the terminal itself shows.
+ * Paste an image into one window's prompt. Nothing is cached and no key is
+ * kept: success is the path appearing in the terminal, which the terminal
+ * itself shows.
  */
 export function usePasteSessionImage(
   sessionId: string,
   window = 0,
-  options?: UseMutationOptions<PastedImage, Error, Blob>,
+  options?: UseMutationOptions<void, Error, Blob>,
 ) {
   const app = useConsumerApp();
   return useMutation({

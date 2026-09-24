@@ -63,12 +63,17 @@ runner does with it and point back.
   composer's line on a session with no pane open); an attached browser's
   keystrokes are **not** it — they are binary frames on the attach socket,
   copied onto the link as binary frames under the attachment id, the
-  same layout as the PTY output the other way. `image` is a picture for a
-  window's prompt (PNG, JPEG, GIF or WebP, 5 MB at most, base64): the
-  runner writes it under its own home and pastes the file's path into the
-  window as a bracketed paste, because an agent reads its host's
-  clipboard and never the browser's (05). The runner picks the path and
-  names the file by the command id.
+  same layout as the PTY output the other way. `image` asks the runner to
+  put a picture into a window's prompt, because an agent reads its host's
+  clipboard and never the browser's (05). **The frame carries no bytes**:
+  control frames stay small, and one paste must not queue ahead of every
+  pane on the host. The control plane parks the image under the command
+  id and the runner pulls it once over HTTPS with its own assertion
+  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
+  table in `packages/shared/src/protocol/session-image.ts` that the
+  runner's copy is generated from. It is sent only to a runner whose
+  `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at

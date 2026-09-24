@@ -142,7 +142,13 @@ export class RunnerLinkGateway {
     hostId: string,
     hello: ReturnType<typeof helloSchema.parse>,
   ): Promise<void> {
-    const link = new SocketRunnerLink(hostId, hello.runId, this.links.nextEpoch(hostId), ws);
+    const link = new SocketRunnerLink(
+      hostId,
+      hello.runId,
+      this.links.nextEpoch(hostId),
+      ws,
+      hello.capabilities,
+    );
     const replaced = this.links.register(link);
     if (replaced instanceof SocketRunnerLink) {
       // The same host again, faster than its old socket noticed: the newer link

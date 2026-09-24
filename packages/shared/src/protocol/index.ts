@@ -11,5 +11,6 @@ export * from './attach';
 export * from './hint';
 export * from './messages';
 export * from './primitives';
+export * from './session-image';
 export * from './session-step';
 export * from './version';

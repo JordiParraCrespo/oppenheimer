@@ -37,8 +37,9 @@ type Terminals interface {
 	SendKeys(ctx context.Context, target, keys string) error
 	// Paste pastes text into a window as a bracketed paste when the program
 	// there asked for one, which is how a dropped file's path reaches an
-	// agent in a local terminal.
-	Paste(ctx context.Context, target, text string) error
+	// agent in a local terminal. The id names the paste, so two at once
+	// never share anything.
+	Paste(ctx context.Context, target, id, text string) error
 	// Attach runs `tmux attach` on a PTY and returns it. Closing the
 	// returned Attachment detaches without touching the session.
 	Attach(ctx context.Context, target string, size Size) (Attachment, error)
@@ -79,6 +80,8 @@ type Worktrees interface {
 type Images interface {
 	// Save writes one image for a session and returns its absolute path.
 	Save(sessionID, name string, data []byte) (string, error)
+	// Delete removes one image, when the paste it was written for failed.
+	Delete(sessionID, name string) error
 	// Discard removes every image a session was given.
 	Discard(sessionID string) error
 }

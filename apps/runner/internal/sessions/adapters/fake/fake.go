@@ -42,6 +42,9 @@ type Terminals struct {
 	Attached int
 	// Pastes is every text pasted, in order.
 	Pastes []string
+	// FailPaste makes the next paste fail, standing in for a window that
+	// went away between the save and the paste.
+	FailPaste bool
 }
 
 // Images is app.Images in memory.
@@ -65,6 +68,14 @@ func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
 	}
 	i.Saved[sessionID][name] = append([]byte(nil), data...)
 	return "/home/jordi/.oppenheimer/images/" + sessionID + "/" + name, nil
+}
+
+// Delete implements app.Images.
+func (i *Images) Delete(sessionID, name string) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	delete(i.Saved[sessionID], name)
+	return nil
 }
 
 // Discard implements app.Images.
@@ -208,9 +219,13 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 
 // Paste implements app.Terminals by appending to the screen and recording
 // the paste, so a test can tell it from typed keys.
-func (t *Terminals) Paste(_ context.Context, target, text string) error {
+func (t *Terminals) Paste(_ context.Context, target, _ string, text string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	if t.FailPaste {
+		t.FailPaste = false
+		return domain.ErrTmuxCommand.WithDetail("no window %q", target)
+	}
 	t.Screens[target] += text
 	t.Pastes = append(t.Pastes, text)
 	return nil

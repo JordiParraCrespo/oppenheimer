@@ -2,34 +2,52 @@ package domain
 
 import "bytes"
 
+// The table of what counts as an image is generated from the shared one
+// (session_image.gen.go, from packages/shared/src/protocol/session-image.ts),
+// so the runner and the control plane judge the same bytes the same way.
+// What is here is only the loop that reads it.
+
+type imageSignaturePart struct {
+	Offset int
+	Bytes  []byte
+}
+
+type imageType struct {
+	MediaType  string
+	Extension  string
+	Signatures [][]imageSignaturePart
+}
+
 // ImageExtension is the extension an image of mediaType is saved under, so
-// the agent reading the pasted path recognises it as an image. The types are
-// the ones an agent reads (01, `session.image`); anything else is not one.
+// the agent reading the pasted path recognises it as an image.
 func ImageExtension(mediaType string) (string, bool) {
-	ext, ok := imageExtensions[mediaType]
-	return ext, ok
+	for _, t := range imageTypes {
+		if t.MediaType == mediaType {
+			return t.Extension, true
+		}
+	}
+	return "", false
 }
 
-var imageExtensions = map[string]string{
-	"image/png":  ".png",
-	"image/jpeg": ".jpg",
-	"image/gif":  ".gif",
-	"image/webp": ".webp",
-}
-
-// SniffImage names the image type data's first bytes declare, or "" when they
-// declare none of the four. A browser's claimed type is a label; the magic
-// bytes are what an agent's image reader will go by.
+// SniffImage names the type data's first bytes declare, or "" when they
+// declare none of the table's.
 func SniffImage(data []byte) string {
-	switch {
-	case bytes.HasPrefix(data, []byte("\x89PNG\r\n\x1a\n")):
-		return "image/png"
-	case bytes.HasPrefix(data, []byte("\xff\xd8\xff")):
-		return "image/jpeg"
-	case bytes.HasPrefix(data, []byte("GIF87a")), bytes.HasPrefix(data, []byte("GIF89a")):
-		return "image/gif"
-	case len(data) >= 12 && bytes.Equal(data[:4], []byte("RIFF")) && bytes.Equal(data[8:12], []byte("WEBP")):
-		return "image/webp"
+	for _, t := range imageTypes {
+		for _, signature := range t.Signatures {
+			if matches(data, signature) {
+				return t.MediaType
+			}
+		}
 	}
 	return ""
+}
+
+func matches(data []byte, signature []imageSignaturePart) bool {
+	for _, part := range signature {
+		end := part.Offset + len(part.Bytes)
+		if end > len(data) || !bytes.Equal(data[part.Offset:end], part.Bytes) {
+			return false
+		}
+	}
+	return true
 }

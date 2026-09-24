@@ -120,7 +120,11 @@
     "PROFILE_007": "No puedes cerrar la sesión del dispositivo que estás usando ahora.",
     "PROFILE_008": "No hemos podido contactar con el servicio de cuentas. Inténtalo de nuevo.",
     "PROFILE_CLIENT_010": "Ese tipo de archivo no se puede usar como foto de perfil.",
-    "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB."
+    "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB.",
+    "SESSIONS_014": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
+    "SESSIONS_015": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
+    "SESSIONS_016": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+    "HOSTS_006": "No hay ninguna imagen esperando para esa orden."
   },
   "notFound": {
     "title": "Esta página no existe",

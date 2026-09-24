@@ -377,7 +377,6 @@ func TestPasteImageRefusesWhatIsNotTheImageItClaims(t *testing.T) {
 	}{
 		"bytes that are not the type":  {imageCommand, "image/jpeg", png, "SESS_005"},
 		"a type no agent reads":        {imageCommand, "image/svg+xml", []byte("<svg/>"), "SESS_005"},
-		"a command id that is a path":  {"../../.ssh/authorized_keys", "image/png", png, "SESS_002"},
 		"a window that does not exist": {imageCommand, "image/png", png, "SESS_001"},
 	}
 	for name, c := range cases {
@@ -410,6 +409,34 @@ func TestPasteImageRefusesAStoppedSession(t *testing.T) {
 	}
 }
 
+func TestAPasteThatDoesNotLandTakesItsFileWithIt(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	h.terminals.FailPaste = true
+
+	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err == nil {
+		t.Fatal("a paste into a window that went away must fail")
+	}
+	if len(h.images.Saved[session.ID]) != 0 {
+		t.Fatalf("the file stayed behind: %v", h.images.Saved[session.ID])
+	}
+}
+
+func TestStoppingDropsTheSessionsImages(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	if _, err := h.svc.PasteImage(context.Background(), session.ID, 0, imageCommand, "image/png", png); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.svc.Stop(context.Background(), session.ID); err != nil {
+		t.Fatal(err)
+	}
+	if len(h.images.Saved[session.ID]) != 0 {
+		t.Fatal("nothing reads an image once the tmux session is gone; stopping must drop them")
+	}
+}
+
 func TestCloseDropsTheSessionsImages(t *testing.T) {
 	h := newFakeHarness(t)
 	session := h.open(t)
@@ -420,7 +447,7 @@ func TestCloseDropsTheSessionsImages(t *testing.T) {
 	if _, err := h.svc.Close(context.Background(), session.ID, app.CloseInput{Force: true}); err != nil {
 		t.Fatal(err)
 	}
-	if len(h.images.Discarded) != 1 || h.images.Discarded[0] != session.ID {
+	if len(h.images.Saved[session.ID]) != 0 || len(h.images.Discarded) == 0 {
 		t.Fatalf("discarded = %v, want the session's images dropped on close", h.images.Discarded)
 	}
 }

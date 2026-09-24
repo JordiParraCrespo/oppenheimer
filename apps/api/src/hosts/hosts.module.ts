@@ -3,11 +3,14 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { AuthModule } from '../auth/auth.module';
+import { LinksModule } from '../links/links.module';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
+import { CollectSessionImageCommandHandler } from './commands/collect-session-image/collect-session-image.command-handler';
+import { CollectSessionImageHttpController } from './commands/collect-session-image/collect-session-image.http.controller';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
 import { MintPairingTokenHttpController } from './commands/mint-pairing-token/mint-pairing-token.http.controller';
 import { RegisterHostCommandHandler } from './commands/register-host/register-host.command-handler';
@@ -56,6 +59,7 @@ const httpControllers = [
   RevokePairingTokenHttpController,
   RegisterHostHttpController,
   UninstallHostHttpController,
+  CollectSessionImageHttpController,
   FindHostHttpController,
   RenameHostHttpController,
   UnpairHostHttpController,
@@ -68,6 +72,7 @@ const commandHandlers: Provider[] = [
   RenameHostCommandHandler,
   UnpairHostCommandHandler,
   UninstallHostCommandHandler,
+  CollectSessionImageCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -108,6 +113,8 @@ const resolvers: Provider[] = [
 @Module({
   imports: [
     CqrsModule,
+    // The parked images a runner collects (`GET /hosts/self/images/{id}`).
+    LinksModule,
     TypeOrmModule.forFeature([HostOrmEntity, HostPairingTokenOrmEntity]),
     AuthzKernelModule.forFeature([HostResource]),
   ],

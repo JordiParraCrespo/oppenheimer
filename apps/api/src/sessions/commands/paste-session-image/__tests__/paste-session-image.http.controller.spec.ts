@@ -8,7 +8,7 @@ import {
 import { CommandBus } from '@nestjs/cqrs';
 import { Test } from '@nestjs/testing';
 import { AllExceptionsFilter } from '@oppenheimer/backend-core';
-import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared';
+import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiAuthGuard } from '../../../../auth/guards/api-auth.guard';
@@ -71,7 +71,7 @@ describe('POST /v1/sessions/:id/images', () => {
   });
 
   beforeEach(() => {
-    execute.mockReset().mockResolvedValue({ delivered: true, hints: [] });
+    execute.mockReset().mockResolvedValue(undefined);
   });
 
   const post = (fields: Record<string, Blob | string>) => {
@@ -84,7 +84,7 @@ describe('POST /v1/sessions/:id/images', () => {
     const response = await post({ file: new Blob([PNG], { type: 'image/png' }), window: '2' });
 
     expect(response.status).toBe(202);
-    await expect(response.json()).resolves.toEqual({ delivered: true, hints: [] });
+    await expect(response.text()).resolves.toBe('');
     const command = execute.mock.calls[0]?.[0] as PasteSessionImageCommand;
     expect(command).toBeInstanceOf(PasteSessionImageCommand);
     expect(command).toMatchObject({ sessionId: SESSION, window: 2, scope: SCOPE });
@@ -107,11 +107,11 @@ describe('POST /v1/sessions/:id/images', () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('refuses a request with no file with SESSIONS_012', async () => {
+  it('refuses a request with no file with SESSIONS_014', async () => {
     const response = await post({ window: '0' });
 
-    expect(response.status).toBe(415);
-    await expect(response.json()).resolves.toMatchObject({ code: 'SESSIONS_012' });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ code: 'SESSIONS_014' });
     expect(execute).not.toHaveBeenCalled();
   });
 

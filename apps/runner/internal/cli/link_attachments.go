@@ -12,7 +12,6 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
-	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
 func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach) {
@@ -88,20 +87,6 @@ func (h *linkHandler) input(ctx context.Context, m link.SessionInput) {
 		return
 	}
 	if err := h.app.Sessions.Send(ctx, m.SessionID, m.Window, string(data)); err != nil {
-		h.fail(m.CommandID, err)
-	}
-}
-
-// image is a picture for a window's prompt: saved on this host and its path
-// pasted into the window. Success is the path appearing in the prompt, so
-// only a failure is reported (01).
-func (h *linkHandler) image(ctx context.Context, m link.SessionImage) {
-	data, err := base64.StdEncoding.DecodeString(m.Data)
-	if err != nil || len(data) == 0 {
-		h.fail(m.CommandID, sessionsdomain.ErrImage.WithDetail("the image is not base64"))
-		return
-	}
-	if _, err := h.app.Sessions.PasteImage(ctx, m.SessionID, m.Window, m.CommandID, m.MediaType, data); err != nil {
 		h.fail(m.CommandID, err)
 	}
 }

@@ -1,4 +1,4 @@
-import { SESSION_IMAGE_MEDIA_TYPES } from '@oppenheimer/shared/schemas/session';
+import { SESSION_IMAGE_MEDIA_TYPES } from '@oppenheimer/shared/protocol';
 
 /**
  * The image in a paste or a drop, if there is one.
@@ -33,4 +33,45 @@ export function carriesFiles(transfer: DataTransfer | null): boolean {
 
 function isSessionImageType(type: string): boolean {
   return (SESSION_IMAGE_MEDIA_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Listen for images pasted or dropped onto `container` and hand each to
+ * `onImage`; returns the function that stops listening.
+ *
+ * The paste is caught on the way down (capture), before xterm's own handler
+ * on its textarea: xterm would paste an image as nothing, or as the text
+ * copied beside it. A paste or a drop without an image is left alone.
+ */
+export function bindImageGestures(
+  container: HTMLElement,
+  onImage: (image: File) => void,
+): () => void {
+  const onPaste = (event: ClipboardEvent) => {
+    const image = imageFromTransfer(event.clipboardData);
+    if (!image) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onImage(image);
+  };
+  const onDragOver = (event: DragEvent) => {
+    if (!carriesFiles(event.dataTransfer)) return;
+    // Without this the browser opens the dropped file in the tab.
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = (event: DragEvent) => {
+    if (!carriesFiles(event.dataTransfer)) return;
+    event.preventDefault();
+    const image = imageFromTransfer(event.dataTransfer);
+    if (image) onImage(image);
+  };
+  container.addEventListener('paste', onPaste, { capture: true });
+  container.addEventListener('dragover', onDragOver);
+  container.addEventListener('drop', onDrop);
+  return () => {
+    container.removeEventListener('paste', onPaste, { capture: true });
+    container.removeEventListener('dragover', onDragOver);
+    container.removeEventListener('drop', onDrop);
+  };
 }

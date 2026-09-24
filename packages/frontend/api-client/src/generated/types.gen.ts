@@ -1093,17 +1093,6 @@ export type AttachTicketResponseDto = {
     window: number;
 };
 
-export type SessionImageResponseDto = {
-    /**
-     * Whether the image reached a live link to the session’s host.
-     */
-    delivered: boolean;
-    /**
-     * `host_offline` means no link to the host exists and nothing was sent: an image is not queued for later, because the prompt it was meant for will have moved on.
-     */
-    hints: Array<string>;
-};
-
 export type AddCheckoutRequest = {
     installationId: string;
     githubRepoId: number;
@@ -3724,6 +3713,35 @@ export type UninstallResponses = {
 
 export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
 
+export type CollectSessionImageData = {
+    body?: never;
+    path: {
+        commandId: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/self/images/{commandId}';
+};
+
+export type CollectSessionImageErrors = {
+    /**
+     * HOSTS_005 — No valid host assertion was presented
+     */
+    401: ProblemDetailsDto;
+    /**
+     * HOSTS_006 — No image is waiting
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CollectSessionImageError = CollectSessionImageErrors[keyof CollectSessionImageErrors];
+
+export type CollectSessionImageResponses = {
+    /**
+     * The image’s bytes
+     */
+    200: unknown;
+};
+
 export type UnpairData = {
     body?: never;
     path: {
@@ -4794,6 +4812,10 @@ export type PasteSessionImageData = {
 
 export type PasteSessionImageErrors = {
     /**
+     * SESSIONS_014 — No image attached
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -4806,6 +4828,8 @@ export type PasteSessionImageErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_016 — The host’s runner cannot take images
+     *
      * SESSIONS_013 — That session is stopped
      *
      * SESSIONS_005 — That session is closed
@@ -4819,15 +4843,20 @@ export type PasteSessionImageErrors = {
      * SESSIONS_012 — Not an image
      */
     415: ProblemDetailsDto;
+    /**
+     * SESSIONS_015 — The host is offline
+     */
+    503: ProblemDetailsDto;
 };
 
 export type PasteSessionImageError = PasteSessionImageErrors[keyof PasteSessionImageErrors];
 
 export type PasteSessionImageResponses = {
-    202: SessionImageResponseDto;
+    /**
+     * The host has been told to pull the image
+     */
+    202: unknown;
 };
-
-export type PasteSessionImageResponse = PasteSessionImageResponses[keyof PasteSessionImageResponses];
 
 export type StopSessionData = {
     body?: never;
