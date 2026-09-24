@@ -16,7 +16,7 @@
  * - `.env` is never written. The stubs' configuration (`stub-env.ts`: a GitHub
  *   App and a control-plane key generated for this stack) is kept in
  *   `.stack/stub.env` and handed to the API as environment, which wins over
- *   `.env` (`@oppenheimer/env`). It is generated once, so a restarted API keeps
+ *   `.env` (`@oppenheimer/env`). Its keys are kept across runs, so a restarted API keeps
  *   the key its paired hosts pinned.
  * - Postgres and Redis already listening are used, not replaced; only a
  *   Compose project this script started (`oppenheimer-stack`) is stopped.
@@ -236,17 +236,31 @@ function parseEnv(file) {
 
 /**
  * What the API runs with on top of the checkout's `.env`: the stubs'
- * configuration, generated once per `.stack/`. A checkout with no `.env` gets
+ * configuration, with its keys kept per `.stack/`. A checkout with no `.env` gets
  * `.env.example`'s defaults the same way — as environment, never as a file.
  */
+/**
+ * The keys a stack keeps across `up`s: a paired host pinned the control
+ * plane's key, and the GitHub stub trusts the App key it was handed.
+ */
+const KEPT_KEYS = ['CONTROL_PLANE_SIGNING_KEY', 'GITHUB_APP_PRIVATE_KEY'];
+
 function apiEnv() {
-  if (!existsSync(stubEnvFile)) {
-    mkdirSync(STATE, { recursive: true });
-    writeFileSync(
-      stubEnvFile,
-      run('node', ['--experimental-strip-types', 'e2e/support/stub-env.ts']),
-    );
-  }
+  // Regenerated on every `up`, so a change to `stub-env.ts` (a new stub, a new
+  // variable) is never missed, with the previous run's keys carried over.
+  const fresh = run('node', ['--experimental-strip-types', 'e2e/support/stub-env.ts']);
+  const previous = existsSync(stubEnvFile) ? parseEnv(stubEnvFile) : {};
+  mkdirSync(STATE, { recursive: true });
+  writeFileSync(
+    stubEnvFile,
+    fresh
+      .split('\n')
+      .map((line) => {
+        const key = /^([A-Z0-9_]+)=/.exec(line)?.[1];
+        return key && KEPT_KEYS.includes(key) && previous[key] ? `${key}=${previous[key]}` : line;
+      })
+      .join('\n'),
+  );
   // `@oppenheimer/env` still loads `.env.local` over this, but environment
   // wins over both files: a default is injected only for a key `.env.local`
   // does not set, or it would silently replace the developer's value.
