@@ -54,6 +54,15 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      # The LLM provider that titles sessions (see the root .env.example).
+      # Empty is "none": sessions are then named from their prompt's words.
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-}
+      SESSION_NAMER_MODEL: ${SESSION_NAMER_MODEL:-}
+      SESSION_NAMER_TIMEOUT_MS: ${SESSION_NAMER_TIMEOUT_MS:-}
     ports:
       - "3001:3001"
 

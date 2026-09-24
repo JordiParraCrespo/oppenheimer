@@ -59,10 +59,10 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // re-derived: a capability that says yes while every route answers
     // HOSTS_004 is a second source of truth, and the console reads this one.
     hosts: hostsAreConfigured(configService),
-    // The same predicate the namer factory binds on, called rather than
-    // re-derived. With no provider, or one whose key or model is missing, a session
-    // keeps the slug it was minted with — a supported configuration, which is why
-    // this exists to answer "why is nothing here ever named" from the startup log.
+    // The same predicate the namer adapter checks, called rather than re-derived.
+    // With no provider, or one whose key or model is missing, sessions are named
+    // from their prompt's own words instead — a supported configuration, which is
+    // why this exists to answer "why are titles never a model's" from the log.
     session_namer: sessionNamerIsConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:

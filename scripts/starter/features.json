@@ -63,7 +63,9 @@
         "apps/docs/docs/architecture/go-services.md",
         "e2e/fleet",
         "e2e/support/fleet.ts",
-        "e2e/tests/fleet"
+        "e2e/tests/fleet",
+        "e2e/support/local-host.ts",
+        "e2e/tests/local"
       ],
       "scripts": ["dev:mvp"]
     },
@@ -71,7 +73,7 @@
       "title": "End-to-end tests",
       "summary": "e2e/ — Playwright suites against the running API and web app",
       "identifiers": ["@oppenheimer/e2e", "e2e/"],
-      "paths": ["e2e"],
+      "paths": ["e2e", "scripts/stack", ".agents/skills/local-stack"],
       "scripts": ["test:e2e"]
     }
   },

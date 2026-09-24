@@ -92,6 +92,12 @@ import { CacheModule } from "@oppenheimer/backend-cache";
 export class AppModule {}
 ```
 
+## `@oppenheimer/backend-llm`
+
+The API binds this one-call LLM client from the `LLM_*` settings and uses it for
+short, best-effort calls such as naming a session. See the package README
+(`packages/backend/llm/README.md`).
+
 ## `@oppenheimer/backend-storage`
 
 File storage abstraction with local filesystem and S3 implementations.

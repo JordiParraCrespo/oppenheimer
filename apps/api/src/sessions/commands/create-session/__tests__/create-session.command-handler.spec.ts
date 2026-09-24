@@ -54,7 +54,7 @@ describe('CreateSessionCommandHandler', () => {
   let hosts: { assertUsable: ReturnType<typeof vi.fn> };
   let dispatch: SessionDispatchPort;
   let plan: SessionPlanFactory;
-  let naming: { nameFromText: ReturnType<typeof vi.fn> };
+  let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
@@ -76,7 +76,10 @@ describe('CreateSessionCommandHandler', () => {
       cwdCheckoutIdFor: vi.fn().mockReturnValue(null),
     } as unknown as SessionPlanFactory;
 
-    naming = { nameFromText: vi.fn().mockResolvedValue(undefined) };
+    naming = {
+      propose: vi.fn().mockResolvedValue(null),
+      record: vi.fn().mockResolvedValue(undefined),
+    };
 
     handler = new CreateSessionCommandHandler(
       sessions,
@@ -223,7 +226,7 @@ describe('CreateSessionCommandHandler', () => {
 describe('CreateSessionCommandHandler: the launch and the first task', () => {
   let sessions: WorkSessionRepositoryPort;
   let dispatch: SessionDispatchPort;
-  let naming: { nameFromText: ReturnType<typeof vi.fn> };
+  let naming: { propose: ReturnType<typeof vi.fn>; record: ReturnType<typeof vi.fn> };
   let handler: CreateSessionCommandHandler;
 
   beforeEach(() => {
@@ -238,7 +241,10 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
     } as unknown as SessionDispatchPort;
-    naming = { nameFromText: vi.fn().mockResolvedValue(undefined) };
+    naming = {
+      propose: vi.fn().mockResolvedValue(null),
+      record: vi.fn().mockResolvedValue(undefined),
+    };
     handler = new CreateSessionCommandHandler(
       sessions,
       { assertUsable: vi.fn().mockResolvedValue(undefined) } as unknown as HostAccessPort,
@@ -305,15 +311,38 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
   });
 
   it('names the session from that task, keyed on the entry that carried it', async () => {
+    const proposal = { name: 'Wallet list empty state', source: 'model' };
+    naming.propose.mockResolvedValue(proposal);
+
     await run({ prompt: 'Fix the wallet list empty state' });
 
     const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
     const prompt = events.find((event) => event.kind === 'prompt.first');
-    expect(naming.nameFromText).toHaveBeenCalledWith(
+    expect(naming.propose).toHaveBeenCalledWith(
       expect.anything(),
       'Fix the wallet list empty state',
-      prompt?.idempotencyKey,
     );
+    expect(naming.record).toHaveBeenCalledWith(expect.anything(), proposal, prompt?.idempotencyKey);
+  });
+
+  it('asks for the name while the host is told, and answers once it has one', async () => {
+    // The model's round trip overlaps the dispatch rather than following it, and
+    // the create waits for the proposal — which the resolver bounds by its
+    // deadline — so the response carries the name.
+    let answer: (value: unknown) => void = () => {};
+    naming.propose.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    const pending = run({ prompt: 'Fix the wallet list empty state' });
+    await vi.waitFor(() => expect(dispatch.create).toHaveBeenCalled());
+    expect(naming.record).not.toHaveBeenCalled();
+
+    answer({ name: 'Fix the wallet list empty state', source: 'prompt' });
+    await pending;
+    expect(naming.record).toHaveBeenCalledTimes(1);
   });
 
   it('writes no prompt entry and names nothing when the composer was empty', async () => {
@@ -321,6 +350,6 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
 
     const [, events] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
     expect(events.some((event) => event.kind === 'prompt.first')).toBe(false);
-    expect(naming.nameFromText).not.toHaveBeenCalled();
+    expect(naming.propose).not.toHaveBeenCalled();
   });
 });

@@ -20,44 +20,49 @@ describe('resolveCapabilities', () => {
     });
   });
 
-  it('only reports a session namer once one can actually be called', () => {
-    // A provider switched on without its key or its model is not configured: the
-    // no-op namer is bound and every session keeps its slug, which is a supported
-    // outcome. The capability is how that shows up in the startup log.
-    const partial = configWith({ 'sessions.namerProvider': 'anthropic' });
-    expect(resolveCapabilities(partial).session_namer).toBe(false);
+  it('only reports a session namer once a model can actually be called', () => {
+    // A provider switched on without its key is not configured: sessions are
+    // then named from their prompt's words, which is a supported outcome. The
+    // capability is how that shows up in the startup log.
+    const noKey = configWith({ 'llm.provider': 'openrouter', 'llm.model': 'a-model-id' });
+    expect(resolveCapabilities(noKey).session_namer).toBe(false);
+
+    const noModel = configWith({ 'llm.provider': 'openrouter', 'llm.apiKey': 'sk-or-test' });
+    expect(resolveCapabilities(noModel).session_namer).toBe(false);
 
     const configured = configWith({
-      'sessions.namerProvider': 'anthropic',
-      'sessions.anthropicApiKey': 'sk-test',
-      'sessions.namerModel': 'a-model-id',
+      'llm.provider': 'openrouter',
+      'llm.apiKey': 'sk-or-test',
+      'llm.model': 'a-model-id',
     });
     expect(resolveCapabilities(configured).session_namer).toBe(true);
+
+    // The naming job may name its own model over the provider's default.
+    const namerModel = configWith({
+      'llm.provider': 'anthropic',
+      'llm.apiKey': 'sk-ant-test',
+      'sessions.namerModel': 'a-small-model',
+    });
+    expect(resolveCapabilities(namerModel).session_namer).toBe(true);
   });
 
   it('reports a namer for an OpenAI-compatible server, key or no key', () => {
-    // One adapter serves Groq, Together, vLLM and a local Ollama; the last of
-    // those wants no key, and demanding one would report "no namer" for exactly
-    // the deployment where the prompt never leaves the building.
+    // A model on your own machine wants no key, and demanding one would report
+    // "no namer" for exactly the deployment where the prompt never leaves the
+    // building.
     const local = configWith({
-      'sessions.namerProvider': 'openai-compatible',
-      'sessions.namerBaseUrl': 'http://localhost:11434/v1',
-      'sessions.namerModel': 'a-model-id',
+      'llm.provider': 'openai-compatible',
+      'llm.baseUrl': 'http://localhost:11434/v1',
+      'llm.model': 'a-model-id',
     });
     expect(resolveCapabilities(local).session_namer).toBe(true);
 
     // Without somewhere to send the prompt it is still not configured.
     const noBaseUrl = configWith({
-      'sessions.namerProvider': 'openai-compatible',
-      'sessions.namerModel': 'a-model-id',
+      'llm.provider': 'openai-compatible',
+      'llm.model': 'a-model-id',
     });
     expect(resolveCapabilities(noBaseUrl).session_namer).toBe(false);
-
-    const noModel = configWith({
-      'sessions.namerProvider': 'openai-compatible',
-      'sessions.namerBaseUrl': 'http://localhost:11434/v1',
-    });
-    expect(resolveCapabilities(noModel).session_namer).toBe(false);
   });
 
   it('reports hosts from the same predicate the host routes refuse on', () => {
