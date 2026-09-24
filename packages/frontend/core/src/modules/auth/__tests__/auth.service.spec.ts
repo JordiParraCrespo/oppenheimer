@@ -39,8 +39,6 @@ function setup(session: AuthSession | null = SESSION) {
     identify: vi.fn(),
     reset: vi.fn(),
     pageView: vi.fn(),
-    getFeatureFlags: vi.fn().mockResolvedValue({}),
-    onFeatureFlags: vi.fn().mockReturnValue(() => {}),
   } as unknown as AnalyticsService;
 
   const repository = {
