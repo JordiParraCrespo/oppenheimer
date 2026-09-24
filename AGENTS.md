@@ -152,6 +152,10 @@ The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-
 - `nestjs-di.md` — DI import rules, `import type` restrictions, repository-port DI tokens
 - `nestjs-architecture.md` — DDD vertical slices, CQRS handlers, domain layer, ports/adapters, mappers, errors, events
 - `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions
+- `database-design.md` — the standard a table is held to: keys, types,
+  `timestamptz`, foreign keys and their indexes, access-pattern indexes,
+  tenancy, lifecycle, scale and lock-safe migrations. `/design-database`
+  walks the process
 - `backend-packages.md` — CJS exports, package structure (pluggable vs library), email template setup
 - `api-config.md` — OAuth graceful handling, controllers, Swagger decorators, rate limiting, versioning
 

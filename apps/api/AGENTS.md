@@ -3,7 +3,7 @@
 NestJS **Domain-Driven Hexagon** API. The authoritative references are
 [`ARCHITECTURE.md`](./ARCHITECTURE.md) (layer model, module anatomy, the
 "add a module" cookbook) and the scoped rules in `.agents/rules/`
-(`nestjs-architecture.md`, `nestjs-di.md`, `typeorm.md`, `api-config.md`,
+(`nestjs-architecture.md`, `nestjs-di.md`, `typeorm.md`, `database-design.md`, `api-config.md`,
 `rbac-roles.md`). Boundaries are enforced by `.dependency-cruiser.cjs`
 (`pnpm --filter @oppenheimer/api arch`). This file adds the conventions that are easy
 to get wrong.
