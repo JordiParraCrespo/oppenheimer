@@ -53,9 +53,21 @@ type Identity struct {
 	ReleaseBaseURL string  `json:"releaseBaseUrl,omitempty"`
 	Channel        Channel `json:"channel"`
 	// PinnedVersion freezes this host: no automatic update while it is set.
-	PinnedVersion string    `json:"pinnedVersion,omitempty"`
-	RegisteredAt  time.Time `json:"registeredAt"`
+	PinnedVersion string `json:"pinnedVersion,omitempty"`
+	// WorkspacesPath is where sessions' checkouts live when the user chose a
+	// directory other than the default at install. Empty means the default.
+	// It is a local setting, so a fresh registration keeps it.
+	WorkspacesPath string    `json:"workspacesPath,omitempty"`
+	RegisteredAt   time.Time `json:"registeredAt"`
+	// RevokedAt is when the control plane refused this host as unpaired. The
+	// identity is kept, so `status` can say what happened and `uninstall` can
+	// still sign its call; the daemon stops dialling, and a fresh registration
+	// replaces it without --force.
+	RevokedAt *time.Time `json:"revokedAt,omitempty"`
 }
+
+// Revoked reports whether the control plane has unpaired this host.
+func (i Identity) Revoked() bool { return i.RevokedAt != nil }
 
 // Sentinel conditions of this context.
 var (

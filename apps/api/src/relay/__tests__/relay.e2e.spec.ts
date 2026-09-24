@@ -164,7 +164,10 @@ async function boot(): Promise<World> {
       };
     },
   };
-  const presence: HostPresencePort = { observe: vi.fn().mockResolvedValue(undefined) };
+  const presence: HostPresencePort = {
+    observe: vi.fn().mockResolvedValue(true),
+    isPaired: vi.fn().mockResolvedValue(true),
+  };
   const reconciliation: SessionReconciliationPort = {
     reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
   };
@@ -182,6 +185,7 @@ async function boot(): Promise<World> {
   const assertions = new HostAssertionResolver(hosts, cache, config);
   const runners = new RunnerLinkGateway(
     assertions,
+    presence,
     registry,
     new RelayEventsProcessor(events, presence, reconciliation),
     new CredentialsProcessor(

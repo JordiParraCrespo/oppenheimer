@@ -72,6 +72,7 @@ export class HostsRepository {
       id: data.id,
       installCommand: data.installCommand,
       agentPrompt: data.agentPrompt,
+      installScriptSha256: data.installScriptSha256 ?? null,
       expiresAt: new Date(data.expiresAt),
       redeemedHostId: data.redeemedHostId ?? null,
     };
@@ -95,6 +96,16 @@ export class HostsRepository {
       expiresAt: new Date(token.expiresAt),
       redeemedHostId: token.redeemedHostId ?? null,
     }));
+  }
+
+  /**
+   * Revoke a pairing token nobody spent. Add host's "New token" calls this on
+   * the token it replaces, so a person only ever holds the one on screen.
+   */
+  @MapApiError(HostsErrors.REVOKE_PAIRING_FAILED)
+  async revokePairing(id: string): Promise<void> {
+    const { error } = await heyApiClient.delete({ url: `${HOSTS_URL}/pairing/{id}`, path: { id } });
+    if (error) throw new AppError(HostsErrors.REVOKE_PAIRING_FAILED);
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

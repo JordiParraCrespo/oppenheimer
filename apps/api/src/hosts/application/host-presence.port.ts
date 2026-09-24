@@ -14,7 +14,17 @@ export interface HostPresencePort {
    * validated (`hostFactsSchema`), so the two describe one machine, and `at` is
    * when this process received the report — never the runner's clock, which a
    * skewed host would use to take itself offline. An unknown or unpaired host is
-   * ignored rather than resurrected.
+   * ignored rather than resurrected, and reported as `false` so the caller can
+   * close the link it arrived on.
    */
-  observe(hostId: string, facts: HostFactsDto, at?: Date): Promise<void>;
+  observe(hostId: string, facts: HostFactsDto, at?: Date): Promise<boolean>;
+
+  /**
+   * May this host hold a link at all? `false` for an unknown host and for one
+   * that was unpaired. Asked at the handshake, after the assertion has said
+   * *which* host is dialling: the assertion port is identity only, and an
+   * unpaired host still authenticates (its own uninstall needs to), so this is
+   * the check that keeps it off the link.
+   */
+  isPaired(hostId: string): Promise<boolean>;
 }

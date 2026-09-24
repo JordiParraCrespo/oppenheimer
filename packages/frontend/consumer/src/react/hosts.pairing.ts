@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
+import { useConsumerApp } from './context';
 import { useCurrentPairing, useHosts, usePairingTokens } from './hosts.queries';
 
 /** How often a pairing surface asks whether its token has been spent yet. */
@@ -19,7 +20,11 @@ export interface HostPairingFlow {
   host: HostEntity | null;
   isPending: boolean;
   error: Error | null;
-  /** Replace the token on screen with a fresh one. */
+  /**
+   * Replace the token on screen with a fresh one, revoking the one it replaces
+   * — a token someone pasted into the wrong window stops working the moment
+   * they ask for another, rather than an hour later.
+   */
   regenerate: () => void;
 }
 
@@ -51,6 +56,7 @@ export interface HostPairingFlow {
  * — and it is a count, not a string: `mm:ss` is the surface's, not the flow's.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
+  const app = useConsumerApp();
   const { data: pairing, isPending, error, refetch } = useCurrentPairing(hostName);
   const [now, setNow] = useState(() => Date.now());
 
@@ -108,7 +114,15 @@ export function useHostPairing(hostName: string): HostPairingFlow {
     isPending,
     error,
     regenerate: () => {
-      refetch();
+      // A token that already paired a machine is spent, not open; revoking it
+      // would be a no-op the API answers with a problem. And a revoke that fails
+      // must not keep a fresh token off the screen: the old one still expires
+      // within the hour.
+      const replaced = pairing && !redeemedHostId && !expired ? pairing.id : null;
+      const revoke = replaced
+        ? app.hosts.revokePairing(replaced).catch(() => {})
+        : Promise.resolve();
+      void revoke.then(() => refetch());
     },
   };
 }

@@ -107,6 +107,7 @@
     "HOSTS_003": "That registration token was refused. Mint a new one and try again.",
     "HOSTS_004": "Hosts are not set up on this server yet.",
     "HOSTS_005": "That host could not prove who it is.",
+    "HOSTS_006": "You already have several unused pairing tokens. Use one or revoke one in Settings before creating another.",
     "ADMIN_009": "That session no longer exists for this user.",
     "PROFILE_001": "We could not find your profile.",
     "PROFILE_002": "That current password is not right.",

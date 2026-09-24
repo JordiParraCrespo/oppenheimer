@@ -24,6 +24,11 @@ export class HostsService {
     return this.repository.pairings();
   }
 
+  /** Revoke a pairing token nobody spent. */
+  revokePairing(id: string): Promise<void> {
+    return this.repository.revokePairing(id);
+  }
+
   remove(id: string): Promise<void> {
     return this.repository.remove(id);
   }

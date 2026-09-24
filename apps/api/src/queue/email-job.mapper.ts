@@ -1,5 +1,6 @@
 import type {
   EmailVerificationEmailParams,
+  HostPairedEmailParams,
   InvitationEmailParams,
   PasswordResetEmailParams,
   WelcomeEmailParams,
@@ -52,6 +53,31 @@ export class EmailJobMapper {
       helperText: t.t('emails.emailVerification.helper'),
       fallbackLabel: t.t('emails.common.pasteLink'),
       closingText: t.t('emails.emailVerification.closing'),
+      recipientEmail: this.required(data, 'to'),
+    };
+  }
+
+  /**
+   * A machine was paired with the recipient's account. Only a prefix of the
+   * fingerprint travels: enough to compare with the one on the host in
+   * Settings, which is where the full value is shown.
+   */
+  toHostPaired(input: unknown, t: LocalizedFormatter): HostPairedEmailParams {
+    const data = this.record(input);
+    const vars = {
+      hostName: this.required(data, 'hostName'),
+      machine: this.required(data, 'machine'),
+      fingerprint: this.required(data, 'fingerprint').slice(0, 16),
+    };
+    return {
+      ...this.securityFrame(t, 'hostPaired', vars),
+      heading: t.t('emails.hostPaired.heading'),
+      body: t.t('emails.hostPaired.body', vars),
+      actionLabel: t.t('emails.hostPaired.action'),
+      url: this.required(data, 'url'),
+      helperText: t.t('emails.hostPaired.helper'),
+      fallbackLabel: t.t('emails.common.pasteLink'),
+      closingText: t.t('emails.hostPaired.closing'),
       recipientEmail: this.required(data, 'to'),
     };
   }
@@ -114,11 +140,15 @@ export class EmailJobMapper {
     };
   }
 
-  private securityFrame(t: LocalizedFormatter, template: 'passwordReset' | 'emailVerification') {
+  private securityFrame(
+    t: LocalizedFormatter,
+    template: 'passwordReset' | 'emailVerification' | 'hostPaired',
+    vars: Record<string, string> = {},
+  ) {
     return {
       locale: t.locale,
-      subject: t.t(`emails.${template}.subject`),
-      preview: t.t(`emails.${template}.preview`),
+      subject: t.t(`emails.${template}.subject`, vars),
+      preview: t.t(`emails.${template}.preview`, vars),
       brandName: t.t('emails.common.brandName'),
       footer: `${t.t('emails.common.footer')}\n${t.t(`emails.${template}.footerNote`)}`,
     };

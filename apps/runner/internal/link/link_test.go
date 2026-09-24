@@ -26,10 +26,14 @@ type controlPlane struct {
 	server      *httptest.Server
 	fingerprint string
 	refuse      *link.Hint
-	mu          sync.Mutex
-	bearers     []string
-	conns       chan *websocket.Conn
-	hellos      chan link.Hello
+	gone        bool
+	// strangerGone answers a bare 410, as a proxy in front of the control
+	// plane might: not the control plane's verdict.
+	strangerGone bool
+	mu           sync.Mutex
+	bearers      []string
+	conns        chan *websocket.Conn
+	hellos       chan link.Hello
 }
 
 func newControlPlane(t *testing.T) *controlPlane {
@@ -46,6 +50,15 @@ func newControlPlane(t *testing.T) *controlPlane {
 		cp.mu.Unlock()
 		if bearer == "" || bearer == "bad" {
 			http.Error(w, "boot assertion rejected", http.StatusUnauthorized)
+			return
+		}
+		if cp.gone {
+			w.Header().Set(link.RefusalHeader, link.RefusalUnpaired)
+			http.Error(w, "this host was unpaired", http.StatusGone)
+			return
+		}
+		if cp.strangerGone {
+			http.Error(w, "gone", http.StatusGone)
 			return
 		}
 		conn, err := websocket.Accept(w, r, nil)
@@ -423,5 +436,94 @@ func TestKeepsAHealthyBusyLinkUpAcrossPings(t *testing.T) {
 	}
 	if !c.Live() || rec.count(func(r *recorder) int { return len(r.disconnected) })() != 0 {
 		t.Fatal("a healthy link was dropped")
+	}
+}
+
+func TestStopsDiallingWhenTheHandshakeSaysUnpaired(t *testing.T) {
+	cp := newControlPlane(t)
+	cp.gone = true
+	unpaired := 0
+	c, err := link.New(link.Options{
+		ControlPlaneURL: cp.server.URL,
+		Token:           func(context.Context) (string, error) { return "good", nil },
+		Fingerprint:     cp.fingerprint,
+		Handler:         &recorder{},
+		Logger:          slog.New(slog.NewTextHandler(testWriter{t}, nil)),
+		Ladder:          []time.Duration{time.Millisecond},
+		OnUnpaired:      func() { unpaired++ },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := c.Run(ctx); !errors.Is(err, link.ErrUnpaired) {
+		t.Fatalf("Run = %v, want ErrUnpaired", err)
+	}
+	// One dial, not a ladder of them: a 410 is not retried.
+	if got := cp.bearerCount(); got != 1 {
+		t.Fatalf("dialled %d times, want 1", got)
+	}
+	if unpaired != 1 {
+		t.Fatalf("OnUnpaired ran %d times, want 1", unpaired)
+	}
+}
+
+func TestStopsDiallingWhenALiveLinkIsClosedAsUnpaired(t *testing.T) {
+	cp := newControlPlane(t)
+	rec := &recorder{}
+	c := client(t, cp, rec, "good")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- c.Run(ctx) }()
+
+	conn := <-cp.conns
+	eventually(t, "the link to come up", c.Live)
+	conn.Close(link.CloseUnpaired, "host unpaired")
+
+	select {
+	case err := <-done:
+		if !errors.Is(err, link.ErrUnpaired) {
+			t.Fatalf("Run = %v, want ErrUnpaired", err)
+		}
+	case <-ctx.Done():
+		t.Fatal("Run kept dialling after the link was closed as unpaired")
+	}
+	if got := cp.bearerCount(); got != 1 {
+		t.Fatalf("dialled %d times, want 1", got)
+	}
+}
+
+func TestKeepsDiallingThroughAProxysBare410(t *testing.T) {
+	cp := newControlPlane(t)
+	cp.strangerGone = true
+	unpaired := 0
+	c, err := link.New(link.Options{
+		ControlPlaneURL: cp.server.URL,
+		Token:           func(context.Context) (string, error) { return "good", nil },
+		Fingerprint:     cp.fingerprint,
+		Handler:         &recorder{},
+		Logger:          slog.New(slog.NewTextHandler(testWriter{t}, nil)),
+		Ladder:          []time.Duration{time.Millisecond},
+		OnUnpaired:      func() { unpaired++ },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- c.Run(ctx) }()
+
+	// A 410 without the control plane's refusal header is a drop like any
+	// other: the ladder keeps going, and nothing is recorded as unpaired.
+	eventually(t, "a second dial", func() bool { return cp.bearerCount() >= 2 })
+	cancel()
+	if err := <-done; errors.Is(err, link.ErrUnpaired) {
+		t.Fatal("a bare 410 was taken as the control plane unpairing this host")
+	}
+	if unpaired != 0 {
+		t.Fatalf("OnUnpaired ran %d times for a proxy's 410", unpaired)
 	}
 }

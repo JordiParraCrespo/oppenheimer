@@ -3,25 +3,35 @@ import type { HostPairingTokenRepositoryPort } from '../../../database/host-pair
 import { hashPairingTokenSecret } from '../../../domain/pairing-token-secret.factory';
 import type { RunnerReleaseConfig } from '../../../infrastructure/runner-release.config';
 import { MintPairingTokenCommand } from '../mint-pairing-token.command';
-import { MintPairingTokenCommandHandler } from '../mint-pairing-token.command-handler';
+import {
+  MAX_SPENDABLE_TOKENS,
+  MintPairingTokenCommandHandler,
+  STALE_TOKEN_RETENTION_MS,
+} from '../mint-pairing-token.command-handler';
 
 describe('MintPairingTokenCommandHandler', () => {
-  let tokens: Pick<HostPairingTokenRepositoryPort, 'insert'>;
+  let tokens: Pick<HostPairingTokenRepositoryPort, 'insert' | 'countSpendable' | 'purgeStale'>;
   /**
    * `isConfigured` is a getter on the real thing, so the double is a plain
    * mutable object: one test turns it off to assert the refusal.
    */
   let release: {
     isConfigured: boolean;
+    installScriptSha256: string | null;
     installCommandFor: (secret: string) => string;
     agentPromptFor: (secret: string) => string;
   };
   let handler: MintPairingTokenCommandHandler;
 
   beforeEach(() => {
-    tokens = { insert: vi.fn().mockResolvedValue(undefined) };
+    tokens = {
+      insert: vi.fn().mockResolvedValue(undefined),
+      countSpendable: vi.fn().mockResolvedValue(0),
+      purgeStale: vi.fn().mockResolvedValue(0),
+    };
     release = {
       isConfigured: true,
+      installScriptSha256: 'ab'.repeat(32),
       installCommandFor: vi.fn((secret: string) => `curl … --token ${secret}`),
       agentPromptFor: vi.fn((secret: string) => `install it, token ${secret}`),
     };
@@ -33,6 +43,30 @@ describe('MintPairingTokenCommandHandler', () => {
 
   const command = () =>
     new MintPairingTokenCommand({ userId: 'jordi', name: 'Dev box', createdFromIp: '203.0.113.7' });
+
+  it('refuses a sixth unspent token, before minting anything', async () => {
+    vi.mocked(tokens.countSpendable).mockResolvedValueOnce(MAX_SPENDABLE_TOKENS);
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_006' });
+    expect(tokens.insert).not.toHaveBeenCalled();
+  });
+
+  it('purges the minter’s long-dead tokens, and only theirs, before counting', async () => {
+    const before = Date.now();
+    await handler.execute(command());
+
+    const [owner, cutoff] = vi.mocked(tokens.purgeStale).mock.calls[0];
+    expect(owner).toBe('jordi');
+    expect(cutoff.getTime()).toBeLessThanOrEqual(before - STALE_TOKEN_RETENTION_MS + 1000);
+    expect(vi.mocked(tokens.purgeStale).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(tokens.countSpendable).mock.invocationCallOrder[0],
+    );
+  });
+
+  it('hands back the installer digest the deployment published', async () => {
+    const result = await handler.execute(command());
+    expect(result.installScriptSha256).toBe('ab'.repeat(32));
+  });
 
   it('hands back the row it wrote, so nothing has to read it again', async () => {
     const result = await handler.execute(command());

@@ -11,14 +11,20 @@ export class HostPresenceResolver implements HostPresencePort {
     private readonly hosts: HostRepositoryPort,
   ) {}
 
-  async observe(hostId: string, facts: HostFactsDto, at: Date = new Date()): Promise<void> {
+  async observe(hostId: string, facts: HostFactsDto, at: Date = new Date()): Promise<boolean> {
     // Unscoped, by design: the machine proved who it is with a signature on the
     // link, and there is no person on a heartbeat to scope by.
     const found = await this.hosts.findOneByIdForMachine(hostId);
-    if (found.isNone()) return;
+    if (found.isNone()) return false;
     const host = found.unwrap();
-    if (host.isUnpaired) return;
+    if (host.isUnpaired) return false;
     host.observe(facts, at);
     await this.hosts.save(host);
+    return true;
+  }
+
+  async isPaired(hostId: string): Promise<boolean> {
+    const found = await this.hosts.findOneByIdForMachine(hostId);
+    return found.isSome() && !found.unwrap().isUnpaired;
   }
 }

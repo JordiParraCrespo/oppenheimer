@@ -1,5 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { HostUnpairedDomainEvent } from '../domain/events/host-unpaired.domain-event';
 import { HostEntity } from '../domain/host.entity';
 import { keyFingerprint } from '../infrastructure/host-assertion.util';
 
@@ -84,6 +85,17 @@ describe('unpair', () => {
     // the other already did; the first answer is the one that stands.
     expect(subject.unpairedAt).toEqual(at);
     expect(subject.isUnpaired).toBe(true);
+  });
+
+  it('raises HostUnpaired once, so the relay can close a link the host still holds', () => {
+    const subject = host();
+
+    subject.unpair();
+    subject.unpair();
+
+    const raised = subject.domainEvents.filter((event) => event instanceof HostUnpairedDomainEvent);
+    expect(raised).toHaveLength(1);
+    expect(raised[0]).toMatchObject({ aggregateId: 'host-1', ownerUserId: 'jordi' });
   });
 });
 

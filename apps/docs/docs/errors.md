@@ -185,6 +185,7 @@ would confirm the id.
 | `HOSTS_003` <a id="hosts_003" /> | The registration token was rejected          | 401  |
 | `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
+| `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -199,6 +200,11 @@ guessing a credential:
   it. Its `detail` is a line for the operator's log, not a branch a client can
   take, and this page does not enumerate the reasons — a catalog that listed them
   would make the endpoint the oracle the single code exists to avoid.
+
+`HOSTS_006` caps how many unspent pairing tokens one person may hold at once,
+because each is a live way to add a machine to the account for its hour. Using
+one, revoking one in Settings, or letting one expire frees a slot; the console's
+"New token" revokes the token it replaces, so it never runs into the cap.
 
 `HOSTS_004` is the optional-capability answer: without the runner release
 settings and the control plane's own signing key there is nothing to hand a
@@ -426,12 +432,15 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_003` <a id="host_003" />         | A tool the runner needs is missing           | 424  |
 | `HOST_004` <a id="host_004" />         | Free disk is below the floor                 | 507  |
 | `HOST_005` <a id="host_005" />         | Could not inspect the host                   | 500  |
+| `HOST_006` <a id="host_006" />         | This machine looks temporary                 | 412  |
+| `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
 | `PAIR_004` <a id="pair_004" />         | The host key could not be read or written    | 500  |
 | `PAIR_005` <a id="pair_005" />         | The control plane URL is not usable          | 400  |
 | `PAIR_006` <a id="pair_006" />         | The control plane could not be reached       | 502  |
+| `PAIR_007` <a id="pair_007" />         | The control plane is limiting registrations  | 429  |
 | `SVC_001` <a id="svc_001" />           | No service manager for this platform         | 400  |
 | `SVC_002` <a id="svc_002" />           | The runner service could not be installed    | 500  |
 | `SVC_003` <a id="svc_003" />           | The runner service is not installed          | 404  |

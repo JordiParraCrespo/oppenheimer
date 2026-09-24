@@ -76,6 +76,13 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		Handler:         handler,
 		UserAgent:       "oppenheimer-runner/" + a.Version,
 		Logger:          logger,
+		// Unpaired is terminal. Recorded in the identity so the next boot does
+		// not dial either and `runner status` can say why the host is quiet.
+		OnUnpaired: func() {
+			if _, err := a.Pairing.MarkRevoked(); err != nil {
+				logger.Error("could not record that this host was unpaired", slog.Any("error", err))
+			}
+		},
 	})
 	if err != nil {
 		logger.Error("the link cannot be built", slog.Any("error", err))
@@ -89,7 +96,10 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
-	client.Run(ctx)
+	// Run returns only when ctx ends or the host was unpaired. Sessions carry
+	// on in tmux either way: ending someone's work is `uninstall --force`'s
+	// decision, not a side effect of losing the control plane.
+	_ = client.Run(ctx)
 }
 
 /* ---------------------------------------------------------------- link.Handler */

@@ -163,7 +163,7 @@ describe('Hosts & pairing (integration)', () => {
 
     expect(created.status, JSON.stringify(created.body)).toBe(201);
     const installCommand = created.body?.installCommand as string;
-    const secret = /--token (\S+)/.exec(installCommand)?.[1] as string;
+    const secret = /OPPENHEIMER_REGISTRATION_TOKEN=(\S+)/.exec(installCommand)?.[1] as string;
     expect(secret).toMatch(/^opr_reg_/);
 
     return { id: created.body?.id as string, secret, body: created.body };

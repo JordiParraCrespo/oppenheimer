@@ -61,6 +61,29 @@ export class HostPairingTokenRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async countSpendable(ownerUserId: string, now: Date): Promise<number> {
+    return this.unscopedQuery(
+      'the mint cap counts the minter’s own tokens by the id the guard authenticated',
+    )
+      .where('token.ownerUserId = :ownerUserId', { ownerUserId })
+      .andWhere('token.redeemedAt IS NULL')
+      .andWhere('token.revokedAt IS NULL')
+      .andWhere('token.expiresAt > :now', { now })
+      .getCount();
+  }
+
+  async purgeStale(ownerUserId: string, cutoff: Date): Promise<number> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .delete()
+      .from(HostPairingTokenOrmEntity)
+      .where('"ownerUserId" = :ownerUserId', { ownerUserId })
+      .andWhere('"redeemedAt" IS NULL')
+      .andWhere('("expiresAt" < :cutoff OR "revokedAt" < :cutoff)', { cutoff })
+      .execute();
+    return result.affected ?? 0;
+  }
+
   async findOneByHash(tokenHash: string): Promise<Option<HostPairingTokenEntity>> {
     const record = await this.unscopedQuery(
       'the presented secret is the credential; a machine redeeming a token has no access scope',

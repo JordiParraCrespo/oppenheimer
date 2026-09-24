@@ -32,9 +32,10 @@ the way this host proves who it is, and they go when the link lands.
 | Command | What it does |
 | ------- | ------------ |
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
-| `runner register --token … --url …` | redeems a one-hour registration token: generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint |
+| `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
+| `runner workspaces [--set DIR]` | where sessions' checkouts live and why; `--set` moves it for new sessions, refused while a session still has a checkout |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
-| `runner uninstall [--keep-identity]` | stops the service, revokes the host, erases the identity. Never touches `~/oppenheimer-ai` |
+| `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). Says when the control plane could not be told. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, service, tools, disk. Exits non-zero when the host is not ready |

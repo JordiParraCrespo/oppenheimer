@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -478,6 +480,56 @@ func (s *Service) Orphans(ctx context.Context) ([]string, error) {
 		}
 	}
 	return orphans, nil
+}
+
+// Running names every tmux session this runner owns that is up right now —
+// recorded sessions and orphans alike — without changing a single record. It
+// is what `uninstall` must not leave behind unattended: an agent in one of
+// these keeps working after the runner is gone, with no control plane and no
+// console to see it. A host with no tmux has nothing running.
+func (s *Service) Running(ctx context.Context) ([]string, error) {
+	if err := s.terminals.Available(ctx); err != nil {
+		return nil, nil //nolint:nilerr // no tmux means no sessions, which is the answer
+	}
+	live, err := s.terminals.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var running []string
+	for _, name := range live {
+		if strings.HasPrefix(name, domain.Prefix) && len(name) > len(domain.Prefix) {
+			running = append(running, name)
+		}
+	}
+	sort.Strings(running)
+	return running, nil
+}
+
+// EndAll kills every tmux session Running names and records the sessions it
+// knows as stopped. Checkouts stay on disk: ending the agents is what
+// `uninstall --force` asks for, deleting someone's work is not.
+func (s *Service) EndAll(ctx context.Context) ([]string, error) {
+	running, err := s.Running(ctx)
+	if err != nil {
+		return nil, err
+	}
+	byTmux := map[string]domain.Session{}
+	for _, session := range s.List() {
+		byTmux[session.TmuxName()] = session
+	}
+	var ended []string
+	var errs []error
+	for _, name := range running {
+		if err := s.terminals.Kill(ctx, name); err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		ended = append(ended, name)
+		if session, ok := byTmux[name]; ok && session.State != domain.StateClosed {
+			s.transition(session, domain.StateStopped, "")
+		}
+	}
+	return ended, errors.Join(errs...)
 }
 
 func (s *Service) transition(session domain.Session, state domain.State, loginURL string) domain.Session {

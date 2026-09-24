@@ -150,6 +150,7 @@
       "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",
       "HOSTS_004": "Este servidor todavía no tiene configurados los equipos.",
       "HOSTS_005": "Ese equipo no ha podido demostrar su identidad.",
+      "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Usa uno o revoca uno en Ajustes antes de crear otro.",
       "ADMIN_009": "Esa sesión ya no existe para este usuario.",
       "PROFILE_001": "No hemos encontrado tu perfil.",
       "PROFILE_002": "La contraseña actual no es correcta.",
@@ -454,7 +455,8 @@
       "waiting": "Escuchando a este host…",
       "registered": "Registrado: esperando a su runner",
       "online": "Runner conectado",
-      "mintFailed": "No hemos podido crear un token de registro."
+      "mintFailed": "No hemos podido crear un token de registro.",
+      "installerDigest": "SHA-256 del instalador: {{digest}}"
     }
   },
   "home": {
@@ -1046,6 +1048,16 @@
       "action": "Aceptar invitación",
       "helper": "Esta invitación caduca en 2 días.",
       "ignore": "¿No esperabas esta invitación? Puedes ignorar este correo."
+    },
+    "hostPaired": {
+      "subject": "Se ha emparejado un equipo nuevo con tu cuenta",
+      "preview": "{{hostName}} ya puede ejecutar sesiones para ti. Si no has sido tú, actúa ya.",
+      "heading": "Se ha emparejado un equipo nuevo",
+      "body": "{{hostName}} ({{machine}}) se ha emparejado con tu cuenta y ya puede ejecutar sesiones de programación para ti. La huella de su clave empieza por {{fingerprint}}.",
+      "action": "Abrir Oppenheimer",
+      "helper": "Si lo has emparejado tú, no tienes que hacer nada. En ese equipo, el comando status del runner muestra la misma huella, para que compruebes que es el que querías.",
+      "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento: desemparéjalo y revoca tus tokens abiertos cuanto antes.",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
     }
   }
 }

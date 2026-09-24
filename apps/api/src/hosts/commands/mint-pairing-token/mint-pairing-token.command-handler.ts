@@ -17,6 +17,21 @@ import { MintPairingTokenCommand } from './mint-pairing-token.command';
 const LIFETIME_MS = 60 * 60 * 1000;
 
 /**
+ * How many unspent tokens one person may hold at once. Each is a live way to
+ * add a machine to the account for its hour, and the console only ever shows
+ * one — its "New token" revokes the one it replaces — so a handful covers two
+ * tabs and a retry without leaving a drawer of them in chat logs.
+ */
+export const MAX_SPENDABLE_TOKENS = 5;
+
+/**
+ * How long a token that was never redeemed is kept after it stopped being
+ * spendable. Long enough to answer "who minted that, and from where" (F5);
+ * after that it is clutter in the list that exists to answer it.
+ */
+export const STALE_TOKEN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
  * What the caller gets back.
  *
  * Commands normally return only the aggregate id and the controller re-reads
@@ -29,6 +44,7 @@ const LIFETIME_MS = 60 * 60 * 1000;
 export interface MintPairingTokenResult {
   token: HostPairingTokenEntity;
   installCommand: string;
+  installScriptSha256: string | null;
   agentPrompt: string;
 }
 
@@ -59,6 +75,19 @@ export class MintPairingTokenCommandHandler
       });
     }
 
+    const now = new Date();
+    // Housekeeping on the minter's own rows, where the cost is bounded by one
+    // person's history rather than by a scheduler nobody would notice was off.
+    await this.tokens.purgeStale(
+      command.userId,
+      new Date(now.getTime() - STALE_TOKEN_RETENTION_MS),
+    );
+    if ((await this.tokens.countSpendable(command.userId, now)) >= MAX_SPENDABLE_TOKENS) {
+      throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
+        detail: `You already hold ${MAX_SPENDABLE_TOKENS} unspent pairing tokens. Use one, revoke one in Settings, or wait for one to expire.`,
+      });
+    }
+
     const secret = generatePairingTokenSecret();
     const token = HostPairingTokenEntity.mint({
       ownerUserId: command.userId,
@@ -66,7 +95,7 @@ export class MintPairingTokenCommandHandler
       prefix: secret.prefix,
       tokenHash: secret.hash,
       createdFromIp: command.createdFromIp,
-      expiresAt: new Date(Date.now() + LIFETIME_MS),
+      expiresAt: new Date(now.getTime() + LIFETIME_MS),
     });
 
     await this.tokens.insert(token);
@@ -74,6 +103,7 @@ export class MintPairingTokenCommandHandler
     return {
       token,
       installCommand: this.release.installCommandFor(secret.secret),
+      installScriptSha256: this.release.installScriptSha256,
       agentPrompt: this.release.agentPromptFor(secret.secret),
     };
   }

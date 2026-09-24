@@ -4989,6 +4989,16 @@
               }
             }
           },
+          "429": {
+            "description": "HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "HOSTS_004 — This deployment has no runner release configured",
             "content": {
@@ -7605,7 +7615,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
+            "description": "SESSIONS_010 — A session checks out one repository\n\nSESSIONS_005 — That session is closed\n\nSESSIONS_004 — That repository is already checked out here",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10413,7 +10423,12 @@
           "installCommand": {
             "type": "string",
             "description": "The one-line command that installs and registers the runner on the machine.",
-            "example": "curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- --token opr_reg_…"
+            "example": "curl --proto '=https' --tlsv1.2 -fsSL https://get.oppenheimer.dev/install.sh | OPPENHEIMER_REGISTRATION_TOKEN=opr_reg_… sh -s -- --url https://app.oppenheimer.dev"
+          },
+          "installScriptSha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one."
           },
           "agentPrompt": {
             "type": "string",

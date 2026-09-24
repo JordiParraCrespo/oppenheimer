@@ -4,12 +4,14 @@ import { type CreateEmailOptions, Resend } from 'resend';
 import {
   EmailService,
   type EmailVerificationEmailParams,
+  type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,
   type WelcomeEmailParams,
 } from './email.service';
 import {
   renderEmailVerificationEmail,
+  renderHostPairedEmail,
   renderInvitationEmail,
   renderPasswordResetEmail,
   renderWelcomeEmail,
@@ -83,6 +85,16 @@ export class ResendEmailService extends EmailService {
 
   async sendInvitation(to: string, params: InvitationEmailParams): Promise<void> {
     const html = await renderInvitationEmail(params);
+    await this.send({
+      from: this.from,
+      to,
+      subject: params.subject,
+      html,
+    });
+  }
+
+  async sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void> {
+    const html = await renderHostPairedEmail(params);
     await this.send({
       from: this.from,
       to,

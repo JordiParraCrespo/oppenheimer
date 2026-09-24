@@ -757,6 +757,10 @@ export type MintedPairingTokenResponseDto = {
      */
     installCommand: string;
     /**
+     * SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one.
+     */
+    installScriptSha256?: string | null;
+    /**
      * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
      */
     agentPrompt: string;
@@ -3614,6 +3618,10 @@ export type MintErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
+     */
+    429: ProblemDetailsDto;
+    /**
      * HOSTS_004 — This deployment has no runner release configured
      */
     503: ProblemDetailsDto;
@@ -4863,6 +4871,8 @@ export type AddSessionCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_010 — A session checks out one repository
+     *
      * SESSIONS_005 — That session is closed
      *
      * SESSIONS_004 — That repository is already checked out here

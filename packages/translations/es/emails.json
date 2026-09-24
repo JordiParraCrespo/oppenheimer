@@ -54,5 +54,15 @@
     "action": "Aceptar invitación",
     "helper": "Esta invitación caduca en 2 días.",
     "ignore": "¿No esperabas esta invitación? Puedes ignorar este correo."
+  },
+  "hostPaired": {
+    "subject": "Se ha emparejado un equipo nuevo con tu cuenta",
+    "preview": "{{hostName}} ya puede ejecutar sesiones para ti. Si no has sido tú, actúa ya.",
+    "heading": "Se ha emparejado un equipo nuevo",
+    "body": "{{hostName}} ({{machine}}) se ha emparejado con tu cuenta y ya puede ejecutar sesiones de programación para ti. La huella de su clave empieza por {{fingerprint}}.",
+    "action": "Abrir Oppenheimer",
+    "helper": "Si lo has emparejado tú, no tienes que hacer nada. En ese equipo, el comando status del runner muestra la misma huella, para que compruebes que es el que querías.",
+    "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento: desemparéjalo y revoca tus tokens abiertos cuanto antes.",
+    "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
   }
 }

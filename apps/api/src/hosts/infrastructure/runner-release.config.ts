@@ -52,12 +52,147 @@ export class RunnerReleaseConfig {
   }
 
   /**
+   * SHA-256 of the installer, hex, or `null` when the deployment did not set
+   * one. Shown beside the command and quoted in the agent prompt, so the
+   * careful path — download, read, check, run — needs nothing else.
+   */
+  get installScriptSha256(): string | null {
+    return this.configService.get<string>('hosts.installSha256') ?? null;
+  }
+
+  /**
    * The one-line install command, with the registration token in it. The token
    * can do exactly one thing — add one host, the minter's — and it expires, so
    * this is the one place it is allowed to appear.
+   *
+   * It rides in the installer's **environment**, not as `--token`: an argument
+   * sits in the process list, readable by every account on the machine for as
+   * long as the install runs, and the installer passes it on to `runner
+   * register` the same way.
    */
   installCommandFor(secret: string): string {
-    const flags = [`--token ${secret}`, `--url ${this.controlPlaneUrl}`];
+    return `${this.fetchInstaller} | OPPENHEIMER_REGISTRATION_TOKEN=${secret} sh -s -- ${this.installerFlags}`;
+  }
+
+  /**
+   * The same steps spelled out for a Claude Code or Codex already running on a
+   * machine, for someone who would rather read them than pipe a script into a
+   * shell.
+   *
+   * Every claim in it is one the runner and the installer keep: the exit codes
+   * are `apps/runner/internal/cli/commands.go`'s, the lines to read are what
+   * `runner status` prints, and the error codes are the catalog in
+   * `apps/docs/docs/errors.md`. Its first job is to establish that the agent is
+   * on the machine the person means, because the token is single-use: spent on
+   * the wrong box, it leaves a host nobody wanted and no token.
+   */
+  agentPromptFor(secret: string): string {
+    const digest = this.installScriptSha256;
+    return [
+      'Install the Oppenheimer runner on a machine and pair it with my account.',
+      '',
+      'What the runner is: one static Go binary. It opens no ports — it holds one',
+      'outbound WebSocket to my control plane — and runs my coding sessions as git',
+      'worktrees, each in its own tmux session. It installs as a user service (a',
+      'launchd agent on macOS, a systemd user unit on Debian or Ubuntu), never as',
+      'root and never system-wide.',
+      '',
+      'STEP 0 — Before running anything, work out where you are and ask me. Do not',
+      'run the install command until I have answered every question below.',
+      '',
+      '1. Which machine is this? Run: uname -sr; uname -n; whoami; echo "$HOME"',
+      '   If it is a container, a CI job, a devcontainer or a cloud sandbox — any',
+      '   environment whose files disappear when it ends — stop and tell me. The',
+      '   token is single-use; spent on a machine that disappears, it leaves me a',
+      '   dead host and no token. (The runner refuses such a machine too, with',
+      '   HOST_006; never pass --allow-container unless I say so.)',
+      '',
+      '2. Say, in one line: "I am on <hostname> (<os> <arch>) as <user>. Is this',
+      '   the machine you want to add?" If it is not, ask me whether the right one',
+      '   is reachable over SSH. If it is, use the SSH form in STEP 1. If not, stop',
+      '   and give me the install command to run there myself. The token is still',
+      '   unspent at this point.',
+      '',
+      '3. Ask me where session code should live on that machine. The default is',
+      '   ~/oppenheimer-ai/workspaces. If I give a path, it must be absolute, not',
+      '   inside ~/.oppenheimer, and not inside a synced folder (iCloud Drive,',
+      '   Dropbox, Google Drive, OneDrive, ~/Library/CloudStorage); the runner',
+      '   refuses the first two with HOST_007 and warns about the third.',
+      '',
+      '4. Check the two tools sessions need: git --version and tmux -V. If both',
+      '   work, say nothing about them and move on. If one is missing, show me the',
+      '   exact command that would install it (brew install <tool> on macOS; sudo',
+      '   apt-get update && sudo apt-get install -y <tool> on Debian/Ubuntu) and',
+      '   ask me. Run it only after I say yes, then check again. If I say no, stop:',
+      '   the installer will not install anything itself when it cannot ask on a',
+      '   terminal, and it stops before spending the token.',
+      '',
+      'STEP 1 — Install. Run this as that user, adding --workspaces with the path I',
+      'chose (leave it off for the default):',
+      '',
+      `  ${this.installCommandFor(secret)} --workspaces '<path>'`,
+      '',
+      ...(digest
+        ? [
+            `The installer's SHA-256 is ${digest}. If you download it to read it`,
+            'first, check that digest and stop if it differs.',
+            '',
+          ]
+        : []),
+      'Over SSH, keep the token out of every command line by sending it on stdin:',
+      '',
+      `  printf '%s\\n' '${secret}' | ssh <target> "IFS= read -r OPPENHEIMER_REGISTRATION_TOKEN && export OPPENHEIMER_REGISTRATION_TOKEN && ${this.fetchInstaller} | sh -s -- ${this.installerFlags} --workspaces '<path>'"`,
+      '',
+      'STEP 2 — Confirm. Run ~/.local/bin/oppenheimer-runner status and read the',
+      'table; do not rely on its exit code, which is 0 even for an unpaired host or',
+      'a stopped service. Report these lines: paired (the host id), service (it must',
+      'say running), runner (the version), git, tmux, claude, and disk (it names the',
+      'directory sessions will use and whether it was chosen or the default — check',
+      'it is the one I asked for). Then ask me to confirm the host shows online in',
+      'the console.',
+      '',
+      'If something goes wrong, stop and tell me. Do not improvise:',
+      '- "This host is already paired" (PAIR_002): the machine belongs to another',
+      '  control plane. The error suggests --force; do not use it unless I say so.',
+      '- "The registration token was rejected" (PAIR_003, exit 3): it is expired,',
+      '  used or revoked. Ask me for a new one from Add host.',
+      '- "The control plane is limiting registrations" (PAIR_007): wait a minute and',
+      '  run the same command again. The token was not spent.',
+      '- "The control plane could not be reached" (PAIR_006, exit 6): show me the',
+      '  URL and the error. Do not change the URL.',
+      '- A signature or checksum mismatch: stop and show me the output. Do not',
+      '  retry from anywhere else.',
+      '- The output shows "paired as …" and then the service step fails: run the',
+      '  same command again. It keeps the pairing, spends nothing, and retries the',
+      '  service; show me what it says the second time.',
+      '- claude not found: a warning, not a failure. Report it and continue.',
+      '- You realise you ran it on the wrong machine: say so at once. The token is',
+      '  spent, and I will unpair that host in the console.',
+      '',
+      'Never:',
+      '- run any of this as root or with sudo, except a tool install I approved;',
+      '- open a port or expose anything to the network;',
+      '- write the token into a file, a script, a commit or a note, or repeat it in',
+      '  your summary;',
+      '- touch my repositories, my shell profile, my git config, or any credential',
+      '  helper.',
+    ].join('\n');
+  }
+
+  /**
+   * `curl … <installer>`, pinned to HTTPS and TLS 1.2+ for an HTTPS URL. A
+   * plain-HTTP URL is only ever a local development deployment, which the
+   * `--proto` pin would refuse.
+   */
+  private get fetchInstaller(): string {
+    const url = this.installUrl ?? '';
+    return url.startsWith('https://')
+      ? `curl --proto '=https' --tlsv1.2 -fsSL ${url}`
+      : `curl -fsSL ${url}`;
+  }
+
+  private get installerFlags(): string {
+    const flags = [`--url ${this.controlPlaneUrl}`];
     // `stable` is the runner's own default; naming it would only add noise to
     // the line a person pastes into a terminal.
     if (this.channel !== 'stable') flags.push(`--channel ${this.channel}`);
@@ -68,41 +203,7 @@ export class RunnerReleaseConfig {
     // control plane it was handed. Naming it is the deployment's job precisely
     // because the script cannot guess it.
     if (this.releaseBaseUrl) flags.push(`--release-base ${this.releaseBaseUrl}`);
-    return `curl -fsSL ${this.installUrl} | sh -s -- ${flags.join(' ')}`;
-  }
-
-  /**
-   * The same steps spelled out for a Claude Code or Codex already running on the
-   * machine, for someone who would rather read them than pipe a script into a
-   * shell. The do-not list is part of the instruction, not decoration: it is
-   * what keeps an agent from running the installer as root or copying the token
-   * somewhere it will outlive its hour.
-   */
-  agentPromptFor(secret: string): string {
-    return [
-      'Install the Oppenheimer runner on this machine and pair it with my account.',
-      '',
-      'The runner is a single static Go binary. It opens no ports: it holds one',
-      'outbound WebSocket to the control plane and runs my coding sessions as git',
-      'worktrees with a tmux session each. The machine becomes mine, usable from',
-      'any of my workspaces.',
-      '',
-      'Steps:',
-      `1. Run the installer as the current user: ${this.installCommandFor(secret)}`,
-      '2. Verify the downloaded artifact against the SHA-256 in the signed release',
-      `   manifest at ${this.releaseBaseUrl ?? ''} before running it.`,
-      '3. Let it install the user service (launchd agent on macOS, systemd user',
-      '   unit on Debian or Ubuntu) and wait until it reports the host online.',
-      '4. Show me the preflight table it prints: git, tmux, claude, free disk.',
-      '',
-      'Do not:',
-      '- do not run any of it as root or with sudo, except a package install it',
-      '  explicitly asks for and names;',
-      '- do not open a port or expose anything to the network;',
-      '- do not copy the registration token anywhere else, and do not put it in a',
-      '  file, a shell history entry you keep, or a commit;',
-      '- stop and tell me if a checksum does not match.',
-    ].join('\n');
+    return flags.join(' ');
   }
 
   private get installUrl(): string | undefined {

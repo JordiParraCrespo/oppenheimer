@@ -184,3 +184,77 @@ func TestSelfCheckRunsWhileTheDaemonHoldsTheLock(t *testing.T) {
 		t.Fatalf("report = %s", report)
 	}
 }
+
+func workspacePaths(t *testing.T) cli.Paths {
+	t.Helper()
+	user := t.TempDir()
+	paths := cli.Paths{Home: filepath.Join(user, ".oppenheimer"), UserHome: user}
+	if err := os.MkdirAll(paths.Home, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return paths
+}
+
+func TestChooseWorkspacesCreatesAPrivateDirectoryAndExpandsTheTilde(t *testing.T) {
+	paths := workspacePaths(t)
+
+	dir, warnings, err := cli.ChooseWorkspaces("~/code/oppenheimer", paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := filepath.EvalSymlinks(filepath.Join(paths.UserHome, "code", "oppenheimer"))
+	if dir != want || len(warnings) != 0 {
+		t.Fatalf("dir = %q, warnings = %v", dir, warnings)
+	}
+	info, err := os.Stat(dir)
+	if err != nil || info.Mode().Perm() != 0o700 {
+		t.Fatalf("created %v with %v, want 0700", err, info)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 0 {
+		t.Fatalf("the writability probe was left behind: %v", entries)
+	}
+}
+
+func TestChooseWorkspacesRefusesWhatWouldHurt(t *testing.T) {
+	paths := workspacePaths(t)
+	for name, raw := range map[string]string{
+		"relative":          "code/oppenheimer",
+		"the home itself":   paths.UserHome,
+		"the root":          "/",
+		"inside the runner": filepath.Join(paths.Home, "workspaces"),
+	} {
+		_, _, err := cli.ChooseWorkspaces(raw, paths)
+		var prob *problem.Error
+		if !errors.As(err, &prob) || prob.Code != "HOST_007" {
+			t.Errorf("%s: err = %v, want HOST_007", name, err)
+		}
+	}
+	// A refusal leaves nothing behind in the runner's own directory.
+	if _, err := os.Stat(filepath.Join(paths.Home, "workspaces")); !os.IsNotExist(err) {
+		t.Fatal("a refused directory inside the runner home was created anyway")
+	}
+}
+
+func TestChooseWorkspacesWarnsAboutASyncedFolder(t *testing.T) {
+	paths := workspacePaths(t)
+
+	_, warnings, err := cli.ChooseWorkspaces(filepath.Join(paths.UserHome, "Dropbox", "code"), paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(warnings) != 1 || !strings.Contains(warnings[0], "synced folder") {
+		t.Fatalf("warnings = %v", warnings)
+	}
+}
+
+func TestServicePATHKeepsOnlyAbsoluteEntriesOnce(t *testing.T) {
+	sep := string(os.PathListSeparator)
+	in := strings.Join([]string{"/opt/homebrew/bin", "", ".", "bin", "/usr/bin", "/opt/homebrew/bin"}, sep)
+
+	got := cli.ServicePATH(in)
+
+	if want := "/opt/homebrew/bin" + sep + "/usr/bin"; got != want {
+		t.Fatalf("ServicePATH = %q, want %q", got, want)
+	}
+}

@@ -70,8 +70,11 @@
   picking another replaces it. The selected row carries its branch,
   which opens a branch pane for that repository. The host chip's
   foot action opens the **Add host dialog**: the same instruction in
-  two forms behind a Command / Agent prompt switch, a copyable panel,
-  the token line, and a status line that resolves in place from
+  two forms behind a Command / Agent prompt switch, a copyable panel
+  (the command form carries the installer's SHA-256 under it when the
+  deployment published one), the token line — whose New token revokes the
+  token it replaces, so a command pasted into the wrong window stops
+  working at once — and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
   enabled then. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,

@@ -44,6 +44,11 @@ export class MintPairingTokenHttpController {
     description: 'This deployment has no runner release configured',
     code: 'HOSTS_004',
   })
+  @ApiProblemResponse({
+    status: 429,
+    description: 'The caller already holds as many unspent pairing tokens as one person may',
+    code: 'HOSTS_006',
+  })
   async mint(
     @CurrentUser('id') userId: string,
     @Req() request: ScopedRequest,
@@ -64,6 +69,7 @@ export class MintPairingTokenHttpController {
     return {
       ...this.mapper.toResponse(minted.token),
       installCommand: minted.installCommand,
+      installScriptSha256: minted.installScriptSha256,
       agentPrompt: minted.agentPrompt,
     };
   }

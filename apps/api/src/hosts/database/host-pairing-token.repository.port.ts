@@ -23,4 +23,15 @@ export interface HostPairingTokenRepositoryPort {
    * refused one; the authority on whether a token may be spent is the burn.
    */
   findOneByHash(tokenHash: string): Promise<Option<HostPairingTokenEntity>>;
+  /**
+   * How many of this person's tokens could still pair a machine at `now`: not
+   * redeemed, not revoked, not expired. What the mint cap counts.
+   */
+  countSpendable(ownerUserId: string, now: Date): Promise<number>;
+  /**
+   * Delete this person's tokens that were never redeemed and stopped being
+   * spendable — expired or revoked — before `cutoff`. A redeemed token stays:
+   * the host it created names it, and it is the record of who paired what.
+   */
+  purgeStale(ownerUserId: string, cutoff: Date): Promise<number>;
 }

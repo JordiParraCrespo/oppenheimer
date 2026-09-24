@@ -5,6 +5,7 @@ import type {
   HeartbeatMessage,
   HelloMessage,
 } from '@oppenheimer/shared/protocol';
+import { RUNNER_LINK_CLOSE_CODES } from '@oppenheimer/shared/protocol';
 import type { HostPresencePort } from '../../hosts/application/host-presence.port';
 import { HOST_PRESENCE } from '../../hosts/hosts.di-tokens';
 import type { RunnerLink } from '../../links/application/link-registry.port';
@@ -35,7 +36,12 @@ export class RelayEventsProcessor {
   ) {}
 
   async onHello(link: RunnerLink, hello: HelloMessage): Promise<void> {
-    await this.presence.observe(link.hostId, hello.host);
+    if (!(await this.presence.observe(link.hostId, hello.host))) {
+      // Unpaired between the handshake's check and this hello: nothing it holds
+      // is reconciled, and it is told why rather than left to redial.
+      this.closeUnpaired(link);
+      return;
+    }
     // The snapshot is what the runner holds; the rows are what it should hold.
     // A launch that never arrived goes out again, and a pane tmux lost is
     // recorded stopped — reconciled, never replayed from a queue.
@@ -59,7 +65,17 @@ export class RelayEventsProcessor {
   async onHeartbeat(link: RunnerLink, heartbeat: HeartbeatMessage): Promise<void> {
     // Receipt time, not `sentAt`: presence is when this process heard from the
     // host, and a skewed clock on the host must not take it offline.
-    await this.presence.observe(link.hostId, heartbeat.host);
+    if (!(await this.presence.observe(link.hostId, heartbeat.host))) {
+      // The host was unpaired while its link was open. The domain event closes
+      // the link at once on the instance that holds it; this is what closes it
+      // on every other one, within a heartbeat.
+      this.closeUnpaired(link);
+    }
+  }
+
+  private closeUnpaired(link: RunnerLink): void {
+    this.logger.log({ message: 'closing the link of an unpaired host', hostId: link.hostId });
+    link.close(RUNNER_LINK_CLOSE_CODES.UNPAIRED, 'host unpaired');
   }
 
   /**

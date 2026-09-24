@@ -19,6 +19,9 @@ type ControlPlane struct {
 	Err      error
 	Requests []app.RegisterRequest
 	Revoked  []string
+	// RevokeErr is what Revoke answers, for the control plane that could not
+	// be reached during an uninstall.
+	RevokeErr error
 }
 
 // New returns a control plane that accepts one registration.
@@ -46,5 +49,5 @@ func (c *ControlPlane) Revoke(_ context.Context, _, assertion string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.Revoked = append(c.Revoked, assertion)
-	return nil
+	return c.RevokeErr
 }
