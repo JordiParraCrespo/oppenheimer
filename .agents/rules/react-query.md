@@ -27,9 +27,14 @@ Biome plugins in `biome-plugins/`, and they fail `pnpm lint` and CI:
 - What belongs to one entity hangs off its `detail(id)`, and repeats the
   `list` / `detail` split below it — never an id straight after `all`, where
   `'list'` sits.
-- Two keys share a prefix only when invalidating one must refetch the other.
-  A factory level is an invitation to invalidate it: `hostsKeys.currentPairing()`
-  mints and `hostsKeys.pairingTokens()` polls, so they have no parent.
+- Every level is a function, and a resource inside a feature repeats the
+  ladder under its own name: `pairings()` → `pairingLists()` → `pairingList()`,
+  `pairingDetails()` → `pairingDetail(name)`; `repositories(id)` →
+  `repositoryLists(id)` → `repositoryList(id)`, `repositoryDetails(id)` →
+  `repositoryDetail(id, repoId)`. Nobody hand-writes a prefix.
+- A level existing does not make it safe to invalidate: `pairingDetail` mints,
+  so refresh the poll with `pairingLists()`, never `pairings()`. Say so in the
+  factory's comment.
 - Every input the `queryFn` reads is in the key; several go in an object at
   the end. An input not known yet is `undefined` in the key, never `''` or `0`.
 - No aliases (`export const profileQueryKey = usersKeys.me()`); call the factory.

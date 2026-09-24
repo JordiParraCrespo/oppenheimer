@@ -163,11 +163,23 @@ useMutation({
   installation is one `removeQueries({ queryKey: installationsKeys.detail(id) })`,
   and refreshing its repository list does not refetch every branch, because a
   list leaf is never the prefix of a detail.
-- **Share a prefix only when invalidating one must refetch the other.** A
-  factory level is an invitation to invalidate it. `hostsKeys.currentPairing()`
-  mints a token and `hostsKeys.pairingTokens()` polls the ones already minted,
-  so they are siblings with no factory above them: a parent key would let
-  "refresh the pairing flow" mint again under the command on screen.
+- **Every level is a function, and a sub-resource gets the same ladder.** A
+  factory names every prefix anything may want to invalidate, so nobody
+  hand-writes one. A resource inside a feature repeats `all → lists → list`,
+  `details → detail` under its own name:
+
+  ```typescript
+  pairings: () => [...hostsKeys.all, 'pairing'] as const,
+  pairingLists: () => [...hostsKeys.pairings(), 'list'] as const,
+  pairingList: () => [...hostsKeys.pairingLists()] as const,
+  pairingDetails: () => [...hostsKeys.pairings(), 'detail'] as const,
+  pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
+  ```
+
+  A level existing does not make it safe to invalidate. `pairingDetail`'s
+  `queryFn` mints a token, so refreshing `pairings()` would mint again under
+  the command on screen; the factory's comment says which level to use
+  (`pairingLists()`), and the invalidation names that level.
 - **Put every input of the `queryFn` in the key.** A variable the fetch reads
   but the key omits serves one answer for two questions. Several inputs go in
   an object at the end (`[...detail(id), 'start', { failed }]`), so order
