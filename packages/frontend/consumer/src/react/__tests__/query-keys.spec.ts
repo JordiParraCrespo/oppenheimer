@@ -18,6 +18,23 @@ const invalidated = (client: QueryClient, key: readonly unknown[]) =>
   client.getQueryState(key)?.isInvalidated ?? false;
 
 describe('installationsKeys', () => {
+  it('gives repositories the full ladder, one function per level', () => {
+    expect(installationsKeys.repositoryLists('inst-1')).toEqual(
+      installationsKeys.repositoryList('inst-1'),
+    );
+    expect(installationsKeys.repositoryDetails('inst-1')).toEqual([
+      'installations',
+      'detail',
+      'inst-1',
+      'repositories',
+      'detail',
+    ]);
+    expect(installationsKeys.repositoryDetail('inst-1', 42)).toEqual([
+      ...installationsKeys.repositoryDetails('inst-1'),
+      42,
+    ]);
+  });
+
   it('splits repositories into a list and per-repository details', () => {
     expect(installationsKeys.repositoryList('inst-1')).toEqual([
       'installations',
@@ -67,22 +84,29 @@ describe('installationsKeys', () => {
 });
 
 describe('hostsKeys', () => {
-  it('keeps the mint and the poll as siblings', () => {
-    expect(hostsKeys.pairingTokens()).toEqual(['hosts', 'pairing', 'tokens']);
-    expect(hostsKeys.currentPairing('laptop')).toEqual([
-      'hosts',
-      'pairing',
-      'current',
-      { name: 'laptop' },
-    ]);
+  it('gives pairing the full ladder, one function per level', () => {
+    expect(hostsKeys.pairings()).toEqual(['hosts', 'pairing']);
+    expect(hostsKeys.pairingLists()).toEqual(['hosts', 'pairing', 'list']);
+    expect(hostsKeys.pairingList()).toEqual(['hosts', 'pairing', 'list']);
+    expect(hostsKeys.pairingDetails()).toEqual(['hosts', 'pairing', 'detail']);
+    expect(hostsKeys.pairingDetail('laptop')).toEqual(['hosts', 'pairing', 'detail', 'laptop']);
   });
 
   it('refreshes the token poll without minting a new token', async () => {
-    const client = cacheWith(hostsKeys.pairingTokens(), hostsKeys.currentPairing('laptop'));
+    const client = cacheWith(hostsKeys.pairingList(), hostsKeys.pairingDetail('laptop'));
 
-    await client.invalidateQueries({ queryKey: hostsKeys.pairingTokens() });
+    await client.invalidateQueries({ queryKey: hostsKeys.pairingLists() });
 
-    expect(invalidated(client, hostsKeys.pairingTokens())).toBe(true);
-    expect(invalidated(client, hostsKeys.currentPairing('laptop'))).toBe(false);
+    expect(invalidated(client, hostsKeys.pairingList())).toBe(true);
+    expect(invalidated(client, hostsKeys.pairingDetail('laptop'))).toBe(false);
+  });
+
+  it('keeps pairing out of the host list', async () => {
+    const client = cacheWith(hostsKeys.list(), hostsKeys.pairingList());
+
+    await client.invalidateQueries({ queryKey: hostsKeys.lists() });
+
+    expect(invalidated(client, hostsKeys.list())).toBe(true);
+    expect(invalidated(client, hostsKeys.pairingList())).toBe(false);
   });
 });

@@ -5,6 +5,7 @@ import type {
   SessionState,
 } from '@oppenheimer/shared';
 import { SESSION_EFFORTS, SESSION_PERMISSIONS } from '@oppenheimer/shared';
+import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * The fold: `(fold, event) → fold`.
@@ -109,12 +110,13 @@ export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[keyof typeof SESSION
  * the console shows the engine button on a session that already exists. Neither
  * can walk a log (`product/versions/mvp/03-control-plane.md`).
  *
- * `permission` has no null: a session was launched at some level, and `ask` is
- * what an absent choice meant.
+ * `permission` is null exactly when the agent has no approvals (the blank
+ * terminal). Every other session was launched at some level, and `ask` is what
+ * an absent choice meant — see `launchPermissionFor`.
  */
 export interface SessionLaunchFold {
   model: string | null;
-  permission: SessionPermissionDto;
+  permission: SessionPermissionDto | null;
   effort: SessionEffortDto | null;
 }
 
@@ -183,6 +185,26 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   launch: { model: null, permission: 'ask', effort: null },
 };
 
+/**
+ * The level a session of `agent` is launched at, given what was asked for.
+ *
+ * The one place "unspecified" is decided. An agent the catalog gives approvals
+ * gets the level asked for when it is one of the three, and `ask` otherwise —
+ * never anything that escalates. An agent with none (the blank terminal) gets
+ * null, whatever was asked, so a level cannot ride along from the last agent
+ * the composer had picked. An agent this build does not know is treated as one
+ * with approvals: `ask` is the safe reading of a session it cannot explain.
+ */
+export function launchPermissionFor(
+  agent: string | null,
+  requested: string | null | undefined,
+): SessionPermissionDto | null {
+  if (agent && isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.permission) return null;
+  return SESSION_PERMISSIONS.includes(requested as SessionPermissionDto)
+    ? (requested as SessionPermissionDto)
+    : 'ask';
+}
+
 /** Reads a string field off a payload of unknown shape, without casting at call sites. */
 function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;
@@ -203,13 +225,13 @@ function launchOf(payload: unknown): SessionLaunchFold | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const launch = (payload as { launch?: unknown }).launch;
   if (typeof launch !== 'object' || launch === null) return null;
-  const permission = stringField(launch, 'permission');
   const effort = stringField(launch, 'effort');
   return {
     model: stringField(launch, 'model'),
-    permission: SESSION_PERMISSIONS.includes(permission as SessionPermissionDto)
-      ? (permission as SessionPermissionDto)
-      : 'ask',
+    permission: launchPermissionFor(
+      stringField(payload, 'agent'),
+      stringField(launch, 'permission'),
+    ),
     effort: SESSION_EFFORTS.includes(effort as SessionEffortDto)
       ? (effort as SessionEffortDto)
       : null,

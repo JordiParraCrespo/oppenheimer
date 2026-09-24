@@ -10,10 +10,10 @@ var launchCatalog = map[string]launchMap{
 	"claude-code": {
 		command: "claude",
 		model:   []string{"--model", "<model>"},
-		permission: map[string][]string{
-			"ask":  {"--permission-mode", "manual"},
-			"auto": {"--permission-mode", "acceptEdits"},
-			"full": {"--permission-mode", "bypassPermissions"},
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--permission-mode", "manual"}},
+			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
+			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
 		},
 		effort: map[string][]string{
 			"minimal": {"--effort", "low"},
@@ -27,10 +27,10 @@ var launchCatalog = map[string]launchMap{
 	"codex": {
 		command: "codex",
 		model:   []string{"--model", "<model>"},
-		permission: map[string][]string{
-			"ask":  {"--ask-for-approval", "on-request", "--sandbox", "workspace-write"},
-			"auto": {"--approve-for-me"},
-			"full": {"--dangerously-bypass-approvals-and-sandbox"},
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--ask-for-approval", "on-request", "--sandbox", "workspace-write"}},
+			"auto": {argv: []string{"--approve-for-me"}},
+			"full": {argv: []string{"--dangerously-bypass-approvals-and-sandbox"}},
 		},
 		effort: map[string][]string{
 			"minimal": {"-c", "model_reasoning_effort=minimal"},
@@ -41,4 +41,26 @@ var launchCatalog = map[string]launchMap{
 		},
 		prompt: []string{"<prompt>"},
 	},
+	"opencode": {
+		command: "opencode",
+		model:   []string{"--model", "<model>"},
+		permission: map[string]launchLevel{
+			"ask":  {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"ask\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
+			"auto": {env: map[string]string{"OPENCODE_PERMISSION": "{\"edit\":\"allow\",\"bash\":\"ask\",\"webfetch\":\"ask\",\"websearch\":\"ask\",\"codesearch\":\"ask\"}"}},
+			"full": {argv: []string{"--auto"}},
+		},
+		prompt: []string{"--prompt", "<prompt>"},
+	},
+	"shell": {
+		command: "",
+	},
+}
+
+// loginTargets is each agent's `loginTargets` entry of the catalog: the
+// vendor logins its screen may show that become a button. Hosts are
+// compared for equality and a path, when set, must prefix the URL path.
+var loginTargets = map[string][]LoginTarget{
+	"claude-code": {{Host: "claude.ai"}, {Host: "console.anthropic.com"}},
+	"codex":       {{Host: "auth.openai.com"}, {Host: "platform.openai.com"}, {Host: "chatgpt.com"}},
+	"opencode":    {{Host: "opencode.ai"}, {Host: "claude.ai"}, {Host: "console.anthropic.com"}, {Host: "auth.openai.com"}, {Host: "chatgpt.com"}, {Host: "github.com", Path: "/login/device"}},
 }

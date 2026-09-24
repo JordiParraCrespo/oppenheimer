@@ -152,7 +152,7 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     agent: session.agent,
     launch: {
       ...(session.launch.model ? { model: session.launch.model } : {}),
-      permission: session.launch.permission,
+      ...(session.launch.permission ? { permission: session.launch.permission } : {}),
       ...(session.launch.effort ? { effort: session.launch.effort } : {}),
     },
     ...(spec.prompt ? { prompt: spec.prompt } : {}),

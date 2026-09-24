@@ -904,7 +904,7 @@ export type SessionLaunchResponseDto = {
      */
     model?: string | null;
     /**
-     * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default.
+     * What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).
      */
     permission: 'ask' | 'auto' | 'full';
     /**
@@ -1017,7 +1017,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'shell';
     projectId?: string;
     name?: string;
     checkouts: Array<{

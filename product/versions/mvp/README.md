@@ -355,11 +355,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-23: **a session is named by a model if it is quick, by its prompt's
   own words if not, and create waits for the name** (03, "A session is named
   from its first prompt").
-- 2026-09-24: **an image pasted or dropped onto the terminal reaches the
-  agent.** The agent reads its host's clipboard, so a screenshot pasted in
-  the browser went nowhere. The console uploads it, the control plane
-  sends it on the link as `session.image`, and the runner writes it under
-  its own home (not the worktree, so it cannot be committed) and pastes
-  the path as a bracketed paste. 5 MB is Claude's own ceiling for one
-  image; the type is judged by the bytes on both sides of the link (01,
-  02 §11, 05, 07 F12).
+- 2026-09-24: **OpenCode and the blank terminal join the catalog, and Opus
+  5.5 is the Claude default** (00, 01, 02, 05). Four agents launch, not
+  one plus placeholders (00); `session.create` names any of the four and
+  carries no permission level for the blank terminal (01); a permission
+  level is one object of argv and environment, which is how OpenCode's
+  `OPENCODE_PERMISSION` reaches window 0 only, the login allowlist is
+  generated per agent from the catalog, and the host probe lists
+  `codex` and `opencode` (02 §5, §9, §10); the composer table and the
+  hide-and-do-not-send rule are 05's. The model seed follows Synara's
+  model table and Orca's pricing table.
+- 2026-09-24: **a pasted or dropped image reaches the agent**: the console
+  uploads it, and the runner writes it outside the worktree and pastes its
+  path into the prompt (01, 02 §11, 05).

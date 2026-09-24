@@ -298,9 +298,11 @@ pnpm check              # Biome lint + format
 pnpm arch               # Architecture boundaries (dependency-cruiser), API and frontend
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm docker:dev         # Start Postgres + Redis
+# oppenheimer:begin e2e
+node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
+# oppenheimer:end e2e
 pnpm generate:api-client # Regenerate typed API client (no database needed)
 pnpm changeset          # Create a changeset for versioning
-node scripts/stack/stack.mjs up --web && node scripts/stack/stack.mjs host  # The whole product plus a real runner, locally (the local-stack skill)
 ```
 
 ## Deployment
