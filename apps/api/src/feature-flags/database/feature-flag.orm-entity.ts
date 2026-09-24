@@ -1,6 +1,6 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { FlagRule, FlagServe } from '@oppenheimer/shared/feature-flags';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 /**
  * Persistence model for `feature_flag` — one row per catalog key an operator
@@ -9,11 +9,12 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } fro
  * them in exactly this shape.
  */
 @Entity('feature_flag')
+@Unique('UQ_feature_flag_key', ['key'])
 export class FeatureFlagOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   id!: string;
 
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar', length: 64 })
   key!: string;
 
   @Column({ type: 'boolean', default: false })
@@ -25,7 +26,7 @@ export class FeatureFlagOrmEntity {
   @Column({ type: 'jsonb' })
   fallthrough!: FlagServe;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', length: 32 })
   salt!: string;
 
   @Column({ type: 'uuid', nullable: true })

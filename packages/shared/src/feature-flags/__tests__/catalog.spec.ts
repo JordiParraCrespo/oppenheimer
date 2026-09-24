@@ -16,7 +16,8 @@ describe('the feature-flag catalog', () => {
   it.each(FEATURE_FLAG_KEYS)('%s is well-formed', (key) => {
     const definition = getFlagDefinition(key);
 
-    expect(key).toMatch(/^[a-z][a-z0-9_]*$/);
+    // At most 64 characters: `feature_flag."key"` is `varchar(64)`.
+    expect(key).toMatch(/^[a-z][a-z0-9_]{0,63}$/);
     expect(definition.description.trim()).not.toBe('');
     expect(definition.owner.trim()).not.toBe('');
     expect(isValidFlagValue(definition, definition.defaultValue)).toBe(true);
