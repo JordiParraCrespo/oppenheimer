@@ -7,6 +7,7 @@ import type { NewSessionEvent } from './database/work-session.repository.port';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { SessionCheckoutEntity } from './domain/session-checkout.entity';
 import {
+  launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
   type SessionFold,
@@ -111,9 +112,9 @@ export class WorkSessionMapper
       ackedReportHash: record.ackedReportHash,
       launch: {
         model: record.launchModel,
-        // A row written before these columns existed reads as the level it was
-        // launched at: the one that asks before every action.
-        permission: record.launchPermission ?? 'ask',
+        // Null is a session whose agent has no approvals; for any other agent
+        // a missing level reads as the one that asks before every action.
+        permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
       },
     };
@@ -153,7 +154,7 @@ export class WorkSessionMapper
           hostId: input.hostId,
           checkouts: props.checkouts,
           requestedByUserId: props.userId,
-          launch: this.toLaunch(input.launch),
+          launch: this.toLaunch(input.agent, input.launch),
         },
       },
       {
@@ -179,12 +180,16 @@ export class WorkSessionMapper
    *
    * An absent level is `ask` — the one that asks before every action — and never
    * anything else: a default that escalated is the single mistake this field must
-   * not make (`product/versions/mvp/03-control-plane.md`).
+   * not make (`product/versions/mvp/03-control-plane.md`). An agent with no
+   * approvals records no level at all (`launchPermissionFor`).
    */
-  toLaunch(launch: CreateSessionDto['launch']): SessionLaunchFold {
+  toLaunch(
+    agent: CreateSessionDto['agent'],
+    launch: CreateSessionDto['launch'],
+  ): SessionLaunchFold {
     return {
       model: launch?.model ?? null,
-      permission: launch?.permission ?? 'ask',
+      permission: launchPermissionFor(agent, launch?.permission),
       effort: launch?.effort ?? null,
     };
   }

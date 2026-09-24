@@ -625,6 +625,57 @@ describe('browser attach socket', () => {
     expect(h.registry.find(HOST)?.attachmentCount).toBe(0);
   });
 
+  it('keeps a viewport the browser sent while its ticket was still being redeemed', async () => {
+    // Redemption is a cache take and two reads; the browser does not wait for
+    // them before saying its size. A resize that landed before the attachment
+    // listened used to be dropped, and the relay attached at 80x24 two seconds
+    // later instead.
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve(true), 150)),
+    );
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const browser = ws(
+      h.origin,
+      '/api/v1/relay/attach',
+      { headers: { origin: 'http://localhost:3000' } },
+      [issueTicket(h, 0)],
+    );
+    sockets.push(browser);
+    await opened(browser);
+    const sentAt = Date.now();
+    browser.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
+
+    const attach = await nextMessage(runner);
+    expect(attach.text).toMatchObject({ type: 'session.attach', cols: 120, rows: 40 });
+    expect(Date.now() - sentAt).toBeLessThan(1_000);
+  });
+
+  it('opens no attachment for a browser that left while its ticket was redeemed', async () => {
+    vi.mocked(h.workspaces.isMember).mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve(true), 150)),
+    );
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const heard: unknown[] = [];
+    runner.on('message', (data) => heard.push(data));
+    const browser = ws(
+      h.origin,
+      '/api/v1/relay/attach',
+      { headers: { origin: 'http://localhost:3000' } },
+      [issueTicket(h, 0)],
+    );
+    await opened(browser);
+    browser.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
+    browser.close();
+
+    // Its close fired before anything was listening for it, so an attachment
+    // opened now would sit in the link's table for good.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(h.registry.find(HOST)?.attachmentCount).toBe(0);
+    expect(heard).toEqual([]);
+  });
+
   it('drops a frame for an attachment that is not open', async () => {
     const runner = await runnerUp(h);
     sockets.push(runner);

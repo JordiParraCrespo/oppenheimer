@@ -53,7 +53,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
     data.agent as SessionEntity['agent'],
     {
       model: data.launch.model ?? null,
-      permission: data.launch.permission,
+      permission: data.launch.permission ?? null,
       effort: data.launch.effort ?? null,
     },
     data.state,

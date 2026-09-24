@@ -22,11 +22,14 @@ import { useConsumerApp } from './context';
  * (`all`) to the most specific so a whole subtree can be invalidated at once.
  *
  * What GitHub says about one installation hangs off its `detail(id)`, and
- * repositories repeat the `list` / `detail` split one level down:
+ * repositories repeat the ladder one level down, one function per level:
  *
  * ```
- * ['installations', 'detail', id, 'repositories', 'list']
- * ['installations', 'detail', id, 'repositories', 'detail', repoId, 'branches']
+ * [..., 'detail', id, 'repositories']                              repositories(id)
+ * [..., 'detail', id, 'repositories', 'list']                      repositoryLists(id) → repositoryList(id)
+ * [..., 'detail', id, 'repositories', 'detail']                    repositoryDetails(id)
+ * [..., 'detail', id, 'repositories', 'detail', repoId]            repositoryDetail(id, repoId)
+ * [..., 'detail', id, 'repositories', 'detail', repoId, 'branches'] branches(id, repoId)
  * ```
  *
  * So removing an installation drops its whole subtree, while refreshing its
@@ -45,12 +48,16 @@ export const installationsKeys = {
     [...installationsKeys.details(), installationId] as const,
   repositories: (installationId: string | undefined) =>
     [...installationsKeys.detail(installationId), 'repositories'] as const,
-  repositoryList: (installationId: string | undefined) =>
+  repositoryLists: (installationId: string | undefined) =>
     [...installationsKeys.repositories(installationId), 'list'] as const,
-  repository: (installationId: string | undefined, githubRepoId: number | undefined) =>
-    [...installationsKeys.repositories(installationId), 'detail', githubRepoId] as const,
+  repositoryList: (installationId: string | undefined) =>
+    [...installationsKeys.repositoryLists(installationId)] as const,
+  repositoryDetails: (installationId: string | undefined) =>
+    [...installationsKeys.repositories(installationId), 'detail'] as const,
+  repositoryDetail: (installationId: string | undefined, githubRepoId: number | undefined) =>
+    [...installationsKeys.repositoryDetails(installationId), githubRepoId] as const,
   branches: (installationId: string | undefined, githubRepoId: number | undefined) =>
-    [...installationsKeys.repository(installationId, githubRepoId), 'branches'] as const,
+    [...installationsKeys.repositoryDetail(installationId, githubRepoId), 'branches'] as const,
 };
 
 /**

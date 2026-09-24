@@ -5,6 +5,7 @@ import {
   SESSION_EFFORTS,
   SESSION_PERMISSIONS,
 } from '../agents/catalog';
+import { loginUrlPattern } from '../agents/login';
 import { FIELD_BOUNDS, HOST_PLATFORMS, promptByteLength } from '../schemas/primitives';
 
 /**
@@ -56,13 +57,15 @@ export const protocolAgentSchema = z.enum(CODING_AGENT_IDS);
  * (`product/versions/mvp/01-protocol.md`, and
  * `02-runner.md` §5 for what the runner then does with it).
  *
- * `permission` is required here although the DTO defaults it: by the time a
- * launch reaches a host the choice has been made, and an absent level on the
- * wire would be a second place deciding what "unspecified" means.
+ * `permission` is present exactly when the agent has approvals: the control
+ * plane fills an absent level in as `ask` for every such agent before it
+ * records the session, so by the time a launch reaches a host the choice has
+ * been made. An agent the catalog gives no approvals (the blank terminal) gets
+ * no level at all, rather than one carried over from the last agent picked.
  */
 export const launchOptionsSchema = z.object({
   model: z.string().min(1).max(128).optional(),
-  permission: z.enum(SESSION_PERMISSIONS),
+  permission: z.enum(SESSION_PERMISSIONS).optional(),
   effort: z.enum(SESSION_EFFORTS).optional(),
 });
 
@@ -81,17 +84,26 @@ export const promptTextSchema = z
   .refine((value) => promptByteLength(value) <= FIELD_BOUNDS.prompt.maxBytes);
 
 /**
- * Every catalog login pattern, or-ed into one anchored expression.
+ * Every catalog login target, as one anchored expression.
  *
- * Derived from the catalog rather than restated, so a new agent's vendor is
- * admitted by adding it there and nowhere else. Each entry is already anchored,
- * so the anchors are stripped before joining and re-applied once — an unanchored
- * alternative would reopen the suffix hole the anchors exist to close (F3).
+ * Derived from the catalog's hosts rather than restated, so a new agent's
+ * vendor is admitted by adding it there and nowhere else. Built from the
+ * de-duplicated host list, not by or-ing each agent's pattern: an agent that
+ * relays other vendors' logins (OpenCode) adds only the hosts that are new, and
+ * every alternative is a host compared whole, so the widest this can get is the
+ * set of hosts some agent actually prints (F3).
  */
 const ANY_VENDOR_LOGIN_URL = new RegExp(
-  `^(?:${Object.values(CODING_AGENTS)
-    .map((agent) => agent.loginUrlPattern.replace(/^\^/, '').replace(/\$$/, ''))
-    .join('|')})$`,
+  loginUrlPattern(Object.values(CODING_AGENTS).flatMap((agent) => agent.loginTargets ?? [])),
+);
+
+/** Each agent's own login check, for narrowing a reported URL to its vendor. */
+const AGENT_LOGIN_URL = new Map(
+  Object.values(CODING_AGENTS).flatMap((agent) =>
+    agent.loginTargets
+      ? [[agent.id, new RegExp(loginUrlPattern(agent.loginTargets))] as const]
+      : [],
+  ),
 );
 
 /** A git ref or a slug — a short, non-empty, path-safe string on the wire. */
@@ -123,9 +135,11 @@ export const hostToolSchema = z.object({
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  *
  *
- * Agents installed on a host are read from `tools` — the entries named `claude`
- * and `codex` — and there is no separate agents key; that is what the console
- * consumes for the agent chip.
+ * Agents installed on a host are read from `tools` — the entries named `claude`,
+ * `codex` and `opencode`, which the runner probes on every host beside `git`
+ * and `tmux` (`ProbedTools` in `facts.go`) — and there is no separate agents
+ * key; that is what the console consumes for the agent chip. The blank
+ * terminal needs no tool of its own.
  *
  * Both mirror `Facts` in `apps/runner/internal/host/domain/facts.go` verbatim,
  * because the runner marshals that struct whole into both `POST /hosts/register`
@@ -213,8 +227,9 @@ export const sessionSnapshotSchema = z
   })
   .superRefine((snapshot, ctx) => {
     if (snapshot.loginUrl === null) return;
-    const pattern = new RegExp(CODING_AGENTS[snapshot.agent].loginUrlPattern);
-    if (!pattern.test(snapshot.loginUrl)) {
+    // An entry with no login targets (the plain shell) reports no login at all.
+    const pattern = AGENT_LOGIN_URL.get(snapshot.agent);
+    if (!pattern?.test(snapshot.loginUrl)) {
       ctx.addIssue({ code: 'custom', path: ['loginUrl'] });
     }
   });

@@ -211,7 +211,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode or shell")
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
