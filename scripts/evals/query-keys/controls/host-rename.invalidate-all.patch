@@ -1,0 +1,103 @@
+diff --git a/packages/frontend/consumer/src/modules/hosts/hosts.errors.ts b/packages/frontend/consumer/src/modules/hosts/hosts.errors.ts
+index e464ec7..12a5eee 100644
+--- a/packages/frontend/consumer/src/modules/hosts/hosts.errors.ts
++++ b/packages/frontend/consumer/src/modules/hosts/hosts.errors.ts
+@@ -17,4 +17,8 @@ export const HostsErrors = {
+     code: 'HOSTS_CLIENT_003',
+     message: 'Failed to remove the host',
+   },
++  RENAME_FAILED: {
++    code: 'HOSTS_CLIENT_004',
++    message: 'Failed to rename the host',
++  },
+ } as const satisfies Record<string, ErrorDefinition>;
+diff --git a/packages/frontend/consumer/src/modules/hosts/hosts.repository.ts b/packages/frontend/consumer/src/modules/hosts/hosts.repository.ts
+index e16f9ff..23fa455 100644
+--- a/packages/frontend/consumer/src/modules/hosts/hosts.repository.ts
++++ b/packages/frontend/consumer/src/modules/hosts/hosts.repository.ts
+@@ -97,6 +97,17 @@ export class HostsRepository {
+     }));
+   }
+ 
++  @MapApiError(HostsErrors.RENAME_FAILED)
++  async rename(id: string, name: string): Promise<HostEntity> {
++    const { data, error } = await heyApiClient.patch<{ 200: HostDto }>({
++      url: `${HOSTS_URL}/{id}`,
++      path: { id },
++      body: { name },
++    });
++    if (error || !data) throw new AppError(HostsErrors.RENAME_FAILED);
++    return toEntity(data);
++  }
++
+   @MapApiError(HostsErrors.REMOVE_FAILED)
+   async remove(id: string): Promise<void> {
+     const { error } = await heyApiClient.delete({ url: `${HOSTS_URL}/{id}`, path: { id } });
+diff --git a/packages/frontend/consumer/src/modules/hosts/hosts.service.ts b/packages/frontend/consumer/src/modules/hosts/hosts.service.ts
+index aa5d4cc..deffa47 100644
+--- a/packages/frontend/consumer/src/modules/hosts/hosts.service.ts
++++ b/packages/frontend/consumer/src/modules/hosts/hosts.service.ts
+@@ -24,6 +24,10 @@ export class HostsService {
+     return this.repository.pairings();
+   }
+ 
++  rename(id: string, name: string): Promise<HostEntity> {
++    return this.repository.rename(id, name);
++  }
++
+   remove(id: string): Promise<void> {
+     return this.repository.remove(id);
+   }
+diff --git a/packages/frontend/consumer/src/react/hosts.queries.ts b/packages/frontend/consumer/src/react/hosts.queries.ts
+index 20e743b..23ad740 100644
+--- a/packages/frontend/consumer/src/react/hosts.queries.ts
++++ b/packages/frontend/consumer/src/react/hosts.queries.ts
+@@ -100,6 +100,29 @@ export function usePairingTokens(
+   });
+ }
+ 
++export interface RenameHostVariables {
++  id: string;
++  name: string;
++}
++
++/**
++ * Rename a host. The saved row is written into the host list where it sits;
++ * pairing is left alone, since refetching a pairing detail mints a new token.
++ */
++export function useRenameHost(
++  options?: UseMutationOptions<HostEntity, Error, RenameHostVariables>,
++) {
++  const app = useConsumerApp();
++  const queryClient = useQueryClient();
++
++  return useMutation({
++    mutationFn: ({ id, name }: RenameHostVariables) => app.hosts.rename(id, name),
++    ...withCacheOnSuccess(options, () => {
++      queryClient.invalidateQueries({ queryKey: hostsKeys.all });
++    }),
++  });
++}
++
+ export function useRemoveHost(options?: UseMutationOptions<void, Error, string>) {
+   const app = useConsumerApp();
+   const queryClient = useQueryClient();
+diff --git a/packages/frontend/consumer/src/react/index.ts b/packages/frontend/consumer/src/react/index.ts
+index 63c50fb..507887d 100644
+--- a/packages/frontend/consumer/src/react/index.ts
++++ b/packages/frontend/consumer/src/react/index.ts
+@@ -13,7 +13,13 @@ export { useConsumerApp } from './context';
+ // "is there a host?" instead of "was this token spent?". They stay exported
+ // from their own file for a spec or a later drawer; the barrel offers the flow.
+ export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
+-export { hostsKeys, useHosts, useRemoveHost } from './hosts.queries';
++export {
++  hostsKeys,
++  type RenameHostVariables,
++  useHosts,
++  useRemoveHost,
++  useRenameHost,
++} from './hosts.queries';
+ export {
+   type ConnectInstallationVariables,
+   installationsKeys,

@@ -5,8 +5,13 @@
       "title": "Consumer web app",
       "summary": "apps/web — Vite + TanStack Router SPA for end users",
       "identifiers": ["apps/web", "@oppenheimer/web", "oppenheimer-web"],
-      "paths": ["apps/web", "e2e/tests/web", ".agents/skills/shadcn/evals/evals.json"],
-      "scripts": ["dev:mvp"]
+      "paths": [
+        "apps/web",
+        "e2e/tests/web",
+        ".agents/skills/shadcn/evals/evals.json",
+        "scripts/evals/query-keys"
+      ],
+      "scripts": ["dev:mvp", "eval:query-keys"]
     },
     "web-showcase": {
       "title": "Web design-system showcase",
