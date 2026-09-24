@@ -1,13 +1,7 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { signedUpContext } from '../../support/auth';
-import {
-  attach,
-  type FleetHost,
-  startHost,
-  uniqueHostName,
-  waitForHost,
-} from '../../support/fleet';
-import { connectInstallation, mintPairingToken, STUB_REPOSITORIES } from '../../support/sessions';
+import { attach, FLEET_CAN, type FleetHost, pairedHosts, waitForHost } from '../../support/fleet';
+import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../support/sessions';
 
 /**
  * Several machines on one account, driven through the real control plane.
@@ -27,43 +21,24 @@ import { connectInstallation, mintPairingToken, STUB_REPOSITORIES } from '../../
 // come back and say hello: minutes, not seconds.
 test.describe.configure({ timeout: 180_000 });
 
-async function pairedHosts(api: APIRequestContext, count: number, label: string) {
-  const hosts: FleetHost[] = [];
-  for (let i = 1; i <= count; i += 1) {
-    const name = uniqueHostName(`${label}-${i}`);
-    hosts.push(startHost(name, await mintPairingToken(api, name)));
-  }
-  const rows = await Promise.all(hosts.map((host) => waitForHost(api, host, true)));
-  return hosts.map((host, i) => ({ host, id: rows[i].id }));
-}
-
-async function createSession(api: APIRequestContext, hostId: string, installationId: string) {
-  const created = await api.post('/api/v1/sessions', {
-    headers: { 'Idempotency-Key': `fleet-${hostId}-${Date.now()}` },
-    data: {
-      hostId,
-      agent: 'claude-code',
-      checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
-    },
-    failOnStatusCode: false,
-  });
-  expect(created.status(), await created.text()).toBe(201);
-  return ((await created.json()) as { id: string }).id;
-}
-
 /**
- * Wait for the session's pane to be the shim's shell, then prove it runs on
- * `host` by asking the machine its own name.
+ * Wait for the session's pane to be the shim's shell, then ask the machine its
+ * own name. That proves the pane runs on `host` only where hosts have names of
+ * their own, which the test that relies on it checks first.
  */
 async function expectRunningOn(api: APIRequestContext, sessionId: string, host: FleetHost) {
   const terminal = await attach(api, sessionId);
   await terminal.waitFor('CLAUDE-SHIM argv=', 60_000);
   terminal.send('echo "on:$(hostname)"\r');
-  await terminal.waitFor(`on:${host.name}`);
+  await terminal.waitFor(`on:${host.machine}`);
   return terminal;
 }
 
 test('three machines pair, and each session runs on the machine it names', async () => {
+  test.skip(
+    !FLEET_CAN.nameItsMachine,
+    'these hosts share one hostname, so it cannot tell them apart',
+  );
   const { api } = await signedUpContext('fleetowner');
   const installationId = await connectInstallation(api);
   const hosts = await pairedHosts(api, 3, 'box');
@@ -84,9 +59,12 @@ test('three machines pair, and each session runs on the machine it names', async
 });
 
 test('a machine that loses its network goes offline alone and comes back to the same screen', async () => {
+  test.skip(!FLEET_CAN.loseItsNetwork, 'these hosts have no network of their own to lose');
   const { api } = await signedUpContext('fleetlink');
   const installationId = await connectInstallation(api);
   const [steady, flaky] = await pairedHosts(api, 2, 'link');
+  const { cutLink, restoreLink } = flaky.host;
+  if (!cutLink || !restoreLink) throw new Error(`${flaky.host.name} has no network of its own`);
 
   const flakySession = await createSession(api, flaky.id, installationId);
   const before = await expectRunningOn(api, flakySession, flaky.host);
@@ -94,12 +72,12 @@ test('a machine that loses its network goes offline alone and comes back to the 
   await before.waitFor('marker-42');
   await before.close();
 
-  flaky.host.cutLink();
+  cutLink();
   await waitForHost(api, flaky.host, false);
   // Only the machine that lost its cable: the other is still online.
   await waitForHost(api, steady.host, true, 5_000);
 
-  flaky.host.restoreLink();
+  restoreLink();
   await waitForHost(api, flaky.host, true);
 
   // tmux kept the pane while the link was down; the tail replay shows it.

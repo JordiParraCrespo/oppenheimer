@@ -64,8 +64,7 @@
         "e2e/fleet",
         "e2e/support/fleet.ts",
         "e2e/tests/fleet",
-        "e2e/support/local-host.ts",
-        "e2e/tests/local"
+        "e2e/support/fleet-local.ts"
       ],
       "scripts": ["dev:mvp"]
     },

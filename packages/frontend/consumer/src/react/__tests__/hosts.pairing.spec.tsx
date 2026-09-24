@@ -91,6 +91,25 @@ describe('useHostPairing', () => {
     expect(result.current.secondsLeft).toBeGreaterThan(3500);
   });
 
+  it('never reads a fresh token as expired, not even for the render it arrives in', async () => {
+    // The count used to be set by the effect after the render that first held
+    // the token, so that render said `expired` — and switched the poll off —
+    // for a frame. Every render is recorded, not just the last one.
+    const { wrapper } = setup([unredeemed], [OWNED]);
+    const seen: { hasPairing: boolean; expired: boolean }[] = [];
+    const { result } = renderHook(
+      () => {
+        const flow = useHostPairing('New host');
+        seen.push({ hasPairing: Boolean(flow.pairing), expired: flow.expired });
+        return flow;
+      },
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
+    expect(seen.filter((render) => render.hasPairing && render.expired)).toEqual([]);
+  });
+
   it('offers no host while the token is unspent, however many the account owns', async () => {
     const { wrapper } = setup([unredeemed], [OWNED]);
     const { result } = renderHook(() => useHostPairing('New host'), { wrapper });

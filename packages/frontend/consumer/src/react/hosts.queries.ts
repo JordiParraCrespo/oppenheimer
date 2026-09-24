@@ -13,20 +13,30 @@ import { useConsumerApp } from './context';
 
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
- * the most specific so a whole subtree can be invalidated with one key.
+ * the most specific, one function per level so any subtree can be named:
  *
- * The two pairing keys are siblings with no factory above them, on purpose.
- * `currentPairing` is a mint — its `queryFn` issues a new token — and
- * `pairingTokens` is a poll over tokens already issued. A parent key would
- * invite `invalidateQueries` on "the pairing flow", which would mint again
- * under the command on screen. Refresh the poll with `pairingTokens()`.
+ * ```
+ * ['hosts']                                   all
+ * ['hosts', 'list']                           lists() → list()
+ * ['hosts', 'pairing']                        pairings()
+ * ['hosts', 'pairing', 'list']                pairingLists() → pairingList()   the tokens Add host polls
+ * ['hosts', 'pairing', 'detail']              pairingDetails()
+ * ['hosts', 'pairing', 'detail', name]        pairingDetail(name)              the token Add host shows
+ * ```
+ *
+ * A pairing detail's `queryFn` mints: refetching it issues a new token under
+ * the command on screen. So refresh the poll with `pairingLists()`, and never
+ * invalidate `pairings()` or `pairingDetails()` while Add host is open.
  */
 export const hostsKeys = {
   all: ['hosts'] as const,
   lists: () => [...hostsKeys.all, 'list'] as const,
   list: () => [...hostsKeys.lists()] as const,
-  pairingTokens: () => [...hostsKeys.all, 'pairing', 'tokens'] as const,
-  currentPairing: (name: string) => [...hostsKeys.all, 'pairing', 'current', { name }] as const,
+  pairings: () => [...hostsKeys.all, 'pairing'] as const,
+  pairingLists: () => [...hostsKeys.pairings(), 'list'] as const,
+  pairingList: () => [...hostsKeys.pairingLists()] as const,
+  pairingDetails: () => [...hostsKeys.pairings(), 'detail'] as const,
+  pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
 };
 
 /** The hosts the caller has paired: the Settings → Hosts list and New session's host chip. */
@@ -63,7 +73,7 @@ export function useCurrentPairing(
   const app = useConsumerApp();
 
   return useQuery({
-    queryKey: hostsKeys.currentPairing(name),
+    queryKey: hostsKeys.pairingDetail(name),
     queryFn: () => app.hosts.pair(name),
     staleTime: 0,
     gcTime: 0,
@@ -84,7 +94,7 @@ export function usePairingTokens(
   const app = useConsumerApp();
 
   return useQuery({
-    queryKey: hostsKeys.pairingTokens(),
+    queryKey: hostsKeys.pairingList(),
     queryFn: () => app.hosts.pairings(),
     ...options,
   });
