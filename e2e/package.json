@@ -8,7 +8,6 @@
     "e2e:api": "playwright test --project=api",
     "e2e:web": "playwright test --project=web",
     "e2e:fleet": "E2E_FLEET=1 playwright test --project=fleet",
-    "e2e:local": "E2E_LOCAL=1 playwright test --project='local*'",
     "e2e:ratelimit": "RUN_RATE_LIMIT=1 playwright test --project=api --workers=1 --grep @ratelimit",
     "lint": "biome check .",
     "report": "playwright show-report",

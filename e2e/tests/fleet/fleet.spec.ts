@@ -1,13 +1,8 @@
+import { hostname } from 'node:os';
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { signedUpContext } from '../../support/auth';
-import {
-  attach,
-  type FleetHost,
-  startHost,
-  uniqueHostName,
-  waitForHost,
-} from '../../support/fleet';
-import { connectInstallation, mintPairingToken, STUB_REPOSITORIES } from '../../support/sessions';
+import { attach, FLEET_HOSTS, type FleetHost, pairedHosts, waitForHost } from '../../support/fleet';
+import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../support/sessions';
 
 /**
  * Several machines on one account, driven through the real control plane.
@@ -27,43 +22,24 @@ import { connectInstallation, mintPairingToken, STUB_REPOSITORIES } from '../../
 // come back and say hello: minutes, not seconds.
 test.describe.configure({ timeout: 180_000 });
 
-async function pairedHosts(api: APIRequestContext, count: number, label: string) {
-  const hosts: FleetHost[] = [];
-  for (let i = 1; i <= count; i += 1) {
-    const name = uniqueHostName(`${label}-${i}`);
-    hosts.push(startHost(name, await mintPairingToken(api, name)));
-  }
-  const rows = await Promise.all(hosts.map((host) => waitForHost(api, host, true)));
-  return hosts.map((host, i) => ({ host, id: rows[i].id }));
-}
-
-async function createSession(api: APIRequestContext, hostId: string, installationId: string) {
-  const created = await api.post('/api/v1/sessions', {
-    headers: { 'Idempotency-Key': `fleet-${hostId}-${Date.now()}` },
-    data: {
-      hostId,
-      agent: 'claude-code',
-      checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
-    },
-    failOnStatusCode: false,
-  });
-  expect(created.status(), await created.text()).toBe(201);
-  return ((await created.json()) as { id: string }).id;
-}
-
 /**
  * Wait for the session's pane to be the shim's shell, then prove it runs on
- * `host` by asking the machine its own name.
+ * `host` by asking the machine its own name. Local hosts all answer with this
+ * machine's name, so there the answer only proves the pane is live.
  */
 async function expectRunningOn(api: APIRequestContext, sessionId: string, host: FleetHost) {
   const terminal = await attach(api, sessionId);
   await terminal.waitFor('CLAUDE-SHIM argv=', 60_000);
   terminal.send('echo "on:$(hostname)"\r');
-  await terminal.waitFor(`on:${host.name}`);
+  await terminal.waitFor(`on:${FLEET_HOSTS === 'local' ? hostname() : host.name}`);
   return terminal;
 }
 
 test('three machines pair, and each session runs on the machine it names', async () => {
+  test.skip(
+    FLEET_HOSTS === 'local',
+    'local hosts share one hostname: the proof is the container’s',
+  );
   const { api } = await signedUpContext('fleetowner');
   const installationId = await connectInstallation(api);
   const hosts = await pairedHosts(api, 3, 'box');
@@ -84,6 +60,7 @@ test('three machines pair, and each session runs on the machine it names', async
 });
 
 test('a machine that loses its network goes offline alone and comes back to the same screen', async () => {
+  test.skip(FLEET_HOSTS === 'local', 'a local host cannot lose its network alone');
   const { api } = await signedUpContext('fleetlink');
   const installationId = await connectInstallation(api);
   const [steady, flaky] = await pairedHosts(api, 2, 'link');

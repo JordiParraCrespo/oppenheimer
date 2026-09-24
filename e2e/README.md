@@ -117,52 +117,42 @@ runner; install, the service units and the signed swap are proved on a real OS
 (`product/versions/mvp/09-runner-install-and-update.md`). What the fleet covers
 is recorded in `product/versions/mvp/11-api-implementation-plan.md`, slice 6.
 
-## The local stack: one real runner, no containers
+### Hosts on this machine
 
-`scripts/stack/stack.mjs` stands the whole product up on one machine and
-pairs **one** real runner with it: the fleet's approach without the fleet's
-image, for machines (a cloud sandbox, typically) where Docker runs containers
-but cannot build one. The host is the runner built from this checkout, under
-a Unix account of its own, cloning from a local `git daemon` seeded as the
-fleet's `git-server` is, with the same `claude` shim.
+Where Docker cannot build the fleet's image — a cloud sandbox whose egress
+stops at a loopback proxy is the usual case — `FLEET_HOSTS=local` runs the
+same hosts on the machine running the suite (`support/fleet-local.ts`): the
+same runner build, the same `claude` shim, and `fleet/git-server.sh` bound to
+loopback. As root each host is a Unix account of its own (`runner register`
+refuses root), marked so teardown removes only accounts it created; as
+anyone else each host gets its own HOME and tmux directory. A local host
+cannot lose its network alone, so the tests that cut a link skip.
 
 ```bash
-node scripts/stack/stack.mjs up --web   # Docker, Postgres, Redis, both stubs, API, console
-node scripts/stack/stack.mjs host       # pair a runner with a fresh account
-pnpm --filter @oppenheimer/e2e e2e:local       # tests/local, against that host
-node scripts/stack/stack.mjs down       # --purge also drops volumes and the host account
+FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
 ```
-
-`e2e:local` is opt-in (`E2E_LOCAL=1`) and runs two projects. `local` puts ten
-sessions on the host and checks they share one connection to the API, that
-typing in one pane stays fast while three others each print ~40 MB, and that
-the flooded panes finish and still answer. `local-web` opens a session in the
-console and types into it. Their terminals credit what they read
-(`support/local-host.ts`), which the fleet's `attach` does not, so they can
-print past the 256 KB window. When to reach for this and what goes wrong is
-the `local-stack` skill (`.agents/skills/local-stack/SKILL.md`).
 
 ## Running it
 
 ```bash
-# 1. infrastructure
-pnpm docker:up                       # Postgres + Redis
-cp .env.example .env                 # EMAIL_PROVIDER=console is what the suite reads
+# 1. the stack: Postgres + Redis, both stubs, the migrated API, and the console
+#    for the `web` project. `.env` is read, never written: without one, copy
+#    .env.example first (EMAIL_PROVIDER=console is what the suite reads).
+node scripts/stack/stack.mjs up --web      # `down` stops what it started
 
-# 2. build + migrate + start the API, capturing its log (see "Mailbox" below)
-pnpm build
-pnpm --filter @oppenheimer/api migration:run
-node apps/api/dist/main.js > /tmp/api.log 2>&1 &
-
-# 3. the web app (only needed for the `web` project)
-pnpm --filter @oppenheimer/web dev &
-
-# 4. the tests
+# 2. the tests, with the API's log as the mailbox (see "No mail server needed")
+export API_LOG=.stack/api.log
 pnpm test:e2e                              # everything (from the repo root)
 pnpm --filter @oppenheimer/e2e e2e:api           # API only, no browser needed
 pnpm --filter @oppenheimer/e2e e2e:web           # browser only
 pnpm --filter @oppenheimer/e2e e2e:ratelimit     # see "The rate-limit test" below
 ```
+
+`stack.mjs` is the steps it replaces, in order: `pnpm docker:up`, `pnpm
+build`, `migration:run`, `node apps/api/dist/main.js > "$API_LOG"`, the two
+stubs with `stub-env.ts`'s configuration handed to the API as environment,
+and `pnpm --filter @oppenheimer/web dev`. It uses a Postgres and Redis that are
+already listening rather than starting its own.
 
 Overridable via environment: `API_URL` (default `http://localhost:3001`),
 `WEB_URL` (`http://localhost:3000`), `API_LOG` (`/tmp/api.log`).
@@ -238,9 +228,15 @@ e2e/
 ├── support/
 │   ├── auth.ts     # request contexts, sign-up/in/out, reset helpers, problem-doc assertions
 │   ├── db.ts       # reset tokens, roles, orgs, sessions, password hashes
-│   └── mail.ts     # reads the console-provider "mailbox" out of the API log
+│   ├── fleet.ts    # real runners as hosts: pairing, attach, containers
+│   ├── fleet-local.ts # the same hosts on this machine (FLEET_HOSTS=local)
+│   ├── mail.ts     # reads the console-provider "mailbox" out of the API log
+│   └── sessions.ts # installations, pairing tokens, sessions through the API
+├── fleet/          # the host image, its entrypoint, the git server, the claude shim
 └── tests/
     ├── api/        # sign-up, sign-in, password reset, verification, protected
     │               # routes, authorization, API tokens, session security, OAuth
+    ├── fleet/      # real runners: machines, link loss, adoption, one link per
+    │               # host, flow control, the console on a live session
     └── web/        # the same journeys through apps/web in Chromium
 ```
