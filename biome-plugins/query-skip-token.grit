@@ -1,18 +1,15 @@
-// A query whose input is not known yet fetches with `skipToken`.
+// The hook that owns a `queryFn` gates it with `skipToken`, not `enabled`.
 //
-// `enabled: !!id` leaves a `queryFn` that has to assert `id` exists, and
-// invites a placeholder id into the key. The input stays `undefined` in the
-// key and the `queryFn` is `id ? () => fetch(id) : skipToken`.
+// Matched on the options object (an `enabled` beside a `queryFn`), so it holds
+// for any callee. `queryFn: id ? () => fetch(id) : skipToken` keeps the input
+// in the key and the `queryFn` free of assertions. An `enabled` a caller passes
+// into a wrapper hook's options is a condition on when to read, not a missing
+// input, and has no `queryFn` beside it. Cases:
+// biome-plugins/fixtures/query-skip-token.ts.
 language js
 
-or {
-  `useQuery({ $props })`,
-  `useSuspenseQuery({ $props })`
-} where {
+`{ $props }` where {
+  $props <: some `queryFn: $_`,
   $props <: some `enabled: $cond`,
-  $cond <: or {
-    `!!$_`,
-    `Boolean($_)`
-  },
-  register_diagnostic(span=$cond, message="Gate a query on a missing input with `queryFn: input ? () => fetch(input) : skipToken`, not `enabled`; keep the input (undefined included) in the key.")
+  register_diagnostic(span=$cond, message="Gate a query on a missing input in its `queryFn` (`input ? () => fetch(input) : skipToken`), not with `enabled` beside it; keep the input, undefined included, in the key.")
 }

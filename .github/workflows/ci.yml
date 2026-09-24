@@ -60,6 +60,7 @@ jobs:
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm check:biome-plugins
       # oppenheimer:begin web|web-showcase
       # The design-system linter (`@shadcn/lint` through oxlint, scoped to its
       # own rules — Biome keeps correctness) over every web app that

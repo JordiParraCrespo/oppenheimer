@@ -1,20 +1,21 @@
-// A query reads its key from its feature's key factory, and never the root.
+// A query key comes from its feature's key factory, and a query never reads
+// the root.
 //
-// An inline array is a key no invalidation can find by name, and `all` handed
-// to a query stops meaning "everything this feature caches" the day a second
-// query joins it. See apps/docs/docs/architecture/query-keys.md.
+// Matched on the `queryKey` property, not on a callee, so generic calls,
+// `useQueries` entries and every TanStack helper are covered. An array literal
+// is a key no invalidation can find by name, wherever it is written; `all`
+// beside a `queryFn` stops meaning "everything this feature caches" the day a
+// second query joins it (invalidating `all` is fine and not matched). Cases:
+// biome-plugins/fixtures/query-key-factory.ts.
 language js
 
 or {
-  `useQuery({ $props })`,
-  `useSuspenseQuery({ $props })`,
-  `useInfiniteQuery({ $props })`,
-  `queryOptions({ $props })`
+  `queryKey: $key` where { $key <: array() },
+  `{ $props }` where {
+    $props <: some `queryFn: $_`,
+    $props <: some `queryKey: $key`,
+    $key <: member_expression(property=`all`)
+  }
 } where {
-  $props <: some `queryKey: $key`,
-  $key <: or {
-    `[$_]`,
-    r"^\w+Keys\.all$"
-  },
-  register_diagnostic(span=$key, message="Take a query's key from its feature's key factory (`thingsKeys.detail(id)`), never an inline array or the root `thingsKeys.all`.")
+  register_diagnostic(span=$key, message="Take a query's key from its feature's key factory (`thingsKeys.detail(id)`), never an array literal, and never the root `thingsKeys.all` for a query.")
 }
