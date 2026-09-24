@@ -1,11 +1,11 @@
-import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
+import { defaultQueryClientOptions, OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { sessionsKeys, usePrefetchSession, useSession, useSessions } from '../sessions.queries';
+import { sessionsKeys, useSession, useSessions } from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -19,9 +19,15 @@ import { fakeKernel } from './fake-kernel';
 const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
 const open = { id: 's-1', isProvisioning: false } as SessionEntity;
 
-function setup(service: { findById?: unknown; findAll?: unknown }, staleTime = 0) {
+function setup(
+  service: { findById?: unknown; findAll?: unknown },
+  // The console's own defaults, for the specs whose rule is its stale window.
+  defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
+    defaultOptions: { queries: { retry: false } },
+  },
+) {
   const app = fakeKernel({ [TOKENS.SessionsService]: service });
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime } } });
+  const queryClient = new QueryClient(defaultOptions);
   function wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -72,17 +78,29 @@ describe('useSessions', () => {
 
 /**
  * Opening a session from the sidebar should not wait on a second read of a row
- * the list already holds, and pointing at a row should read it ahead of the
- * click when the list's copy has gone stale.
+ * the list already holds: the list writes each row through to its detail.
  */
 describe('session detail from the list', () => {
   const listed = { id: 's-1', name: 'from the list', isProvisioning: false } as SessionEntity;
   const read = { id: 's-1', name: 'from the detail', isProvisioning: false } as SessionEntity;
+  const consoleDefaults = { defaultOptions: defaultQueryClientOptions(60_000) };
 
-  it('opens on the list row with no read while the list is fresh', () => {
+  it("writes each row it reads to that session's detail", async () => {
+    const { wrapper, queryClient } = setup({ findAll: vi.fn().mockResolvedValue([listed]) });
+    const { result } = renderHook(() => useSessions(), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(listed);
+  });
+
+  it('opens on the list row with no read while the list is fresh', async () => {
     const findById = vi.fn().mockResolvedValue(read);
-    const { wrapper, queryClient } = setup({ findById }, 60_000);
-    queryClient.setQueryData(sessionsKeys.list(), [listed]);
+    const { wrapper } = setup(
+      { findAll: vi.fn().mockResolvedValue([listed]), findById },
+      consoleDefaults,
+    );
+    const list = renderHook(() => useSessions(), { wrapper });
+    await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
 
     const { result } = renderHook(() => useSession('s-1'), { wrapper });
 
@@ -91,51 +109,38 @@ describe('session detail from the list', () => {
   });
 
   it('opens on a stale list row at once and reads the session behind it', async () => {
-    const findById = vi.fn().mockResolvedValue(read);
-    const { wrapper, queryClient } = setup({ findById }, 60_000);
-    queryClient.setQueryData(sessionsKeys.list(), [listed], { updatedAt: Date.now() - 120_000 });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const findById = vi.fn().mockResolvedValue(read);
+      const { wrapper } = setup(
+        { findAll: vi.fn().mockResolvedValue([listed]), findById },
+        consoleDefaults,
+      );
+      const list = renderHook(() => useSessions(), { wrapper });
+      await waitFor(() => expect(list.result.current.isSuccess).toBe(true));
+      vi.setSystemTime(Date.now() + 120_000);
 
-    const { result } = renderHook(() => useSession('s-1'), { wrapper });
+      const { result } = renderHook(() => useSession('s-1'), { wrapper });
 
-    expect(result.current.data).toBe(listed);
-    await waitFor(() => expect(result.current.data?.name).toBe(read.name));
-    expect(findById).toHaveBeenCalledTimes(1);
+      expect(result.current.data).toBe(listed);
+      await waitFor(() => expect(result.current.data?.name).toBe(read.name));
+      expect(findById).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('prefetches a session the cache does not hold, once', async () => {
-    const findById = vi.fn().mockResolvedValue(read);
-    const { wrapper, queryClient } = setup({ findById }, 60_000);
-    const { result } = renderHook(() => usePrefetchSession(), { wrapper });
-
-    act(() => result.current('s-1'));
-    act(() => result.current('s-1'));
-
-    await waitFor(() => expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(read));
-    act(() => result.current('s-1'));
-    expect(findById).toHaveBeenCalledTimes(1);
-  });
-
-  it('skips the prefetch when the list row is still fresh', () => {
-    const findById = vi.fn().mockResolvedValue(read);
-    const { wrapper, queryClient } = setup({ findById }, 60_000);
-    queryClient.setQueryData(sessionsKeys.list(), [listed]);
-    const { result } = renderHook(() => usePrefetchSession(), { wrapper });
-
-    act(() => result.current('s-1'));
-
-    expect(findById).not.toHaveBeenCalled();
-    expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(listed);
-  });
-
-  it('stops prefetching past two reads in flight', () => {
-    const findById = vi.fn().mockReturnValue(new Promise(() => {}));
-    const { wrapper } = setup({ findById }, 60_000);
-    const { result } = renderHook(() => usePrefetchSession(), { wrapper });
-
-    act(() => {
-      for (const id of ['s-1', 's-2', 's-3', 's-4']) result.current(id);
+  it('leaves a detail read after the list was asked for', async () => {
+    const { wrapper, queryClient } = setup({
+      findAll: vi.fn(async () => {
+        // The session's own read lands while the list is still on its way.
+        queryClient.setQueryData(sessionsKeys.detail('s-1'), read);
+        return [listed];
+      }),
     });
+    const { result } = renderHook(() => useSessions(), { wrapper });
 
-    expect(findById).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(sessionsKeys.detail('s-1'))).toBe(read);
   });
 });

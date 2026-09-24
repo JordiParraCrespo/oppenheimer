@@ -6,7 +6,7 @@ import {
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
-import { useHosts, usePrefetchSession, useSessions } from '@oppenheimer/frontend-consumer/react';
+import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -165,16 +165,10 @@ export function SessionsSidebar() {
  * One row. The age is derived on render rather than held: `compactAge` returns
  * the unit and the count, and the words are ours to translate — `null` is
  * "less than a minute", which the artboard leaves blank rather than labelling.
- *
- * Pointing at a row or tabbing to it reads the session ahead of the click, the
- * way the `Link` already fetches the route's code, so the pane opens on data
- * the cache holds rather than on a skeleton.
  */
 function SessionRow({ session, pathname }: { session: SessionEntity; pathname: string }) {
   const { t } = useTranslation();
-  const prefetch = usePrefetchSession();
   const age = compactAge(session.createdAt);
-  const onIntent = () => prefetch(session.id);
 
   return (
     <SessionItem
@@ -182,8 +176,6 @@ function SessionRow({ session, pathname }: { session: SessionEntity; pathname: s
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
       active={pathname === `/sessions/${session.id}`}
-      onPointerEnter={onIntent}
-      onFocus={onIntent}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
     />
   );
