@@ -77,6 +77,19 @@
   "overrides": [
     {
       "includes": [
+        "packages/frontend/*/src/**",
+        "apps/*/src/**",
+        "!apps/api/**",
+        "biome-plugins/fixtures/**"
+      ],
+      "plugins": [
+        "./biome-plugins/mutation-on-success.grit",
+        "./biome-plugins/query-key-factory.grit",
+        "./biome-plugins/query-skip-token.grit"
+      ]
+    },
+    {
+      "includes": [
         "apps/*/src/**",
         "apps/*/app/**",
         "apps/*/features/**",

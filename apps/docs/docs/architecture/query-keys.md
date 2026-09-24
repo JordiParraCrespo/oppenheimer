@@ -18,18 +18,19 @@ nested under a detail).
 
 ## The rules
 
-### 1. Always use arrays
+### 1. Keys are arrays, and they come from a factory
 
-Even when a key is a single string, write it as an array. React Query treats
-string keys as `[key]` internally, so standardising on arrays keeps everything
-consistent and composable.
+A key is an array even when it has one entry, and nobody writes that array at
+the call site: the feature's key factory (rule 4) builds it, so every key has a
+name an invalidation can find it by.
 
 ```typescript
-// ❌ avoid
+// ❌ avoid: a string, and an array literal nothing else can name
 useQuery({ queryKey: 'users', queryFn: ... });
+useQuery({ queryKey: ['users'], queryFn: ... });
 
 // ✅ prefer
-useQuery({ queryKey: ['users'], queryFn: ... });
+useQuery({ queryKey: usersKeys.list(params), queryFn: ... });
 ```
 
 ### 2. Structure keys from generic to specific
@@ -125,20 +126,42 @@ queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
 queryClient.invalidateQueries({ queryKey: usersKeys.detail(id) });
 ```
 
-A common optimistic-update pattern combines `setQueryData` for the entity you
-already have with `invalidateQueries` for everything derived from it:
+A mutation hook writes the entity the server answered with and invalidates
+what it appears in — never `all`, which would mark the row just written stale
+and fetch it again. The update goes through `withCacheOnSuccess` from
+`@oppenheimer/frontend-core/react`, which runs it before the caller's
+`onSuccess`; written inline beside `...options`, the spread order decides
+whether it runs at all:
 
 ```typescript
-useMutation({
-  mutationFn: ({ id, dto }) => app.users.update(id, dto),
-  onSuccess: (updated, { id }) => {
-    // We already have the fresh entity — write it directly.
-    queryClient.setQueryData(usersKeys.detail(id), updated);
-    // Lists / me may now be stale — let them refetch.
-    queryClient.invalidateQueries({ queryKey: usersKeys.all });
-  },
-});
+export function useUpdateUser(options?: UpdateUserOptions) {
+  return useMutation({
+    mutationFn: ({ id, dto }) => app.users.update(id, dto),
+    ...withCacheOnSuccess(options, (updated, { id }) => {
+      queryClient.setQueryData(usersKeys.detail(id), updated);
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+    }),
+  });
+}
 ```
+
+## What lint checks
+
+Three of these rules are Biome plugins in `biome-plugins/`, matched on the
+option properties rather than on a hook's name, so they hold for generic calls,
+`useQueries` entries and every TanStack helper:
+
+- `query-key-factory` — a `queryKey` that is an array literal, or a factory's
+  `all` beside a `queryFn`.
+- `mutation-on-success` — an `onSuccess` beside a `mutationFn`: use
+  `withCacheOnSuccess`.
+- `query-skip-token` — an `enabled` beside a `queryFn`: gate on `skipToken`.
+  An `enabled` a caller passes into a wrapper hook is a condition, not a
+  missing input, and is not checked.
+
+Each has a fixture in `biome-plugins/fixtures/`, and `pnpm check:biome-plugins`
+fails when a plugin stops flagging a bad case or starts flagging a good one.
 
 ## Pitfalls to avoid
 
@@ -163,11 +186,23 @@ useMutation({
   installation is one `removeQueries({ queryKey: installationsKeys.detail(id) })`,
   and refreshing its repository list does not refetch every branch, because a
   list leaf is never the prefix of a detail.
-- **Share a prefix only when invalidating one must refetch the other.** A
-  factory level is an invitation to invalidate it. `hostsKeys.currentPairing()`
-  mints a token and `hostsKeys.pairingTokens()` polls the ones already minted,
-  so they are siblings with no factory above them: a parent key would let
-  "refresh the pairing flow" mint again under the command on screen.
+- **Every level is a function, and a sub-resource gets the same ladder.** A
+  factory names every prefix anything may want to invalidate, so nobody
+  hand-writes one. A resource inside a feature repeats `all → lists → list`,
+  `details → detail` under its own name:
+
+  ```typescript
+  pairings: () => [...hostsKeys.all, 'pairing'] as const,
+  pairingLists: () => [...hostsKeys.pairings(), 'list'] as const,
+  pairingList: () => [...hostsKeys.pairingLists()] as const,
+  pairingDetails: () => [...hostsKeys.pairings(), 'detail'] as const,
+  pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
+  ```
+
+  A level existing does not make it safe to invalidate. `pairingDetail`'s
+  `queryFn` mints a token, so refreshing `pairings()` would mint again under
+  the command on screen; the factory's comment says which level to use
+  (`pairingLists()`), and the invalidation names that level.
 - **Put every input of the `queryFn` in the key.** A variable the fetch reads
   but the key omits serves one answer for two questions. Several inputs go in
   an object at the end (`[...detail(id), 'start', { failed }]`), so order
