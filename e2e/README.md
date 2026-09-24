@@ -127,6 +127,8 @@ loopback. As root each host is a Unix account of its own (`runner register`
 refuses root), marked so teardown removes only accounts it created; as
 anyone else each host gets its own HOME and tmux directory. A local host
 cannot lose its network alone, so the tests that cut a link skip.
+`KEEP_FLEET` is ignored here: what it would leave running is Unix accounts
+and a writable git server on the machine itself.
 
 ```bash
 FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
@@ -136,12 +138,11 @@ FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet
 
 ```bash
 # 1. the stack: Postgres + Redis, both stubs, the migrated API, and the console
-#    for the `web` project. `.env` is read, never written: without one, copy
-#    .env.example first (EMAIL_PROVIDER=console is what the suite reads).
+#    for the `web` project. `.env` is read, never written; with none, the API
+#    runs on .env.example's values (EMAIL_PROVIDER=console is what the suite reads).
 node scripts/stack/stack.mjs up --web      # `down` stops what it started
 
-# 2. the tests, with the API's log as the mailbox (see "No mail server needed")
-export API_LOG=.stack/api.log
+# 2. the tests; the API's log, .stack/api.log, is their mailbox
 pnpm test:e2e                              # everything (from the repo root)
 pnpm --filter @oppenheimer/e2e e2e:api           # API only, no browser needed
 pnpm --filter @oppenheimer/e2e e2e:web           # browser only
@@ -155,7 +156,8 @@ and `pnpm --filter @oppenheimer/web dev`. It uses a Postgres and Redis that are
 already listening rather than starting its own.
 
 Overridable via environment: `API_URL` (default `http://localhost:3001`),
-`WEB_URL` (`http://localhost:3000`), `API_LOG` (`/tmp/api.log`).
+`WEB_URL` (`http://localhost:3000`), `API_LOG` (`.stack/api.log`, where
+`stack.mjs` writes it; CI captures its API elsewhere and says so).
 
 Database settings are **not** a separate knob. `support/db.ts` imports
 `@oppenheimer/env/load` and reads the same `DB_HOST` / `DB_PORT` / `DB_USERNAME` /

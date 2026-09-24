@@ -28,6 +28,19 @@ import { mintPairingToken } from './sessions';
  * test that needs a host to lose its network alone skips there.
  */
 export const FLEET_HOSTS = process.env.FLEET_HOSTS === 'local' ? 'local' : 'container';
+
+/**
+ * What every host this fleet starts can do, known before one is paired —
+ * pairing is throttled per address (F5), so a spec that cannot hold on these
+ * hosts skips before spending registrations on them. Each host carries the
+ * same facts (`machine`, `cutLink`) for the spec that has one in hand.
+ */
+export const FLEET_CAN = {
+  /** Every host's `hostname` is its own, so it can prove where a pane runs. */
+  nameItsMachine: FLEET_HOSTS === 'container',
+  /** A host can lose its network alone (`cutLink`). */
+  loseItsNetwork: FLEET_HOSTS === 'container',
+};
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
 export const FLEET_IMAGE = process.env.FLEET_IMAGE ?? 'oppenheimer-fleet-host:dev';
 const NETWORK = 'oppenheimer-fleet';
@@ -115,11 +128,21 @@ export function teardownFleet(): void {
 }
 
 export interface FleetHost {
-  /** The container, which is also the machine's hostname and pairing name. */
+  /** The host's pairing name, which the API keeps as the host's row name. */
   name: string;
-  /** Pull the host's network cable: the link and every new dial fail. Containers only. */
-  cutLink(): void;
-  restoreLink(): void;
+  /**
+   * The name the host's own `hostname` prints. A container's is its pairing
+   * name; hosts on the suite's machine all print that machine's, so a spec
+   * proving *which* host ran something checks these are distinct first.
+   */
+  machine: string;
+  /**
+   * Pull the host's network cable: the link and every new dial fail. Only a
+   * host with a network of its own has one, so a spec that pulls it skips
+   * when it is absent.
+   */
+  cutLink?(): void;
+  restoreLink?(): void;
   /** Kill `runner run` only; tmux is its sibling and survives (02 §12). */
   killRunner(): void;
   /** Run a command on the host, as its user. */
@@ -169,6 +192,7 @@ export function startHost(container: string, token: string): FleetHost {
   const exec = (...args: string[]) => docker(['exec', container, ...args]);
   return {
     name: container,
+    machine: container,
     cutLink: () => void exec('fleet-host', 'cut'),
     restoreLink: () => void exec('fleet-host', 'restore'),
     killRunner: () => void exec('fleet-host', 'kill-runner'),

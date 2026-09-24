@@ -8,7 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir, userInfo } from 'node:os';
+import { hostname, tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { API_URL } from '../playwright.config';
 import type { FleetHost } from './fleet';
@@ -26,8 +26,8 @@ import type { FleetHost } from './fleet';
  *
  * - as root, each host is a Unix account of its own, because `runner register`
  *   refuses root — which is also the shape of a real machine. Accounts carry
- *   `ACCOUNT_MARK` as their comment, and teardown removes only accounts that
- *   carry it;
+ *   `ACCOUNT_MARK` as their comment, and teardown removes every account that
+ *   carries it and no other;
  * - as anyone else, each host is the caller with a HOME and a tmux directory
  *   of its own, so hosts never share an identity or a tmux server;
  * - the git server binds loopback, and a host's `PATH` is its own bin dir in
@@ -50,7 +50,6 @@ interface LocalRecord {
   name: string;
   user: string;
   home: string;
-  created: boolean;
   supervisor: number;
 }
 
@@ -162,9 +161,9 @@ export function startLocalHost(name: string, token: string): FleetHost {
         user,
       ]);
     }
-    record = { name, user, home: `/home/${user}`, created: comment === undefined };
+    record = { name, user, home: `/home/${user}` };
   } else {
-    record = { name, user: userInfo().username, home: join(ROOT, 'homes', name), created: false };
+    record = { name, user: userInfo().username, home: join(ROOT, 'homes', name) };
   }
 
   const bin = join(record.home, 'bin');
@@ -198,16 +197,9 @@ export function startLocalHost(name: string, token: string): FleetHost {
 
   return {
     name,
-    cutLink: () => {
-      throw new Error(
-        'a local host shares this machine’s network; run this test with FLEET_HOSTS=container',
-      );
-    },
-    restoreLink: () => {
-      throw new Error(
-        'a local host shares this machine’s network; run this test with FLEET_HOSTS=container',
-      );
-    },
+    // Every local host is this machine: its hostname proves nothing about which
+    // host ran a command, and it cannot lose its network alone (no `cutLink`).
+    machine: hostname(),
     killRunner: () => {
       execFileSync('pkill', [
         '-KILL',
@@ -221,7 +213,28 @@ export function startLocalHost(name: string, token: string): FleetHost {
   };
 }
 
-/** Every host this machine runs for the fleet, their accounts, and the git server. */
+/**
+ * The accounts carrying the fleet's mark. The mark is the ledger: a run that
+ * died between `useradd` and recording the host still left an account this
+ * finds, so no crash leaves one behind for good.
+ */
+function markedAccounts(): string[] {
+  try {
+    return execFileSync('getent', ['passwd'], { encoding: 'utf8' })
+      .split('\n')
+      .map((line) => line.split(':'))
+      .filter((fields) => fields[4] === ACCOUNT_MARK)
+      .map((fields) => fields[0]);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Every host this machine runs for the fleet, every marked account, and the
+ * git server. Each step is best-effort, so one busy home cannot keep the rest
+ * — the git server above all — running.
+ */
 export function teardownLocalFleet(): void {
   for (const record of records()) {
     try {
@@ -230,12 +243,16 @@ export function teardownLocalFleet(): void {
     try {
       runAs(record, ['tmux', '-L', 'oppenheimer', 'kill-server']);
     } catch {}
-    if (isRoot && record.created && accountComment(record.user) === ACCOUNT_MARK) {
+  }
+  if (isRoot) {
+    for (const user of markedAccounts()) {
       try {
-        execFileSync('pkill', ['-KILL', '-u', record.user]);
+        execFileSync('pkill', ['-KILL', '-u', user]);
       } catch {}
-      execFileSync('sleep', ['0.5']);
-      execFileSync('userdel', ['-r', record.user], { stdio: 'ignore' });
+      try {
+        execFileSync('sleep', ['0.5']);
+        execFileSync('userdel', ['-r', user], { stdio: 'ignore' });
+      } catch {}
     }
   }
   const gitPid = join(ROOT, 'git-server.pid');

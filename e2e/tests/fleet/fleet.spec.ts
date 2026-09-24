@@ -1,7 +1,6 @@
-import { hostname } from 'node:os';
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { signedUpContext } from '../../support/auth';
-import { attach, FLEET_HOSTS, type FleetHost, pairedHosts, waitForHost } from '../../support/fleet';
+import { attach, FLEET_CAN, type FleetHost, pairedHosts, waitForHost } from '../../support/fleet';
 import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../support/sessions';
 
 /**
@@ -23,22 +22,22 @@ import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../sup
 test.describe.configure({ timeout: 180_000 });
 
 /**
- * Wait for the session's pane to be the shim's shell, then prove it runs on
- * `host` by asking the machine its own name. Local hosts all answer with this
- * machine's name, so there the answer only proves the pane is live.
+ * Wait for the session's pane to be the shim's shell, then ask the machine its
+ * own name. That proves the pane runs on `host` only where hosts have names of
+ * their own, which the test that relies on it checks first.
  */
 async function expectRunningOn(api: APIRequestContext, sessionId: string, host: FleetHost) {
   const terminal = await attach(api, sessionId);
   await terminal.waitFor('CLAUDE-SHIM argv=', 60_000);
   terminal.send('echo "on:$(hostname)"\r');
-  await terminal.waitFor(`on:${FLEET_HOSTS === 'local' ? hostname() : host.name}`);
+  await terminal.waitFor(`on:${host.machine}`);
   return terminal;
 }
 
 test('three machines pair, and each session runs on the machine it names', async () => {
   test.skip(
-    FLEET_HOSTS === 'local',
-    'local hosts share one hostname: the proof is the container’s',
+    !FLEET_CAN.nameItsMachine,
+    'these hosts share one hostname, so it cannot tell them apart',
   );
   const { api } = await signedUpContext('fleetowner');
   const installationId = await connectInstallation(api);
@@ -60,10 +59,12 @@ test('three machines pair, and each session runs on the machine it names', async
 });
 
 test('a machine that loses its network goes offline alone and comes back to the same screen', async () => {
-  test.skip(FLEET_HOSTS === 'local', 'a local host cannot lose its network alone');
+  test.skip(!FLEET_CAN.loseItsNetwork, 'these hosts have no network of their own to lose');
   const { api } = await signedUpContext('fleetlink');
   const installationId = await connectInstallation(api);
   const [steady, flaky] = await pairedHosts(api, 2, 'link');
+  const { cutLink, restoreLink } = flaky.host;
+  if (!cutLink || !restoreLink) throw new Error(`${flaky.host.name} has no network of its own`);
 
   const flakySession = await createSession(api, flaky.id, installationId);
   const before = await expectRunningOn(api, flakySession, flaky.host);
@@ -71,12 +72,12 @@ test('a machine that loses its network goes offline alone and comes back to the 
   await before.waitFor('marker-42');
   await before.close();
 
-  flaky.host.cutLink();
+  cutLink();
   await waitForHost(api, flaky.host, false);
   // Only the machine that lost its cable: the other is still online.
   await waitForHost(api, steady.host, true, 5_000);
 
-  flaky.host.restoreLink();
+  restoreLink();
   await waitForHost(api, flaky.host, true);
 
   // tmux kept the pane while the link was down; the tail replay shows it.

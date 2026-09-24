@@ -167,8 +167,26 @@ function ensureImage(image) {
   fail(`could not pull ${image} from Docker Hub or its mirrors`);
 }
 
+/**
+ * Which of Postgres and Redis are already listening: `both` is someone's
+ * running pair, used as it is; `neither` is ours to start; one without the
+ * other is someone else's half-running setup, and starting a Compose project
+ * beside it would leave two half-stacks, so the script refuses.
+ */
+async function infrastructure() {
+  const postgres = await portOpen(5432);
+  const redis = await portOpen(6379);
+  if (postgres && redis) return 'both';
+  if (!postgres && !redis) return 'neither';
+  fail(
+    `${postgres ? 'Postgres (5432)' : 'Redis (6379)'} is listening but ${
+      postgres ? 'Redis (6379)' : 'Postgres (5432)'
+    } is not; start or stop the other one yourself, then run this again`,
+  );
+}
+
 async function startInfrastructure() {
-  if ((await portOpen(5432)) && (await portOpen(6379))) {
+  if ((await infrastructure()) === 'both') {
     log('Postgres and Redis are already listening; using them');
     return;
   }
@@ -178,7 +196,7 @@ async function startInfrastructure() {
     for (let i = 0; i < 20 && !((await portOpen(5432)) && (await portOpen(6379))); i += 1) {
       await new Promise((r) => setTimeout(r, 500));
     }
-    if ((await portOpen(5432)) && (await portOpen(6379))) {
+    if ((await infrastructure()) === 'both') {
       log('Postgres and Redis came back with the daemon; using them');
       return;
     }
@@ -280,7 +298,7 @@ async function up(flags) {
   // oppenheimer:begin web
   if (flags.has('--web')) await startWeb();
   // oppenheimer:end web
-  log(`up. The API's log is ${join(STATE, 'api.log')}: pass it to the suites as API_LOG`);
+  log(`up. The API's log is ${join(STATE, 'api.log')}, where the suites read it`);
 }
 
 /** Stop a recorded process group and wait for it to go, killing it at 20 s. */
