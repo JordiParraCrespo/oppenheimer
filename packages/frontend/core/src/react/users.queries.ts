@@ -2,6 +2,7 @@
 
 import type { PermissionDefinition, Role, UpdateUserDto } from '@oppenheimer/shared';
 import {
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -10,6 +11,7 @@ import {
 } from '@tanstack/react-query';
 import type { UserEntity } from '../modules/users/user.entity';
 import { useOppenheimerApp } from './context';
+import { withCacheOnSuccess } from './mutations';
 
 export interface UsersListParams {
   page?: number;
@@ -33,12 +35,10 @@ export const usersKeys = {
   lists: () => [...usersKeys.all, 'list'] as const,
   list: (params?: UsersListParams) => [...usersKeys.lists(), params] as const,
   details: () => [...usersKeys.all, 'detail'] as const,
-  detail: (id: string) => [...usersKeys.details(), id] as const,
+  detail: (id: string | undefined) => [...usersKeys.details(), id] as const,
   me: () => [...usersKeys.all, 'me'] as const,
   permissions: () => [...usersKeys.me(), 'permissions'] as const,
 };
-
-export const profileQueryKey = usersKeys.me();
 
 /**
  * The caller's own effective permissions (CASL rules), used to gate which
@@ -97,15 +97,14 @@ export function useUsers(
 }
 
 export function useUser(
-  id: string,
+  id: string | undefined,
   options?: Omit<UseQueryOptions<UserEntity, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useOppenheimerApp();
 
   return useQuery({
     queryKey: usersKeys.detail(id),
-    queryFn: () => app.users.findById(id),
-    enabled: !!id,
+    queryFn: id ? () => app.users.findById(id) : skipToken,
     ...options,
   });
 }
@@ -121,12 +120,14 @@ export function useUpdateUser(
 
   return useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: UpdateUserDto }) => app.users.update(id, dto),
-    onSuccess: (...args) => {
-      queryClient.setQueryData(usersKeys.detail(args[1].id), args[0]);
-      queryClient.invalidateQueries({ queryKey: usersKeys.all });
-      options?.onSuccess?.(...args);
-    },
-    ...options,
+    // The saved row is the answer, so it is written, not refetched. What it
+    // appears in is invalidated around it — never `all`, which would mark the
+    // row just written stale and fetch it again.
+    ...withCacheOnSuccess(options, (user, { id }) => {
+      queryClient.setQueryData(usersKeys.detail(id), user);
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+    }),
   });
 }
 
@@ -138,10 +139,9 @@ export function useDeleteUser(
 
   return useMutation({
     mutationFn: (id: string) => app.users.delete(id),
-    onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: usersKeys.all });
-      options?.onSuccess?.(...args);
-    },
-    ...options,
+    ...withCacheOnSuccess(options, (_, id) => {
+      queryClient.removeQueries({ queryKey: usersKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
+    }),
   });
 }

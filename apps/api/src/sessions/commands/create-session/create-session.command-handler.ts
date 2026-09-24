@@ -94,22 +94,25 @@ export class CreateSessionCommandHandler
     }
     if (!created.created) return { session: created.session, hints: [] };
 
+    // The name is asked for *while* the host is told about the session, so the
+    // model's round trip overlaps the dispatch rather than following it. It
+    // resolves within the namer's deadline and never rejects: a model that is
+    // not quick is replaced by the prompt's own words, and the response then
+    // carries a readable name rather than the slug.
+    const naming = input.prompt
+      ? this.naming.propose(created.session, input.prompt)
+      : Promise.resolve(null);
+
     const { hints } = await this.dispatch.create(
       created.session,
       await this.launches.build(created.session, project.slug, { prompt: input.prompt }),
     );
 
-    // Naming is deliberately not awaited: it is a call to a model, and a title is
-    // never what makes creating a session slow. The name lands in the log a moment
-    // later and the console reads it on its next listing. Nothing here throws —
-    // the resolver swallows its own failures, and the session keeps its slug.
-    if (input.prompt) {
-      void this.naming.nameFromText(
-        created.session,
-        input.prompt,
-        WorkSessionMapper.promptKeyFor(command.id),
-      );
-    }
+    await this.naming.record(
+      created.session,
+      await naming,
+      WorkSessionMapper.promptKeyFor(command.id),
+    );
     return { session: created.session, hints };
   }
 }

@@ -65,6 +65,7 @@ oppenheimer/
 │   │   ├── ddd/          # DDD/hexagon building blocks (@oppenheimer/backend-ddd)
 │   │   ├── email/        # Pluggable email + React Email templates (@oppenheimer/backend-email)
 │   │   ├── i18n/         # Server-side translation + Intl formatting (@oppenheimer/backend-i18n)
+│   │   ├── llm/          # One interface over LLM providers: OpenRouter, Together, Anthropic… (@oppenheimer/backend-llm)
 │   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
 │   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
 │   ├── tsconfig/         # Shared TypeScript configs + build helpers (@oppenheimer/tsconfig)
@@ -273,6 +274,7 @@ packages/backend/ddd      → used by api, backend/core (depends on nothing in t
 packages/backend/email    → used by api
 packages/backend/i18n     → used by api (bundles from packages/translations)
 packages/backend/cache    → used by api
+packages/backend/llm      → used by api
 packages/backend/storage  → used by api
 packages/backend/queue    → used by api
 packages/translations     → used by web, frontend/web, api (email copy via backend/i18n)
@@ -298,6 +300,7 @@ pnpm check:structure    # Frontend layout contract: feature names, kinds, route 
 pnpm docker:dev         # Start Postgres + Redis
 pnpm generate:api-client # Regenerate typed API client (no database needed)
 pnpm changeset          # Create a changeset for versioning
+node scripts/stack/stack.mjs up --web && node scripts/stack/stack.mjs host  # The whole product plus a real runner, locally (the local-stack skill)
 ```
 
 ## Deployment

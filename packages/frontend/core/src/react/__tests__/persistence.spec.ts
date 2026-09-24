@@ -60,7 +60,7 @@ describe('createQueryPersistOptions', () => {
     const options = createQueryPersistOptions('1.2.3');
 
     expect(options.maxAge).toBe(QUERY_PERSIST_MAX_AGE);
-    expect(options.buster).toBe('1.2.3:2');
+    expect(options.buster).toBe('1.2.3:3');
     // The predicate is bound to the app's non-persisted features, so it is
     // checked by behaviour: a kernel-excluded key stays out, an unknown one
     // persists, and a feature the app names is kept out too.

@@ -352,6 +352,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   it, a runner's refusal of a session command is recorded on the
   session's log instead of dropped, so a start the host refuses fails
   visibly (03).
+- 2026-09-23: **a session is named by a model if it is quick, by its prompt's
+  own words if not, and create waits for the name** (03, "A session is named
+  from its first prompt").
 - 2026-09-24: **an image pasted or dropped onto the terminal reaches the
   agent.** The agent reads its host's clipboard, so a screenshot pasted in
   the browser went nowhere. The console uploads it, the control plane

@@ -54,3 +54,6 @@ dump.rdb
 
 # Claude Code agent worktrees (isolated checkouts, never repo content)
 .claude/worktrees/
+
+# The local stack (scripts/stack/stack.mjs): pids, logs, the host account
+.stack/

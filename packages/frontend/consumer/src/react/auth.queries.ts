@@ -1,9 +1,10 @@
 'use client';
 
-import { profileQueryKey } from '@oppenheimer/frontend-core/react';
+import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import type { RegisterDto } from '@oppenheimer/shared';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useConsumerApp } from './context';
+import { profileKeys } from './profile.queries';
 
 /**
  * Sign-up is the consumer product's: an account is created here and nowhere
@@ -19,9 +20,11 @@ export function useRegister(
 
   return useMutation<void, Error, RegisterDto>({
     mutationFn: (dto: RegisterDto) => app.auth.register(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });
-    },
-    ...options,
+    // Both views of the caller: the directory's, which the shell reads, and the
+    // account's own, which Settings reads.
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+      queryClient.invalidateQueries({ queryKey: profileKeys.me() });
+    }),
   });
 }

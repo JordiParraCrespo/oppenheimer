@@ -1,6 +1,8 @@
 'use client';
 
+import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -24,8 +26,8 @@ export const sessionsKeys = {
   lists: () => [...sessionsKeys.all, 'list'] as const,
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
-  detail: (id: string) => [...sessionsKeys.details(), id] as const,
-  start: (id: string, failed: boolean) =>
+  detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
+  start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
 };
 
@@ -58,15 +60,14 @@ export function useSessions(
 }
 
 export function useSession(
-  id: string,
+  id: string | undefined,
   options?: Omit<UseQueryOptions<SessionEntity, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
   return useQuery({
     queryKey: sessionsKeys.detail(id),
-    queryFn: () => app.sessions.findById(id),
-    enabled: Boolean(id),
+    queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
     ...options,
   });
@@ -82,7 +83,7 @@ export function useSession(
  * `failed`. A live or finished session never reads it at all.
  */
 export function useSessionStartProgress(
-  id: string,
+  id: string | undefined,
   { starting, failed }: { starting: boolean; failed: boolean },
   options?: Omit<UseQueryOptions<SessionStartProgress, Error>, 'queryKey' | 'queryFn'>,
 ) {
@@ -90,8 +91,8 @@ export function useSessionStartProgress(
 
   return useQuery({
     queryKey: sessionsKeys.start(id, failed),
-    queryFn: () => app.sessions.startProgress(id, { failed }),
-    enabled: Boolean(id) && (starting || failed),
+    queryFn:
+      id && (starting || failed) ? () => app.sessions.startProgress(id, { failed }) : skipToken,
     refetchInterval: (query) => (query.state.data?.settled ? false : PROVISIONING_POLL_MS),
     ...options,
   });
@@ -121,11 +122,9 @@ export function useCreateSession(
   return useMutation({
     mutationFn: ({ input, idempotencyKey }: CreateSessionVariables) =>
       app.sessions.create(input, idempotencyKey),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 
@@ -135,11 +134,9 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
 
   return useMutation({
     mutationFn: (id: string) => app.sessions.stop(id),
-    ...options,
-    onSuccess: (...args) => {
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
-      options?.onSuccess?.(...args);
-    },
+    }),
   });
 }
 

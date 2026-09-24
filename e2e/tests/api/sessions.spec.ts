@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectProblemDocument, newContext, signedUpContext } from '../../support/auth';
+import { titleFor } from '../../support/namer-stub';
 import { connectInstallation, pairHost, STUB_REPOSITORIES } from '../../support/sessions';
 
 /**
@@ -129,6 +130,10 @@ test.describe('Sessions', () => {
     const session = await created.json();
 
     expect(session.launch).toEqual({ model: 'opus', permission: 'auto', effort: 'high' });
+    // Named within the create itself: the model is asked while the host is told,
+    // and the response waits for its title (or the prompt's own words) rather
+    // than leaving the slug for the next listing to replace.
+    expect(session.name).toBe(titleFor(task));
     expect(session.checkouts[0].baseBranch).toBe('release/2026-09');
     // The base is what the session branched *from*; the session works on its own.
     expect(session.checkouts[0].branch).toContain(session.slug);
@@ -145,9 +150,16 @@ test.describe('Sessions', () => {
     const log = await api.get(`/api/v1/sessions/${session.id}/events`, {
       failOnStatusCode: false,
     });
-    const entries = (await log.json()).data as { kind: string; payload: { text?: string } }[];
+    const entries = (await log.json()).data as {
+      kind: string;
+      payload: { text?: string; source?: string };
+    }[];
     const prompt = entries.find((entry) => entry.kind === 'prompt.first');
     expect(prompt?.payload.text, 'the first task is the log’s, never a column').toBe(task);
+    // The model's title, not the fallback from the prompt's words: the stub is up
+    // and answers well inside the naming deadline.
+    const named = entries.find((entry) => entry.kind === 'session.named');
+    expect(named?.payload.source).toBe('model');
   });
 
   test('an anonymous caller cannot list or create sessions', async () => {
