@@ -1,0 +1,15 @@
+// A query whose input is not known yet fetches with `skipToken`.
+//
+// `enabled: !!id` leaves a `queryFn` that has to assert `id` exists, and
+// invites a placeholder id into the key. The input stays `undefined` in the
+// key and the `queryFn` is `id ? () => fetch(id) : skipToken`.
+language js
+
+or { `useQuery({ $props })`, `useSuspenseQuery({ $props })` } where {
+  $props <: some `enabled: $cond`,
+  $cond <: or { `!!$_`, `Boolean($_)` },
+  register_diagnostic(
+    span=$cond,
+    message="Gate a query on a missing input with `queryFn: input ? () => fetch(input) : skipToken`, not `enabled`; keep the input (undefined included) in the key."
+  )
+}

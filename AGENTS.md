@@ -135,7 +135,7 @@ skeleton. Boundaries are enforced by `apps/api/.dependency-cruiser.cjs`
 (`pnpm arch`, run in CI and by a Claude Code Stop hook).
 
 Detailed rules live in `.agents/rules/`, each scoped by a `paths` glob so it
-loads only for the code it governs. Three are frontend:
+loads only for the code it governs. Four are frontend:
 
 - `frontend-architecture.md` — the placement grid (kernel, product package,
   platform kit, feature), the kind directories and what each may import, the
@@ -145,6 +145,9 @@ loads only for the code it governs. Three are frontend:
 - `frontend-ui.md` — reaching for the design system before writing markup, the
   colour vocabulary, where helpers and route files live, placeholder data,
   translating exports, and e2e coverage
+- `react-query.md` — key factories, `withCacheOnSuccess` for mutation cache
+  updates, `skipToken` for missing inputs; three of its rules are Biome
+  plugins in `biome-plugins/`
 
 The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-roles.md`—`packages/shared`):
 
