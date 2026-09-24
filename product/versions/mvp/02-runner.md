@@ -359,6 +359,7 @@ One tree, named here and pointed at from 09:
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
+  images/<session>/    0700  images pasted into a session's prompt, 0600 each, named by command id; dropped on close
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3

@@ -352,3 +352,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   it, a runner's refusal of a session command is recorded on the
   session's log instead of dropped, so a start the host refuses fails
   visibly (03).
+- 2026-09-24: **an image pasted or dropped onto the terminal reaches the
+  agent.** The agent reads its host's clipboard, so a screenshot pasted in
+  the browser went nowhere. The console uploads it, the control plane
+  sends it on the link as `session.image`, and the runner writes it under
+  its own home (not the worktree, so it cannot be committed) and pastes
+  the path as a bracketed paste. 5 MB is Claude's own ceiling for one
+  image; the type is judged by the bytes on both sides of the link (01,
+  02 §11, 05, 07 F12).

@@ -219,4 +219,58 @@ test.describe('Sessions', () => {
     // unique violation surfacing from the insert.
     expect(created.status()).toBe(400);
   });
+
+  test('an image is handed to the host, and what is not an image is refused', async () => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
+    const { api } = await signedUpContext('sessionimage');
+    const hostId = await pairHost(api, 'Image box');
+    const installationId = await connectInstallation(api);
+    const created = await api.post('/api/v1/sessions', {
+      headers: { 'Idempotency-Key': `e2e-image-${Date.now()}` },
+      data: {
+        hostId,
+        agent: 'claude-code',
+        checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
+      },
+      failOnStatusCode: false,
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    const session = await created.json();
+    const images = `/api/v1/sessions/${session.id}/images`;
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+
+    // The host was paired by redeeming a token, not by a runner dialling in, so
+    // it holds no link: the image is accepted and nothing is owed later.
+    const sent = await api.post(images, {
+      multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
+      failOnStatusCode: false,
+    });
+    expect(sent.status(), await sent.text()).toBe(202);
+    expect(await sent.json()).toEqual({ delivered: false, hints: ['host_offline'] });
+
+    // The label is the browser's; the bytes are what count.
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: {
+          file: { name: 'shot.png', mimeType: 'image/png', buffer: Buffer.from('<svg/>') },
+        },
+        failOnStatusCode: false,
+      }),
+      { status: 415, code: 'SESSIONS_012' },
+    );
+    await expectProblemDocument(
+      await api.post(images, { multipart: { window: '0' }, failOnStatusCode: false }),
+      { status: 415, code: 'SESSIONS_012' },
+    );
+
+    await api.post(`/api/v1/sessions/${session.id}/stop`);
+    await expectProblemDocument(
+      await api.post(images, {
+        multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
+        failOnStatusCode: false,
+      }),
+      { status: 409, code: 'SESSIONS_013' },
+    );
+  });
 });

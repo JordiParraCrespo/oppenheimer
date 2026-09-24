@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
+	imagestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/images"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/manifest"
 	statestore "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/state"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/tmux"
@@ -31,6 +33,7 @@ type realHarness struct {
 	layout   domain.Layout
 	terminal *tmux.Server
 	store    *statestore.Store
+	images   string
 	remote   string
 }
 
@@ -45,9 +48,11 @@ func newRealHarness(t *testing.T) *realHarness {
 	}
 	layout := domain.Layout{Root: t.TempDir()}
 	store := statestore.New(t.TempDir())
+	images := t.TempDir()
 	svc, err := app.New(app.Options{
 		Terminals: terminal, Worktrees: gitadapter.New(gitadapter.Options{Layout: layout}),
 		Classifier: manifest.New(manifest.Options{}), Store: store, Publisher: &recorder{}, Layout: layout,
+		Images: imagestore.New(images),
 		Env: func(s domain.Session) map[string]string {
 			return map[string]string{"OPPENHEIMER_SESSION": s.ID}
 		},
@@ -55,7 +60,7 @@ func newRealHarness(t *testing.T) *realHarness {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &realHarness{svc: svc, layout: layout, terminal: terminal, store: store, remote: origin(t)}
+	return &realHarness{svc: svc, layout: layout, terminal: terminal, store: store, images: images, remote: origin(t)}
 }
 
 // requireWorkingTmux skips unless a tmux server can actually be started.
@@ -193,5 +198,58 @@ func TestARealSessionSurvivesTheRunnerGoingAway(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(session.Worktree, "README.md")); err != nil {
 		t.Fatalf("the worktree went with the runner: %v", err)
+	}
+}
+
+// An image pasted into a real shell session: the file is on disk, private,
+// outside the worktree, and its path sits on the prompt line — pasted, not
+// run — until the session closes and takes the file with it.
+func TestARealSessionTakesAPastedImage(t *testing.T) {
+	h := newRealHarness(t)
+	ctx := context.Background()
+	session, err := h.svc.Create(ctx, app.CreateInput{
+		Repo: "jordi/oppenheimer", Remote: h.remote, BaseBranch: "main", Agent: domain.AgentShell,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	png := []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
+	const command = "7d9f2c1e-3b4a-4f6e-8a9b-0c1d2e3f4a5b"
+
+	path, err := h.svc.PasteImage(ctx, session.ID, 0, command, "image/png", png)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.HasPrefix(path, h.images) || strings.HasPrefix(path, session.Worktree) {
+		t.Fatalf("path = %q: under the runner's images, never the worktree", path)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("mode = %v, want 0600", info.Mode().Perm())
+	}
+	// The pane is 80 columns and a path is longer, so the capture wraps it:
+	// joined, the screen must hold the path, and a pasted path is not run.
+	var screen string
+	for i := 0; i < 100 && !strings.Contains(screen, path); i++ {
+		captured, _ := h.terminal.Capture(ctx, session.Target(0))
+		screen = strings.ReplaceAll(captured.Body, "\n", "")
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !strings.Contains(screen, path) {
+		t.Fatalf("the path never reached the prompt:\n%s", screen)
+	}
+	if strings.Contains(screen, "No such file") || strings.Contains(screen, "Permission denied") {
+		t.Fatalf("the shell ran the pasted path instead of holding it:\n%s", screen)
+	}
+
+	if _, err := h.svc.Close(ctx, session.ID, app.CloseInput{Force: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Dir(path)); !os.IsNotExist(err) {
+		t.Fatalf("closing kept the session's images: %v", err)
 	}
 }
