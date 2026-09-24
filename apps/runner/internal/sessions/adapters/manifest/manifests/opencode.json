@@ -1,9 +1,9 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "opencode",
-  "version": "2026.09.24.1",
+  "version": "2026.09.24.2",
   "minEngine": 1,
-  "notes": "First cut, from OpenCode's published behaviour and the title shape Orca matches (`OC | <session>`, with a braille spinner glyph in front while a turn runs), not from a soak on a real host. Provisional like Codex's: `unknown` is the honest answer until a rule has been watched against a live session.",
+  "notes": "One rule, from the one signal with a known shape: OpenCode's terminal title is `OC | <session>`, with a braille spinner glyph in front while a turn runs (the shape Orca matches). Nothing on the screen body is trusted yet — no rule has been watched against a live session, and borrowing Claude's bottom-of-screen patterns is how a spinner under a question reads as work. Everything the title does not say is `unknown`, which the sidebar shows honestly, until a soak produces patterns of OpenCode's own.",
   "rules": [
     {
       "id": "title-working",
@@ -12,37 +12,6 @@
       "region": "title",
       "any": ["^\\s*[\\x{2800}-\\x{28FF}] OC \\|"],
       "note": "OpenCode puts one spinner glyph before its `OC |` title while a turn runs; nothing typed into the composer reaches the title."
-    },
-    {
-      "id": "permission",
-      "state": "blocked",
-      "priority": 1000,
-      "region": "bottom:12",
-      "any": [
-        "(?i)\\bpermission required\\b",
-        "(?i)\\ballow (once|always)\\b",
-        "(?i)\\b(accept|reject)\\b.*\\b(accept|reject)\\b",
-        "(?i)[(\\[]?\\b(y/n|yes/no)\\b[)\\]]?"
-      ],
-      "note": "OpenCode asks before a tool whose rule is `ask`, offering allow once, allow always or reject."
-    },
-    {
-      "id": "working",
-      "state": "working",
-      "priority": 970,
-      "region": "bottom:12",
-      "any": ["(?i)esc (to )?interrupt", "[\\x{2800}-\\x{28FF}]"],
-      "not": ["permission required", "allow once", "(y/n)"],
-      "note": "Same shape as Claude's, same reason for the guards: a spinner left on screen under a question is not work."
-    },
-    {
-      "id": "prompt",
-      "state": "idle",
-      "priority": 800,
-      "region": "bottom:5",
-      "any": ["(?m)^\\s*(>|❯|›|┃)\\s*$", "(?i)\\bctrl\\+p\\b.*\\bcommands\\b"],
-      "not": ["esc interrupt", "esc to interrupt"],
-      "note": "Provisional: the composer with nothing happening. Confirm against a real OpenCode session before trusting an idle dot from it."
     }
   ]
 }

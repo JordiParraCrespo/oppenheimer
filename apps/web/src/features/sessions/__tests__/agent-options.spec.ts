@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { defaultModelFor, hasEffort, hasPermission, toAgentOptions } from '../lib/session-options';
+import {
+  defaultModelFor,
+  launchControlsFor,
+  toAgentOptions,
+  toLaunchInput,
+} from '../lib/session-options';
 
 /**
  * The engine button offers every catalog entry, and the chips beside it follow
@@ -23,10 +28,24 @@ describe('agent options', () => {
   });
 
   it('shows the permission and effort chips only where the agent takes them', () => {
-    expect(hasPermission('claude-code')).toBe(true);
-    expect(hasPermission('opencode')).toBe(true);
-    expect(hasPermission('shell')).toBe(false);
-    expect(hasEffort('opencode')).toBe(false);
-    expect(hasEffort('shell')).toBe(false);
+    expect(launchControlsFor('claude-code')).toEqual({ permission: true, effort: true });
+    expect(launchControlsFor('opencode')).toEqual({ permission: true, effort: false });
+    expect(launchControlsFor('shell')).toEqual({ permission: false, effort: false });
+  });
+
+  it('sends only the controls the agent has, never a level left over from the last one', () => {
+    const draft = { model: null, permission: 'full' as const, effort: 'max' as const };
+    expect(toLaunchInput({ ...draft, agent: 'shell' })).toEqual({ model: null });
+    expect(
+      toLaunchInput({ ...draft, agent: 'opencode', model: 'anthropic/claude-opus-5-5' }),
+    ).toEqual({
+      model: 'anthropic/claude-opus-5-5',
+      permission: 'full',
+    });
+    expect(toLaunchInput({ ...draft, agent: 'claude-code' })).toEqual({
+      model: null,
+      permission: 'full',
+      effort: 'max',
+    });
   });
 });

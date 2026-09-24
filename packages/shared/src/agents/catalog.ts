@@ -77,9 +77,26 @@ export interface CodingAgentModel {
 }
 
 /**
+ * One permission level as the host starts the agent with it: the argv appended
+ * to `command`, and the environment set on that process alone.
+ *
+ * Both halves are one object because together they *are* the level. A CLI
+ * whose approvals are a flag (Claude Code, Codex) has an empty `env`; one whose
+ * approvals are configuration (OpenCode's `OPENCODE_PERMISSION`) states them
+ * there. The runner emits the two together or not at all — the env as an
+ * `env NAME=value` prefix on window 0's command line, so a shell tab opened
+ * beside the agent does not inherit it — and there is no path that rebuilds
+ * one half without the other.
+ */
+export interface CodingAgentLaunchLevel {
+  readonly argv: readonly string[];
+  readonly env: Readonly<Record<string, string>>;
+}
+
+/**
  * How one agent is told what the person chose: argv, not prose.
  *
- * Every entry is the **argument vector** to append to `command`, so the runner
+ * Every argv is the **argument vector** to append to `command`, so the runner
  * concatenates rather than parses, and a value that would need quoting cannot
  * become a second word by accident. `<model>` is the one placeholder, and it is
  * substituted whole.
@@ -92,20 +109,10 @@ export interface CodingAgentLaunch {
   /** Absent: this agent takes no model. */
   readonly model?: readonly string[];
   /**
-   * Absent: this agent has no notion of approvals (a plain shell), and the
-   * console hides the permission chip.
+   * Absent: this agent has no notion of approvals (a plain shell). The console
+   * hides the permission chip and sends no level, and the session records none.
    */
-  readonly permission?: Readonly<Record<SessionPermission, readonly string[]>>;
-  /**
-   * Environment set on the agent's process, per permission level, for a CLI
-   * whose approvals are configuration rather than a flag.
-   *
-   * Only window 0 gets it: the runner spells it as an `env NAME=value` prefix
-   * on the command line, so a shell tab opened beside the agent does not
-   * inherit a permission level somebody chose for the agent. A level is
-   * stated here, in `permission`, or in both; the two together are the level.
-   */
-  readonly permissionEnv?: Readonly<Record<SessionPermission, Readonly<Record<string, string>>>>;
+  readonly permission?: Readonly<Record<SessionPermission, CodingAgentLaunchLevel>>;
   /** Absent: this agent has no notion of effort, and the console hides the slider. */
   readonly effort?: Readonly<Record<SessionEffort, readonly string[]>>;
   /**
@@ -126,6 +133,19 @@ export interface CodingAgentLaunch {
   readonly prompt?: readonly string[];
 }
 
+/**
+ * A vendor login the console may turn into a button: a host, compared for
+ * equality, and optionally a path the URL's path must start with.
+ *
+ * Hosts are hosts and not regex, because F3 is host equality: `claude.ai` and
+ * `claude.ai.attacker.test` differ by a suffix (`product/04-security-review.md`).
+ * GitHub is a login host only at `/login/device`, which is what `path` says.
+ */
+export interface CodingAgentLoginTarget {
+  readonly host: string;
+  readonly path?: string;
+}
+
 /** One agent's launch and inspection facts. */
 export interface CodingAgentDefinition {
   readonly id: CodingAgentId;
@@ -137,27 +157,20 @@ export interface CodingAgentDefinition {
    */
   readonly command: string;
   /**
-   * `RegExp` **source** matching the vendor login URL the CLI prints when it
-   * needs an account, so the console can turn it into a button.
+   * The vendor logins the CLI prints when it needs an account, so the console
+   * can turn one into a button.
    *
-   * It is a source string rather than a `RegExp` so this stays plain data, and
-   * it is anchored on purpose: `claude.ai` and `claude.ai.attacker.test` differ
-   * by a suffix, and an unanchored or substring match would hand a person a
-   * button to the second one (`product/04-security-review.md`, F3).
+   * **This is the only statement of them.** Both enforcements are generated
+   * from it: the link's check (`sessionSnapshotSchema.loginUrl` in
+   * `../protocol/primitives.ts`, whose pattern survives into the emitted JSON
+   * Schema) and the runner's own allowlist (`launch_catalog.gen.go`, which the
+   * screen classifier reads per agent). A URL on any other host, or from any
+   * other agent's screen, never becomes a button.
    *
-   * **This is the only statement of it.** The link enforces it —
-   * `sessionSnapshotSchema.loginUrl` in `../protocol/primitives.ts` checks a
-   * reported URL against the reporting agent's pattern, and the constraint
-   * survives into the emitted JSON Schema, so the generated runner code refuses a
-   * lookalike host where the control plane does. The runner's existing allowlist
-   * in `apps/runner/internal/sessions/adapters/manifest/engine.go` is the twin
-   * this replaces; it is retired when the runner consumes the generated types
-   * (its own slice), and until then the two must not be edited apart.
-   *
-   * Absent: nothing this entry prints is a login, and a URL a plain shell
-   * shows is never turned into a button.
+   * Absent: nothing this entry prints is a login, and a URL a plain shell shows
+   * is never turned into a button.
    */
-  readonly loginUrlPattern?: string;
+  readonly loginTargets?: readonly CodingAgentLoginTarget[];
   /**
    * Where the CLI writes the transcript the first prompt is read from.
    * Absent: there is no transcript (a plain shell).
@@ -169,7 +182,8 @@ export interface CodingAgentDefinition {
    * which is what makes the later accounts slice possible without changing
    * anything global on the host.
    *
-   * Absent: there is no login to scope (a plain shell).
+   * Absent: there is no login to scope (a plain shell), or no variable yet
+   * that moves this agent's credentials and nothing else (OpenCode).
    */
   readonly configDirEnv?: string;
   /**
@@ -196,7 +210,10 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     id: 'claude-code',
     label: 'Claude Code',
     command: 'claude',
-    loginUrlPattern: '^https://(claude\\.ai|console\\.anthropic\\.com)(/[^\\s]*)?$',
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'claude.ai' }),
+      Object.freeze({ host: 'console.anthropic.com' }),
+    ]),
     transcriptLocation: Object.freeze({
       directory: '~/.claude/projects/',
       keyedBy: 'working-directory',
@@ -232,9 +249,18 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       model: Object.freeze(['--model', '<model>']),
       permission: Object.freeze({
         // `--permission-mode` choices, read off claude 2.1.278's own `--help`.
-        ask: Object.freeze(['--permission-mode', 'manual']),
-        auto: Object.freeze(['--permission-mode', 'acceptEdits']),
-        full: Object.freeze(['--permission-mode', 'bypassPermissions']),
+        ask: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'manual']),
+          env: Object.freeze({}),
+        }),
+        auto: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'acceptEdits']),
+          env: Object.freeze({}),
+        }),
+        full: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'bypassPermissions']),
+          env: Object.freeze({}),
+        }),
       }),
       // `--effort` takes low | medium | high | xhigh | max — five levels for
       // five stops, so this is order-preserving and every stop is distinct.
@@ -257,8 +283,11 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     id: 'codex',
     label: 'Codex',
     command: 'codex',
-    loginUrlPattern:
-      '^https://(auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com)(/[^\\s]*)?$',
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'auth.openai.com' }),
+      Object.freeze({ host: 'platform.openai.com' }),
+      Object.freeze({ host: 'chatgpt.com' }),
+    ]),
     transcriptLocation: Object.freeze({
       directory: '~/.codex/sessions/',
       keyedBy: 'session-id',
@@ -285,9 +314,15 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         // Read off codex-cli 0.155.1's own `--help`. `--approve-for-me` is that
         // CLI's own name for the middle level, and is more than the flag pair it
         // replaces: it routes approvals through an automatic review.
-        ask: Object.freeze(['--ask-for-approval', 'on-request', '--sandbox', 'workspace-write']),
-        auto: Object.freeze(['--approve-for-me']),
-        full: Object.freeze(['--dangerously-bypass-approvals-and-sandbox']),
+        ask: Object.freeze({
+          argv: Object.freeze(['--ask-for-approval', 'on-request', '--sandbox', 'workspace-write']),
+          env: Object.freeze({}),
+        }),
+        auto: Object.freeze({ argv: Object.freeze(['--approve-for-me']), env: Object.freeze({}) }),
+        full: Object.freeze({
+          argv: Object.freeze(['--dangerously-bypass-approvals-and-sandbox']),
+          env: Object.freeze({}),
+        }),
       }),
       // Codex has no effort flag; it is the `model_reasoning_effort` config key,
       // set per invocation with `-c`. Its config reference runs to `xhigh`, so
@@ -315,12 +350,16 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     label: 'OpenCode',
     command: 'opencode',
     // OpenCode is not one vendor: `opencode auth login` signs in to whichever
-    // provider the person picks, so the login it prints is OpenCode Zen's own,
-    // Anthropic's, OpenAI's or GitHub Copilot's device flow. Still one group
-    // and anchored at both ends, so the union in `../protocol/primitives.ts`
-    // stays anchored when it strips and re-applies them (F3).
-    loginUrlPattern:
-      '^https://(opencode\\.ai|claude\\.ai|console\\.anthropic\\.com|auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com|github\\.com/login/device)(/[^\\s]*)?$',
+    // provider is picked, so it prints OpenCode Zen's own login or that
+    // provider's — Anthropic's, OpenAI's, or GitHub Copilot's device flow.
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'opencode.ai' }),
+      Object.freeze({ host: 'claude.ai' }),
+      Object.freeze({ host: 'console.anthropic.com' }),
+      Object.freeze({ host: 'auth.openai.com' }),
+      Object.freeze({ host: 'chatgpt.com' }),
+      Object.freeze({ host: 'github.com', path: '/login/device' }),
+    ]),
     // One SQLite database for every session, keyed by OpenCode's own session
     // id (`~/.local/share/opencode/opencode.db`, as Orca's session scanner
     // reads it).
@@ -328,10 +367,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       directory: '~/.local/share/opencode/',
       keyedBy: 'session-id',
     }),
-    // OpenCode keeps its logins in `$XDG_DATA_HOME/opencode/auth.json`;
-    // `OPENCODE_CONFIG_DIR` moves the config and not the credentials, so the
-    // data home is the variable that scopes a login to a directory.
-    configDirEnv: 'XDG_DATA_HOME',
+    // No `configDirEnv`. OpenCode keeps its logins in
+    // `$XDG_DATA_HOME/opencode/auth.json`, and `OPENCODE_CONFIG_DIR` moves the
+    // config but not the credentials; the only variable that moves them is
+    // the machine's whole data home, which would relocate every XDG program in
+    // the window along with it. That is not one login per directory, so the
+    // accounts slice has nothing to set here until OpenCode has a variable of
+    // its own (`product/06-multi-account.md`).
+    //
     // `provider/model`, the form `opencode --model` takes. OpenCode reaches
     // whatever providers the host has signed in to, so this seed is the
     // Anthropic family Claude Code offers, under OpenCode's `anthropic/`
@@ -350,26 +393,36 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     ]),
     launch: Object.freeze({
       model: Object.freeze(['--model', '<model>']),
+      // Read off opencode 1.18.32's own `--help` and `debug agent build`.
+      //
       // The TUI has one approval flag, `--auto` ("auto-approve permissions
-      // that are not explicitly denied"), which is Full access. The two
-      // levels below it are configuration: `OPENCODE_PERMISSION` inlines a
-      // `permission` block, and with nothing configured OpenCode allows edits
-      // and commands outright, so Ask has to say `ask` to mean it. Orca ships
-      // no bypass flag for OpenCode and Synara drives the same rules through
-      // its server session config; this is those rules as a launch.
+      // that are not explicitly denied"), which is Full access. The two levels
+      // below it are configuration: `OPENCODE_PERMISSION` inlines a
+      // `permission` block, and its rules land *after* the build agent's
+      // default `"*": "allow"`, so they win. That default is also why the env
+      // is not optional: an Ask started without it would be Full access under
+      // another name, which is why a level is one object and never half-sent.
+      //
+      // Ask asks before edits, commands and anything that reaches the
+      // internet; Approve for me lets edits through and still asks for the
+      // rest, as Claude Code's `acceptEdits` does. Reads keep OpenCode's own
+      // rules, which ask before an `.env` file.
       permission: Object.freeze({
-        ask: Object.freeze([]),
-        auto: Object.freeze([]),
-        full: Object.freeze(['--auto']),
-      }),
-      permissionEnv: Object.freeze({
         ask: Object.freeze({
-          OPENCODE_PERMISSION: '{"edit":"ask","bash":"ask","webfetch":"ask"}',
+          argv: Object.freeze([]),
+          env: Object.freeze({
+            OPENCODE_PERMISSION:
+              '{"edit":"ask","bash":"ask","webfetch":"ask","websearch":"ask","codesearch":"ask"}',
+          }),
         }),
         auto: Object.freeze({
-          OPENCODE_PERMISSION: '{"edit":"allow","bash":"ask","webfetch":"ask"}',
+          argv: Object.freeze([]),
+          env: Object.freeze({
+            OPENCODE_PERMISSION:
+              '{"edit":"allow","bash":"ask","webfetch":"ask","websearch":"ask","codesearch":"ask"}',
+          }),
         }),
-        full: Object.freeze({}),
+        full: Object.freeze({ argv: Object.freeze(['--auto']), env: Object.freeze({}) }),
       }),
       // No effort: reasoning is a per-provider model variant in OpenCode, not
       // a launch flag, so the console hides the slider.

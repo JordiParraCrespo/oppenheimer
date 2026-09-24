@@ -28,56 +28,31 @@ type Launch struct {
 type launchMap struct {
 	command    string
 	model      []string
-	permission map[string][]string
-	// permissionEnv is set on the agent's process per permission level, for
-	// a CLI whose approvals are configuration rather than a flag (OpenCode).
-	permissionEnv map[string]map[string]string
-	effort        map[string][]string
-	prompt        []string
+	permission map[string]launchLevel
+	effort     map[string][]string
+	prompt     []string
 }
 
-// AgentFromCatalogID maps a catalog agent id (`claude-code`, `codex`,
-// `opencode`, `shell`) onto this runner's agent; the ids are the catalog's
-// `CODING_AGENT_IDS`.
-func AgentFromCatalogID(id string) (Agent, bool) {
-	switch id {
-	case "claude-code":
-		return AgentClaude, true
-	case "codex":
-		return AgentCodex, true
-	case "opencode":
-		return AgentOpenCode, true
-	case "shell":
-		return AgentShell, true
-	}
-	return "", false
+// launchLevel is one permission level: the argv appended to the command and
+// the environment set on the agent's process. The two are one value because
+// together they are the level — an OpenCode Ask is all environment, and
+// without it OpenCode allows everything — so nothing here can emit one half.
+type launchLevel struct {
+	argv []string
+	env  map[string]string
 }
 
-// CatalogID is the inverse, for snapshots the control plane reads.
-func (a Agent) CatalogID() string {
-	switch a {
-	case AgentCodex:
-		return "codex"
-	case AgentOpenCode:
-		return "opencode"
-	case AgentShell:
-		return "shell"
-	}
-	return "claude-code"
+// LoginTarget is one vendor login an agent's screen may show: a host,
+// compared for equality, and a path the URL's path must start with when set.
+type LoginTarget struct {
+	Host string
+	Path string
 }
 
-// Env is the environment the launch sets on the agent's process: the
-// catalog's `permissionEnv` for the chosen level, or nil.
-func (l Launch) Env(agent Agent) map[string]string {
-	m, ok := launchCatalog[agent.CatalogID()]
-	if !ok || agent == AgentShell {
-		return nil
-	}
-	env := m.permissionEnv[l.Permission]
-	if len(env) == 0 {
-		return nil
-	}
-	return env
+// LoginTargets are the logins this agent's screen may turn into a button, from
+// the catalog; none for the blank terminal or an agent the catalog lacks.
+func (a Agent) LoginTargets() []LoginTarget {
+	return loginTargets[a.CatalogID()]
 }
 
 // Args turns the launch into the argument vector appended to the agent's
@@ -87,16 +62,14 @@ func (l Launch) Env(agent Agent) map[string]string {
 // for. The prompt is always last.
 func (l Launch) Args(agent Agent) []string {
 	m, ok := launchCatalog[agent.CatalogID()]
-	if !ok || agent == AgentShell {
+	if !ok {
 		return nil
 	}
 	var args []string
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
-	if v, ok := m.permission[l.Permission]; ok {
-		args = append(args, v...)
-	}
+	args = append(args, m.permission[l.Permission].argv...)
 	if v, ok := m.effort[l.Effort]; ok {
 		args = append(args, v...)
 	}
@@ -104,6 +77,12 @@ func (l Launch) Args(agent Agent) []string {
 		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
 	}
 	return args
+}
+
+// Env is the environment the chosen permission level sets on the agent's
+// process, or nil.
+func (l Launch) Env(agent Agent) map[string]string {
+	return launchCatalog[agent.CatalogID()].permission[l.Permission].env
 }
 
 func substitute(vector []string, placeholder, value string) []string {
@@ -118,25 +97,25 @@ func substitute(vector []string, placeholder, value string) []string {
 	return out
 }
 
-// CommandLine is the one string tmux runs in window 0: the agent's command
-// and the launch argv, each word quoted for a POSIX shell so a prompt with
-// spaces, quotes or a `$` stays one argument. Empty for the plain shell.
+// CommandLine is the one string tmux runs in window 0: the level's
+// environment, the agent's command and the launch argv, each word quoted for a
+// POSIX shell so a prompt with spaces, quotes or a `$` stays one argument.
+// Empty when there is nothing to launch — the blank terminal, whose command is
+// empty, or an agent the catalog has no row for — and tmux starts the login
+// shell.
 //
-// A launch that sets environment is prefixed with `env NAME=value …`: env(1)
-// rather than a shell assignment, because tmux hands the line to the user's
-// own shell and not every shell spells assignments the POSIX way, and on the
-// command line rather than in the tmux session's environment, so only window
-// 0 gets it and a shell tab opened beside the agent does not.
+// Environment is spelled `env NAME=value …`: env(1) rather than a shell
+// assignment, because tmux hands the line to the user's own shell and not
+// every shell spells assignments the POSIX way, and on the command line rather
+// than in the tmux session's environment, so only window 0 gets it and a
+// shell tab opened beside the agent does not.
 func (l Launch) CommandLine(agent Agent) string {
-	if agent == AgentShell {
+	command := agent.Command()
+	if command == "" {
 		return ""
 	}
-	m, ok := launchCatalog[agent.CatalogID()]
-	if !ok {
-		return agent.Command()
-	}
 	var words []string
-	if env := l.Env(agent); env != nil {
+	if env := l.Env(agent); len(env) > 0 {
 		names := make([]string, 0, len(env))
 		for name := range env {
 			names = append(names, name)
@@ -147,7 +126,7 @@ func (l Launch) CommandLine(agent Agent) string {
 			words = append(words, name+"="+env[name])
 		}
 	}
-	words = append(words, m.command)
+	words = append(words, command)
 	words = append(words, l.Args(agent)...)
 	quoted := make([]string, len(words))
 	for i, word := range words {

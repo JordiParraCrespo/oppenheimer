@@ -58,22 +58,31 @@ function goMap(record) {
   return `map[string][]string{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
 }
 
-/** A `map[string]map[string]string`, one inner map per permission level. */
-function goEnvMap(record) {
-  const entries = Object.entries(record).map(([key, env]) => {
-    const pairs = Object.entries(env);
-    if (!pairs.length) return [JSON.stringify(key), '{}'];
-    const inner = aligned(
-      pairs.map(([name, value]) => [JSON.stringify(name), JSON.stringify(value)]),
-      '\t\t\t\t',
-    );
-    return [JSON.stringify(key), `{\n${inner.join('\n')}\n\t\t\t}`];
-  });
-  // A multi-line value ends gofmt's alignment run, so each entry is its own.
-  const lines = entries.flatMap(([key, value]) =>
-    value.includes('\n') ? [`\t\t\t${key}: ${value},`] : aligned([[key, value]], '\t\t\t'),
-  );
-  return `map[string]map[string]string{\n${lines.join('\n')}\n\t\t}`;
+/** One permission level: its argv and its env, each omitted when empty. */
+function goLevel(level) {
+  const fields = [];
+  if (level.argv.length) fields.push(`argv: ${goStrings(level.argv)}`);
+  const env = Object.entries(level.env);
+  if (env.length) {
+    const pairs = env.map(([name, value]) => `${JSON.stringify(name)}: ${JSON.stringify(value)}`);
+    fields.push(`env: map[string]string{${pairs.join(', ')}}`);
+  }
+  return `{${fields.join(', ')}}`;
+}
+
+function goLevels(record) {
+  const entries = Object.entries(record).map(([key, level]) => [
+    JSON.stringify(key),
+    goLevel(level),
+  ]);
+  return `map[string]launchLevel{\n${aligned(entries, '\t\t\t').join('\n')}\n\t\t}`;
+}
+
+/** One login target: a host, and a path prefix when there is one. */
+function goTarget(target) {
+  const fields = [`Host: ${JSON.stringify(target.host)}`];
+  if (target.path) fields.push(`Path: ${JSON.stringify(target.path)}`);
+  return `{${fields.join(', ')}}`;
 }
 
 function render() {
@@ -96,15 +105,25 @@ function render() {
     const head = [['command', JSON.stringify(agent.command)]];
     if (launch.model) head.push(['model', goStrings(launch.model)]);
     lines.push(...aligned(head, '\t\t'));
-    if (launch.permission) lines.push(`\t\tpermission: ${goMap(launch.permission)},`);
-    if (launch.permissionEnv) {
-      lines.push(`\t\tpermissionEnv: ${goEnvMap(launch.permissionEnv)},`);
-    }
+    if (launch.permission) lines.push(`\t\tpermission: ${goLevels(launch.permission)},`);
     if (launch.effort) lines.push(`\t\teffort: ${goMap(launch.effort)},`);
     if (launch.prompt) lines.push(`\t\tprompt: ${goStrings(launch.prompt)},`);
     lines.push('\t},');
   }
   lines.push('}', '');
+  // The runner's vendor-login allowlist, per agent. An agent with no targets
+  // (the blank terminal) has no row, so nothing on its screen is a login.
+  lines.push(
+    "// loginTargets is each agent's `loginTargets` entry of the catalog: the",
+    '// vendor logins its screen may show that become a button. Hosts are',
+    '// compared for equality and a path, when set, must prefix the URL path.',
+    'var loginTargets = map[string][]LoginTarget{',
+  );
+  const targets = CODING_AGENT_IDS.filter((id) => CODING_AGENTS[id].loginTargets).map((id) => [
+    JSON.stringify(id),
+    `{${CODING_AGENTS[id].loginTargets.map(goTarget).join(', ')}}`,
+  ]);
+  lines.push(...aligned(targets, '\t'), '}', '');
   return lines.join('\n');
 }
 

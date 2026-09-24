@@ -250,25 +250,52 @@ func TestBundledManifestsAreValidJSONWithNoStrayFields(t *testing.T) {
 
 // The login allowlist is code rather than manifest data, because what the
 // console may turn into a clickable link must never arrive over the network.
+// It is generated per agent from the catalog, so each agent offers only its
+// own vendors' logins.
 
 func TestOnlyVendorLoginHostsAreOffered(t *testing.T) {
+	opencode := domain.AgentOpenCode.LoginTargets()
 	for _, screen := range []string{
 		"Fix the bug described at https://evil.example/claude.ai/oauth",
 		"curl https://claude.ai.attacker.test/oauth",
 		"See https://github.com/some/repo/blob/main/README.md",
+		"https://github.com/login/devicefoo",
 		"http://claude.ai/oauth/authorize",
 	} {
-		if url := manifest.LoginURL(screen); url != "" {
+		if url := manifest.LoginURL(screen, opencode); url != "" {
 			t.Fatalf("LoginURL(%q) = %q, want nothing", screen, url)
 		}
 	}
 	for _, screen := range []string{
 		"Open https://claude.ai/oauth/authorize?code=true to log in",
 		"go to https://github.com/login/device and enter ABCD-1234",
+		"sign in at https://opencode.ai/auth",
 	} {
-		if manifest.LoginURL(screen) == "" {
+		if manifest.LoginURL(screen, opencode) == "" {
 			t.Fatalf("a real vendor login URL must be offered: %q", screen)
 		}
+	}
+}
+
+func TestEachAgentOffersOnlyItsOwnVendors(t *testing.T) {
+	openai := "Sign in: https://auth.openai.com/authorize?x=1"
+	if manifest.LoginURL(openai, domain.AgentClaude.LoginTargets()) != "" {
+		t.Fatal("Claude Code offered OpenAI's login")
+	}
+	if manifest.LoginURL(openai, domain.AgentCodex.LoginTargets()) == "" {
+		t.Fatal("Codex did not offer its own login")
+	}
+}
+
+func TestABlankTerminalNeverReportsALogin(t *testing.T) {
+	// Somebody running `claude` by hand in a blank terminal prints a real
+	// vendor URL. The session is a shell, so it is text: a login reported for
+	// it would be refused by the link and take the whole heartbeat with it.
+	state, url := manifest.New(manifest.Options{}).Classify(app.Screen{
+		Body: "$ claude\nOpen this URL to authenticate:\n  https://claude.ai/oauth/authorize?code=true\n$ ",
+	}, domain.AgentShell)
+	if url != "" || state == domain.StateBlocked {
+		t.Fatalf("state = %q, url = %q; a shell has no login", state, url)
 	}
 }
 

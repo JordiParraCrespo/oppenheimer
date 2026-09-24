@@ -3,7 +3,8 @@
 ## In one line
 
 Orca, as a hosted web app: connect a host you own, then run sessions
-on it. No virtual machines in the MVP. Claude Code first, Codex next.
+on it. No virtual machines in the MVP. Claude Code, Codex, OpenCode or a
+blank terminal in each session; Claude Code is the one the demo walks.
 
 ## Decided
 
@@ -38,16 +39,17 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
   personalities and the like come later (note 11 §1).
 - **Create session chips:** host, repository, branch, agent, every one
   of them searchable. The repository chip picks one repository and
-  carries its branch; picking another replaces it (above). The agent chip lists Claude Code, Codex,
-  OpenCode and a blank terminal with the vendors' marks where they
-  exist; Claude Code is the one wired end to end in the MVP, the others
-  are pickable so the flow is honest about where they go next.
-  *Changed 2026-09-24:* all four are in the shared catalog and the
-  runner launches each of them; the blank terminal has no model,
-  approvals or effort, so the composer hides those chips for it.
-- **Agent login is the host's own.** The runner launches `claude` with
+  carries its branch; picking another replaces it (above). The agent
+  lives in the engine button (05) and lists Claude Code, Codex, OpenCode
+  and a blank terminal, with the vendors' marks where they exist. All
+  four are rows of the shared agent catalog (`CODING_AGENTS`) and the
+  runner launches each of them (02 §5). The blank terminal is a worktree
+  and a login shell with nothing launched in it: no model, no permission
+  level, no effort, and no login button.
+- **Agent login is the host's own.** The runner launches the agent with
   the host's existing config; you log in once per host by typing it in
-  the terminal, and the login URL becomes a button. No account objects,
+  the terminal, and the login URL becomes a button when its host is one
+  the catalog lists for that agent (02 §9). No account objects,
   no volumes, no config-dir switching yet (note 06 comes later).
 - **GitHub access for clone and push:** the runner obtains a one-hour
   installation token scoped to the session's repository from the
@@ -83,7 +85,8 @@ on it. No virtual machines in the MVP. Claude Code first, Codex next.
 
 Virtual machines in any form (Shared workspace VM, Clean VM,
 Firecracker, tart, cloud adapters), sleep tiers, account objects and
-volumes, the egress proxy, Codex and other agents, Create PR and diff
+volumes, the egress proxy, agents beyond the four in the catalog (Cursor,
+Gemini and the rest Orca and Synara run), Create PR and diff
 view, preview URLs, auto-fix and routines, usage meters, delegation,
 Tailscale mode, orgs and billing, agent personalities and any other
 directory under `~/oppenheimer-ai`.

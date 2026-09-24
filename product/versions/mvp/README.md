@@ -356,11 +356,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   own words if not, and create waits for the name** (03, "A session is named
   from its first prompt").
 - 2026-09-24: **OpenCode and the blank terminal join the catalog, and Opus
-  5.5 is the Claude default** (00, 05). `CODING_AGENTS` gains `opencode`
-  (`provider/model` ids, Claude's family under `anthropic/`, `--prompt`
-  for the first task) and `shell`, the plain terminal with nothing
-  launched. OpenCode's TUI has one approval flag, `--auto`, so Ask and
-  Approve for me are an `OPENCODE_PERMISSION` block the runner sets on
-  window 0 only, with `env`. Claude Code's seed is Fable 5.1, Opus 5.5,
-  Sonnet 5 and Haiku 4.5, as Synara's model table and Orca's pricing
-  table list the current family.
+  5.5 is the Claude default** (00, 01, 02, 05). Four agents launch, not
+  one plus placeholders (00); `session.create` names any of the four and
+  carries no permission level for the blank terminal (01); a permission
+  level is one object of argv and environment, which is how OpenCode's
+  `OPENCODE_PERMISSION` reaches window 0 only, the login allowlist is
+  generated per agent from the catalog, and the host probe lists
+  `codex` and `opencode` (02 §5, §9, §10); the composer table and the
+  hide-and-do-not-send rule are 05's. The model seed follows Synara's
+  model table and Orca's pricing table.

@@ -34,7 +34,8 @@ export type SessionState = 'starting' | 'open' | 'failed' | 'resolved';
 export interface SessionLaunch {
   /** Null runs the agent's own default. */
   model: string | null;
-  permission: SessionPermission;
+  /** Null for an agent with no approvals (the blank terminal). */
+  permission: SessionPermission | null;
   /** Null leaves the agent its own default. */
   effort: SessionEffort | null;
 }

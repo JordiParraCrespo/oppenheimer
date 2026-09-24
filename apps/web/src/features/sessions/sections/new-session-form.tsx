@@ -18,13 +18,13 @@ import { RepositoryBranchSelect } from '../components/repository-branch-select';
 import { AddHostDialog } from '../dialogs/add-host';
 import { useNewSessionDraft } from '../hooks/use-new-session-draft';
 import {
-  hasEffort,
-  hasPermission,
+  launchControlsFor,
   parseRepositoryKey,
   toAgentOptions,
   toBranchOptions,
   toCheckouts,
   toHostOptions,
+  toLaunchInput,
   toRepositoryOptions,
 } from '../lib/session-options';
 
@@ -85,6 +85,7 @@ export function NewSessionForm() {
   // selected; with two there are two base branches and one chip cannot say so.
   const onlyScope = draft.scope.length === 1 ? draft.scope[0] : undefined;
   const onlyRef = onlyScope ? parseRepositoryKey(onlyScope.id) : null;
+  const controls = launchControlsFor(draft.agent);
   const onlyBranches = onlyRef ? (branches.byRepository.get(onlyRef.githubRepoId) ?? []) : [];
 
   function start(prompt: string) {
@@ -95,11 +96,7 @@ export function NewSessionForm() {
         hostId: draft.hostId,
         agent: draft.agent,
         checkouts: toCheckouts(draft.scope),
-        launch: {
-          model: draft.model,
-          permission: draft.permission,
-          effort: hasEffort(draft.agent) ? draft.effort : null,
-        },
+        launch: toLaunchInput(draft),
         prompt,
       },
     });
@@ -147,7 +144,7 @@ export function NewSessionForm() {
           busy={create.isPending}
           disabled={!draft.hostId}
           tools={
-            hasPermission(draft.agent) ? (
+            controls.permission ? (
               <PermissionSelect
                 value={draft.permission}
                 onValueChange={(permission) => update({ permission })}
@@ -163,7 +160,7 @@ export function NewSessionForm() {
                   setEngine(engine.agent as typeof draft.agent, engine.model)
                 }
               />
-              {hasEffort(draft.agent) ? (
+              {controls.effort ? (
                 <EffortSelect value={draft.effort} onValueChange={(effort) => update({ effort })} />
               ) : null}
             </>

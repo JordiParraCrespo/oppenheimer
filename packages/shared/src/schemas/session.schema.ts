@@ -48,10 +48,13 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
  * the launch is how it was started, and only the second is something a later
  * slice changes without making a different session.
  *
- * `permission` defaults to `ask` and nothing else: it is the level that asks
- * before every action, and a default that escalates is the one mistake this
- * field must not make. The console never seeds `full` from a remembered choice
- * either, for the same reason.
+ * `permission` absent means `ask` and nothing else, for every agent that has
+ * approvals: it is the level that asks before every action, and a default that
+ * escalates is the one mistake this field must not make. The console never
+ * seeds `full` from a remembered choice either, for the same reason. The
+ * default is applied where the agent is known (the API's launch mapping), not
+ * here, because an agent with no approvals — the blank terminal — records no
+ * level at all.
  *
  * What each value means to a given CLI is catalog data, beside that agent's
  * command (`../agents/catalog`), because the answer differs per agent and a
@@ -60,7 +63,8 @@ export type SessionEffortDto = z.infer<typeof sessionEffortSchema>;
 export const sessionLaunchSchema = z.object({
   /** An id or alias the agent's own CLI takes; absent runs that agent's default. */
   model: z.string().min(1).max(128).optional(),
-  permission: sessionPermissionSchema.default('ask'),
+  /** Absent is `ask` for an agent with approvals, and nothing for one without. */
+  permission: sessionPermissionSchema.optional(),
   /** Absent leaves the agent's own default; an agent with no notion of it ignores it. */
   effort: sessionEffortSchema.optional(),
 });

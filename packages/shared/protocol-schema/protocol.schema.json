@@ -394,10 +394,7 @@
                 "max"
               ]
             }
-          },
-          "required": [
-            "permission"
-          ]
+          }
         },
         "prompt": {
           "type": "string",
@@ -992,7 +989,7 @@
           "anyOf": [
             {
               "type": "string",
-              "pattern": "^(?:https:\\/\\/(claude\\.ai|console\\.anthropic\\.com)(\\/[^\\s]*)?|https:\\/\\/(auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com)(\\/[^\\s]*)?|https:\\/\\/(opencode\\.ai|claude\\.ai|console\\.anthropic\\.com|auth\\.openai\\.com|platform\\.openai\\.com|chatgpt\\.com|github\\.com\\/login\\/device)(\\/[^\\s]*)?)$"
+              "pattern": "^https:\\/\\/(?:claude\\.ai(?:\\/[^\\s]*)?|console\\.anthropic\\.com(?:\\/[^\\s]*)?|auth\\.openai\\.com(?:\\/[^\\s]*)?|platform\\.openai\\.com(?:\\/[^\\s]*)?|chatgpt\\.com(?:\\/[^\\s]*)?|opencode\\.ai(?:\\/[^\\s]*)?|github\\.com\\/login\\/device(?:[/?#][^\\s]*)?)$"
             },
             {
               "type": "null"

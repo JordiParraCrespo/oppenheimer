@@ -59,7 +59,7 @@ func (s State) Live() bool {
 type Agent string
 
 // Agents. Claude Code is the MVP's first entry; Codex and OpenCode are the
-// others, and the shell is the plain terminal with no agent in it.
+// others, and the shell is the blank terminal with no agent in it.
 const (
 	AgentClaude   Agent = "claude"
 	AgentCodex    Agent = "codex"
@@ -67,24 +67,44 @@ const (
 	AgentShell    Agent = "shell"
 )
 
-// Command is what the agent is launched as.
-func (a Agent) Command() string {
-	switch a {
-	case AgentClaude:
-		return "claude"
-	case AgentCodex:
-		return "codex"
-	case AgentOpenCode:
-		return "opencode"
-	case AgentShell:
-		return ""
-	}
-	return ""
+// agentCatalogIDs is the runner's view of the catalog's `CODING_AGENT_IDS`:
+// each agent it can start and the catalog id the control plane names it by.
+// It is the one table; Valid, CatalogID, AgentFromCatalogID and Command all
+// read it, so a fifth agent is one row here and one in the catalog, and a
+// test fails when the generated launch table has an id this map lacks.
+var agentCatalogIDs = map[Agent]string{
+	AgentClaude:   "claude-code",
+	AgentCodex:    "codex",
+	AgentOpenCode: "opencode",
+	AgentShell:    "shell",
 }
 
 // Valid reports an agent the runner knows how to start.
 func (a Agent) Valid() bool {
-	return a == AgentClaude || a == AgentCodex || a == AgentOpenCode || a == AgentShell
+	_, ok := agentCatalogIDs[a]
+	return ok
+}
+
+// CatalogID is the catalog's id for this agent, for snapshots the control
+// plane reads; "" for anything the runner does not know, never a guess.
+func (a Agent) CatalogID() string {
+	return agentCatalogIDs[a]
+}
+
+// Command is what the agent is launched as: the catalog's `command`, empty
+// for the blank terminal and for an agent the catalog has no row for.
+func (a Agent) Command() string {
+	return launchCatalog[a.CatalogID()].command
+}
+
+// AgentFromCatalogID maps a catalog agent id onto this runner's agent.
+func AgentFromCatalogID(id string) (Agent, bool) {
+	for agent, catalogID := range agentCatalogIDs {
+		if catalogID == id {
+			return agent, true
+		}
+	}
+	return "", false
 }
 
 // Window is one tmux window in the session: window 0 is the agent, 1 and up

@@ -8,6 +8,7 @@ import type {
 import type {
   BranchEntity,
   CreateSessionCheckout,
+  CreateSessionInput,
   HostEntity,
   RepositoryEntity,
 } from '@oppenheimer/frontend-consumer';
@@ -17,6 +18,7 @@ import {
   type CodingAgentId,
   SESSION_EFFORTS,
   type SessionEffort,
+  type SessionPermission,
 } from '@oppenheimer/shared/agents';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
 
@@ -133,14 +135,38 @@ export function defaultModelFor(agent: CodingAgentId): string | null {
   return (models.find((model) => model.default) ?? models[0])?.id ?? null;
 }
 
-/** Whether this agent asks for approvals at all; the plain terminal does not. */
-export function hasPermission(agent: CodingAgentId): boolean {
-  return CODING_AGENTS[agent].launch.permission !== undefined;
+/**
+ * Which of the foot row's controls an agent takes, read off its catalog entry
+ * once: a control the catalog declares nothing for is neither drawn nor sent.
+ * The blank terminal takes none of them.
+ */
+export interface LaunchControls {
+  permission: boolean;
+  effort: boolean;
 }
 
-/** Whether this agent has any notion of effort at all. */
-export function hasEffort(agent: CodingAgentId): boolean {
-  return CODING_AGENTS[agent].launch.effort !== undefined;
+export function launchControlsFor(agent: CodingAgentId): LaunchControls {
+  const { launch } = CODING_AGENTS[agent];
+  return { permission: launch.permission !== undefined, effort: launch.effort !== undefined };
+}
+
+/**
+ * The foot row as `POST /sessions` takes it: only the controls this agent
+ * has. A level or an effort the composer still holds from the last agent is
+ * dropped rather than sent, so a blank terminal records no permission at all.
+ */
+export function toLaunchInput(draft: {
+  agent: CodingAgentId;
+  model: string | null;
+  permission: SessionPermission;
+  effort: SessionEffort;
+}): CreateSessionInput['launch'] {
+  const controls = launchControlsFor(draft.agent);
+  return {
+    model: draft.model,
+    ...(controls.permission ? { permission: draft.permission } : {}),
+    ...(controls.effort ? { effort: draft.effort } : {}),
+  };
 }
 
 /** The five stops, translated where the call site translates. */

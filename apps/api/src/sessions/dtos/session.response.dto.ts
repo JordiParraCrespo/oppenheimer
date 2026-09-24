@@ -85,10 +85,11 @@ export class SessionLaunchResponseDto {
 
   @ApiProperty({
     enum: SESSION_PERMISSIONS,
+    nullable: true,
     description:
-      'What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default.',
+      'What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal).',
   })
-  permission!: SessionPermissionDto;
+  permission!: SessionPermissionDto | null;
 
   @ApiPropertyOptional({
     enum: SESSION_EFFORTS,
