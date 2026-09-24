@@ -38,6 +38,13 @@ export const VIEWPORT_TIMEOUT_MS = 2_000;
 
 const DEFAULT_VIEWPORT = { cols: 80, rows: 24 };
 
+/**
+ * Frames held while a ticket is redeemed. The browser sends one, its viewport,
+ * the moment the socket opens; anything past a handful is not a browser
+ * waiting for an answer, and is dropped.
+ */
+const MAX_EARLY_FRAMES = 8;
+
 /** Keystrokes larger than this are not keystrokes. */
 const MAX_INPUT_BYTES = 64 * 1024;
 
@@ -104,6 +111,24 @@ export class BrowserAttachGateway {
   }
 
   private async redeem(ws: WebSocket, ticket: string): Promise<void> {
+    // The browser sends its viewport as soon as the socket opens, which is
+    // while the lookups below are still out. `ws` drops a frame nobody listens
+    // for, so without this hold the resize was lost whenever redemption was
+    // slower than the browser, and the relay sat out `VIEWPORT_TIMEOUT_MS`
+    // before attaching at 80x24: two seconds on some session switches.
+    const early: EarlyFrame[] = [];
+    const hold = (data: unknown, isBinary: boolean) => {
+      if (early.length < MAX_EARLY_FRAMES) early.push({ data: data as Buffer, isBinary });
+    };
+    ws.on('message', hold);
+    try {
+      await this.judge(ws, ticket, early);
+    } finally {
+      ws.off('message', hold);
+    }
+  }
+
+  private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
     if (!claim) {
       this.end(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
@@ -132,7 +157,11 @@ export class BrowserAttachGateway {
       ws.close(ATTACH_CLOSE_CODES.HOST_OFFLINE, 'host offline');
       return;
     }
-    new BrowserAttachment(ws, claim, link, this.logger).start();
+    // A browser that left while the ticket was judged has nothing to attach,
+    // and its `close` has already fired: an attachment opened now would never
+    // be detached.
+    if (ws.readyState !== ws.OPEN) return;
+    new BrowserAttachment(ws, claim, link, this.logger).start(early);
   }
 
   /** A final answer: the reason as a control frame, then the code. */
@@ -151,6 +180,12 @@ export class BrowserAttachGateway {
     const allowed = this.configService.get<string>('app.frontendUrl');
     return Boolean(allowed) && sameOrigin(allowed as string, origin);
   }
+}
+
+/** A frame the browser sent before its attachment was listening. */
+interface EarlyFrame {
+  data: Buffer;
+  isBinary: boolean;
 }
 
 function sameOrigin(a: string, b: string): boolean {
@@ -180,7 +215,8 @@ class BrowserAttachment implements AttachmentSink {
     private readonly logger: Logger,
   ) {}
 
-  start(): void {
+  /** `early` is what the browser sent while its ticket was redeemed, in order. */
+  start(early: readonly EarlyFrame[] = []): void {
     this.attachmentId = this.link.openAttachment(this, this.commandId);
     this.ws.on('message', (data, isBinary) => this.onBrowserMessage(data as Buffer, isBinary));
     this.ws.on('close', () => this.detach());
@@ -190,6 +226,7 @@ class BrowserAttachment implements AttachmentSink {
     // The attach carries the viewport so the pane is not resized a frame later;
     // a browser that never says its size gets a classic 80x24.
     this.viewportTimer = setTimeout(() => this.attach(DEFAULT_VIEWPORT), VIEWPORT_TIMEOUT_MS);
+    for (const frame of early) this.onBrowserMessage(frame.data, frame.isBinary);
   }
 
   deliver(bytes: Uint8Array): void {
