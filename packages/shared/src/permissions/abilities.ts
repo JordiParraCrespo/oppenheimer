@@ -54,6 +54,7 @@ export const KNOWN_SUBJECTS = [
   'ApiToken',
   'AuditLog',
   'Billing',
+  'FeatureFlag',
   // The control plane's own nouns. `Host` is person-owned; the other three are
   // workspace-owned. There is deliberately no `Repository` subject: a repository
   // has no row, and the thing that *is* a row and *does* carry the tenant is the
