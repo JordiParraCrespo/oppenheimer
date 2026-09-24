@@ -298,6 +298,7 @@ pnpm check:structure    # Frontend layout contract: feature names, kinds, route 
 pnpm docker:dev         # Start Postgres + Redis
 pnpm generate:api-client # Regenerate typed API client (no database needed)
 pnpm changeset          # Create a changeset for versioning
+node scripts/stack/stack.mjs up --web && node scripts/stack/stack.mjs host  # The whole product plus a real runner, locally (the local-stack skill)
 ```
 
 ## Deployment
