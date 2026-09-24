@@ -352,3 +352,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   it, a runner's refusal of a session command is recorded on the
   session's log instead of dropped, so a start the host refuses fails
   visibly (03).
+- 2026-09-23: **a session is named by a model if it is quick, by its prompt's
+  own words if not, and create waits for the name** (03, "A session is named
+  from its first prompt").

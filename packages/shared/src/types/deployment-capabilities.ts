@@ -10,10 +10,11 @@
  * signing key there is nothing to hand a machine that wants to pair, so the
  * host routes answer "not configured" and the rest of the API is unaffected.
  *
- * `session_namer` is the smallest of them: with no provider configured a session
- * keeps its minted slug as its name, which reads fine and costs nothing. It is a
- * capability so that "nothing here is ever named" is answered by the startup log
- * rather than by somebody reading the naming code.
+ * `session_namer` is the smallest of them: it says whether a *model* titles
+ * sessions. Without one, a session is still named — from its first prompt's own
+ * words — which costs nothing. It is a capability so that "why is no title ever
+ * a model's" is answered by the startup log rather than by reading the naming
+ * code.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
