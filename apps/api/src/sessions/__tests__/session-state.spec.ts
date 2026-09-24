@@ -118,6 +118,22 @@ describe('the session fold', () => {
     expect(fold.nameSource).toBe('user');
   });
 
+  it('keeps a name a person typed against the prompt-derived fallback', () => {
+    const fold = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Fix the wallet list', source: 'user' }),
+      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet list empty state', source: 'prompt' }),
+    ]);
+    expect(fold.name).toBe('Fix the wallet list');
+    expect(fold.nameSource).toBe('user');
+  });
+
+  it('records a name taken from the prompt’s words as such', () => {
+    const fold = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet list empty state', source: 'prompt' }),
+    ]);
+    expect(fold.nameSource).toBe('prompt');
+  });
+
   it('lets a person rename over a model’s title', () => {
     const fold = foldSessionLog([
       entry(SESSION_EVENT_KINDS.NAMED, { name: 'Wallet empty state', source: 'model' }),

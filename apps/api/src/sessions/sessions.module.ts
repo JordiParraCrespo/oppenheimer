@@ -1,9 +1,7 @@
 import { Module, type Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
-import { sessionNamerIsConfigured } from '../config/sessions.config';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
@@ -37,11 +35,6 @@ import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
-import { AnthropicSessionNamerAdapter } from './infrastructure/anthropic-session-namer.adapter';
-import { NoopSessionNamerAdapter } from './infrastructure/noop-session-namer.adapter';
-import { OpenAiCompatibleSessionNamerAdapter } from './infrastructure/openai-compatible-session-namer.adapter';
-import { SessionNamerConfig } from './infrastructure/session-namer.config';
-import type { SessionNamerPort } from './infrastructure/session-namer.port';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
@@ -51,7 +44,6 @@ import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.
 import {
   RECORD_SESSION_EVENTS,
   SESSION_LOOKUP,
-  SESSION_NAMER,
   SESSION_RECONCILIATION,
   WORK_SESSION_REPOSITORY,
 } from './sessions.di-tokens';
@@ -96,25 +88,6 @@ const queryHandlers: Provider[] = [
 ];
 
 const adapters: Provider[] = [
-  SessionNamerConfig,
-  {
-    // The abstract-class-plus-factory shape `packages/backend/email` already
-    // follows: the provider is an environment variable, and a provider whose key
-    // or model is missing is *not configured* rather than half-configured — the
-    // no-op adapter is then the honest binding, and every session keeps its slug.
-    provide: SESSION_NAMER,
-    inject: [ConfigService],
-    useFactory: (configService: ConfigService): SessionNamerPort => {
-      if (!sessionNamerIsConfigured(configService)) return new NoopSessionNamerAdapter();
-      const config = new SessionNamerConfig(configService);
-      // `openai-compatible` is one adapter for most of the field — Groq,
-      // Together, OpenRouter, vLLM, a local Ollama — which is how a session gets
-      // named by a fast open-weights model without a vendor adapter each.
-      return config.provider === 'openai-compatible'
-        ? new OpenAiCompatibleSessionNamerAdapter(config)
-        : new AnthropicSessionNamerAdapter(config);
-    },
-  },
   { provide: RECORD_SESSION_EVENTS, useClass: RecordSessionEventsResolver },
   { provide: SESSION_LOOKUP, useClass: SessionLookupResolver },
   { provide: SESSION_RECONCILIATION, useClass: SessionReconciliationResolver },

@@ -16,6 +16,7 @@ The API (`apps/api`) is built with NestJS and consumes 5 reusable backend packag
 - **Caching**: Redis via [`@oppenheimer/backend-cache`](./backend-packages#oppenheimerbackend-cache)
 - **Queues**: BullMQ via [`@oppenheimer/backend-queue`](./backend-packages#oppenheimerbackend-queue)
 - **Email**: Pluggable with React Email templates via [`@oppenheimer/backend-email`](./backend-packages#oppenheimerbackend-email)
+- **LLM calls**: Pluggable (OpenRouter / Together / Anthropic / OpenAI-compatible) via [`@oppenheimer/backend-llm`](./backend-packages#oppenheimerbackend-llm)
 - **Storage**: Pluggable (Local / S3) via [`@oppenheimer/backend-storage`](./backend-packages#oppenheimerbackend-storage)
 - **Cross-cutting**: Structured errors, correlation IDs, input sanitization via [`@oppenheimer/backend-core`](./backend-packages#oppenheimerbackend-core)
 - **Logging**: Pino structured JSON logs

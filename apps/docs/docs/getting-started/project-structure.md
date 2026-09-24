@@ -17,6 +17,7 @@ oppenheimer/
 │   │   ├── cache/        # Redis cache abstraction (@oppenheimer/backend-cache)
 │   │   ├── core/         # Errors, filters, pipes, interceptors (@oppenheimer/backend-core)
 │   │   ├── email/        # Pluggable email + React Email templates (@oppenheimer/backend-email)
+│   │   ├── llm/          # One interface over LLM providers (@oppenheimer/backend-llm)
 │   │   ├── queue/        # BullMQ + Bull Board (@oppenheimer/backend-queue)
 │   │   └── storage/      # File storage Local/S3 (@oppenheimer/backend-storage)
 │   ├── auth/             # Shared Better Auth config (@oppenheimer/auth)
@@ -45,6 +46,7 @@ packages/shared           → api, frontend, api-client
 packages/backend/core     → api, other backend packages
 packages/backend/email    → api
 packages/backend/cache    → api
+packages/backend/llm      → api
 packages/backend/storage  → api
 packages/backend/queue    → api
 packages/translations     → web, api (email copy)

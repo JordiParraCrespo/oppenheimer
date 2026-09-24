@@ -249,8 +249,8 @@ apps/api/src/sessions/
   domain/sessions.errors.ts  domain/events/session-*.domain-event.ts
   database/work-session.orm-entity.ts  session-checkout.orm-entity.ts  work-session-event.orm-entity.ts
   database/work-session.repository.port.ts  work-session.repository.ts   # append + fold in one tx; seq under row lock; ON CONFLICT DO NOTHING per row
-  infrastructure/session-namer.port.ts  anthropic-session-namer.adapter.ts  noop-session-namer.adapter.ts
-  infrastructure/session-namer.config.ts        # SESSION_NAMER_PROVIDER, SESSION_NAMER_MODEL, ANTHROPIC_API_KEY
+  domain/session-name.policy.ts                 # the title request, the model answer's cleanup, the prompt-words fallback
+  application/session-naming.resolver.ts        # LlmService with a deadline, else the prompt's words; SESSION_NAMER_MODEL, SESSION_NAMER_TIMEOUT_MS
   application/session-dispatch.port.ts          # what relay/ implements: create/stop/restart/close/addCheckout/removeCheckout → host
   application/record-session-events.port.ts     # what relay/ calls with a runner batch
   commands/create-session/       POST /sessions  (Idempotency-Key; ensure project; slug; checkouts; session.requested; dispatch)
@@ -258,7 +258,6 @@ apps/api/src/sessions/
   commands/stop-session/  restart-session/  close-session/   POST …/stop, …/restart, DELETE /sessions/{id}
   commands/add-checkout/  remove-checkout/                    POST …/checkouts, DELETE …/checkouts/{checkoutId}
   commands/record-session-events/  (no controller; the relay's command)
-  commands/name-session/           (no controller; reacts to prompt.first)
   commands/issue-attach-ticket/    POST /sessions/{id}/attach-ticket  (Redis set, 60 s, {sessionId, organizationId, window, userId})
   queries/find-sessions/  find-session/  find-session-events/
   dtos/session.response.dto.ts  dtos/session-event.response.dto.ts

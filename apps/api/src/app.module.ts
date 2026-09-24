@@ -15,6 +15,7 @@ import {
 } from '@oppenheimer/backend-core';
 import { EmailModule } from '@oppenheimer/backend-email';
 import { I18nModule } from '@oppenheimer/backend-i18n';
+import { LlmModule } from '@oppenheimer/backend-llm';
 import { StorageModule } from '@oppenheimer/backend-storage';
 // The JSON files directly, not the package root: that entry is a TypeScript
 // source the API's CommonJS build cannot require at runtime.
@@ -34,6 +35,8 @@ import {
   emailConfig,
   githubAppConfig,
   hostsConfig,
+  llmConfig,
+  llmConfigFrom,
   oauthConfig,
   redisConfig,
   sessionsConfig,
@@ -71,6 +74,7 @@ import { UsersModule } from './users/user.module';
         stripeConfig,
         githubAppConfig,
         hostsConfig,
+        llmConfig,
         sessionsConfig,
       ],
     }),
@@ -149,6 +153,12 @@ import { UsersModule } from './users/user.module';
     EmailModule.register(),
     StorageModule.register(),
     CacheModule.register(),
+    // The deployment's LLM provider, for short best-effort calls (a session's
+    // title). `none` by default; see `config/llm.config.ts`.
+    LlmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => llmConfigFrom(configService),
+    }),
     // `bodyParser.rawBody` attaches the raw request buffer to `req.rawBody`,
     // which the Stripe webhook controller needs for signature verification.
     //
