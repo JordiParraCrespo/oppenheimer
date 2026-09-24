@@ -2,6 +2,7 @@
 
 import type { PermissionDefinition, Role, UpdateUserDto } from '@oppenheimer/shared';
 import {
+  type QueryClient,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -39,6 +40,11 @@ export const usersKeys = {
   me: () => [...usersKeys.all, 'me'] as const,
   permissions: () => [...usersKeys.me(), 'permissions'] as const,
 };
+
+/** Whether `id` is the signed-in user, as far as the cache knows. */
+function isCaller(queryClient: QueryClient, id: string): boolean {
+  return queryClient.getQueryData<UserEntity>(usersKeys.me())?.id === id;
+}
 
 /**
  * The caller's own effective permissions (CASL rules), used to gate which
@@ -120,13 +126,14 @@ export function useUpdateUser(
 
   return useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: UpdateUserDto }) => app.users.update(id, dto),
-    // The saved row is the answer, so it is written, not refetched. What it
-    // appears in is invalidated around it — never `all`, which would mark the
-    // row just written stale and fetch it again.
+    // Write the row the server answered with, where it is cached: its detail,
+    // and the caller's own entry when the row is the caller. The lists it
+    // appears in are refetched. `UpdateUserDto` cannot touch roles, so the
+    // permissions under `me()` stay as they are.
     ...withCacheOnSuccess(options, (user, { id }) => {
       queryClient.setQueryData(usersKeys.detail(id), user);
+      if (isCaller(queryClient, id)) queryClient.setQueryData(usersKeys.me(), user);
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
     }),
   });
 }
@@ -139,12 +146,14 @@ export function useDeleteUser(
 
   return useMutation({
     mutationFn: (id: string) => app.users.delete(id),
+    // The row is gone, so its detail is dropped rather than refetched. An
+    // admin may delete their own account: then the caller's entry and its
+    // permissions go too, or the shell keeps rendering the identity just
+    // removed.
     ...withCacheOnSuccess(options, (_, id) => {
       queryClient.removeQueries({ queryKey: usersKeys.detail(id) });
+      if (isCaller(queryClient, id)) queryClient.removeQueries({ queryKey: usersKeys.me() });
       queryClient.invalidateQueries({ queryKey: usersKeys.lists() });
-      // An admin may delete their own account: the shell's "me" and its
-      // permissions must not keep rendering the identity just removed.
-      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
     }),
   });
 }

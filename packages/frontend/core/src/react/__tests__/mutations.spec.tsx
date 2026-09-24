@@ -84,6 +84,8 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
   it('an update writes the saved row and leaves it fresh', async () => {
     const { wrapper, queryClient } = setup();
     queryClient.setQueryData(usersKeys.list(), []);
+    queryClient.setQueryData(usersKeys.me(), { id: 'someone-else' });
+    queryClient.setQueryData(usersKeys.permissions(), []);
     const onSuccess = vi.fn();
 
     const { result } = renderHook(() => useUpdateUser({ onSuccess }), { wrapper });
@@ -95,13 +97,30 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     // Invalidating `all` here would mark the row just written stale.
     expect(invalidated(queryClient, usersKeys.detail('user-1'))).toBe(false);
     expect(invalidated(queryClient, usersKeys.list())).toBe(true);
+    // Someone else's row: the caller's entry and permissions are untouched.
+    expect(queryClient.getQueryData(usersKeys.me())).toEqual({ id: 'someone-else' });
+    expect(invalidated(queryClient, usersKeys.me())).toBe(false);
+    expect(invalidated(queryClient, usersKeys.permissions())).toBe(false);
   });
 
-  it('a delete drops the row and refreshes the lists and the caller', async () => {
+  it('an update of the caller writes their own entry, not their permissions', async () => {
+    const { wrapper, queryClient } = setup();
+    queryClient.setQueryData(usersKeys.me(), { id: 'user-1', firstName: 'Before' });
+    queryClient.setQueryData(usersKeys.permissions(), []);
+
+    const { result } = renderHook(() => useUpdateUser(), { wrapper });
+    act(() => result.current.mutate({ id: 'user-1', dto: { firstName: 'Saved' } }));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(usersKeys.me())).toEqual(SAVED);
+    expect(invalidated(queryClient, usersKeys.permissions())).toBe(false);
+  });
+
+  it('a delete drops the row and refreshes the lists', async () => {
     const { wrapper, queryClient } = setup();
     queryClient.setQueryData(usersKeys.detail('user-1'), SAVED);
     queryClient.setQueryData(usersKeys.list(), [SAVED]);
-    queryClient.setQueryData(usersKeys.me(), SAVED);
+    queryClient.setQueryData(usersKeys.me(), { id: 'someone-else' });
     const onSuccess = vi.fn();
 
     const { result } = renderHook(() => useDeleteUser({ onSuccess }), { wrapper });
@@ -111,6 +130,19 @@ describe('a caller’s onSuccess runs alongside the cache update', () => {
     expect(onSuccess).toHaveBeenCalled();
     expect(queryClient.getQueryData(usersKeys.detail('user-1'))).toBeUndefined();
     expect(invalidated(queryClient, usersKeys.list())).toBe(true);
-    expect(invalidated(queryClient, usersKeys.me())).toBe(true);
+    expect(queryClient.getQueryData(usersKeys.me())).toEqual({ id: 'someone-else' });
+  });
+
+  it('deleting the caller drops their own entry and permissions', async () => {
+    const { wrapper, queryClient } = setup();
+    queryClient.setQueryData(usersKeys.me(), SAVED);
+    queryClient.setQueryData(usersKeys.permissions(), []);
+
+    const { result } = renderHook(() => useDeleteUser(), { wrapper });
+    act(() => result.current.mutate('user-1'));
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(usersKeys.me())).toBeUndefined();
+    expect(queryClient.getQueryData(usersKeys.permissions())).toBeUndefined();
   });
 });
