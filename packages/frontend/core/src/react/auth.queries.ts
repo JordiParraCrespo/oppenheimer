@@ -12,10 +12,9 @@ import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.clie
 import { useOppenheimerApp } from './context';
 import { reconcileCacheOwner } from './persistence';
 import { authKeys } from './query-keys';
+import { usersKeys } from './users.queries';
 
 export { authKeys };
-
-import { profileQueryKey } from './users.queries';
 
 export function useSessionRestore(
   options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
@@ -75,11 +74,11 @@ export function useLogin(options?: Omit<UseMutationOptions<void, Error, LoginDto
 
   return useMutation({
     mutationFn: (dto: LoginDto) => app.auth.login(dto),
+    ...options,
     onSuccess: (...args) => {
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
       options?.onSuccess?.(...args);
     },
-    ...options,
   });
 }
 
@@ -89,11 +88,11 @@ export function useLogout(options?: Omit<UseMutationOptions<void, Error, void>, 
 
   return useMutation({
     mutationFn: () => app.auth.logout(),
+    ...options,
     onSuccess: (...args) => {
       queryClient.clear();
       options?.onSuccess?.(...args);
     },
-    ...options,
   });
 }
 

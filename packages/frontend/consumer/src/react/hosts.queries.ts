@@ -13,13 +13,17 @@ import { useConsumerApp } from './context';
 /**
  * Query key factory for the `hosts` feature, from the most generic (`all`) to
  * the most specific so a whole subtree can be invalidated with one key.
+ *
+ * Pairing has its own scope: the token list Add host polls and the token it is
+ * showing both sit under `pairings()`, so one key refreshes the whole flow.
  */
 export const hostsKeys = {
   all: ['hosts'] as const,
   lists: () => [...hostsKeys.all, 'list'] as const,
   list: () => [...hostsKeys.lists()] as const,
-  pairings: () => [...hostsKeys.all, 'pairings'] as const,
-  currentPairing: (name: string) => [...hostsKeys.all, 'pairing', 'current', name] as const,
+  pairings: () => [...hostsKeys.all, 'pairing'] as const,
+  pairingTokens: () => [...hostsKeys.pairings(), 'tokens'] as const,
+  currentPairing: (name: string) => [...hostsKeys.pairings(), 'current', { name }] as const,
 };
 
 /** The hosts the caller has paired: the Settings → Hosts list and New session's host chip. */
@@ -77,7 +81,7 @@ export function usePairingTokens(
   const app = useConsumerApp();
 
   return useQuery({
-    queryKey: hostsKeys.pairings(),
+    queryKey: hostsKeys.pairingTokens(),
     queryFn: () => app.hosts.pairings(),
     ...options,
   });

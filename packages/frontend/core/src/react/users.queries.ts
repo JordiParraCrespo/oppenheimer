@@ -38,8 +38,6 @@ export const usersKeys = {
   permissions: () => [...usersKeys.me(), 'permissions'] as const,
 };
 
-export const profileQueryKey = usersKeys.me();
-
 /**
  * The caller's own effective permissions (CASL rules), used to gate which
  * routes appear in the app's navigation. Kept alongside the profile query so
@@ -121,12 +119,12 @@ export function useUpdateUser(
 
   return useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: UpdateUserDto }) => app.users.update(id, dto),
+    ...options,
     onSuccess: (...args) => {
       queryClient.setQueryData(usersKeys.detail(args[1].id), args[0]);
       queryClient.invalidateQueries({ queryKey: usersKeys.all });
       options?.onSuccess?.(...args);
     },
-    ...options,
   });
 }
 
@@ -138,10 +136,10 @@ export function useDeleteUser(
 
   return useMutation({
     mutationFn: (id: string) => app.users.delete(id),
+    ...options,
     onSuccess: (...args) => {
       queryClient.invalidateQueries({ queryKey: usersKeys.all });
       options?.onSuccess?.(...args);
     },
-    ...options,
   });
 }

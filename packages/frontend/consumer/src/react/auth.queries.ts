@@ -1,6 +1,6 @@
 'use client';
 
-import { profileQueryKey } from '@oppenheimer/frontend-core/react';
+import { usersKeys } from '@oppenheimer/frontend-core/react';
 import type { RegisterDto } from '@oppenheimer/shared';
 import { type UseMutationOptions, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useConsumerApp } from './context';
@@ -19,9 +19,10 @@ export function useRegister(
 
   return useMutation<void, Error, RegisterDto>({
     mutationFn: (dto: RegisterDto) => app.auth.register(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });
-    },
     ...options,
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+      options?.onSuccess?.(...args);
+    },
   });
 }

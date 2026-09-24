@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
   useMutation,
@@ -18,15 +19,22 @@ import { useConsumerApp } from './context';
 /**
  * Query key factory for the `installations` feature, from the most generic
  * (`all`) to the most specific so a whole subtree can be invalidated at once.
+ *
+ * What GitHub says about one installation hangs off its `detail(id)`: its
+ * repositories, and under each repository its branches. Removing an
+ * installation drops that one subtree; the scope segment keeps an id from
+ * ever colliding with `'list'`.
  */
 export const installationsKeys = {
   all: ['installations'] as const,
   lists: () => [...installationsKeys.all, 'list'] as const,
   list: () => [...installationsKeys.lists()] as const,
+  details: () => [...installationsKeys.all, 'detail'] as const,
+  detail: (installationId: string) => [...installationsKeys.details(), installationId] as const,
   repositories: (installationId: string) =>
-    [...installationsKeys.all, installationId, 'repositories'] as const,
+    [...installationsKeys.detail(installationId), 'repositories'] as const,
   branches: (installationId: string, githubRepoId: number) =>
-    [...installationsKeys.all, installationId, 'branches', githubRepoId] as const,
+    [...installationsKeys.repositories(installationId), githubRepoId, 'branches'] as const,
 };
 
 /**
@@ -87,6 +95,8 @@ export function useRemoveInstallation(options?: UseMutationOptions<void, Error, 
     mutationFn: (id: string) => app.installations.remove(id),
     ...options,
     onSuccess: (...args) => {
+      const [, id] = args;
+      queryClient.removeQueries({ queryKey: installationsKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: installationsKeys.lists() });
       options?.onSuccess?.(...args);
     },
@@ -102,8 +112,7 @@ export function useInstallationRepositories(
 
   return useQuery({
     queryKey: installationsKeys.repositories(installationId ?? ''),
-    queryFn: () => app.installations.repositories(installationId as string),
-    enabled: Boolean(installationId),
+    queryFn: installationId ? () => app.installations.repositories(installationId) : skipToken,
     ...options,
   });
 }
@@ -124,8 +133,10 @@ export function useRepositoryBranches(
 
   return useQuery({
     queryKey: installationsKeys.branches(installationId ?? '', githubRepoId ?? 0),
-    queryFn: () => app.installations.branches(installationId as string, githubRepoId as number),
-    enabled: Boolean(installationId) && Boolean(githubRepoId),
+    queryFn:
+      installationId && githubRepoId
+        ? () => app.installations.branches(installationId, githubRepoId)
+        : skipToken,
     ...options,
   });
 }
