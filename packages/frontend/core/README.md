@@ -1,13 +1,12 @@
 # @oppenheimer/frontend-core
 
-The kernel every frontend app loads. It holds the logic both products share —
-session, users, user settings, deployment capabilities, analytics — as plain
-entities, repositories and services over `@oppenheimer/api-client`, plus the React
-bindings that expose them as TanStack Query hooks. Nothing here is web or
-mobile: no DOM, no React Native, no router, so `apps/web`, `apps/admin-web`,
-`apps/mobile` and `apps/admin-mobile` all run the same code. It also owns the
-InversifyJS container (`OppenheimerApp`, `TOKENS`) the product packages extend, the
-query-cache persistence policy, and the contracts the two products meet on.
+The kernel every frontend app loads. It holds the logic that is not any one
+product's — session, users, user settings, deployment capabilities, analytics —
+as plain entities, repositories and services over `@oppenheimer/api-client`, plus
+the React bindings that expose them as TanStack Query hooks. Nothing here is
+platform code: no DOM, no router. It also owns the InversifyJS container
+(`OppenheimerApp`, `TOKENS`) the product package extends, the query-cache
+persistence policy, and the contracts a product builds on.
 
 `react` and `@tanstack/react-query` are optional peer dependencies: import
 `@oppenheimer/frontend-core/react` only from a React app.
@@ -45,7 +44,7 @@ query-cache persistence policy, and the contracts the two products meet on.
 - Capabilities: `useDeploymentCapabilities`, `capabilitiesKeys`.
 - Cache policy: `defaultQueryClientOptions`, `createQueryPersistOptions`,
   `shouldDehydrateQuery`, `KERNEL_NON_PERSISTED_FEATURES`, `cacheOwnerKey`.
-- Contracts both products use: `MEMBER_LISTS_KEY`, `withFeaturePrefix`.
+- Contracts a product builds on: `MEMBER_LISTS_KEY`, `withFeaturePrefix`.
 
 ## How to use it
 
@@ -84,5 +83,4 @@ pnpm --filter @oppenheimer/frontend-core build   # tsc -> dist, what the apps co
 
 Depends on `@oppenheimer/api-client`, `@oppenheimer/shared`, `inversify`, `zustand`,
 `better-auth` and `@tanstack/query-core`. Used by
-`@oppenheimer/frontend-consumer`, `@oppenheimer/frontend-admin`, `@oppenheimer/frontend-web`,
-`@oppenheimer/frontend-mobile` and all four frontend apps.
+`@oppenheimer/frontend-consumer`, `@oppenheimer/frontend-web` and `apps/web`.

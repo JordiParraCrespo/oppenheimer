@@ -115,6 +115,8 @@ export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): s
   return url.toString();
 }
 
+type DataListener = (chunk: Uint8Array | string, consumed: () => void) => void;
+
 /**
  * The real transport: one attach socket per stream, reconnected through the
  * ladder with a fresh ticket each time, and an epoch counter so a frame or a
@@ -125,93 +127,152 @@ export function attachSocketUrl(path: string, apiBaseUrl: string | undefined): s
  * Input goes the other way as bytes too. The viewport is sent first, before
  * the relay dispatches the attach, so the pane is not resized a frame later;
  * a resize that arrives before the socket is open waits for it.
+ *
+ * Constructing one dials: a stream exists to be connected, and the hook that
+ * owns it disposes it with the terminal.
  */
-export function createSessionStream(options: SessionStreamOptions): SessionStream {
-  const dataListeners = new Set<(chunk: Uint8Array | string, consumed: () => void) => void>();
-  const statusListeners = new Set<(status: StreamStatus) => void>();
-  const endListeners = new Set<(reason: StreamEnd) => void>();
-  const socketFactory =
-    options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
-  const schedule =
-    options.schedule ??
-    ((fn, ms) => {
-      const timer = setTimeout(fn, ms);
-      return () => clearTimeout(timer);
-    });
-  const encoder = new TextEncoder();
+export class AttachSessionStream implements SessionStream {
+  private readonly dataListeners = new Set<DataListener>();
+  private readonly statusListeners = new Set<(status: StreamStatus) => void>();
+  private readonly endListeners = new Set<(reason: StreamEnd) => void>();
+  private readonly socketFactory: (url: string, protocols: string[]) => WebSocket;
+  private readonly schedule: (fn: () => void, ms: number) => () => void;
+  private readonly encoder = new TextEncoder();
 
-  let status: StreamStatus = 'connecting';
-  let disposed = false;
-  let epoch = 0;
-  let socket: WebSocket | null = null;
-  let attached = false;
-  let attempt = 0;
-  let cancelRetry: (() => void) | null = null;
-  let viewport: { cols: number; rows: number } | null = null;
+  private status: StreamStatus = 'connecting';
+  private disposed = false;
+  private epoch = 0;
+  private socket: WebSocket | null = null;
+  private attached = false;
+  private attempt = 0;
+  private cancelRetry: (() => void) | null = null;
+  private viewport: { cols: number; rows: number } | null = null;
   /** The reason a `closed` control frame named, read back when the close follows. */
-  let closedReason: StreamEnd | null = null;
+  private closedReason: StreamEnd | null = null;
 
-  const setStatus = (next: StreamStatus) => {
-    if (status === next) return;
-    status = next;
-    for (const listener of statusListeners) listener(next);
-  };
+  constructor(private readonly options: SessionStreamOptions) {
+    this.socketFactory =
+      options.socketFactory ?? ((url, protocols) => new WebSocket(url, protocols));
+    this.schedule =
+      options.schedule ??
+      ((fn, ms) => {
+        const timer = setTimeout(fn, ms);
+        return () => clearTimeout(timer);
+      });
+    void this.connect();
+  }
+
+  onData(listener: DataListener): () => void {
+    this.dataListeners.add(listener);
+    return () => this.dataListeners.delete(listener);
+  }
+
+  onStatus(listener: (status: StreamStatus) => void): () => void {
+    // The current state first, so a subscriber never waits for a change to
+    // learn where things stand.
+    listener(this.status);
+    this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+
+  onEnd(listener: (reason: StreamEnd) => void): () => void {
+    this.endListeners.add(listener);
+    return () => this.endListeners.delete(listener);
+  }
+
+  send(data: string): void {
+    if (!this.attached || this.socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
+    this.socket.send(this.encoder.encode(data));
+  }
+
+  resize(cols: number, rows: number): void {
+    if (cols < 1 || rows < 1) return;
+    this.viewport = { cols, rows };
+    this.tell({ type: 'resize', cols, rows });
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.epoch += 1;
+    this.cancelRetry?.();
+    this.dataListeners.clear();
+    this.endListeners.clear();
+    const open = this.socket;
+    this.socket = null;
+    if (open && (open.readyState === WebSocket.OPEN || open.readyState === WebSocket.CONNECTING)) {
+      open.close(1000, 'terminal closed');
+    }
+    this.setStatus('closed');
+    this.statusListeners.clear();
+  }
+
+  private setStatus(next: StreamStatus): void {
+    if (this.status === next) return;
+    this.status = next;
+    for (const listener of this.statusListeners) listener(next);
+  }
 
   /** Over for good: say why, then say closed, and never dial again. */
-  const end = (reason: StreamEnd) => {
-    cancelRetry?.();
-    for (const listener of endListeners) listener(reason);
-    setStatus('closed');
-  };
+  private end(reason: StreamEnd): void {
+    this.cancelRetry?.();
+    for (const listener of this.endListeners) listener(reason);
+    this.setStatus('closed');
+  }
 
-  const tell = (message: AttachClientMessage) => {
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
-  };
+  private tell(message: AttachClientMessage): void {
+    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify(message));
+  }
 
-  const retry = (after: StreamStatus) => {
-    if (disposed) return;
-    setStatus(after);
-    const base = RECONNECT_LADDER_MS[Math.min(attempt, RECONNECT_LADDER_MS.length - 1)];
-    attempt += 1;
+  private retry(after: StreamStatus): void {
+    if (this.disposed) return;
+    this.setStatus(after);
+    const base = RECONNECT_LADDER_MS[Math.min(this.attempt, RECONNECT_LADDER_MS.length - 1)];
+    this.attempt += 1;
     const jitter = base * (Math.random() * 0.4 - 0.2);
-    cancelRetry = schedule(() => void connect(), Math.max(0, Math.round(base + jitter)));
-  };
+    this.cancelRetry = this.schedule(
+      () => void this.connect(),
+      Math.max(0, Math.round(base + jitter)),
+    );
+  }
 
-  const connect = async () => {
-    if (disposed) return;
-    const thisEpoch = ++epoch;
-    attached = false;
-    closedReason = null;
+  private async connect(): Promise<void> {
+    if (this.disposed) return;
+    const thisEpoch = ++this.epoch;
+    this.attached = false;
+    this.closedReason = null;
     let ticket: { ticket: string; url: string };
     try {
-      ticket = await options.issueTicket();
+      ticket = await this.options.issueTicket();
     } catch (error) {
-      if (disposed || thisEpoch !== epoch) return;
+      if (this.disposed || thisEpoch !== this.epoch) return;
       const final = endOfMintFailure(error);
       if (final) {
-        end(final);
+        this.end(final);
         return;
       }
       // The API could not be reached or answered with something that is not
       // an answer about this session: the ladder decides how soon to ask again.
-      retry('connecting');
+      this.retry('connecting');
       return;
     }
-    if (disposed || thisEpoch !== epoch) return;
+    if (this.disposed || thisEpoch !== this.epoch) return;
 
-    const ws = socketFactory(attachSocketUrl(ticket.url, options.apiBaseUrl), [ticket.ticket]);
+    const ws = this.socketFactory(attachSocketUrl(ticket.url, this.options.apiBaseUrl), [
+      ticket.ticket,
+    ]);
     ws.binaryType = 'arraybuffer';
-    socket = ws;
+    this.socket = ws;
 
     ws.onopen = () => {
-      if (thisEpoch !== epoch) return;
+      if (thisEpoch !== this.epoch) return;
       // The viewport first, so the attach the relay dispatches carries it.
-      if (viewport) tell({ type: 'resize', ...viewport });
+      if (this.viewport) this.tell({ type: 'resize', ...this.viewport });
     };
     ws.onmessage = (event: MessageEvent) => {
-      if (thisEpoch !== epoch) return;
+      if (thisEpoch !== this.epoch) return;
       if (typeof event.data === 'string') {
-        onControl(event.data);
+        this.onControl(event.data);
         return;
       }
       const bytes = new Uint8Array(event.data as ArrayBuffer);
@@ -220,31 +281,31 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
       // a socket that has since been replaced gives none.
       let credited = false;
       const consumed = () => {
-        if (credited || thisEpoch !== epoch || !attached) return;
+        if (credited || thisEpoch !== this.epoch || !this.attached) return;
         credited = true;
-        tell({ type: 'credit', bytes: bytes.byteLength });
+        this.tell({ type: 'credit', bytes: bytes.byteLength });
       };
-      for (const listener of dataListeners) listener(bytes, consumed);
+      for (const listener of this.dataListeners) listener(bytes, consumed);
     };
     ws.onclose = (event: CloseEvent) => {
-      if (thisEpoch !== epoch) return;
-      socket = null;
-      attached = false;
-      if (disposed) return;
-      const final = closedReason ?? FINAL_CLOSE_CODES.get(event.code);
+      if (thisEpoch !== this.epoch) return;
+      this.socket = null;
+      this.attached = false;
+      if (this.disposed) return;
+      const final = this.closedReason ?? FINAL_CLOSE_CODES.get(event.code);
       if (final) {
-        end(final);
+        this.end(final);
         return;
       }
       // Host offline, link lost, a relay restart, a dropped radio: the ladder.
-      retry(event.code === ATTACH_CLOSE_CODES.HOST_OFFLINE ? 'offline' : 'connecting');
+      this.retry(event.code === ATTACH_CLOSE_CODES.HOST_OFFLINE ? 'offline' : 'connecting');
     };
     ws.onerror = () => {
       // `onclose` follows every error and carries the code; nothing to do here.
     };
-  };
+  }
 
-  const onControl = (raw: string) => {
+  private onControl(raw: string): void {
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -255,66 +316,19 @@ export function createSessionStream(options: SessionStreamOptions): SessionStrea
     if (!message.success) return;
     switch (message.data.type) {
       case 'attached':
-        attached = true;
-        attempt = 0;
-        setStatus('live');
+        this.attached = true;
+        this.attempt = 0;
+        this.setStatus('live');
         return;
       case 'hint':
-        if (message.data.kind === 'host_offline') setStatus('offline');
+        if (message.data.kind === 'host_offline') this.setStatus('offline');
         return;
       case 'refused':
-        closedReason = 'refused';
+        this.closedReason = 'refused';
         return;
       case 'closed':
-        closedReason = message.data.reason;
+        this.closedReason = message.data.reason;
         return;
     }
-  };
-
-  void connect();
-
-  return {
-    onData(listener) {
-      dataListeners.add(listener);
-      return () => dataListeners.delete(listener);
-    },
-    onStatus(listener) {
-      // The current state first, so a subscriber never waits for a change to
-      // learn where things stand.
-      listener(status);
-      statusListeners.add(listener);
-      return () => statusListeners.delete(listener);
-    },
-    onEnd(listener) {
-      endListeners.add(listener);
-      return () => endListeners.delete(listener);
-    },
-    send(data) {
-      if (!attached || socket?.readyState !== WebSocket.OPEN || data.length === 0) return;
-      socket.send(encoder.encode(data));
-    },
-    resize(cols, rows) {
-      if (cols < 1 || rows < 1) return;
-      viewport = { cols, rows };
-      tell({ type: 'resize', cols, rows });
-    },
-    dispose() {
-      if (disposed) return;
-      disposed = true;
-      epoch += 1;
-      cancelRetry?.();
-      dataListeners.clear();
-      endListeners.clear();
-      const open = socket;
-      socket = null;
-      if (
-        open &&
-        (open.readyState === WebSocket.OPEN || open.readyState === WebSocket.CONNECTING)
-      ) {
-        open.close(1000, 'terminal closed');
-      }
-      setStatus('closed');
-      statusListeners.clear();
-    },
-  };
+  }
 }

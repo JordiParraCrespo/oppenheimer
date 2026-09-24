@@ -171,8 +171,8 @@ renders as a problem document with **no `code`** and `type: about:blank`, whose
 `title` is only the status phrase ("Conflict", "Forbidden"). That is deliberate:
 only curated catalog codes are part of the public contract. The consequence is
 that `throw new ForbiddenException(...)` / `new NotFoundException(...)` in a
-handler or guard silently leaves the catalog, and every client — CLI exit codes,
-MCP tool errors, the web app's translated messages — loses the thing it branches
+handler or guard silently leaves the catalog, and every client — scripts on an API token,
+OAuth clients, the web app's translated messages — loses the thing it branches
 on.
 
 ```typescript

@@ -148,11 +148,8 @@ export class BrowserAttachGateway {
   private originAllowed(origin: string | undefined): boolean {
     // A non-browser client sends no Origin; the ticket is what authorises it.
     if (!origin) return true;
-    const allowed = [
-      this.configService.get<string>('app.frontendUrl'),
-      this.configService.get<string>('app.adminFrontendUrl'),
-    ].filter((value): value is string => Boolean(value));
-    return allowed.some((value) => sameOrigin(value, origin));
+    const allowed = this.configService.get<string>('app.frontendUrl');
+    return Boolean(allowed) && sameOrigin(allowed as string, origin);
   }
 }
 

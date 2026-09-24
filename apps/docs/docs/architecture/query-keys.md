@@ -147,13 +147,13 @@ useMutation({
 
 ## Cache persistence
 
-The in-memory cache dies with the tab or the process, so both apps also write it
-to storage — `localStorage` on web, `AsyncStorage` on mobile — via TanStack's
+The in-memory cache dies with the tab, so the app also writes it to
+`localStorage` via TanStack's
 [`PersistQueryClientProvider`](https://tanstack.com/query/latest/docs/framework/react/plugins/persistQueryClient).
-A reload or a cold start renders from the restored cache and refetches in the
+A reload renders from the restored cache and refetches in the
 background instead of showing spinners.
 
-The policy is shared by both apps from `@oppenheimer/frontend-core/react` so it can
+The policy ships from `@oppenheimer/frontend-core/react` so it can
 only drift in one place:
 
 ```typescript
@@ -189,15 +189,13 @@ What that policy encodes:
     run — the app would render as signed in with no session behind it.
   - `apiTokens` is never persisted — the consumer product names it in
     `CONSUMER_NON_PERSISTED_FEATURES`. Token prefixes, scopes and the
-    permission catalog are credential metadata, and neither `localStorage` nor
-    `AsyncStorage` is encrypted at rest. Tokens themselves live in
-    `expo-secure-store` on mobile and never touch the query cache.
+    permission catalog are credential metadata, and `localStorage` is not encrypted at rest.
   - Only **successful** queries are written; restoring an error or a pending
     fetch would replay a failure the user has already moved past.
 
 Adding a feature whose data shouldn't outlive the session? Add its namespace to
 `KERNEL_NON_PERSISTED_FEATURES` in
-`packages/frontend/core/src/react/persistence.ts` when both products need it,
+`packages/frontend/core/src/react/persistence.ts` when it is kernel data,
 or to the product's own list — `CONSUMER_NON_PERSISTED_FEATURES` in
 `packages/frontend/consumer/src/react/persistence.ts`, which the app passes
 through `nonPersistedFeatures`.

@@ -3,9 +3,8 @@ import type { Role } from '@oppenheimer/shared';
 /**
  * Platform-agnostic authentication client contract.
  *
- * Each platform (web / mobile) builds a Better Auth client with the plugins it
- * needs (the Expo plugin + SecureStore on mobile, browser cookies on web) and
- * adapts it to this interface, which is then injected into the DI container.
+ * Each app builds a Better Auth client with the plugins its platform needs
+ * (browser cookies on web) and adapts it to this interface, which is then injected into the DI container.
  * Keeping the boundary here means the rest of the frontend package never
  * imports `better-auth` directly.
  */
@@ -50,7 +49,7 @@ export interface IAuthClient {
   signUp(params: SignUpParams): Promise<void>;
   /**
    * Start the OAuth flow for a social provider. On web this redirects the
-   * browser; on mobile it opens an auth session and deep-links back.
+   * browser to the provider and back.
    *
    * `intent` defaults to `'sign-in'`, which the API refuses for an identity
    * that has no account here. Only the register screens pass `'sign-up'`.
@@ -68,8 +67,8 @@ export interface IAuthClient {
   getSession(): Promise<AuthSession | null>;
   /**
    * Extra headers used to authenticate non-auth REST calls (the generated
-   * `@oppenheimer/api-client`). On native this carries the Better Auth session
-   * cookie from SecureStore; on web it is empty and the browser sends cookies.
+   * `@oppenheimer/api-client`). On web it is empty and the browser sends
+   * cookies; a client with no cookie jar would carry the session here.
    */
   getAuthHeaders(): Promise<Record<string, string>>;
 }

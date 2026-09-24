@@ -71,8 +71,8 @@ export interface PermissionGroup {
 }
 
 /**
- * The permission catalog — the single source of truth shared by the API guard,
- * the MCP tool registry, the CLI and the web permission picker. Adding a
+ * The permission catalog — the single source of truth shared by the API guard
+ * and the web permission picker. Adding a
  * resource here is the only step needed for it to appear on every surface.
  */
 export const PERMISSION_GROUPS: readonly PermissionGroup[] = [

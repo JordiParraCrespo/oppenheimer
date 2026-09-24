@@ -2,14 +2,15 @@
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first.
 
-What both Vite apps share below their routes, organised by concern. The
+The web platform kit: what `apps/web` builds on below its routes, organised by
+concern. The
 concern map, the layering and the "add a concern" cookbook are
 [`ARCHITECTURE.md`](ARCHITECTURE.md); the tier's layer model is
 [`../ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ## Where things go
 
-- A component both Vite apps render → `src/<concern>/components/`, exported
+- A component more than one feature renders → `src/<concern>/components/`, exported
   by name from `src/<concern>/index.ts`. A dialog goes in `dialogs/`, a hook
   in `hooks/`, a pure helper in `lib/` (no JSX there).
 - A new concern → `src/<concern>/` with only the kind directories it needs,
@@ -17,8 +18,8 @@ concern map, the layering and the "add a concern" cookbook are
   `src/index.ts`, and the concern's name in the `leaves`, `middle` or `top`
   list of [`.dependency-cruiser.cjs`](.dependency-cruiser.cjs). Add it to
   `sideEffects` in `package.json` only if it runs code at import.
-- Something only one app needs → it stays in that app's
-  `features/<module>/<kind>/`. It moves here when the second app asks for it.
+- Something only one feature needs → it stays in that feature's
+  `<kind>/` directory. It moves here when a second feature asks for it.
 - A hook over a product package's data → not here. It is a feature in the
   app; the kit may hold the presentational half.
 
@@ -33,8 +34,7 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # source-exported: no dist t
 
 ## Patterns agents get wrong
 
-- Importing `@oppenheimer/frontend-consumer` or `@oppenheimer/frontend-admin` to finish a
-  component. `kit-knows-no-product` fails; take the data as props, or leave
+- Importing `@oppenheimer/frontend-consumer` to finish a component. `kit-knows-no-product` fails; take the data as props, or leave
   the component in the app.
 - Reaching into another concern's file (`../table/hooks/use-table-query`).
   Concerns meet at their `index.ts` — `concerns-meet-at-their-index`.

@@ -3,7 +3,7 @@ import { TOKENS } from '../../di/tokens';
 import type { AttachTicket, CreateSessionInput, SessionEntity } from './session.entity';
 import { deriveSessionStartProgress, type SessionStartProgress } from './session-steps';
 import type { SessionsRepository } from './sessions.repository';
-import { createSessionStream, type SessionStream } from './stream/session-stream';
+import { AttachSessionStream, type SessionStream } from './stream/session-stream';
 
 @injectable()
 export class SessionsService {
@@ -59,7 +59,7 @@ export class SessionsService {
    * renders what it delivers.
    */
   openStream(id: string, window = 0): SessionStream {
-    return createSessionStream({
+    return new AttachSessionStream({
       apiBaseUrl: this.apiBaseUrl,
       issueTicket: () => this.issueAttachTicket(id, window),
     });

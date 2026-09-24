@@ -22,16 +22,15 @@ ran it:
 - six `team.spec.ts` specs, and the profile spec that opens the team page, drive
   a `/team` route that `apps/web` no longer has. Organization surfaces now live
   in `apps/web/src/features/organizations/` — the onboarding and
-  accept-invitation screens, and the general pane of `/settings` — while roles
-  and users moved to the control plane (`apps/admin-web`, over
-  `@oppenheimer/frontend-admin`). The specs did not follow
+  accept-invitation screens, and the general pane of `/settings` — and the
+  console has no roles or users screens at all. The specs did not follow
 - `nav-permissions.spec.ts` asserts a nav catalog that has the same problem
 - the rest — an avatar upload, a password change signing other devices out, a
   wrong-password error, the language switch — are individually stale or broken
   and need diagnosing one at a time
 
-Fixing that is its own piece of work: port the specs to whichever app owns each
-surface now, then add `--project=web` to the CI job. Until then a green CI says
+Fixing that is its own piece of work: port or retire each spec against the
+surface the console has now, then add `--project=web` to the CI job. Until then a green CI says
 nothing about the browser journeys, so run `pnpm --filter @oppenheimer/e2e e2e:web`
 locally when you touch them.
 

@@ -118,15 +118,6 @@ check it and fix the script rather than working around it.
 If the tree looks right but `tsc` fails on it, the mismatch is almost always a
 `createFileRoute('...')` string that does not match the file's location.
 
-## When dependencies cannot be installed
-
-A full `pnpm install` needs `codeload.github.com` for two Expo-only git
-dependencies. Where egress policy blocks that host, the web half of the
-workspace still installs: trim `pnpm-workspace.yaml` to the non-mobile projects
-and run `pnpm install --no-frozen-lockfile`, then **restore
-`pnpm-workspace.yaml` and `pnpm-lock.yaml` before committing**. That is enough
-to build, typecheck, lint and test both web apps.
-
 ## Block navigation away from an unsaved form
 
 `useBlocker` is the router's own mechanism; do not hand-roll one with a

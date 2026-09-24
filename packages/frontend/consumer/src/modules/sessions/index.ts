@@ -20,15 +20,15 @@ export { SessionsErrors } from './sessions.errors';
 export { SessionsModule } from './sessions.module';
 export { SessionsRepository } from './sessions.repository';
 export { SessionsService } from './sessions.service';
-export { createFakeSessionStream } from './stream/fake-session-stream';
+export { FakeSessionStream } from './stream/fake-session-stream';
 export {
   createResizeCoalescer,
   RESIZE_SETTLE_MS,
   type ResizeCoalescer,
 } from './stream/resize-coalescer';
 export {
+  AttachSessionStream,
   attachSocketUrl,
-  createSessionStream,
   RECONNECT_LADDER_MS,
   type SessionStream,
   type SessionStreamOptions,

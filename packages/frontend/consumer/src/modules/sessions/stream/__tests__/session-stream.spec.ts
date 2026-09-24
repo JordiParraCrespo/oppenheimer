@@ -1,8 +1,8 @@
 import { ATTACH_CLOSE_CODES } from '@oppenheimer/shared/protocol';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  AttachSessionStream,
   attachSocketUrl,
-  createSessionStream,
   type SessionStream,
   type StreamStatus,
 } from '../session-stream';
@@ -89,7 +89,7 @@ function harness(
         return { ticket: `t-${minted}`, url: '/api/v1/relay/attach' };
       }),
   );
-  const stream = createSessionStream({
+  const stream = new AttachSessionStream({
     issueTicket: tickets,
     apiBaseUrl: 'https://api.example.com',
     socketFactory: (url, protocols) => {
@@ -143,7 +143,7 @@ describe('attachSocketUrl', () => {
   });
 });
 
-describe('createSessionStream', () => {
+describe('AttachSessionStream', () => {
   it('mints a ticket, opens the socket with it as the subprotocol, and sends the viewport first', async () => {
     const h = harness();
     expect(h.statuses).toEqual(['connecting']);

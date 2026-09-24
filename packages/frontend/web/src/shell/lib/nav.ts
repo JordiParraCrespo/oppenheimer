@@ -52,6 +52,6 @@ export interface NavLink {
 export interface ShellWorkspace {
   name: string;
   logo?: string | null;
-  /** Rendered instead of the avatar when the workspace is the product itself (the control plane's glyph). */
+  /** Rendered instead of the avatar when the workspace is the product itself (an app's own glyph). */
   icon?: ReactNode;
 }

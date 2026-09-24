@@ -1,3 +1,0 @@
-# Run output. Every `qa suite` rewrites these; only the scenario definitions
-# and the harness itself belong in version control.
-artifacts/

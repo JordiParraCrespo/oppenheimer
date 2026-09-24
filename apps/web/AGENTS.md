@@ -22,7 +22,7 @@
 - A helper or component a second screen wants → `@oppenheimer/frontend-web`, not a
   second copy and not `src/lib/` (that holds only `oppenheimer.ts`, `auth-client.ts`, `nav.ts`).
 - Logic — entities, repositories, query hooks → `@oppenheimer/frontend-consumer` or
-  `@oppenheimer/frontend-core`. Never `@oppenheimer/frontend-admin`.
+  `@oppenheimer/frontend-core`.
 
 ## Telling the user something worked, or didn't
 
