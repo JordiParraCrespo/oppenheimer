@@ -1,6 +1,9 @@
 import { createHash, generateKeyPairSync, type KeyObject, sign } from 'node:crypto';
+import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { QUEUE_NAMES } from '@oppenheimer/shared';
+import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { runAllMigrations } from './run-migrations';
@@ -374,6 +377,30 @@ describe('Hosts & pairing (integration)', () => {
       });
       expect(host.body?.capabilities).toEqual(FACTS);
       expect(host.body?.publicKeyFingerprint).toBe(key.fingerprint);
+    });
+
+    it('queues the security email that tells the owner a machine was paired', async () => {
+      // The unit test mocks the queue, and a mock accepts job ids BullMQ
+      // refuses: a colon in a custom id made every add throw, so no owner was
+      // ever told. Only the real queue can say the job is there.
+      const minted = await mintPairingToken('Notify the owner');
+      const registered = await register(minted.secret, hostKey());
+      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
+      const hostId = registered.body?.hostId as string;
+
+      const emails = app.get<Queue>(getQueueToken(QUEUE_NAMES.EMAIL));
+      await vi.waitFor(
+        async () => {
+          const job = await emails.getJob(`host-paired-${hostId}`);
+          expect(job?.name).toBe('host-paired');
+          expect(job?.data).toMatchObject({
+            to: user.email,
+            userId: user.id,
+            hostName: 'Notify the owner',
+          });
+        },
+        { timeout: 10_000, interval: 200 },
+      );
     });
 
     it('accepts the document a real runner sends, tools array and all', async () => {

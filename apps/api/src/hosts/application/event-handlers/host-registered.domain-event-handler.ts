@@ -25,7 +25,10 @@ type RegisteredHost = Pick<
  * is added for the same reason. It is a security email, so it is always sent.
  *
  * Queued with the host id as the job id: the outbox redelivers an event whose
- * handler failed, and a second delivery must not be a second email.
+ * handler failed, and a second delivery must not be a second email. The id is
+ * joined with `-`, never `:` — BullMQ refuses a custom id with a colon in it
+ * (it reserves `:` for its own keys), and a refused add is an email that never
+ * goes out.
  */
 @Injectable()
 export class HostRegisteredDomainEventHandler {
@@ -59,7 +62,7 @@ export class HostRegisteredDomainEventHandler {
         fingerprint: event.publicKeyFingerprint,
         url: this.frontendUrl,
       },
-      { jobId: `host-paired:${event.aggregateId}` },
+      { jobId: `host-paired-${event.aggregateId}` },
     );
     this.logger.log({ message: 'queued the new-host notice', hostId: event.aggregateId });
   }

@@ -48,8 +48,12 @@ describe('HostRegisteredDomainEventHandler', () => {
         fingerprint: 'f'.repeat(64),
         url: 'https://app.oppenheimer.dev',
       },
-      { jobId: 'host-paired:host-1' },
+      { jobId: 'host-paired-host-1' },
     );
+    // BullMQ refuses a custom job id containing `:`, so the mock above would
+    // pass a value the real queue throws on; hold the rule here.
+    const [, , options] = vi.mocked(queue.add).mock.calls[0];
+    expect(options?.jobId).not.toContain(':');
   });
 
   it('sends nothing when the owner or the host is gone', async () => {
