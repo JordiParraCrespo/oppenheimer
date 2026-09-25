@@ -12490,7 +12490,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "shell"]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
           },
           "projectId": {
             "type": "string",

@@ -225,7 +225,7 @@ func TestBundledManifestsLoad(t *testing.T) {
 			}
 		}
 	}
-	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentShell} {
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
 		}
@@ -274,6 +274,13 @@ func TestOnlyVendorLoginHostsAreOffered(t *testing.T) {
 		if manifest.LoginURL(screen, opencode) == "" {
 			t.Fatalf("a real vendor login URL must be offered: %q", screen)
 		}
+	}
+	grok := domain.AgentGrok.LoginTargets()
+	if manifest.LoginURL("Open https://accounts.x.ai/sign-in?redirect=grok-build to sign in", grok) == "" {
+		t.Fatal("grok's own sign-in URL must be offered")
+	}
+	if url := manifest.LoginURL("Open https://claude.ai/oauth/authorize to log in", grok); url != "" {
+		t.Fatalf("another vendor's login on grok's screen = %q, want nothing", url)
 	}
 }
 

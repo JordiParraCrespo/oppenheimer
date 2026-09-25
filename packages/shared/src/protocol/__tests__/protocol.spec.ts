@@ -33,6 +33,7 @@ const hostFacts = {
     { name: 'claude', required: false },
     { name: 'codex', path: '/opt/homebrew/bin/codex', version: '0.155.1', required: false },
     { name: 'opencode', path: '/opt/homebrew/bin/opencode', version: '1.18.32', required: false },
+    { name: 'grok', path: '/Users/jordi/.grok/bin/grok', version: '1.0.41', required: false },
   ],
   workspacePath: '/Users/jordi/oppenheimer-ai',
   diskFreeBytes: 120_000_000_000,
@@ -310,6 +311,18 @@ describe('session.create for every catalog agent', () => {
     expect(parsed).toMatchObject({ agent: 'opencode', launch: { permission: 'ask' } });
   });
 
+  it('carries Grok with a model, a level and an effort', () => {
+    const parsed = protocolMessageSchema.parse({
+      ...create,
+      agent: 'grok',
+      launch: { model: 'grok-4.7', permission: 'auto', effort: 'high' },
+    });
+    expect(parsed).toMatchObject({
+      agent: 'grok',
+      launch: { model: 'grok-4.7', permission: 'auto', effort: 'high' },
+    });
+  });
+
   it('carries a blank terminal with no level at all', () => {
     const parsed = protocolMessageSchema.parse({ ...create, agent: 'shell', launch: {} });
     expect(parsed).toMatchObject({ agent: 'shell', launch: {} });
@@ -334,6 +347,7 @@ describe('host facts on the link', () => {
         'claude',
         'codex',
         'opencode',
+        'grok',
       ]);
       expect(parsed.host.workspacePath).toBe('/Users/jordi/oppenheimer-ai');
     }

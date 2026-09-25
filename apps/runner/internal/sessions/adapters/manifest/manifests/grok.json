@@ -1,0 +1,17 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "grok",
+  "version": "2026.09.25.1",
+  "minEngine": 1,
+  "notes": "One rule, from the one string with a known job: grok 1.0.41's tool-approval dialog offers `Allow once` beside `Always allow`, so either on the bottom of the screen is a question waiting on the person. The title is not a signal: it reads a plain `grok` on the welcome screen, and the logo there is drawn in braille, so Claude's and OpenCode's braille-spinner rules would read the welcome screen as work. Everything else is `unknown` until a soak against a signed-in session produces patterns of Grok's own.",
+  "rules": [
+    {
+      "id": "approval",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:12",
+      "any": ["(?i)\\b(allow once|always allow)\\b"],
+      "note": "Grok's tool-approval dialog lists `Allow once` and `Always allow`; the strings are read off the 1.0.41 binary, not yet watched in a live session."
+    }
+  ]
+}

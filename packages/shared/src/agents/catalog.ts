@@ -24,7 +24,7 @@
  * because the console picks it from the same engine button and the runner
  * reads the same id off `session.create`.
  */
-export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'shell'] as const;
+export const CODING_AGENT_IDS = ['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const;
 
 /** A coding agent this product knows how to launch. */
 export type CodingAgentId = (typeof CODING_AGENT_IDS)[number];
@@ -117,8 +117,8 @@ export interface CodingAgentLaunch {
   readonly effort?: Readonly<Record<SessionEffort, readonly string[]>>;
   /**
    * How the person's first task reaches the agent, with `<prompt>` substituted
-   * whole — always the **last** argv appended: Claude Code and Codex take it as
-   * a trailing positional, OpenCode as the value of its trailing `--prompt`.
+   * whole — always the **last** argv appended: Claude Code, Codex and Grok take
+   * it as a trailing positional, OpenCode as the value of its trailing `--prompt`.
    *
    * It is a launch option and not a message typed at a running process, which
    * is the whole reason it is here: writing into window 0 once the TUI is up
@@ -430,6 +430,76 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // `opencode [project] --prompt <text>`, which starts the TUI with the
       // task in it; `opencode run` is the non-interactive one.
       prompt: Object.freeze(['--prompt', '<prompt>']),
+    }),
+  }),
+  grok: Object.freeze({
+    id: 'grok',
+    label: 'Grok',
+    // xAI's Grok Build CLI (`@xai-official/grok`, or `x.ai/cli/install.sh`),
+    // whose binary is `grok`.
+    command: 'grok',
+    // `grok login` signs in through `accounts.x.ai/sign-in`, and `--oauth`
+    // through `auth.x.ai`: the two hosts grok 1.0.41 carries for a login.
+    // `grok.com` and `console.x.ai` are what it links for a subscription or an
+    // API key, not a sign-in, so they stay off the list.
+    loginTargets: Object.freeze([
+      Object.freeze({ host: 'accounts.x.ai' }),
+      Object.freeze({ host: 'auth.x.ai' }),
+    ]),
+    // `~/.grok/sessions/<url-encoded cwd>/<session id>/`, grouped by working
+    // directory as Claude Code's are, per the guide grok installs beside itself.
+    transcriptLocation: Object.freeze({
+      directory: '~/.grok/sessions/',
+      keyedBy: 'working-directory',
+    }),
+    // "Override config directory (default: `~/.grok`)", and `auth.json` lives
+    // in that directory, so it scopes the login and nothing else.
+    configDirEnv: 'GROK_HOME',
+    // The two Grok generations the CLI offers, with the ids `grok --model`
+    // takes. 4.6 is the default because it is the CLI's own (`grok models`
+    // on 1.0.41 reads "grok-4.6 (default)"); 4.7 is xAI's newest, first in
+    // capability order as Codex's list is. Same seed argument as the others:
+    // whether a given account's `grok` offers 4.7 is the probe still open in
+    // `product/versions/mvp/05-screens.md`.
+    models: Object.freeze([
+      Object.freeze({ id: 'grok-4.7', label: 'Grok 4.7' }),
+      Object.freeze({ id: 'grok-4.6', label: 'Grok 4.6', default: true as const }),
+    ]),
+    launch: Object.freeze({
+      model: Object.freeze(['--model', '<model>']),
+      // `--permission-mode` choices, read off grok 1.0.41's own `--help`:
+      // `default | acceptEdits | auto | dontAsk | bypassPermissions | plan`,
+      // Claude Code's vocabulary. `default` asks before edits and commands.
+      permission: Object.freeze({
+        ask: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'default']),
+          env: Object.freeze({}),
+        }),
+        auto: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'acceptEdits']),
+          env: Object.freeze({}),
+        }),
+        full: Object.freeze({
+          argv: Object.freeze(['--permission-mode', 'bypassPermissions']),
+          env: Object.freeze({}),
+        }),
+      }),
+      // `--reasoning-effort` takes none | minimal | low | medium | high |
+      // xhigh | max, and the Grok 4.x models reason at low, medium, high (their
+      // default) and xhigh. So the stops run as Claude Code's do: the middle
+      // one is the models' own default, and every stop is a level they have
+      // but the ceiling, which is the CLI's `max`.
+      effort: Object.freeze({
+        minimal: Object.freeze(['--reasoning-effort', 'low']),
+        low: Object.freeze(['--reasoning-effort', 'medium']),
+        medium: Object.freeze(['--reasoning-effort', 'high']),
+        high: Object.freeze(['--reasoning-effort', 'xhigh']),
+        max: Object.freeze(['--reasoning-effort', 'max']),
+      }),
+      // `grok [OPTIONS] [PROMPT]`, whose help calls the positional "Initial
+      // prompt for the interactive session". Not `-p`, which is single-turn
+      // and exits.
+      prompt: Object.freeze(['<prompt>']),
     }),
   }),
   shell: Object.freeze({

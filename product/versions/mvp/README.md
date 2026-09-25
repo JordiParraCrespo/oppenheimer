@@ -365,3 +365,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `codex` and `opencode` (02 §5, §9, §10); the composer table and the
   hide-and-do-not-send rule are 05's. The model seed follows Synara's
   model table and Orca's pricing table.
+- 2026-09-25: **Grok joins the catalog** (00, 02). `CODING_AGENTS` gains
+  `grok`, xAI's Grok Build CLI, read off grok 1.0.41's own `--help` and
+  the guide it installs: Grok 4.7 and Grok 4.6 (the CLI's default, so
+  the catalog's), `--permission-mode` in Claude Code's vocabulary,
+  `--reasoning-effort`, the task as the trailing positional (`-p` is
+  single-turn), `GROK_HOME` for the login, and `accounts.x.ai` /
+  `auth.x.ai` on the login allowlist. The host probe lists `grok`, and
+  the screen manifest trusts only the approval dialog until a soak.

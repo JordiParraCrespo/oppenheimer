@@ -9,8 +9,8 @@ import { cn } from '../lib/utils';
  * mark in its own orange (a brand colour, not a system one, so it does not
  * re-point in dark); Codex the OpenAI mark and OpenCode its square-in-square,
  * both in the current ink so they invert with the theme. "Blank terminal"
- * takes a terminal glyph, and an id this component does not know the neutral
- * bot glyph.
+ * takes a terminal glyph, and Grok — no xAI mark ships with this system — and
+ * an id this component does not know the neutral bot glyph.
  *
  * Marks are inline SVG so they need no asset pipeline and scale with the
  * text. Sources: the Claude and OpenAI marks as published in Simple Icons
@@ -23,7 +23,7 @@ import { cn } from '../lib/utils';
  * <AgentMark agent="opencode" className="size-4" />
  * ```
  */
-type AgentId = 'claude-code' | 'codex' | 'opencode' | 'shell' | (string & {});
+type AgentId = 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell' | (string & {});
 
 const CLAUDE_ORANGE = '#D97757';
 

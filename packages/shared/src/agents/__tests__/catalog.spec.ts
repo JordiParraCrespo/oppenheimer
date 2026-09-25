@@ -26,6 +26,15 @@ describe('coding agent catalog', () => {
     // Parked: the only variable that moves OpenCode's credentials is the whole
     // XDG data home, which is not a login scoped to one directory.
     expect(CODING_AGENTS.opencode.configDirEnv).toBeUndefined();
+    expect(CODING_AGENTS.grok.command).toBe('grok');
+    // Moves `~/.grok`, `auth.json` included, and nothing else.
+    expect(CODING_AGENTS.grok.configDirEnv).toBe('GROK_HOME');
+  });
+
+  it('offers Grok 4.7 and 4.6, defaulting to the CLI’s own', () => {
+    const models = CODING_AGENTS.grok.models;
+    expect(models.map((model) => model.id)).toEqual(['grok-4.7', 'grok-4.6']);
+    expect(models.filter((model) => model.default).map((model) => model.id)).toEqual(['grok-4.6']);
   });
 
   it('offers the plain terminal as an entry with nothing to launch', () => {
@@ -43,6 +52,10 @@ describe('coding agent catalog', () => {
       keyedBy: 'working-directory',
     });
     expect(CODING_AGENTS.codex.transcriptLocation?.directory).toBe('~/.codex/sessions/');
+    expect(CODING_AGENTS.grok.transcriptLocation).toEqual({
+      directory: '~/.grok/sessions/',
+      keyedBy: 'working-directory',
+    });
   });
 
   it('is frozen, because every tier reads the same object', () => {
@@ -82,6 +95,10 @@ describe('coding agent catalog', () => {
       expect(opencode.test('https://claude.ai/oauth/authorize?code=true')).toBe(true);
       expect(opencode.test('https://github.com/login/device')).toBe(true);
       expect(opencode.test('https://github.com/login/device?user_code=ABCD')).toBe(true);
+
+      const grok = pattern('grok');
+      expect(grok.test('https://accounts.x.ai/sign-in?redirect=grok-build')).toBe(true);
+      expect(grok.test('https://auth.x.ai/oauth2/authorize?client_id=x')).toBe(true);
     });
 
     it('compare hosts whole, so a lookalike host is not a login URL (F3)', () => {
@@ -95,6 +112,9 @@ describe('coding agent catalog', () => {
       expect(opencode.test('https://opencode.ai.attacker.test/auth')).toBe(false);
       expect(opencode.test('https://github.com/evil')).toBe(false);
       expect(opencode.test('https://github.com/login/devicefoo')).toBe(false);
+      const grok = pattern('grok');
+      expect(grok.test('https://accounts.x.ai.attacker.test/sign-in')).toBe(false);
+      expect(grok.test('https://evil.test/?next=https://accounts.x.ai/')).toBe(false);
     });
 
     it('do not cross the vendors', () => {
@@ -102,6 +122,10 @@ describe('coding agent catalog', () => {
       expect(claude.test('https://auth.openai.com/authorize')).toBe(false);
       expect(claude.test('https://opencode.ai/auth')).toBe(false);
       expect(claude.test('https://github.com/login/device')).toBe(false);
+      expect(claude.test('https://accounts.x.ai/sign-in')).toBe(false);
+      const grok = pattern('grok');
+      expect(grok.test('https://claude.ai/oauth/authorize')).toBe(false);
+      expect(grok.test('https://auth.openai.com/authorize')).toBe(false);
     });
   });
 });
@@ -118,6 +142,7 @@ describe('isCodingAgentId', () => {
     expect(isCodingAgentId('claude-code')).toBe(true);
     expect(isCodingAgentId('codex')).toBe(true);
     expect(isCodingAgentId('opencode')).toBe(true);
+    expect(isCodingAgentId('grok')).toBe(true);
     expect(isCodingAgentId('shell')).toBe(true);
     expect(isCodingAgentId('cursor')).toBe(false);
     expect(isCodingAgentId('')).toBe(false);

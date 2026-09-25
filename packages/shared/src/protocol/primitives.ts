@@ -136,7 +136,7 @@ export const hostToolSchema = z.object({
  *
  *
  * Agents installed on a host are read from `tools` — the entries named `claude`,
- * `codex` and `opencode`, which the runner probes on every host beside `git`
+ * `codex`, `opencode` and `grok`, which the runner probes on every host beside `git`
  * and `tmux` (`ProbedTools` in `facts.go`) — and there is no separate agents
  * key; that is what the console consumes for the agent chip. The blank
  * terminal needs no tool of its own.

@@ -17,6 +17,7 @@ describe('agent options', () => {
       'claude-code',
       'codex',
       'opencode',
+      'grok',
       'shell',
     ]);
   });
@@ -24,12 +25,14 @@ describe('agent options', () => {
   it('defaults each agent to its own model, and the terminal to none', () => {
     expect(defaultModelFor('claude-code')).toBe('claude-opus-5-5');
     expect(defaultModelFor('opencode')).toBe('anthropic/claude-opus-5-5');
+    expect(defaultModelFor('grok')).toBe('grok-4.6');
     expect(defaultModelFor('shell')).toBeNull();
   });
 
   it('shows the permission and effort chips only where the agent takes them', () => {
     expect(launchControlsFor('claude-code')).toEqual({ permission: true, effort: true });
     expect(launchControlsFor('opencode')).toEqual({ permission: true, effort: false });
+    expect(launchControlsFor('grok')).toEqual({ permission: true, effort: true });
     expect(launchControlsFor('shell')).toEqual({ permission: false, effort: false });
   });
 

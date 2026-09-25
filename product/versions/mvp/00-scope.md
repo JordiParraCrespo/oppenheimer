@@ -3,8 +3,8 @@
 ## In one line
 
 Orca, as a hosted web app: connect a host you own, then run sessions
-on it. No virtual machines in the MVP. Claude Code, Codex, OpenCode or a
-blank terminal in each session; Claude Code is the one the demo walks.
+on it. No virtual machines in the MVP. Claude Code, Codex, OpenCode, Grok
+or a blank terminal in each session; Claude Code is the one the demo walks.
 
 ## Decided
 
@@ -40,9 +40,9 @@ blank terminal in each session; Claude Code is the one the demo walks.
 - **Create session chips:** host, repository, branch, agent, every one
   of them searchable. The repository chip picks one repository and
   carries its branch; picking another replaces it (above). The agent
-  lives in the engine button (05) and lists Claude Code, Codex, OpenCode
-  and a blank terminal, with the vendors' marks where they exist. All
-  four are rows of the shared agent catalog (`CODING_AGENTS`) and the
+  lives in the engine button (05) and lists Claude Code, Codex, OpenCode,
+  Grok and a blank terminal, with the vendors' marks where they exist. All
+  five are rows of the shared agent catalog (`CODING_AGENTS`) and the
   runner launches each of them (02 §5). The blank terminal is a worktree
   and a login shell with nothing launched in it: no model, no permission
   level, no effort, and no login button.
