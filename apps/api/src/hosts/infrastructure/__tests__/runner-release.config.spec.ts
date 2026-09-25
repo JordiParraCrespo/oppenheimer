@@ -18,10 +18,14 @@ function release(overrides: Record<string, unknown> = {}): RunnerReleaseConfig {
 }
 
 describe('RunnerReleaseConfig.installCommandFor', () => {
-  it('puts the token in the installer’s environment, never on a command line', () => {
+  it('passes the token as an environment assignment, never as an argument', () => {
     const command = release().installCommandFor(SECRET);
 
+    // The assignment is on the pasted line; what `sh` and the installer
+    // receive as argv is everything after `sh -s --`, and the token is not in it.
     expect(command).toContain(`| OPPENHEIMER_REGISTRATION_TOKEN=${SECRET} sh -s -- `);
+    const argv = command.slice(command.indexOf('sh -s --'));
+    expect(argv).not.toContain(SECRET);
     expect(command).not.toContain('--token');
   });
 
@@ -51,40 +55,28 @@ describe('RunnerReleaseConfig.installCommandFor', () => {
 describe('RunnerReleaseConfig.agentPromptFor', () => {
   const prompt = release().agentPromptFor(SECRET);
 
-  it('establishes the machine and asks before anything is run', () => {
-    const step0 = prompt.indexOf('STEP 0');
-    const step1 = prompt.indexOf('STEP 1');
-    expect(step0).toBeGreaterThan(-1);
-    expect(step0).toBeLessThan(step1);
-    expect(prompt).toContain('Is this');
-    expect(prompt).toContain('Ask me where session code should live');
+  it('asks which machine and which path before anything is run', () => {
+    expect(prompt.indexOf('Before you run anything')).toBeLessThan(prompt.indexOf('Then run'));
+    expect(prompt).toContain('is the one I mean');
     expect(prompt).toContain('--workspaces');
   });
 
-  it('names the codes the runner actually reports, and not a status exit code it does not', () => {
-    for (const code of ['HOST_006', 'HOST_007', 'PAIR_002', 'PAIR_003', 'PAIR_006', 'PAIR_007']) {
-      expect(prompt).toContain(code);
-    }
-    expect(prompt).toContain('do not rely on its exit code');
+  it('carries the secret once, inside the install command', () => {
+    expect(prompt.split(SECRET)).toHaveLength(2);
+    expect(prompt).toContain(release().installCommandFor(SECRET));
   });
 
   it('quotes the installer digest when the deployment published one', () => {
     expect(prompt).toContain(DIGEST);
     expect(release({ 'hosts.installSha256': undefined }).agentPromptFor(SECRET)).not.toContain(
-      'SHA-256 is',
+      'SHA-256',
     );
   });
 
-  it('keeps the SSH form on one line, with the token on stdin', () => {
-    const ssh = prompt.split('\n').find((line) => line.includes('| ssh <target>'));
-    expect(ssh).toBeDefined();
-    // A literal \n for printf, not a line break in the middle of the command.
-    expect(ssh).toContain(`printf '%s\\n' '${SECRET}'`);
-    expect(ssh).toContain('read -r OPPENHEIMER_REGISTRATION_TOKEN');
-    expect(ssh).not.toContain(`OPPENHEIMER_REGISTRATION_TOKEN=${SECRET}`);
-  });
-
-  it('never offers the removed --yes', () => {
+  it('leaves the procedure to the installer and the runner', () => {
+    // No error-code table, and no console action version 1 does not have.
+    expect(prompt).not.toMatch(/[A-Z]+_\d{3}/);
+    expect(prompt).not.toMatch(/console|Settings|unpair/i);
     expect(prompt).not.toMatch(/--yes|--no-deps/);
   });
 });

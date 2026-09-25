@@ -8,8 +8,8 @@ import { HOST_REPOSITORY } from '../../hosts.di-tokens';
 import { UnpairHostCommand } from './unpair-host.command';
 
 /**
- * Unpairs a host from the console: the person no longer wants this machine to be
- * given work.
+ * Unpairs a host at the owner's request (`DELETE /v1/hosts/{id}`): the person
+ * no longer wants this machine to be given work.
  *
  * The row is kept, with `unpairedAt` set. Hosts are never hard-deleted — the
  * pairing history, the key that was trusted and the sessions that ran on it all

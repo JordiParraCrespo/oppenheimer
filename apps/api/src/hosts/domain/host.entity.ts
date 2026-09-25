@@ -103,6 +103,9 @@ export class HostEntity extends AggregateRoot<HostProps> {
         ownerUserId: host.ownerUserId,
         publicKeyFingerprint: host.publicKeyFingerprint,
         pairingTokenId: props.pairingTokenId,
+        name: host.name,
+        hostname: host.hostname,
+        os: host.os,
         reason: 'A machine finished pairing and can now be given work',
       }),
     );

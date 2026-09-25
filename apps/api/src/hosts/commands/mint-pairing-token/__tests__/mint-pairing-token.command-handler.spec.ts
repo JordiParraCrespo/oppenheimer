@@ -1,16 +1,18 @@
+import type { AccessScope } from '@oppenheimer/backend-authz';
+import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostPairingTokenRepositoryPort } from '../../../database/host-pairing-token.repository.port';
+import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entity';
 import { hashPairingTokenSecret } from '../../../domain/pairing-token-secret.factory';
 import type { RunnerReleaseConfig } from '../../../infrastructure/runner-release.config';
 import { MintPairingTokenCommand } from '../mint-pairing-token.command';
 import {
   MAX_SPENDABLE_TOKENS,
   MintPairingTokenCommandHandler,
-  STALE_TOKEN_RETENTION_MS,
 } from '../mint-pairing-token.command-handler';
 
 describe('MintPairingTokenCommandHandler', () => {
-  let tokens: Pick<HostPairingTokenRepositoryPort, 'insert' | 'countSpendable' | 'purgeStale'>;
+  let tokens: Pick<HostPairingTokenRepositoryPort, 'insertWithinCap' | 'findOneById'>;
   /**
    * `isConfigured` is a getter on the real thing, so the double is a plain
    * mutable object: one test turns it off to assert the refusal.
@@ -25,9 +27,8 @@ describe('MintPairingTokenCommandHandler', () => {
 
   beforeEach(() => {
     tokens = {
-      insert: vi.fn().mockResolvedValue(undefined),
-      countSpendable: vi.fn().mockResolvedValue(0),
-      purgeStale: vi.fn().mockResolvedValue(0),
+      insertWithinCap: vi.fn().mockResolvedValue(true),
+      findOneById: vi.fn().mockResolvedValue(None),
     };
     release = {
       isConfigured: true,
@@ -41,26 +42,48 @@ describe('MintPairingTokenCommandHandler', () => {
     );
   });
 
-  const command = () =>
-    new MintPairingTokenCommand({ userId: 'jordi', name: 'Dev box', createdFromIp: '203.0.113.7' });
+  const scope = {} as AccessScope;
+  const command = (replaces?: string) =>
+    new MintPairingTokenCommand({
+      userId: 'jordi',
+      scope,
+      name: 'Dev box',
+      createdFromIp: '203.0.113.7',
+      replaces,
+    });
+  const inserted = () => vi.mocked(tokens.insertWithinCap).mock.calls[0][0];
+  const fence = () => vi.mocked(tokens.insertWithinCap).mock.calls[0][1];
 
-  it('refuses a sixth unspent token, before minting anything', async () => {
-    vi.mocked(tokens.countSpendable).mockResolvedValueOnce(MAX_SPENDABLE_TOKENS);
+  it('leaves the cap to the write, and refuses when the write finds no room', async () => {
+    vi.mocked(tokens.insertWithinCap).mockResolvedValueOnce(false);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_006' });
-    expect(tokens.insert).not.toHaveBeenCalled();
+    expect(fence().cap).toBe(MAX_SPENDABLE_TOKENS);
   });
 
-  it('purges the minter’s long-dead tokens, and only theirs, before counting', async () => {
-    const before = Date.now();
-    await handler.execute(command());
+  it('revokes the token it replaces inside the same write', async () => {
+    const old = HostPairingTokenEntity.mint({
+      ownerUserId: 'jordi',
+      intendedName: 'Dev box',
+      prefix: 'opr_reg_abcdef',
+      tokenHash: 'cd'.repeat(32),
+      createdFromIp: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    vi.mocked(tokens.findOneById).mockResolvedValueOnce(Some(old));
 
-    const [owner, cutoff] = vi.mocked(tokens.purgeStale).mock.calls[0];
-    expect(owner).toBe('jordi');
-    expect(cutoff.getTime()).toBeLessThanOrEqual(before - STALE_TOKEN_RETENTION_MS + 1000);
-    expect(vi.mocked(tokens.purgeStale).mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(tokens.countSpendable).mock.invocationCallOrder[0],
-    );
+    await handler.execute(command(old.id));
+
+    expect(tokens.findOneById).toHaveBeenCalledWith(scope, old.id);
+    expect(fence().replacing).toBe(old);
+    expect(old.revokedAt).not.toBeNull();
+  });
+
+  it('mints nothing when the token it should replace is not the caller’s', async () => {
+    await expect(handler.execute(command('someone-elses'))).rejects.toMatchObject({
+      code: 'HOSTS_002',
+    });
+    expect(tokens.insertWithinCap).not.toHaveBeenCalled();
   });
 
   it('hands back the installer digest the deployment published', async () => {
@@ -71,14 +94,13 @@ describe('MintPairingTokenCommandHandler', () => {
   it('hands back the row it wrote, so nothing has to read it again', async () => {
     const result = await handler.execute(command());
 
-    const [inserted] = vi.mocked(tokens.insert).mock.calls[0];
-    expect(result.token).toBe(inserted);
+    expect(result.token).toBe(inserted());
   });
 
   it('stores only the digest of the secret it hands back', async () => {
     const result = await handler.execute(command());
 
-    const [token] = vi.mocked(tokens.insert).mock.calls[0];
+    const token = inserted();
     const secret = /--token (\S+)/.exec(result.installCommand)?.[1] as string;
 
     expect(secret).toBeTruthy();
@@ -98,14 +120,14 @@ describe('MintPairingTokenCommandHandler', () => {
   it('shows a prefix that identifies the row without revealing it', async () => {
     await handler.execute(command());
 
-    const [token] = vi.mocked(tokens.insert).mock.calls[0];
+    const token = inserted();
     expect(token.prefix).toMatch(/^opr_reg_.{6}$/);
   });
 
   it('records the intended name and where the mint came from', async () => {
     await handler.execute(command());
 
-    const [token] = vi.mocked(tokens.insert).mock.calls[0];
+    const token = inserted();
     expect(token).toMatchObject({ intendedName: 'Dev box', createdFromIp: '203.0.113.7' });
     expect(token.ownerUserId).toBe('jordi');
   });
@@ -113,7 +135,7 @@ describe('MintPairingTokenCommandHandler', () => {
   it('expires the token within the hour', async () => {
     await handler.execute(command());
 
-    const [token] = vi.mocked(tokens.insert).mock.calls[0];
+    const token = inserted();
     const minutes = (token.expiresAt.getTime() - Date.now()) / 60_000;
     expect(minutes).toBeGreaterThan(55);
     expect(minutes).toBeLessThanOrEqual(60);
@@ -125,6 +147,6 @@ describe('MintPairingTokenCommandHandler', () => {
     release.isConfigured = false;
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'HOSTS_004' });
-    expect(tokens.insert).not.toHaveBeenCalled();
+    expect(tokens.insertWithinCap).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@
 // grew from. One binary, one version, one code path per job:
 //
 //	runner run          the host agent: local socket, self-update, sessions
-//	runner register     redeem a registration token from Settings → Add host
+//	runner register     redeem a registration token from Add host
 //	runner install      write and start the launchd agent or systemd user unit
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
@@ -147,7 +147,7 @@ func register(ctx context.Context, args []string) (int, error) {
 	fs := flag.NewFlagSet("register", flag.ContinueOnError)
 	opts := cli.RegisterOptions{}
 	var tokenFile string
-	fs.StringVar(&opts.Token, "token", "", "registration token from Settings → Add host (prefer --token-file or "+EnvRegistrationToken+")")
+	fs.StringVar(&opts.Token, "token", "", "registration token from Add host (prefer --token-file or "+EnvRegistrationToken+")")
 	fs.StringVar(&tokenFile, "token-file", "", "read the registration token from this file, or from stdin with -")
 	fs.StringVar(&opts.URL, "url", "", "control plane URL (required)")
 	fs.StringVar(&opts.Name, "name", "", "name for this host (default: its hostname)")

@@ -18,13 +18,4 @@ export interface HostPresencePort {
    * close the link it arrived on.
    */
   observe(hostId: string, facts: HostFactsDto, at?: Date): Promise<boolean>;
-
-  /**
-   * May this host hold a link at all? `false` for an unknown host and for one
-   * that was unpaired. Asked at the handshake, after the assertion has said
-   * *which* host is dialling: the assertion port is identity only, and an
-   * unpaired host still authenticates (its own uninstall needs to), so this is
-   * the check that keeps it off the link.
-   */
-  isPaired(hostId: string): Promise<boolean>;
 }

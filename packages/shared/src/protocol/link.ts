@@ -6,6 +6,15 @@
  * unpaired host is refused with `410` at the handshake and closed with `4410`
  * when it is unpaired while its link is open. The runner's twin is
  * `apps/runner/internal/link/protocol.go`.
+ *
+ * The handshake's `410` carries `X-Oppenheimer-Refusal: host-unpaired`, and the
+ * runner treats a `410` as terminal only with that header: any proxy in front
+ * of the control plane can answer `410`, and a host that took a stranger's as
+ * its verdict would stop dialling for good. A `4410` needs no such proof —
+ * proxies do not invent codes in the private range.
+ *
+ * "Unpaired" is a close code rather than a fourth hint because a hint rides a
+ * live link, and the point of this one is that the host may not have one.
  */
 export const RUNNER_LINK_CLOSE_CODES = Object.freeze({
   /** The first frame was not a valid hello, or a second hello arrived. */

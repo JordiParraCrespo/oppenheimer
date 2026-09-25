@@ -121,7 +121,7 @@ func (s *Service) Identity() (domain.Identity, error) {
 	switch {
 	case errors.Is(err, domain.ErrNotPaired):
 		return domain.Identity{}, domain.ErrNotRegistered.WithDetail(
-			"run the install command from Settings → Add host on this machine").WithCause(err)
+			"run the install command from Add host on this machine").WithCause(err)
 	case errors.Is(err, domain.ErrKeyPermissions):
 		return domain.Identity{}, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
 	case err != nil:
@@ -207,7 +207,7 @@ func (s *Service) MarkRevoked() (domain.Identity, error) {
 // half: the user asked for this machine to stop being a host. What it does do
 // is change the answer — `revoked` is false, and the caller must say so,
 // because the control plane still lists the host and still trusts its key
-// until someone unpairs it in the console.
+// until someone unpairs it at the control plane.
 func (s *Service) Unregister(ctx context.Context) (revoked bool, err error) {
 	identity, err := s.Identity()
 	if err != nil {

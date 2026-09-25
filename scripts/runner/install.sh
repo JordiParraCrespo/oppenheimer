@@ -53,7 +53,7 @@ usage: OPPENHEIMER_REGISTRATION_TOKEN=<token> install.sh --url <control plane UR
                 pair this machine even though it looks like a container or CI job
   --token       the registration token, if it is not in OPPENHEIMER_REGISTRATION_TOKEN
 
-The token is the one-hour, single-use token from Settings → Add host.
+The token is the one-hour, single-use token from Add host.
 Nothing is installed with a package manager unless you answer "y" on a terminal.
 EOF
 }

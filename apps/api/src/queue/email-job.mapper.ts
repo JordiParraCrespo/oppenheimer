@@ -59,14 +59,21 @@ export class EmailJobMapper {
 
   /**
    * A machine was paired with the recipient's account. Only a prefix of the
-   * fingerprint travels: enough to compare with the one on the host in
-   * Settings, which is where the full value is shown.
+   * fingerprint is shown: enough to compare with the `key` line of
+   * `oppenheimer-runner status` on the machine, which prints the full value.
+   * The machine line is the hostname and platform the runner reported, when it
+   * reported them. The closing names the host id because, until the console
+   * has an unpair control, the API is the way to retire a machine nobody can
+   * reach.
    */
   toHostPaired(input: unknown, t: LocalizedFormatter): HostPairedEmailParams {
     const data = this.record(input);
+    const reported = [data.hostname, data.os].filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
     const vars = {
       hostName: this.required(data, 'hostName'),
-      machine: this.required(data, 'machine'),
+      machine: reported.length > 0 ? reported.join(', ') : t.t('emails.hostPaired.unknownMachine'),
       fingerprint: this.required(data, 'fingerprint').slice(0, 16),
     };
     return {
@@ -77,7 +84,7 @@ export class EmailJobMapper {
       url: this.required(data, 'url'),
       helperText: t.t('emails.hostPaired.helper'),
       fallbackLabel: t.t('emails.common.pasteLink'),
-      closingText: t.t('emails.hostPaired.closing'),
+      closingText: t.t('emails.hostPaired.closing', { hostId: this.required(data, 'hostId') }),
       recipientEmail: this.required(data, 'to'),
     };
   }

@@ -1,7 +1,7 @@
 import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
 
 /**
- * Raised when a host stops being one — unpaired from the console, or reported
+ * Raised when a host stops being one — unpaired by its owner, or reported
  * gone by its own uninstall.
  *
  * The relay listens so a link that is open at that moment is closed with the

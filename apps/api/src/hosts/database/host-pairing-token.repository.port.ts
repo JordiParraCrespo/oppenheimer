@@ -2,6 +2,14 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity';
 
+export interface MintFence {
+  /** How many spendable tokens one person may hold. */
+  cap: number;
+  now: Date;
+  /** The caller's own token this mint replaces, already revoked in memory. */
+  replacing?: HostPairingTokenEntity;
+}
+
 /**
  * Port for the pairing-token aggregate.
  *
@@ -10,7 +18,6 @@ import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity
  * verb rather than a noun of its own.
  */
 export interface HostPairingTokenRepositoryPort {
-  insert(entity: HostPairingTokenEntity): Promise<void>;
   save(entity: HostPairingTokenEntity): Promise<HostPairingTokenEntity>;
   /** Tokens the caller minted, newest first. */
   findAll(scope: AccessScope): Promise<HostPairingTokenEntity[]>;
@@ -24,14 +31,11 @@ export interface HostPairingTokenRepositoryPort {
    */
   findOneByHash(tokenHash: string): Promise<Option<HostPairingTokenEntity>>;
   /**
-   * How many of this person's tokens could still pair a machine at `now`: not
-   * redeemed, not revoked, not expired. What the mint cap counts.
+   * Mint `entity` unless its owner already holds `cap` spendable tokens — not
+   * redeemed, not revoked, not expired at `now` — revoking `replacing` first in
+   * the same transaction. The owner's mints are serialised, so two at once cannot
+   * both find room. `false` means the cap held and nothing was written, the
+   * revoke included.
    */
-  countSpendable(ownerUserId: string, now: Date): Promise<number>;
-  /**
-   * Delete this person's tokens that were never redeemed and stopped being
-   * spendable — expired or revoked — before `cutoff`. A redeemed token stays:
-   * the host it created names it, and it is the record of who paired what.
-   */
-  purgeStale(ownerUserId: string, cutoff: Date): Promise<number>;
+  insertWithinCap(entity: HostPairingTokenEntity, fence: MintFence): Promise<boolean>;
 }

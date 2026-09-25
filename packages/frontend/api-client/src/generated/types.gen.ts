@@ -724,6 +724,7 @@ export type PairingTokenResponseDto = {
 
 export type MintPairingTokenRequest = {
     name: string;
+    replaces?: string;
 };
 
 export type MintedPairingTokenResponseDto = {
@@ -3828,6 +3829,10 @@ export type MintErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
+    /**
+     * HOSTS_002 — The token named in `replaces` is not one of the caller’s
+     */
+    404: ProblemDetailsDto;
     /**
      * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
      */

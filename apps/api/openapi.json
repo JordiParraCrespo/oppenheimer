@@ -4945,7 +4945,7 @@
         "tags": ["Hosts"]
       },
       "post": {
-        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.",
+        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.",
         "operationId": "mint",
         "parameters": [],
         "requestBody": {
@@ -4981,6 +4981,16 @@
           },
           "403": {
             "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — The token named in `replaces` is not one of the caller’s",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11084,6 +11094,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "replaces": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": ["name"]

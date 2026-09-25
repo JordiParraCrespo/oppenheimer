@@ -343,6 +343,57 @@ describe('Hosts & pairing (integration)', () => {
       expect(rows[0].tokenHash).not.toBe(minted.secret);
       expect(rows[0].createdFromIp).toBeTruthy();
     });
+
+    /** Mint as `owner`, who is a fresh account so no other test's tokens count. */
+    const mintAs = (owner: { sessionToken: string }, body: Record<string, unknown>) =>
+      call('/api/v1/hosts/pairing', { method: 'POST', token: owner.sessionToken, body });
+    const revokedAt = async (id: string) =>
+      (
+        (await dataSource.query('SELECT "revokedAt" FROM "host_pairing_token" WHERE "id" = $1', [
+          id,
+        ])) as { revokedAt: Date | null }[]
+      )[0].revokedAt;
+
+    it('holds the cap when mints race', async () => {
+      const owner = await signUp('cap-race@example.com');
+
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () => mintAs(owner, { name: 'Race' })),
+      );
+
+      // The count and the insert are one serialised write, so eight at once
+      // cannot all find room for a fifth.
+      expect(results.filter((r) => r.status === 201)).toHaveLength(5);
+      for (const refused of results.filter((r) => r.status !== 201)) {
+        expect(refused.status).toBe(429);
+        expect(refused.body?.code).toBe('HOSTS_006');
+      }
+    });
+
+    it('replaces a token in the same write, even at the cap', async () => {
+      const owner = await signUp('cap-replace@example.com');
+      const held = [];
+      for (let i = 0; i < 5; i++) held.push(await mintAs(owner, { name: 'Full' }));
+      expect((await mintAs(owner, { name: 'Full' })).status).toBe(429);
+
+      const replacement = await mintAs(owner, { name: 'Full', replaces: held[0].body?.id });
+
+      expect(replacement.status).toBe(201);
+      expect(await revokedAt(held[0].body?.id as string)).not.toBeNull();
+    });
+
+    it('leaves the old token alone when the mint is refused', async () => {
+      const owner = await signUp('cap-refused@example.com');
+      const stranger = await signUp('cap-stranger@example.com');
+      const mine = await mintAs(owner, { name: 'Mine' });
+
+      const refused = await mintAs(stranger, { name: 'Theirs', replaces: mine.body?.id });
+
+      // Someone else's token is not found, and nothing was minted or revoked.
+      expect(refused.status).toBe(404);
+      expect(refused.body?.code).toBe('HOSTS_002');
+      expect(await revokedAt(mine.body?.id as string)).toBeNull();
+    });
   });
 
   describe('registering a host', () => {
@@ -396,6 +447,7 @@ describe('Hosts & pairing (integration)', () => {
           expect(job?.data).toMatchObject({
             to: user.email,
             userId: user.id,
+            hostId,
             hostName: 'Notify the owner',
           });
         },

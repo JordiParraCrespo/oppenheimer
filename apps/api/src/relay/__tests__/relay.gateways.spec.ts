@@ -93,13 +93,14 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     recognises: (bearer) => bearer.startsWith('valid.'),
     verify: async (bearer) => {
       if (bearer === 'valid.host')
-        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000) };
+        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
+      if (bearer === 'valid.unpaired')
+        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: true };
       throw new Error('rejected');
     },
   };
   const presence: HostPresencePort = {
     observe: vi.fn().mockResolvedValue(true),
-    isPaired: vi.fn().mockResolvedValue(true),
   };
   const events: RecordSessionEventsPort = {
     record: vi.fn(async (batch: RunnerEventBatch) => ({
@@ -145,14 +146,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     { mintRepositoryToken: vi.fn() } as unknown as RepositoryAccessPort,
     { publicKeyOf: vi.fn().mockResolvedValue(null) } as unknown as HostKeyPort,
   );
-  const runners = new RunnerLinkGateway(
-    assertions,
-    presence,
-    registry,
-    processor,
-    credentials,
-    config,
-  );
+  const runners = new RunnerLinkGateway(assertions, registry, processor, credentials, config);
   const browsers = new BrowserAttachGateway(cache, lookup, registry, workspaces, config);
   const server = createServer((_request, response) => response.writeHead(404).end());
   const upgrade = new RelayUpgradeGateway({} as HttpAdapterHost, runners, browsers);
@@ -278,9 +272,8 @@ describe('runner link', () => {
   });
 
   it('refuses an unpaired host with 410 before the upgrade, so it stops dialling', async () => {
-    vi.mocked(h.presence.isPaired).mockResolvedValueOnce(false);
     const runner = ws(h.origin, '/api/v1/relay/runner', {
-      headers: { authorization: 'Bearer valid.host' },
+      headers: { authorization: 'Bearer valid.unpaired' },
     });
     sockets.push(runner);
     runner.on('error', () => {});

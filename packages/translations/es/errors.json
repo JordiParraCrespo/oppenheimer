@@ -97,7 +97,7 @@
     "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",
     "HOSTS_004": "Este servidor todavía no tiene configurados los equipos.",
     "HOSTS_005": "Ese equipo no ha podido demostrar su identidad.",
-    "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Usa uno o revoca uno en Ajustes antes de crear otro.",
+    "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Empareja una máquina con uno o espera a que caduquen; cada uno dura una hora.",
     "ADMIN_009": "Esa sesión ya no existe para este usuario.",
     "PROFILE_001": "No hemos encontrado tu perfil.",
     "PROFILE_002": "La contraseña actual no es correcta.",

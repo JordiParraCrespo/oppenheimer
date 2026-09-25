@@ -15,11 +15,10 @@ sessions — a git worktree plus a tmux session with the agent in window 0,
 tabs as further windows, a screen classifier for the sidebar dot, and a close
 that pushes the branch and removes the worktree.
 
-**What does not exist yet**: the outbound WebSocket to the control plane. So
-sessions are driven from the host itself (`runner sessions …`) rather than
-from a browser, and the git credential helper answers "I have none" because
-the token it would hand git is minted by the control plane over that link.
-Both are the next slice, in the order `apps/runner/ARCHITECTURE.md` lists.
+`runner run` holds one outbound WebSocket to the control plane: sessions are
+driven from the console over it, and the git credential helper answers with
+installation tokens the control plane mints on it. `runner sessions …` drives
+the same lifecycle from the host itself.
 
 `runner serve` and the `apikeys` context are the template this grew from:
 an inbound API-key surface on a TCP port, which is what the container
@@ -33,12 +32,12 @@ the way this host proves who it is, and they go when the link lands.
 | ------- | ------------ |
 | `runner run` | the host agent: single-instance lock, local 0600 Unix socket, update loop. What the service unit starts |
 | `runner register --url … [--token-file F\|-] [--workspaces DIR] [--keep-existing] [--allow-container]` | redeems a one-hour registration token (from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`): generates the host keypair, sends the public half with the host's facts, pins the control plane's fingerprint. Refuses a machine that looks temporary unless `--allow-container`; `--keep-existing` makes a re-run a repair |
-| `runner workspaces [--set DIR]` | where sessions' checkouts live and why; `--set` moves it for new sessions, refused while a session still has a checkout |
+| `runner workspaces [--set DIR]` | where sessions' checkouts live and why; `--set` moves it for new sessions, refused while any session's worktree is still on disk under the old directory |
 | `runner install [--print]` | writes and starts the launchd agent (macOS) or systemd user unit (Debian, Ubuntu); `--print` shows the unit instead |
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). Says when the control plane could not be told. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
-| `runner status` | platform, pairing, service, tools, disk. Exits non-zero when the host is not ready |
+| `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
 | `runner serve` | the control-plane-facing HTTP service on a TCP port — what the container image runs |

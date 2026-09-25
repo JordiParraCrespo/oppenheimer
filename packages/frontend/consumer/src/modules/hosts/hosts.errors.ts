@@ -17,8 +17,4 @@ export const HostsErrors = {
     code: 'HOSTS_CLIENT_003',
     message: 'Failed to remove the host',
   },
-  REVOKE_PAIRING_FAILED: {
-    code: 'HOSTS_CLIENT_004',
-    message: 'Failed to revoke the registration token',
-  },
 } as const satisfies Record<string, ErrorDefinition>;

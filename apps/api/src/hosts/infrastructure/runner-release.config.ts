@@ -4,7 +4,7 @@ import { hostsAreConfigured } from '../../config/hosts.config';
 
 /**
  * What this deployment hands a machine that is about to become a host: the
- * install command, the same steps written for a coding agent, the release
+ * install command, the same command wrapped for a coding agent, the release
  * channel and the base URL artifacts come from — plus the fingerprint of the
  * control plane's own key, which the runner pins and then refuses to talk to
  * anything else by.
@@ -65,117 +65,51 @@ export class RunnerReleaseConfig {
    * can do exactly one thing — add one host, the minter's — and it expires, so
    * this is the one place it is allowed to appear.
    *
-   * It rides in the installer's **environment**, not as `--token`: an argument
-   * sits in the process list, readable by every account on the machine for as
-   * long as the install runs, and the installer passes it on to `runner
-   * register` the same way.
+   * It is an environment assignment on the pasted line, not an argument: it is
+   * in no process's argv, so other accounts on the machine cannot read it from
+   * the process list while the install runs, and the installer hands it to
+   * `runner register` the same way. It is still on the line the person pastes,
+   * and so in that shell's history until the token expires.
    */
   installCommandFor(secret: string): string {
     return `${this.fetchInstaller} | OPPENHEIMER_REGISTRATION_TOKEN=${secret} sh -s -- ${this.installerFlags}`;
   }
 
   /**
-   * The same steps spelled out for a Claude Code or Codex already running on a
-   * machine, for someone who would rather read them than pipe a script into a
-   * shell.
+   * The install command wrapped for a Claude Code or Codex already running on
+   * a machine: what to settle with the person before running it, and what to
+   * show them after. Deliberately a template, not a procedure. The procedure
+   * is the installer's and the runner's: they ask about the workspace path and
+   * missing tools on a terminal, refuse a machine that looks temporary, and
+   * say what to do next in each error. Restating those steps here would be a
+   * second copy that goes stale the next time the installer changes.
    *
-   * Every claim in it is one the runner and the installer keep: the exit codes
-   * are `apps/runner/internal/cli/commands.go`'s, the lines to read are what
-   * `runner status` prints, and the error codes are the catalog in
-   * `apps/docs/docs/errors.md`. Its first job is to establish that the agent is
-   * on the machine the person means, because the token is single-use: spent on
-   * the wrong box, it leaves a host nobody wanted and no token.
+   * The secret appears once, inside the command.
    */
   agentPromptFor(secret: string): string {
     const digest = this.installScriptSha256;
     return [
-      'Install the Oppenheimer runner on a machine and pair it with my account.',
+      'Install the Oppenheimer runner on a machine of mine and pair it with my account.',
       '',
-      'What the runner is: one static Go binary. It opens no ports — it holds one',
-      'outbound WebSocket to my control plane — and runs my coding sessions as git',
-      'worktrees, each in its own tmux session. It installs as a user service (a',
-      'launchd agent on macOS, a systemd user unit on Debian or Ubuntu), never as',
-      'root and never system-wide.',
+      'Before you run anything:',
+      '- Tell me which machine you are on (uname -n, uname -sr, whoami) and ask whether it',
+      '  is the one I mean. If it is not, stop: the token below pairs one machine only.',
+      '- Ask me where session code should live. Add --workspaces with that path to the',
+      '  command, or leave it off for ~/oppenheimer-ai/workspaces.',
+      '- Do not install anything, run anything as root, or add --force or --allow-container',
+      '  unless I say so.',
       '',
-      'STEP 0 — Before running anything, work out where you are and ask me. Do not',
-      'run the install command until I have answered every question below.',
+      'Then run this as that user:',
       '',
-      '1. Which machine is this? Run: uname -sr; uname -n; whoami; echo "$HOME"',
-      '   If it is a container, a CI job, a devcontainer or a cloud sandbox — any',
-      '   environment whose files disappear when it ends — stop and tell me. The',
-      '   token is single-use; spent on a machine that disappears, it leaves me a',
-      '   dead host and no token. (The runner refuses such a machine too, with',
-      '   HOST_006; never pass --allow-container unless I say so.)',
-      '',
-      '2. Say, in one line: "I am on <hostname> (<os> <arch>) as <user>. Is this',
-      '   the machine you want to add?" If it is not, ask me whether the right one',
-      '   is reachable over SSH. If it is, use the SSH form in STEP 1. If not, stop',
-      '   and give me the install command to run there myself. The token is still',
-      '   unspent at this point.',
-      '',
-      '3. Ask me where session code should live on that machine. The default is',
-      '   ~/oppenheimer-ai/workspaces. If I give a path, it must be absolute, not',
-      '   inside ~/.oppenheimer, and not inside a synced folder (iCloud Drive,',
-      '   Dropbox, Google Drive, OneDrive, ~/Library/CloudStorage); the runner',
-      '   refuses the first two with HOST_007 and warns about the third.',
-      '',
-      '4. Check the two tools sessions need: git --version and tmux -V. If both',
-      '   work, say nothing about them and move on. If one is missing, show me the',
-      '   exact command that would install it (brew install <tool> on macOS; sudo',
-      '   apt-get update && sudo apt-get install -y <tool> on Debian/Ubuntu) and',
-      '   ask me. Run it only after I say yes, then check again. If I say no, stop:',
-      '   the installer will not install anything itself when it cannot ask on a',
-      '   terminal, and it stops before spending the token.',
-      '',
-      'STEP 1 — Install. Run this as that user, adding --workspaces with the path I',
-      'chose (leave it off for the default):',
-      '',
-      `  ${this.installCommandFor(secret)} --workspaces '<path>'`,
+      `  ${this.installCommandFor(secret)}`,
       '',
       ...(digest
-        ? [
-            `The installer's SHA-256 is ${digest}. If you download it to read it`,
-            'first, check that digest and stop if it differs.',
-            '',
-          ]
+        ? [`The installer's SHA-256 is ${digest}. If you download it first, check it.`, '']
         : []),
-      'Over SSH, keep the token out of every command line by sending it on stdin:',
+      'Do not copy the token anywhere else; it expires within the hour.',
       '',
-      `  printf '%s\\n' '${secret}' | ssh <target> "IFS= read -r OPPENHEIMER_REGISTRATION_TOKEN && export OPPENHEIMER_REGISTRATION_TOKEN && ${this.fetchInstaller} | sh -s -- ${this.installerFlags} --workspaces '<path>'"`,
-      '',
-      'STEP 2 — Confirm. Run ~/.local/bin/oppenheimer-runner status and read the',
-      'table; do not rely on its exit code, which is 0 even for an unpaired host or',
-      'a stopped service. Report these lines: paired (the host id), service (it must',
-      'say running), runner (the version), git, tmux, claude, and disk (it names the',
-      'directory sessions will use and whether it was chosen or the default — check',
-      'it is the one I asked for). Then ask me to confirm the host shows online in',
-      'the console.',
-      '',
-      'If something goes wrong, stop and tell me. Do not improvise:',
-      '- "This host is already paired" (PAIR_002): the machine belongs to another',
-      '  control plane. The error suggests --force; do not use it unless I say so.',
-      '- "The registration token was rejected" (PAIR_003, exit 3): it is expired,',
-      '  used or revoked. Ask me for a new one from Add host.',
-      '- "The control plane is limiting registrations" (PAIR_007): wait a minute and',
-      '  run the same command again. The token was not spent.',
-      '- "The control plane could not be reached" (PAIR_006, exit 6): show me the',
-      '  URL and the error. Do not change the URL.',
-      '- A signature or checksum mismatch: stop and show me the output. Do not',
-      '  retry from anywhere else.',
-      '- The output shows "paired as …" and then the service step fails: run the',
-      '  same command again. It keeps the pairing, spends nothing, and retries the',
-      '  service; show me what it says the second time.',
-      '- claude not found: a warning, not a failure. Report it and continue.',
-      '- You realise you ran it on the wrong machine: say so at once. The token is',
-      '  spent, and I will unpair that host in the console.',
-      '',
-      'Never:',
-      '- run any of this as root or with sudo, except a tool install I approved;',
-      '- open a port or expose anything to the network;',
-      '- write the token into a file, a script, a commit or a note, or repeat it in',
-      '  your summary;',
-      '- touch my repositories, my shell profile, my git config, or any credential',
-      '  helper.',
+      'Afterwards, run ~/.local/bin/oppenheimer-runner status and show me what it prints.',
+      'If anything fails, stop and show me the output. The error says what to do next.',
     ].join('\n');
   }
 

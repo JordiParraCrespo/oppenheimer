@@ -769,7 +769,7 @@ export const list7 = <ThrowOnError extends boolean = false>(options?: Options<Li
 /**
  * Mint a pairing token for a new host
  *
- * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.
+ * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.
  */
 export const mint = <ThrowOnError extends boolean = false>(options: Options<MintData, ThrowOnError>): RequestResult<MintResponses, MintErrors, ThrowOnError> => (options.client ?? client).post<MintResponses, MintErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

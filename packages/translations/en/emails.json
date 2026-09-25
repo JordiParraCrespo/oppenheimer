@@ -62,7 +62,8 @@
     "body": "{{hostName}} ({{machine}}) was paired with your account and can now run coding sessions for you. Its key fingerprint starts with {{fingerprint}}.",
     "action": "Open Oppenheimer",
     "helper": "If you paired it, there is nothing to do. On that machine, the runner’s status command shows the same fingerprint, so you can check it is the one you meant.",
-    "closing": "Don't recognise it? Someone used one of your pairing tokens: unpair that host and revoke your open tokens as soon as you can.",
+    "closing": "Don't recognise it? Someone used one of your pairing tokens. The console cannot unpair a host yet. If you can reach the machine, run the runner’s uninstall command on it; if you cannot, unpair it through the API with DELETE /v1/hosts/{{hostId}}. Your unspent tokens expire within the hour.",
+    "unknownMachine": "no hostname reported",
     "footerNote": "This is a security email, so you always receive it."
   }
 }

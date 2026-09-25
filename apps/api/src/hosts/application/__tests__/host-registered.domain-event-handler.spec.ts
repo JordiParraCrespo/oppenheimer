@@ -3,33 +3,28 @@ import type { Queue } from 'bullmq';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
-import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostRegisteredDomainEventHandler } from '../event-handlers/host-registered.domain-event-handler';
 
 const EVENT = {
   aggregateId: 'host-1',
   ownerUserId: 'user-1',
   publicKeyFingerprint: 'f'.repeat(64),
+  name: 'Dev box',
+  hostname: 'devbox.local',
+  os: 'macos',
 };
 
-function handler(options: { owner?: boolean; host?: boolean } = {}) {
+function handler(options: { owner?: boolean; frontendUrl?: string } = {}) {
   const users = {
     findOneById: vi
       .fn()
       .mockResolvedValue(options.owner === false ? None : Some({ email: 'jordi@example.com' })),
   } as unknown as UserRepositoryPort;
-  const hosts = {
-    findOneByIdForMachine: vi
-      .fn()
-      .mockResolvedValue(
-        options.host === false
-          ? None
-          : Some({ name: 'Dev box', hostname: 'devbox.local', os: 'macos' }),
-      ),
-  } as unknown as HostRepositoryPort;
   const queue = { add: vi.fn().mockResolvedValue(undefined) } as unknown as Queue;
-  const config = { get: () => 'https://app.oppenheimer.dev' } as unknown as ConfigService;
-  return { subject: new HostRegisteredDomainEventHandler(hosts, users, queue, config), queue };
+  const frontendUrl =
+    'frontendUrl' in options ? options.frontendUrl : 'https://app.oppenheimer.dev';
+  const config = { get: () => frontendUrl } as unknown as ConfigService;
+  return { subject: new HostRegisteredDomainEventHandler(users, queue, config), queue, users };
 }
 
 describe('HostRegisteredDomainEventHandler', () => {
@@ -43,8 +38,10 @@ describe('HostRegisteredDomainEventHandler', () => {
       {
         to: 'jordi@example.com',
         userId: 'user-1',
+        hostId: 'host-1',
         hostName: 'Dev box',
-        machine: 'devbox.local, macos',
+        hostname: 'devbox.local',
+        os: 'macos',
         fingerprint: 'f'.repeat(64),
         url: 'https://app.oppenheimer.dev',
       },
@@ -56,11 +53,18 @@ describe('HostRegisteredDomainEventHandler', () => {
     expect(options?.jobId).not.toContain(':');
   });
 
-  it('sends nothing when the owner or the host is gone', async () => {
-    for (const gone of [{ owner: false }, { host: false }]) {
-      const { subject, queue } = handler(gone);
+  it('sends nothing when the owner is gone', async () => {
+    const { subject, queue } = handler({ owner: false });
+    await subject.handle(EVENT);
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it('fails closed without a frontend URL: no job whose button goes nowhere', async () => {
+    for (const frontendUrl of [undefined, '']) {
+      const { subject, queue, users } = handler({ frontendUrl });
       await subject.handle(EVENT);
       expect(queue.add).not.toHaveBeenCalled();
+      expect(users.findOneById).not.toHaveBeenCalled();
     }
   });
 });

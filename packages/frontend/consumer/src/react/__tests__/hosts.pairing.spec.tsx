@@ -55,7 +55,6 @@ function setup(tokens: HostPairingToken[], hosts: HostEntity[]) {
     pair: vi.fn().mockResolvedValue(PAIRING),
     pairings: vi.fn().mockResolvedValue(tokens),
     findAll: vi.fn().mockResolvedValue(hosts),
-    revokePairing: vi.fn().mockResolvedValue(undefined),
   };
   const app = fakeKernel({ [TOKENS.HostsService]: service });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -155,9 +154,9 @@ describe('useHostPairing', () => {
     expect(result.current.host).toBeNull();
   });
 
-  it('revokes the unspent token it replaces before minting the next', async () => {
+  it('asks the mint to replace the unspent token on screen', async () => {
     // A token pasted into the wrong window must stop working when its reader
-    // asks for another, not an hour later.
+    // asks for another, not an hour later — and in the same write as the mint.
     const { wrapper, service } = setup([unredeemed], [OWNED]);
     const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
     await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
@@ -165,13 +164,10 @@ describe('useHostPairing', () => {
     result.current.regenerate();
 
     await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
-    expect(service.revokePairing).toHaveBeenCalledWith('token-1');
-    expect(service.revokePairing.mock.invocationCallOrder[0]).toBeLessThan(
-      service.pair.mock.invocationCallOrder[1],
-    );
+    expect(service.pair).toHaveBeenLastCalledWith('New host', 'token-1');
   });
 
-  it('leaves a token that already paired a machine alone', async () => {
+  it('replaces nothing when the token already paired a machine', async () => {
     const { wrapper, service } = setup([redeemed], [OWNED, PAIRED]);
     const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
     await waitFor(() => expect(result.current.host?.id).toBe('host-2'));
@@ -179,17 +175,18 @@ describe('useHostPairing', () => {
     result.current.regenerate();
 
     await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
-    expect(service.revokePairing).not.toHaveBeenCalled();
+    expect(service.pair).toHaveBeenLastCalledWith('New host', undefined);
   });
 
-  it('still mints a fresh token when the revoke fails', async () => {
+  it('keeps the token on screen when the replacement is refused', async () => {
     const { wrapper, service } = setup([unredeemed], [OWNED]);
-    service.revokePairing.mockRejectedValueOnce(new Error('offline'));
     const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
     await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
 
+    service.pair.mockRejectedValueOnce(new Error('HOSTS_006'));
     result.current.regenerate();
 
-    await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.error?.message).toBe('HOSTS_006'));
+    expect(result.current.pairing).toEqual(PAIRING);
   });
 });

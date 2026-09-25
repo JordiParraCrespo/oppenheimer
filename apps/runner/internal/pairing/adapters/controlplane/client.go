@@ -148,7 +148,7 @@ func statusProblem(status int, payload []byte) error {
 	switch {
 	case status == http.StatusUnauthorized, status == http.StatusForbidden, status == http.StatusGone:
 		if detail == "" {
-			detail = "the token is expired, already used, or revoked; mint a new one in Settings → Add host"
+			detail = "the token is expired, already used, or revoked; mint a new one in Add host"
 		}
 		return domain.ErrTokenRejected.WithDetail("%s", detail)
 	case status == http.StatusConflict:

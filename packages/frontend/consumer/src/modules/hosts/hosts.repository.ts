@@ -59,13 +59,14 @@ export class HostsRepository {
    * runner dials in.
    *
    * The machine is named before it exists, because the token carries the name
-   * the runner will adopt. It can be renamed afterwards from Settings.
+   * the runner will adopt. `replaces` is Add host's "New token": the API revokes
+   * that token in the same write, so a refused mint leaves it spendable.
    */
   @MapApiError(HostsErrors.PAIR_FAILED)
-  async pair(name: string): Promise<HostPairing> {
+  async pair(name: string, replaces?: string): Promise<HostPairing> {
     const { data, error } = await heyApiClient.post<{ 201: MintedPairingTokenDto }>({
       url: `${HOSTS_URL}/pairing`,
-      body: { name },
+      body: replaces ? { name, replaces } : { name },
     });
     if (error || !data) throw new AppError(HostsErrors.PAIR_FAILED);
     return {
@@ -96,16 +97,6 @@ export class HostsRepository {
       expiresAt: new Date(token.expiresAt),
       redeemedHostId: token.redeemedHostId ?? null,
     }));
-  }
-
-  /**
-   * Revoke a pairing token nobody spent. Add host's "New token" calls this on
-   * the token it replaces, so a person only ever holds the one on screen.
-   */
-  @MapApiError(HostsErrors.REVOKE_PAIRING_FAILED)
-  async revokePairing(id: string): Promise<void> {
-    const { error } = await heyApiClient.delete({ url: `${HOSTS_URL}/pairing/{id}`, path: { id } });
-    if (error) throw new AppError(HostsErrors.REVOKE_PAIRING_FAILED);
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

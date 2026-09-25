@@ -193,8 +193,9 @@ guessing a credential:
 
 `HOSTS_006` caps how many unspent pairing tokens one person may hold at once,
 because each is a live way to add a machine to the account for its hour. Using
-one, revoking one in Settings, or letting one expire frees a slot; the console's
-"New token" revokes the token it replaces, so it never runs into the cap.
+one, revoking one (`DELETE /v1/hosts/pairing/{id}`), or letting one expire frees
+a slot. The console's "New token" mints with `replaces`, which revokes the token
+on screen in the same write, so it never runs into the cap.
 
 `HOSTS_004` is the optional-capability answer: without the runner release
 settings and the control plane's own signing key there is nothing to hand a

@@ -108,6 +108,7 @@ describe('HostAssertionResolver', () => {
       hostId: 'host-1',
       // The caller bounds what it caches by this rather than guessing.
       expiresAt: new Date(NOW.getTime() + 300_000),
+      unpaired: false,
     });
   });
 
@@ -247,7 +248,7 @@ describe('HostAssertionResolver', () => {
   });
 
   describe('a host that has been unpaired', () => {
-    it('still proves who it is', async () => {
+    it('still proves who it is, and says it was unpaired', async () => {
       // Verification is identity, not permission. Its own uninstall call has to be
       // able to say "I am gone" twice and get the same answer, so what a host may
       // *do* is `HostAccessPort`'s question.
@@ -263,7 +264,7 @@ describe('HostAssertionResolver', () => {
 
       await expect(
         verify(assertion(current.privateKey, bootClaims('host-1'))),
-      ).resolves.toMatchObject({ hostId: 'host-1' });
+      ).resolves.toMatchObject({ hostId: 'host-1', unpaired: true });
     });
   });
 

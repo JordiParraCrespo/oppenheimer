@@ -22,9 +22,4 @@ export class HostPresenceResolver implements HostPresencePort {
     await this.hosts.save(host);
     return true;
   }
-
-  async isPaired(hostId: string): Promise<boolean> {
-    const found = await this.hosts.findOneByIdForMachine(hostId);
-    return found.isSome() && !found.unwrap().isUnpaired;
-  }
 }

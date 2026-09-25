@@ -12,8 +12,7 @@ import {
 } from '@oppenheimer/shared/protocol';
 import { type WebSocket, WebSocketServer } from 'ws';
 import type { HostAssertionPort } from '../../hosts/application/host-assertion.port';
-import type { HostPresencePort } from '../../hosts/application/host-presence.port';
-import { HOST_ASSERTION, HOST_PRESENCE } from '../../hosts/hosts.di-tokens';
+import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../links/links.di-tokens';
 import { CredentialsProcessor } from './credentials.processor';
@@ -54,12 +53,12 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  * exactly once per dial because verifying burns the `jti`. A socket that
  * presents none is refused before the upgrade, so it never costs a frame.
  *
- * The assertion says *which* host is dialling and nothing about whether it may:
- * an unpaired host still authenticates, because its own uninstall has to. So
- * the handshake asks presence as well, and an unpaired host is refused with
- * `410` — the runner's cue to stop dialling rather than walk its ladder
- * forever. One unpaired while connected is closed with `4410`, the same answer
- * after the upgrade (`RUNNER_LINK_CLOSE_CODES`).
+ * The assertion says *which* host is dialling, and whether that host has been
+ * unpaired — an unpaired host still authenticates, because its own uninstall
+ * has to. The handshake refuses one with `410`, the runner's cue to stop
+ * dialling rather than walk its ladder forever. One unpaired while connected
+ * is closed with `4410`, the same answer after the upgrade
+ * (`RUNNER_LINK_CLOSE_CODES`).
  *
  * After the upgrade the first frame must be `hello`; anything else, or nothing
  * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL`
@@ -76,8 +75,6 @@ export class RunnerLinkGateway {
   constructor(
     @Inject(HOST_ASSERTION)
     private readonly assertions: HostAssertionPort,
-    @Inject(HOST_PRESENCE)
-    private readonly presence: HostPresencePort,
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
     private readonly events: RelayEventsProcessor,
@@ -99,13 +96,14 @@ export class RunnerLinkGateway {
       return;
     }
     let hostId: string;
+    let unpaired: boolean;
     try {
-      ({ hostId } = await this.assertions.verify(bearer));
+      ({ hostId, unpaired } = await this.assertions.verify(bearer));
     } catch {
       refuseUpgrade(socket, 401, 'boot assertion rejected');
       return;
     }
-    if (!(await this.presence.isPaired(hostId))) {
+    if (unpaired) {
       refuseUpgrade(
         socket,
         410,

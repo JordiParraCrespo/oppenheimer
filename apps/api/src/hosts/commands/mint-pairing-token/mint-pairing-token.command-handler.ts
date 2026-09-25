@@ -19,17 +19,10 @@ const LIFETIME_MS = 60 * 60 * 1000;
 /**
  * How many unspent tokens one person may hold at once. Each is a live way to
  * add a machine to the account for its hour, and the console only ever shows
- * one — its "New token" revokes the one it replaces — so a handful covers two
+ * one — its "New token" replaces the one on screen — so a handful covers two
  * tabs and a retry without leaving a drawer of them in chat logs.
  */
 export const MAX_SPENDABLE_TOKENS = 5;
-
-/**
- * How long a token that was never redeemed is kept after it stopped being
- * spendable. Long enough to answer "who minted that, and from where" (F5);
- * after that it is clutter in the list that exists to answer it.
- */
-export const STALE_TOKEN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * What the caller gets back.
@@ -76,17 +69,8 @@ export class MintPairingTokenCommandHandler
     }
 
     const now = new Date();
-    // Housekeeping on the minter's own rows, where the cost is bounded by one
-    // person's history rather than by a scheduler nobody would notice was off.
-    await this.tokens.purgeStale(
-      command.userId,
-      new Date(now.getTime() - STALE_TOKEN_RETENTION_MS),
-    );
-    if ((await this.tokens.countSpendable(command.userId, now)) >= MAX_SPENDABLE_TOKENS) {
-      throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
-        detail: `You already hold ${MAX_SPENDABLE_TOKENS} unspent pairing tokens. Use one, revoke one in Settings, or wait for one to expire.`,
-      });
-    }
+    const replacing = await this.replacedToken(command);
+    replacing?.revoke(now);
 
     const secret = generatePairingTokenSecret();
     const token = HostPairingTokenEntity.mint({
@@ -98,7 +82,16 @@ export class MintPairingTokenCommandHandler
       expiresAt: new Date(now.getTime() + LIFETIME_MS),
     });
 
-    await this.tokens.insert(token);
+    const minted = await this.tokens.insertWithinCap(token, {
+      cap: MAX_SPENDABLE_TOKENS,
+      now,
+      replacing,
+    });
+    if (!minted) {
+      throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
+        detail: `You already hold ${MAX_SPENDABLE_TOKENS} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each lasts an hour.`,
+      });
+    }
 
     return {
       token,
@@ -106,5 +99,19 @@ export class MintPairingTokenCommandHandler
       installScriptSha256: this.release.installScriptSha256,
       agentPrompt: this.release.agentPromptFor(secret.secret),
     };
+  }
+
+  /** The caller's own token this mint replaces; missing is an error, not a plain mint. */
+  private async replacedToken(
+    command: MintPairingTokenCommand,
+  ): Promise<HostPairingTokenEntity | undefined> {
+    if (!command.replaces) return undefined;
+    const found = await this.tokens.findOneById(command.scope, command.replaces);
+    if (found.isNone()) {
+      throw new AppError(HostErrors.PAIRING_TOKEN_NOT_FOUND, {
+        detail: `No pairing token with id ${command.replaces}`,
+      });
+    }
+    return found.unwrap();
   }
 }

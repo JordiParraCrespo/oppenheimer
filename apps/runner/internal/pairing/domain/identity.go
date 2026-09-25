@@ -121,7 +121,7 @@ func isLoopback(host string) bool {
 func ValidateToken(token string) error {
 	token = strings.TrimSpace(token)
 	if !strings.HasPrefix(token, TokenPrefix) || len(token) <= len(TokenPrefix)+16 {
-		return fmt.Errorf("%w: expected a %s… token from Settings → Add host", ErrTokenShape, TokenPrefix)
+		return fmt.Errorf("%w: expected a %s… token from Add host", ErrTokenShape, TokenPrefix)
 	}
 	return nil
 }

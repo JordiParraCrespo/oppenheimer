@@ -20,7 +20,6 @@ import (
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 	pairapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/app"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
-	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 	upddomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
@@ -220,9 +219,12 @@ func (a *App) Workspaces(ctx context.Context, out io.Writer, dir string) error {
 }
 
 // moveWorkspaces points new sessions at dir. It moves nothing: every session
-// with a checkout under the old directory has to be closed first, because git
-// wrote that directory's absolute path into each worktree and tmux is running
-// in it. The old directory is left for the user to delete.
+// whose checkout is still on disk under the old directory has to be closed
+// first, because git wrote that directory's absolute path into each worktree
+// and tmux may be running in it. Closing a session removes its worktree, so the
+// question is asked of the disk, not of the session's state: a close that kept
+// the worktree still holds it, and a session whose worktree is gone does not.
+// The old directory is left for the user to delete.
 func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error {
 	if a.Paths.WorkspacesSource == "env" {
 		return hostdomain.ErrWorkspaces.WithDetail(
@@ -232,16 +234,16 @@ func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error 
 		p.printf("sessions already live in %s\n", dir)
 		return nil
 	}
-	var open []string
+	var held []string
 	for _, session := range a.Sessions.List() {
-		if session.State != sessionsdomain.StateClosed {
-			open = append(open, session.ID)
+		if hasCheckoutUnder(a.Paths.Workspaces, session.Worktree) {
+			held = append(held, session.ID)
 		}
 	}
-	if len(open) > 0 {
+	if len(held) > 0 {
 		return problem.ErrConflict.WithDetail(
-			"%d session(s) still have checkouts in %s (%s); close them from the console before moving where sessions live",
-			len(open), a.Paths.Workspaces, strings.Join(open, ", "))
+			"%d session(s) still have checkouts in %s (%s); close them with `%s sessions close <id>` before moving where sessions live",
+			len(held), a.Paths.Workspaces, strings.Join(held, ", "), binaryName())
 	}
 	if _, err := a.Pairing.SetWorkspaces(dir); err != nil {
 		return err
@@ -255,6 +257,19 @@ func (a *App) moveWorkspaces(ctx context.Context, p *printer, dir string) error 
 		p.println("service restarted to pick it up")
 	}
 	return nil
+}
+
+// hasCheckoutUnder reports whether worktree is a directory on disk inside dir.
+func hasCheckoutUnder(dir, worktree string) bool {
+	if worktree == "" {
+		return false
+	}
+	rel, err := filepath.Rel(dir, worktree)
+	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return false
+	}
+	info, err := os.Stat(worktree)
+	return err == nil && info.IsDir()
 }
 
 // publicKeyFingerprint is SHA-256 of the raw host key, hex — the form the
@@ -327,9 +342,9 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 	}
 	if len(running) > 0 && !opts.Force {
 		return problem.ErrConflict.WithDetail(
-			"%d session(s) are still running on this host (%s). Close them from the console, "+
+			"%d session(s) are still running on this host (%s). Close them with `%s sessions close <id>`, "+
 				"or re-run with --force to end them; their checkouts stay on disk",
-			len(running), strings.Join(running, ", "))
+			len(running), strings.Join(running, ", "), binaryName())
 	}
 
 	var errs []error
@@ -342,12 +357,20 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 	// session records while they are marked stopped.
 	if opts.Force && len(running) > 0 {
 		ended, err := a.Sessions.EndAll(ctx)
-		if err != nil {
-			errs = append(errs, err)
-		}
 		p.printf("ended %d session(s); their checkouts are still in %s\n", len(ended), a.Paths.Workspaces)
+		// A session that could not be ended is an agent still working. Stop
+		// before the identity goes, so the host stays paired and visible, and
+		// running this again can finish the job.
+		if err != nil {
+			p.println("the host is still paired: end the remaining sessions, then run this again")
+			return errors.Join(append(errs, err, p.err)...)
+		}
 	}
 	if !opts.KeepIdentity {
+		hostID := "<id>"
+		if identity, err := a.Pairing.Identity(); err == nil && identity.HostID != "" {
+			hostID = identity.HostID
+		}
 		revoked, err := a.Pairing.Unregister(ctx)
 		switch {
 		case err != nil && !isNotPaired(err):
@@ -357,8 +380,8 @@ func (a *App) Uninstall(ctx context.Context, out io.Writer, opts UninstallOption
 		case revoked:
 			p.println("host revoked at the control plane and identity erased")
 		default:
-			p.println("identity erased, but the control plane could not be reached: it still lists this host " +
-				"and trusts its key until you unpair it in the console")
+			p.printf("identity erased, but the control plane could not be reached: it still lists this host "+
+				"and trusts its key until the host is unpaired there (DELETE /v1/hosts/%s; the console has no unpair control yet)\n", hostID)
 		}
 	}
 	p.printf("left in place: %s (your worktrees and code)\n", a.Paths.Workspaces)
@@ -473,7 +496,7 @@ func (a *App) Update(ctx context.Context, out io.Writer, opts UpdateOptions) err
 	}
 	if a.Updates == nil {
 		return pairdomain.ErrNotRegistered.WithDetail(
-			"updates need a paired host: run the install command from Settings → Add host")
+			"updates need a paired host: run the install command from Add host")
 	}
 	if opts.Rollback {
 		if err := a.Updates.Rollback(ctx); err != nil {
