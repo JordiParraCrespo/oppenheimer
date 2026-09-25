@@ -1286,7 +1286,7 @@
             }
           },
           "403": {
-            "description": "TOKEN_002 / TOKEN_008 — Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization",
+            "description": "TOKEN_002 / TOKEN_008 — Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization\n\nFLAG_003 — The \"api_token_creation\" feature is switched off for the caller",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6785,6 +6785,740 @@
         "tags": ["Admin"]
       }
     },
+    "/api/v1/feature-flags": {
+      "get": {
+        "description": "Every client-visible flag, evaluated for the caller: their user, their active organization, and the platform and build the client reports. Values only — targeting rules never leave the server. Works signed out.",
+        "operationId": "getClientFeatureFlags",
+        "parameters": [
+          {
+            "name": "appVersion",
+            "required": false,
+            "in": "query",
+            "description": "Client build, semver",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["web", "ios", "android"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientFeatureFlagsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The caller’s feature flags",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/changes": {
+      "get": {
+        "description": "Who changed which flag or segment, when, why, and what it was before and after.",
+        "operationId": "findFlagChanges",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "subjectKey",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["flag", "segment"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedFlagChangesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Feature flag audit trail",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/segments": {
+      "get": {
+        "operationId": "findFlagSegments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlagSegmentResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List flag segments and the flags that target them",
+        "tags": ["Feature flags"]
+      },
+      "post": {
+        "operationId": "createFlagSegment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlagSegmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagSegmentResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "FLAG_005 — Segment key taken",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "FLAG_007 — Invalid segment conditions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a flag segment",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/segments/{key}": {
+      "patch": {
+        "description": "Every flag that targets the segment follows the change.",
+        "operationId": "updateFlagSegment",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFlagSegmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagSegmentResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_004 — Segment not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "FLAG_007 — Invalid segment conditions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a flag segment",
+        "tags": ["Feature flags"]
+      },
+      "delete": {
+        "operationId": "deleteFlagSegment",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "comment",
+            "required": false,
+            "in": "query",
+            "description": "Why, for the audit trail",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_004 — Segment not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "FLAG_006 — Still targeted by a flag",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a flag segment no flag targets",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/admin": {
+      "get": {
+        "description": "Every flag the code declares, with its catalog definition and — once saved — its targeting on this deployment.",
+        "operationId": "findFeatureFlags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureFlagResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List feature flags with their targeting",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/admin/{key}/evaluate": {
+      "get": {
+        "description": "Evaluates the flag for the user, organization, platform and build described in the query — what they would get, and why.",
+        "operationId": "evaluateFeatureFlag",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagEvaluationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_001 — No such flag in the catalog",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Explain a flag for a given context",
+        "tags": ["Feature flags"]
+      }
+    },
+    "/api/v1/feature-flags/admin/{key}": {
+      "get": {
+        "operationId": "findFeatureFlag",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_001 — No such flag in the catalog",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a feature flag with its targeting",
+        "tags": ["Feature flags"]
+      },
+      "put": {
+        "description": "Sets the master switch, the ordered rules and the fallthrough in one write. Recorded on the audit trail with the optional comment.",
+        "operationId": "updateFeatureFlag",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeatureFlagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_001 — No such flag in the catalog",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "FLAG_002 — Targeting serves a value the flag does not take, or targets a missing segment",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace a feature flag’s targeting",
+        "tags": ["Feature flags"]
+      },
+      "patch": {
+        "description": "Flips the master switch only. Off serves `false` (or the default variant) to everyone — the kill switch. Takes effect on this replica immediately and on every other within the snapshot poll interval.",
+        "operationId": "toggleFeatureFlag",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleFeatureFlagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "FLAG_001 — No such flag in the catalog",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Switch a feature flag on or off",
+        "tags": ["Feature flags"]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "description": "Newest first. Archived projects are left out unless asked for.",
@@ -8256,7 +8990,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Which client-relevant optional features (OAuth providers, Stripe billing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
+            "description": "Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8849,7 +9583,7 @@
           },
           "label": {
             "type": "string",
-            "example": "View leads"
+            "example": "View projects"
           },
           "sensitive": {
             "type": "boolean",
@@ -8864,15 +9598,15 @@
         "properties": {
           "subject": {
             "type": "string",
-            "example": "Lead"
+            "example": "Project"
           },
           "label": {
             "type": "string",
-            "example": "Leads"
+            "example": "Projects"
           },
           "group": {
             "type": "string",
-            "example": "crm"
+            "example": "control-plane"
           },
           "actions": {
             "type": "array",
@@ -8882,7 +9616,7 @@
           },
           "fields": {
             "description": "Attributes that may be granted or denied individually.",
-            "example": ["value", "notes"],
+            "example": ["name"],
             "type": "array",
             "items": {
               "type": "string"
@@ -8890,7 +9624,7 @@
           },
           "scopes": {
             "description": "Scope dimensions this resource can be narrowed by.",
-            "example": ["organization", "team"],
+            "example": ["organization"],
             "type": "array",
             "items": {
               "type": "string"
@@ -8899,7 +9633,7 @@
           "credentialScope": {
             "type": "string",
             "description": "Credential-scope group, when the resource is reachable by API tokens.",
-            "example": "leads"
+            "example": "projects"
           }
         },
         "required": ["subject", "label", "group", "actions", "scopes"]
@@ -8909,7 +9643,7 @@
         "properties": {
           "group": {
             "type": "string",
-            "example": "crm"
+            "example": "control-plane"
           },
           "resources": {
             "type": "array",
@@ -8929,7 +9663,7 @@
           },
           "subject": {
             "type": "string",
-            "example": "Lead"
+            "example": "Project"
           }
         },
         "required": ["action", "subject"]
@@ -8974,7 +9708,7 @@
           },
           "resourceType": {
             "type": "string",
-            "example": "Lead",
+            "example": "Project",
             "description": "A registry subject."
           },
           "resourceId": {
@@ -9075,10 +9809,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9086,7 +9816,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           },
@@ -9114,10 +9846,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9125,7 +9853,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           },
@@ -9192,10 +9922,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9203,7 +9929,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           },
@@ -9294,10 +10022,6 @@
               "workspaces:write",
               "tokens:read",
               "tokens:write",
-              "billing:read",
-              "billing:write",
-              "leads:read",
-              "leads:write",
               "hosts:read",
               "hosts:write",
               "projects:read",
@@ -9305,7 +10029,9 @@
               "sessions:read",
               "sessions:write",
               "repositories:read",
-              "repositories:write"
+              "repositories:write",
+              "flags:read",
+              "flags:write"
             ],
             "example": "users:read"
           },
@@ -9354,12 +10080,11 @@
               "invitations",
               "workspaces",
               "tokens",
-              "billing",
-              "leads",
               "hosts",
               "projects",
               "sessions",
-              "repositories"
+              "repositories",
+              "flags"
             ],
             "example": "users"
           },
@@ -9416,10 +10141,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9427,7 +10148,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           }
@@ -9466,10 +10189,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9477,7 +10196,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           },
@@ -9548,10 +10269,6 @@
                 "workspaces:write",
                 "tokens:read",
                 "tokens:write",
-                "billing:read",
-                "billing:write",
-                "leads:read",
-                "leads:write",
                 "hosts:read",
                 "hosts:write",
                 "projects:read",
@@ -9559,7 +10276,9 @@
                 "sessions:read",
                 "sessions:write",
                 "repositories:read",
-                "repositories:write"
+                "repositories:write",
+                "flags:read",
+                "flags:write"
               ]
             }
           },
@@ -10949,6 +11668,710 @@
         },
         "required": ["newPassword"]
       },
+      "ClientFeatureFlagsResponseDto": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "Changes whenever any flag or segment configuration does."
+          },
+          "flags": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Every client flag, keyed by name."
+          }
+        },
+        "required": ["version", "flags"]
+      },
+      "FlagChangeResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "subjectType": {
+            "type": "string",
+            "enum": ["flag", "segment"]
+          },
+          "subjectKey": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "targeting_updated",
+              "toggled",
+              "segment_created",
+              "segment_updated",
+              "segment_deleted"
+            ]
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, in the author’s words."
+          },
+          "before": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "after": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "subjectType",
+          "subjectKey",
+          "action",
+          "actorId",
+          "comment",
+          "before",
+          "after",
+          "createdAt"
+        ]
+      },
+      "FlagChangePaginationMetaDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          }
+        },
+        "required": ["total", "page", "limit", "totalPages"]
+      },
+      "PaginatedFlagChangesResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagChangeResponseDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/FlagChangePaginationMetaDto"
+          }
+        },
+        "required": ["data", "meta"]
+      },
+      "FlagConditionDto": {
+        "type": "object",
+        "properties": {
+          "attribute": {
+            "type": "string",
+            "enum": [
+              "userId",
+              "organizationId",
+              "email",
+              "platformRole",
+              "platform",
+              "appVersion",
+              "segment"
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["attribute", "operator", "values"]
+      },
+      "FlagSegmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "conditions": {
+            "description": "ANDed.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagConditionDto"
+            }
+          },
+          "usedBy": {
+            "description": "Flags whose rules target this segment.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "updatedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["key", "name", "description", "conditions", "usedBy", "updatedBy", "updatedAt"]
+      },
+      "CreateFlagSegmentRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "conditions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "attribute": {
+                  "type": "string",
+                  "enum": [
+                    "userId",
+                    "organizationId",
+                    "email",
+                    "platformRole",
+                    "platform",
+                    "appVersion",
+                    "segment"
+                  ]
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                },
+                "values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 10000,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 320
+                  }
+                }
+              },
+              "required": ["attribute", "operator", "values"]
+            }
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": ["key", "name", "conditions"]
+      },
+      "UpdateFlagSegmentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "conditions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "attribute": {
+                  "type": "string",
+                  "enum": [
+                    "userId",
+                    "organizationId",
+                    "email",
+                    "platformRole",
+                    "platform",
+                    "appVersion",
+                    "segment"
+                  ]
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                },
+                "values": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 10000,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 320
+                  }
+                }
+              },
+              "required": ["attribute", "operator", "values"]
+            }
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      },
+      "FlagSplitArmDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "weight": {
+            "type": "number",
+            "description": "Percentage of the audience, 0–100. The arms sum to 100."
+          }
+        },
+        "required": ["value", "weight"]
+      },
+      "FlagServeDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Serve one value to everyone reached."
+          },
+          "split": {
+            "description": "Split the audience between values by a deterministic hash.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagSplitArmDto"
+            }
+          }
+        }
+      },
+      "FlagRuleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "conditions": {
+            "description": "ANDed. Empty matches everyone.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagConditionDto"
+            }
+          },
+          "serve": {
+            "$ref": "#/components/schemas/FlagServeDto"
+          }
+        },
+        "required": ["id", "conditions", "serve"]
+      },
+      "FeatureFlagConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "The master switch. Off serves the default to everyone."
+          },
+          "rules": {
+            "description": "Ordered; the first match decides.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagRuleDto"
+            }
+          },
+          "fallthrough": {
+            "description": "Served when enabled and no rule matched.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FlagServeDto"
+              }
+            ]
+          },
+          "updatedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["enabled", "rules", "fallthrough", "updatedBy", "updatedAt"]
+      },
+      "FeatureFlagResponseDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["release", "ops", "experiment"]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["boolean", "variant"]
+          },
+          "variants": {
+            "description": "The values a variant flag takes; empty for a boolean flag.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "defaultValue": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "The safe value, served when nothing else decides."
+          },
+          "client": {
+            "type": "boolean",
+            "description": "Whether clients may read it."
+          },
+          "bucketBy": {
+            "type": "string",
+            "enum": ["organization", "user"]
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "YYYY-MM-DD, for temporary flags."
+          },
+          "expired": {
+            "type": "boolean",
+            "description": "A temporary flag past its expiry date: remove it from the code."
+          },
+          "config": {
+            "nullable": true,
+            "description": "Null until targeting is first saved; the flag serves its default.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureFlagConfigResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "description",
+          "kind",
+          "owner",
+          "type",
+          "variants",
+          "defaultValue",
+          "client",
+          "bucketBy",
+          "expiresAt",
+          "expired",
+          "config"
+        ]
+      },
+      "FlagEvaluationResponseDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["DEFAULT", "DISABLED", "TARGETING_MATCH", "SPLIT", "FALLTHROUGH", "ERROR"]
+          },
+          "ruleId": {
+            "type": "string",
+            "description": "The rule that decided, when one did."
+          }
+        },
+        "required": ["key", "value", "reason"]
+      },
+      "UpdateFeatureFlagRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[a-zA-Z0-9_-]+$"
+                },
+                "description": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "conditions": {
+                  "type": "array",
+                  "maxItems": 20,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "attribute": {
+                        "type": "string",
+                        "enum": [
+                          "userId",
+                          "organizationId",
+                          "email",
+                          "platformRole",
+                          "platform",
+                          "appVersion",
+                          "segment"
+                        ]
+                      },
+                      "operator": {
+                        "type": "string",
+                        "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                      },
+                      "values": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 320
+                        }
+                      }
+                    },
+                    "required": ["attribute", "operator", "values"]
+                  }
+                },
+                "serve": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "oneOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["value"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "split": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 10,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "oneOf": [
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  }
+                                ]
+                              },
+                              "weight": {
+                                "type": "number",
+                                "minimum": 0,
+                                "exclusiveMinimum": false,
+                                "maximum": 100,
+                                "exclusiveMaximum": false
+                              }
+                            },
+                            "required": ["value", "weight"]
+                          }
+                        }
+                      },
+                      "required": ["split"]
+                    }
+                  ]
+                }
+              },
+              "required": ["id", "conditions", "serve"]
+            }
+          },
+          "fallthrough": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "oneOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    ]
+                  }
+                },
+                "required": ["value"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "split": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "oneOf": [
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            }
+                          ]
+                        },
+                        "weight": {
+                          "type": "number",
+                          "minimum": 0,
+                          "exclusiveMinimum": false,
+                          "maximum": 100,
+                          "exclusiveMaximum": false
+                        }
+                      },
+                      "required": ["value", "weight"]
+                    }
+                  }
+                },
+                "required": ["split"]
+              }
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": ["enabled", "rules", "fallthrough"]
+      },
+      "ToggleFeatureFlagRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": ["enabled"]
+      },
       "ProjectResponseDto": {
         "type": "object",
         "properties": {
@@ -11457,10 +12880,6 @@
             "type": "boolean",
             "description": "Sign-in with GitHub is configured."
           },
-          "stripe_billing": {
-            "type": "boolean",
-            "description": "Stripe billing is configured."
-          },
           "github_app": {
             "type": "boolean",
             "description": "The sessions GitHub App is configured."
@@ -11472,13 +12891,7 @@
             "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
           }
         },
-        "required": [
-          "google_oauth",
-          "github_oauth",
-          "stripe_billing",
-          "github_app",
-          "github_app_install_url"
-        ]
+        "required": ["google_oauth", "github_oauth", "github_app", "github_app_install_url"]
       }
     }
   }

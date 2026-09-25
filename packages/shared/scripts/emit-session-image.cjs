@@ -11,7 +11,10 @@
 const { writeFileSync } = require('node:fs');
 const { join, relative } = require('node:path');
 
-const { SESSION_IMAGE_TYPES, SESSION_IMAGE_MAX_BYTES } = require('../dist/protocol/session-image.js');
+const {
+  SESSION_IMAGE_TYPES,
+  SESSION_IMAGE_MAX_BYTES,
+} = require('../dist/protocol/session-image.js');
 
 const outputPath = join(
   __dirname,

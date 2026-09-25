@@ -125,10 +125,6 @@
         "name": "Claves de API",
         "hint": "Tokens de API personales"
       },
-      "billing": {
-        "name": "Facturación",
-        "hint": "Suscripción y facturas"
-      },
       "audit": {
         "name": "Registro de auditoría",
         "hint": "Quién hizo qué, y cuándo"

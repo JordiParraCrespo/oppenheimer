@@ -18,6 +18,7 @@
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "check:api-structure": "node scripts/check-api-structure.mjs && node --test scripts/check-api-structure.test.mjs",
     "check:structure": "node scripts/check-frontend-structure.mjs",
+    "check:flags": "node --no-warnings scripts/check-feature-flags.mjs && node --no-warnings --test scripts/check-feature-flags.test.mjs",
     "starter:prune": "node scripts/starter/prune.mjs",
     "starter:check": "node scripts/starter/prune.mjs --check && node --test scripts/starter/prune.test.mjs",
     "test": "turbo run test",

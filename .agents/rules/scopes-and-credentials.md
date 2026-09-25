@@ -28,7 +28,7 @@ and must not be broken:
 
 ## The catalog is the single source of truth
 
-`packages/shared/src/scopes/catalog.ts` defines fifteen permission groups, each
+`packages/shared/src/scopes/catalog.ts` defines the permission groups, each
 with a Read and an Edit level. **Add a resource there and nowhere else** — the
 API guard and the web permission picker both read from it.
 

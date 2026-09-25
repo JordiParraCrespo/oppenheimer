@@ -28,7 +28,7 @@ function token(
     'token-1',
     'CI deploy key',
     'oppenheimer_ab12',
-    overrides.scopes ?? (['leads:read'] as Scope[]),
+    overrides.scopes ?? (['tokens:read'] as Scope[]),
     overrides.organizationIds ?? null,
     overrides.ipAllowlist ?? null,
     overrides.expiresAt ?? null,

@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query';
 import type { SocialAuthIntent, SocialProvider } from '../modules/auth/auth.client';
 import { useOppenheimerApp } from './context';
+import { featureFlagsQueryOptions } from './feature-flags.queries';
 import { withCacheOnSuccess } from './mutations';
 import { reconcileCacheOwner } from './persistence';
 import { authKeys } from './query-keys';
@@ -32,6 +33,14 @@ export function useSessionRestore(
       // check it still belongs to whoever is signed in now — before this
       // resolves and either app's gate renders anything from it.
       reconcileCacheOwner(queryClient, userId);
+
+      // Start the flags request now that we know who is asking, so it runs
+      // beside the first route's code rather than after the first screen has
+      // rendered its defaults. Not awaited: flags never hold up the gate, and
+      // a fresh persisted copy makes this a no-op.
+      void queryClient.prefetchQuery(
+        featureFlagsQueryOptions(app, userId ? 'signed-in' : 'anonymous'),
+      );
 
       return userId;
     },

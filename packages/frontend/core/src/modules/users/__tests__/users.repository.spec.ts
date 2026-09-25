@@ -146,11 +146,11 @@ describe('UsersRepository', () => {
       // The app rebuilds an ability from these with
       // `defineAbilitiesFromPermissions`, so they have to arrive unshaped.
       api.permissions.mockResolvedValue({
-        permissions: [{ action: 'read', subject: 'Lead' }],
+        permissions: [{ action: 'read', subject: 'Project' }],
       });
 
       await expect(repository.myPermissions()).resolves.toEqual([
-        { action: 'read', subject: 'Lead' },
+        { action: 'read', subject: 'Project' },
       ]);
     });
 

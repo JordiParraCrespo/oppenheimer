@@ -14,10 +14,5 @@ export const $CapabilitiesResponseDto = {
             description: `Sign-in with GitHub is configured.`,
             isRequired: true,
         },
-        stripe_billing: {
-            type: 'boolean',
-            description: `Stripe billing is configured.`,
-            isRequired: true,
-        },
     },
 } as const;

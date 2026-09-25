@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule, SCOPE_RESOLVER } from '@oppenheimer/backend-authz';
 import { ApiTokenResource } from '../api-tokens/api-tokens.resource';
+import { FeatureFlagResource } from '../feature-flags/feature-flags.resource';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
@@ -73,6 +74,7 @@ const repositories: Provider[] = [
       UserResource,
       RoleResource,
       ApiTokenResource,
+      FeatureFlagResource,
       ...ORGANIZATION_RESOURCES,
     ]),
   ],

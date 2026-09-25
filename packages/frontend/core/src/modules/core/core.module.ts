@@ -4,6 +4,7 @@ import { TOKENS } from '../../di/tokens';
 import type { IAnalyticsClient } from '../analytics/analytics.client';
 import { NoopAnalyticsClient } from '../analytics/noop-analytics.client';
 import type { IAuthClient } from '../auth/auth.client';
+import type { FeatureFlagsClientContext } from '../feature-flags/feature-flags.client';
 import type { IStorageService } from './storage.service';
 
 export interface CoreModuleConfig {
@@ -16,6 +17,11 @@ export interface CoreModuleConfig {
    * analytics account.
    */
   analytics?: IAnalyticsClient;
+  /**
+   * The platform and build this app reports when it asks for its flags. The
+   * API targets on both; identity comes from the session, not from here.
+   */
+  featureFlags?: FeatureFlagsClientContext;
 }
 
 export function createCoreModule(config: CoreModuleConfig): ContainerModule {
@@ -40,6 +46,9 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
     bind<IAuthClient>(TOKENS.AuthClient).toConstantValue(config.authClient);
     bind<IAnalyticsClient>(TOKENS.AnalyticsClient).toConstantValue(
       config.analytics ?? new NoopAnalyticsClient(),
+    );
+    bind<FeatureFlagsClientContext>(TOKENS.FeatureFlagsClientContext).toConstantValue(
+      config.featureFlags ?? {},
     );
   });
 }

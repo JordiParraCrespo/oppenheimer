@@ -23,26 +23,20 @@ export type { AuthzResourceDto } from './common/models/AuthzResourceDto';
 export type { AuthzResourceGroupDto } from './common/models/AuthzResourceGroupDto';
 export type { AuthzRuleDto } from './common/models/AuthzRuleDto';
 export type { BanUserRequest } from './common/models/BanUserRequest';
-export type { BillingSessionResponseDto } from './common/models/BillingSessionResponseDto';
 export type { CapabilitiesResponseDto } from './common/models/CapabilitiesResponseDto';
 export type { ChangePasswordRequest } from './common/models/ChangePasswordRequest';
 export type { CheckSlugRequest } from './common/models/CheckSlugRequest';
 export type { CreateAccessGrantRequest } from './common/models/CreateAccessGrantRequest';
 export type { CreateApiTokenRequest } from './common/models/CreateApiTokenRequest';
-export type { CreateCheckoutRequest } from './common/models/CreateCheckoutRequest';
 export type { CreatedApiTokenResponseDto } from './common/models/CreatedApiTokenResponseDto';
-export type { CreateLeadRequest } from './common/models/CreateLeadRequest';
 export type { CreateOrganizationRequest } from './common/models/CreateOrganizationRequest';
-export type { CreatePortalRequest } from './common/models/CreatePortalRequest';
 export type { CreateRoleRequest } from './common/models/CreateRoleRequest';
 export type { CreateWorkspaceRequest } from './common/models/CreateWorkspaceRequest';
-export type { CurrencyMrrDto } from './common/models/CurrencyMrrDto';
 export type { CurrentCredentialResponseDto } from './common/models/CurrentCredentialResponseDto';
 export type { FullOrganizationResponseDto } from './common/models/FullOrganizationResponseDto';
 export type { InvalidParamDto } from './common/models/InvalidParamDto';
 export type { InvitationResponseDto } from './common/models/InvitationResponseDto';
 export type { InviteMemberRequest } from './common/models/InviteMemberRequest';
-export type { LeadResponseDto } from './common/models/LeadResponseDto';
 export type { MemberResponseDto } from './common/models/MemberResponseDto';
 export type { MemberUserResponseDto } from './common/models/MemberUserResponseDto';
 export type { MyPermissionsResponseDto } from './common/models/MyPermissionsResponseDto';
@@ -55,7 +49,6 @@ export type { PermissionGroupDto } from './common/models/PermissionGroupDto';
 export type { ProblemDetailsDto } from './common/models/ProblemDetailsDto';
 export type { ProfileResponseDto } from './common/models/ProfileResponseDto';
 export type { ResourceActionDto } from './common/models/ResourceActionDto';
-export type { RevenueMetricsResponseDto } from './common/models/RevenueMetricsResponseDto';
 export type { RevokeSessionRequest } from './common/models/RevokeSessionRequest';
 export type { RolePaginationMetaDto } from './common/models/RolePaginationMetaDto';
 export type { RoleResponseDto } from './common/models/RoleResponseDto';
@@ -65,7 +58,6 @@ export type { ScopePolicyDto } from './common/models/ScopePolicyDto';
 export type { SetUserPasswordRequest } from './common/models/SetUserPasswordRequest';
 export type { SetUserRoleRequest } from './common/models/SetUserRoleRequest';
 export type { SlugAvailabilityResponseDto } from './common/models/SlugAvailabilityResponseDto';
-export type { SubscriptionResponseDto } from './common/models/SubscriptionResponseDto';
 export type { UpdateMemberRoleRequest } from './common/models/UpdateMemberRoleRequest';
 export type { UpdateOrganizationRequest } from './common/models/UpdateOrganizationRequest';
 export type { UpdateProfileRequest } from './common/models/UpdateProfileRequest';
@@ -89,10 +81,8 @@ export { AccessGrantsApi } from './data-access/api/openapi/services/AccessGrants
 export { AdminApi } from './data-access/api/openapi/services/AdminApi';
 export { ApiTokensApi } from './data-access/api/openapi/services/ApiTokensApi';
 export { AuthorizationApi } from './data-access/api/openapi/services/AuthorizationApi';
-export { BillingApi } from './data-access/api/openapi/services/BillingApi';
 export { HealthApi } from './data-access/api/openapi/services/HealthApi';
 export { InvitationsApi } from './data-access/api/openapi/services/InvitationsApi';
-export { LeadsApi } from './data-access/api/openapi/services/LeadsApi';
 export { OrganizationInvitationsApi } from './data-access/api/openapi/services/OrganizationInvitationsApi';
 export { OrganizationMembersApi } from './data-access/api/openapi/services/OrganizationMembersApi';
 export { OrganizationsApi } from './data-access/api/openapi/services/OrganizationsApi';
@@ -104,14 +94,22 @@ export { WorkspacesApi } from './data-access/api/openapi/services/WorkspacesApi'
 export type {
   AddCheckoutRequest,
   AttachTicketResponseDto,
+  ClientFeatureFlagsResponseDto,
   ConnectInstallationRequest,
+  CreateFlagSegmentRequest,
   CreateSessionRequest,
+  FeatureFlagConfigResponseDto,
+  FeatureFlagResponseDto,
+  FlagChangeResponseDto,
+  FlagEvaluationResponseDto,
+  FlagSegmentResponseDto,
   HostRegistrationResponseDto,
   HostResponseDto,
   InstallationResponseDto,
   IssueAttachTicketRequest,
   MintedPairingTokenResponseDto,
   MintPairingTokenRequest,
+  PaginatedFlagChangesResponseDto,
   PaginatedSessionsResponseDto,
   PairingTokenResponseDto,
   ProjectResponseDto,
@@ -125,5 +123,8 @@ export type {
   SessionEventResponseDto,
   SessionLaunchResponseDto,
   SessionResponseDto,
+  ToggleFeatureFlagRequest,
+  UpdateFeatureFlagRequest,
+  UpdateFlagSegmentRequest,
   UpdateProjectRequest,
 } from './generated/types.gen';

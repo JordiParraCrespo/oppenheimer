@@ -95,6 +95,18 @@
       "require": "./dist/scopes/index.js",
       "default": "./dist/scopes/index.js"
     },
+    "./feature-flags": {
+      "types": "./dist/feature-flags/index.d.ts",
+      "import": "./dist/feature-flags/index.js",
+      "require": "./dist/feature-flags/index.js",
+      "default": "./dist/feature-flags/index.js"
+    },
+    "./feature-flags/catalog": {
+      "types": "./dist/feature-flags/catalog.d.ts",
+      "import": "./dist/feature-flags/catalog.js",
+      "require": "./dist/feature-flags/catalog.js",
+      "default": "./dist/feature-flags/catalog.js"
+    },
     "./agents": {
       "types": "./dist/agents/index.d.ts",
       "import": "./dist/agents/index.js",
@@ -115,6 +127,12 @@
       ],
       "protocol": [
         "./dist/protocol/index.d.ts"
+      ],
+      "feature-flags": [
+        "./dist/feature-flags/index.d.ts"
+      ],
+      "feature-flags/catalog": [
+        "./dist/feature-flags/catalog.d.ts"
       ]
     }
   },

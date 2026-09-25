@@ -11,7 +11,6 @@ describe('resolveCapabilities', () => {
     expect(resolveCapabilities(configWith({ 'email.provider': 'console' }))).toEqual({
       google_oauth: false,
       github_oauth: false,
-      stripe_billing: false,
       s3_storage: false,
       email_delivery: false,
       github_app: false,
@@ -96,12 +95,6 @@ describe('resolveCapabilities', () => {
     });
     expect(resolveCapabilities(complete).google_oauth).toBe(true);
     expect(resolveCapabilities(complete).github_oauth).toBe(false);
-  });
-
-  it('enables stripe_billing on the secret key alone', () => {
-    expect(resolveCapabilities(configWith({ 'stripe.secretKey': 'sk_test' })).stripe_billing).toBe(
-      true,
-    );
   });
 
   it('only counts s3_storage when the provider is s3 AND credentials exist', () => {

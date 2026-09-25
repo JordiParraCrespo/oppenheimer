@@ -1,7 +1,7 @@
 /**
  * The optional capabilities a deployment may or may not have, resolved from
  * configuration once at boot. Each one maps to config a self-hoster might not
- * have (OAuth credentials, a Stripe key, S3 credentials, SMTP/Resend settings);
+ * have (OAuth credentials, a GitHub App, S3 credentials, SMTP/Resend settings);
  * a missing key removes the capability — it never prevents the app from
  * booting. Required settings (database, `BETTER_AUTH_SECRET`) are the
  * opposite: they fail fast at boot and are not capabilities.
@@ -19,7 +19,6 @@
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
   'github_oauth',
-  'stripe_billing',
   's3_storage',
   'email_delivery',
   'github_app',
@@ -47,7 +46,6 @@ export type DeploymentCapabilities = Record<DeploymentCapability, boolean>;
 export const CLIENT_CAPABILITIES = [
   'google_oauth',
   'github_oauth',
-  'stripe_billing',
   // The sessions GitHub App. A console cannot read this off anything else: an
   // empty installation list says "you have not connected yet", never "this
   // deployment has no App, so Connect GitHub will fail" — and the App slug the

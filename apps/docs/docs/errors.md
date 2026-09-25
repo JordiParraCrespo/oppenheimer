@@ -44,7 +44,7 @@ An unexpected `5xx` never carries an internal message — the status is preserve
 (a readiness failure still answers `503`) but the `detail` always reads
 `"An unexpected error occurred. Quote the correlation id when reporting it."`
 The specifics are in the server log, keyed by `correlationId`. Catalog errors
-that are themselves `5xx` (e.g. `BILLING_001`) keep their curated title, since
+that are themselves `5xx` (e.g. `HOSTS_004`) keep their curated title, since
 that text was written to be shown.
 
 The `type` base is configurable with `ERROR_TYPE_BASE_URL` so a deployment can
@@ -161,16 +161,6 @@ wrong place.
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
 | `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
 
-## Leads
-
-| Code                           | Title          | HTTP |
-| ------------------------------ | -------------- | ---- |
-| `LEAD_001` <a id="lead_001" /> | Lead not found                          | 404  |
-| `LEAD_002` <a id="lead_002" /> | Leads are created inside an organization | 400  |
-
-Also returned for a lead that exists but sits outside the caller's access
-scope. Distinguishing the two would confirm the id.
-
 ## Hosts
 
 A host is a machine someone paired with this control plane. It belongs to the
@@ -208,19 +198,6 @@ unaffected.
 
 Note the prefix is plural. The Go runner owns `HOST_00x` and `PAIR_00x` below,
 and a code may only be claimed once.
-
-## Billing
-
-| Code                                 | Title                                        | HTTP |
-| ------------------------------------ | -------------------------------------------- | ---- |
-| `BILLING_001` <a id="billing_001" /> | Billing is not configured on this server     | 503  |
-| `BILLING_002` <a id="billing_002" /> | No billing customer exists for this user     | 404  |
-| `BILLING_003` <a id="billing_003" /> | No subscription found                        | 404  |
-| `BILLING_004` <a id="billing_004" /> | Invalid Stripe webhook signature             | 400  |
-| `BILLING_005` <a id="billing_005" /> | Failed to create a Stripe Checkout session   | 502  |
-| `BILLING_006` <a id="billing_006" /> | This user already has an active subscription | 409  |
-| `BILLING_007` <a id="billing_007" /> | Failed to open the Stripe Customer Portal    | 502  |
-| `BILLING_008` <a id="billing_008" /> | Failed to create a Stripe customer           | 502  |
 
 ## Organizations, teams & invitations
 
@@ -285,6 +262,26 @@ operation, its code is folded onto the catalog, and the original survives as
 | `ADMIN_007` <a id="admin_007" /> | The admin service rejected this request                           | 400  |
 | `ADMIN_008` <a id="admin_008" /> | The admin service failed to handle this request                   | 502  |
 | `ADMIN_009` <a id="admin_009" /> | No such session for that user                                     | 404  |
+
+## Feature flags
+
+Flags are declared in code; the database holds only their targeting, so a key
+the catalog does not know is `FLAG_001` whatever the database says.
+
+| Code                           | Title                                    | HTTP |
+| ------------------------------ | ---------------------------------------- | ---- |
+| `FLAG_001` <a id="flag_001" /> | Feature flag not found                   | 404  |
+| `FLAG_002` <a id="flag_002" /> | The targeting is not valid for this flag | 422  |
+| `FLAG_003` <a id="flag_003" /> | This feature is not available            | 403  |
+| `FLAG_004` <a id="flag_004" /> | Segment not found                        | 404  |
+| `FLAG_005` <a id="flag_005" /> | A segment with this key already exists   | 409  |
+| `FLAG_006` <a id="flag_006" /> | The segment is still targeted by a flag  | 409  |
+| `FLAG_007` <a id="flag_007" /> | The segment conditions are not valid     | 422  |
+
+`FLAG_003` is what an endpoint behind `@RequireFlag` answers while its flag is
+off for the caller — minting an API token while `api_token_creation` is
+switched off, for example. `FLAG_002` and `FLAG_007` list every problem with
+the submitted targeting in `detail`.
 
 ## GitHub installations
 
