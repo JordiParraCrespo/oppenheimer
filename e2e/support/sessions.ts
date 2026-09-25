@@ -61,6 +61,13 @@ function hostKey() {
   };
 }
 
+/**
+ * What a runner from **before Grok** reports: it probes the command of every
+ * agent it can start, installed or not (`ProbedTools`), and Grok is not one of
+ * them. The control plane reads that list as what the runner knows, so Claude
+ * Code starts here and a Grok session is refused at create (`SESSIONS_011`) —
+ * which `sessions.spec.ts` checks.
+ */
 const FACTS = {
   platform: 'linux',
   arch: 'amd64',
@@ -71,6 +78,9 @@ const FACTS = {
   tools: [
     { name: 'git', path: '/usr/bin/git', version: '2.51.0', required: true },
     { name: 'tmux', path: '/usr/bin/tmux', version: '3.5a', required: true },
+    { name: 'claude', path: '/usr/local/bin/claude', version: '2.1.278', required: false },
+    { name: 'codex', required: false },
+    { name: 'opencode', required: false },
   ],
   workspacePath: '/home/runner/oppenheimer-ai',
   diskFreeBytes: 120_000_000_000,

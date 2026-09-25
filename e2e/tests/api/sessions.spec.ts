@@ -41,6 +41,20 @@ test.describe('Sessions', () => {
     expect(created.status(), await created.text()).toBe(201);
     const session = await created.json();
 
+    // This host's runner predates Grok — its inventory has no `grok` entry — so
+    // a Grok session is refused before anything is recorded, instead of being
+    // written and then failed by a runner that cannot start it.
+    const tooNew = await api.post('/api/v1/sessions', {
+      headers: { 'Idempotency-Key': `e2e-grok-${Date.now()}` },
+      data: {
+        hostId,
+        agent: 'grok',
+        checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
+      },
+      failOnStatusCode: false,
+    });
+    await expectProblemDocument(tooNew, { status: 409, code: 'SESSIONS_011' });
+
     // The slug is minted before anything is typed, because the directory and the
     // branch have to exist first; the name starts equal to it.
     expect(session.slug).toMatch(/^[a-z]+-[a-z]+-[0-9a-z]{6}$/);
