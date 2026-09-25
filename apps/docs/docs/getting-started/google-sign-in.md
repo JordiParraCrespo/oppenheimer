@@ -117,10 +117,10 @@ provider exists.
 
 :::note Containers do not inherit the root `.env`
 The API image does not ship `.env`; the process only sees what its runtime
-environment forwards. `docker/docker-compose.prod.yml` passes both variables
-through to the `api` service, so a `.env` next to the compose file (or the same
-names exported in the shell) is enough there. On any other target, use that
-platform's own secret wiring.
+environment forwards. `docker/docker-compose.prod.yml` loads the root `.env`
+into the `api` service, so setting both variables there and running
+`pnpm docker:prod` (which passes `--env-file .env`) is enough. On any other
+target, use that platform's own secret wiring.
 :::
 
 ## 5. Restart the API and verify

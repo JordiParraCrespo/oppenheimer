@@ -35,6 +35,15 @@ describe('EmailJobMapper', () => {
       'emails.emailVerification.helper',
       'emails.emailVerification.closing',
       'emails.emailVerification.footerNote',
+      'emails.hostPaired.subject',
+      'emails.hostPaired.preview',
+      'emails.hostPaired.heading',
+      'emails.hostPaired.body',
+      'emails.hostPaired.action',
+      'emails.hostPaired.helper',
+      'emails.hostPaired.closing',
+      'emails.hostPaired.unknownMachine',
+      'emails.hostPaired.footerNote',
       'emails.welcome.subject',
       'emails.welcome.preview',
       'emails.welcome.eyebrow',
@@ -114,5 +123,49 @@ describe('EmailJobMapper', () => {
 
   it('rejects malformed internal jobs instead of sending partial mail', () => {
     expect(() => mapper.toLocaleTarget({ userId: 'user-1' })).toThrow('Email job is missing to');
+  });
+
+  it('writes the new-host notice with the machine and only a prefix of its fingerprint', () => {
+    const params = mapper.toHostPaired(
+      {
+        to: 'jordi@example.com',
+        userId: 'u1',
+        hostId: 'host-1',
+        hostName: 'Dev box',
+        hostname: 'devbox.local',
+        os: 'macos',
+        fingerprint: 'abcdef0123456789'.repeat(4),
+        url: 'https://app.oppenheimer.dev',
+      },
+      i18n.for('en', 'UTC'),
+    );
+
+    expect(params.subject).toBe('A new machine was paired with your account');
+    expect(params.body).toContain('Dev box (devbox.local, macos)');
+    expect(params.body).toContain('abcdef0123456789');
+    expect(params.body).not.toContain('abcdef0123456789abcdef');
+    expect(params.url).toBe('https://app.oppenheimer.dev');
+    // A security email: the footer says why it cannot be turned off.
+    expect(params.footer).toContain('security email');
+    // No console verb version 1 lacks: the closing names what actually works.
+    expect(params.closingText).toContain('uninstall command');
+    expect(params.closingText).toContain('DELETE /v1/hosts/host-1');
+  });
+
+  it('names the machine by its host name when the runner reported nothing else', () => {
+    const params = mapper.toHostPaired(
+      {
+        to: 'jordi@example.com',
+        hostId: 'host-1',
+        hostName: 'Dev box',
+        hostname: null,
+        os: null,
+        fingerprint: 'ab'.repeat(32),
+        url: 'https://app.oppenheimer.dev',
+      },
+      i18n.for('en', 'UTC'),
+    );
+
+    expect(params.body).toContain('Dev box (no hostname reported)');
   });
 });

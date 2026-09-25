@@ -134,6 +134,23 @@ export function registerHost(
  * the only way the dialog's status line can be shown to be watching the token
  * it minted rather than the host list.
  */
+/**
+ * Try to spend a registration token and answer only the status, for a spec
+ * that expects a refusal — a token the dialog revoked when it minted the next.
+ */
+export async function redemptionStatus(secret: string, name: string): Promise<number> {
+  const anonymous = await newContext();
+  const registered = await registerHost(anonymous, {
+    token: secret,
+    name,
+    publicKey: hostKey().base64,
+    facts: FACTS,
+  });
+  const status = registered.status();
+  await anonymous.dispose();
+  return status;
+}
+
 export async function redeemPairingToken(secret: string, name: string): Promise<string> {
   const anonymous = await newContext();
   const registered = await registerHost(anonymous, {
@@ -148,9 +165,13 @@ export async function redeemPairingToken(secret: string, name: string): Promise<
   return hostId;
 }
 
-/** The secret an install command carries, which is the only place it is shown. */
+/**
+ * The secret an install command carries, which is the only place it is shown.
+ * It rides in the installer's environment (`OPPENHEIMER_REGISTRATION_TOKEN=…`),
+ * never as an argument.
+ */
 export function tokenFrom(installCommand: string): string {
-  const secret = /--token (\S+)/.exec(installCommand)?.[1];
+  const secret = /OPPENHEIMER_REGISTRATION_TOKEN=(\S+)/.exec(installCommand)?.[1];
   expect(secret, 'the install command carries the pairing token').toBeTruthy();
   return secret as string;
 }

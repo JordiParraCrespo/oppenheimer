@@ -64,9 +64,18 @@ export class PairingTokenResponseDto {
 export class MintedPairingTokenResponseDto extends PairingTokenResponseDto {
   @ApiProperty({
     description: 'The one-line command that installs and registers the runner on the machine.',
-    example: 'curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- --token opr_reg_…',
+    example:
+      "curl --proto '=https' --tlsv1.2 -fsSL https://get.oppenheimer.dev/install.sh | OPPENHEIMER_REGISTRATION_TOKEN=opr_reg_… sh -s -- --url https://app.oppenheimer.dev",
   })
   installCommand!: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description:
+      'SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one.',
+  })
+  installScriptSha256!: string | null;
 
   @ApiProperty({
     description:

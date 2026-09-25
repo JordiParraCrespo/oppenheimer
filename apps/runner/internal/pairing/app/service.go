@@ -64,7 +64,10 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (domain.Identi
 	if err := domain.ValidateControlPlaneURL(url); err != nil {
 		return domain.Identity{}, domain.ErrControlPlaneURL.WithDetail("%v", err).WithCause(err)
 	}
-	if existing, _, err := s.store.Load(); err == nil && existing.HostID != "" && !in.Force {
+	// A revoked identity is a machine the user already unpaired; pairing it
+	// again is the normal way back, not a move that needs --force.
+	existing, _, loadErr := s.store.Load()
+	if loadErr == nil && existing.HostID != "" && !existing.Revoked() && !in.Force {
 		return domain.Identity{}, domain.ErrAlreadyRegisted.WithDetail(
 			"this host is already paired as %s; re-run with --force to move it", existing.HostID)
 	}
@@ -100,6 +103,11 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) (domain.Identi
 		Channel:         channel,
 		RegisteredAt:    s.now().UTC(),
 	}
+	if loadErr == nil {
+		// Where this machine keeps its code is the machine's setting, not the
+		// pairing's: moving the host to another account keeps it.
+		identity.WorkspacesPath = existing.WorkspacesPath
+	}
 	if err := s.store.Save(identity, priv); err != nil {
 		return domain.Identity{}, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
 	}
@@ -113,7 +121,7 @@ func (s *Service) Identity() (domain.Identity, error) {
 	switch {
 	case errors.Is(err, domain.ErrNotPaired):
 		return domain.Identity{}, domain.ErrNotRegistered.WithDetail(
-			"run the install command from Settings → Add host on this machine").WithCause(err)
+			"run the install command from Add host on this machine").WithCause(err)
 	case errors.Is(err, domain.ErrKeyPermissions):
 		return domain.Identity{}, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
 	case err != nil:
@@ -176,21 +184,42 @@ func (s *Service) SetPin(version string) (domain.Identity, error) {
 	return s.mutate(func(i *domain.Identity) { i.PinnedVersion = version })
 }
 
+// SetWorkspaces records where sessions' checkouts live. The caller has
+// already checked the directory (`cli.ChooseWorkspaces`) and that no session
+// still has a checkout under the old one.
+func (s *Service) SetWorkspaces(path string) (domain.Identity, error) {
+	return s.mutate(func(i *domain.Identity) { i.WorkspacesPath = path })
+}
+
+// MarkRevoked records that the control plane unpaired this host. The first
+// time is the one that stands.
+func (s *Service) MarkRevoked() (domain.Identity, error) {
+	now := s.now().UTC()
+	return s.mutate(func(i *domain.Identity) {
+		if i.RevokedAt == nil {
+			i.RevokedAt = &now
+		}
+	})
+}
+
 // Unregister revokes the host at the control plane and erases the local
 // identity. A control plane that cannot be reached does not stop the local
-// half: the user asked for this machine to stop being a host.
-func (s *Service) Unregister(ctx context.Context) error {
+// half: the user asked for this machine to stop being a host. What it does do
+// is change the answer — `revoked` is false, and the caller must say so,
+// because the control plane still lists the host and still trusts its key
+// until someone unpairs it at the control plane.
+func (s *Service) Unregister(ctx context.Context) (revoked bool, err error) {
 	identity, err := s.Identity()
 	if err != nil {
-		return err
+		return false, err
 	}
 	if assertion, tokenErr := s.BootToken(ctx); tokenErr == nil {
-		_ = s.cp.Revoke(ctx, identity.ControlPlaneURL, assertion)
+		revoked = s.cp.Revoke(ctx, identity.ControlPlaneURL, assertion) == nil
 	}
 	if err := s.store.Clear(); err != nil {
-		return domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
+		return revoked, domain.ErrKeyStore.WithDetail("%v", err).WithCause(err)
 	}
-	return nil
+	return revoked, nil
 }
 
 func (s *Service) mutate(apply func(*domain.Identity)) (domain.Identity, error) {

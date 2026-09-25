@@ -16,6 +16,22 @@ import (
 // `PROTOCOL_VERSION` in `packages/shared/src/protocol/version.ts`.
 const ProtocolVersion = 1
 
+// CloseUnpaired is `RUNNER_LINK_CLOSE_CODES.UNPAIRED` in
+// `packages/shared/src/protocol/link.ts`: the control plane closed the link
+// because this host was unpaired. Its handshake twin is an HTTP 410 on the
+// upgrade. Both are terminal — see ErrUnpaired.
+const CloseUnpaired = 4410
+
+// RefusalHeader and RefusalUnpaired mark the control plane's own 410 at the
+// handshake. A bare 410 is not trusted — any proxy in front of the control
+// plane can answer one — and a host that took a stranger's as "unpaired"
+// would stop dialling for good. Twin of `REFUSAL_HEADER` in
+// `apps/api/src/relay/infrastructure/upgrade.util.ts`.
+const (
+	RefusalHeader   = "X-Oppenheimer-Refusal"
+	RefusalUnpaired = "host-unpaired"
+)
+
 // The message vocabulary, mirrored from `packages/shared/src/protocol/`. Zod is
 // the source and `protocol-schema/protocol.schema.json` is the contract; these
 // structs are the hand-kept Go twin, and `protocol_test.go` checks the samples

@@ -174,3 +174,18 @@ func TestRevokeFollowsASameOriginRedirect(t *testing.T) {
 		t.Fatalf("requests = %v", seen)
 	}
 }
+
+func TestRegisterReportsAThrottleAsRateLimitedNotAsARejectedToken(t *testing.T) {
+	client, baseURL, _ := serve(t, http.StatusTooManyRequests, nil)
+
+	_, err := client.Register(context.Background(), baseURL, app.RegisterRequest{
+		Token: "opr_reg_0123456789abcdef0123", Name: "mac-studio", PublicKey: "key",
+	})
+
+	// A 429 is the throttle answering before the token was looked at, so the
+	// person must be told to wait, not to mint a new token.
+	var prob *problem.Error
+	if !errors.As(err, &prob) || prob.Code != "PAIR_007" {
+		t.Fatalf("err = %v, want PAIR_007", err)
+	}
+}

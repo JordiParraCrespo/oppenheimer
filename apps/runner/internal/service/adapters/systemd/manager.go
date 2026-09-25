@@ -54,7 +54,7 @@ func (m *Manager) Kind() domain.Kind { return domain.KindSystemd }
 // Path is the unit file.
 func (m *Manager) Path() string { return filepath.Join(m.dir, domain.SystemdUnit) }
 
-// Install writes the unit, reloads, enables and starts it.
+// Install writes the unit, reloads, enables it and (re)starts it.
 func (m *Manager) Install(ctx context.Context, unit domain.Unit) error {
 	content, err := unit.Render(domain.KindSystemd)
 	if err != nil {
@@ -82,8 +82,15 @@ func (m *Manager) Install(ctx context.Context, unit domain.Unit) error {
 	if out, err := m.commands.Run(ctx, "systemctl", "--user", "daemon-reload"); err != nil {
 		return controlFailed("systemctl --user daemon-reload", out, err)
 	}
-	if out, err := m.commands.Run(ctx, "systemctl", "--user", "enable", "--now", domain.SystemdUnit); err != nil {
-		return controlFailed("systemctl --user enable --now", out, err)
+	if out, err := m.commands.Run(ctx, "systemctl", "--user", "enable", domain.SystemdUnit); err != nil {
+		return controlFailed("systemctl --user enable", out, err)
+	}
+	// Restart, not `enable --now`: `--now` leaves a unit that is already
+	// running alone, so re-running the installer on a paired host would link
+	// the new release and keep executing the old one until the next update.
+	// Restart starts a stopped unit too, and leaves tmux up (KillMode=process).
+	if out, err := m.commands.Run(ctx, "systemctl", "--user", "restart", domain.SystemdUnit); err != nil {
+		return controlFailed("systemctl --user restart", out, err)
 	}
 	return nil
 }

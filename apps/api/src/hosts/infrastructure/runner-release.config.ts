@@ -4,7 +4,7 @@ import { hostsAreConfigured } from '../../config/hosts.config';
 
 /**
  * What this deployment hands a machine that is about to become a host: the
- * install command, the same steps written for a coding agent, the release
+ * install command, the same command wrapped for a coding agent, the release
  * channel and the base URL artifacts come from — plus the fingerprint of the
  * control plane's own key, which the runner pins and then refuses to talk to
  * anything else by.
@@ -52,12 +52,81 @@ export class RunnerReleaseConfig {
   }
 
   /**
+   * SHA-256 of the installer, hex, or `null` when the deployment did not set
+   * one. Shown beside the command and quoted in the agent prompt, so the
+   * careful path — download, read, check, run — needs nothing else.
+   */
+  get installScriptSha256(): string | null {
+    return this.configService.get<string>('hosts.installSha256') ?? null;
+  }
+
+  /**
    * The one-line install command, with the registration token in it. The token
    * can do exactly one thing — add one host, the minter's — and it expires, so
    * this is the one place it is allowed to appear.
+   *
+   * It is an environment assignment on the pasted line, not an argument: it is
+   * in no process's argv, so other accounts on the machine cannot read it from
+   * the process list while the install runs, and the installer hands it to
+   * `runner register` the same way. It is still on the line the person pastes,
+   * and so in that shell's history until the token expires.
    */
   installCommandFor(secret: string): string {
-    const flags = [`--token ${secret}`, `--url ${this.controlPlaneUrl}`];
+    return `${this.fetchInstaller} | OPPENHEIMER_REGISTRATION_TOKEN=${secret} sh -s -- ${this.installerFlags}`;
+  }
+
+  /**
+   * The install command wrapped for a Claude Code or Codex already running on
+   * a machine: what to settle with the person before running it, and what to
+   * show them after. Deliberately a template, not a procedure. The procedure
+   * is the installer's and the runner's: they ask about the workspace path and
+   * missing tools on a terminal, refuse a machine that looks temporary, and
+   * say what to do next in each error. Restating those steps here would be a
+   * second copy that goes stale the next time the installer changes.
+   *
+   * The secret appears once, inside the command.
+   */
+  agentPromptFor(secret: string): string {
+    const digest = this.installScriptSha256;
+    return [
+      'Install the Oppenheimer runner on a machine of mine and pair it with my account.',
+      '',
+      'Before you run anything:',
+      '- Tell me which machine you are on (uname -n, uname -sr, whoami) and ask whether it',
+      '  is the one I mean. If it is not, stop: the token below pairs one machine only.',
+      '- Ask me where session code should live. Add --workspaces with that path to the',
+      '  command, or leave it off for ~/oppenheimer-ai/workspaces.',
+      '- Do not install anything, run anything as root, or add --force or --allow-container',
+      '  unless I say so.',
+      '',
+      'Then run this as that user:',
+      '',
+      `  ${this.installCommandFor(secret)}`,
+      '',
+      ...(digest
+        ? [`The installer's SHA-256 is ${digest}. If you download it first, check it.`, '']
+        : []),
+      'Do not copy the token anywhere else; it expires within the hour.',
+      '',
+      'Afterwards, run ~/.local/bin/oppenheimer-runner status and show me what it prints.',
+      'If anything fails, stop and show me the output. The error says what to do next.',
+    ].join('\n');
+  }
+
+  /**
+   * `curl … <installer>`, pinned to HTTPS and TLS 1.2+ for an HTTPS URL. A
+   * plain-HTTP URL is only ever a local development deployment, which the
+   * `--proto` pin would refuse.
+   */
+  private get fetchInstaller(): string {
+    const url = this.installUrl ?? '';
+    return url.startsWith('https://')
+      ? `curl --proto '=https' --tlsv1.2 -fsSL ${url}`
+      : `curl -fsSL ${url}`;
+  }
+
+  private get installerFlags(): string {
+    const flags = [`--url ${this.controlPlaneUrl}`];
     // `stable` is the runner's own default; naming it would only add noise to
     // the line a person pastes into a terminal.
     if (this.channel !== 'stable') flags.push(`--channel ${this.channel}`);
@@ -68,41 +137,7 @@ export class RunnerReleaseConfig {
     // control plane it was handed. Naming it is the deployment's job precisely
     // because the script cannot guess it.
     if (this.releaseBaseUrl) flags.push(`--release-base ${this.releaseBaseUrl}`);
-    return `curl -fsSL ${this.installUrl} | sh -s -- ${flags.join(' ')}`;
-  }
-
-  /**
-   * The same steps spelled out for a Claude Code or Codex already running on the
-   * machine, for someone who would rather read them than pipe a script into a
-   * shell. The do-not list is part of the instruction, not decoration: it is
-   * what keeps an agent from running the installer as root or copying the token
-   * somewhere it will outlive its hour.
-   */
-  agentPromptFor(secret: string): string {
-    return [
-      'Install the Oppenheimer runner on this machine and pair it with my account.',
-      '',
-      'The runner is a single static Go binary. It opens no ports: it holds one',
-      'outbound WebSocket to the control plane and runs my coding sessions as git',
-      'worktrees with a tmux session each. The machine becomes mine, usable from',
-      'any of my workspaces.',
-      '',
-      'Steps:',
-      `1. Run the installer as the current user: ${this.installCommandFor(secret)}`,
-      '2. Verify the downloaded artifact against the SHA-256 in the signed release',
-      `   manifest at ${this.releaseBaseUrl ?? ''} before running it.`,
-      '3. Let it install the user service (launchd agent on macOS, systemd user',
-      '   unit on Debian or Ubuntu) and wait until it reports the host online.',
-      '4. Show me the preflight table it prints: git, tmux, claude, free disk.',
-      '',
-      'Do not:',
-      '- do not run any of it as root or with sudo, except a package install it',
-      '  explicitly asks for and names;',
-      '- do not open a port or expose anything to the network;',
-      '- do not copy the registration token anywhere else, and do not put it in a',
-      '  file, a shell history entry you keep, or a commit;',
-      '- stop and tell me if a checksum does not match.',
-    ].join('\n');
+    return flags.join(' ');
   }
 
   private get installUrl(): string | undefined {

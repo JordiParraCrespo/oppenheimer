@@ -216,7 +216,19 @@ export function startLocalHost(name: string, token: string): FleetHost {
   ]);
   runAs(record, ['git', 'config', '--global', 'user.name', 'Fleet host']);
   runAs(record, ['git', 'config', '--global', 'user.email', 'fleet@oppenheimer.test']);
-  register(record, ['runner', 'register', '--token', token, '--url', API_URL, '--name', name]);
+  // CI sets CI and GITHUB_ACTIONS, which the runner reads as a temporary
+  // machine; a fleet host is one on purpose, for the length of the run.
+  register(record, [
+    'runner',
+    'register',
+    '--token',
+    token,
+    '--url',
+    API_URL,
+    '--name',
+    name,
+    '--allow-container',
+  ]);
 
   // Kept alive the way the container's entrypoint keeps it, standing in for
   // launchd KeepAlive or systemd Restart=always.

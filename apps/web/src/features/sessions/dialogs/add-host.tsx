@@ -118,6 +118,11 @@ export function AddHostDialog({
                   layout="panel"
                   code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
                   maxLines={CODE_MAX_LINES}
+                  note={
+                    format === 'command' && pairing.installScriptSha256
+                      ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
+                      : undefined
+                  }
                   copyLabel={t('common.copy')}
                   copiedLabel={t('common.copied')}
                 />

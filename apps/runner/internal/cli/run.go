@@ -93,11 +93,20 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	// The link: one outbound socket, redialled for as long as this process
 	// lives. Sessions do not wait for it — tmux does not care whether the
 	// control plane can see it.
-	loops.Add(1)
-	go func() {
-		defer loops.Done()
-		a.linkLoop(ctx, logger, identity)
-	}()
+	if identity.Revoked() {
+		// The control plane unpaired this host. Dialling again would be refused
+		// the same way, and exiting would only have the service manager restart
+		// us into the same refusal every few seconds — so the daemon stays up,
+		// quiet, and keeps serving its local socket for `status` and `sessions`.
+		logger.Warn("this host was unpaired; the link stays down until it is paired again",
+			slog.Time("revokedAt", *identity.RevokedAt))
+	} else {
+		loops.Add(1)
+		go func() {
+			defer loops.Done()
+			a.linkLoop(ctx, logger, identity)
+		}()
+	}
 
 	if facts, err := a.Host.Collect(ctx); err == nil {
 		if err := facts.Validate(); err != nil {

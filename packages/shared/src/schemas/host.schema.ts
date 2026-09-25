@@ -15,6 +15,12 @@ import { hostFactsSchema, hostNameSchema } from './primitives';
  */
 export const mintPairingTokenSchema = z.object({
   name: hostNameSchema,
+  /**
+   * The caller's token this one replaces: Add host's "New token". It is revoked
+   * in the same write that mints the new one, so a failed mint leaves it
+   * spendable and a failed revoke mints nothing.
+   */
+  replaces: z.string().uuid().optional(),
 });
 
 export type MintPairingTokenDto = z.infer<typeof mintPairingTokenSchema>;

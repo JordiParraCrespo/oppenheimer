@@ -56,8 +56,9 @@ user-facing diagnostics are the same artifact and the same version.
 |---|---|
 | `run` | the daemon: link, sessions, tmux, worktrees, credential socket. What the service unit starts |
 | `serve` | the control-plane-facing HTTP service on a TCP port, which is what the container image runs. The host agent is `run`, which opens no port |
-| `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json` |
-| `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key |
+| `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json`. The token comes from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`; `--workspaces` chooses where sessions live; `--keep-existing` keeps a pairing to the same control plane instead of spending the token again; a machine that looks temporary is refused unless `--allow-container` (09 §3) |
+| `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key, and refuses while the runner's sessions run unless `--force`, which ends them (09 §4) |
+| `workspaces` | where sessions' checkouts live and why (`config`, `env` or `default`); `--set` moves it for new sessions, refused while any session has a checkout in the old one |
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
@@ -138,6 +139,13 @@ What belongs here is what the runner does with it:
   runaway build stalls its own pane.
 - It survives the link being down indefinitely. Sessions keep running;
   tmux does not care.
+- **Except when the control plane says the host was unpaired**: an HTTP
+  `410` at the handshake or a `4410` close (01). That is not a drop but a
+  verdict, so the link stops redialling, the revocation is written to
+  `config.json`, and later boots do not dial either — the daemon stays up,
+  quiet, so the service manager does not restart it into the same refusal
+  every few seconds. `runner status` says what happened; a fresh
+  registration replaces the revoked identity without `--force`.
 - **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
   port with one transport adapter, as §3 says; the composition root maps
   each message onto the session service. The launch argv comes from
@@ -390,8 +398,9 @@ One tree, named here and pointed at from 09:
 
 ```
 ~/.oppenheimer/
-  config.json          0600  control plane URL, host id, key fingerprint, channel, pin
-  host.key             0600  the ed25519 private key (F8; rotation supported)
+  config.json          0600  control plane URL, host id, key fingerprint, channel, pin,
+                             where sessions live, and when the host was unpaired
+  host.key             0600  the ed25519 private key (F8; rotation arrives with the link, 09 §3)
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
@@ -433,7 +442,13 @@ offline. Logs never contain PTY bytes or tokens.
 
 The daemon reads `~/.oppenheimer/config.json` (written by `register`) for
 everything that identifies the host, and the repo's root `.env` only in
-development, through `internal/config` as today. New variables get a note
+development, through `internal/config` as today. Where sessions live is the
+one path a user chooses: `config.json` holds it, so every process — the
+service, `status`, `sessions` — resolves the same directory, and
+`RUNNER_WORKSPACES` still overrides it for development. The service unit
+carries the installer's `PATH` with empty and relative entries dropped,
+because the unit's working directory is the user's home and a `.` in
+`PATH` would let a file there shadow `git` or `tmux`. New variables get a note
 in the root `.env.example` under "Runner (apps/runner)" when the code
 lands; a paired host needs no environment at all, which is what lets the
 service unit be three lines.
