@@ -11,7 +11,7 @@ paths:
 > predicate generator, the scoped repository base and the containment checks.
 > Read its README before adding a resource; the two-step recipe there
 > (`defineResource` + `ScopedRepositoryBase`) is the whole interface, and
-> `apps/api/src/leads/` is the worked example.
+> `apps/api/src/projects/` is a worked example.
 >
 > Three rules that are easy to break and hard to notice:
 >
@@ -102,7 +102,7 @@ export class PublishArticleHttpController {
 ### An endpoint a client gates a destination on declares its rules once
 
 Some endpoints are the thing a client hides a link behind — members, roles, API
-tokens, admin, billing. Their `@CheckPolicies` is declared once, in
+tokens, admin, projects, sessions. Their `@CheckPolicies` is declared once, in
 `ENDPOINT_POLICIES` (`packages/shared/src/permissions/endpoint-policies.ts`),
 and asserted by `apps/api/src/auth/__tests__/endpoint-policies.spec.ts`: it
 checks the handler exists, that it is mounted at the path the catalog names,

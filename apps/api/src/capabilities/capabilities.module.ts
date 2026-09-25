@@ -47,7 +47,6 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     github_oauth: Boolean(
       configService.get('oauth.github.clientId') && configService.get('oauth.github.clientSecret'),
     ),
-    stripe_billing: Boolean(configService.get('stripe.secretKey')),
     github_app: hasGithubApp(configService),
     s3_storage:
       configService.get('storage.provider') === 's3' &&

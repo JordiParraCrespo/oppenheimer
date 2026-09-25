@@ -214,16 +214,16 @@ describe('AllExceptionsFilter', () => {
   it('still hands back the curated message of a 5xx catalog error', () => {
     const problem = handle(
       new AppError({
-        code: 'BILLING_001',
-        message: 'Billing is not configured on this server',
+        code: 'HOSTS_004',
+        message: 'Hosts are not configured on this server',
         httpStatus: 503,
       }),
     ).problem();
 
     expect(problem).toMatchObject({
       status: 503,
-      title: 'Billing is not configured on this server',
-      code: 'BILLING_001',
+      title: 'Hosts are not configured on this server',
+      code: 'HOSTS_004',
     });
   });
 

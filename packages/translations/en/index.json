@@ -63,14 +63,6 @@
       "ROLE_002": "A role with that name already exists.",
       "ROLE_003": "System roles cannot be deleted or renamed.",
       "ROLE_004": "This role must keep full access.",
-      "BILLING_001": "Billing is not available on this server.",
-      "BILLING_002": "No billing account exists for you yet.",
-      "BILLING_003": "No subscription was found.",
-      "BILLING_004": "The billing request could not be verified.",
-      "BILLING_005": "Checkout could not be started. Please try again.",
-      "BILLING_006": "You already have an active subscription.",
-      "BILLING_007": "The billing portal could not be opened. Please try again.",
-      "BILLING_008": "Your billing account could not be created. Please try again.",
       "ORG_001": "That organization could not be found.",
       "ORG_002": "That organization address is already taken.",
       "ORG_003": "You are not a member of this organization.",
@@ -118,8 +110,6 @@
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
       "GRANT_004": "Choose an organization before managing access grants.",
-      "LEAD_001": "That lead could not be found.",
-      "LEAD_002": "Choose an organization before creating leads.",
       "GITHUB_001": "We could not find that GitHub installation.",
       "GITHUB_002": "GitHub is not configured on this server.",
       "GITHUB_003": "Another workspace has already connected that GitHub installation.",
@@ -161,7 +151,14 @@
       "PROFILE_007": "You cannot sign out the device you are using right now.",
       "PROFILE_008": "We could not reach the account service. Please try again.",
       "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
-      "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB."
+      "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB.",
+      "FLAG_001": "That feature flag does not exist.",
+      "FLAG_002": "Those targeting rules are not valid for this flag.",
+      "FLAG_003": "This feature is not available right now.",
+      "FLAG_004": "That segment could not be found.",
+      "FLAG_005": "A segment with that key already exists.",
+      "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
+      "FLAG_007": "Those segment conditions are not valid."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -495,6 +492,7 @@
     "team": "Team",
     "users": "Users",
     "roles": "Roles",
+    "featureFlags": "Feature flags",
     "toggleSidebar": "Toggle sidebar",
     "sessions": "Sessions",
     "newSession": "New session"
@@ -584,6 +582,169 @@
           "description": "The account for {{name}} and its access will be permanently removed.",
           "submit": "Delete user"
         }
+      }
+    },
+    "flags": {
+      "title": "Feature flags",
+      "description": "Roll features out, run experiments and pull kill switches for everyone on this deployment.",
+      "tabs": {
+        "flags": "Flags",
+        "segments": "Segments",
+        "history": "History"
+      },
+      "search": "Search flags",
+      "empty": "No flags match.",
+      "columns": {
+        "flag": "Flag",
+        "kind": "Kind",
+        "serving": "Serving",
+        "enabled": "On"
+      },
+      "kinds": {
+        "release": "Release",
+        "ops": "Ops",
+        "experiment": "Experiment"
+      },
+      "expired": "Expired",
+      "expiredHint": "Past {{date}}. Ship it and remove the flag from the code.",
+      "expires": "Until {{date}}",
+      "serving": {
+        "default": "Default: {{value}}",
+        "off": "Off: {{value}} to everyone",
+        "value": "{{value}} to everyone else",
+        "split": "Split {{arms}}",
+        "rules_one": "{{count}} rule, then",
+        "rules_other": "{{count}} rules, then"
+      },
+      "actions": {
+        "edit": "Edit targeting",
+        "explain": "Explain",
+        "history": "History"
+      },
+      "toggle": {
+        "onTitle": "Switch {{key}} on?",
+        "offTitle": "Switch {{key}} off?",
+        "onDescription": "Its targeting takes effect for everyone on this deployment straight away.",
+        "offDescription": "Everyone on this deployment gets {{value}} straight away. Targeting is kept for when you switch it back on.",
+        "comment": "Why",
+        "commentPlaceholder": "Incident, rollout step, experiment ended…",
+        "commentHint": "Recorded on the history with your name.",
+        "confirmOn": "Switch on",
+        "confirmOff": "Switch off",
+        "pending": "Switching…"
+      },
+      "targeting": {
+        "title": "Targeting: {{key}}",
+        "description": "Rules are checked in order and the first whose conditions all hold decides. Everyone else gets the fallthrough.",
+        "enabled": "Serve targeting",
+        "enabledHint": "Off serves {{value}} to everyone, whatever the rules say.",
+        "rules": "Rules",
+        "rule": "Rule {{number}}",
+        "addRule": "Add rule",
+        "removeRule": "Remove rule",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "ruleDescription": "What this rule is for",
+        "noRules": "No rules. Everyone gets the fallthrough.",
+        "conditions": "When",
+        "addCondition": "Add condition",
+        "removeCondition": "Remove condition",
+        "noConditions": "No conditions, so this rule matches everyone.",
+        "attribute": "Attribute",
+        "operator": "Operator",
+        "values": "Values",
+        "valuesHint": "One per line.",
+        "serve": "Serve",
+        "fallthrough": "Everyone else",
+        "serveValue": "One value",
+        "serveSplit": "Percentage split",
+        "addArm": "Add arm",
+        "removeArm": "Remove arm",
+        "weight": "Percent",
+        "splitTotal": "Total {{total}}%",
+        "comment": "Why",
+        "commentPlaceholder": "What this change is for",
+        "save": "Save targeting",
+        "saving": "Saving…"
+      },
+      "attributes": {
+        "userId": "User ID",
+        "organizationId": "Organization ID",
+        "email": "Email",
+        "platformRole": "Platform role",
+        "platform": "Platform",
+        "appVersion": "App version",
+        "segment": "Segment"
+      },
+      "operators": {
+        "in": "is one of",
+        "not_in": "is not one of",
+        "ends_with": "ends with",
+        "semver_gte": "is at least version",
+        "semver_lt": "is below version"
+      },
+      "explain": {
+        "title": "Explain: {{key}}",
+        "description": "What this flag serves to someone, and why. Describe as much of them as you know.",
+        "submit": "Explain",
+        "result": "Serves {{value}}",
+        "reasons": {
+          "DEFAULT": "Nothing decided, so the catalog default was served.",
+          "DISABLED": "The flag is switched off.",
+          "TARGETING_MATCH": "Rule “{{rule}}” matched.",
+          "SPLIT": "Bucketed by a percentage split.",
+          "FALLTHROUGH": "No rule matched; the fallthrough served it.",
+          "ERROR": "Targeting served a value this flag does not take, so the default was served."
+        }
+      },
+      "segments": {
+        "search": "Search segments",
+        "empty": "No segments yet. A segment is a named audience, like staff or beta customers, that any flag's rules can target.",
+        "new": "New segment",
+        "edit": "Edit",
+        "delete": "Delete",
+        "columns": {
+          "segment": "Segment",
+          "conditions": "Conditions",
+          "usedBy": "Used by"
+        },
+        "conditionCount_one": "{{count}} condition",
+        "conditionCount_other": "{{count}} conditions",
+        "unused": "No flag",
+        "newTitle": "New segment",
+        "editTitle": "Edit segment",
+        "formDescription": "Everyone who meets all of these conditions is in the segment.",
+        "key": "Key",
+        "keyHint": "What rules refer to it by. Lowercase letters, digits, - and _. It cannot be changed later.",
+        "name": "Name",
+        "details": "Description",
+        "create": "Create segment",
+        "save": "Save segment",
+        "saving": "Saving…",
+        "deleteTitle": "Delete this segment?",
+        "deleteDescription": "No flag targets it, so nobody's flags change.",
+        "inUse": "Used by {{flags}}. Remove it from their rules first."
+      },
+      "history": {
+        "search": "Filter by flag or segment key",
+        "empty": "No changes yet.",
+        "columns": {
+          "when": "When",
+          "subject": "Flag or segment",
+          "change": "Change",
+          "by": "By",
+          "comment": "Why"
+        },
+        "actions": {
+          "targeting_updated": "Targeting changed",
+          "toggled": "Switched",
+          "segment_created": "Segment created",
+          "segment_updated": "Segment updated",
+          "segment_deleted": "Segment deleted"
+        },
+        "switchedOn": "Switched on",
+        "switchedOff": "Switched off",
+        "unknownActor": "Unknown"
       }
     }
   },
@@ -802,10 +963,6 @@
         "api": {
           "name": "API keys",
           "hint": "Personal API tokens"
-        },
-        "billing": {
-          "name": "Billing",
-          "hint": "Subscription and invoices"
         },
         "audit": {
           "name": "Audit log",

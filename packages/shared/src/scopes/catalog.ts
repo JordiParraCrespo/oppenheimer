@@ -22,12 +22,11 @@ export const SCOPE_RESOURCES = [
   'invitations',
   'workspaces',
   'tokens',
-  'billing',
-  'leads',
   'hosts',
   'projects',
   'sessions',
   'repositories',
+  'flags',
 ] as const;
 export type ScopeResource = (typeof SCOPE_RESOURCES)[number];
 
@@ -279,44 +278,6 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
     },
   },
   {
-    resource: 'billing',
-    label: 'Billing',
-    description: 'Subscriptions, checkout and the customer portal.',
-    levels: {
-      read: {
-        scope: 'billing:read',
-        label: 'Read',
-        description: 'Read subscriptions and revenue metrics.',
-        policies: [{ action: 'read', subject: 'Billing' }],
-      },
-      write: {
-        scope: 'billing:write',
-        label: 'Edit',
-        description: 'Start a checkout session and open the customer portal.',
-        policies: [{ action: 'manage', subject: 'Billing' }],
-      },
-    },
-  },
-  {
-    resource: 'leads',
-    label: 'Leads',
-    description: 'The CRM lead records the caller can reach.',
-    levels: {
-      read: {
-        scope: 'leads:read',
-        label: 'Read',
-        description: 'Browse and export leads within your scope.',
-        policies: [{ action: 'read', subject: 'Lead' }],
-      },
-      write: {
-        scope: 'leads:write',
-        label: 'Edit',
-        description: 'Create, edit and delete leads within your scope.',
-        policies: [{ action: 'update', subject: 'Lead' }],
-      },
-    },
-  },
-  {
     resource: 'hosts',
     label: 'Hosts',
     description: 'The machines the credential owner has paired, and the tokens that pair them.',
@@ -416,6 +377,26 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Installation' },
           { action: 'delete', subject: 'Installation' },
         ],
+      },
+    },
+  },
+  {
+    resource: 'flags',
+    label: 'Feature flags',
+    description: 'Feature-flag targeting, kill switches and audience segments on this deployment.',
+    sensitive: true,
+    levels: {
+      read: {
+        scope: 'flags:read',
+        label: 'Read',
+        description: 'List flags, their targeting, segments and change history.',
+        policies: [{ action: 'read', subject: 'FeatureFlag' }],
+      },
+      write: {
+        scope: 'flags:write',
+        label: 'Edit',
+        description: 'Change targeting, pull kill switches and edit segments — for every user.',
+        policies: [{ action: 'update', subject: 'FeatureFlag' }],
       },
     },
   },

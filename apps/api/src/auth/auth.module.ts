@@ -13,6 +13,7 @@ import { OAuthConsentOrmEntity } from './database/oauth-consent.orm-entity';
 import { Session } from './database/session.orm-entity';
 import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
+import { OptionalApiAuthGuard } from './guards/optional-api-auth.guard';
 import { PoliciesGuard } from './guards/policies.guard';
 import { ScopesGuard } from './guards/scopes.guard';
 import { AuthCommandBusBridge } from './infrastructure/auth-command-bus.util';
@@ -84,6 +85,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     CompleteSignUpCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
+    OptionalApiAuthGuard,
     ScopesGuard,
     // The adapters are bound to the tokens their ports are named by. This is
     // the only place that decides Better Auth answers these questions.
@@ -96,6 +98,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
   exports: [
     PoliciesGuard,
     ApiAuthGuard,
+    OptionalApiAuthGuard,
     ScopesGuard,
     CredentialResolverRegistry,
     CREDENTIAL_SCOPE,

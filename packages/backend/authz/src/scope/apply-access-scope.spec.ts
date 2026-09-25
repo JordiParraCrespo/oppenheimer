@@ -9,7 +9,7 @@ import { applyAccessScope } from './apply-access-scope';
  * against a fake keeps these tests free of a database while still asserting the
  * exact SQL fragments and parameters produced.
  */
-function fakeQueryBuilder(alias = 'lead') {
+function fakeQueryBuilder(alias = 'project') {
   const calls: { clause: string; parameters?: Record<string, unknown> }[] = [];
   const qb = {
     alias,
@@ -24,9 +24,9 @@ function fakeQueryBuilder(alias = 'lead') {
 }
 
 const TeamScoped = defineResource({
-  subject: 'Lead',
-  label: 'Leads',
-  group: 'crm',
+  subject: 'Project',
+  label: 'Projects',
+  group: 'projects',
   actions: [{ name: 'read' }],
   keys: {
     organization: 'organizationId',
@@ -38,9 +38,9 @@ const TeamScoped = defineResource({
 });
 
 const OrgOnly = defineResource({
-  subject: 'Invoice',
-  label: 'Invoices',
-  group: 'billing',
+  subject: 'Host',
+  label: 'Hosts',
+  group: 'hosts',
   actions: [{ name: 'read' }],
   keys: { organization: 'organizationId' },
   scopes: ['organization'],
@@ -68,7 +68,7 @@ describe('applyAccessScope', () => {
     const qb = fakeQueryBuilder();
     applyAccessScope(qb, TeamScoped, scope({ teamIds: ['team-a'] }));
 
-    expect(qb.calls[0].clause).toBe('lead.organizationId = :authzOrganizationId');
+    expect(qb.calls[0].clause).toBe('project.organizationId = :authzOrganizationId');
     expect(qb.calls[0].parameters).toEqual({ authzOrganizationId: 'org-1' });
   });
 
@@ -79,24 +79,24 @@ describe('applyAccessScope', () => {
       TeamScoped,
       scope({
         teamIds: ['team-a', 'team-b'],
-        grants: new Map([['Lead', new Set(['lead-9'])]]),
+        grants: new Map([['Project', new Set(['project-9'])]]),
       }),
     );
 
     const [, narrowing] = qb.calls;
     expect(narrowing.clause).toBe(
-      '(lead.teamId IN (:...authzTeamIds) OR lead.ownerId = :authzUserId OR lead.id IN (:...authzGrantIds))',
+      '(project.teamId IN (:...authzTeamIds) OR project.ownerId = :authzUserId OR project.id IN (:...authzGrantIds))',
     );
     expect(narrowing.parameters).toEqual({
       authzTeamIds: ['team-a', 'team-b'],
       authzUserId: 'user-1',
-      authzGrantIds: ['lead-9'],
+      authzGrantIds: ['project-9'],
     });
   });
 
   it("skips narrowing entirely for an 'all' grant", () => {
     const qb = fakeQueryBuilder();
-    applyAccessScope(qb, TeamScoped, scope({ grants: new Map([['Lead', 'all']]) }));
+    applyAccessScope(qb, TeamScoped, scope({ grants: new Map([['Project', 'all']]) }));
 
     // Tenant clause only — the grant already covers every row inside it.
     expect(qb.calls).toHaveLength(1);
@@ -118,7 +118,7 @@ describe('applyAccessScope', () => {
     const noOwner = defineResource({
       subject: 'Report',
       label: 'Reports',
-      group: 'crm',
+      group: 'projects',
       actions: [{ name: 'read' }],
       keys: { organization: 'organizationId', team: 'teamId' },
       scopes: ['organization', 'team'],
@@ -145,7 +145,7 @@ describe('defineResource', () => {
       defineResource({
         subject: 'Broken',
         label: 'Broken',
-        group: 'crm',
+        group: 'projects',
         actions: [{ name: 'read' }],
         keys: { organization: 'organizationId' },
         scopes: ['organization', 'team'],
@@ -158,7 +158,7 @@ describe('defineResource', () => {
       defineResource({
         subject: 'Dupe',
         label: 'Dupe',
-        group: 'crm',
+        group: 'projects',
         actions: [{ name: 'read' }, { name: 'read' }],
         keys: { organization: 'organizationId' },
         scopes: ['organization'],
@@ -170,7 +170,7 @@ describe('defineResource', () => {
     const resource = defineResource({
       subject: 'Thing',
       label: 'Thing',
-      group: 'crm',
+      group: 'projects',
       actions: [{ name: 'read' }],
       keys: { organization: 'organizationId' },
       scopes: ['organization', 'grant'],

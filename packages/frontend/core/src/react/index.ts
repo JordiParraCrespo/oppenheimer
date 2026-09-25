@@ -6,9 +6,6 @@ export {
   useCaptureEvent,
   useCaptureOnMount,
   useCapturePageView,
-  useFeatureFlag,
-  useFeatureFlags,
-  useFeatureFlagValue,
   usePageView,
 } from './analytics.queries';
 export {
@@ -28,6 +25,14 @@ export {
 } from './capabilities.queries';
 export { OppenheimerProvider, useOppenheimerApp } from './context';
 export { type ResolvedErrorMessage, useErrorMessage } from './error-message';
+export {
+  type FeatureFlagReadOptions,
+  featureFlagKeys,
+  featureFlagsQueryOptions,
+  useFeatureFlag,
+  useFeatureFlags,
+  useFeatureFlagValue,
+} from './feature-flags.queries';
 export { useAuthState } from './hooks';
 export { withCacheOnSuccess } from './mutations';
 export {

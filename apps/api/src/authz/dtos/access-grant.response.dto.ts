@@ -13,7 +13,7 @@ export class AccessGrantResponseDto {
   @ApiProperty({ format: 'uuid' })
   principalId!: string;
 
-  @ApiProperty({ example: 'Lead', description: 'A registry subject.' })
+  @ApiProperty({ example: 'Project', description: 'A registry subject.' })
   resourceType!: string;
 
   @ApiPropertyOptional({

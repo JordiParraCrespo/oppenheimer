@@ -10,6 +10,8 @@ import type { CapabilitiesService } from '../modules/capabilities';
 import { CapabilitiesModule } from '../modules/capabilities';
 import { createCoreModule } from '../modules/core/core.module';
 import type { IStorageService } from '../modules/core/storage.service';
+import type { FeatureFlagsClientContext, FeatureFlagsService } from '../modules/feature-flags';
+import { FeatureFlagsModule } from '../modules/feature-flags';
 import type { UserSettingsService } from '../modules/user-settings';
 import { UserSettingsModule } from '../modules/user-settings';
 import type { UsersService } from '../modules/users';
@@ -23,12 +25,19 @@ export interface OppenheimerAppConfig {
   authClient: IAuthClient;
   /**
    * Platform-specific analytics adapter. Omit it and the app runs against a
-   * no-op client — events are dropped and every feature flag reads as off.
+   * no-op client — events are dropped. Feature flags do not depend on it: they
+   * come from the API.
    */
   analytics?: IAnalyticsClient;
   /**
+   * What this app reports about itself when it asks for its feature flags —
+   * `{ platform: 'web', appVersion: '2.1.0' }`. The API can target on both.
+   */
+  featureFlags?: FeatureFlagsClientContext;
+  /**
    * The product's modules, such as `consumerModules` from
-   * `@oppenheimer/frontend-consumer`. The kernel binds what every product shares (session, users, capabilities, analytics); the app
+   * `@oppenheimer/frontend-consumer`. The kernel binds what every product
+   * shares (session, users, capabilities, analytics, feature flags); the app
    * decides which product it is by what it loads here.
    */
   modules?: ContainerModule[];
@@ -47,6 +56,7 @@ export class OppenheimerApp {
     container.load(AnalyticsModule);
     container.load(AuthModule);
     container.load(CapabilitiesModule);
+    container.load(FeatureFlagsModule);
     container.load(UsersModule);
     container.load(UserSettingsModule);
 
@@ -78,5 +88,9 @@ export class OppenheimerApp {
 
   get capabilities(): CapabilitiesService {
     return this.container.get(TOKENS.CapabilitiesService);
+  }
+
+  get featureFlags(): FeatureFlagsService {
+    return this.container.get(TOKENS.FeatureFlagsService);
   }
 }

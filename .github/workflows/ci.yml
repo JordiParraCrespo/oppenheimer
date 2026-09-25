@@ -81,6 +81,11 @@ jobs:
       # Import rules are dependency-cruiser's, above.
       - name: API structure
         run: pnpm check:api-structure
+      # Every flag in the catalog is read somewhere, and no temporary flag is
+      # past its expiry date — flags are debt with a due date, and this is
+      # where it falls due.
+      - name: Feature flags
+        run: pnpm check:flags
       # oppenheimer:begin web
       # The frontend layout contract: feature names, kind directories, the
       # route line cap, no copies of what a kit ships, and the docs every
