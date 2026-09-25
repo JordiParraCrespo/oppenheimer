@@ -177,21 +177,31 @@ export async function mintPairingToken(api: APIRequestContext, name: string): Pr
 
 let sessionCounter = 0;
 
+/** What the composer can add to a session besides its checkout. */
+export interface SessionChoices {
+  agent?: string;
+  launch?: { model?: string; permission?: string; effort?: string };
+  prompt?: string;
+}
+
 /**
  * `POST /sessions` on `hostId`, checking out the stub's `xrp-mobile`: the one
- * session factory every spec with a real runner shares.
+ * session factory every spec with a real runner shares. Claude Code with each
+ * default unless `choices` says otherwise.
  */
 export async function createSession(
   api: APIRequestContext,
   hostId: string,
   installationId: string,
+  { agent = 'claude-code', ...choices }: SessionChoices = {},
 ): Promise<string> {
   sessionCounter += 1;
   const created = await api.post('/api/v1/sessions', {
     headers: { 'Idempotency-Key': `e2e-${hostId}-${process.pid}-${sessionCounter}-${Date.now()}` },
     data: {
       hostId,
-      agent: 'claude-code',
+      agent,
+      ...choices,
       checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
     },
     failOnStatusCode: false,
