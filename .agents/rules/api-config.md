@@ -29,9 +29,9 @@ its documentation. Never add a per-package `.env` or `.env.example`.
 
 ## Optional capabilities: a missing key removes a feature, it never throws
 
-Anything a self-hoster might not have — OAuth credentials, Stripe, S3,
-SMTP/Resend — is **optional capability config**, and the code must work
-without it. Model absence honestly:
+Anything a self-hoster might not have — OAuth credentials, the GitHub App,
+S3, SMTP/Resend, an integration's API key — is **optional capability
+config**, and the code must work without it. Model absence honestly:
 
 - Optional keys are genuinely optional in the Zod schema
   (`z.string().optional()`). **Never** a sentinel default like
@@ -49,11 +49,11 @@ without it. Model absence honestly:
   which reads `process.env` directly. Do not add a trim here or at a call site.
 - Declare the feature in `resolveCapabilities()`
   (`src/capabilities/capabilities.module.ts`). The resolved set — currently
-  `google_oauth`, `github_oauth`, `stripe_billing`, `s3_storage`,
-  `email_delivery` — is computed once at boot and logged at startup, so a
-  self-hoster learns what the deployment can do from the log. Only the
-  **client-facing subset** (`CLIENT_CAPABILITIES` in `@oppenheimer/shared`:
-  the OAuth providers and `stripe_billing`) is served by
+  `google_oauth`, `github_oauth`, `github_app`, `s3_storage`,
+  `email_delivery`, `hosts`, `session_namer` — is computed once at boot and
+  logged at startup, so a self-hoster learns what the deployment can do from
+  the log. Only the **client-facing subset** (`CLIENT_CAPABILITIES` in
+  `@oppenheimer/shared`: the OAuth providers and `github_app`) is served by
   `GET /health/capabilities`, so clients can hide UI for capabilities that are
   off (the web login page only renders configured providers). Server-internal
   capabilities (`s3_storage`, `email_delivery`) never go over the wire — a
@@ -61,8 +61,9 @@ without it. Model absence honestly:
   its UI already reveals. Add a capability to `CLIENT_CAPABILITIES` only when
   a client has a UI decision hanging on it.
 - Feature code that would need a missing key fails fast with a clear domain
-  error ("Billing is not configured on this server"), the way
-  `StripePaymentGateway` does — never by passing a placeholder downstream.
+  error ("Hosts are not configured on this server", `HOSTS_004`, the way the
+  host routes answer without the runner release settings) — never by passing a
+  placeholder downstream.
 
 ```typescript
 // WRONG — crashes at boot if env var is empty
@@ -94,19 +95,19 @@ This keeps the method readable and the fallbacks in one place.
 
 ```typescript
 // WRONG — inline lookups + nested ternaries in the use case
-async execute(command: CreateCheckoutCommand): Promise<string> {
+async execute(command: SendInvitationCommand): Promise<void> {
   const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? '';
-  const successUrl =
-    command.successUrl ??
-    this.configService.get<string>('stripe.successUrl') ??
-    `${frontendUrl}/billing?status=success`;
+  const acceptUrl =
+    command.acceptUrl ??
+    this.configService.get<string>('invitations.acceptUrl') ??
+    `${frontendUrl}/accept-invitation`;
   // ...
 }
 
 // CORRECT — the use case reads `command.x ?? this.defaultX`
-async execute(command: CreateCheckoutCommand): Promise<string> {
-  return this.gateway.createCheckoutSession({
-    successUrl: command.successUrl ?? this.defaultSuccessUrl,
+async execute(command: SendInvitationCommand): Promise<void> {
+  await this.mailer.sendInvitation({
+    acceptUrl: command.acceptUrl ?? this.defaultAcceptUrl,
     // ...
   });
 }
@@ -115,10 +116,10 @@ private get frontendUrl(): string {
   return this.configService.get<string>('app.frontendUrl') ?? '';
 }
 
-private get defaultSuccessUrl(): string {
+private get defaultAcceptUrl(): string {
   return (
-    this.configService.get<string>('stripe.successUrl') ??
-    `${this.frontendUrl}/billing?status=success`
+    this.configService.get<string>('invitations.acceptUrl') ??
+    `${this.frontendUrl}/accept-invitation`
   );
 }
 ```

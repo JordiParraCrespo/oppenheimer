@@ -252,11 +252,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -274,7 +274,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -295,7 +295,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write';
     label: string;
     description: string;
     /**
@@ -310,7 +310,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'billing' | 'leads' | 'hosts' | 'projects' | 'sessions' | 'repositories';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'projects' | 'sessions' | 'repositories' | 'flags';
     label: string;
     description: string;
     /**
@@ -328,12 +328,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -349,7 +349,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'billing:read' | 'billing:write' | 'leads:read' | 'leads:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -875,6 +875,219 @@ export type SetUserPasswordRequest = {
     newPassword: string;
 };
 
+export type ClientFeatureFlagsResponseDto = {
+    /**
+     * Changes whenever any flag or segment configuration does.
+     */
+    version: string;
+    /**
+     * Every client flag, keyed by name.
+     */
+    flags: {
+        [key: string]: boolean | string;
+    };
+};
+
+export type FlagChangeResponseDto = {
+    id: string;
+    subjectType: 'flag' | 'segment';
+    subjectKey: string;
+    action: 'targeting_updated' | 'toggled' | 'segment_created' | 'segment_updated' | 'segment_deleted';
+    actorId: string | null;
+    /**
+     * Why, in the author’s words.
+     */
+    comment: string | null;
+    before: {
+        [key: string]: unknown;
+    } | null;
+    after: {
+        [key: string]: unknown;
+    } | null;
+    createdAt: string;
+};
+
+export type FlagChangePaginationMetaDto = {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+};
+
+export type PaginatedFlagChangesResponseDto = {
+    data: Array<FlagChangeResponseDto>;
+    meta: FlagChangePaginationMetaDto;
+};
+
+export type FlagConditionDto = {
+    attribute: 'userId' | 'organizationId' | 'email' | 'platformRole' | 'platform' | 'appVersion' | 'segment';
+    operator: 'in' | 'not_in' | 'ends_with' | 'semver_gte' | 'semver_lt';
+    values: Array<string>;
+};
+
+export type FlagSegmentResponseDto = {
+    key: string;
+    name: string;
+    description: string | null;
+    /**
+     * ANDed.
+     */
+    conditions: Array<FlagConditionDto>;
+    /**
+     * Flags whose rules target this segment.
+     */
+    usedBy: Array<string>;
+    updatedBy: string | null;
+    updatedAt: string;
+};
+
+export type CreateFlagSegmentRequest = {
+    key: string;
+    name: string;
+    description?: string;
+    conditions: Array<{
+        attribute: 'userId' | 'organizationId' | 'email' | 'platformRole' | 'platform' | 'appVersion' | 'segment';
+        operator: 'in' | 'not_in' | 'ends_with' | 'semver_gte' | 'semver_lt';
+        values: Array<string>;
+    }>;
+    comment?: string;
+};
+
+export type UpdateFlagSegmentRequest = {
+    name?: string;
+    description?: string | null;
+    conditions?: Array<{
+        attribute: 'userId' | 'organizationId' | 'email' | 'platformRole' | 'platform' | 'appVersion' | 'segment';
+        operator: 'in' | 'not_in' | 'ends_with' | 'semver_gte' | 'semver_lt';
+        values: Array<string>;
+    }>;
+    comment?: string;
+};
+
+export type FlagSplitArmDto = {
+    value: boolean | string;
+    /**
+     * Percentage of the audience, 0–100. The arms sum to 100.
+     */
+    weight: number;
+};
+
+export type FlagServeDto = {
+    /**
+     * Serve one value to everyone reached.
+     */
+    value?: boolean | string;
+    /**
+     * Split the audience between values by a deterministic hash.
+     */
+    split?: Array<FlagSplitArmDto>;
+};
+
+export type FlagRuleDto = {
+    id: string;
+    description?: string;
+    /**
+     * ANDed. Empty matches everyone.
+     */
+    conditions: Array<FlagConditionDto>;
+    serve: FlagServeDto;
+};
+
+export type FeatureFlagConfigResponseDto = {
+    /**
+     * The master switch. Off serves the default to everyone.
+     */
+    enabled: boolean;
+    /**
+     * Ordered; the first match decides.
+     */
+    rules: Array<FlagRuleDto>;
+    /**
+     * Served when enabled and no rule matched.
+     */
+    fallthrough: FlagServeDto;
+    updatedBy: string | null;
+    updatedAt: string;
+};
+
+export type FeatureFlagResponseDto = {
+    key: string;
+    description: string;
+    kind: 'release' | 'ops' | 'experiment';
+    owner: string;
+    type: 'boolean' | 'variant';
+    /**
+     * The values a variant flag takes; empty for a boolean flag.
+     */
+    variants: Array<string>;
+    /**
+     * The safe value, served when nothing else decides.
+     */
+    defaultValue: boolean | string;
+    /**
+     * Whether clients may read it.
+     */
+    client: boolean;
+    bucketBy: 'organization' | 'user';
+    /**
+     * YYYY-MM-DD, for temporary flags.
+     */
+    expiresAt: string | null;
+    /**
+     * A temporary flag past its expiry date: remove it from the code.
+     */
+    expired: boolean;
+    /**
+     * Null until targeting is first saved; the flag serves its default.
+     */
+    config: FeatureFlagConfigResponseDto | null;
+};
+
+export type FlagEvaluationResponseDto = {
+    key: string;
+    value: boolean | string;
+    reason: 'DEFAULT' | 'DISABLED' | 'TARGETING_MATCH' | 'SPLIT' | 'FALLTHROUGH' | 'ERROR';
+    /**
+     * The rule that decided, when one did.
+     */
+    ruleId?: string;
+};
+
+export type UpdateFeatureFlagRequest = {
+    enabled: boolean;
+    rules: Array<{
+        id: string;
+        description?: string;
+        conditions: Array<{
+            attribute: 'userId' | 'organizationId' | 'email' | 'platformRole' | 'platform' | 'appVersion' | 'segment';
+            operator: 'in' | 'not_in' | 'ends_with' | 'semver_gte' | 'semver_lt';
+            values: Array<string>;
+        }>;
+        serve: {
+            value: boolean | string;
+        } | {
+            split: Array<{
+                value: boolean | string;
+                weight: number;
+            }>;
+        };
+    }>;
+    fallthrough: {
+        value: boolean | string;
+    } | {
+        split: Array<{
+            value: boolean | string;
+            weight: number;
+        }>;
+    };
+    comment?: string;
+};
+
+export type ToggleFeatureFlagRequest = {
+    enabled: boolean;
+    comment?: string;
+};
+
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
@@ -1112,10 +1325,6 @@ export type CapabilitiesResponseDto = {
      * Sign-in with GitHub is configured.
      */
     github_oauth: boolean;
-    /**
-     * Stripe billing is configured.
-     */
-    stripe_billing: boolean;
     /**
      * The sessions GitHub App is configured.
      */
@@ -1809,6 +2018,8 @@ export type Create2Errors = {
     401: ProblemDetailsDto;
     /**
      * TOKEN_002 / TOKEN_008 — Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization
+     *
+     * FLAG_003 — The "api_token_creation" feature is switched off for the caller
      */
     403: ProblemDetailsDto;
     /**
@@ -4457,6 +4668,354 @@ export type SetPasswordResponses = {
 
 export type SetPasswordResponse = SetPasswordResponses[keyof SetPasswordResponses];
 
+export type GetClientFeatureFlagsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Client build, semver
+         */
+        appVersion?: string;
+        platform?: 'web' | 'ios' | 'android';
+    };
+    url: '/api/v1/feature-flags';
+};
+
+export type GetClientFeatureFlagsResponses = {
+    200: ClientFeatureFlagsResponseDto;
+};
+
+export type GetClientFeatureFlagsResponse = GetClientFeatureFlagsResponses[keyof GetClientFeatureFlagsResponses];
+
+export type FindFlagChangesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        page?: number;
+        subjectKey?: string;
+        subjectType?: 'flag' | 'segment';
+    };
+    url: '/api/v1/feature-flags/changes';
+};
+
+export type FindFlagChangesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindFlagChangesError = FindFlagChangesErrors[keyof FindFlagChangesErrors];
+
+export type FindFlagChangesResponses = {
+    200: PaginatedFlagChangesResponseDto;
+};
+
+export type FindFlagChangesResponse = FindFlagChangesResponses[keyof FindFlagChangesResponses];
+
+export type FindFlagSegmentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/feature-flags/segments';
+};
+
+export type FindFlagSegmentsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindFlagSegmentsError = FindFlagSegmentsErrors[keyof FindFlagSegmentsErrors];
+
+export type FindFlagSegmentsResponses = {
+    200: Array<FlagSegmentResponseDto>;
+};
+
+export type FindFlagSegmentsResponse = FindFlagSegmentsResponses[keyof FindFlagSegmentsResponses];
+
+export type CreateFlagSegmentData = {
+    body: CreateFlagSegmentRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/feature-flags/segments';
+};
+
+export type CreateFlagSegmentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_005 — Segment key taken
+     */
+    409: ProblemDetailsDto;
+    /**
+     * FLAG_007 — Invalid segment conditions
+     */
+    422: ProblemDetailsDto;
+};
+
+export type CreateFlagSegmentError = CreateFlagSegmentErrors[keyof CreateFlagSegmentErrors];
+
+export type CreateFlagSegmentResponses = {
+    201: FlagSegmentResponseDto;
+};
+
+export type CreateFlagSegmentResponse = CreateFlagSegmentResponses[keyof CreateFlagSegmentResponses];
+
+export type DeleteFlagSegmentData = {
+    body?: never;
+    path: {
+        key: string;
+    };
+    query?: {
+        /**
+         * Why, for the audit trail
+         */
+        comment?: string;
+    };
+    url: '/api/v1/feature-flags/segments/{key}';
+};
+
+export type DeleteFlagSegmentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_004 — Segment not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * FLAG_006 — Still targeted by a flag
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DeleteFlagSegmentError = DeleteFlagSegmentErrors[keyof DeleteFlagSegmentErrors];
+
+export type DeleteFlagSegmentResponses = {
+    /**
+     * Deleted
+     */
+    204: void;
+};
+
+export type DeleteFlagSegmentResponse = DeleteFlagSegmentResponses[keyof DeleteFlagSegmentResponses];
+
+export type UpdateFlagSegmentData = {
+    body: UpdateFlagSegmentRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/feature-flags/segments/{key}';
+};
+
+export type UpdateFlagSegmentErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_004 — Segment not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * FLAG_007 — Invalid segment conditions
+     */
+    422: ProblemDetailsDto;
+};
+
+export type UpdateFlagSegmentError = UpdateFlagSegmentErrors[keyof UpdateFlagSegmentErrors];
+
+export type UpdateFlagSegmentResponses = {
+    200: FlagSegmentResponseDto;
+};
+
+export type UpdateFlagSegmentResponse = UpdateFlagSegmentResponses[keyof UpdateFlagSegmentResponses];
+
+export type FindFeatureFlagsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/feature-flags/admin';
+};
+
+export type FindFeatureFlagsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindFeatureFlagsError = FindFeatureFlagsErrors[keyof FindFeatureFlagsErrors];
+
+export type FindFeatureFlagsResponses = {
+    200: Array<FeatureFlagResponseDto>;
+};
+
+export type FindFeatureFlagsResponse = FindFeatureFlagsResponses[keyof FindFeatureFlagsResponses];
+
+export type EvaluateFeatureFlagData = {
+    body?: never;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/feature-flags/admin/{key}/evaluate';
+};
+
+export type EvaluateFeatureFlagErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_001 — No such flag in the catalog
+     */
+    404: ProblemDetailsDto;
+};
+
+export type EvaluateFeatureFlagError = EvaluateFeatureFlagErrors[keyof EvaluateFeatureFlagErrors];
+
+export type EvaluateFeatureFlagResponses = {
+    200: FlagEvaluationResponseDto;
+};
+
+export type EvaluateFeatureFlagResponse = EvaluateFeatureFlagResponses[keyof EvaluateFeatureFlagResponses];
+
+export type FindFeatureFlagData = {
+    body?: never;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/feature-flags/admin/{key}';
+};
+
+export type FindFeatureFlagErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_001 — No such flag in the catalog
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindFeatureFlagError = FindFeatureFlagErrors[keyof FindFeatureFlagErrors];
+
+export type FindFeatureFlagResponses = {
+    200: FeatureFlagResponseDto;
+};
+
+export type FindFeatureFlagResponse = FindFeatureFlagResponses[keyof FindFeatureFlagResponses];
+
+export type ToggleFeatureFlagData = {
+    body: ToggleFeatureFlagRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/feature-flags/admin/{key}';
+};
+
+export type ToggleFeatureFlagErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_001 — No such flag in the catalog
+     */
+    404: ProblemDetailsDto;
+};
+
+export type ToggleFeatureFlagError = ToggleFeatureFlagErrors[keyof ToggleFeatureFlagErrors];
+
+export type ToggleFeatureFlagResponses = {
+    200: FeatureFlagResponseDto;
+};
+
+export type ToggleFeatureFlagResponse = ToggleFeatureFlagResponses[keyof ToggleFeatureFlagResponses];
+
+export type UpdateFeatureFlagData = {
+    body: UpdateFeatureFlagRequest;
+    path: {
+        key: string;
+    };
+    query?: never;
+    url: '/api/v1/feature-flags/admin/{key}';
+};
+
+export type UpdateFeatureFlagErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * FLAG_001 — No such flag in the catalog
+     */
+    404: ProblemDetailsDto;
+    /**
+     * FLAG_002 — Targeting serves a value the flag does not take, or targets a missing segment
+     */
+    422: ProblemDetailsDto;
+};
+
+export type UpdateFeatureFlagError = UpdateFeatureFlagErrors[keyof UpdateFeatureFlagErrors];
+
+export type UpdateFeatureFlagResponses = {
+    200: FeatureFlagResponseDto;
+};
+
+export type UpdateFeatureFlagResponse = UpdateFeatureFlagResponses[keyof UpdateFeatureFlagResponses];
+
 export type ListProjectsData = {
     body?: never;
     path?: never;
@@ -4863,6 +5422,8 @@ export type AddSessionCheckoutErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_010 — A session checks out one repository
+     *
      * SESSIONS_005 — That session is closed
      *
      * SESSIONS_004 — That repository is already checked out here
@@ -5094,7 +5655,7 @@ export type DeploymentCapabilitiesData = {
 
 export type DeploymentCapabilitiesResponses = {
     /**
-     * Which client-relevant optional features (OAuth providers, Stripe billing) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
+     * Which client-relevant optional features (sign-in providers, the GitHub App) this deployment has configured. `false` means not configured, not unhealthy. Server-internal capabilities are not exposed here.
      */
     200: CapabilitiesResponseDto;
 };

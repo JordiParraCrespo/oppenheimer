@@ -58,6 +58,9 @@ TypeORM entities are **persistence models**, not domain entities. Name them
 domain `Entity`/`AggregateRoot` lives in `domain/` and is mapped to/from the ORM
 record by the mapper (`toDomain` / `toPersistence`). See `nestjs-architecture.md`.
 
+How a table is designed (keys, types, indexes, constraints, migrations) is
+`database-design.md`.
+
 - Use `@PrimaryGeneratedColumn('uuid')` for IDs the app owns. Tables owned by
   Better Auth (e.g. `user`) use `@PrimaryColumn({ type: 'uuid' })` because Better
   Auth generates the id.

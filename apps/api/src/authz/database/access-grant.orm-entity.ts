@@ -29,7 +29,7 @@ export class AccessGrantOrmEntity {
   @Column({ type: 'uuid' })
   principalId!: string;
 
-  /** A registry subject, e.g. `Lead`. */
+  /** A registry subject, e.g. `Project`. */
   @Column({ type: 'varchar' })
   resourceType!: string;
 

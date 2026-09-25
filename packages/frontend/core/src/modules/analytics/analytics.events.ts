@@ -13,6 +13,12 @@ export const ANALYTICS_EVENTS = {
   USER_SIGNED_OUT: 'user_signed_out',
   PASSWORD_RESET_REQUESTED: 'password_reset_requested',
   PASSWORD_RESET_COMPLETED: 'password_reset_completed',
+  /**
+   * An experiment's variant was shown. Carries `flag` and `variant`; recorded
+   * once per variant per session by `FeatureFlagsService`, so an experiment's
+   * result can be attributed to the arm people actually saw.
+   */
+  FEATURE_FLAG_EXPOSED: 'feature_flag_exposed',
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];

@@ -11,6 +11,9 @@ import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
+import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
+import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
@@ -64,6 +67,9 @@ const dataSource = new DataSource({
     WorkSessionOrmEntity,
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,
+    FeatureFlagOrmEntity,
+    FlagSegmentOrmEntity,
+    FlagChangeOrmEntity,
     OutboxMessageSchema,
   ],
 });

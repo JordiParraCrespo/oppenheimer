@@ -1,0 +1,231 @@
+{
+  "skill_name": "design-database",
+  "evals": [
+    {
+      "id": 1,
+      "name": "invoicing-money",
+      "prompt": "We need invoicing in the API. Organizations bill their own customers (a customer belongs to one org). An invoice has a number that humans read (INV-0042), line items with a description, quantity and unit price, a status (draft, open, paid, void), a due date, and can be paid in several partial payments. Accountants need the list of an org's open invoices sorted by due date, and a nightly job finds overdue ones. Design the tables and write the migration and ORM entities.",
+      "expected_output": "customer, invoice, invoice_line and payment tables with integer minor-unit (or numeric) money plus currency, timestamptz, status CHECK, per-org unique invoice number, RESTRICT (not CASCADE) from financial rows to customers, FK indexes, and a tenant-first index serving the open-by-due-date list.",
+      "files": [],
+      "expectations": [
+        "Money columns use bigint minor units or numeric(p,s); no float, real, double precision or money type",
+        "Invoices (or payments) carry a currency column constrained to 3 characters",
+        "Every timestamp column is timestamptz / TIMESTAMP WITH TIME ZONE (a due date may be a date)",
+        "Invoice status is constrained with a CHECK (or equivalent) listing draft, open, paid, void",
+        "Invoice number is unique per organization (UNIQUE on organizationId + number), not globally",
+        "Invoices, lines and payments are not ON DELETE CASCADE from customer: RESTRICT/NO ACTION protects financial records from a customer delete",
+        "Every foreign key is backed by an index whose leading columns are exactly the foreign key's columns (all of them for a composite FK), or by the primary key / a unique with that prefix",
+        "There is an index leading with organizationId that serves listing open invoices by due date (organizationId, status and dueOn/dueDate, or a partial index on status)",
+        "Line items store their own description and unit price (a snapshot), not only a product reference",
+        "Tables whose rows change have createdAt and updatedAt; constraints and indexes have explicit readable names",
+        "The migration has a header comment explaining the design decisions and a down() that reverses up()",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), and no index uses DESC that the entity cannot express",
+        "Concurrent partial payments cannot lose an update: a version column (optimistic locking) or a row lock is part of the design (in code or the documented repository contract), and status/timestamp CHECKs are logically correct for every non-draft status",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "audit-log-scale",
+      "prompt": "Add an audit log to apps/api: every change an admin makes inside an organization is recorded (who did it, what action, which record it touched, a JSON diff, their IP and when). The org's security page shows the latest events with filters by actor and by record, and we expect millions of rows per year across tenants. Design the table(s), write the migration and the ORM entity.",
+      "expected_output": "An append-only audit_event table (no updatedAt) with timestamptz, jsonb diff, inet IP, tenant-first time-ordered indexes plus actor and target lookups, no FKs (or justified) on actor/target so history survives deletes, and a written retention/partitioning plan.",
+      "files": [],
+      "expectations": [
+        "The table is treated as append-only: it has no updatedAt column and the design says rows are never updated",
+        "The time column is timestamptz / TIMESTAMP WITH TIME ZONE",
+        "The diff/metadata is stored as jsonb",
+        "IP address uses the inet type (or a bounded varchar with a stated reason)",
+        "The actor and target references have no foreign key with a stated reason (history must survive deletes), or use ON DELETE SET NULL; they are not ON DELETE CASCADE",
+        "There is an index leading with organizationId followed by the time column (descending or used for newest-first)",
+        "There are indexes serving the filter by actor and the filter by target record, each scoped by organization or time",
+        "The design states a concrete retention period AND the mechanism that enforces it (a scheduled job or partition drop), not only a function nobody runs",
+        "The design mentions time-based partitioning as the scaling path (or implements it)",
+        "Constraints and indexes have explicit readable names and the migration header explains the design",
+        "organizationId is not an ON DELETE CASCADE foreign key that would delete millions of audit rows in the organization-delete transaction (no FK with a reason, or tenant erasure via batched purge / partition drop)",
+        "Actors that are not users (system jobs, API tokens) can be recorded (actorId nullable or typed by actorType/credentialType), or the design states that only people's changes are audited and why",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), and no index uses DESC that the entity cannot express",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "boards-members-tenancy",
+      "prompt": "In the API, organizations should be able to create boards (planning boards, not the existing `project` table). A board has a name and a URL slug, and users of the organization can be added to a board as viewer, editor or admin. We need: the org's board list, 'my boards' for the current user, and the member list of a board. Write the migration and the ORM entities.",
+      "expected_output": "board (tenant-scoped, unique slug per org) and board_member (composite PK or unique pair, role CHECK, reverse index on userId), timestamptz, cascades that match the relationship, and protection against cross-tenant references.",
+      "files": [],
+      "expectations": [
+        "board has organizationId NOT NULL with a foreign key to organization",
+        "The slug is unique per organization (UNIQUE on organizationId + slug), not globally",
+        "The member table prevents duplicate membership with a composite primary key or a unique on (boardId, userId)",
+        "Member role is constrained with a CHECK (or equivalent) to viewer, editor, admin",
+        "There is an index serving 'my boards': leading with userId, or (organizationId, userId) when the design explicitly scopes 'my boards' to the active organization",
+        "Membership rows are removed when the board is deleted and when the user is deleted or leaves the organization (ON DELETE CASCADE directly, or through a cascading composite FK to member)",
+        "Every timestamp column is timestamptz / TIMESTAMP WITH TIME ZONE, with createdAt on both tables and updatedAt on board",
+        "The design addresses tenancy on the member table: it carries organizationId or otherwise prevents/justifies members being added across organizations",
+        "New tables use snake_case singular names and camelCase quoted column names consistent with the repo",
+        "The ORM entities are declared with timestamptz column types and are registered in data-source.ts (or the output says to register them)",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), and no index uses DESC that the entity cannot express",
+        "Altering Better Auth's member table (if the design adds a unique to it) first checks for existing duplicate rows or documents the failure mode and the lock taken",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "comments-polymorphic",
+      "prompt": "Users should be able to comment on tasks and on documents (both already exist as tenant tables `task` and `document` with organizationId). Comments can be edited and deleted; a deleted comment in a thread should show as 'deleted' if it has replies. Comments support one level of replies and emoji reactions (one reaction of each emoji per user per comment). Design the schema and write the migration and ORM entities.",
+      "expected_output": "A comment table with an explicit polymorphic strategy (preferably one FK column per target with a num_nonnulls CHECK), parentId self-FK, soft delete justified by the thread requirement, reaction table with a unique (commentId, userId, emoji), timestamptz, tenant-first indexes.",
+      "files": [],
+      "expectations": [
+        "The polymorphic target is modelled deliberately: either separate nullable FK columns with a CHECK that exactly one is set, or a type+id pair with a CHECK on the type and an index, and the choice is explained",
+        "Replies use a self-referencing parentId with a foreign key and an index",
+        "Deletion uses a deletedAt timestamp (soft delete) justified by showing 'deleted' in threads, rather than a boolean flag",
+        "Comment has createdAt and updatedAt (edits), all timestamptz",
+        "Reactions are unique per (commentId, userId, emoji) enforced by the database",
+        "The comment table carries organizationId and the listing index for a target's thread leads with the tenant or the target id",
+        "Every foreign-key column is covered by an index",
+        "Emoji and body columns have sensible types and bounds (e.g. bounded varchar for emoji, text for body with a non-empty CHECK)",
+        "The migration header explains the design decisions and down() reverses up()",
+        "The reply's parent foreign key does not silently delete replies: it is ON DELETE NO ACTION/RESTRICT (the database refuses to hard-delete a comment with replies), or CASCADE with a stated reason that the app never hard-deletes a parent that has replies",
+        "Comments cannot reference a task, document or parent comment in another organization (composite FKs through organizationId, or an explicit trigger/check)",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), and no index uses DESC that the entity cannot express",
+        "Adding the (organizationId, id) unique to the existing task and document tables is lock-aware: not an ALTER TABLE ADD CONSTRAINT UNIQUE that builds under ACCESS EXCLUSIVE in the boot transaction without a note, but a CREATE UNIQUE INDEX (buildable CONCURRENTLY beforehand) or an explicit lock-cost call-out",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "extend-better-auth-user",
+      "prompt": "Product wants to email users who have been inactive for 30 days. Add what's needed to the database: we need to know when each user was last active (updated at most once per hour from the API) and each user's IANA timezone so the email goes out in their morning. The user table already has production data. Write the migration and update the ORM entity.",
+      "expected_output": "Nullable (or defaulted) columns added safely to the Better Auth-owned user table (or a side table with the reason), timestamptz for lastActiveAt, bounded timezone column, a partial or targeted index for the inactivity query, the additionalFields/Better Auth implication noted, and lock-safety considered.",
+      "files": [],
+      "expectations": [
+        "The design recognises that user is a Better Auth-owned table (camelCase naming, Better Auth writes the rows) and either declares new columns as Better Auth additionalFields or puts them in an app-owned side table keyed by userId, explaining why",
+        "New columns on a populated table are nullable or NOT NULL with a constant DEFAULT; no NOT NULL column without a default is added",
+        "lastActiveAt is timestamptz / TIMESTAMP WITH TIME ZONE",
+        "The timezone column is bounded (varchar with a length) or constrained, not an unlimited varchar with no reasoning",
+        "There is an index that serves the 'inactive for 30 days' query (on lastActiveAt, possibly partial)",
+        "The migration is lock-safe on the populated user table: no long-running backfill runs in the same transaction as a lock on user (FK creation, ALTER), and any index on a large table is built without blocking writes or called out to be built concurrently",
+        "The ORM entity is updated with matching types and nullability",
+        "down() reverses up() and the header explains the design",
+        "The frequently-updated lastActiveAt does not cause write amplification on the hot user row (side table), or the design explicitly weighs that cost",
+        "The design prevents emailing the same inactive user repeatedly (e.g. a sent-at timestamp cleared on activity), and says what happens to users already inactive at launch",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "fix-existing-large-tables",
+      "prompt": "Our production database has gaps in tables Better Auth created early on: `session` (about 20 million rows, read on every request) and `account` (about 2 million rows) have no foreign key and no index on \"userId\". Write the migration(s) that fix these without taking the site down, and update the ORM entities.",
+      "expected_output": "Indexes built CONCURRENTLY outside the boot transaction (or a documented manual step), foreign keys added NOT VALID then VALIDATE, orphans handled first, Better Auth ownership respected, entities updated.",
+      "files": [],
+      "expectations": [
+        "The userId indexes on session and account are built with CREATE INDEX CONCURRENTLY, and the design deals with the fact that CONCURRENTLY cannot run inside the boot migration transaction (a migration with transaction = false plus migrationsTransactionMode 'each', or a documented manual/one-off step)",
+        "The foreign keys are added NOT VALID and validated in a separate statement or step, not as a plain ADD CONSTRAINT FOREIGN KEY that scans 20M rows under lock",
+        "Orphaned rows (sessions/accounts whose user no longer exists) are handled before validation (a cleanup statement, or a documented check), since validation would fail on them",
+        "The ON DELETE choice for session/account -> user is CASCADE (a user's sessions and accounts mean nothing without the user) and matches Better Auth's own delete behaviour",
+        "Column names and types Better Auth reads are kept compatible (no renames)",
+        "Migrations that touch these hot tables set a lock_timeout (and reset it) or otherwise bound how long they can block traffic",
+        "The ORM entities are updated to match (@Index declarations or synchronize: false for the concurrent indexes)",
+        "down() reverses the change (drop FKs and indexes) and the header explains the rollout order",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "inventory-no-oversell",
+      "prompt": "We sell physical products from several warehouses per organization. Each product has a stock level per warehouse (on hand and reserved). Checkout reserves stock and must never oversell, even with many buyers at once; shipping turns a reservation into a shipment, and every stock change must be traceable later (who, why, which order). Warehouse managers list low-stock products per warehouse. Design the schema and write the migration and ORM entities.",
+      "expected_output": "product, warehouse, stock_level keyed by (warehouseId, productId) with CHECK onHand >= reserved >= 0, an append-only stock_movement ledger, concurrency via guarded UPDATE or row lock, tenant-safe FKs, a low-stock index.",
+      "files": [],
+      "expectations": [
+        "Stock per (warehouse, product) is one row with a composite primary key or unique on (warehouseId, productId)",
+        "The database forbids overselling with CHECK constraints such as reserved >= 0 and onHand >= reserved (or available >= 0)",
+        "Concurrent reservations are made safe by a guarded atomic UPDATE (UPDATE ... SET reserved = reserved + n WHERE onHand - reserved >= n) or SELECT ... FOR UPDATE, described in the design; not a read-then-write in application code",
+        "Every stock change is recorded in an append-only movement/ledger table with quantity delta, reason/type (CHECK), actor and order reference, and no updatedAt",
+        "Quantities are integers or numeric, never floating point",
+        "Tables are tenant-scoped with organizationId and cross-tenant references are prevented (composite FKs or equivalent)",
+        "Products and warehouses referenced by stock or movements cannot be deleted out from under history (NO ACTION/RESTRICT or archiving)",
+        "The movement ledger survives a tenant delete and a user delete: no ON DELETE CASCADE from organization into the ledger, and the actor ('who') is kept (no FK, or a label snapshot) rather than SET NULL losing it",
+        "An index serves the low-stock list per warehouse (e.g. (organizationId, warehouseId, ...) with a threshold predicate or ordering on available quantity)",
+        "Every timestamp is timestamptz, and every foreign key is backed by an index with the FK columns leading",
+        "The movement ledger's growth is addressed (retention or it is explicitly kept forever with an indexing plan for time-ordered reads)",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), primary keys carry their constraint names, and no relations (@ManyToOne) are declared, matching the repo",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "review-flawed-migration",
+      "prompt": "A teammate opened a PR with this migration for subscriptions. Queries it must serve: the organization's current active subscription, a subscription's invoices newest first, and looking an invoice up by the payment provider's id from a webhook. Review it like a senior DBA and write the corrected migration and ORM entities.\n\n```ts\nimport type { MigrationInterface, QueryRunner } from 'typeorm';\n\nexport class AddSubscriptions1789000000000 implements MigrationInterface {\n  public async up(q: QueryRunner): Promise<void> {\n    await q.query(`CREATE TABLE \"subscription\" (\"id\" uuid PRIMARY KEY DEFAULT gen_random_uuid(), \"organizationId\" uuid NOT NULL REFERENCES \"organization\"(\"id\") ON DELETE CASCADE, \"plan\" varchar NOT NULL, \"status\" varchar NOT NULL DEFAULT 'active', \"price\" double precision NOT NULL, \"currency\" varchar, \"seats\" integer, \"startedAt\" TIMESTAMP NOT NULL DEFAULT now(), \"cancelledAt\" TIMESTAMP, \"createdAt\" TIMESTAMP NOT NULL DEFAULT now())`);\n    await q.query(`CREATE TABLE \"subscription_invoice\" (\"id\" uuid PRIMARY KEY DEFAULT gen_random_uuid(), \"subscriptionId\" uuid NOT NULL REFERENCES \"subscription\"(\"id\") ON DELETE CASCADE, \"amount\" double precision NOT NULL, \"paid\" boolean NOT NULL DEFAULT false, \"paidAt\" TIMESTAMP, \"externalId\" varchar, \"createdAt\" TIMESTAMP NOT NULL DEFAULT now())`);\n    await q.query(`CREATE INDEX ON \"subscription\" (\"status\")`);\n    await q.query(`ALTER TABLE \"organization\" ADD COLUMN \"billingEmail\" varchar NOT NULL`);\n    await q.query(`CREATE UNIQUE INDEX ON \"subscription_invoice\" (\"externalId\")`);\n  }\n\n  public async down(q: QueryRunner): Promise<void> {\n    await q.query(`DROP TABLE \"subscription_invoice\"`);\n    await q.query(`DROP TABLE \"subscription\"`);\n  }\n}\n```",
+      "expected_output": "A review listing the defects (float money, timestamp without tz, unnamed constraints, missing FK indexes, useless status index, no status CHECK, NOT NULL billingEmail on populated Better Auth organization table, CASCADE deleting invoices, no one-active-per-org rule, down() incomplete) and a corrected migration.",
+      "files": [],
+      "expectations": [
+        "Flags double precision money and fixes it to bigint minor units or numeric, with a constrained currency",
+        "Flags TIMESTAMP without time zone and uses timestamptz",
+        "Flags that ALTER TABLE organization ADD COLUMN billingEmail varchar NOT NULL fails on a populated table (no default) and that organization is Better Auth-owned (additionalField or a side table)",
+        "Flags the missing indexes behind subscription.organizationId and subscription_invoice.subscriptionId and adds them",
+        "Flags the standalone index on status as low-value and replaces it with an index or partial unique serving 'the org's active subscription'",
+        "Enforces at most one active subscription per organization in the database (partial unique index on organizationId WHERE status = 'active' or equivalent)",
+        "Adds a CHECK constraining status (and plan or seats where sensible)",
+        "Flags ON DELETE CASCADE from subscription to its invoices (financial records) and changes it to NO ACTION/RESTRICT, or justifies it",
+        "Names every constraint and index explicitly",
+        "The webhook lookup is served by a unique on the provider id (ideally scoped by provider), and paid/paidAt redundancy is resolved (one source of truth or a consistency CHECK)",
+        "Adds updatedAt where rows change and fixes down() to reverse everything up() does",
+        "Invoices sort on the provider's own issue time (issuedAt), not on when the webhook row was inserted, and the provider id is unique per provider",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), primary keys carry their constraint names, and no relations (@ManyToOne) are declared, matching the repo",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "notifications-inbox",
+      "prompt": "Add in-app notifications: each user gets notifications (type, title, body, a link, optional actor) scoped to the organization they came from. The bell shows the unread count for the active organization and the latest 20; users mark one or all as read and can dismiss them. We expect a few hundred notifications per active user per month and 100k active users. Design the tables, write the migration and the ORM entities.",
+      "expected_output": "A notification table with readAt/dismissedAt timestamps, a partial index for unread per (userId, organizationId), keyset index for the latest list, no hot counter on the user row, a retention plan, and a key that suits the insert volume.",
+      "files": [],
+      "expectations": [
+        "Read state is a timestamp (readAt), and dismiss is either a dismissedAt timestamp or a hard delete whose trade-off (no undo, no dismissal analytics) is stated",
+        "The unread count is served by a partial index on (userId, organizationId) WHERE readAt IS NULL (and not dismissed), or by a separately maintained counter that is not a hot column on user/member",
+        "The latest-20 list is served by an index leading with (userId, organizationId) followed by the time column and a tiebreaker",
+        "The volume (tens of millions of rows per month) is addressed: a retention period with the job that enforces it, and partitioning or a stated threshold for it",
+        "The primary key suits the insert volume (bigint identity, time-ordered UUIDv7 from the app, or an explicit trade-off), not an unexamined random uuid",
+        "Deleting a user removes their notifications (CASCADE or purge) and the actor reference does not cascade-delete other users' notifications (SET NULL or no FK)",
+        "type is constrained (CHECK or bounded varchar with a TS union) and text columns are bounded where a limit is real",
+        "'Mark all as read' is served by the unread partial index, bounded by a snapshot (createdAt <= request time) and batched",
+        "Every timestamp is timestamptz and the ORM entity mirrors the migration (checks, partial index predicates, primary key name)",
+        "The organization reference does not cascade-delete millions of notifications inside the organization delete (no CASCADE FK, or an explicit batched purge), and the link column rejects open redirects such as //host and /\\host",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "room-booking-no-overlap",
+      "prompt": "Organizations have meeting rooms. People book a room for a time range; two active bookings for the same room must never overlap, even if two people click at the same moment. Cancelled bookings are kept for reporting. We need a room's schedule for a day, a user's upcoming bookings, and a check for free rooms in a time range. Design the schema and write the migration and ORM entities.",
+      "expected_output": "booking with a tstzrange (or start/end) and an EXCLUDE USING gist constraint with btree_gist, restricted to active bookings, CHECK end > start, cancelledAt kept, GiST index serving the schedule and availability queries.",
+      "files": [],
+      "expectations": [
+        "Overlaps are prevented by the database with an exclusion constraint (EXCLUDE USING gist (roomId WITH =, period WITH &&)), not by an application-level check",
+        "The btree_gist extension is created (CREATE EXTENSION IF NOT EXISTS btree_gist) so uuid equality works in the GiST constraint",
+        "The exclusion constraint ignores cancelled bookings (WHERE (\"cancelledAt\" IS NULL) or status predicate)",
+        "The time range is a tstzrange (or timestamptz start/end with a generated range) with a CHECK that end > start / range is not empty, and bound inclusivity is stated ([) so back-to-back bookings are allowed",
+        "Cancelled bookings are kept with cancelledAt (and optionally who cancelled), not deleted",
+        "The room schedule and free-room queries are served by the GiST index (range operators) and the user's upcoming bookings by an index leading with the booker",
+        "Bookings and rooms are tenant-scoped, and a booking cannot reference a room in another organization",
+        "Deleting a room with bookings is decided deliberately (NO ACTION/archiving to keep history, or CASCADE with a reason)",
+        "The ORM entity declares what TypeORM cannot express (the exclusion constraint, GiST index) with synchronize: false or equivalent, and the range column type is handled (tstzrange as string or custom transformer)",
+        "Every timestamp is timestamptz, and the migration header explains the design",
+        "Booking length is bounded (CHECK on a maximum duration or on finite endsAt), so an open-ended booking cannot block a room forever",
+        "The ORM entities mirror the migration: every CHECK, unique and partial-index predicate in the SQL is declared on the entity (or the index is marked synchronize: false), primary keys carry their constraint names, and no relations (@ManyToOne) are declared, matching the repo",
+        "The migration applies cleanly on Postgres 16 against the repo schema with seeded rows (up in one transaction, then down, then up again), as checked by running it",
+        "Each documented access pattern's query is served by the index the design assigns to it, and ordered lists need no Sort above the index scan (checked with EXPLAIN on Postgres)"
+      ]
+    }
+  ]
+}

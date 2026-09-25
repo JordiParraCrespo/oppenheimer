@@ -53,7 +53,7 @@ export const KNOWN_SUBJECTS = [
   'Invitation',
   'ApiToken',
   'AuditLog',
-  'Billing',
+  'FeatureFlag',
   // The control plane's own nouns. `Host` is person-owned; the other three are
   // workspace-owned. There is deliberately no `Repository` subject: a repository
   // has no row, and the thing that *is* a row and *does* carry the tenant is the
@@ -145,7 +145,7 @@ function resolveScopePath(segments: string[], context: AbilityContext): unknown 
   if (head === 'teamIds') return scope?.teamIds ?? [];
   if (head === 'organizationId') return scope?.organizationId ?? null;
   if (head === 'grants') {
-    // `${scope.grants.Lead}` — a grant over one subject.
+    // `${scope.grants.Project}` — a grant over one subject.
     const subjectName = rest[0];
     if (!subjectName) return [];
     const grant = scope?.grants?.[subjectName];

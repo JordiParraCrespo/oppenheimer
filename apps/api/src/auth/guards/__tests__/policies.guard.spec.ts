@@ -36,14 +36,16 @@ describe('PoliciesGuard', () => {
     abilities = {
       forRequest: vi
         .fn()
-        .mockResolvedValue(defineAbilitiesFromPermissions([{ action: 'read', subject: 'Lead' }])),
+        .mockResolvedValue(
+          defineAbilitiesFromPermissions([{ action: 'read', subject: 'Project' }]),
+        ),
     };
   });
 
   it('allows a route whose policy the caller satisfies', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({
-        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
+        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }],
       }),
       abilities,
     );
@@ -54,7 +56,7 @@ describe('PoliciesGuard', () => {
   it('denies a route whose policy the caller does not satisfy', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({
-        [CHECK_POLICIES_KEY]: [{ action: 'delete', subject: 'Lead' }],
+        [CHECK_POLICIES_KEY]: [{ action: 'delete', subject: 'Project' }],
       }),
       abilities,
     );
@@ -89,7 +91,7 @@ describe('PoliciesGuard', () => {
   it('reports a missing principal as unauthenticated, not forbidden', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({
-        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
+        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }],
       }),
       abilities,
     );
@@ -105,7 +107,7 @@ describe('PoliciesGuard', () => {
   it('builds the ability once per request', async () => {
     const guard = new PoliciesGuard(
       reflectorFor({
-        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Lead' }],
+        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }],
       }),
       abilities,
     );

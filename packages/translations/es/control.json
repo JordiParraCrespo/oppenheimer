@@ -84,5 +84,168 @@
         "submit": "Eliminar usuario"
       }
     }
+  },
+  "flags": {
+    "title": "Feature flags",
+    "description": "Lanza funcionalidades, ejecuta experimentos y activa interruptores de emergencia para todo este despliegue.",
+    "tabs": {
+      "flags": "Flags",
+      "segments": "Segmentos",
+      "history": "Historial"
+    },
+    "search": "Buscar flags",
+    "empty": "Ningún flag coincide.",
+    "columns": {
+      "flag": "Flag",
+      "kind": "Tipo",
+      "serving": "Sirve",
+      "enabled": "Activo"
+    },
+    "kinds": {
+      "release": "Lanzamiento",
+      "ops": "Operación",
+      "experiment": "Experimento"
+    },
+    "expired": "Caducado",
+    "expiredHint": "Pasó el {{date}}. Lánzalo y elimina el flag del código.",
+    "expires": "Hasta el {{date}}",
+    "serving": {
+      "default": "Por defecto: {{value}}",
+      "off": "Apagado: {{value}} para todos",
+      "value": "{{value}} para el resto",
+      "split": "Reparto {{arms}}",
+      "rules_one": "{{count}} regla y después",
+      "rules_other": "{{count}} reglas y después"
+    },
+    "actions": {
+      "edit": "Editar segmentación",
+      "explain": "Explicar",
+      "history": "Historial"
+    },
+    "toggle": {
+      "onTitle": "¿Activar {{key}}?",
+      "offTitle": "¿Apagar {{key}}?",
+      "onDescription": "Su segmentación se aplica a todo este despliegue de inmediato.",
+      "offDescription": "Todo este despliegue recibe {{value}} de inmediato. La segmentación se conserva para cuando lo vuelvas a activar.",
+      "comment": "Motivo",
+      "commentPlaceholder": "Incidencia, paso del despliegue, fin del experimento…",
+      "commentHint": "Queda en el historial con tu nombre.",
+      "confirmOn": "Activar",
+      "confirmOff": "Apagar",
+      "pending": "Cambiando…"
+    },
+    "targeting": {
+      "title": "Segmentación: {{key}}",
+      "description": "Las reglas se evalúan en orden y decide la primera cuyas condiciones se cumplen todas. El resto recibe el valor por defecto de la segmentación.",
+      "enabled": "Aplicar segmentación",
+      "enabledHint": "Apagado sirve {{value}} a todos, digan lo que digan las reglas.",
+      "rules": "Reglas",
+      "rule": "Regla {{number}}",
+      "addRule": "Añadir regla",
+      "removeRule": "Quitar regla",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "ruleDescription": "Para qué es esta regla",
+      "noRules": "Sin reglas. Todos reciben el valor para el resto.",
+      "conditions": "Cuando",
+      "addCondition": "Añadir condición",
+      "removeCondition": "Quitar condición",
+      "noConditions": "Sin condiciones, así que esta regla aplica a todos.",
+      "attribute": "Atributo",
+      "operator": "Operador",
+      "values": "Valores",
+      "valuesHint": "Uno por línea.",
+      "serve": "Servir",
+      "fallthrough": "El resto",
+      "serveValue": "Un valor",
+      "serveSplit": "Reparto por porcentaje",
+      "addArm": "Añadir brazo",
+      "removeArm": "Quitar brazo",
+      "weight": "Porcentaje",
+      "splitTotal": "Total {{total}} %",
+      "comment": "Motivo",
+      "commentPlaceholder": "Para qué es este cambio",
+      "save": "Guardar segmentación",
+      "saving": "Guardando…"
+    },
+    "attributes": {
+      "userId": "ID de usuario",
+      "organizationId": "ID de organización",
+      "email": "Email",
+      "platformRole": "Rol de plataforma",
+      "platform": "Plataforma",
+      "appVersion": "Versión de la app",
+      "segment": "Segmento"
+    },
+    "operators": {
+      "in": "es uno de",
+      "not_in": "no es uno de",
+      "ends_with": "termina en",
+      "semver_gte": "es al menos la versión",
+      "semver_lt": "es anterior a la versión"
+    },
+    "explain": {
+      "title": "Explicar: {{key}}",
+      "description": "Qué sirve este flag a alguien y por qué. Describe todo lo que sepas de esa persona.",
+      "submit": "Explicar",
+      "result": "Sirve {{value}}",
+      "reasons": {
+        "DEFAULT": "Nada decidió, así que se sirvió el valor por defecto del catálogo.",
+        "DISABLED": "El flag está apagado.",
+        "TARGETING_MATCH": "Coincidió la regla «{{rule}}».",
+        "SPLIT": "Asignado por un reparto por porcentaje.",
+        "FALLTHROUGH": "No coincidió ninguna regla; lo sirvió el valor para el resto.",
+        "ERROR": "La segmentación sirvió un valor que este flag no admite, así que se sirvió el valor por defecto."
+      }
+    },
+    "segments": {
+      "search": "Buscar segmentos",
+      "empty": "Aún no hay segmentos. Un segmento es una audiencia con nombre, como el equipo o los clientes beta, a la que pueden apuntar las reglas de cualquier flag.",
+      "new": "Nuevo segmento",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "columns": {
+        "segment": "Segmento",
+        "conditions": "Condiciones",
+        "usedBy": "Usado por"
+      },
+      "conditionCount_one": "{{count}} condición",
+      "conditionCount_other": "{{count}} condiciones",
+      "unused": "Ningún flag",
+      "newTitle": "Nuevo segmento",
+      "editTitle": "Editar segmento",
+      "formDescription": "Quien cumpla todas estas condiciones está en el segmento.",
+      "key": "Clave",
+      "keyHint": "Cómo se refieren a él las reglas. Minúsculas, dígitos, - y _. No se puede cambiar después.",
+      "name": "Nombre",
+      "details": "Descripción",
+      "create": "Crear segmento",
+      "save": "Guardar segmento",
+      "saving": "Guardando…",
+      "deleteTitle": "¿Eliminar este segmento?",
+      "deleteDescription": "Ningún flag apunta a él, así que no cambia el flag de nadie.",
+      "inUse": "Lo usa {{flags}}. Quítalo primero de sus reglas."
+    },
+    "history": {
+      "search": "Filtrar por clave de flag o segmento",
+      "empty": "Aún no hay cambios.",
+      "columns": {
+        "when": "Cuándo",
+        "subject": "Flag o segmento",
+        "change": "Cambio",
+        "by": "Quién",
+        "comment": "Motivo"
+      },
+      "actions": {
+        "targeting_updated": "Segmentación cambiada",
+        "toggled": "Cambio de estado",
+        "segment_created": "Segmento creado",
+        "segment_updated": "Segmento actualizado",
+        "segment_deleted": "Segmento eliminado"
+      },
+      "switchedOn": "Activado",
+      "switchedOff": "Apagado",
+      "unknownActor": "Desconocido"
+    }
   }
 }

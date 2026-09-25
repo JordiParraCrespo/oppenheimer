@@ -5,7 +5,7 @@ import { ENDPOINT_POLICIES, type GuardedEndpoint } from '@oppenheimer/shared';
 import { describe, expect, it } from 'vitest';
 import { AdminController } from '../../admin/admin.controller';
 import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-tokens/find-api-tokens.http.controller';
-import { FindSubscriptionsHttpController } from '../../billing/queries/find-subscriptions/find-subscriptions.http.controller';
+import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
 import { MembersController } from '../../organizations/members.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
@@ -44,7 +44,10 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'GET /roles': { controller: FindRolesHttpController, handler: 'findAll' },
   'GET /tokens': { controller: FindApiTokensHttpController, handler: 'findAll' },
   'GET /admin/users': { controller: AdminController, handler: 'listUsers' },
-  'GET /billing/subscriptions': { controller: FindSubscriptionsHttpController, handler: 'findAll' },
+  'GET /feature-flags/admin': {
+    controller: FindFeatureFlagsHttpController,
+    handler: 'findFeatureFlags',
+  },
   'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
   'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
   'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
