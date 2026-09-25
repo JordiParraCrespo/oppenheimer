@@ -7946,7 +7946,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_006 — That project is archived",
+            "description": "SESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
             "content": {
               "application/problem+json": {
                 "schema": {

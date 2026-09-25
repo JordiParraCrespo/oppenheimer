@@ -190,7 +190,5 @@ earlier note:
   epoch's floor is now the control plane's clock in milliseconds. The
   same note now also says that PTY bytes are never dropped, how the
   runner's writer orders frames, and that liveness is ping/pong.
-- `versions/mvp/00-scope.md` named four entries on the agent chip:
-  Claude Code, Codex, OpenCode and the blank terminal. Grok is the fifth
-  (2026-09-25), a catalog row the runner launches like the others;
-  `versions/mvp/README.md` has the flags it was read off.
+- `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
+  fifth (2026-09-25).

@@ -121,6 +121,21 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.updatedAt = entity.updatedAt;
     return dto;
   }
+
+  /**
+   * The `name` of each entry in the inventory's `tools`, which is what the
+   * runner probed, found or not; null when there is no inventory yet.
+   */
+  toProbedTools(capabilities: unknown): string[] | null {
+    if (typeof capabilities !== 'object' || capabilities === null) return null;
+    const { tools } = capabilities as { tools?: unknown };
+    if (!Array.isArray(tools)) return null;
+    return tools.flatMap((tool: unknown) => {
+      const name =
+        typeof tool === 'object' && tool !== null ? Reflect.get(tool, 'name') : undefined;
+      return typeof name === 'string' ? [name] : [];
+    });
+  }
 }
 
 /**

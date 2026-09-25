@@ -85,7 +85,7 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
 
 Virtual machines in any form (Shared workspace VM, Clean VM,
 Firecracker, tart, cloud adapters), sleep tiers, account objects and
-volumes, the egress proxy, agents beyond the four in the catalog (Cursor,
+volumes, the egress proxy, agents beyond the catalog (Cursor,
 Gemini and the rest Orca and Synara run), Create PR and diff
 view, preview URLs, auto-fix and routines, usage meters, delegation,
 Tailscale mode, orgs and billing, agent personalities and any other

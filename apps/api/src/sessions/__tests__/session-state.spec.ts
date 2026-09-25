@@ -4,6 +4,7 @@ import {
   foldSessionLog,
   INITIAL_SESSION_FOLD,
   launchPermissionFor,
+  runnerCanStart,
   SESSION_EVENT_KINDS,
   type SessionFold,
   type SessionLogEntry,
@@ -265,6 +266,22 @@ describe('the launch the fold projects', () => {
     ]);
 
     expect(fold.launch).toEqual({ model: 'sonnet', permission: 'full', effort: 'max' });
+  });
+});
+
+describe('runnerCanStart', () => {
+  const beforeGrok = ['git', 'tmux', 'claude', 'codex', 'opencode'];
+
+  it('refuses an agent whose command the runner never probed', () => {
+    expect(runnerCanStart('grok', beforeGrok)).toBe(false);
+    expect(runnerCanStart('grok', [...beforeGrok, 'grok'])).toBe(true);
+    expect(runnerCanStart('claude-code', beforeGrok)).toBe(true);
+  });
+
+  it('allows what it cannot judge: no inventory yet, the blank terminal, an unknown id', () => {
+    expect(runnerCanStart('grok', null)).toBe(true);
+    expect(runnerCanStart('shell', [])).toBe(true);
+    expect(runnerCanStart('cursor', beforeGrok)).toBe(true);
   });
 });
 

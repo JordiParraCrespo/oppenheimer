@@ -81,6 +81,15 @@ var agentCatalogIDs = map[Agent]string{
 	AgentShell:    "shell",
 }
 
+// Agents is every agent the runner knows how to start, in no promised order.
+func Agents() []Agent {
+	agents := make([]Agent, 0, len(agentCatalogIDs))
+	for agent := range agentCatalogIDs {
+		agents = append(agents, agent)
+	}
+	return agents
+}
+
 // Valid reports an agent the runner knows how to start.
 func (a Agent) Valid() bool {
 	_, ok := agentCatalogIDs[a]

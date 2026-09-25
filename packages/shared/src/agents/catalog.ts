@@ -485,15 +485,14 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
         }),
       }),
       // `--reasoning-effort` takes none | minimal | low | medium | high |
-      // xhigh | max, and the Grok 4.x models reason at low, medium, high (their
-      // default) and xhigh. So the stops run as Claude Code's do: the middle
-      // one is the models' own default, and every stop is a level they have
-      // but the ceiling, which is the CLI's `max`.
+      // xhigh | max, so each of the five stops is the level of the same name.
+      // The models' own default is `high`, one stop above the slider's middle
+      // (`product/versions/mvp/05-screens.md`).
       effort: Object.freeze({
-        minimal: Object.freeze(['--reasoning-effort', 'low']),
-        low: Object.freeze(['--reasoning-effort', 'medium']),
-        medium: Object.freeze(['--reasoning-effort', 'high']),
-        high: Object.freeze(['--reasoning-effort', 'xhigh']),
+        minimal: Object.freeze(['--reasoning-effort', 'minimal']),
+        low: Object.freeze(['--reasoning-effort', 'low']),
+        medium: Object.freeze(['--reasoning-effort', 'medium']),
+        high: Object.freeze(['--reasoning-effort', 'high']),
         max: Object.freeze(['--reasoning-effort', 'max']),
       }),
       // `grok [OPTIONS] [PROMPT]`, whose help calls the positional "Initial

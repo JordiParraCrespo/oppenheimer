@@ -135,6 +135,7 @@
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
       "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
       "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
+      "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
       "HOSTS_002": "No se ha encontrado ese token de vinculación.",
       "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",

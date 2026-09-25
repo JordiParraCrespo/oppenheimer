@@ -32,6 +32,7 @@ import { Separator } from '@oppenheimer/design-system-web/separator';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
+import { CODING_AGENT_IDS, CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { StepHeader } from '@oppenheimer/design-system-web/step-header';
 import { SuccessMark } from '@oppenheimer/design-system-web/success-mark';
 import { SummaryCard, SummaryRow } from '@oppenheimer/design-system-web/summary-card';
@@ -585,19 +586,11 @@ export default function Page() {
         desc="The coding agent's mark at 15px. Claude Code carries Anthropic's mark in its own orange, Codex the OpenAI mark, OpenCode its square and Grok its slashed circle in the current ink, and Blank terminal a terminal glyph. An unknown id falls back to the bot."
         code={`<AgentMark agent="claude-code" />`}
       >
-        {(['claude-code', 'codex', 'opencode', 'grok', 'shell'] as const).map((agent) => (
+        {CODING_AGENT_IDS.map((agent) => (
           <Swatch key={agent} label={agent}>
             <span className="flex items-center gap-2.5 text-[13px] text-fg">
               <AgentMark agent={agent} />
-              {agent === 'claude-code'
-                ? 'Claude Code'
-                : agent === 'codex'
-                  ? 'Codex'
-                  : agent === 'opencode'
-                    ? 'OpenCode'
-                    : agent === 'grok'
-                      ? 'Grok'
-                      : 'Blank terminal'}
+              {CODING_AGENTS[agent].label}
             </span>
           </Swatch>
         ))}

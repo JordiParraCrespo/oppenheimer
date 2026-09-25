@@ -5244,6 +5244,8 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_011 — The host's runner is older than the agent picked
+     *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;

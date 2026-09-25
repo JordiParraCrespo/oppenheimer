@@ -524,6 +524,22 @@ describe('F3: a login URL on the wire is a vendor login URL', () => {
     ).toBe(false);
   });
 
+  it('accepts Grok’s own sign-in hosts, and refuses them from another agent and the reverse', () => {
+    const grok = (loginUrl: string) =>
+      sessionSnapshotSchema.safeParse({ ...snapshot, agent: 'grok', loginUrl }).success;
+    expect(grok('https://accounts.x.ai/oauth2/device?user_code=KKG6-57R3')).toBe(true);
+    expect(grok('https://auth.x.ai/oauth2/authorize?client_id=x')).toBe(true);
+    expect(grok('https://accounts.x.ai.attacker.test/oauth2/device')).toBe(false);
+    expect(grok('https://claude.ai/oauth/authorize')).toBe(false);
+    expect(
+      sessionSnapshotSchema.safeParse({
+        ...snapshot,
+        agent: 'claude-code',
+        loginUrl: 'https://accounts.x.ai/oauth2/device',
+      }).success,
+    ).toBe(false);
+  });
+
   it('still allows no login URL at all', () => {
     expect(sessionSnapshotSchema.safeParse({ ...snapshot, loginUrl: null }).success).toBe(true);
   });

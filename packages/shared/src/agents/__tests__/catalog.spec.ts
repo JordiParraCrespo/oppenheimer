@@ -37,6 +37,18 @@ describe('coding agent catalog', () => {
     expect(models.filter((model) => model.default).map((model) => model.id)).toEqual(['grok-4.6']);
   });
 
+  it('maps Grok’s effort stops 1:1 onto its own levels, and Ask onto its `default` mode', () => {
+    // Two product decisions, pinned so a later `--help` pass cannot slide them:
+    // `--reasoning-effort` has all five names, so no stop is shifted; and Ask
+    // is `default`, not Grok's own `auto`, which approves on its own.
+    const { effort, permission } = CODING_AGENTS.grok.launch;
+    for (const stop of SESSION_EFFORTS) {
+      expect(effort?.[stop]).toEqual(['--reasoning-effort', stop]);
+    }
+    expect(permission?.ask.argv).toEqual(['--permission-mode', 'default']);
+    expect(permission?.full.argv).toEqual(['--permission-mode', 'bypassPermissions']);
+  });
+
   it('offers the plain terminal as an entry with nothing to launch', () => {
     const shell = CODING_AGENTS.shell;
     expect(shell.command).toBe('');

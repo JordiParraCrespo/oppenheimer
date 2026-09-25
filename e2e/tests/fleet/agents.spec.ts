@@ -28,7 +28,7 @@ test('a Grok session starts grok with the model, level, effort and task it was g
 
   const terminal = await attach(api, sessionId);
   await terminal.waitFor(
-    'GROK-SHIM argv=--model grok-4.7 --permission-mode acceptEdits --reasoning-effort xhigh fix the picker',
+    'GROK-SHIM argv=--model grok-4.7 --permission-mode acceptEdits --reasoning-effort high fix the picker',
     120_000,
   );
   await terminal.close();
