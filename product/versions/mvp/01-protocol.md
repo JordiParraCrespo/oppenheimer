@@ -53,14 +53,13 @@ runner does with it and point back.
 - Job payloads carrying secrets are encrypted to the runner's public
   key (F7). Attach tickets are single-use and seconds-lived (F1).
 - **Identity is not permission.** The boot assertion says *which* host is
-  dialling; an unpaired host still produces a valid one, because its own
-  uninstall must be able to sign `DELETE /hosts/self`. So the handshake
-  also asks whether the host is still paired, and refuses one that is not
-  with HTTP `410`. A host unpaired while its link is open is closed with
-  `4410`: at once on the instance holding the link (the `HostUnpaired`
-  event), and within a heartbeat on any other (the heartbeat's presence
-  write finds the host unpaired). Credentials are refused to an unpaired
-  host on their own path as well (the key lookup answers nothing).
+  dialling, and an unpaired host still produces a valid one, because its
+  own uninstall must be able to sign. An unpaired host does not get a link:
+  the handshake refuses it, and a link that is open when its host is
+  unpaired is closed rather than hinted. Unpaired is terminal — the runner
+  stops dialling — so the handshake's refusal must be distinguishable from
+  the same status coming from a proxy. The codes and the header are
+  `RUNNER_LINK_CLOSE_CODES`.
 
 ### What rides the link
 
@@ -183,31 +182,6 @@ grounds can still fetch, verify and install the version that fixes it
 - A runner below the control plane's `min_supported` is refused at
   hello **with** `update_required` rather than dropped, and the
   supported window is N-2 minor versions (03).
-
-### Close codes
-
-The control plane's closes on the runner link are `4000 + HTTP status`, so
-a log line reads like the refusal the same condition gets before the
-upgrade (`RUNNER_LINK_CLOSE_CODES` in `packages/shared/src/protocol/link.ts`;
-the runner's twin is `internal/link/protocol.go`):
-
-| Code | Means | The runner |
-|---|---|---|
-| `4400` | the first frame was not a valid hello, or a second arrived | redials |
-| `4408` | no hello within the timeout | redials |
-| `4409` | a newer link from the same host replaced this one | redials |
-| `4410` | the host was unpaired — `410` at the handshake | **stops dialling**, records it, says so in `status` |
-| `4426` | the protocol ranges do not overlap; a hint was sent first | acts on the hint |
-
-The handshake's `410` carries `X-Oppenheimer-Refusal: host-unpaired`, and
-the runner treats a `410` as terminal only with that header: any proxy in
-front of the control plane can answer `410`, and a host that took a
-stranger's as its verdict would stop dialling for good. A `4410` needs no
-such proof — proxies do not invent codes in the private range.
-
-"Unpaired" is a close code and not a fourth hint on purpose. A hint rides
-a live link, and the point of this one is that the host may not have a
-link at all; the hint vocabulary stays closed at three.
 
 ### Flow control and reconnect
 

@@ -38,17 +38,13 @@ version `1`), so the paths below carry that prefix and the runner's
   token and answers with the host id, the control plane's key
   fingerprint (which the runner pins from then on), the release channel
   and the release base URL. Unauthenticated apart from the token; the
-  source IP is recorded and shown (F5). A registration raises
-  `HostRegistered`, and the hosts module queues a security email to the
-  owner naming the machine and the start of its key fingerprint, keyed by
-  host id so a redelivered event is not a second email.
+  source IP is recorded and shown (F5). Pairing notifies the owner, once
+  per host.
 - `POST /api/v1/hosts/pairing` — mints the token and answers the install
-  command (token in the installer's environment), the agent prompt, and
-  the installer's SHA-256 when the deployment set `RUNNER_INSTALL_SHA256`.
-  One person may hold at most five unspent tokens (`HOSTS_006`); each mint
-  first deletes that person's never-redeemed tokens that stopped being
-  spendable more than thirty days ago — housekeeping bounded by one
-  person's history rather than a scheduler nobody would notice was off.
+  command, the agent prompt, and the installer's digest when the deployment
+  published one. A person holds a small number of unspent tokens at once,
+  and minting past that is refused; a replacement token retires the one it
+  replaces in the same write.
 - `DELETE /api/v1/hosts/self` — uninstall, authenticated by the host's boot
   JWT rather than by the spent registration token. The JWT is presented as
   `Authorization: Bearer`, so the credential resolver must recognise a host
@@ -64,12 +60,8 @@ version `1`), so the paths below carry that prefix and the runner's
   heartbeat, the hint vocabulary (`update_available`, `update_required`,
   `blocked`), and refusing a runner below `min_supported` *with* the
   hint rather than dropping it. Supported window: N-2 minor versions.
-  **It authorizes as well as authenticates**: the assertion verifier is
-  identity only and accepts an unpaired host (its uninstall needs it), so
-  the handshake asks `HostPresencePort.isPaired` and refuses one with
-  `410`; a heartbeat that finds the host unpaired closes the link with
-  `4410`, and the relay's `HostUnpaired` handler closes it at once on the
-  instance that holds it (01, "Close codes").
+  An unpaired host does not get a link, and one unpaired while connected
+  loses it (01).
 - **Release rollout.** Which version a channel offers a given host — a
   percentage, an allowlist, a stop — plus `min_supported` and the
   urgent flag. The manifest itself is signed offline and served from the

@@ -7,9 +7,7 @@ feature lands.
 - [ ] F1 per-session single-use attach tickets
 - [ ] F2 Origin check on WebSocket upgrades, CSRF on mutating HTTP
 - [ ] F3 linkify only vendor login hosts
-- [ ] F5 registration token: one hour, single use, revocable, source IP shown;
-      never on a command line, at most five unspent per person, and the owner
-      is emailed when one pairs a machine (09 §3)
+- [ ] F5 registration token: one hour, single use, revocable, source IP shown
 - [ ] F6 runner pins the control plane's key fingerprint
 - [ ] F7 job payloads encrypted to the runner key
 - [ ] F8 runner private key 0600; rotation arrives with the link (09 §3) —
@@ -30,13 +28,12 @@ feature lands.
       deferred with the VM slice, and this row is the runner half of the
       same finding
 - [ ] F26a first install is trust-on-first-use — a script fetched over
-      HTTPS only (`--proto '=https' --tlsv1.2`), checked against the digest
-      the Add host screen shows (`RUNNER_INSTALL_SHA256`). The script checks
-      the manifest signature against release keys stamped into it where
-      OpenSSL 3 exists, but those keys ride in the same script, so F26 still
-      begins at the first self-update, not at install. The mitigation is the
-      digest on screen, the token's one-hour single use, and keeping the
-      script host separate from the control plane (03)
+      HTTPS only, checked against the digest the Add host screen shows.
+      Where it can, the script checks the release signature, but against
+      keys it carries itself, so F26 still begins at the first self-update,
+      not at install. The mitigation is the digest on screen, the token's
+      one-hour single use, and keeping the script host separate from the
+      control plane (03)
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay

@@ -132,8 +132,12 @@ The GitHub Actions runner pattern, which solves exactly this problem:
 get a machine behind a NAT talking to a control plane without ever
 putting the user's credentials on it.
 
-- Settings mints a **one-hour, single-use registration token**, shown
-  inside the install command. It is revocable, and the console shows the
+- Add host — the dialog, or onboarding's host step — mints a **one-hour,
+  single-use registration token**, shown inside the install command.
+  The command carries it as an environment assignment
+  (`OPPENHEIMER_REGISTRATION_TOKEN=… sh`), so it is an argument of nothing
+  the installer or the runner runs; it is still on the line the person
+  pastes, and in that shell's history until it expires. It is revocable, and the console shows the
   source IP that redeemed it (F5).
 - `runner register` generates an **ed25519 keypair**, writes the private
   key 0600 (F8), and sends the public key with the host facts and a name.
@@ -157,23 +161,22 @@ putting the user's credentials on it.
   unpair the host and pair the machine again. The verifier already takes a
   list of keys, so the retired key joins it when rotation lands.
 - **A host that is unpaired stops dialling.** The link refuses an
-  unpaired host with HTTP `410` at the handshake — marked with
-  `X-Oppenheimer-Refusal: host-unpaired`, so a proxy's `410` is not
-  mistaken for it — and closes a live one with `4410` (01), and the runner
-  treats both as terminal: it records the
-  revocation in `config.json`, stops redialling, and says so in `runner
-  status` — rather than walking its reconnect ladder against a control
-  plane that will never take it back. Pairing it again needs no `--force`.
+  unpaired host at the handshake and closes a live one (01), and the
+  runner treats both as terminal: it records the revocation in
+  `config.json`, stops redialling, and says so in `runner status` —
+  rather than walking its reconnect ladder against a control plane that
+  will never take it back. Pairing it again needs no `--force`.
 - **The owner is told.** Every registration queues a security email to
   the host's owner — the machine, and the first sixteen characters of its
   key fingerprint, which `runner status` prints in full — the way GitHub
   mails you when an SSH key is added. It is the cheapest way to notice a
   stolen token.
 - **One person holds at most five unspent tokens** (`HOSTS_006`), each a
-  live way to add a machine for its hour; minting also deletes that
-  person's never-redeemed tokens that expired more than thirty days ago.
-  The console's "New token" revokes the token it replaces, so a command
-  pasted into the wrong window stops working at once.
+  live way to add a machine for its hour. The count and the insert are one
+  write, so two tabs minting at once cannot both find room. Add host's
+  "New token" mints a replacement that retires the token on screen in the
+  same write, so a command pasted into the wrong window stops working at
+  once, and a refused mint leaves the old one as it was.
 - A pairing-code flow — install first, type a code in the browser — is
   not needed while pasting a command works.
 
@@ -198,9 +201,12 @@ putting the user's credentials on it.
   running** unless `--force`, which ends them: the unit deliberately
   leaves tmux up when the runner stops, so without the check an agent
   would keep working after the uninstall with no control plane and no
-  console. `--force` ends the sessions and keeps their checkouts. It
-  says when the control plane could not be reached — the host is then
-  still listed and its key still trusted until someone unpairs it — and
+  console. `--force` ends the sessions and keeps their checkouts; a
+  session it cannot end stops the uninstall before the identity is
+  erased, so the host stays paired and a second run can finish. It says
+  when the control plane could not be reached — the host is then still
+  listed and its key still trusted until it is unpaired there
+  (`DELETE /v1/hosts/{id}`; the console has no unpair control yet) — and
   it **never touches the workspaces directory**, which is the user's
   code. Binaries and logs under `~/.oppenheimer` are left for the user to
   delete, and it prints both paths.
@@ -208,8 +214,8 @@ putting the user's credentials on it.
   in `config.json`, so the service, `runner status` and `runner sessions`
   agree on it without an environment variable; `RUNNER_WORKSPACES` still
   wins, for development. `runner workspaces --set <dir>` moves where new
-  sessions go, refused while any session still has a checkout in the old
-  directory, and moves nothing.
+  sessions go, refused while any session's worktree is still on disk
+  under the old directory, and moves nothing.
 
 ### 5. Updates
 
@@ -236,7 +242,8 @@ putting the user's credentials on it.
   in [03](03-control-plane.md) §"Runner-facing surfaces". A compromised
   control plane can withhold updates; it cannot deliver code.
 - **Channels and pinning.** `stable` by default, `beta` opt-in per host
-  in Settings, and `runner update --pin <version>` freezes a host
+  at install (`--channel beta`) and, with the settings drawer, from the
+  console; and `runner update --pin <version>` freezes a host
   entirely; the console shows pinned hosts as pinned, because a host
   that silently stopped updating is the failure nobody notices.
 - **When it runs.** On boot, every six hours, and immediately when a
@@ -324,8 +331,9 @@ putting the user's credentials on it.
 - The control plane supports runners two minor versions back. Wire
   changes are additive within a major version, so a new control plane
   and an old runner is a supported pair for weeks, not hours.
-- Version, channel, pin and last update outcome are on the host's row in
-  Settings. A fleet of one is still a fleet; the screen answers "is this
+- Version, channel, pin and last update outcome will be on the host's row
+  in the settings drawer (05, a later slice); until then `runner status`
+  on the host shows them. A fleet of one is still a fleet; the screen answers "is this
   host current" without an SSH session.
 
 ### 7. What this deliberately prevents
@@ -339,7 +347,7 @@ putting the user's credentials on it.
 | A redirect or proxy downgrades a download to HTTP | Every URL must be `https://` (loopback excepted), `curl --proto '=https' --tlsv1.2` refuses a downgrade, and artifacts must come from the release host |
 | Registration token stolen | One hour, one use, one host added to that account, never on a command line; the source IP is shown and it can be revoked. The owner is emailed the moment a machine pairs, one person holds at most five unspent tokens, and "New token" revokes the one it replaces |
 | Token spent on a container or CI job that disappears | `runner register` refuses a machine that looks temporary (`HOST_006`) before sending the token; the agent prompt asks first |
-| Host key stolen | It only authenticates a dial, and an unpaired host cannot hold a link (`410`/`4410`) or be granted credentials. Rotation waits for the link (§3); until then the answer is to unpair and pair again |
+| Host key stolen | It only authenticates a dial, and an unpaired host cannot hold a link or be granted credentials. Rotation waits for the link (§3); until then the answer is to unpair and pair again |
 | A host the user unpaired keeps dialling, or keeps its link | Refused at the handshake and closed within a heartbeat — at once on the instance holding the link — and the runner stops dialling for good |
 | Uninstall leaves agents running unattended | `runner uninstall` refuses while the runner's sessions run, unless `--force`, which ends them |
 | An old, validly signed manifest is served again to freeze a host on a vulnerable version | **Accepted for now.** The manifest carries no expiry, so a compromised release host can withhold updates. The control plane's `update_required` and `update_available` hints are a second channel that does not go through the release host; a signed expiry (TUF's freeze defence) is the thing to add if that proves insufficient |

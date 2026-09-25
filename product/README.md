@@ -190,12 +190,3 @@ earlier note:
   epoch's floor is now the control plane's clock in milliseconds. The
   same note now also says that PTY bytes are never dropped, how the
   runner's writer orders frames, and that liveness is ping/pong.
-- `versions/mvp/09-runner-install-and-update.md` said the installer offers to
-  install a missing tmux, and that declining carries on. Under `curl | sh` the
-  question could never be answered: stdin is the script, so it silently said
-  no. Now every question goes to the terminal. `git` and `tmux` are installed
-  only on a typed "y", and a tool still missing stops the install before the
-  token is spent. The same note promised that uninstall refuses while sessions
-  are live and that rotation is a subcommand. The first is now true. The second
-  was withdrawn on 2026-09-19 and the note says so. Details and the rest of that
-  day's hardening are in the MVP decision log, 2026-09-24.

@@ -365,47 +365,21 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `codex` and `opencode` (02 §5, §9, §10); the composer table and the
   hide-and-do-not-send rule are 05's. The model seed follows Synara's
   model table and Orca's pricing table.
-- 2026-09-24: **connecting a host is hardened end to end** (01, 02, 03, 05, 09).
-  - **The link authorizes.** The boot assertion is identity only and
-    accepts an unpaired host, so the handshake also asks whether the host
-    is paired and refuses one with `410`. A host unpaired while connected
-    is closed with `4410`, at once through `HostUnpaired` and within a
-    heartbeat on any instance. The runner treats both as terminal: it
-    records the revocation and stops dialling. "Unpaired" is a close code
-    (01, "Close codes"), not a fourth hint.
-  - **Uninstall refuses while sessions run**, which 09 §4 promised and the
-    code did not do; `--force` ends them and keeps the checkouts. It also
-    says when the control plane was not told. It no longer deletes
-    `~/.oppenheimer`: it erases the identity and leaves binaries and logs,
-    printing where they are.
-  - **The installer is rewritten**:
-    - one `main` so a cut-short download runs nothing;
-    - HTTPS only, and `--proto '=https' --tlsv1.2`;
-    - the manifest signature checked against keys `release.sh` stamps
-      in, where OpenSSL 3 exists;
-    - every question up front on `/dev/tty`;
-    - `git` and `tmux` installed only on a typed "y", and the install
-      stops before the token is spent otherwise — **replacing 09 §2.6's
-      "decline and carry on" and the `--yes` flag**;
-    - the token in the environment, never on a command line;
-    - a re-run that repairs (`register --keep-existing`) rather than
-      failing on "already paired".
-  - **Where sessions live is chosen at install** (`--workspaces`), saved
-    in `config.json` and read by every process, not only the service.
-  - **Registration refuses a temporary machine** (`HOST_006`) unless
-    `--allow-container`. A throttled registration is `PAIR_007`, not a
-    rejected token.
-  - **Pairing tokens are capped** at five unspent per person
-    (`HOSTS_006`) and purged thirty days after they die unused. The
-    console's New token revokes the token it replaces.
-  - **The owner is emailed on every pairing.** The installer's SHA-256 is
-    served with the command (`RUNNER_INSTALL_SHA256`). `runner status`
-    prints the key fingerprint the email quotes.
-  - **The agent prompt opens with a step 0** that establishes the machine
-    before anything runs, and reads `status` by its lines, never its exit
-    code.
-  - **Key rotation stays with the link**, as 2026-09-19 decided; 09 §3
-    and 02 §11 still promised a `--rotate-key` subcommand and no longer
-    do.
-  - **One accepted risk is written down**: the release manifest has no
-    expiry (09 §7).
+- 2026-09-24: **connecting a host is hardened** (01, 02, 03, 05, 09).
+  - An unpaired host is **terminal**: it gets no link, loses the one it
+    has, and its runner stops dialling rather than retrying forever.
+  - Uninstall is **refused while the runner's sessions run**, as 09 §4
+    promised; ending them is an explicit `--force`.
+  - The registration token is **not an argument** of anything the runner
+    or the installer runs.
+  - The installer **asks before installing anything**, on the terminal,
+    and stops before the token is spent when a tool is missing; this
+    replaces 09 §2.6's "decline and carry on".
+  - A machine that **looks temporary is refused** unless the person says
+    otherwise.
+  - A person holds **a small number of unspent tokens**, and the owner is
+    **told when a machine pairs**.
+  - First install stays **trust-on-first-use**: the digest on screen is
+    the check, and signature checks begin at the first self-update (F26a).
+  - Key rotation stays with the link, as 2026-09-19 decided; the release
+    manifest's lack of an expiry is an accepted risk (09 §7).
