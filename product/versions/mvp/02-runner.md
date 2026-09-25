@@ -296,6 +296,13 @@ key. State dots come from `capture-pane` on window 0 every few seconds,
 which is also how the login URL is detected. The tmux server outlives
 the runner, so a runner restart or upgrade loses nothing.
 
+tmux consumes a pane's synchronized-output markers (DEC 2026) and does
+not pass them on, so a TUI's hide, draw, show can reach the browser
+split across animation frames and paint frames with no cursor. The
+console puts the frame back: it opens synchronized output in front of
+the hide and closes it behind the show, or after 100 ms when no show
+follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
+
 ### 7. Terminal streaming
 
 - One PTY per attached browser connection, one goroutine reading it,

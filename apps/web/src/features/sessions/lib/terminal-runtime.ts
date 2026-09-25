@@ -55,7 +55,7 @@ export function mountSessionTerminal(
   const term = new Terminal({
     ...TERMINAL_FONT,
     theme: readTerminalTheme(),
-    cursorBlink: true,
+    cursorBlink: false,
     cursorStyle: 'block',
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
@@ -183,8 +183,7 @@ export function mountSessionTerminal(
 
   // xterm's write callback fires once the parser has drained the chunk:
   // that is the moment the bytes are consumed, and the credit goes with it.
-  // A TUI's hide-draw-show arrives split across animation frames; without
-  // `CursorFrames` the cursor flickers for as long as the agent works.
+  // A TUI's hide, draw, show painted as one frame (02 §6).
   const cursorFrames = new CursorFrames((data) => term.write(data));
   const offData = stream.onData((chunk, consumed) =>
     term.write(cursorFrames.frame(chunk), consumed),

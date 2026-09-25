@@ -1,15 +1,9 @@
-/**
- * How long a frame opened by a hidden cursor may stay open before it is
- * painted anyway: the gap between a TUI's hide and show is a few
- * milliseconds, and a program that hides its cursor for good is held back by
- * this much once.
- */
+/** How long a frame opened by a hide waits for its show. */
 export const CURSOR_FRAME_MAX_MS = 100;
 
 const ESC = 0x1b;
 const HIDE = '\x1b[?25l';
-// tmux shows the cursor with terminfo's `cnorm` (`ESC[?12l ESC[?25h`), or
-// `cvvis` (`ESC[?12;25h`) when the pane asked for a blinking one.
+// tmux's `cnorm` ends in the first, `cvvis` is the second.
 const SHOWS = ['\x1b[?25h', '\x1b[?12;25h'];
 const SYNC_ON = '\x1b[?2026h';
 const SYNC_OFF = '\x1b[?2026l';
@@ -25,24 +19,10 @@ const browserTimers: CursorFrameTimers = {
 };
 
 /**
- * Turns a program's "hide the cursor … show it" into one frame for xterm.
- *
- * A TUI redraws by hiding the cursor, writing the frame and showing the cursor
- * again, each step its own flush — ratatui does, and so Codex does, on every
- * tick of its "Working" timer. A local terminal takes the three together.
- * Here they cross tmux, the relay and a WebSocket, and when the hide lands in
- * one animation frame and the show in the next, xterm paints a frame with no
- * cursor: many times a second, for as long as the agent works. The program's
- * own synchronized-output markers (DEC 2026) would have said "these belong
- * together", but tmux consumes them and does not pass them on.
- *
- * So the console puts them back: synchronized output opens in front of a hide
- * and closes behind the show, in place in the byte stream, and xterm paints
- * what lies between as one frame. A hide with no show behind it — Claude Code
- * hides the terminal's cursor and draws its own — is painted after `maxMs`.
- *
- * `frame` rewrites one chunk on its way to `term.write`; `close` is how the
- * frame ends when no show comes, and is handed to the constructor.
+ * Paints a program's hide, draw, show as one frame: synchronized output
+ * (DEC 2026) opens in front of the hide and closes behind the show, in place
+ * in the byte stream, because tmux drops the program's own markers (02 §6).
+ * A hide with no show behind it is painted after `maxMs`.
  */
 export class CursorFrames {
   private open = false;
