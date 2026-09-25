@@ -17,9 +17,6 @@ export class CapabilitiesResponseDto implements ClientDeployment {
   @ApiProperty({ description: 'Sign-in with GitHub is configured.' })
   github_oauth!: boolean;
 
-  @ApiProperty({ description: 'Stripe billing is configured.' })
-  stripe_billing!: boolean;
-
   @ApiProperty({ description: 'The sessions GitHub App is configured.' })
   github_app!: boolean;
 

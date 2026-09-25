@@ -15,14 +15,14 @@ const ORG = 'b8a4c2d0-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
 const PROJECT = 'c9b5d3e1-2f30-4b4c-9d5e-6f708192a3b4';
 const HOST = 'd0c6e4f2-3041-4c5d-8e6f-70819203b4c5';
 
-function session(): WorkSessionEntity {
+function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
     organizationId: ORG,
     projectId: PROJECT,
     createdByUserId: 'user-1',
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',
-    agent: 'claude-code',
+    agent,
   });
   (entity.checkouts as SessionCheckoutEntity[]).push(
     SessionCheckoutEntity.createNew({
@@ -87,6 +87,19 @@ describe('RelayDispatchAdapter', () => {
     expect(parsed.checkouts).toEqual([
       expect.objectContaining({ githubRepoId: 42, repositoryFullName: 'acme/xrp-mobile' }),
     ]);
+  });
+
+  it('sends a blank terminal with no permission level', async () => {
+    const { adapter, link } = harness(true);
+    await adapter.create(session('shell'), {
+      organizationSlug: 'jordi',
+      projectSlug: 'xrp-mobile',
+      branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
+    });
+    const [message] = vi.mocked(link.send).mock.calls[0];
+    const parsed = sessionCreateSchema.parse(message);
+    expect(parsed.agent).toBe('shell');
+    expect(parsed.launch).toEqual({});
   });
 
   it('reports a link that could not queue the frame as offline', async () => {

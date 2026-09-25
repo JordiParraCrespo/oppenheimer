@@ -3,6 +3,7 @@ import {
   foldSessionEvent,
   foldSessionLog,
   INITIAL_SESSION_FOLD,
+  launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionFold,
   type SessionLogEntry,
@@ -239,6 +240,20 @@ describe('the launch the fold projects', () => {
     expect(fold.launch.effort).toBeNull();
   });
 
+  it('records no level for a blank terminal, whatever the request carried', () => {
+    const fold = foldSessionEvent(
+      INITIAL_SESSION_FOLD,
+      entry(SESSION_EVENT_KINDS.REQUESTED, {
+        agent: 'shell',
+        launch: { permission: 'full' },
+      }),
+    );
+
+    // A level carried over from the last agent the composer had picked means
+    // nothing on a shell, and must not be read back as if it did.
+    expect(fold.launch.permission).toBeNull();
+  });
+
   it('survives every later entry, because only the request states it', () => {
     const fold = foldSessionLog([
       entry(SESSION_EVENT_KINDS.REQUESTED, {
@@ -250,5 +265,23 @@ describe('the launch the fold projects', () => {
     ]);
 
     expect(fold.launch).toEqual({ model: 'sonnet', permission: 'full', effort: 'max' });
+  });
+});
+
+describe('launchPermissionFor', () => {
+  it('keeps a level for an agent with approvals, and reads an absent one as ask', () => {
+    expect(launchPermissionFor('opencode', 'auto')).toBe('auto');
+    expect(launchPermissionFor('claude-code', undefined)).toBe('ask');
+    expect(launchPermissionFor('codex', 'root')).toBe('ask');
+  });
+
+  it('gives the blank terminal no level at all', () => {
+    expect(launchPermissionFor('shell', 'full')).toBeNull();
+    expect(launchPermissionFor('shell', undefined)).toBeNull();
+  });
+
+  it('reads an agent this build does not know as one that asks', () => {
+    expect(launchPermissionFor('cursor', null)).toBe('ask');
+    expect(launchPermissionFor(null, 'full')).toBe('full');
   });
 });

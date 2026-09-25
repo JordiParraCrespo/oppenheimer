@@ -9,7 +9,10 @@ paths:
 Where a thing goes on the frontend, and what it may import. Every rule here is
 checked: dependency-cruiser (`pnpm arch`) for imports, `pnpm check:structure`
 for names, shapes and where a query is subscribed to, Biome for effects and
-memo, and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
+memo, Biome plugins in `biome-plugins/` for query keys, `skipToken` and
+mutation cache updates (the rules are
+[`apps/docs/docs/architecture/query-keys.md`](../../apps/docs/docs/architecture/query-keys.md)),
+and a `*-render.spec.tsx` for what a component costs. The Claude Code Stop hook
 runs all three. The layer model and the cookbooks are in
 [`packages/frontend/ARCHITECTURE.md`](../../packages/frontend/ARCHITECTURE.md)
 and `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape.

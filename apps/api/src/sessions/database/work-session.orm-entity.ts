@@ -143,9 +143,12 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   launchModel!: string | null;
 
-  /** Never null: a session was launched at some level, and `ask` is the absent one. */
-  @Column({ type: 'varchar', default: 'ask' })
-  launchPermission!: SessionPermissionDto;
+  /**
+   * Null only for an agent with no approvals (the blank terminal). Every other
+   * session was launched at some level, and `ask` is the absent one.
+   */
+  @Column({ type: 'varchar', nullable: true, default: 'ask' })
+  launchPermission!: SessionPermissionDto | null;
 
   /** Null leaves the agent its own default. */
   @Column({ type: 'varchar', nullable: true })

@@ -186,10 +186,12 @@ started last is the one that failed:
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
    session's environment set once (§6).
-5. Window 0 runs the agent; `claude` from the host's own installation
-   and login. The login URL it prints is detected by the classifier and
-   sent to the browser as a button, linkified only for known vendor
-   hosts (F3).
+5. Window 0 runs the agent — `claude`, `codex` or `opencode` from the
+   host's own installation and login — or, for the blank terminal,
+   nothing: tmux starts the user's login shell and the session is a
+   worktree and a terminal. The login URL an agent prints is detected by
+   the classifier and sent to the browser as a button, linkified only
+   for that agent's own vendor hosts (§9, F3).
 
    **The launch is argv, assembled from the catalog, and never a string.**
    `session.create` carries what the person chose — a model, a permission
@@ -201,23 +203,43 @@ started last is the one that failed:
    word. It **drops** a stop it has no entry for rather than failing the
    launch: a thinking budget is never worth refusing a session over, and
    the console has already hidden a control the catalog declares nothing
-   for.
+   for. The table is `launch_catalog.gen.go`, generated from the catalog
+   and checked against it, and the runner's own agent list is one map
+   from its agent names to catalog ids; an id it does not know launches
+   nothing and is never read as Claude Code.
 
-   **The first task is the trailing positional, not something typed at a
-   running process.** Both CLIs take it that way and say so in their own
-   help — `claude [options] [command] [prompt]` ("Your prompt"), and
-   `codex [OPTIONS] [PROMPT]` ("Optional user prompt to start the
-   session") — so the task is in the process's arguments before it
-   starts. Writing into window 0 once the TUI is up was the alternative
-   and is rejected: it is not how either CLI takes a first task, and "the
-   TUI is ready" is the moment this design avoids needing to name
-   anywhere else. Nothing about the composer waits on a readiness signal
-   that does not exist.
+   **A permission level is one object: argv and environment.** Claude
+   Code and Codex take their level as flags, so their `env` is empty.
+   OpenCode's TUI has one approval flag, `--auto`, which is Full access;
+   Ask and Approve for me are an `OPENCODE_PERMISSION` block, whose rules
+   land after its build agent's default `"*": "allow"` and so win
+   (checked against opencode 1.18.32's `debug agent build`). That default
+   is why the two halves are never separable: an Ask started without its
+   environment would be Full access. The runner spells the environment as
+   `env NAME=value` in front of window 0's command — env(1) rather than a
+   shell assignment, because tmux hands the line to the user's own shell,
+   and on the command line rather than in the tmux session, so a shell
+   tab does not inherit it. First launch and Restart build the line the
+   same way.
+
+   **The first task is the last argument, not something typed at a
+   running process.** Every CLI here takes it on its command line and
+   says so in its own help — `claude [options] [command] [prompt]`
+   ("Your prompt"), `codex [OPTIONS] [PROMPT]` ("Optional user prompt to
+   start the session"), and `opencode [project] --prompt <text>` — so
+   the task is in the process's arguments before it starts. Writing into
+   window 0 once the TUI is up was the alternative and is rejected: it is
+   not how any of these CLIs takes a first task, and "the TUI is ready"
+   is the moment this design avoids needing to name anywhere else.
+   Nothing about the composer waits on a readiness signal that does not
+   exist. The blank terminal takes no task: what was typed in the
+   composer names the session, and the person types the first command.
 6. The control plane hears `session.created` with each checkout's
    branch, path and mode, and the initial state.
 7. **When the launch carried no task**, the first user message is read
    from the agent's own transcript (Claude Code keeps one under
-   `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`),
+   `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`;
+   OpenCode in one database under `~/.local/share/opencode/`),
    never scraped from the PTY, and sent once as `prompt.first`, at most
    2 KB. The control plane names the session from it (10); the transcript
    itself never leaves the host.
@@ -319,7 +341,12 @@ the runner, so a runner restart or upgrade loses nothing.
 - The classifier reads `capture-pane` on window 0 — every 1 s while a
   client is attached, every 10 s when none is — and maps the screen to
   working, blocked, done, idle or unknown (note 03 §1), plus the login
-  URL. Claude Code's manifest first, Codex's next.
+  URL. There is a manifest per agent: Claude Code's is the one watched
+  on real hosts; Codex's is provisional; OpenCode's is one title rule
+  (`OC |` with a spinner glyph in front while a turn runs) and reports
+  unknown for everything else until a soak on a live session produces
+  patterns of its own, rather than borrowing Claude's screen rules; the
+  blank terminal's says idle at a prompt and unknown otherwise.
 - **A manifest is one agent's rules, as data.** One JSON file per
   agent, carrying a schema, an agent id, its own version and the engine
   version it needs; each rule names the region it reads, the patterns
@@ -342,7 +369,13 @@ the runner, so a runner restart or upgrade loses nothing.
   the screen is the fallback; that half is still to build.
 - The vendor-login allowlist stays in code, not in a manifest: what the
   console may turn into a clickable link should not travel over the
-  network (F3).
+  network (F3). It is **generated**, per agent, from the catalog's
+  `loginTargets` — a host compared for equality, and a path for GitHub's
+  device flow — the same list the link's own check is built from, so
+  the runner and the control plane cannot disagree. An agent's screen
+  offers only its own vendors' logins, and the blank terminal offers
+  none: a URL somebody prints in a shell is text, never a snapshot the
+  control plane would refuse.
 - Idle is terminal silence **and** a manifest state that is not working,
   so a long unattended run is never called idle.
 - State changes go to the control plane as events; the control plane
@@ -351,10 +384,13 @@ the runner, so a runner restart or upgrade loses nothing.
 ### 10. Host facts and health
 
 Collected at register, on `host.preflight`, and summarised in every
-heartbeat: OS and arch, `git`, `tmux` and `claude` presence and version,
-free disk on the workspaces filesystem, load, runner version and
-channel. Missing `claude` is a hint in the UI, not a refusal — a session
-still opens and the install prompt appears in the terminal. Missing
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex` and `opencode`
+presence and version (one list, `ProbedTools`), free disk on the
+workspaces filesystem, load, runner version and channel. Only `git` and
+`tmux` are required. A missing agent is a hint on the engine button, not
+a refusal — a session still opens and the shell's own "command not
+found" appears in the terminal — and the blank terminal needs no tool of
+its own. Missing
 `tmux` is fatal for sessions and the installer offers to fix it (09
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).

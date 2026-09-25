@@ -45,26 +45,30 @@ export interface HostPairingFlow {
  * looked up. A regenerated token is a different id, so the host it offered
  * goes with it.
  *
- * One effect, and it synchronises with the clock. `secondsLeft` is recomputed
- * from `expiresAt` rather than decremented, so a backgrounded tab that missed
- * a hundred ticks still shows the right number when it comes back — and it is
- * a count, not a string: `mm:ss` is the surface's, not the flow's.
+ * One effect, and it synchronises with the clock. `secondsLeft` is derived
+ * from `expiresAt` and the clock rather than decremented, so a backgrounded tab
+ * that missed a hundred ticks still shows the right number when it comes back
+ * — and it is a count, not a string: `mm:ss` is the surface's, not the flow's.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error, refetch } = useCurrentPairing(hostName);
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
+  // Advance the clock once a second while a token is on screen.
   useEffect(() => {
     if (!pairing) return;
 
-    const remaining = () =>
-      Math.max(0, Math.floor((pairing.expiresAt.getTime() - Date.now()) / 1000));
-
-    setSecondsLeft(remaining());
-    const tick = setInterval(() => setSecondsLeft(remaining()), 1000);
+    setNow(Date.now());
+    const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(tick);
   }, [pairing]);
 
+  // Derived in render, not set by the effect: the render that first holds a
+  // token already has its count, so it is never read as expired while the
+  // effect has yet to run. `now` is at most a tick old.
+  const secondsLeft = pairing
+    ? Math.max(0, Math.floor((pairing.expiresAt.getTime() - now) / 1000))
+    : 0;
   const expired = Boolean(pairing) && secondsLeft <= 0;
 
   // Poll the token, not the host list. Stops once this token names a host, and

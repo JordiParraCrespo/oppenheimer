@@ -40,15 +40,32 @@ export const sessionsKeys = {
  */
 const PROVISIONING_POLL_MS = 2000;
 
-/** The sessions in the caller's workspace: the sidebar and the sessions list. */
+/**
+ * The sessions in the caller's workspace: the sidebar and the sessions list.
+ *
+ * Each row it reads is also written to that session's detail, so opening a
+ * session from the list renders on the click instead of waiting on a second
+ * read of the same row. A detail read after this list was asked for is newer
+ * than its row, or as new, and is left alone.
+ */
 export function useSessions(
   options?: Omit<UseQueryOptions<SessionEntity[], Error>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: sessionsKeys.list(),
-    queryFn: () => app.sessions.findAll(),
+    queryFn: async () => {
+      const askedAt = Date.now();
+      const sessions = await app.sessions.findAll();
+      for (const session of sessions) {
+        const key = sessionsKeys.detail(session.id);
+        if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= askedAt) continue;
+        queryClient.setQueryData(key, session);
+      }
+      return sessions;
+    },
     refetchInterval: (query) =>
       query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
     ...options,

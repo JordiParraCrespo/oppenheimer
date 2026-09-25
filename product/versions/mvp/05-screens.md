@@ -47,7 +47,25 @@
   the right. The agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
-  (Minimal to Max) in a popover, not a list. Chips remember last choice. Every chip filters (a search row, an empty
+  (Minimal to Max) in a popover, not a list.
+
+  **What each agent offers**, from the shared catalog (`CODING_AGENTS`)
+  and never a list kept in the console:
+
+  | Agent | Models (default first in bold) | Permission chip | Effort |
+  |---|---|---|---|
+  | Claude Code | Fable 5.1, **Opus 5.5**, Sonnet 5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
+  | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
+  | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
+  | Blank terminal | none, picked outright | no | no |
+
+  A control the agent does not take is **hidden, and not sent**: the
+  composer keeps what was chosen for the last agent (a permission level
+  is still never remembered as `full`), but only the controls the picked
+  agent has go into the request, so a blank terminal is created with no
+  permission level at all rather than one carried over, and the API
+  records none. The option set is read off the catalog entry once
+  (`launchControlsFor`), not one predicate per control. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,
   which opens a branch pane for that repository. The host chip's

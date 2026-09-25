@@ -18,6 +18,7 @@ src/
 ├── scopes/        # the credential scope catalog
 ├── agents/        # the closed coding-agent catalog
 ├── protocol/      # the runner link's wire vocabulary, as Zod
+├── feature-flags/ # the flag catalog, the evaluator, targeting schemas
 └── index.ts
 ```
 
@@ -34,6 +35,12 @@ src/
   declaration of a rule the API enforces and a client gates a destination on;
   `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` pins the controllers
   to it.
+- **The feature-flag catalog** (`feature-flags/catalog.ts`): every flag the
+  code may read, and the pure evaluator the API runs over it. Like `agents/`
+  and `protocol/`, it is reached through its own subpaths and not the root
+  barrel: the API imports `@oppenheimer/shared/feature-flags`, the web tier
+  `@oppenheimer/shared/feature-flags/catalog` (no Zod); see
+  `.agents/rules/feature-flags.md`.
 - **Types**: `Role` (free-form role-name `string`), `PermissionDefinition`,
   `AuthProvider`, `JwtPayload`, `TokenPair`, `PaginationParams`,
   `PaginatedResponse<T>`.

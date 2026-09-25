@@ -60,6 +60,7 @@ jobs:
       # oppenheimer:end runner
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm check:biome-plugins
       # oppenheimer:begin web|web-showcase
       # The design-system linter (`@shadcn/lint` through oxlint, scoped to its
       # own rules — Biome keeps correctness) over every web app that
@@ -80,6 +81,11 @@ jobs:
       # Import rules are dependency-cruiser's, above.
       - name: API structure
         run: pnpm check:api-structure
+      # Every flag in the catalog is read somewhere, and no temporary flag is
+      # past its expiry date — flags are debt with a due date, and this is
+      # where it falls due.
+      - name: Feature flags
+        run: pnpm check:flags
       # oppenheimer:begin web
       # The frontend layout contract: feature names, kind directories, the
       # route line cap, no copies of what a kit ships, and the docs every
@@ -300,6 +306,10 @@ jobs:
         run: |
           pnpm --filter @oppenheimer/e2e exec node -e "require('@oppenheimer/env/load');console.log(JSON.stringify({FRONTEND_URL:process.env.FRONTEND_URL,BETTER_AUTH_URL:process.env.BETTER_AUTH_URL,NODE_ENV:process.env.NODE_ENV,API_URL:process.env.API_URL,WEB_URL:process.env.WEB_URL},null,2))"
       - run: pnpm --filter @oppenheimer/e2e e2e:api
+        # The mailbox is the log "Start the API" captures, not the local
+        # stack's default (.stack/api.log).
+        env:
+          API_LOG: /tmp/api.log
       # The API log is this suite's mailbox, and it is also where Better Auth
       # writes why it refused a request. Grepped rather than tailed: the first
       # spec is the one that fails, so its request is at the top of a two-minute

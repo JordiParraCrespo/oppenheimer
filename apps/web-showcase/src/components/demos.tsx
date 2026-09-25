@@ -1,5 +1,6 @@
 'use client';
 
+import { CODING_AGENT_IDS, CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { Avatar, AvatarFallback } from '@oppenheimer/design-system-web/avatar';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
@@ -302,40 +303,16 @@ export function AccountMenuDemo() {
 
 /* ── Engine: agent + model, effort, permissions ───────────────────────── */
 
-export const HARNESSES: AgentOption[] = [
-  {
-    id: 'claude-code',
-    label: 'Claude Code',
-    models: [
-      { value: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
-      { value: 'claude-opus-5', label: 'Claude Opus 5' },
-      { value: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
-      { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
-    ],
-  },
-  {
-    id: 'codex',
-    label: 'Codex',
-    models: [
-      { value: 'gpt-6-astra', label: 'GPT-6 Astra' },
-      { value: 'gpt-5.6-sol', label: 'GPT-5.6 Sol' },
-      { value: 'gpt-5.6-terra', label: 'GPT-5.6 Terra' },
-      { value: 'gpt-5.6-luna', label: 'GPT-5.6 Luna' },
-    ],
-  },
-  {
-    id: 'opencode',
-    label: 'OpenCode',
-    models: [
-      { value: 'qwen', label: 'Qwen3 Coder 480B' },
-      { value: 'deepseek', label: 'DeepSeek V3.2' },
-      { value: 'kimi', label: 'Kimi K2' },
-      { value: 'llama', label: 'Llama 4 Maverick' },
-      { value: 'glm', label: 'GLM 4.6' },
-    ],
-  },
-  { id: 'shell', label: 'Blank terminal', models: [] },
-];
+/**
+ * The engine button's rows, read off the product's own catalog rather than
+ * kept by hand here, so the gallery shows the agents and seed models the
+ * console offers and cannot fall a model behind it.
+ */
+export const HARNESSES: AgentOption[] = CODING_AGENT_IDS.map((id) => ({
+  id,
+  label: CODING_AGENTS[id].label,
+  models: CODING_AGENTS[id].models.map((model) => ({ value: model.id, label: model.label })),
+}));
 
 export const PERMISSIONS = [
   {
@@ -356,7 +333,7 @@ export const PERMISSIONS = [
 ];
 
 export function AgentModelDemo() {
-  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5' });
+  const [engine, setEngine] = React.useState<Engine>({ agent: 'claude-code', model: 'claude-opus-5-5' });
   return <AgentModelSelect agents={HARNESSES} value={engine} onValueChange={setEngine} />;
 }
 

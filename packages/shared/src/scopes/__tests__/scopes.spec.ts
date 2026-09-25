@@ -109,15 +109,8 @@ describe('the control plane’s scopes', () => {
     expect(hasScope(['sessions:write'], 'sessions:read')).toBe(true);
   });
 
-  /**
-   * Scoped to the control plane's four resources on purpose. The same assertion
-   * over the whole catalog fails today on `leads`, whose `Lead` subject was never
-   * added to `KNOWN_SUBJECTS` — a pre-existing gap in a reference module, not
-   * something to fix from here.
-   */
   it('uses only actions and subjects the seed and the role UI know', () => {
-    for (const resource of ['hosts', 'projects', 'sessions', 'repositories'] as const) {
-      const group = getPermissionGroup(resource);
+    for (const group of PERMISSION_GROUPS) {
       for (const level of SCOPE_ACCESS_LEVELS) {
         for (const policy of group.levels[level].policies) {
           expect(KNOWN_ACTIONS).toContain(policy.action);

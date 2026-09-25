@@ -9,8 +9,7 @@ control plane. The codebase is a Turborepo + pnpm monorepo started from the
 Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. The one app beyond the MVP is
-`apps/web-showcase`, the gallery of the web design system. The starter's reference modules
-(`leads`, `billing`) are on disk but not composed into the API.
+`apps/web-showcase`, the gallery of the web design system.
 
 ## Product notes
 
@@ -153,6 +152,10 @@ The rest are backend (scoped to `apps/api`, `packages/backend`, and—for `rbac-
 - `nestjs-di.md` — DI import rules, `import type` restrictions, repository-port DI tokens
 - `nestjs-architecture.md` — DDD vertical slices, CQRS handlers, domain layer, ports/adapters, mappers, errors, events
 - `typeorm.md` — Union-typed column rules, persistence-model (ORM) conventions
+- `database-design.md` — the standard a table is held to: keys, types,
+  `timestamptz`, foreign keys and their indexes, access-pattern indexes,
+  tenancy, lifecycle, scale and lock-safe migrations. `/design-database`
+  walks the process
 - `backend-packages.md` — CJS exports, package structure (pluggable vs library), email template setup
 - `api-config.md` — OAuth graceful handling, controllers, Swagger decorators, rate limiting, versioning
 
@@ -161,6 +164,8 @@ the global `AllExceptionsFilter`; the catalog message is the stable problem
 `title` and per-request specifics go in `AppError`'s `detail`. New error codes
 need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
 
+- `feature-flags.md` — the flag catalog, kinds and safe defaults,
+  `useFeatureFlag` / `@RequireFlag`, what is not a flag
 - `go.md` — the Go service template (`apps/runner`): layout, ports, errors,
   auth, what to reach for instead of a framework
 - `rbac-roles.md` — database-backed roles & permissions, `@CheckPolicies`/`PoliciesGuard`, resource scoping, role-management endpoints
@@ -171,6 +176,20 @@ need a row in `apps/docs/docs/errors.md` — see `nestjs-architecture.md`.
 Database-backed dynamic RBAC: roles and permissions live in the `role` table,
 a user holds many, and routes are guarded with `@CheckPolicies`. The full
 guide is `.agents/rules/rbac-roles.md`.
+
+#### Feature flags
+
+Declared in code, targeted in the database, evaluated on the server, read on
+every client from one endpoint. `FEATURE_FLAGS` in
+`packages/shared/src/feature-flags/catalog.ts` is the only place a flag
+exists (reached through the `@oppenheimer/shared/feature-flags` subpaths, not
+the root barrel); `apps/api/src/feature-flags/` holds each deployment's
+targeting, segments and audit trail, evaluates everything in memory and serves
+the caller's values at `GET /v1/feature-flags`; clients read them with
+`useFeatureFlag('key')` from `@oppenheimer/frontend-core/react`, and a route
+gates the same capability with `@RequireFlag('key')`. Temporary flags carry an
+expiry that `pnpm check:flags` enforces in CI. The guide is
+`.agents/rules/feature-flags.md`.
 
 #### Scopes (API tokens and OAuth clients)
 
@@ -299,10 +318,13 @@ pnpm test:integration   # Integration tests (needs Docker)
 pnpm check              # Biome lint + format
 pnpm arch               # Architecture boundaries (dependency-cruiser), API and frontend
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
+pnpm check:flags        # Feature flags: none past expiry, none declared but unread
 pnpm docker:dev         # Start Postgres + Redis
+# oppenheimer:begin e2e
+node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)
+# oppenheimer:end e2e
 pnpm generate:api-client # Regenerate typed API client (no database needed)
 pnpm changeset          # Create a changeset for versioning
-node scripts/stack/stack.mjs up --web && node scripts/stack/stack.mjs host  # The whole product plus a real runner, locally (the local-stack skill)
 ```
 
 ## Deployment

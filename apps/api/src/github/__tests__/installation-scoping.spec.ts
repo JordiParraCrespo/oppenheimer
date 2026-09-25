@@ -74,7 +74,7 @@ describe('installation row scoping (SQL)', () => {
 
   it('constrains the tenant even for a caller with grants elsewhere', () => {
     const clauses = whereClausesFor(
-      scope({ teamIds: ['team-madrid'], grants: new Map([['Lead', new Set(['lead-x'])]]) }),
+      scope({ teamIds: ['team-madrid'], grants: new Map([['Project', new Set(['project-x'])]]) }),
     );
     expect(clauses).toEqual(['installation.organizationId = :authzOrganizationId']);
   });

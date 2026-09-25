@@ -4,30 +4,17 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { OppenheimerApp } from '../../di/oppenheimer-app';
 import { ANALYTICS_EVENTS, type AnalyticsEvent } from '../../modules/analytics/analytics.events';
-import {
-  useCaptureEvent,
-  useCaptureOnMount,
-  useFeatureFlag,
-  useFeatureFlags,
-  useFeatureFlagValue,
-  usePageView,
-} from '../analytics.queries';
+import { useCaptureEvent, useCaptureOnMount, usePageView } from '../analytics.queries';
 import { OppenheimerProvider } from '../context';
 
-type FakeFlags = Record<string, boolean | string>;
-
-function setup(overrides: { flags?: FakeFlags } = {}) {
+function setup() {
   const capture = vi.fn();
   const pageView = vi.fn();
-  const onFeatureFlags = vi.fn().mockReturnValue(() => {});
-  const getFeatureFlags = vi.fn().mockResolvedValue(overrides.flags ?? {});
 
-  const app = {
-    analytics: { capture, pageView, getFeatureFlags, onFeatureFlags },
-  } as unknown as OppenheimerApp;
+  const app = { analytics: { capture, pageView } } as unknown as OppenheimerApp;
 
   // Retries would turn a deliberate failure into a multi-second test, and
-  // caching across tests would leak one case's flags into the next.
+  // caching across tests would leak one case's state into the next.
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -40,7 +27,7 @@ function setup(overrides: { flags?: FakeFlags } = {}) {
     );
   }
 
-  return { wrapper, capture, pageView, getFeatureFlags, onFeatureFlags };
+  return { wrapper, capture, pageView };
 }
 
 describe('useCaptureEvent', () => {
@@ -201,65 +188,5 @@ describe('usePageView', () => {
     rerender({ path: '/dashboard' });
 
     expect(pageView).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('feature flag hooks', () => {
-  it('reads a boolean flag once it loads', async () => {
-    const { wrapper } = setup({ flags: { 'new-checkout': true } });
-    const { result } = renderHook(() => useFeatureFlag('new-checkout'), {
-      wrapper,
-    });
-
-    // Control branch first — the contract every caller depends on.
-    expect(result.current).toBe(false);
-
-    await waitFor(() => expect(result.current).toBe(true));
-  });
-
-  it('treats a multivariate variant as enabled and exposes its value', async () => {
-    const { wrapper } = setup({ flags: { 'pricing-copy': 'variant-b' } });
-
-    const flag = renderHook(() => useFeatureFlag('pricing-copy'), { wrapper });
-    const value = renderHook(() => useFeatureFlagValue('pricing-copy'), {
-      wrapper,
-    });
-
-    await waitFor(() => expect(flag.result.current).toBe(true));
-    await waitFor(() => expect(value.result.current).toBe('variant-b'));
-  });
-
-  it('reports an unknown flag as off', async () => {
-    const { wrapper } = setup({ flags: { other: true } });
-    const { result } = renderHook(() => useFeatureFlag('missing'), { wrapper });
-
-    await waitFor(() => expect(result.current).toBe(false));
-    expect(result.current).toBe(false);
-  });
-
-  // Twenty flag reads on a page must not become twenty requests — that is the
-  // point of routing them through a single query.
-  it('shares one fetch across every flag read', async () => {
-    const { wrapper, getFeatureFlags } = setup({ flags: { a: true, b: 'x' } });
-
-    const { result } = renderHook(
-      () => ({
-        a: useFeatureFlag('a'),
-        b: useFeatureFlagValue('b'),
-        all: useFeatureFlags(),
-      }),
-      { wrapper },
-    );
-
-    await waitFor(() => expect(result.current.a).toBe(true));
-
-    expect(getFeatureFlags).toHaveBeenCalledTimes(1);
-  });
-
-  it('subscribes to provider-pushed flag reloads', () => {
-    const { wrapper, onFeatureFlags } = setup();
-    renderHook(() => useFeatureFlag('anything'), { wrapper });
-
-    expect(onFeatureFlags).toHaveBeenCalled();
   });
 });

@@ -14,6 +14,7 @@ import { SESSION_SLUG_PATTERN } from './session-slug.policy';
 import {
   foldSessionEvent,
   INITIAL_SESSION_FOLD,
+  launchPermissionFor,
   SESSION_EVENT_KINDS,
   type SessionAgent,
   type SessionFold,
@@ -90,6 +91,12 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       id: randomUUID(),
       props: {
         ...INITIAL_SESSION_FOLD,
+        // The request event states the launch; until it is folded, the level is
+        // the agent's absent one — `ask`, or none for the blank terminal.
+        launch: {
+          ...INITIAL_SESSION_FOLD.launch,
+          permission: launchPermissionFor(props.agent, null),
+        },
         organizationId: props.organizationId,
         projectId: props.projectId,
         createdByUserId: props.createdByUserId,

@@ -25,7 +25,8 @@ export const organizationsKeys = {
   all: ['organizations'] as const,
   lists: () => [...organizationsKeys.all, 'list'] as const,
   list: () => [...organizationsKeys.lists()] as const,
-  slug: (slug: string | undefined) => [...organizationsKeys.all, 'slug', slug] as const,
+  slugs: () => [...organizationsKeys.all, 'slug'] as const,
+  slug: (slug: string | undefined) => [...organizationsKeys.slugs(), slug] as const,
 };
 
 /**

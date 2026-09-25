@@ -174,3 +174,28 @@ export async function mintPairingToken(api: APIRequestContext, name: string): Pr
   expect(minted.status(), await minted.text()).toBe(201);
   return tokenFrom(((await minted.json()) as { installCommand: string }).installCommand);
 }
+
+let sessionCounter = 0;
+
+/**
+ * `POST /sessions` on `hostId`, checking out the stub's `xrp-mobile`: the one
+ * session factory every spec with a real runner shares.
+ */
+export async function createSession(
+  api: APIRequestContext,
+  hostId: string,
+  installationId: string,
+): Promise<string> {
+  sessionCounter += 1;
+  const created = await api.post('/api/v1/sessions', {
+    headers: { 'Idempotency-Key': `e2e-${hostId}-${process.pid}-${sessionCounter}-${Date.now()}` },
+    data: {
+      hostId,
+      agent: 'claude-code',
+      checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
+    },
+    failOnStatusCode: false,
+  });
+  expect(created.status(), await created.text()).toBe(201);
+  return ((await created.json()) as { id: string }).id;
+}

@@ -9,6 +9,7 @@ import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
+import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
 import { ApiTokenMapper } from '../../api-tokens.mapper';
 import type { ApiTokenEntity } from '../../domain/api-token.entity';
 import { CreatedApiTokenResponseDto } from '../../dtos/api-token.response.dto';
@@ -33,6 +34,8 @@ export class CreateApiTokenHttpController {
   @Version('1')
   @CheckPolicies({ action: 'create', subject: 'ApiToken' })
   @RequireScopes('tokens:write')
+  // The kill switch: off stops new tokens being minted, existing ones keep working.
+  @RequireFlag('api_token_creation')
   // Minting credentials is a high-value operation; keep it well below the
   // global rate limit.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })

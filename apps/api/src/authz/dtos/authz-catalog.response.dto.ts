@@ -5,7 +5,7 @@ export class ResourceActionDto {
   @ApiProperty({ example: 'read' })
   name!: string;
 
-  @ApiPropertyOptional({ example: 'View leads' })
+  @ApiPropertyOptional({ example: 'View projects' })
   label?: string;
 
   @ApiPropertyOptional({
@@ -17,13 +17,13 @@ export class ResourceActionDto {
 
 /** A resource a role can be granted permissions over. */
 export class AuthzResourceDto {
-  @ApiProperty({ example: 'Lead' })
+  @ApiProperty({ example: 'Project' })
   subject!: string;
 
-  @ApiProperty({ example: 'Leads' })
+  @ApiProperty({ example: 'Projects' })
   label!: string;
 
-  @ApiProperty({ example: 'crm' })
+  @ApiProperty({ example: 'control-plane' })
   group!: string;
 
   @ApiProperty({ type: [ResourceActionDto] })
@@ -31,26 +31,26 @@ export class AuthzResourceDto {
 
   @ApiPropertyOptional({
     description: 'Attributes that may be granted or denied individually.',
-    example: ['value', 'notes'],
+    example: ['name'],
   })
   fields?: string[];
 
   @ApiProperty({
     description: 'Scope dimensions this resource can be narrowed by.',
-    example: ['organization', 'team'],
+    example: ['organization'],
   })
   scopes!: string[];
 
   @ApiPropertyOptional({
     description: 'Credential-scope group, when the resource is reachable by API tokens.',
-    example: 'leads',
+    example: 'projects',
   })
   credentialScope?: string;
 }
 
 /** Resources grouped for display. */
 export class AuthzResourceGroupDto {
-  @ApiProperty({ example: 'crm' })
+  @ApiProperty({ example: 'control-plane' })
   group!: string;
 
   @ApiProperty({ type: [AuthzResourceDto] })
@@ -62,7 +62,7 @@ export class AuthzRuleDto {
   @ApiProperty({ example: 'read' })
   action!: string;
 
-  @ApiProperty({ example: 'Lead' })
+  @ApiProperty({ example: 'Project' })
   subject!: string;
 }
 

@@ -15,10 +15,10 @@ const ACTOR = { id: 'admin-1', activeOrganizationId: 'org-1' };
 
 describe('RoleGrantPolicy', () => {
   it('allows granting what the actor already holds', async () => {
-    const policy = policyFor([{ action: 'read', subject: 'Lead' }]);
+    const policy = policyFor([{ action: 'read', subject: 'Project' }]);
 
     await expect(
-      policy.assertGrantable(ACTOR, [{ action: 'read', subject: 'Lead' }]),
+      policy.assertGrantable(ACTOR, [{ action: 'read', subject: 'Project' }]),
     ).resolves.toBeUndefined();
   });
 
@@ -33,16 +33,16 @@ describe('RoleGrantPolicy', () => {
   });
 
   it('names what the actor is short of', async () => {
-    const policy = policyFor([{ action: 'read', subject: 'Lead' }]);
+    const policy = policyFor([{ action: 'read', subject: 'Project' }]);
 
     // The catalog message titles the problem and stays stable; what this
     // caller is short of belongs in `detail`.
     const error = await policy
-      .assertGrantable(ACTOR, [{ action: 'export', subject: 'Lead' }])
+      .assertGrantable(ACTOR, [{ action: 'export', subject: 'Project' }])
       .catch((thrown: AppError) => thrown);
 
     expect(error).toBeInstanceOf(AppError);
-    expect((error as AppError).detail).toContain('export Lead');
+    expect((error as AppError).detail).toContain('export Project');
   });
 
   it('lets a full-access actor grant anything', async () => {
@@ -50,7 +50,7 @@ describe('RoleGrantPolicy', () => {
 
     await expect(
       policy.assertGrantable(ACTOR, [
-        { action: 'export', subject: 'Lead' },
+        { action: 'export', subject: 'Project' },
         { action: 'manage', subject: 'all' },
       ]),
     ).resolves.toBeUndefined();
