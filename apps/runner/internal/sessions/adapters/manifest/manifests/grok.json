@@ -1,10 +1,21 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "grok",
-  "version": "2026.09.25.1",
+  "version": "2026.09.25.2",
   "minEngine": 1,
-  "notes": "One rule, from the one string with a known job: grok 1.0.41's tool-approval dialog offers `Allow once` beside `Always allow`, so either on the bottom of the screen is a question waiting on the person. The title is not a signal: it reads a plain `grok` on the welcome screen, and the logo there is drawn in braille, so Claude's and OpenCode's braille-spinner rules would read the welcome screen as work. Everything else is `unknown` until a soak against a signed-in session produces patterns of Grok's own.",
+  "notes": "Two rules, both from strings grok 1.0.41 shows with a known job. Its sign-in screen, which a host that has never signed in opens on, reads `Approve in your browser to finish signing in.` above the code, and after its 'show full URL' link is clicked `Select the URL below with your mouse and copy manually.` above an `accounts.x.ai` device URL: both watched in a live session, and both a wait on the person. Its tool-approval dialog offers `Allow once` beside `Always allow`, read off the binary and not yet watched. The title is not a signal: it reads a plain `grok`, and the logo on the welcome and sign-in screens is drawn in braille, so Claude's and OpenCode's braille-spinner rules would read those screens as work. Everything else is `unknown` until a soak against a signed-in session produces patterns of Grok's own.",
   "rules": [
+    {
+      "id": "sign-in",
+      "state": "blocked",
+      "priority": 1050,
+      "region": "screen",
+      "any": [
+        "(?i)approve in your browser to finish signing in",
+        "(?i)select the url below with your mouse and copy manually"
+      ],
+      "note": "Grok's sign-in screen, before and after its 'show full URL' link is clicked; the session cannot start work until somebody signs in. Watched in a live session on grok 1.0.41."
+    },
     {
       "id": "approval",
       "state": "blocked",
