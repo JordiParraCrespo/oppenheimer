@@ -43,4 +43,13 @@ export const HostErrors = {
     message: 'The host assertion was rejected',
     httpStatus: 401,
   },
+  /**
+   * Every unspent token is a live way to add a machine to the account for an
+   * hour, so one person may hold only a few at once.
+   */
+  TOO_MANY_PAIRING_TOKENS: {
+    code: 'HOSTS_006',
+    message: 'Too many pairing tokens are open',
+    httpStatus: 429,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

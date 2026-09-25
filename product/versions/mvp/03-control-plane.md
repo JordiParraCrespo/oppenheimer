@@ -38,7 +38,13 @@ version `1`), so the paths below carry that prefix and the runner's
   token and answers with the host id, the control plane's key
   fingerprint (which the runner pins from then on), the release channel
   and the release base URL. Unauthenticated apart from the token; the
-  source IP is recorded and shown (F5).
+  source IP is recorded and shown (F5). Pairing notifies the owner, once
+  per host.
+- `POST /api/v1/hosts/pairing` — mints the token and answers the install
+  command, the agent prompt, and the installer's digest when the deployment
+  published one. A person holds a small number of unspent tokens at once,
+  and minting past that is refused; a replacement token retires the one it
+  replaces in the same write.
 - `DELETE /api/v1/hosts/self` — uninstall, authenticated by the host's boot
   JWT rather than by the spent registration token. The JWT is presented as
   `Authorization: Bearer`, so the credential resolver must recognise a host
@@ -54,6 +60,8 @@ version `1`), so the paths below carry that prefix and the runner's
   heartbeat, the hint vocabulary (`update_available`, `update_required`,
   `blocked`), and refusing a runner below `min_supported` *with* the
   hint rather than dropping it. Supported window: N-2 minor versions.
+  An unpaired host does not get a link, and one unpaired while connected
+  loses it (01).
 - **Release rollout.** Which version a channel offers a given host — a
   percentage, an allowlist, a stop — plus `min_supported` and the
   urgent flag. The manifest itself is signed offline and served from the

@@ -1,5 +1,6 @@
 import type {
   EmailVerificationEmailParams,
+  HostPairedEmailParams,
   InvitationEmailParams,
   PasswordResetEmailParams,
   WelcomeEmailParams,
@@ -52,6 +53,38 @@ export class EmailJobMapper {
       helperText: t.t('emails.emailVerification.helper'),
       fallbackLabel: t.t('emails.common.pasteLink'),
       closingText: t.t('emails.emailVerification.closing'),
+      recipientEmail: this.required(data, 'to'),
+    };
+  }
+
+  /**
+   * A machine was paired with the recipient's account. Only a prefix of the
+   * fingerprint is shown: enough to compare with the `key` line of
+   * `oppenheimer-runner status` on the machine, which prints the full value.
+   * The machine line is the hostname and platform the runner reported, when it
+   * reported them. The closing names the host id because, until the console
+   * has an unpair control, the API is the way to retire a machine nobody can
+   * reach.
+   */
+  toHostPaired(input: unknown, t: LocalizedFormatter): HostPairedEmailParams {
+    const data = this.record(input);
+    const reported = [data.hostname, data.os].filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+    const vars = {
+      hostName: this.required(data, 'hostName'),
+      machine: reported.length > 0 ? reported.join(', ') : t.t('emails.hostPaired.unknownMachine'),
+      fingerprint: this.required(data, 'fingerprint').slice(0, 16),
+    };
+    return {
+      ...this.securityFrame(t, 'hostPaired', vars),
+      heading: t.t('emails.hostPaired.heading'),
+      body: t.t('emails.hostPaired.body', vars),
+      actionLabel: t.t('emails.hostPaired.action'),
+      url: this.required(data, 'url'),
+      helperText: t.t('emails.hostPaired.helper'),
+      fallbackLabel: t.t('emails.common.pasteLink'),
+      closingText: t.t('emails.hostPaired.closing', { hostId: this.required(data, 'hostId') }),
       recipientEmail: this.required(data, 'to'),
     };
   }
@@ -114,11 +147,15 @@ export class EmailJobMapper {
     };
   }
 
-  private securityFrame(t: LocalizedFormatter, template: 'passwordReset' | 'emailVerification') {
+  private securityFrame(
+    t: LocalizedFormatter,
+    template: 'passwordReset' | 'emailVerification' | 'hostPaired',
+    vars: Record<string, string> = {},
+  ) {
     return {
       locale: t.locale,
-      subject: t.t(`emails.${template}.subject`),
-      preview: t.t(`emails.${template}.preview`),
+      subject: t.t(`emails.${template}.subject`, vars),
+      preview: t.t(`emails.${template}.preview`, vars),
       brandName: t.t('emails.common.brandName'),
       footer: `${t.t('emails.common.footer')}\n${t.t(`emails.${template}.footerNote`)}`,
     };

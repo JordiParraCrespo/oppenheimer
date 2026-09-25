@@ -6,6 +6,7 @@
     "waiting": "Listening for this host…",
     "registered": "Registered — waiting for its runner",
     "online": "Runner connected",
-    "mintFailed": "We could not create a registration token."
+    "mintFailed": "We could not create a registration token.",
+    "installerDigest": "Installer SHA-256: {{digest}}"
   }
 }

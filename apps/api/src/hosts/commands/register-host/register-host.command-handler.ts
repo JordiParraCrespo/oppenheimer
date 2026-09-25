@@ -15,7 +15,7 @@ import { RegisterHostCommand } from './register-host.command';
 
 /** Every reason at once, because the endpoint will not say which applied. */
 const REJECTION_DETAIL =
-  'The token is expired, already used, or revoked; mint a new one in Settings → Add host.';
+  'The token is expired, already used, or revoked; mint a new one in Add host.';
 
 /** What the machine is told, and what it pins from then on. */
 export interface RegisterHostResult {

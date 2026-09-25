@@ -39,7 +39,7 @@ export const hostsKeys = {
   pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
 };
 
-/** The hosts the caller has paired: the Settings → Hosts list and New session's host chip. */
+/** The hosts the caller has paired: New session's host chip and the pairing surfaces. */
 export function useHosts(
   options?: Omit<UseQueryOptions<HostEntity[], Error>, 'queryKey' | 'queryFn'>,
 ) {
@@ -58,9 +58,9 @@ export function useHosts(
  * A query rather than a mutation fired from an effect, even though minting
  * writes: the step needs exactly one token for as long as it is open, which is
  * what a query keyed to the screen gives — fetched once on mount, returned
- * from cache on a re-render, and replaced by `refetch()` when the reader asks
- * for a new one. Minting from an effect needed a ref to survive StrictMode and
- * left the old command on screen until the next one resolved.
+ * from cache on a re-render, and replaced by `useReplacePairing` when the
+ * reader asks for a new one. Minting from an effect needed a ref to survive
+ * StrictMode and left the old command on screen until the next one resolved.
  *
  * Never cached beyond the visit: a token is single-use and hour-long, so
  * handing a second visit the first one's command would show a secret that no
@@ -80,6 +80,24 @@ export function useCurrentPairing(
     refetchOnWindowFocus: false,
     retry: false,
     ...options,
+  });
+}
+
+/**
+ * Add host's "New token": mint a replacement for the token on screen and put
+ * it where `useCurrentPairing(name)` reads it. The replaced token is revoked by
+ * the same API write, so a refused mint (the cap, a network error) leaves the
+ * one on screen spendable and unchanged.
+ */
+export function useReplacePairing(name: string) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (replaces: string | undefined) => app.hosts.pair(name, replaces),
+    onSuccess: (pairing) => {
+      queryClient.setQueryData(hostsKeys.pairingDetail(name), pairing);
+    },
   });
 }
 

@@ -9,6 +9,7 @@ export * from './attach';
  * message.
  */
 export * from './hint';
+export * from './link';
 export * from './messages';
 export * from './primitives';
 export * from './session-step';

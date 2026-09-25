@@ -80,6 +80,11 @@ export function OnboardingHostScreen({
               title={t('onboarding.flow.host.installCommand')}
               code={pairing.installCommand}
               maxLines={CODE_MAX_LINES}
+              note={
+                pairing.installScriptSha256
+                  ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
+                  : undefined
+              }
               copyLabel={t('common.copy')}
               copiedLabel={t('common.copied')}
             />

@@ -2,6 +2,14 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity';
 
+export interface MintFence {
+  /** How many spendable tokens one person may hold. */
+  cap: number;
+  now: Date;
+  /** The caller's own token this mint replaces, already revoked in memory. */
+  replacing?: HostPairingTokenEntity;
+}
+
 /**
  * Port for the pairing-token aggregate.
  *
@@ -10,7 +18,6 @@ import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity
  * verb rather than a noun of its own.
  */
 export interface HostPairingTokenRepositoryPort {
-  insert(entity: HostPairingTokenEntity): Promise<void>;
   save(entity: HostPairingTokenEntity): Promise<HostPairingTokenEntity>;
   /** Tokens the caller minted, newest first. */
   findAll(scope: AccessScope): Promise<HostPairingTokenEntity[]>;
@@ -23,4 +30,12 @@ export interface HostPairingTokenRepositoryPort {
    * refused one; the authority on whether a token may be spent is the burn.
    */
   findOneByHash(tokenHash: string): Promise<Option<HostPairingTokenEntity>>;
+  /**
+   * Mint `entity` unless its owner already holds `cap` spendable tokens — not
+   * redeemed, not revoked, not expired at `now` — revoking `replacing` first in
+   * the same transaction. The owner's mints are serialised, so two at once cannot
+   * both find room. `false` means the cap held and nothing was written, the
+   * revoke included.
+   */
+  insertWithinCap(entity: HostPairingTokenEntity, fence: MintFence): Promise<boolean>;
 }

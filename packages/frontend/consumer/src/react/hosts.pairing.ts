@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { HostEntity, HostPairing } from '../modules/hosts/host.entity';
-import { useCurrentPairing, useHosts, usePairingTokens } from './hosts.queries';
+import { useCurrentPairing, useHosts, usePairingTokens, useReplacePairing } from './hosts.queries';
 
 /** How often a pairing surface asks whether its token has been spent yet. */
 const POLL_MS = 3000;
@@ -19,7 +19,12 @@ export interface HostPairingFlow {
   host: HostEntity | null;
   isPending: boolean;
   error: Error | null;
-  /** Replace the token on screen with a fresh one. */
+  /**
+   * Replace the token on screen with a fresh one, revoking the one it replaces
+   * in the same write — a token someone pasted into the wrong window stops
+   * working the moment they ask for another, rather than an hour later. If
+   * the mint is refused, the old token stays on screen and stays spendable.
+   */
   regenerate: () => void;
 }
 
@@ -34,7 +39,7 @@ export interface HostPairingFlow {
  *
  * One token is minted per visit. The mint is a query, not a mutation fired
  * from an effect — a surface needs exactly one token for as long as it is open,
- * which is what a query keyed to it gives, and `regenerate()` is its refetch.
+ * which is what a query keyed to it gives, and `regenerate()` replaces it.
  * Nothing here has to survive StrictMode by hand.
  *
  * **Correlation is the point.** "The host list is non-empty" is a different
@@ -51,7 +56,8 @@ export interface HostPairingFlow {
  * — and it is a count, not a string: `mm:ss` is the surface's, not the flow's.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
-  const { data: pairing, isPending, error, refetch } = useCurrentPairing(hostName);
+  const { data: pairing, isPending, error } = useCurrentPairing(hostName);
+  const replace = useReplacePairing(hostName);
   const [now, setNow] = useState(() => Date.now());
 
   // Advance the clock once a second while a token is on screen.
@@ -105,10 +111,13 @@ export function useHostPairing(hostName: string): HostPairingFlow {
     secondsLeft,
     expired,
     host,
-    isPending,
-    error,
+    isPending: isPending || replace.isPending,
+    error: error ?? replace.error,
     regenerate: () => {
-      refetch();
+      // A token that already paired a machine, or ran out, is spent: there is
+      // nothing left to revoke, so the replacement is a plain mint.
+      const replaces = pairing && !redeemedHostId && !expired ? pairing.id : undefined;
+      replace.mutate(replaces);
     },
   };
 }

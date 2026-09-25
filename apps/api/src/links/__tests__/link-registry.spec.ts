@@ -14,6 +14,7 @@ function link(hostId: string, epoch: number): RunnerLink {
     attachment: vi.fn(),
     attachmentCount: 0,
     takeSessionCommand: vi.fn(),
+    close: vi.fn(),
   };
 }
 

@@ -4,6 +4,7 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { SessionsModule } from '../sessions/sessions.module';
+import { HostUnpairedDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { BrowserAttachGateway } from './infrastructure/browser-attach.gateway';
 import { CredentialsProcessor } from './infrastructure/credentials.processor';
 import { RelayEventsProcessor } from './infrastructure/relay-events.processor';
@@ -31,6 +32,7 @@ import { RunnerLinkGateway } from './infrastructure/runner-link.gateway';
     RunnerLinkGateway,
     BrowserAttachGateway,
     RelayUpgradeGateway,
+    HostUnpairedDomainEventHandler,
   ],
 })
 export class RelayModule {}

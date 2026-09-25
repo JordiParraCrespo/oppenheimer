@@ -14,4 +14,5 @@ var (
 	ErrKeyStore        = problem.New("PAIR_004", http.StatusInternalServerError, "The host key could not be read or written")
 	ErrControlPlaneURL = problem.New("PAIR_005", http.StatusBadRequest, "The control plane URL is not usable")
 	ErrUnreachable     = problem.New("PAIR_006", http.StatusBadGateway, "The control plane could not be reached")
+	ErrRateLimited     = problem.New("PAIR_007", http.StatusTooManyRequests, "The control plane is limiting registrations")
 )

@@ -528,7 +528,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 
 <h3>What a session is</h3>
 <div class="rule">
-  <span class="k">host</span><span>A machine you own with the runner installed: a single static Go binary, Linux or macOS, running as your user under systemd or launchd. It dials out to the control plane; nothing listens on the host. Registered with a one-hour token from onboarding and its own keypair after that.</span>
+  <span class="k">host</span><span>A machine you own with the runner installed: a single static Go binary, Linux or macOS, running as your user under systemd or launchd. It dials out to the control plane; nothing listens on the host. Registered with a one-hour token from onboarding and its own keypair after that. The owner is emailed each time a machine pairs, and an unpaired host is refused at the door and stops dialling.</span>
   <span class="k">worktree</span><span>A git worktree under the fixed layout <code>~/oppenheimer-ai/workspaces/&lt;repo&gt;/main</code> and <code>worktrees/&lt;slug&gt;</code>, created from the main checkout at the chosen base branch. Only the workspaces tree exists in the MVP; agent personalities and the rest of the layout come later.</span>
   <span class="k">terminal</span><span>tmux-backed, owned by the runner, streamed to the browser over the relay, the chosen agent launched in it. Survives closing the tab, wifi drops, and runner restarts. Nothing is rendered as chat.</span>
   <span class="k">github</span><span>Per-session installation token, one repo, one hour, handed to git through a credential helper bound to that session's shell. The runner never stores it on disk.</span>

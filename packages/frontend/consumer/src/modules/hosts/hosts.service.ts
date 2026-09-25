@@ -14,9 +14,12 @@ export class HostsService {
     return this.repository.findAll();
   }
 
-  /** Mint a registration token for a machine that will adopt `name`. */
-  pair(name: string): Promise<HostPairing> {
-    return this.repository.pair(name);
+  /**
+   * Mint a registration token for a machine that will adopt `name`, revoking
+   * the caller's token `replaces` in the same write when it is given.
+   */
+  pair(name: string, replaces?: string): Promise<HostPairing> {
+    return this.repository.pair(name, replaces);
   }
 
   /** The caller's pairing tokens, so Add host can tell which one was spent. */

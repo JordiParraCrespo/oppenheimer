@@ -7,6 +7,13 @@ export interface HostPrincipalIdentity {
   hostId: string;
   /** The assertion's own expiry, so a caller can bound what it caches. */
   expiresAt: Date;
+  /**
+   * Whether that host has been unpaired. Not a refusal: an unpaired host still
+   * authenticates, because its own uninstall has to. It is read off the row the
+   * verification already loaded, so a caller that must refuse one — the link
+   * handshake — asks nothing else.
+   */
+  unpaired: boolean;
 }
 
 /**
