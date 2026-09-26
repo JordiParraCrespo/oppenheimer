@@ -16,17 +16,21 @@ src/app/
 src/components/
 ├── foundations.tsx   # colours, type ladder, space, radii, elevation, motion, icons
 ├── demos.tsx         # interactive demos (menus, the Add host dialog, scope chips, slug field, composer, sidebar, terminal, carousel)
+├── feedback.tsx      # Alert, Badge, Skeleton, the toast, the command palette's parts
 ├── page-shell.tsx    # PageShell, PageHead, GroupHead, Spec, Swatch, ThemePair
 ├── app-sidebar.tsx   # the TOC with scroll-spy
 └── top-bar.tsx       # search palette and theme toggle
-src/lib/toc.ts        # the inventory; drives the sidebar and the page order
+src/lib/toc.ts        # the inventory: each item names its component files; drives the sidebar and the page order
 public/imagery/       # copies of the package's carousel photographs
 ```
 
 ## Conventions
 
 - Adding a component to the system means a `<Spec id>` on the page **and** a
-  row in `toc.ts`; the scroll-spy matches on the id.
+  row in `toc.ts` whose `components` names its file; the scroll-spy matches
+  on the id. The design system's `test` fails on a component file no row
+  names, or one the page never imports.
+- Icons come from `@oppenheimer/design-system-web/icons`, as in the apps.
 - Show every state the screens use, in both themes where colour matters
   (`ThemePair` renders the same markup light and dark side by side).
 - The page is a client component: demos hold state and pass handlers.

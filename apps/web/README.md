@@ -52,8 +52,8 @@ public/
 
 ## Where the shared code lives
 
-- UI and browser glue below the routes — `AppShell`, `DataTable`,
-  `useTableQuery`, `useZodResolver`, `dateFormatter` — are in
+- UI and browser glue below the routes — `AppShell`, `PageHead`,
+  `useZodResolver`, `dateFormatter` — are in
   `@oppenheimer/frontend-web` (`packages/frontend/web`).
 - Primitives are in `@oppenheimer/design-system-web`.
 - Domain logic is in `@oppenheimer/frontend-core` (session, users, user settings,

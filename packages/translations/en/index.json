@@ -1233,19 +1233,6 @@
       "title": "Terms of service"
     }
   },
-  "table": {
-    "clearFilter": "Clear filter",
-    "clearSelection": "Clear selection",
-    "nextPage": "Next page",
-    "page": "Page {{page}} of {{totalPages}}",
-    "previousPage": "Previous page",
-    "range": "{{first}}–{{last}} of {{total}}",
-    "rowActions": "Row actions",
-    "selectPage": "Select every row on this page",
-    "selectRow": "Select row",
-    "selected_one": "{{count}} selected",
-    "selected_other": "{{count}} selected"
-  },
   "theme": {
     "toggle": "Toggle theme",
     "label": "Appearance",

@@ -10,7 +10,8 @@ Consumed by `apps/web`, `apps/web-showcase` and `packages/frontend/web`.
 
 ```
 src/
-├── components/   # shadcn-based components
+├── components/   # the public components: one file each, all in the barrel
+├── internal/     # building blocks only components import; not exported
 ├── hooks/        # generic React hooks (useControlled, useDebouncedValue, …), exported from index.ts
 ├── lib/          # utils (cn, variants, etc.)
 ├── styles/       # shared styles
@@ -23,25 +24,24 @@ tsup.config.ts    # build config
 
 - Components follow **shadcn** conventions.
 - Colors/spacing/typography come from the shared design tokens — don't hardcode.
-- **Export new components from `index.ts`.** This is enforced:
-  `scripts/check-exports.mjs` runs as the package's `test` script and fails the
-  build when a file in `src/components/` exports something the barrel does not.
-  Every component also has a `./name` subpath in package.json, and the two
-  consumers use different ones: `apps/web-showcase` imports each component by
-  subpath, while `apps/web` takes components from the root and only icons by
-  subpath. So a missing barrel entry does not break the showcase — it just
-  makes the component invisible to the product app, which is how `Breadcrumb`
-  and `Collapsible` sat unused until an audit went looking, by which time a
-  screen had hand-rolled a breadcrumb.
-  If something must stay internal, do not export it from its own module either.
-- Preview new components in `apps/web-showcase`.
+- **Adding a component** is a file in `src/components/`, its exports in
+  `src/index.ts` (`apps/web` imports from the root), and a `<Spec>` on the
+  showcase page with the file name in that `toc.ts` item's `components`.
+  `package.json` needs nothing: `./*` maps every file to its subpath.
+  `pnpm test` (`scripts/check-exports.mjs`) fails until all of it is there.
+- **A building block** that only other components use goes in
+  `src/internal/`, stays out of the barrel and off the showcase, and is
+  imported as `../internal/<name>`.
+- **Removing one**: when the last caller goes, delete the file and its barrel
+  lines in the same change. The test fails on an internal file nothing
+  imports and on a public one the showcase no longer lists.
 
 ## Commands
 
 ```bash
 pnpm --filter @oppenheimer/design-system-web build
 pnpm --filter @oppenheimer/design-system-web dev
-pnpm --filter @oppenheimer/design-system-web test   # the barrel-export check
+pnpm --filter @oppenheimer/design-system-web test   # barrel, subpaths and showcase coverage
 ```
 
 See [`.agents/rules/frontend-ui.md`](../../../../.agents/rules/frontend-ui.md) for how the apps consume these components.
