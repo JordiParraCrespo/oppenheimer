@@ -7,7 +7,9 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
 import { SessionNamingResolver } from './application/session-naming.resolver';
@@ -147,6 +149,10 @@ const adapters: Provider[] = [
     // module's injector, so it injects this module's repository port while
     // `projects/` reaches across only for the registry.
     ...ProjectsModule.contributeUsage([SessionProjectUsage]),
+    // The same shape for hosts: what runs on a machine, for its row in Settings.
+    ...HostsModule.contributeUsage([SessionHostUsage]),
+    // Removing a host stops what runs on it.
+    HostUnpairedStopsSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },
   ],
   // The two application ports, and nothing else. The repository is this module's

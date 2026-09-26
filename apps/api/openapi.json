@@ -4849,9 +4849,20 @@
     },
     "/api/v1/hosts": {
       "get": {
-        "description": "The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.",
+        "description": "The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.",
         "operationId": "list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Add the hosts that were removed — for naming the host of a session that outlived it.",
+            "schema": {
+              "enum": ["unpaired"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -5030,6 +5041,69 @@
       }
     },
     "/api/v1/hosts/pairing/{id}": {
+      "get": {
+        "description": "What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.",
+        "operationId": "getPairingToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingTokenStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — Pairing token not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one pairing token, and the host it paired",
+        "tags": ["Hosts"]
+      },
       "delete": {
         "description": "Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.",
         "operationId": "revoke",
@@ -11131,6 +11205,11 @@
         },
         "required": ["name", "commitSha", "protected", "isDefault"]
       },
+      "HostStatus": {
+        "type": "string",
+        "enum": ["running", "idle", "offline", "unpaired"],
+        "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`."
+      },
       "HostResponseDto": {
         "type": "object",
         "properties": {
@@ -11181,6 +11260,19 @@
             "type": "boolean",
             "description": "Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored."
           },
+          "status": {
+            "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostStatus"
+              }
+            ]
+          },
+          "runningSessionCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s."
+          },
           "lastSeenAt": {
             "format": "date-time",
             "type": "string",
@@ -11207,6 +11299,8 @@
           "name",
           "publicKeyFingerprint",
           "online",
+          "status",
+          "runningSessionCount",
           "createdAt",
           "updatedAt"
         ]
@@ -11261,6 +11355,70 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          }
+        },
+        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+      },
+      "PairingTokenStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "host": {
+            "nullable": true,
+            "description": "The host this token paired, as the hosts list shows it. Null until a runner spends the token.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostResponseDto"
+              }
+            ]
           }
         },
         "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
@@ -11425,6 +11583,11 @@
               "diskFreeBytes": {
                 "type": "integer",
                 "minimum": 0,
+                "exclusiveMinimum": false
+              },
+              "cpus": {
+                "type": "integer",
+                "minimum": 1,
                 "exclusiveMinimum": false
               },
               "runnerVersion": {

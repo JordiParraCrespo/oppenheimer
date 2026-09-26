@@ -193,6 +193,11 @@ export const hostFactsSchema = z.object({
   workspacePath: z.string(),
   /** Free bytes on the workspace filesystem. A JSON number; `uint64` in Go. */
   diskFreeBytes: z.number().int().min(0),
+  /**
+   * Logical CPUs the runner's process can use, for the "32 vCPU" on a host row.
+   * Optional because runners before it did not send it, and Go omits it at 0.
+   */
+  cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
 });
 

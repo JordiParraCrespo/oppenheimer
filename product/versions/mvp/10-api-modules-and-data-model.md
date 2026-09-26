@@ -965,13 +965,13 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 `@RequireScopes` + Swagger decorators:
 
 ```
-GET    /hosts                     read Host          hosts:read
+GET    /hosts                     read Host          hosts:read    ?include=unpaired (12)
 GET    /hosts/{id}                read Host          hosts:read
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }
 GET    /hosts/pairing             read Host          hosts:read    (F5: source IP)
-GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId
+GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (12)
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
 GET    /installations             read Installation  repositories:read

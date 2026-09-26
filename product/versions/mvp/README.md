@@ -24,6 +24,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
+| 12 | [Hosts in Settings](12-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 
 ## Decision log
 
@@ -391,3 +392,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with a screen manifest that is provisional until a soak. A session for an
   agent the host's runner never probed is refused at create rather than
   failed at launch, so a new row needs no protocol bump (01).
+- 2026-09-26: the version-1 frames gained a Settings page with a Hosts
+  section, and the hosts backend is designed against it (12). A host
+  read now carries a derived `status` and the count of sessions running
+  on it; `GET /hosts` leaves unpaired hosts out unless asked; removing a
+  host stops the sessions running on it, where unpairing used to leave
+  them `open`; `GET /hosts/pairing/{id}`, listed in 10, is built and
+  returns the host the token paired; the runner reports its CPU count.
+  05's "no settings page" is superseded for hosts by the frame.

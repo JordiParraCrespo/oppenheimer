@@ -47,8 +47,12 @@ export class HostRepository
     super();
   }
 
-  async findAllWithPresence(scope: AccessScope): Promise<HostPresence[]> {
+  async findAllWithPresence(
+    scope: AccessScope,
+    options: { includeUnpaired?: boolean } = {},
+  ): Promise<HostPresence[]> {
     const query = this.withPresence(this.scopedQuery(scope)).orderBy('host.createdAt', 'DESC');
+    if (!options.includeUnpaired) query.andWhere('host.unpairedAt IS NULL');
     const { entities, raw } = await query.getRawAndEntities();
     return entities.map((record, index) => ({
       host: this.mapper.toDomain(record),

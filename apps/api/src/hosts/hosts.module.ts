@@ -1,5 +1,5 @@
 import { BullModule } from '@nestjs/bullmq';
-import { Module, type Provider } from '@nestjs/common';
+import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
@@ -13,6 +13,8 @@ import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
 import { HostPresenceResolver } from './application/host-presence.resolver';
+import type { HostUsagePort } from './application/host-usage.port';
+import { HostUsageRegistry } from './application/host-usage.registry';
 import { CollectSessionImageCommandHandler } from './commands/collect-session-image/collect-session-image.command-handler';
 import { CollectSessionImageHttpController } from './commands/collect-session-image/collect-session-image.http.controller';
 import { MintPairingTokenCommandHandler } from './commands/mint-pairing-token/mint-pairing-token.command-handler';
@@ -48,6 +50,8 @@ import { FindHostHttpController } from './queries/find-host/find-host.http.contr
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
 import { FindHostsHttpController } from './queries/find-hosts/find-hosts.http.controller';
 import { FindHostsQueryHandler } from './queries/find-hosts/find-hosts.query-handler';
+import { FindPairingTokenHttpController } from './queries/find-pairing-token/find-pairing-token.http.controller';
+import { FindPairingTokenQueryHandler } from './queries/find-pairing-token/find-pairing-token.query-handler';
 import { FindPairingTokensHttpController } from './queries/find-pairing-tokens/find-pairing-tokens.http.controller';
 import { FindPairingTokensQueryHandler } from './queries/find-pairing-tokens/find-pairing-tokens.query-handler';
 
@@ -59,6 +63,7 @@ import { FindPairingTokensQueryHandler } from './queries/find-pairing-tokens/fin
 const httpControllers = [
   FindHostsHttpController,
   FindPairingTokensHttpController,
+  FindPairingTokenHttpController,
   MintPairingTokenHttpController,
   RevokePairingTokenHttpController,
   RegisterHostHttpController,
@@ -83,6 +88,7 @@ const queryHandlers: Provider[] = [
   FindHostsQueryHandler,
   FindHostQueryHandler,
   FindPairingTokensQueryHandler,
+  FindPairingTokenQueryHandler,
 ];
 
 const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
@@ -134,12 +140,43 @@ const resolvers: Provider[] = [
     ...resolvers,
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
     RunnerReleaseConfig,
+    HostUsageRegistry,
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
   ],
   // The two application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
   // which is exactly the check the port exists to make unavoidable.
-  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_KEY],
+  //
+  // `HostUsageRegistry` is the other half of that surface: what runs on a host
+  // is contributed into it by the module that owns the work.
+  exports: [HOST_ASSERTION, HOST_ACCESS, HOST_PRESENCE, HOST_KEY, HostUsageRegistry],
 })
-export class HostsModule {}
+export class HostsModule {
+  /**
+   * The providers a module adds to say what is running on a host:
+   *
+   * ```ts
+   * providers: [...HostsModule.contributeUsage([SessionHostUsage])]
+   * ```
+   *
+   * The same shape as `ProjectsModule.contributeUsage`, for the same reason: the
+   * implementation is constructed in the injector of the module that owns the
+   * work, so it injects that module's own repository without anything being
+   * published application-wide, and a module that is never imported contributes
+   * nothing.
+   */
+  static contributeUsage(usages: Type<HostUsagePort>[]): Provider[] {
+    return [
+      ...usages,
+      {
+        provide: Symbol('HOST_USAGE_CONTRIBUTION'),
+        inject: [HostUsageRegistry, ...usages],
+        useFactory: (registry: HostUsageRegistry, ...contributed: HostUsagePort[]) => {
+          registry.registerAll(contributed);
+          return contributed;
+        },
+      },
+    ];
+  }
+}

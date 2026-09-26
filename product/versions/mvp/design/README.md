@@ -80,6 +80,8 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - Routines and the Settings page are in the version-1 frames as of the
   2026-09-26 export, but `../00-scope.md` still lists routines as a later
   slice and `../05-screens.md` still says the MVP has no settings page.
-  The notes have not been reconciled with these frames yet.
+  The Hosts half of Settings is reconciled: `../12-hosts-settings.md`
+  designs its backend and 05 records the supersession. Routines and the
+  Profile half are not reconciled yet.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

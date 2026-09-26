@@ -165,6 +165,11 @@
   version 1 — the frames draw no way to open it, so it is designed here
   and built with the slice that needs it.
   Accounts arrive with the accounts slice.
+  **Superseded for hosts on 2026-09-26:** the frames now draw a
+  Settings *page* (`design/version1/Settings.dc.html`) with Profile and
+  Hosts — each host with a status word and its running session count,
+  rename, copy id, and a remove dialog that names what removal stops.
+  Its backend is 12; the screen is built with the Settings slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it
   is **pinned** (and to what), and the **last update outcome** —
