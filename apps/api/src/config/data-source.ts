@@ -14,7 +14,11 @@ import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-e
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
+import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
+import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-entity';
+import { HostNetworkOrmEntity } from '../hosts/database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
+import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
@@ -59,6 +63,10 @@ export default new DataSource({
     ProjectOrmEntity,
     HostOrmEntity,
     HostPairingTokenOrmEntity,
+    HostInventoryOrmEntity,
+    HostPresenceOrmEntity,
+    HostNetworkOrmEntity,
+    HostEventOrmEntity,
     WorkSessionOrmEntity,
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,

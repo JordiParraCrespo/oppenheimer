@@ -31,8 +31,12 @@ import { UnpairHostCommandHandler } from './commands/unpair-host/unpair-host.com
 import { UnpairHostHttpController } from './commands/unpair-host/unpair-host.http.controller';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostRepository } from './database/host.repository';
+import { HostEventOrmEntity } from './database/host-event.orm-entity';
+import { HostInventoryOrmEntity } from './database/host-inventory.orm-entity';
+import { HostNetworkOrmEntity } from './database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from './database/host-pairing-token.orm-entity';
 import { HostPairingTokenRepository } from './database/host-pairing-token.repository';
+import { HostPresenceOrmEntity } from './database/host-presence.orm-entity';
 import { HostPrincipalGuard } from './guards/host-principal.guard';
 import { HostMapper } from './host.mapper';
 import { HostPairingTokenMapper } from './host-pairing-token.mapper';
@@ -125,7 +129,14 @@ const resolvers: Provider[] = [
     CqrsModule,
     // The parked images a runner collects (`GET /hosts/self/images/{id}`).
     LinksModule,
-    TypeOrmModule.forFeature([HostOrmEntity, HostPairingTokenOrmEntity]),
+    TypeOrmModule.forFeature([
+      HostOrmEntity,
+      HostPairingTokenOrmEntity,
+      HostInventoryOrmEntity,
+      HostPresenceOrmEntity,
+      HostNetworkOrmEntity,
+      HostEventOrmEntity,
+    ]),
     AuthzKernelModule.forFeature([HostResource]),
     // The owner's address for the new-host notice, and the queue it goes out on.
     UsersModule,

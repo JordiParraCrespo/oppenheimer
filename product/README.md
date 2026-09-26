@@ -200,3 +200,9 @@ earlier note:
   running on it (it used to close the link and leave them `open`), and
   `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
   (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+  metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
+  a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
+  heartbeat. `versions/mvp/13-host-metadata.md` splits it by rate of
+  change into `host_inventory`, `host_presence`, `host_network` and
+  `host_event`; the old columns go in a later contract step (2026-09-26).

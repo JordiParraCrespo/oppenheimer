@@ -710,7 +710,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 **`hosts/`**
 
-- `host` — `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
+- `host` — (its metadata columns move to four side tables in 13) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
   `runnerVersion`, `capabilities` jsonb (git/tmux/disk and the detected
   agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyFingerprint` null,
