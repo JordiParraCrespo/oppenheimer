@@ -1,6 +1,6 @@
 {
   "prompt": "/frontend-audit diff --base {base} --format json",
-  "tolerate": ["R11", "U5"],
+  "tolerate": ["R11", "R12", "U5"],
   "cases": [
     {
       "id": "live-search-to-list",

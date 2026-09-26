@@ -115,6 +115,23 @@ The render budgets (`*-render.spec.tsx`) run with the compiler **off** on
 purpose: they measure the component's shape, which is what these rules are
 about. A profiler run with the compiler on will not show you any of this.
 
+### The UI pass
+
+The questions above find render cost. Rendering correctly on the design
+system is a separate pass, and it gets skipped when the render questions
+come up empty, so run it on every file in scope that returns JSX:
+
+1. **Design system first (`U1`).** Read
+   `packages/frontend/design-system/web/src/index.ts` in full, then the table
+   under "Reach for the design system" in `.agents/rules/frontend-ui.md`. A
+   `div` or `p` styled as a callout, an empty state, a status dot, a chip or a
+   summary, where the design system ships one, is `U1`. That holds even when
+   every class is a token, because `lint:design` only checks the classes, not
+   what the markup builds. A `role="alert"` on a hand-built box is the tell.
+2. **Every string the user can read goes through `t()` (`U3`).** That
+   includes `aria-label`, `placeholder`, `title` and template literals.
+3. **Colour outside the linter's reach (`U2`)**, and **forms (`U4`)**.
+
 ### Evidence bar
 
 Report a finding only when you can state all four of: the clock, where its
