@@ -8,17 +8,21 @@ import { z } from 'zod';
 /**
  * The token rides in the URL, so only the two password fields are user input.
  * Whether they match is checked here, not in the shared schema, which
- * deliberately carries no messages.
+ * deliberately carries no messages. A `refine` states its own message, which
+ * skips the translated error map, so the message is passed in already
+ * translated rather than written here in English.
  */
-const newPasswordSchema = resetPasswordSchema
-  .pick({ password: true })
-  .extend({ confirmPassword: z.string().min(8) })
-  .refine((values) => values.password === values.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  });
+function newPasswordSchema(mismatch: string) {
+  return resetPasswordSchema
+    .pick({ password: true })
+    .extend({ confirmPassword: z.string().min(8) })
+    .refine((values) => values.password === values.confirmPassword, {
+      path: ['confirmPassword'],
+      message: mismatch,
+    });
+}
 
-export type NewPasswordValues = z.infer<typeof newPasswordSchema>;
+export type NewPasswordValues = z.infer<ReturnType<typeof newPasswordSchema>>;
 
 export function ResetPasswordForm({
   isPending,
@@ -37,7 +41,7 @@ export function ResetPasswordForm({
     handleSubmit,
     formState: { errors },
   } = useForm<NewPasswordValues>({
-    resolver: useZodResolver(newPasswordSchema),
+    resolver: useZodResolver(newPasswordSchema(t('auth.passwordsDoNotMatch'))),
     defaultValues: { password: '', confirmPassword: '' },
   });
 

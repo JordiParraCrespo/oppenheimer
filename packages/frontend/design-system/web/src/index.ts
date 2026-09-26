@@ -132,7 +132,7 @@ export {
   CommandSeparator,
   CommandShortcut,
 } from './components/command';
-export type { ComposerAttachment } from './components/composer';
+export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
 export { DeltaText } from './components/delta-text';
 export {

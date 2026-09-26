@@ -31,6 +31,8 @@ export function AuthPanel({ className }: { className?: string }) {
           caption: t(`auth.art.slides.${slide.key}.caption`),
           position: slide.position,
         }))}
+        dotsLabel={t('auth.art.dots')}
+        slideLabel={(position) => t('auth.art.slide', { position })}
       />
     </div>
   );

@@ -44,6 +44,7 @@ export function NewSessionComposer({
       busy={busy}
       disabled={disabled}
       placeholder={t('sessions.new.composer.placeholder')}
+      labels={{ send: t('sessions.new.composer.send'), stop: t('sessions.new.composer.stop') }}
       scope={scope}
       tools={tools}
       engine={engine}
