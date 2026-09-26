@@ -45,11 +45,12 @@
       "expect": [
         {
           "rule": "R5",
-          "accept": ["R10"],
+          "accept": ["R10", "M-compiler"],
           "file": "apps/web/src/features/hosts/forms/rename-host-form.tsx"
         }
       ],
-      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves."
+      "mechanical": ["M-compiler"],
+      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves. The compiler also skips the form: it lists react-hook-form's watch() as an incompatible library."
     },
     {
       "id": "ref-mutated-in-render",
