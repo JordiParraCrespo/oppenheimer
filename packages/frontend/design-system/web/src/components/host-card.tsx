@@ -18,6 +18,7 @@ function HostCard({
   state,
   seen,
   action,
+  rename,
   className,
   ...props
 }: React.ComponentProps<'div'> & {
@@ -29,13 +30,15 @@ function HostCard({
   /** Mono: "connected", "last seen 2 days ago". */
   seen?: React.ReactNode;
   action?: React.ReactNode;
+  /** The inline rename row, drawn where the name is while it is open. */
+  rename?: React.ReactNode;
 }) {
   return (
     <div
       data-slot="host-card"
       data-status={status}
       className={cn(
-        'flex items-center gap-4 rounded-lg border border-border-subtle bg-card py-4 pr-3.5 pl-5',
+        'flex items-center gap-3.5 rounded-lg border border-border-subtle bg-card py-4.5 pr-4 pl-5',
         className,
       )}
       {...props}
@@ -49,13 +52,13 @@ function HostCard({
           status === 'offline' && 'border-[1.5px] border-fg-subtle',
         )}
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-mono text-[13.5px] text-fg">{name}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.75">
+        {rename ?? <span className="truncate font-mono text-operate text-fg">{name}</span>}
         {meta ? <span className="truncate text-[12.5px] text-fg-muted">{meta}</span> : null}
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+      <div className="flex min-w-30 shrink-0 flex-col items-end gap-0.75 text-right">
         <span className="text-[13px] text-fg">{state}</span>
-        {seen ? <span className="figures text-[11px] text-fg-subtle">{seen}</span> : null}
+        {seen ? <span className="figures text-[11.5px] text-fg-subtle">{seen}</span> : null}
       </div>
       {action ? <span className="shrink-0 [&_button]:text-fg-muted [&_button:hover]:text-fg">{action}</span> : null}
     </div>

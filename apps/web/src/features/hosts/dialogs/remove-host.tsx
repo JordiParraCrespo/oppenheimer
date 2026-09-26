@@ -1,38 +1,68 @@
-import { toast } from '@oppenheimer/design-system-web';
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@oppenheimer/design-system-web';
 import type { HostEntity } from '@oppenheimer/frontend-consumer';
 import { useRemoveHost } from '@oppenheimer/frontend-consumer/react';
-import { ConfirmDialog } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * "Remove optimus?" — and what it costs, from the host's own count: the
- * sessions running on it are stopped (their logs kept), and its runner's
- * token is revoked (`product/versions/mvp/13-hosts-settings.md`). The failure
- * stays in the dialog, where the reader still is.
+ * "Remove optimus?" as the frame draws it (`design/version1/Settings.dc.html`):
+ * the title, what it costs from the host's own count, and Cancel beside
+ * Remove host — no hero, no close button, so the header keeps no room for
+ * one, and the frame's taller title line and 24px above the buttons. The sessions running on it are
+ * stopped (their logs kept) and its runner's token is revoked
+ * (`product/versions/mvp/13-hosts-settings.md`). A failure stays in the
+ * dialog, where the reader still is.
  */
 export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {
   const { t } = useTranslation();
-  const remove = useRemoveHost({
-    onSuccess: () => {
-      toast.success(t('hosts.settings.removed'));
-      onClose();
-    },
-  });
+  const resolveError = useErrorMessage();
+  const remove = useRemoveHost({ onSuccess: onClose });
   const count = host.details.runningSessionCount;
 
   return (
-    <ConfirmDialog
-      title={t('hosts.settings.removeTitle', { name: host.name })}
-      description={
-        count > 0
-          ? t('hosts.settings.removeRunning', { count, name: host.name })
-          : t('hosts.settings.removeIdle', { name: host.name })
-      }
-      confirmLabel={t('hosts.settings.remove')}
-      pending={remove.isPending}
-      error={remove.error}
-      onClose={onClose}
-      onConfirm={() => remove.mutate(host.id)}
-    />
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader className="pr-7">
+          <DialogTitle className="leading-(--leading-body)">
+            {t('hosts.settings.removeTitle', { name: host.name })}
+          </DialogTitle>
+          <DialogDescription className="text-pretty">
+            {count > 0
+              ? t('hosts.settings.removeRunning', { count, name: host.name })
+              : t('hosts.settings.removeIdle', { name: host.name })}
+          </DialogDescription>
+        </DialogHeader>
+        {remove.error ? (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {resolveError(remove.error, t('common.error')).message}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        <DialogFooter className="pt-6">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            {t('hosts.settings.cancel')}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={remove.isPending}
+            onClick={() => remove.mutate(host.id)}
+          >
+            {t('hosts.settings.remove')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

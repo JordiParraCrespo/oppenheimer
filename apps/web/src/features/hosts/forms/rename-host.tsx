@@ -5,10 +5,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Rename in place, where the name was: the input, Save and Cancel. Escape
- * cancels, Enter saves. The schema is the API's own (`renameHostSchema`), so
- * a name the route would refuse is refused here first. Spaces become hyphens
- * as you type, as the frame does: a host's name reads as a hostname.
+ * Rename in place, where the name was, as the frame draws it: a small mono
+ * input, Save and Cancel. Enter saves, Escape cancels. Spaces become hyphens
+ * as you type, and saving an empty name keeps the old one. The schema is the
+ * API's own (`renameHostSchema`), so a name the route would refuse is refused
+ * here first.
  */
 export function RenameHostForm({
   defaultName,
@@ -22,24 +23,33 @@ export function RenameHostForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { register, handleSubmit, formState } = useForm<RenameHostDto>({
+  const { register, handleSubmit, getValues, formState } = useForm<RenameHostDto>({
     resolver: useZodResolver(renameHostSchema),
     defaultValues: { name: defaultName },
   });
-  const field = register('name', {
-    setValueAs: (value: string) => value.trim().replace(/\s+/g, '-'),
-  });
+  const field = register('name', { setValueAs: (value: string) => value.trim() });
 
   return (
     <form
       className="flex items-center gap-1.5"
-      onSubmit={handleSubmit(({ name }) => onSubmit(name))}
+      onSubmit={(event) => {
+        if (getValues('name').trim() === '') {
+          event.preventDefault();
+          onCancel();
+          return;
+        }
+        void handleSubmit(({ name }) => onSubmit(name))(event);
+      }}
       noValidate
     >
       <Input
         {...field}
+        onChange={(event) => {
+          event.target.value = event.target.value.replace(/\s+/g, '-');
+          void field.onChange(event);
+        }}
         size="sm"
-        className="w-56 font-mono"
+        className="w-55 font-mono text-[13px]"
         aria-label={t('hosts.settings.renameLabel')}
         aria-invalid={Boolean(formState.errors.name)}
         autoFocus

@@ -1,6 +1,7 @@
-import { Alert, AlertDescription, EmptyState, Skeleton } from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
+import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
 
 /**
@@ -8,19 +9,15 @@ import { HostRow } from './host-row';
  * hosts out, so a host that is removed here leaves the list with the refetch.
  * It subscribes because it draws the rows; a row gets its host by reference,
  * kept across a poll that did not change it (`shareEntities`).
+ *
+ * The frame draws the list and its empty card only; until the first answer
+ * nothing is drawn, and a failed load stays on screen as an `Alert`.
  */
 export function HostList() {
   const { t } = useTranslation();
   const hosts = useHosts({ refetchInterval: 15_000 });
 
-  if (hosts.isPending) {
-    return (
-      <div className="flex flex-col gap-2.5">
-        <Skeleton className="h-19 rounded-lg" />
-        <Skeleton className="h-19 rounded-lg" />
-      </div>
-    );
-  }
+  if (hosts.isPending) return null;
   if (hosts.isError) {
     return (
       <Alert variant="destructive">
@@ -30,12 +27,7 @@ export function HostList() {
   }
   if (hosts.data.length === 0) {
     return (
-      <EmptyState>
-        <EmptyState.Header>
-          <EmptyState.Title>{t('hosts.settings.emptyTitle')}</EmptyState.Title>
-          <EmptyState.Description>{t('hosts.settings.emptyBody')}</EmptyState.Description>
-        </EmptyState.Header>
-      </EmptyState>
+      <HostsEmpty title={t('hosts.settings.emptyTitle')} body={t('hosts.settings.emptyBody')} />
     );
   }
   return (

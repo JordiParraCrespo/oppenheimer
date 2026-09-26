@@ -87,7 +87,7 @@ function PageHeaderRow({
             'm-0 min-w-0 flex-1 truncate font-semibold text-fg',
             size === 'lg'
               ? 'text-[28px] leading-[1.15] tracking-[-0.019em]'
-              : 'text-2xl leading-[1.25] tracking-[-0.018em]',
+              : 'text-[24px] leading-[1.25] tracking-[-0.018em]',
           )}
         >
           {title}
@@ -115,12 +115,16 @@ function PageHeaderTitleInput({ className, ...props }: React.ComponentProps<'inp
   );
 }
 
-/** The facts under the title: status, trigger, agent · model · project, separated by dots. */
+/**
+ * The facts under the title: status, trigger, agent · model · project, separated
+ * by dots — indented under the title, past the 36px icon and its gap
+ * (`.op-ph__meta`).
+ */
 function PageHeaderMeta({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="page-header-meta"
-      className={cn('flex flex-wrap items-center gap-1.5 text-[13px] text-fg-muted', className)}
+      className={cn('flex flex-wrap items-center gap-1.5 pl-12 text-[13px] text-fg-muted', className)}
       {...props}
     />
   );

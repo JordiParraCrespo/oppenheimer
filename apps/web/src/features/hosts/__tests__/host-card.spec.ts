@@ -1,6 +1,6 @@
 import { HostEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { cardStatusOf, gigabytesOf, metaPartsOf } from '../lib/host-card';
+import { cardStatusOf, metaPartsOf } from '../lib/host-card';
 
 function host(
   details: Partial<HostEntity['details']> = {},
@@ -42,7 +42,7 @@ describe('cardStatusOf', () => {
 });
 
 describe('metaPartsOf', () => {
-  it('reads the frame’s order: OS, CPUs, memory, place, runner', () => {
+  it('reads the frame’s order, and nothing the frame does not draw', () => {
     expect(
       metaPartsOf(
         host({
@@ -56,21 +56,11 @@ describe('metaPartsOf', () => {
     ).toEqual([
       { kind: 'text', value: 'Ubuntu 24.04.1 LTS' },
       { kind: 'cpus', count: 32 },
-      { kind: 'memory', gb: 64 },
-      { kind: 'text', value: 'Madrid, ES' },
       { kind: 'runner', version: '0.14.2' },
     ]);
   });
 
   it('shows only what is known, falling back to the platform for the OS', () => {
     expect(metaPartsOf(host({}, null))).toEqual([{ kind: 'text', value: 'ubuntu 24.04' }]);
-  });
-});
-
-describe('gigabytesOf', () => {
-  it('rounds to whole gigabytes and reads nothing as unknown', () => {
-    expect(gigabytesOf(16_877_547_520)).toBe(16);
-    expect(gigabytesOf(null)).toBeNull();
-    expect(gigabytesOf(0)).toBeNull();
   });
 });

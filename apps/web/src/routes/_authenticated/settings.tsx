@@ -14,10 +14,10 @@ export const Route = createFileRoute('/_authenticated/settings')({
 
 function SettingsLayout() {
   return (
-    <div className="flex h-svh overflow-hidden bg-background text-fg">
+    <div className="flex h-svh overflow-hidden bg-canvas-recessed text-fg">
       <HostsSettingsNav />
-      <main className="min-w-0 flex-1 overflow-y-auto bg-canvas">
-        <div className="mx-auto flex max-w-[760px] flex-col px-10 pt-16 pb-24">
+      <main className="min-w-0 flex-1 overflow-y-auto bg-canvas-recessed">
+        <div className="mx-auto flex max-w-190 flex-col px-10 pt-16 pb-24">
           <Outlet />
         </div>
       </main>

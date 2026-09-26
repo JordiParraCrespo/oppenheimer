@@ -14,7 +14,9 @@
     "meta": "Nothing on the host is exposed to the internet.",
     "back": "Back",
     "crumbNewSession": "New session",
+    "crumbHosts": "Hosts",
     "use": "Use this host",
+    "done": "Done",
     "defaultName": "New host",
     "install": {
       "title": "Install",
@@ -40,18 +42,15 @@
       "running_one": "Running · {{count}} session",
       "running_other": "Running · {{count}} sessions",
       "idle": "Idle",
-      "offline": "Offline",
-      "unpaired": "Removed"
+      "offline": "Offline"
     },
     "seen": {
       "connected": "connected",
-      "connectedRtt": "connected · {{ms}} ms",
       "lastSeen": "last seen {{when}}",
-      "never": "never connected"
+      "now": "now"
     },
     "meta": {
       "cpus": "{{count}} vCPU",
-      "memory": "{{gb}} GB",
       "runner": "runner {{version}}"
     },
     "actions": "{{name}} actions",
@@ -59,14 +58,11 @@
     "renameLabel": "Host name",
     "save": "Save",
     "cancel": "Cancel",
-    "renamed": "Host renamed",
     "copyId": "Copy host ID",
-    "copied": "Host ID copied",
     "remove": "Remove host",
     "removeTitle": "Remove {{name}}?",
-    "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
+    "removeRunning_one": "{{count}} session is running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
     "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
-    "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked, and it stops dialling in.",
-    "removed": "Host removed"
+    "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
   }
 }

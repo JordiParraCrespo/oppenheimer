@@ -11,23 +11,15 @@ import {
   PageHeaderRow,
   RoutineStep,
   RoutineSteps,
-  SegmentedControl,
-  SegmentedControlItem,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { Server } from '@oppenheimer/design-system-web/icons';
+import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-/**
- * How much of the block is shown before it scrolls; the rest is one copy away.
- * The agent prompt the server composes runs to thirty-odd lines.
- */
-const CODE_MAX_LINES = 8;
 
 /** The two ways to read one instruction, and the key each reads its label by. */
 const FORMATS = ['command', 'agentPrompt'] as const;
@@ -43,8 +35,8 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * than a dialog, built like the automation editor: a page header with
  * Cancel and Use this host on its right and one fact under the title —
  * nothing on the host is exposed to the internet — then two numbered steps.
- * Install is the instruction in two forms behind a Command / Agent prompt
- * switch, the copyable panel and the token line; Connect is the status row
+ * Install is the instruction in two forms, the Command / Agent prompt pills
+ * in the panel's own band beside Copy, then the token line; Connect is the status row
  * that resolves in place when a runner spends the token. Both steps tick
  * themselves done on the same event, because installing is what connects.
  *
@@ -61,7 +53,7 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen() {
+export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settings' }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
@@ -72,38 +64,55 @@ export function AddHostScreen() {
   // component that reads it, and the switch changes nothing else on screen.
   const [format, setFormat] = useState<Format>('command');
   const connected = host !== null;
+  // Opened from Settings → Hosts (`design/version1/Settings.dc.html`) the
+  // same page reads Back, Hosts / Add a host, Cancel and Done, and every one
+  // of them returns to the list; from the console it hands the host on.
+  const inSettings = from === 'settings';
+  const back = inSettings ? <Link to="/settings/hosts" /> : <Link to="/sessions/new" />;
 
   return (
     <>
-      <EditorPageBack render={<Link to="/sessions/new" />}>{t('hosts.add.back')}</EditorPageBack>
+      <EditorPageBack render={back}>{t('hosts.add.back')}</EditorPageBack>
 
       <PageHeader className="mb-7">
         <PageHeaderCrumbs>
-          <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
+          {inSettings ? (
+            <Link to="/settings/hosts">{t('hosts.add.crumbHosts')}</Link>
+          ) : (
+            <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
+          )}
           <span>/</span>
           <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
         </PageHeaderCrumbs>
         <PageHeaderRow
-          icon={<Server />}
+          icon={<Cpu />}
           title={t('hosts.add.title')}
           actions={
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                render={<Link to="/sessions/new" />}
-              >
+              <Button type="button" variant="secondary" size="sm" render={back}>
                 {t('common.cancel')}
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={!host}
-                onClick={() => host && navigate({ to: '/sessions/new', search: { host: host.id } })}
-              >
-                {t('hosts.add.use')}
-              </Button>
+              {inSettings ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!host}
+                  onClick={() => navigate({ to: '/settings/hosts' })}
+                >
+                  {t('hosts.add.done')}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!host}
+                  onClick={() =>
+                    host && navigate({ to: '/sessions/new', search: { host: host.id } })
+                  }
+                >
+                  {t('hosts.add.use')}
+                </Button>
+              )}
             </>
           }
         />
@@ -129,28 +138,21 @@ export function AddHostScreen() {
           summary={t('hosts.add.install.done')}
         >
           <div className="flex flex-col gap-2">
-            <SegmentedControl
-              value={format}
-              onValueChange={(next) => {
-                // `SegmentedControl` speaks strings; the guard is what keeps
-                // that at the boundary instead of casting it away.
-                if (isFormat(next)) setFormat(next);
-              }}
-              aria-label={t('hosts.add.install.format')}
-              className="self-start"
-            >
-              {FORMATS.map((option) => (
-                <SegmentedControlItem key={option} value={option}>
-                  {t(`hosts.add.install.${option}` as const)}
-                </SegmentedControlItem>
-              ))}
-            </SegmentedControl>
-
             {pairing ? (
               <CodeBlock
                 layout="panel"
+                tabs={FORMATS.map((option) => ({
+                  value: option,
+                  label: t(`hosts.add.install.${option}` as const),
+                }))}
+                tab={format}
+                onTabChange={(next) => {
+                  // The block speaks strings; the guard is what keeps that at
+                  // the boundary instead of casting it away.
+                  if (isFormat(next)) setFormat(next);
+                }}
+                tabsLabel={t('hosts.add.install.format')}
                 code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
-                maxLines={CODE_MAX_LINES}
                 note={
                   format === 'command' && pairing.installScriptSha256
                     ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
@@ -160,7 +162,7 @@ export function AddHostScreen() {
                 copiedLabel={t('common.copied')}
               />
             ) : (
-              <Skeleton className="h-19 w-full" />
+              <Skeleton className="h-48 w-full" />
             )}
 
             <HostPairingToken
@@ -180,7 +182,7 @@ export function AddHostScreen() {
           summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
           last
         >
-          <div className="rounded-2xl border border-border-subtle bg-card px-3.5">
+          <div className="rounded-[14px] border border-border-subtle bg-card px-3.5">
             <HostPairingStatus host={host} />
           </div>
         </RoutineStep>

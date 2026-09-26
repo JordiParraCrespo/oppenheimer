@@ -7,10 +7,11 @@ import { provisionedUser, signInAs } from '../../support/web';
  * (`product/versions/mvp/13-hosts-settings.md`, `design/version1/Settings.dc.html`).
  *
  * The host is paired the way a runner pairs — its token spent anonymously —
- * but no runner dials in, so the card reads offline and never connected: the
+ * but no runner dials in, so the card reads offline with no last-seen line: the
  * page is about what the control plane holds, and a live link is the fleet
  * suite's subject. The legs are the page's verbs: the account menu's way in,
- * the card, Rename in place, Copy host ID, and Remove behind its confirm,
+ * the card, Add host in the same frame, Rename in place, Copy host ID, and
+ * Remove behind its confirm,
  * after which the host leaves the list and the timeline says why.
  */
 test('lists, renames, copies and removes a host from Settings', async ({ page, context }) => {
@@ -40,15 +41,27 @@ test('lists, renames, copies and removes a host from Settings', async ({ page, c
   await expect(card).toContainText('build-02');
   await expect(card).toContainText('runner 0.1.0');
   await expect(card).toContainText('Offline');
-  await expect(card).toContainText('never connected');
+
+  // ── Add host opens in the Settings frame and returns to the list ─────────
+  await page.getByRole('button', { name: 'Add host' }).click();
+  await expect(page).toHaveURL(/\/settings\/hosts\/new$/);
+  await expect(page.getByRole('heading', { name: 'Add a host', level: 1 })).toBeVisible();
+  await expect(nav).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Breadcrumb' })
+    .getByRole('link', { name: 'Hosts' })
+    .click();
+  await expect(page).toHaveURL(/\/settings\/hosts$/);
 
   // ── Rename in place ──────────────────────────────────────────────────────
   await card.getByRole('button', { name: 'build-02 actions' }).click();
   await page.getByRole('menuitem', { name: 'Rename' }).click();
   const input = card.getByRole('textbox', { name: 'Host name' });
-  await input.fill('build 03');
+  await input.fill('');
+  await input.pressSequentially('build 03');
+  // Spaces become hyphens as you type: a host's name reads as a hostname.
+  await expect(input).toHaveValue('build-03');
   await card.getByRole('button', { name: 'Save' }).click();
-  // Spaces become hyphens: a host's name reads as a hostname.
   await expect(card).toContainText('build-03');
   await expect(input).toBeHidden();
 
@@ -62,7 +75,9 @@ test('lists, renames, copies and removes a host from Settings', async ({ page, c
   await page.getByRole('menuitem', { name: 'Remove host' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Remove build-03?');
-  await expect(dialog).toContainText('No sessions are running on build-03');
+  await expect(dialog).toContainText(
+    'No sessions are running on build-03. The runner’s token is revoked and automations targeting it are paused.',
+  );
   await dialog.getByRole('button', { name: 'Remove host' }).click();
 
   await expect(page.getByTestId('host-card')).toHaveCount(0);

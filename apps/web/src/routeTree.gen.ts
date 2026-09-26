@@ -34,10 +34,11 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedSettingsHostsRouteImport } from './routes/_authenticated/settings/hosts'
 import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authenticated/_editor/hosts/new'
 import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
 import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
+import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
+import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -165,12 +166,6 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsHostsRoute =
-  AuthenticatedSettingsHostsRouteImport.update({
-    id: '/hosts',
-    path: '/hosts',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
 const AuthenticatedEditorHostsNewRoute =
   AuthenticatedEditorHostsNewRouteImport.update({
     id: '/hosts/new',
@@ -188,6 +183,18 @@ const AuthenticatedEditorProjectsNewRoute =
     id: '/projects/new',
     path: '/projects/new',
     getParentRoute: () => AuthenticatedEditorRoute,
+  } as any)
+const AuthenticatedSettingsHostsIndexRoute =
+  AuthenticatedSettingsHostsIndexRouteImport.update({
+    id: '/hosts/',
+    path: '/hosts/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsHostsNewRoute =
+  AuthenticatedSettingsHostsNewRouteImport.update({
+    id: '/hosts/new',
+    path: '/hosts/new',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -209,13 +216,14 @@ export interface FileRoutesByFullPath {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/hosts': typeof AuthenticatedSettingsHostsRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -234,13 +242,14 @@ export interface FileRoutesByTo {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/hosts': typeof AuthenticatedSettingsHostsRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -266,13 +275,14 @@ export interface FileRoutesById {
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/_authenticated/settings/hosts': typeof AuthenticatedSettingsHostsRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
+  '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -295,13 +305,14 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
-    | '/settings/hosts'
     | '/onboarding/'
     | '/sessions/'
     | '/settings/'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts/new'
+    | '/settings/hosts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -320,13 +331,14 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
-    | '/settings/hosts'
     | '/onboarding'
     | '/sessions'
     | '/settings'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts/new'
+    | '/settings/hosts'
   id:
     | '__root__'
     | '/'
@@ -351,13 +363,14 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/workspace'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
-    | '/_authenticated/settings/hosts'
     | '/_auth/onboarding/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
     | '/_authenticated/_editor/hosts/new'
     | '/_authenticated/_editor/projects/$projectId'
     | '/_authenticated/_editor/projects/new'
+    | '/_authenticated/settings/hosts/new'
+    | '/_authenticated/settings/hosts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -547,13 +560,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/hosts': {
-      id: '/_authenticated/settings/hosts'
-      path: '/hosts'
-      fullPath: '/settings/hosts'
-      preLoaderRoute: typeof AuthenticatedSettingsHostsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
     '/_authenticated/_editor/hosts/new': {
       id: '/_authenticated/_editor/hosts/new'
       path: '/hosts/new'
@@ -574,6 +580,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/new'
       preLoaderRoute: typeof AuthenticatedEditorProjectsNewRouteImport
       parentRoute: typeof AuthenticatedEditorRoute
+    }
+    '/_authenticated/settings/hosts/': {
+      id: '/_authenticated/settings/hosts/'
+      path: '/hosts'
+      fullPath: '/settings/hosts/'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/hosts/new': {
+      id: '/_authenticated/settings/hosts/new'
+      path: '/hosts/new'
+      fullPath: '/settings/hosts/new'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsNewRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
   }
 }
@@ -645,13 +665,15 @@ const AuthenticatedEditorRouteWithChildren =
   AuthenticatedEditorRoute._addFileChildren(AuthenticatedEditorRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
-  AuthenticatedSettingsHostsRoute: typeof AuthenticatedSettingsHostsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
+  AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
-  AuthenticatedSettingsHostsRoute: AuthenticatedSettingsHostsRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
+  AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =

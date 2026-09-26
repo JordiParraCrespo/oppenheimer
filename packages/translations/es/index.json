@@ -522,7 +522,9 @@
       "meta": "Nada del host queda expuesto a internet.",
       "back": "Atrás",
       "crumbNewSession": "Nueva sesión",
+      "crumbHosts": "Equipos",
       "use": "Usar este host",
+      "done": "Hecho",
       "defaultName": "Nuevo host",
       "install": {
         "title": "Instalar",
@@ -548,18 +550,15 @@
         "running_one": "En marcha · {{count}} sesión",
         "running_other": "En marcha · {{count}} sesiones",
         "idle": "Inactivo",
-        "offline": "Desconectado",
-        "unpaired": "Eliminado"
+        "offline": "Desconectado"
       },
       "seen": {
         "connected": "conectado",
-        "connectedRtt": "conectado · {{ms}} ms",
         "lastSeen": "visto {{when}}",
-        "never": "nunca se ha conectado"
+        "now": "ahora"
       },
       "meta": {
         "cpus": "{{count}} vCPU",
-        "memory": "{{gb}} GB",
         "runner": "runner {{version}}"
       },
       "actions": "Acciones de {{name}}",
@@ -567,15 +566,12 @@
       "renameLabel": "Nombre del equipo",
       "save": "Guardar",
       "cancel": "Cancelar",
-      "renamed": "Equipo renombrado",
       "copyId": "Copiar ID del equipo",
-      "copied": "ID del equipo copiado",
       "remove": "Eliminar equipo",
       "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
-      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y deja de conectarse.",
-      "removed": "Equipo eliminado"
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
     }
   },
   "projects": {

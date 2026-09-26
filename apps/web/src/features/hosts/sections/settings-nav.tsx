@@ -11,14 +11,16 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The Settings frame's left side: back to the console, then the Workspace
- * group with Hosts and its count. Profile (the Account group) arrives with
- * its own slice. Only the count subscribes to the list, narrowed to a number.
+ * group with Hosts and its count. The frame's Account group (Profile) is not
+ * drawn: there is no Profile page yet. Only the count subscribes to the list,
+ * narrowed to a number.
  */
 export function HostsSettingsNav() {
   const { t } = useTranslation();
   const count = useHosts({ select: (hosts) => hosts.length });
+  // The frame lights Hosts on the list, not while Add a host is open over it.
   const onHosts = useRouterState({
-    select: (state) => state.location.pathname.startsWith('/settings/hosts'),
+    select: (state) => state.location.pathname.replace(/\/$/, '') === '/settings/hosts',
   });
 
   return (
