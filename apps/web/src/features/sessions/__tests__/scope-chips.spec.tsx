@@ -25,6 +25,8 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
+const INSTALL_URL = 'https://github.com/apps/oppenheimer-stub/installations/new';
+
 function chip(name: string) {
   return screen.getByRole('button', { name }) as HTMLButtonElement;
 }
@@ -53,7 +55,7 @@ describe('the scope chips', () => {
         repositories={[]}
         value={[]}
         onValueChange={vi.fn()}
-        manageUrl="https://github.com/apps/oppenheimer-stub/installations/new"
+        manageUrl={INSTALL_URL}
         loading
       />,
     );
@@ -62,6 +64,38 @@ describe('the scope chips', () => {
     const popup = openChip('sessions.new.repository.label');
     expect(within(popup).getByText('sessions.new.repository.loading')).toBeDefined();
     expect(within(popup).queryByText('sessions.new.repository.empty')).toBeNull();
+  });
+
+  it('leads to the install page in a new tab from the foot row', () => {
+    render(
+      <RepositoryBranchSelect
+        repositories={[]}
+        value={[]}
+        onValueChange={vi.fn()}
+        manageUrl={INSTALL_URL}
+        loading
+      />,
+    );
+
+    openChip('sessions.new.repository.label');
+    const manage = screen.getByRole('link', { name: 'sessions.new.repository.manage' });
+    expect(manage.getAttribute('href')).toBe(INSTALL_URL);
+    expect(manage.getAttribute('target')).toBe('_blank');
+  });
+
+  it('says there is no GitHub App, with no foot row, when the deployment has none', () => {
+    render(
+      <RepositoryBranchSelect
+        repositories={[]}
+        value={[]}
+        onValueChange={vi.fn()}
+        manageUrl={null}
+      />,
+    );
+
+    const popup = openChip('sessions.new.repository.label');
+    expect(within(popup).getByText('sessions.new.repository.noApp')).toBeDefined();
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('says the branches are loading rather than that none match', () => {

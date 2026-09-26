@@ -373,6 +373,7 @@
         "branchPane": "Rama de {{name}}",
         "changeBranch": "Cambiar de rama",
         "manage": "Gestionar el acceso a repositorios",
+        "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
         "archived": "Archivado"
       },
       "branch": {

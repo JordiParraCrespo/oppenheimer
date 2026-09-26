@@ -31,12 +31,6 @@ import { capRepositories } from '../lib/session-options';
  * Every row carries the branches the section has loaded for it. Until that read
  * lands the picker falls back to the repository's `defaultBranch`, which is the
  * branch it would have chosen anyway.
- *
- * The foot row leaves the console. Which repositories the App can see is
- * decided on GitHub's own installation page and nowhere here, so "Manage
- * repository access" is a link to it, in a new tab, with the GitHub mark. The
- * address is the deployment's (`github_app_install_url`); without it there is
- * no row, rather than a link to a page that may not exist.
  */
 export function RepositoryBranchSelect({
   repositories,
@@ -50,8 +44,8 @@ export function RepositoryBranchSelect({
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
-  /** The GitHub App's installation page, as the deployment reports it. */
-  manageUrl?: string;
+  /** `github_app_install_url`; `null` when the deployment has no GitHub App. */
+  manageUrl: string | null;
   loading?: boolean;
   branchesLoading?: boolean;
   disabled?: boolean;
@@ -72,19 +66,19 @@ export function RepositoryBranchSelect({
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}
-      emptyText={t('sessions.new.repository.empty')}
+      emptyText={t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')}
       branchSearchPlaceholder={t('sessions.new.repository.branchSearch')}
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}
       changeBranchLabel={t('sessions.new.repository.changeBranch')}
       action={
-        manageUrl
-          ? {
+        manageUrl === null
+          ? undefined
+          : {
               label: t('sessions.new.repository.manage'),
               icon: <BrandGlyph name="github" size={15} />,
               href: manageUrl,
             }
-          : undefined
       }
     />
   );

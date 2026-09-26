@@ -1,6 +1,7 @@
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
+import githubApp from './github-app.json';
 import { claimInstallation } from './github-stub';
 
 /**
@@ -23,6 +24,12 @@ export const STUB_REPOSITORIES = {
   mobile: { githubRepoId: 821374923, name: 'xrp-mobile', defaultBranch: 'main' },
   web: { githubRepoId: 821374924, name: 'xrp-web', defaultBranch: 'trunk' },
 } as const;
+
+/**
+ * Where the API sends a reader to install the stub App: built from the slug
+ * `stub-env.ts` gives it, the way `GET /health/capabilities` builds it.
+ */
+export const STUB_INSTALL_URL = `https://github.com/apps/${githubApp.slug}/installations/new`;
 
 /** A branch of `xrp-mobile` that is not its default, so picking one is visible. */
 export const STUB_BRANCH = 'fix/wallet-empty-state';

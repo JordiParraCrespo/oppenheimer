@@ -458,7 +458,7 @@ export function ScopeChips() {
         action={{
           label: 'Manage repository access',
           icon: <BrandGlyph name="github" size={15} />,
-          href: 'https://github.com/apps/oppenheimer-dev/installations/new',
+          href: 'https://github.com/settings/installations',
         }}
       />
       {single && singleRepo ? (

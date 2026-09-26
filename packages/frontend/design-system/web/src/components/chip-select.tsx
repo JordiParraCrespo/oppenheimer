@@ -4,6 +4,7 @@ import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIc
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Link } from './link';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 /**
@@ -52,19 +53,12 @@ type ChipSelectOption = {
   disabled?: boolean;
 };
 
+/** The foot row either leaves the page (`href`, a new-tab link) or fires a callback. */
 type ChipSelectAction = {
   label: string;
   /** Defaults to a plus. */
   icon?: React.ReactNode;
-  /**
-   * Where the row leads when it leaves the console: it renders as a link that
-   * opens in a new tab. The repository picker's "Manage repository access"
-   * goes to the GitHub App's own page this way, because the list of
-   * repositories is decided there and nowhere in the console.
-   */
-  href?: string;
-  onSelect?: () => void;
-};
+} & ({ href: string } | { onSelect: () => void });
 
 /**
  * The two shapes these parts are drawn in.
@@ -410,26 +404,32 @@ function ChipSelectList({
   );
 }
 
-/** The pinned band at the foot for "Add host…": a plus, the label, a chevron. */
+/**
+ * The pinned band at the foot for "Add host…": a plus, the label, a chevron.
+ *
+ * It takes the whole action and dispatches it: `onClose` runs first either
+ * way, then an `onSelect` action fires; an `href` action is a `Link` in a new
+ * tab, drawn as a row rather than in the link blue.
+ */
 function ChipSelectActionRow({
-  icon,
-  href,
+  action,
+  onClose,
   className,
-  children,
-  onClick,
-  ...props
-}: Omit<React.ComponentProps<'button'>, 'onClick'> & {
-  icon?: React.ReactNode;
-  /** A destination outside the console; the row becomes a link in a new tab. */
-  href?: string;
-  onClick?: React.MouseEventHandler<HTMLElement>;
+}: {
+  action: ChipSelectAction;
+  onClose: () => void;
+  className?: string;
 }) {
+  const classes = cn(ITEM_CLASSES, 'gap-2.5', className);
   const content = (
     <>
-      <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
-        {icon ?? <PlusGlyph />}
+      <span
+        aria-hidden
+        className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]"
+      >
+        {action.icon ?? <PlusGlyph />}
       </span>
-      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <span className="min-w-0 flex-1 truncate">{action.label}</span>
       <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
     </>
   );
@@ -438,24 +438,26 @@ function ChipSelectActionRow({
       data-slot="chip-select-footer"
       className="-mx-1 -mb-1 mt-1 border-t border-border-subtle p-1"
     >
-      {href ? (
-        <a
-          href={href}
+      {'href' in action ? (
+        <Link
+          href={action.href}
           target="_blank"
           rel="noopener noreferrer"
           data-slot="chip-select-action"
-          className={cn(ITEM_CLASSES, 'gap-2.5 cursor-pointer no-underline', className)}
-          onClick={onClick}
+          className={cn(classes, 'text-fg hover:no-underline')}
+          onClick={onClose}
         >
           {content}
-        </a>
+        </Link>
       ) : (
         <button
           type="button"
           data-slot="chip-select-action"
-          className={cn(ITEM_CLASSES, 'gap-2.5', className)}
-          onClick={onClick}
-          {...props}
+          className={classes}
+          onClick={() => {
+            onClose();
+            action.onSelect();
+          }}
         >
           {content}
         </button>
@@ -604,16 +606,7 @@ function ChipSelect({
           ))}
         </ChipSelectList>
         {action ? (
-          <ChipSelectActionRow
-            icon={action.icon}
-            href={action.href}
-            onClick={() => {
-              setOpen(false);
-              action.onSelect?.();
-            }}
-          >
-            {action.label}
-          </ChipSelectActionRow>
+          <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
         ) : null}
       </ChipSelectPopup>
     </Popover>
