@@ -96,9 +96,11 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="#mvp">MVP</a></li>
   <li><a href="#reuse">Reuse the runner host</a></li>
   <li><a href="#sleep">Sleep and pricing</a></li>
+  <li><a href="#cloud">MicroVM sessions and cloud hosts</a></li>
   <li><a href="#layout">Workspace layout</a></li>
   <li><a href="#grok">Grok Bot lessons</a></li>
   <li><a href="#herdr">herdr lessons</a></li>
+  <li><a href="#digitalocean">DigitalOcean lessons</a></li>
   <li><a href="#phases">Phases</a></li>
   <li><a href="#questions">Open questions</a></li>
 </ul></nav>
@@ -232,11 +234,11 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
       <li>Runner acts as a provisioner on a hypervisor host. Each task gets a VM with 4 to 8 GB RAM and 2 to 4 vCPUs, Docker preinstalled, the repo cloned at the requested branch.</li>
       <li>The setup script runs inside the VM, then the PTY opens inside it. The agent can bring up Postgres or Redis for the task without touching the host.</li>
       <li>Created on session start, paused when idle, destroyed after retention. A persistent per-target home volume keeps <code>claude</code> logged in across fresh VMs.</li>
-      <li>Linux host: Firecracker microVM. macOS host: Apple Virtualization via tart. Cloud: a provider adapter instead of a daemon.</li>
+      <li>Linux host: Firecracker microVM. macOS host: Apple Virtualization via tart. Cloud: a rented KVM host that pairs itself and runs the same microVMs (v0.2).</li>
     </ul>
   </div>
 </div>
-<p>Order: mode A on day one, since it is the terminal from the section above. Mode B after secrets, starting with Linux and Firecracker because the images are reusable for the cloud adapter later. macOS VM hosting after that.</p>
+<p>Order: mode A on day one, since it is the terminal from the section above. Mode B after secrets, starting with Linux and Firecracker. macOS VM hosting after that. The cloud path is v0.2 and needs no image of ours: a provider's Ubuntu and the ordinary installer.</p>
 
 <h2 id="login">Logins and subscriptions, done legitimately</h2>
 <p>The constraint is firm: use the Claude and Codex subscriptions by the book. Opening a terminal and typing <code>claude</code> is the sanctioned path, and the platform stays on it. The platform helps with the <em>login</em>, never with the <em>credential</em>.</p>
@@ -459,7 +461,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
     </g>
   </g>
 </svg>
-<p class="caption">Same lifecycle for a Firecracker guest on Linux, a tart guest on macOS, a cloud VM through a provider adapter, or a container on a KVM-less host labelled as such.</p>
+<p class="caption">Same lifecycle for a Firecracker guest on Linux, a tart guest on macOS, a cloud VM paired as an ordinary host, or a container on a KVM-less host labelled as such.</p>
 </div>
 
 <h3>Service decomposition</h3>
@@ -623,11 +625,12 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </svg>
 <p class="caption">Website and runners in different places. The host keeps its no-public-services property; guests are reachable from nowhere.</p>
 </div>
-<div class="note"><strong>Trade made:</strong> a cloud-init KVM guest boots in tens of seconds where Firecracker boots in one. For a session that starts once and lives for days, with fast resume from managedsave, that is acceptable, and it removes a month of provisioner work. Firecracker stays as a later cold-start optimization behind the same runner interface.</div>
+<div class="note"><strong>Trade reversed (v0.2, note 15):</strong> a session is now a Firecracker microVM that exists only while active and is booted again on its kept disk at every wake, so the boot time is the product and a cloud-init KVM guest is too slow for it. The controller's ideas (verified image, capacity gate, reconcile on start, nothing of the host in a guest) carry over; its libvirt, qcow2 and managedsave code does not.</div>
 
 
 <h2 id="sleep">Sleep, wake, and what it costs</h2>
 <p>Yes, sessions can sleep and wake like a Claude Code on the web session that expires and comes back. On our own KVM host it is better, because there are two kinds of sleep and we get both.</p>
+<div class="note"><strong>v0.2 (note 15):</strong> for a microVM session the tiers below collapse to two states, running or stopped with the disk kept, because a Firecracker VM boots on its kept disk in about two seconds and the agent resumes by its own id. The tiers remain the design for a libvirt guest, which v0.2 no longer builds.</div>
 <div class="grid2">
   <div class="panel">
     <span class="tag">Suspend · like closing a laptop lid</span>
@@ -665,13 +668,31 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">watch</span><span>Disks must not change while suspended. Tokens expire while asleep, so the runner mints and rotates a fresh one before announcing ready. The guest clock jumps, so chrony is in the image. Agent session ids are captured continuously, not at sleep time.</span>
   <span class="k">this host</span><span>The MVP host is an i7-6700 with 4 cores and 8 threads, 64 GB, two 512 GB SATA SSDs, about €63 a month. RAM-rich, CPU-poor. So the tiers use RAM first: two sessions running, up to five more paused in RAM with instant wake, ten more suspended on disk with a fifteen-second wake, dozens hibernated. The two-VM cap is correct for this CPU. Build the MVP on it, then move to an AX42 or AX52 class host: 8 cores and NVMe give four to six running slots and a three-second suspend wake for the same money or less. Account volumes and hibernated overlays copy across as files.</span>
   <span class="k">pricing</span><span>Compute is the user's host, so the product charges for the console: a flat personal plan. Hosted hosts later at pass-through plus margin or per running-VM-hour. One rule fixed now: sleeping sessions are free, because they cost disk only.</span>
-  <span class="k">clouds</span><span>The same tiers map onto provider operations. AWS EC2 has native hibernation with RAM saved to the encrypted root volume and costs only EBS while asleep, about $5 a month for our shape. GCP suspends natively, Azure hibernates. Fly Machines have no suspend but stop and start in seconds for cents. Hetzner Cloud bills a stopped server at full price, so hibernate there means snapshot and delete, and wake takes minutes. Cloud sessions bill per running hour plus storage while asleep at provider price plus margin. AWS adapter first, Fly second, after the MVP.</span>
-  <span class="k">versus</span><span>For two sessions running six hours a day and ten asleep: an AX42 host is €47 to €57 flat with sleeping free. Hetzner Cloud bills stopped servers, so CPX32 at €36 each never sleeps and twelve would be €432. AWS with EC2 hibernation is about $85 and pays only while running, the right cloud adapter later. E2B has real pause and resume but no Docker inside and a $150 floor. Vercel Sandbox caps a sandbox at five hours, so it cannot host a days-long terminal at all.</span>
+  <span class="k">clouds</span><span>The same tiers map onto provider operations behind one machine-lifecycle port, and a cloud machine is an ordinary host that pairs itself. AWS EC2 hibernates with RAM saved to the encrypted root volume and costs only EBS while asleep, about $5 a month for our shape. Oracle and Alibaba only stop, so a pause there is a boot and an agent resume on wake, and a stopped machine costs its disk, $2 to $5 a month. GCP and Azure suspend natively, Fly stops in seconds, Hetzner Cloud bills a stopped server in full: further drivers of the same port, unscheduled. Cloud sessions bill per running hour plus storage while asleep at provider price plus a margin. AWS first, Oracle second, Alibaba third, in v0.2.</span>
+  <span class="k">versus</span><span>For two sessions running six hours a day and ten asleep: an AX42 host is €47 to €57 flat with sleeping free. Hetzner Cloud bills stopped servers, so CPX32 at €36 each never sleeps and twelve would be €432. AWS with EC2 hibernation is about $85 and pays only while running, the right first cloud driver. E2B has real pause and resume but no Docker inside and a $150 floor. Vercel Sandbox caps a sandbox at five hours, so it cannot host a days-long terminal at all.</span>
   <span class="k">per task</span><span>An hour-long agent task costs one to three cents of compute on the own host, about fifteen cents on AWS, and two to twenty euros of model. Compute is one to five percent of a task, never the reason to change the architecture. VMs stay for isolation, Docker inside, and the day a second person shows up. Two adjustments recover density: overcommit CPU 2:1 because agents mostly wait, giving about four running sessions on the i7 host and eight to twelve on an AX42, and let the balloon driver reclaim idle guest memory.</span>
   <span class="k">fifty agents</span><span>Eight hours a day, 22 days: about €250 to €300 a month on five AX42 hosts, about $1,300 on AWS on demand or $450 on spot, €1,800 on Hetzner Cloud, about $2,900 on E2B. The model for the same 8,800 agent-hours is $18,000 to $44,000 on API pricing, and one subscription cannot drive fifty agents. At that scale the question is tokens and accounts, never VMs.</span>
   <span class="k">ephemeral</span><span>Realistic scale is at most ten running at once, which one AX42 handles. Each session carries a lifetime: Keep, the default on your host, with the sleep tiers; or Ephemeral, the default on cloud hosts, destroyed after two idle hours with the branch auto-pushed and the scrollback kept in the log. Ten ephemeral sessions of four hours a day on AWS cost about $130 a month on demand or $45 on spot, and nothing on days you do not use them. The host chip shows cloud hosts with their per-hour price.</span>
 </div>
 
+
+<h2 id="cloud">Sessions in microVMs, and cloud hosts</h2>
+<p>v0.2, designed the way Claude Code on the web runs a session, read off the session that wrote it: a Firecracker microVM with a process API on vsock, a kept disk, an uptime of 46 seconds an hour into the conversation, tokens rewritten at every resume. <b>A session is a microVM on a host with KVM.</b> It exists only while the session is active; its disk is kept; a wake boots a fresh VM on that disk in about two seconds and the agent resumes by its own id; the guest has no network device and reaches the host over vsock and the network only through our proxy, which enforces the allowlist and injects the repository token in flight. Two states instead of three tiers. Firecracker, not libvirt; the controller's ideas carry over, its code does not.</p>
+<p>The host is your own Hetzner box first. When you have none, <b>a cloud box is a host that pairs itself</b>: the control plane asks the provider for a KVM-capable machine whose cloud-init runs the ordinary install command with a one-hour pairing token, the runner registers, and the host runs the same microVMs, six to eight of them. The provider sits behind a machine-lifecycle port that knows nothing about sessions; no guest agent of a second kind, no sixth module. Pause, resume and delete are the session's first (kill, boot, drop the disk) and the host's second (stop when nothing runs on it, start on the next message). Teardown is always the control plane's API call, because on Oracle an OS shutdown does not stop billing.</p>
+<table>
+  <thead><tr><th></th><th>Own Hetzner box</th><th>AWS EC2 m8i</th><th>Oracle E5.Flex</th></tr></thead>
+  <tbody>
+    <tr><td>KVM</td><td>metal</td><td>nested virtualisation on ordinary instances since February 2026, Intel only</td><td>nested virtualisation on E5 and Standard3 shapes, not on A1</td></tr>
+    <tr><td>Host for 6 to 8 sessions</td><td>AX41-1-LTD 12 threads / 64 GB, €57.30 a month</td><td>m8i.2xlarge 8 / 32, $0.51 an hour Frankfurt, $0.20 spot</td><td>4 OCPU / 32 GB, $0.18 an hour, $0.09 preemptible</td></tr>
+    <tr><td>Month, ten sessions four hours a day</td><td>€57 flat</td><td>about $60 to $75, $30 on spot</td><td>about $25; the $300 trial covers a year</td></tr>
+    <tr><td>Watch out</td><td>always on</td><td>no Graviton; quota request on day one</td><td>random I/O 79 % slower than bare metal: worktrees on tmpfs</td></tr>
+  </tbody>
+</table>
+<div class="rule">
+  <span class="k">out</span><span>Hetzner Cloud has no nested virtualisation and stays the control plane's home. Alibaba sells KVM only on 104-vCPU bare metal and waits for a user who has it. Per-session cloud VMs, EC2 hibernation as the warm resume, and the shared workspace VM are all off the v0.2 list. Firecracker snapshots are the later warm resume, loaded once and never twice.</span>
+  <span class="k">login</span><span>The one place this is worse than Claude Code on the web: a fresh machine has no Claude login, and the platform stores no vendor credential. Version one is the login button once per session disk, ten seconds on a phone. Version two is the account volume: a second block device holding the login directory, attached to one VM at a time, with the accounts slice.</span>
+  <span class="k">order</span><span>The image and the guest agent; the microVM runtime in the runner on the Hetzner box; the egress proxy; then rented hosts, AWS first and Oracle second with the $300 trial started when that driver is a week away; snapshots, squashfs drives for the agent CLIs and the account volume later.</span>
+</div>
 
 <h2 id="layout">Workspace layout</h2>
 <p>No free-form filesystem. Every repo lives in one fixed place with one main checkout and one worktree per session, exactly Orca's model, so the UX is the same.</p>
@@ -731,8 +752,17 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
 </div>
 <div class="verdict"><p><strong>The architecture holds.</strong> What we take is not structure but craft: manifests as versioned data, hooks over scraping, and the terminal title as a first-class signal.</p></div>
 
+<h2 id="digitalocean">Lessons from DigitalOcean Managed Agents</h2>
+<p>DigitalOcean's Managed Agents (public preview, 2026-09-22) is note 15's runtime sold as a service: a Firecracker microVM per session running Claude Code, Codex or a custom image, paused when idle. Read from the docs and from the source of its open clients (note 16).</p>
+<div class="rule">
+  <span class="k">not a runtime</span><span>Every model call rides an API key the platform holds: <code>ANTHROPIC_API_KEY</code> for Claude Code, <code>OPENAI_API_KEY</code> written into the guest for Codex, and the native-Codex proxy stubs the ChatGPT login out. That is the opposite of "the person logs in to their own subscription". Only a custom image running our runner could fit, and that is unverified.</span>
+  <span class="k">take</span><span>Agent state from hooks and approvals as records you can answer from a phone; a session event log you can resume by sequence, backfilled before it goes live; a reconnect policy that knows which failures are final; idle measured between turns, never mid-turn; wake on use, waiting until the agent listens before typing; for Codex, a tee on the app-server, not a facade.</span>
+  <span class="k">leave</span><span>Vendor keys in manifests, a chat view rebuilt from translated events, one stream per device, memory checkpoints for now, prepayment.</span>
+</div>
+<div class="verdict"><p><strong>It confirms the shape of note 15</strong> and teaches the layer above the VM we have not designed yet: the event feed, approvals and reconnect policy the console needs whether a session runs on a laptop or in a microVM.</p></div>
+
 <h2 id="phases">Phases</h2>
-<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud provider adapters, Tailscale mode and signed updates.</div>
+<div class="note"><strong>Superseded by the MVP order of work above.</strong> The original phase table put direct-mode sessions first and VMs in phase 6; a later revision moved VMs into the MVP; the 2026-09-12 reset took them out again. After the MVP, the slices in order are: VMs on the runner host with sleep tiers, the accounts model, Create PR and diff view, auto-fix and PR subscriptions, accounts usage meters and headroom routing, delegation between sessions, routines and triggers, cloud machines with pause and resume (v0.2), Tailscale mode and signed updates.</div>
 <h3>Stack</h3>
 <p>TypeScript for the web app and control plane, Go for the runner. pnpm and Turborepo monorepo. The web framework is not locked in: the recommendation is a Vite + React SPA, and Next.js used as a client app is also fine. The firm point is that the console is a real-time client over a WebSocket, so server components stay out of the session and sidebar screens. NestJS control plane with TypeORM on Postgres (from the Flama starter), a single static Go runner binary, and a shared protocol package that both languages generate from. Rejected: Python on targets (second toolchain on user machines), Electron (state must live server-side), Kubernetes (targets are pets, not cattle).</p>
 
@@ -757,5 +787,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <li><a href="https://github.com/herdrdev/herdr">herdr</a>, <a href="https://www.developersdigest.tech/blog/herdr-deep-dive-agent-terminal-multiplexer">herdr deep dive</a></li>
   <li><a href="https://github.com/actions/runner/blob/main/docs/design/auth.md">GitHub Actions runner auth design</a></li>
   <li><a href="https://actuated.com/blog/managing-github-actions">Actuated: lessons managing GitHub Actions and Firecracker</a>, <a href="https://blog.alexellis.io/blazing-fast-ci-with-microvms/">blazing fast CI with microVMs</a>, <a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></li>
+  <li><a href="https://www.digitalocean.com/blog/managed-agents-public-preview">DigitalOcean Managed Agents</a>, <a href="https://docs.digitalocean.com/products/managed-agents/agent-harness-runtime/">Harness Runtime docs</a>, <a href="https://github.com/digitalocean/doctl">doctl</a>, <a href="https://pypi.org/project/pydo/">pydo</a></li>
+  <li><a href="https://code.claude.com/docs/en/self-hosted-environments">Claude Code self-hosted environments</a>, <a href="https://code.claude.com/docs/en/self-hosted-environments-configuration">the spawn-runner hook</a>; <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-hibernate-overview.html">EC2 hibernation</a>, <a href="https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm">OCI Always Free</a>, <a href="https://www.alibabacloud.com/help/en/ecs/user-guide/economical-mode">Alibaba economical mode</a>; <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md">Firecracker snapshots</a>, <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/vsock.md">vsock</a>, <a href="https://www.anthropic.com/engineering/how-we-contain-claude">How we contain Claude</a>, <a href="https://aws.amazon.com/about-aws/whats-new/2026/02/amazon-ec2-nested-virtualization-on-virtual">EC2 nested virtualization</a>, <a href="https://blogs.oracle.com/cloud-infrastructure/firecracker-oci-vm-vs-bm">Firecracker on OCI</a></li>
 </ul>
 </div>

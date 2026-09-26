@@ -20,6 +20,9 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
+| 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | The research behind v0.2: a per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba; what Anthropic's own self-hosted runner does; each provider's SDK, sleep, price, free money and quotas checked; why pause, resume and delete later is the headline and what each verb is per provider; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand. The decisions live in `versions/mvp/03` and `10` |
+| 15 | [Sessions in microVMs](15-sessions-in-microvms.md) | The v0.2 runtime, read off the session that wrote it: a Firecracker microVM per session that exists only while active, on a kept disk, booted again in two seconds on wake; no NIC, vsock to the host, egress through the proxy; two states instead of three tiers; which hosts sell KVM (own box, AWS m8i, Oracle E5); what it costs; Firecracker, not libvirt |
+| 16 | [Lessons from DigitalOcean Managed Agents](16-lessons-from-digitalocean-managed-agents.md) | DigitalOcean's Firecracker agent sessions read from the docs and from the source of `doctl`, `godo` and `pydo`: every model call rides an API key, so it cannot be our runtime; what to take instead — agent state from hooks and approvals as records, a resumable session event feed, a reconnect policy that knows which failures are final, idle measured between turns, a tee for Codex's app-server; what not to take |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 
 Decisions that changed along the way, so nobody is confused by an
@@ -172,6 +175,41 @@ earlier note:
   `command`, not a column per agent. The surface itself is in the notes
   that own it — `versions/mvp/03-control-plane.md` for the route and the
   fold, `01-protocol.md` for the wire.
+- Note 03 §4 and note 10 §6 described the cloud adapter as "the runner
+  running in the control plane" with an in-guest agent registering a JIT
+  identity. Both passages are rewritten (v0.2, researched in note 14): a
+  cloud machine is an ordinary host whose cloud-init runs the ordinary
+  install command with a one-hour pairing token, and the provider sits
+  behind a machine-lifecycle port that `hosts/` owns — no sixth module;
+  the five modules of `versions/mvp/10` stand. The port and its drivers
+  are the library package `@oppenheimer/backend-machines` (built
+  2026-09-22), which `hosts/` consumes. The port,
+  the routes and the pause, resume, delete policy are
+  `versions/mvp/03` §Cloud hosts; the two tables are in `10`. Note
+  10 §6's provider order "AWS, Fly, GCP, Azure" is now AWS, Oracle,
+  Alibaba in its body.
+- Note 10 §10 made Ephemeral the default lifetime on cloud hosts; it now
+  says Keep: a session on a cloud machine is paused when idle, resumed
+  when opened and deleted later, because a stopped machine costs only
+  its disk on AWS, Oracle and Alibaba. Ephemeral stays as the option for
+  one-task work.
+- Note 08 §4 chose libvirt/KVM first with Firecracker as a later
+  cold-start optimisation. Note 15 reverses it: a session is a
+  Firecracker microVM that exists only while active and is booted again
+  on its kept disk at every wake, so the boot time is the product; the
+  controller's ideas carry over, its qcow2 and cloud-init code does not.
+- Note 14 designed one provider VM per session. Note 15 makes the
+  rented machine a KVM-capable *host* holding several microVM sessions,
+  on AWS (nested virtualisation on ordinary instances since February
+  2026) and Oracle (E5.Flex); Alibaba sells KVM only on bare metal and
+  waits for a user who has it; Hetzner Cloud has none and is out as a
+  session host. EC2 hibernation as the warm resume is gone with it.
+- Note 10 §2's three sleep tiers are two states for a microVM session:
+  running, or stopped with the disk kept. Note 11 §2's shared workspace
+  VM is not built in v0.2; a session is its own VM.
+- Note 10 §4's Hetzner AX42 price predates the June 2026 repricing;
+  note 15 §5 has the current table, where the AX41-1-LTD at €57.30 is
+  the cheap KVM box.
 - The coding-agent catalog seeded Claude Code with the aliases its CLI
   documents (`opus`, `sonnet`, `fable`) and gave Codex no models at all,
   on the argument that a pinned id is a list this repository has to keep

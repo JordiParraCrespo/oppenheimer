@@ -1,0 +1,81 @@
+name: Machines live smoke
+
+# The one test that talks to a real cloud account: every verb of
+# @oppenheimer/backend-machines on one small machine, with the serial console
+# as the proof that /dev/kvm exists on a host asked for as a KVM host. It costs
+# a few cents and runs only when a person starts it. The machine is destroyed
+# whatever happens; the tagged network it creates on first run stays.
+#
+# Credentials:
+#   aws      an IAM role trusting GitHub's OIDC provider, in the secret
+#            MACHINES_LIVE_AWS_ROLE_ARN; no long-lived key anywhere
+#   oci      OCI_TENANCY_ID, OCI_USER_ID, OCI_FINGERPRINT, OCI_PRIVATE_KEY_B64,
+#            OCI_COMPARTMENT_ID as secrets
+#   alibaba  ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET as secrets
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Which provider to smoke
+        type: choice
+        required: true
+        options: [aws, oci, alibaba]
+      region:
+        description: Region (blank for the provider's default)
+        type: string
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: machines-live-${{ inputs.provider }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: ${{ inputs.provider }}
+    # GitHub's runner rather than the self-hosted one: this job needs nothing
+    # from the host and should run even when that host is the thing under test.
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # The AWS SDK's default chain reads a web identity token from a file, so
+      # the workflow's own OIDC token is enough: no third-party action holds it.
+      - name: AWS credentials through OIDC
+        if: inputs.provider == 'aws'
+        env:
+          ROLE_ARN: ${{ secrets.MACHINES_LIVE_AWS_ROLE_ARN }}
+        run: |
+          test -n "$ROLE_ARN" || { echo "MACHINES_LIVE_AWS_ROLE_ARN is not set"; exit 1; }
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value > "$RUNNER_TEMP/oidc-token"
+          {
+            echo "AWS_WEB_IDENTITY_TOKEN_FILE=$RUNNER_TEMP/oidc-token"
+            echo "AWS_ROLE_ARN=$ROLE_ARN"
+            echo "AWS_ROLE_SESSION_NAME=oppenheimer-machines-smoke"
+            echo "AWS_REGION=${{ inputs.region || 'eu-central-1' }}"
+          } >> "$GITHUB_ENV"
+
+      - name: Smoke
+        env:
+          MACHINES_LIVE: ${{ inputs.provider }}
+          MACHINES_LIVE_REGION: ${{ inputs.region }}
+          OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+          OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_PRIVATE_KEY_B64: ${{ secrets.OCI_PRIVATE_KEY_B64 }}
+          OCI_COMPARTMENT_ID: ${{ secrets.OCI_COMPARTMENT_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+        run: pnpm --filter @oppenheimer/backend-machines test:integration

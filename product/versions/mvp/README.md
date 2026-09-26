@@ -25,6 +25,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
 | 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
+| 13 | [Orchestration (v0.2)](13-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
 
 ## Decision log
 
@@ -291,6 +292,52 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   Ollama and the rest — so a session is named by a fast open-weights
   model, never on the critical path of creating it. 05's first open
   question, how a session is named, is closed by the same change.
+- 2026-09-22: **v0.2, cloud machines** (research note 14). A cloud
+  machine is an ordinary host that pairs itself — cloud-init runs the
+  install command with a pairing token — and `hosts/` is the host
+  factory: two person-owned rows, `cloud_account` and `machine`, and a
+  `MachineProviderPort` with an adapter per provider in its
+  `infrastructure/`; no sixth module, no package. 03 gains the port,
+  the routes and the pause, resume, delete policy (Keep is the default
+  on cloud too; `suspend` fails closed on a driver without it; idle is
+  the control plane's call and the guest never powers itself off); 10
+  the tables; 01 a `push` flag on `stop`; 02 the push-on-stop and the
+  cold resume; 05 the host chip, the boot-trace rows and the session
+  menu; 09 the cloud-init path with the lingering user manager.
+- 2026-09-22: **v0.2, sessions as microVMs, the way Claude Code on the
+  web runs them** (research note 15, read off the session that wrote
+  it). A session on a host with KVM is a Firecracker VM that exists
+  only while active, on a disk that is kept; a wake boots a fresh VM on
+  that disk in about two seconds and the agent resumes by its own id;
+  the guest has no network device and reaches the host over vsock and
+  the network only through the runner's proxy. 02 §14 replaces "deferred
+  to the VM slice" with the runtime; 04 is un-deferred as a
+  Dockerfile-built raw ext4 with the guest agent as `init`; 03's cloud
+  section becomes "Cloud hosts and microVM sessions": the port rents a
+  KVM-capable *host* for several sessions, `suspend` is never sent in
+  v0.2, and pause, resume, delete are the session's first and the
+  host's second; 10 gains `work_session.runtime` and `capabilities.vm`;
+  01 `runtime` on `session.create`; 05 the runtime control and the VM
+  rows; 07 takes F14 to F18 and F26's rootfs half into the list.
+- 2026-09-22: **the provider port is a package.** The review had folded
+  the drivers into `hosts/infrastructure/`; the owner then asked for a
+  package, so `@oppenheimer/backend-machines` holds the port, the three
+  drivers (AWS EC2, Oracle Cloud, Alibaba Cloud ECS), the size and price
+  catalog and the cloud-config that pairs a fresh machine. `hosts/` is
+  its only consumer and still owns the rows and the policy (03 §Cloud
+  hosts, 10).
+- 2026-09-22: **orchestration is 12** (13 since 2026-09-26). One
+  runner per host and many hosts per person; the control plane assigns a session to a host at
+  create by a ladder (running host with room, stopped host, new host
+  within the account's cap) and never lets hosts claim; a session
+  waiting for a host is a `starting` row with no `hostId`, not a jobs
+  table; provider calls are BullMQ jobs grouped per cloud account, with
+  the outcome written as `machine.*` events; domain events stay on the
+  outbox. Persistence gains a fourth layer, the **transcript snapshot**
+  in object storage at every stop, so a session on a lost rented host
+  resumes with its conversation. VMs run in their own scope and outlive
+  the runner. One API replica holds links in v0.2; presence and
+  dispatch through Redis are the named seam.
 - 2026-09-22: **Add host is armed on a registered host, not an online
   one** (05). The dialog picks the machine a session will run on, and
   the control plane already records a session against a host whose
@@ -401,3 +448,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   project made in the dialog has no origin, so the auto-created path for
   callers that send only checkouts is unchanged. The grouped sidebar and
   the row menu are the next slice.
+- 2026-09-26: orchestration renumbered from 12 to 13, because projects
+  on the console took 12 first. Only the number and the references to it
+  changed.

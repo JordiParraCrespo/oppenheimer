@@ -170,6 +170,19 @@
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
+- **MicroVM sessions and cloud hosts (v0.2).** The host chip lists the
+  person's own hosts first, then each connected cloud account as
+  `<provider> <region>` with the host's per-hour price; the chip's foot
+  action gains Connect a cloud account beside Add host. Beside it the
+  **runtime** is a two-way control, This machine or Clean VM (note 11
+  §5's names), Clean VM by default on a host whose capabilities say
+  `vm` and absent on one that cannot. The provisioning pane gains rows
+  drawn from the `machine.*` and `vm.*` events (03 §Cloud hosts): Host
+  requested, Host booting, Runner online for a rented host, then VM
+  booting, VM ready before clone; the same rows appear on a resume. A
+  paused session shows the moon; an Ephemeral one shows a timer; the
+  session menu gains Pause, Resume and Delete, and Delete confirms.
+  The lifetime is a toggle on New session, Keep by default.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here
