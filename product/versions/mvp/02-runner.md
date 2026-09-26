@@ -194,8 +194,8 @@ started last is the one that failed:
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
    session's environment set once (§6).
-5. Window 0 runs the agent — `claude`, `codex` or `opencode` from the
-   host's own installation and login — or, for the blank terminal,
+5. Window 0 runs the agent — `claude`, `codex`, `opencode` or `grok`
+   from the host's own installation and login — or, for the blank terminal,
    nothing: tmux starts the user's login shell and the session is a
    worktree and a terminal. The login URL an agent prints is detected by
    the classifier and sent to the browser as a button, linkified only
@@ -217,7 +217,10 @@ started last is the one that failed:
    nothing and is never read as Claude Code.
 
    **A permission level is one object: argv and environment.** Claude
-   Code and Codex take their level as flags, so their `env` is empty.
+   Code, Codex and Grok take their level as flags, so their `env` is
+   empty; Grok's `--permission-mode` is Claude Code's vocabulary, and
+   Ask is its `default` rather than its own `auto`, which approves on its
+   own.
    OpenCode's TUI has one approval flag, `--auto`, which is Full access;
    Ask and Approve for me are an `OPENCODE_PERMISSION` block, whose rules
    land after its build agent's default `"*": "allow"` and so win
@@ -234,7 +237,9 @@ started last is the one that failed:
    running process.** Every CLI here takes it on its command line and
    says so in its own help — `claude [options] [command] [prompt]`
    ("Your prompt"), `codex [OPTIONS] [PROMPT]` ("Optional user prompt to
-   start the session"), and `opencode [project] --prompt <text>` — so
+   start the session"), `grok [OPTIONS] [PROMPT]` ("Initial prompt for
+   the interactive session"; its `-p` is single-turn and exits), and
+   `opencode [project] --prompt <text>` — so
    the task is in the process's arguments before it starts. Writing into
    window 0 once the TUI is up was the alternative and is rejected: it is
    not how any of these CLIs takes a first task, and "the TUI is ready"
@@ -247,7 +252,8 @@ started last is the one that failed:
 7. **When the launch carried no task**, the first user message is read
    from the agent's own transcript (Claude Code keeps one under
    `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`;
-   OpenCode in one database under `~/.local/share/opencode/`),
+   Grok under `~/.grok/sessions/`, keyed by cwd; OpenCode in one
+   database under `~/.local/share/opencode/`),
    never scraped from the PTY, and sent once as `prompt.first`, at most
    2 KB. The control plane names the session from it (10); the transcript
    itself never leaves the host.
@@ -342,8 +348,14 @@ the runner, so a runner restart or upgrade loses nothing.
   on real hosts; Codex's is provisional; OpenCode's is one title rule
   (`OC |` with a spinner glyph in front while a turn runs) and reports
   unknown for everything else until a soak on a live session produces
-  patterns of its own, rather than borrowing Claude's screen rules; the
-  blank terminal's says idle at a prompt and unknown otherwise.
+  patterns of its own, rather than borrowing Claude's screen rules;
+  Grok's is provisional too — its sign-in screen reads blocked, watched
+  on a live session of grok 1.0.41, and so does its tool-approval
+  dialog, read off the binary and not yet watched — and it reports
+  unknown for everything else until a soak, its braille logo being why
+  no spinner rule is borrowed; the blank terminal's says idle at a
+  prompt and unknown otherwise. Each agent's login allowlist is its
+  catalog `loginTargets`, Grok's being `accounts.x.ai` and `auth.x.ai`.
 - **A manifest is one agent's rules, as data.** One JSON file per
   agent, carrying a schema, an agent id, its own version and the engine
   version it needs; each rule names the region it reads, the patterns
@@ -381,13 +393,16 @@ the runner, so a runner restart or upgrade loses nothing.
 ### 10. Host facts and health
 
 Collected at register, on `host.preflight`, and summarised in every
-heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex` and `opencode`
-presence and version (one list, `ProbedTools`), free disk on the
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode` and
+`grok` presence and version (one list, `ProbedTools`), free disk on the
 workspaces filesystem, load, runner version and channel. Only `git` and
 `tmux` are required. A missing agent is a hint on the engine button, not
 a refusal — a session still opens and the shell's own "command not
 found" appears in the terminal — and the blank terminal needs no tool of
-its own. Missing
+its own. The list is also what the runner knows: every agent it can
+launch is probed, found or not (a test in `internal/cli` holds that),
+and a catalog agent with no entry is one this build would refuse, which
+the control plane refuses to create a session for (01). Missing
 `tmux` is fatal for sessions and the installer offers to fix it (09
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).

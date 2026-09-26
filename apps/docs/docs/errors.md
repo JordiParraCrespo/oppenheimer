@@ -377,6 +377,7 @@ are never reissued.
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
+| `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -390,6 +391,12 @@ already keys conversation state by.
 per session, so a second repository is refused here — on create by the body's own
 limit, and on adding one to a session that has one — rather than by the host after
 the session was written.
+
+`SESSIONS_011` is a runner older than the agent that was picked. A runner probes
+the command of every agent it can launch, installed or not, so a host whose last
+inventory has no entry for that command runs a build that would refuse the
+launch; updating the runner is the fix. Whether the agent is *installed* is never
+checked here — that is a hint on the engine button, and the terminal says so.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Stands in for the Grok CLI: prints the argv the runner built, then hands the
+# pane to an interactive shell, as the `claude` shim beside it does.
+printf 'GROK-SHIM argv=%s\n' "$*"
+exec sh -i

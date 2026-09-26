@@ -383,3 +383,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
     the check, and signature checks begin at the first self-update (F26a).
   - Key rotation stays with the link, as 2026-09-19 decided; the release
     manifest's lack of an expiry is an accepted risk (09 §7).
+- 2026-09-25: **Grok joins the catalog** (00, 01, 02, 05): one more row in
+  `CODING_AGENTS`, defaulting to Grok 4.6 because that is its CLI's default,
+  with a screen manifest that is provisional until a soak. A session for an
+  agent the host's runner never probed is refused at create rather than
+  failed at launch, so a new row needs no protocol bump (01).

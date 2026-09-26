@@ -135,6 +135,7 @@
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
       "SESSIONS_009": "Choose a project, or add a repository to take one from.",
       "SESSIONS_010": "A session works on one repository. Start a new session for another.",
+      "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
       "HOSTS_001": "That host could not be found.",
       "HOSTS_002": "That pairing token could not be found.",
       "HOSTS_003": "That registration token was refused. Mint a new one and try again.",

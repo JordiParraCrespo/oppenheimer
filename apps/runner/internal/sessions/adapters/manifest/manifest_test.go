@@ -109,6 +109,45 @@ func TestAQuestionUnderASpinnerWins(t *testing.T) {
 	}
 }
 
+// Grok 1.0.41 on a host that has never signed in, as the pane showed it in a
+// live session: the braille logo, then the code and a wait on the person. The
+// logo is braille, which is why no spinner rule may read this as work.
+const grokSignIn = `
+                    ⠀⠀⠀⠀⠀⠀⣀⣀⡀⠀⠀⠀⢀⠄
+                    ⠀⠀⠀⣠⣾⠿⠛⠛⠛⠛⢀⡴⠁⠀
+                    ⠀⠀⣼⡟⠁⠀⠀⠀⢀⡴⠻⣿⡀⠀
+
+             Approve in your browser to finish signing in.
+                             FGQ4-ECWK
+                Make sure your browser shows this code.
+                If it doesn't open, click here to copy.
+
+           Copying not working? Click here to show full URL.
+                        Waiting for approval...
+
+
+
+
+                             ctrl+q  quit
+`
+
+func TestGrokWaitingToSignInIsBlocked(t *testing.T) {
+	c := classifier(t, "")
+
+	if state, _ := c.Classify(app.Screen{Title: "grok", Body: grokSignIn}, domain.AgentGrok); state != domain.StateBlocked {
+		t.Fatalf("sign-in screen: state = %q, want blocked", state)
+	}
+	revealed := "Select the URL below with your mouse and copy manually.\n" +
+		"https://accounts.x.ai/oauth2/device?user_code=KKG6-57R3\n\nctrl+q  go back\n"
+	state, login := c.Classify(app.Screen{Title: "grok", Body: revealed}, domain.AgentGrok)
+	if state != domain.StateBlocked {
+		t.Fatalf("revealed URL: state = %q, want blocked", state)
+	}
+	if login != "https://accounts.x.ai/oauth2/device?user_code=KKG6-57R3" {
+		t.Fatalf("login = %q, want the device URL grok printed", login)
+	}
+}
+
 func TestAnAgentWithNoManifestIsUnknownNotGuessed(t *testing.T) {
 	c := classifier(t, "")
 
@@ -225,7 +264,7 @@ func TestBundledManifestsLoad(t *testing.T) {
 			}
 		}
 	}
-	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentShell} {
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
 		}
@@ -274,6 +313,13 @@ func TestOnlyVendorLoginHostsAreOffered(t *testing.T) {
 		if manifest.LoginURL(screen, opencode) == "" {
 			t.Fatalf("a real vendor login URL must be offered: %q", screen)
 		}
+	}
+	grok := domain.AgentGrok.LoginTargets()
+	if manifest.LoginURL("Open https://accounts.x.ai/sign-in?redirect=grok-build to sign in", grok) == "" {
+		t.Fatal("grok's own sign-in URL must be offered")
+	}
+	if url := manifest.LoginURL("Open https://claude.ai/oauth/authorize to log in", grok); url != "" {
+		t.Fatalf("another vendor's login on grok's screen = %q, want nothing", url)
 	}
 }
 

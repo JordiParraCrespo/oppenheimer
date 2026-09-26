@@ -1235,7 +1235,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
     checkouts: Array<{
@@ -5244,6 +5244,8 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_011 — The host's runner is older than the agent picked
+     *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;

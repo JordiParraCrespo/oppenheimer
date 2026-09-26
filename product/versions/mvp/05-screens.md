@@ -58,6 +58,17 @@
   | Claude Code | Fable 5.1, **Opus 5.5**, Sonnet 5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
   | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
   | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
+  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | yes |
+
+  **The effort stops are the product's, and each agent's catalog entry
+  says what they mean.** Where a CLI has a level of each name, a stop is
+  the level of that name: Grok's `--reasoning-effort` has all five, so
+  Minimal is `minimal` and Max is `max`, and the Grok models' own
+  default, `high`, sits one stop above the slider's middle — a Grok
+  session left on Medium thinks less than Grok would unasked. Where a
+  CLI has fewer, the stops shift so the middle is its default: Claude
+  Code has no `minimal`, so its Minimal is `low` and its Medium is
+  `high`.
   | Blank terminal | none, picked outright | no | no |
 
   A control the agent does not take is **hidden, and not sent**: the
