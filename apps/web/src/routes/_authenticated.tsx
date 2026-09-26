@@ -1,12 +1,12 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { AppShell, RouteError } from '@oppenheimer/frontend-web';
-import { createFileRoute, Navigate, Outlet, redirect } from '@tanstack/react-router';
+import { AppShell, drawsOwnFrame, RouteError } from '@oppenheimer/frontend-web';
+import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
-import { NAV } from '@/lib/nav';
+import { NAV, USER_MENU } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -43,15 +43,20 @@ export const Route = createFileRoute('/_authenticated')({
 function AuthenticatedShell() {
   const { t } = useTranslation();
   const organizations = useOrganizations();
+  const ownFrame = useMatches({ select: drawsOwnFrame });
 
   const settledEmpty =
     organizations.isSuccess && !organizations.isFetching && organizations.data.length === 0;
 
   if (settledEmpty) return <Navigate to="/onboarding" replace />;
+  // Settings draws its own left side (its nav, "Back to console"); the
+  // guards above still hold for it.
+  if (ownFrame) return <Outlet />;
 
   return (
     <AppShell
       nav={NAV}
+      userMenuLinks={USER_MENU}
       rail={<ConsoleRail />}
       sidebar={<SessionsSidebar />}
       // The brand row names the product, not the workspace — version 1 has one

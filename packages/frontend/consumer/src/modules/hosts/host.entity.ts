@@ -9,6 +9,44 @@
  * wire a host simply does not exist until its runner has registered, which is
  * the same fact told a shorter way.
  */
+/**
+ * One word for the row, derived by the API on every read: `running` (online,
+ * a session up), `idle`, `offline`, `unpaired`.
+ */
+export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
+
+/**
+ * What a host row says beyond identity (`product/versions/mvp/14-host-metadata.md`):
+ * its status and running sessions, what the machine is, where it connects
+ * from and how the link is doing. Every fact the runner has not reported is
+ * `null`, never a placeholder.
+ */
+export interface HostDetails {
+  status: HostStatus;
+  runningSessionCount: number;
+  osName: string | null;
+  cpuCount: number | null;
+  memoryTotalBytes: number | null;
+  cloudProvider: string | null;
+  countryCode: string | null;
+  city: string | null;
+  asnOrg: string | null;
+  roundTripMillis: number | null;
+}
+
+const NO_DETAILS: HostDetails = {
+  status: 'offline',
+  runningSessionCount: 0,
+  osName: null,
+  cpuCount: null,
+  memoryTotalBytes: null,
+  cloudProvider: null,
+  countryCode: null,
+  city: null,
+  asnOrg: null,
+  roundTripMillis: null,
+};
+
 export class HostEntity {
   constructor(
     public readonly id: string,
@@ -24,6 +62,7 @@ export class HostEntity {
     /** When the runner last reported in; `null` until it has connected once. */
     public readonly lastSeenAt: Date | null,
     public readonly createdAt: Date,
+    public readonly details: HostDetails = NO_DETAILS,
   ) {}
 
   /**

@@ -151,3 +151,21 @@ export function useRemoveHost(options?: UseMutationOptions<void, Error, string>)
     }),
   });
 }
+
+/**
+ * Rename a host. The list is refreshed rather than patched: the row's status
+ * and counts come back from the same read, so one source says what a host is.
+ */
+export function useRenameHost(
+  options?: UseMutationOptions<HostEntity, Error, { id: string; name: string }>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => app.hosts.rename(id, name),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: hostsKeys.lists() });
+    }),
+  });
+}

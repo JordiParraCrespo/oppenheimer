@@ -536,6 +536,46 @@
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
       }
+    },
+    "settings": {
+      "title": "Equipos",
+      "description": "Los servidores en los que se ejecutan tus sesiones. Nada de un equipo queda expuesto a internet.",
+      "add": "Añadir equipo",
+      "loadFailed": "No hemos podido cargar tus equipos.",
+      "emptyTitle": "Aún no hay equipos",
+      "emptyBody": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
+      "state": {
+        "running_one": "En marcha · {{count}} sesión",
+        "running_other": "En marcha · {{count}} sesiones",
+        "idle": "Inactivo",
+        "offline": "Desconectado",
+        "unpaired": "Eliminado"
+      },
+      "seen": {
+        "connected": "conectado",
+        "connectedRtt": "conectado · {{ms}} ms",
+        "lastSeen": "visto {{when}}",
+        "never": "nunca se ha conectado"
+      },
+      "meta": {
+        "cpus": "{{count}} vCPU",
+        "memory": "{{gb}} GB",
+        "runner": "runner {{version}}"
+      },
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "renameLabel": "Nombre del equipo",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "renamed": "Equipo renombrado",
+      "copyId": "Copiar ID del equipo",
+      "copied": "ID del equipo copiado",
+      "remove": "Eliminar equipo",
+      "removeTitle": "¿Eliminar {{name}}?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y deja de conectarse.",
+      "removed": "Equipo eliminado"
     }
   },
   "projects": {
@@ -645,7 +685,11 @@
     "commandTitle": "Paleta de comandos",
     "commandDescription": "Busca una página o una acción.",
     "sidebarTitle": "Navegación",
-    "sidebarDescription": "Tus sesiones y tu cuenta."
+    "sidebarDescription": "Tus sesiones y tu cuenta.",
+    "settings": "Ajustes",
+    "backToConsole": "Volver a la consola",
+    "workspace": "Espacio de trabajo",
+    "hosts": "Equipos"
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",

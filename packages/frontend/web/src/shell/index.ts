@@ -7,5 +7,6 @@ export { type AbilityState, useAbility, useAbilityState } from './hooks/use-abil
 export { useAuthorizedNav, useLandingRoute } from './hooks/use-authorized-nav';
 export { useHotkey } from './hooks/use-hotkey';
 export { type ShellConfig, ShellProvider, useShell } from './hooks/use-shell';
+export { drawsOwnFrame, type RouteFrame } from './lib/frame';
 export type { NavItem, NavLink, NavPolicy, NavTo, ShellWorkspace } from './lib/nav';
 export { type ContentPane, DEFAULT_CONTENT_PANE, resolveContentPane } from './lib/pane';

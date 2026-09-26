@@ -1,4 +1,10 @@
-export { HostEntity, type HostPairing, type HostPairingToken } from './host.entity';
+export {
+  type HostDetails,
+  HostEntity,
+  type HostPairing,
+  type HostPairingToken,
+  type HostStatus,
+} from './host.entity';
 export { HostsErrors } from './hosts.errors';
 export { HostsModule } from './hosts.module';
 export { HostsRepository } from './hosts.repository';

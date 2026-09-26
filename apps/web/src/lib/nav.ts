@@ -1,5 +1,5 @@
-import { Plus, Terminal } from '@oppenheimer/design-system-web/icons';
-import type { NavItem } from '@oppenheimer/frontend-web';
+import { Plus, Settings, Terminal } from '@oppenheimer/design-system-web/icons';
+import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
 
 /**
  * The workspace's destinations.
@@ -10,12 +10,10 @@ import type { NavItem } from '@oppenheimer/frontend-web';
  * exists — an app whose sidebar is its content still has to be able to answer
  * "where does a reader who chose nothing go".
  *
- * Settings and Profile are deliberately absent, and so are their screens. The
- * version-1 artboards carry neither anywhere in the console — the account menu
- * holds appearance, language and log out — and hosts arrive through onboarding.
- * `05-screens.md` describes a settings drawer that version 1 does not draw;
- * when it is drawn, it is a drawer, not a destination, and does not belong in
- * this list.
+ * Settings is not a row here either: it is a destination of its own frame,
+ * reached from the account menu (`USER_MENU` below), with its own nav and a
+ * way back to the console (`design/version1/Settings.dc.html`, the 2026-09-26
+ * frames). Profile arrives in that frame with its own slice.
  *
  * Every row is ungated: a workspace is personal, so its owner reaches every
  * session and host in it. A row that does need a permission takes its
@@ -29,3 +27,12 @@ export const NAV = [
   { to: '/sessions', icon: Terminal, labelKey: 'sessions', policies: [] },
   { to: '/sessions/new', icon: Plus, labelKey: 'newSession', policies: [] },
 ] as const satisfies readonly NavItem[];
+
+/**
+ * The account menu's links, above the language list: Settings, since the
+ * 2026-09-26 frames draw it as a page (`product/versions/mvp/05-screens.md`).
+ * Hosts is its one section today, so the link goes straight there.
+ */
+export const USER_MENU = [
+  { to: '/settings/hosts', icon: Settings, labelKey: 'settings' },
+] as const satisfies readonly NavLink[];
