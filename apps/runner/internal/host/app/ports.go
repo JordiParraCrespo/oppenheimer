@@ -22,4 +22,10 @@ type Prober interface {
 	// DiskFree reports free bytes on the filesystem holding path. It takes
 	// the nearest existing ancestor when the path is not there yet.
 	DiskFree(path string) (uint64, error)
+	// DiskTotal reports the size of the filesystem holding path, resolved the
+	// same way DiskFree resolves it.
+	DiskTotal(path string) (uint64, error)
+	// Machine reports what the operating system says about the hardware and
+	// itself. Fields it cannot read are left empty; it never fails.
+	Machine(ctx context.Context) domain.Machine
 }

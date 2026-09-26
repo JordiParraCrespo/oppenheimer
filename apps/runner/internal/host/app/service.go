@@ -62,7 +62,12 @@ func (s *Service) Collect(ctx context.Context) (domain.Facts, error) {
 		if free, err := s.prober.DiskFree(filepath.Clean(s.workspace)); err == nil {
 			facts.DiskFreeBytes = free
 		}
+		if total, err := s.prober.DiskTotal(filepath.Clean(s.workspace)); err == nil {
+			facts.DiskTotalBytes = total
+		}
 	}
+	facts.Machine = s.prober.Machine(ctx)
+	facts.ServiceManager = platform.ServiceKind()
 	return facts, nil
 }
 

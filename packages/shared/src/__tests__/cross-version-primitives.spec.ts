@@ -45,7 +45,16 @@ const runnerFactsJson = `{
   "workspacePath": "/Users/jordi/oppenheimer-ai",
   "diskFreeBytes": 120000000000,
   "cpus": 12,
-  "runnerVersion": "0.4.1"
+  "runnerVersion": "0.4.1",
+  "osName": "macOS 15.3.1",
+  "kernelVersion": "24.3.0",
+  "cpuModel": "Apple M3 Max",
+  "memoryTotalBytes": 68719476736,
+  "diskTotalBytes": 1000000000000,
+  "virtualization": "none",
+  "timezone": "Europe/Madrid",
+  "bootedAt": "2026-09-20T08:14:03Z",
+  "serviceManager": "launchd"
 }`;
 
 const validFacts = JSON.parse(runnerFactsJson);
@@ -63,6 +72,8 @@ const invalidFacts: [string, unknown][] = [
   ['diskFreeBytes as a string', { ...validFacts, diskFreeBytes: '120' }],
   ['a CPU count of zero, which Go omits rather than sends', { ...validFacts, cpus: 0 }],
   ['a fractional CPU count', { ...validFacts, cpus: 1.5 }],
+  ['a boot time that is not a timestamp', { ...validFacts, bootedAt: 'last tuesday' }],
+  ['a zero memory total, which Go omits rather than sends', { ...validFacts, memoryTotalBytes: 0 }],
   ['a tool with no name', { ...validFacts, tools: [{ path: '/usr/bin/git', required: true }] }],
   ['a tool with no required flag', { ...validFacts, tools: [{ name: 'git' }] }],
   ['tools as the old version map', { ...validFacts, tools: { git: '2.45.0' } }],
@@ -128,16 +139,26 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
   it('describes exactly the fields `facts.go` declares, and no others', () => {
     expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual([
       'arch',
+      'bootedAt',
+      'cloudProvider',
+      'cpuModel',
       'cpus',
       'diskFreeBytes',
+      'diskTotalBytes',
       'home',
       'hostname',
+      'kernelVersion',
+      'memoryTotalBytes',
+      'osName',
       'osVersion',
       'platform',
       'root',
       'runnerVersion',
+      'serviceManager',
+      'timezone',
       'tools',
       'user',
+      'virtualization',
       'workspacePath',
     ]);
   });

@@ -89,6 +89,9 @@ type Heartbeat struct {
 // Load is the heartbeat's load figure.
 type Load struct {
 	LoadAverage1m float64 `json:"loadAverage1m"`
+	// MemoryAvailableBytes is what a new process could have without swapping.
+	// Omitted where the runner cannot read it honestly (macOS).
+	MemoryAvailableBytes uint64 `json:"memoryAvailableBytes,omitempty"`
 }
 
 // Welcome is the control plane's answer to hello.

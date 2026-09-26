@@ -409,3 +409,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   to `host_event` (append-only, 180 days). Heartbeat history is
   deliberately not stored. `host` keeps its old columns until the code
   switches over (expand, switch, contract).
+- 2026-09-26: 13's two open questions are settled. Geography comes from
+  DB-IP Lite (free, no account), and the owner is emailed about a new
+  network only when the host's country or ASN changes.

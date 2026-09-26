@@ -148,16 +148,30 @@ where partitioning pays; the header says when it would.
    `runnerVersion`, `capabilities` and `lastSeenAt` from `host` once nothing
    reads them.
 
+## Decided since
+
+- **The IP database is DB-IP Lite** (2026-09-26). It is CC BY 4.0 and
+  needs no account or licence key, so every deployment gets geography
+  without registering anywhere. The city and ASN databases are two `.mmdb`
+  files fetched by `scripts/geoip/fetch-dbip.mjs` and named by
+  `HOSTS_GEOIP_CITY_DB` and `HOSTS_GEOIP_ASN_DB`; both are optional, and
+  without them a network is recorded with its address and no geography.
+  The licence asks for attribution ("IP geolocation by DB-IP"), which the
+  console shows wherever it shows a location. MaxMind GeoLite2 reads the
+  same format, so a deployment that holds a licence can point the two
+  variables at its files instead.
+- **The new-network email goes out only when the country or the ASN
+  changes** (2026-09-26). A laptop moving between cafés on the same ISP,
+  or a server whose provider renumbers it, is recorded in the timeline and
+  mails nobody. A machine that turns up in another country, or on another
+  network operator's addresses, is the case a stolen key looks like, and
+  the owner hears about it the way they hear about a pairing. A host's
+  first network is not "changed" and sends nothing: the pairing email
+  already covered it.
+
 ## Open questions
 
-1. **Which IP database.** MaxMind GeoLite2 needs an account and a licence
-   key per deployment; DB-IP Lite is CC BY 4.0 and needs neither. Ship
-   DB-IP in the image and let a deployment point at MaxMind?
-2. **A new-network notice.** 12 proposed it. Email the owner on the first
-   connect from a network the host has never used, as pairing already does,
-   or only show it in the timeline? Email on a laptop that roams between
-   cafés is noise; perhaps only when the country or ASN changes too.
-3. **Round trip across replicas.** `roundTripMillis` is written by the
+1. **Round trip across replicas.** `roundTripMillis` is written by the
    replica holding the link, with the heartbeat, so it is always the true
    one. It goes stale with `lastSeenAt` and needs no extra rule. Recorded
    here so nobody adds a second writer.

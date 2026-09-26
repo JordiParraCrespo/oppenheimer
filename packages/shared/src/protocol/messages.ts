@@ -86,6 +86,8 @@ export const heartbeatSchema = z.object({
   load: z.object({
     /** One-minute load average, as the kernel reports it. Not part of `Facts`. */
     loadAverage1m: z.number().min(0),
+    /** What a new process could have without swapping. Omitted where the runner cannot read it honestly. */
+    memoryAvailableBytes: z.number().int().min(0).optional(),
   }),
   sessions: z.array(sessionSnapshotSchema),
 });

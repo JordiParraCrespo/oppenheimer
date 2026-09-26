@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Platform is the host family, at the granularity the installer and the
@@ -125,6 +126,42 @@ type Facts struct {
 	// sees the key and one newer than it reads a missing count as unknown.
 	CPUs          int    `json:"cpus,omitempty"`
 	RunnerVersion string `json:"runnerVersion"`
+
+	// The machine beyond what a session needs: what the console shows on a
+	// host row and what a rollout counts
+	// (product/versions/mvp/13-host-metadata.md). Every field is omitted when
+	// the prober could not read it, so an older control plane never sees the
+	// key and a newer one reads absence as unknown.
+	Machine
+	// DiskTotalBytes is the size of the workspace filesystem, beside
+	// DiskFreeBytes.
+	DiskTotalBytes uint64 `json:"diskTotalBytes,omitempty"`
+	// ServiceManager is how this runner is kept running: launchd or systemd.
+	ServiceManager string `json:"serviceManager,omitempty"`
+}
+
+// Machine is what the operating system says about the hardware and itself.
+// It changes on a reboot, an upgrade or a move, not between heartbeats, which
+// is why the prober reads it once and caches it.
+type Machine struct {
+	// OSName is the distribution's own name for itself: "Ubuntu 24.04.1 LTS",
+	// "macOS 15.2".
+	OSName        string `json:"osName,omitempty"`
+	KernelVersion string `json:"kernelVersion,omitempty"`
+	CPUModel      string `json:"cpuModel,omitempty"`
+	// MemoryTotalBytes is physical memory as the kernel reports it.
+	MemoryTotalBytes uint64 `json:"memoryTotalBytes,omitempty"`
+	// Virtualization is "none", "vm" or "container", read from local files
+	// only: DMI data, the CPU's hypervisor flag, container markers.
+	Virtualization string `json:"virtualization,omitempty"`
+	// CloudProvider is the vendor the DMI data names ("aws", "gcp",
+	// "hetzner", …), never the answer of a metadata call.
+	CloudProvider string `json:"cloudProvider,omitempty"`
+	// Timezone is the IANA zone the machine runs in, e.g. "Europe/Madrid".
+	Timezone string `json:"timezone,omitempty"`
+	// BootedAt is when the kernel started, so a console can tell a reboot
+	// from a runner restart.
+	BootedAt *time.Time `json:"bootedAt,omitempty"`
 }
 
 // Sentinel conditions. The use case maps these onto the problem catalog; the

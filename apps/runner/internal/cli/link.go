@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/adapters/system"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	pairdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/pairing/domain"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -135,7 +136,7 @@ func (h *linkHandler) Heartbeat(ctx context.Context) (link.Heartbeat, error) {
 		SentAt:   time.Now().UTC(),
 		Channel:  string(h.identity.Channel),
 		Host:     facts,
-		Load:     link.Load{LoadAverage1m: loadAverage()},
+		Load:     link.Load{LoadAverage1m: loadAverage(), MemoryAvailableBytes: system.AvailableMemory()},
 		Sessions: h.snapshots(),
 	}, nil
 }

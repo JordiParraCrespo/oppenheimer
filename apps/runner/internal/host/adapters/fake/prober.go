@@ -21,6 +21,8 @@ type Prober struct {
 	Hostname     string
 	Root         bool
 	Free         uint64
+	Total        uint64
+	MachineFacts domain.Machine
 	PlatformErr  error
 }
 
@@ -53,3 +55,9 @@ func (p *Prober) Identity() (string, string, string, bool) {
 
 // DiskFree implements app.Prober.
 func (p *Prober) DiskFree(string) (uint64, error) { return p.Free, nil }
+
+// DiskTotal implements app.Prober.
+func (p *Prober) DiskTotal(string) (uint64, error) { return p.Total, nil }
+
+// Machine implements app.Prober.
+func (p *Prober) Machine(context.Context) domain.Machine { return p.MachineFacts }

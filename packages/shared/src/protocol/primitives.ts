@@ -161,6 +161,16 @@ export const hostFactsSchema = z.object({
   diskFreeBytes: z.number().int().min(0),
   cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
+  osName: z.string().max(80).optional(),
+  kernelVersion: z.string().max(64).optional(),
+  cpuModel: z.string().max(128).optional(),
+  memoryTotalBytes: z.number().int().min(1).optional(),
+  diskTotalBytes: z.number().int().min(1).optional(),
+  virtualization: z.string().max(24).optional(),
+  cloudProvider: z.string().max(24).optional(),
+  timezone: z.string().max(64).optional(),
+  bootedAt: z.iso.datetime({ offset: true }).optional(),
+  serviceManager: z.string().max(16).optional(),
 });
 
 /**
