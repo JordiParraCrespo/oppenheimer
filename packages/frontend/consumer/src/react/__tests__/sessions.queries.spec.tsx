@@ -66,6 +66,45 @@ describe('useSession', () => {
 });
 
 describe('useSessions', () => {
+  /**
+   * The entities are classes, which the query's default sharing does not look
+   * into: every poll handed every reader a new object per row, and the
+   * sidebar re-rendered all of its rows every two seconds.
+   */
+  it('keeps the rows, and the details, of a poll that changed nothing', async () => {
+    // Real class instances: a plain object literal would pass on the default
+    // sharing alone and prove nothing.
+    class Row {
+      constructor(
+        public readonly id: string,
+        public readonly isProvisioning: boolean,
+      ) {}
+    }
+    const poll = (provisioning: boolean) =>
+      [new Row('s-2', false), new Row('s-1', provisioning)] as unknown as SessionEntity[];
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce(poll(true))
+      .mockResolvedValueOnce(poll(true))
+      .mockResolvedValue(poll(false));
+    const { wrapper, queryClient } = setup({ findAll });
+    const { result } = renderHook(() => useSessions(), { wrapper });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const first = result.current.data;
+    const detail = queryClient.getQueryData(sessionsKeys.detail('s-2'));
+
+    await waitFor(() => expect(findAll).toHaveBeenCalledTimes(2), { timeout: 5_000 });
+    expect(result.current.data).toBe(first);
+
+    await waitFor(() => expect(result.current.data?.[1]?.isProvisioning).toBe(false), {
+      timeout: 5_000,
+    });
+    expect(result.current.data).not.toBe(first);
+    expect(result.current.data?.[0]).toBe(first?.[0]);
+    expect(queryClient.getQueryData(sessionsKeys.detail('s-2'))).toBe(detail);
+  }, 10_000);
+
   it('reads the list again while any row is starting', async () => {
     const findAll = vi.fn().mockResolvedValueOnce([open, starting]).mockResolvedValue([open]);
     const { wrapper } = setup({ findAll });

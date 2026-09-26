@@ -1,6 +1,6 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -65,10 +65,15 @@ export function useSessions<TData = SessionEntity[]>(
       for (const session of sessions) {
         const key = sessionsKeys.detail(session.id);
         if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= askedAt) continue;
-        queryClient.setQueryData(key, session);
+        // Shared against what the detail already holds, so a poll that
+        // changed nothing leaves the open session's screen alone.
+        queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
       }
       return sessions;
     },
+    // Entities are classes: without this every poll is a new object per row,
+    // and the sidebar re-renders every row every two seconds.
+    structuralSharing: shareEntities,
     refetchInterval: (query) =>
       query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
     ...options,
@@ -85,6 +90,7 @@ export function useSession(
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    structuralSharing: shareEntities,
     ...options,
   });
 }

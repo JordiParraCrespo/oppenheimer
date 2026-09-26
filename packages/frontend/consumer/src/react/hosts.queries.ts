@@ -1,6 +1,6 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -55,6 +55,8 @@ export function useHosts<TData = HostEntity[]>(
   return useQuery<HostEntity[], Error, TData>({
     queryKey: hostsKeys.list(),
     queryFn: () => app.hosts.findAll(),
+    // Entities are classes: without this every poll is a new object per host.
+    structuralSharing: shareEntities,
     ...options,
   });
 }
