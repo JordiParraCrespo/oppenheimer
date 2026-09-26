@@ -8,7 +8,7 @@ import {
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentSelect } from '../components/agent-select';
@@ -22,6 +22,7 @@ import { RepositoryBranchSelect } from '../components/repository-branch-select';
 import { AddHostDialog } from '../dialogs/add-host';
 import { ProjectDialog } from '../dialogs/project';
 import { useNewSessionDraft } from '../hooks/use-new-session-draft';
+import { useProjectSearch } from '../hooks/use-project-search';
 import {
   launchControlsFor,
   parseRepositoryKey,
@@ -66,6 +67,7 @@ export function NewSessionForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { draft, update, setEngine } = useNewSessionDraft();
+  const search = useSearch({ from: '/_authenticated/sessions/new' });
   const [addingHost, setAddingHost] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
 
@@ -125,6 +127,9 @@ export function NewSessionForm() {
       ),
     });
   }
+
+  // The sidebar's "New session here" names the project in the address.
+  useProjectSearch(search.project, projects.data, pick);
 
   function start(prompt: string) {
     if (!draft.hostId) return;
@@ -243,7 +248,7 @@ export function NewSessionForm() {
       {creatingProject ? (
         <ProjectDialog
           onClose={() => setCreatingProject(false)}
-          onCreated={(created) => {
+          onSaved={(created) => {
             pick(created);
             setCreatingProject(false);
           }}

@@ -12,6 +12,7 @@ export type SessionSort = 'recent' | 'oldest' | 'name';
  * facets that narrow the list and one order that does not.
  */
 export interface SessionFilters {
+  project: string;
   repository: string;
   agent: string;
   host: string;
@@ -19,6 +20,7 @@ export interface SessionFilters {
 }
 
 export const DEFAULT_FILTERS: SessionFilters = {
+  project: ALL,
   repository: ALL,
   agent: ALL,
   host: ALL,
@@ -36,8 +38,22 @@ export interface FilterOption {
  * artboard lights the filter button and draws the chips for what is *missing*
  * from the list, and re-ordering hides nothing.
  */
+/** The facets, in the order the menu and the chips show them. */
+export const FACETS = ['project', 'repository', 'agent', 'host'] as const;
+export type SessionFacet = (typeof FACETS)[number];
+
 export function isFiltered(filters: SessionFilters): boolean {
-  return filters.repository !== ALL || filters.agent !== ALL || filters.host !== ALL;
+  return FACETS.some((facet) => filters[facet] !== ALL);
+}
+
+export function projectOptions(
+  projects: { id: string; name: string }[] | undefined,
+  allLabel: string,
+): FilterOption[] {
+  return [
+    { value: ALL, label: allLabel },
+    ...(projects ?? []).map((project) => ({ value: project.id, label: project.name })),
+  ];
 }
 
 /** `owner/repo` is how a session names its repository; the menu wants `repo`. */
@@ -112,6 +128,7 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
   return sessions
     .filter(
       (session) =>
+        (filters.project === ALL || session.projectId === filters.project) &&
         (filters.repository === ALL ||
           session.checkouts.some(
             (checkout) => checkout.repositoryFullName === filters.repository,
@@ -129,12 +146,10 @@ export function applyFilters(sessions: SessionEntity[], filters: SessionFilters)
 /** The facets that are narrowing right now, for the chip row under the header. */
 export function activeFilters(
   filters: SessionFilters,
-  options: Record<'repository' | 'agent' | 'host', FilterOption[]>,
-): { key: 'repository' | 'agent' | 'host'; label: string }[] {
-  return (['repository', 'agent', 'host'] as const)
-    .filter((key) => filters[key] !== ALL)
-    .map((key) => ({
-      key,
-      label: options[key].find((option) => option.value === filters[key])?.label ?? filters[key],
-    }));
+  options: Record<SessionFacet, FilterOption[]>,
+): { key: SessionFacet; label: string }[] {
+  return FACETS.filter((key) => filters[key] !== ALL).map((key) => ({
+    key,
+    label: options[key].find((option) => option.value === filters[key])?.label ?? filters[key],
+  }));
 }

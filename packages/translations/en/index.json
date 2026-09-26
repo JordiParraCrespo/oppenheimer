@@ -167,6 +167,7 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
+      "SESSIONS_018": "That project does not include this session's repository. Add the repository to it first.",
       "HOSTS_007": "No image is waiting for that command."
     },
     "notFound": {
@@ -398,7 +399,14 @@
         "agent": "Default agent",
         "create": "Create project",
         "creating": "Creating…",
-        "failed": "The project could not be created."
+        "failed": "The project could not be created.",
+        "editTitle": "Project settings",
+        "save": "Save",
+        "saving": "Saving…",
+        "saveFailed": "The project could not be saved.",
+        "deleteProject": "Delete project",
+        "deleteBlocked": "Close its sessions first.",
+        "deleting": "Deleting…"
       },
       "repository": {
         "label": "Repositories",
@@ -467,14 +475,45 @@
         "dismiss": "Dismiss"
       }
     },
+    "sidebar": {
+      "projects": "Projects",
+      "newProject": "New project",
+      "search": "Search sessions",
+      "clearSearch": "Clear search",
+      "noMatches": "No sessions match “{{query}}”.",
+      "empty": "No projects yet. The first one you create appears here with its sessions.",
+      "emptyProject": "No sessions yet.",
+      "startOne": "Start one",
+      "newSessionHere": "New session in {{name}}",
+      "projectSettings": "{{name}} settings",
+      "unfiled": "Other sessions",
+      "actions": "Session actions",
+      "rename": "Rename",
+      "renameLabel": "Session name",
+      "move": "Move to project…",
+      "moveTitle": "Move to project",
+      "moveNone": "No other project holds this session's repository.",
+      "delete": "Delete",
+      "routines": "Routines",
+      "routinesSoon": "Routines are not here yet."
+    },
+    "deleteSession": {
+      "title": "Delete “{{name}}”?",
+      "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+      "confirm": "Delete session",
+      "deleting": "Deleting…",
+      "failed": "The session could not be deleted."
+    },
     "filters": {
       "label": "Filter sessions",
+      "project": "Project",
       "repository": "Repository",
       "agent": "Agent",
       "host": "Host",
       "sort": "Sort by",
       "clear": "Clear filters",
       "remove": "Clear filter",
+      "allProjects": "All projects",
       "allRepositories": "All repositories",
       "allAgents": "All agents",
       "allHosts": "All hosts",
