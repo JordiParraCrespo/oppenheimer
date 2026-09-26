@@ -4,6 +4,7 @@ import {
   SessionItem,
   SessionList,
   Skeleton,
+  useNow,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
@@ -84,8 +85,11 @@ export function SessionsSidebar() {
   const { data: hosts } = useHosts({
     select: (rows) => rows.map((host) => ({ id: host.id, name: host.name })),
   });
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
+  // One clock for every row's age, ticking once a minute. Every row redraws on
+  // the tick, because every age may have moved; that is one render a minute,
+  // where a clock read inside each row stopped the ages moving at all.
+  const now = useNow(60_000);
 
   const all = sessions ?? [];
   const options = {
@@ -150,7 +154,7 @@ export function SessionsSidebar() {
           // that one says so here, in `.op-emptylist`.
           <SessionList>
             {visible.map((session) => (
-              <SessionRow key={session.id} session={session} pathname={pathname} />
+              <SessionRow key={session.id} session={session} now={now} />
             ))}
             {dirty && visible.length === 0 ? (
               <EmptyState compact>
@@ -168,17 +172,26 @@ export function SessionsSidebar() {
  * One row. The age is derived on render rather than held: `compactAge` returns
  * the unit and the count, and the words are ours to translate — `null` is
  * "less than a minute", which the artboard leaves blank rather than labelling.
+ *
+ * The row subscribes to whether it is the open session, not the list: the
+ * router hands each row one boolean, so a navigation re-renders the two rows
+ * whose highlight moved and not the sidebar above them. The session is the
+ * list query's, kept by reference across a poll that did not change it, and
+ * `now` is the sidebar's one minute clock.
  */
-function SessionRow({ session, pathname }: { session: SessionEntity; pathname: string }) {
+function SessionRow({ session, now }: { session: SessionEntity; now: number }) {
   const { t } = useTranslation();
-  const age = compactAge(session.createdAt);
+  const active = useRouterState({
+    select: (state) => state.location.pathname === `/sessions/${session.id}`,
+  });
+  const age = compactAge(session.createdAt, now);
 
   return (
     <SessionItem
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
-      active={pathname === `/sessions/${session.id}`}
+      active={active}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
     />
   );
