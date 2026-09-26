@@ -1,53 +1,47 @@
 /**
- * Holds the component inventory to one list: the files in `src/components/`.
- * Fails when any of the three places that register a component disagrees
- * with it.
+ * Holds the design system to one inventory. `src/components/` is the public
+ * set and `src/internal/` the building blocks only those components import;
+ * the showcase's `toc.ts` names every public file once, under the section that
+ * shows it. Fails when the folder and anything that registers it disagree:
  *
- * 1. The barrel. Every name a component file exports is re-exported from
- *    `src/index.ts`. Every component also has a `./name` subpath, but
- *    `apps/web` imports from the root, so a missing barrel entry is invisible
- *    in practice. Nobody gets an error; they just re-implement the component
- *    by hand. `Breadcrumb` sat that way until an audit went looking, by which
- *    time a detail page had already hand-rolled a breadcrumb. If something
- *    genuinely needs to stay internal, do not export it from its own module
- *    either: a non-exported helper is invisible to this check, which is the
- *    honest way to say "internal".
- * 2. The subpaths. `package.json` `exports` has `./name` for every file and no
- *    subpath for a file that is gone, so the map cannot drift from the folder.
- * 3. The showcase. Every component is imported by `apps/web-showcase` (which
- *    imports each one by subpath), or is named in `NOT_IN_SHOWCASE` with the
- *    reason. A component with neither is how forty-one of them sat in this
- *    folder unused, next to the ones an agent should reach for, until an
- *    audit removed them.
+ * 1. The barrel. Every name a component exports is re-exported from
+ *    `src/index.ts` (apps import from the root, so a missing entry is a
+ *    component nobody finds), and nothing in `src/internal/` is.
+ * 2. The subpaths. `package.json` maps `./*` onto `src/components/`, so a new
+ *    file needs no entry there, and no other key may point into either folder.
+ * 3. The internals. Each file in `src/internal/` is imported by a component;
+ *    one nothing imports is dead and gets deleted.
+ * 4. The inventory. Every component is listed in exactly one `toc.ts` item's
+ *    `components`, every listed name is a file, and the showcase has a real
+ *    `import … from '@oppenheimer/design-system-web/<name>'` for it (a comment
+ *    or a string does not count).
+ *
+ * Internal means not exported from the package: a file in `src/internal/` is
+ * reachable only through the component that wraps it.
  *
  * Run: `pnpm --filter @oppenheimer/design-system-web test`
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const componentsDir = join(root, 'src', 'components');
+const internalDir = join(root, 'src', 'internal');
 const indexPath = join(root, 'src', 'index.ts');
 const packagePath = join(root, 'package.json');
 
 /**
- * Files deliberately left out of the barrel. Keep this at zero or one entry —
- * an exception you have to justify in writing is the whole point of the list.
- *
  * `icons.tsx` re-exports the whole of lucide. Pulling that into the barrel
  * would put every icon in the graph of anyone importing a Button, so it ships
- * only as `@oppenheimer/design-system-web/icons`, which is how every app already
- * imports icons.
+ * only as `@oppenheimer/design-system-web/icons`.
  */
 const NOT_IN_BARREL = new Set(['icons.tsx']);
 
 /**
  * Two export forms the barrel cannot express, flagged by name so the failure
- * explains itself. `export *` re-exports symbols this script cannot enumerate
- * without resolving the target; `export default` has no name for `index.ts` to
- * re-export. Neither appears in the package today — this keeps it that way,
- * rather than letting a component slip past the check by using one.
+ * explains itself: `export *` re-exports symbols this script cannot enumerate,
+ * and `export default` has no name for `index.ts` to re-export.
  */
 const WILDCARD_REEXPORT = '<a wildcard `export *`, which the barrel cannot enumerate>';
 const DEFAULT_EXPORT = '<a default export, which the barrel cannot name>';
@@ -93,14 +87,30 @@ function exportedNames(source) {
   return names;
 }
 
+/** Source files directly in `dir`, as names without their extension. */
+function moduleNames(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((file) => /\.tsx?$/.test(file))
+    .sort()
+    .map((file) => file.replace(/\.tsx?$/, ''));
+}
+
+/** The module specifiers of every real import declaration in `source`. */
+function importSpecifiers(source) {
+  return [...source.matchAll(/^\s*import\s[^;]*?from\s+['"]([^'"]+)['"]/gm)].map((m) => m[1]);
+}
+
 const componentFiles = readdirSync(componentsDir)
   .filter((file) => /\.tsx?$/.test(file))
   .sort();
-const componentNames = componentFiles.map((file) => file.replace(/\.tsx?$/, ''));
+const componentNames = moduleNames(componentsDir);
+const internalNames = moduleNames(internalDir);
 const failures = [];
 
 // 1. The barrel.
-const published = exportedNames(readFileSync(indexPath, 'utf8'));
+const indexSource = readFileSync(indexPath, 'utf8');
+const published = exportedNames(indexSource);
 const missing = [];
 for (const file of componentFiles) {
   if (NOT_IN_BARREL.has(file)) continue;
@@ -116,8 +126,18 @@ if (missing.length > 0) {
         `  src/components/${file}`,
         ...absent.map((name) => `    · ${name}`),
       ]),
-      'Add them to src/index.ts, or stop exporting them from their own module',
-      'if they are meant to be internal.',
+      'Add them to src/index.ts, or move the file to src/internal/ if only',
+      'another component uses it.',
+    ].join('\n'),
+  );
+}
+const leaked = [...indexSource.matchAll(/from\s+['"](\.\/internal\/[^'"]+)['"]/g)].map((m) => m[1]);
+if (leaked.length > 0) {
+  failures.push(
+    [
+      'src/index.ts exports from src/internal/, which is not public:',
+      ...leaked.map((spec) => `  ${spec}`),
+      'Move the file to src/components/ (and give it a showcase section) to publish it.',
     ].join('\n'),
   );
 }
@@ -125,90 +145,93 @@ if (missing.length > 0) {
 // 2. The subpaths.
 const { exports: subpaths } = JSON.parse(readFileSync(packagePath, 'utf8'));
 const subpathProblems = [];
-for (const [index, name] of componentNames.entries()) {
-  const expected = `./src/components/${componentFiles[index]}`;
-  if (subpaths[`./${name}`] !== expected) {
-    subpathProblems.push(`  "./${name}": "${expected}" is missing`);
-  }
+if (subpaths['./*'] !== './src/components/*.tsx') {
+  subpathProblems.push('  "./*" must map to "./src/components/*.tsx"');
 }
 for (const [key, target] of Object.entries(subpaths)) {
-  if (typeof target !== 'string' || !target.startsWith('./src/components/')) continue;
-  const file = target.slice('./src/components/'.length);
-  if (!componentFiles.includes(file) || key !== `./${file.replace(/\.tsx?$/, '')}`) {
-    subpathProblems.push(`  "${key}": "${target}" names no component file under its own name`);
+  if (key === './*' || typeof target !== 'string') continue;
+  if (/^\.\/src\/(components|internal)\//.test(target)) {
+    subpathProblems.push(`  "${key}": "${target}" — components are reached through "./*" only`);
   }
 }
 if (subpathProblems.length > 0) {
+  failures.push(['package.json exports:', ...subpathProblems].join('\n'));
+}
+
+// 3. The internals.
+const componentImports = componentFiles.flatMap((file) =>
+  importSpecifiers(readFileSync(join(componentsDir, file), 'utf8')),
+);
+const unusedInternals = internalNames.filter(
+  (name) => !componentImports.includes(`../internal/${name}`),
+);
+if (unusedInternals.length > 0) {
   failures.push(
-    ['package.json exports disagree with src/components/:', ...subpathProblems].join('\n'),
+    [
+      'src/internal/ files no component imports:',
+      ...unusedInternals.map((name) => `  ${name}`),
+      'Delete them; git keeps them.',
+    ].join('\n'),
   );
 }
 
 // oppenheimer:begin web-showcase
-// 3. The showcase.
+// 4. The inventory.
 const showcaseDir = join(root, '..', '..', '..', '..', 'apps', 'web-showcase', 'src');
+const tocPath = join(showcaseDir, 'lib', 'toc.ts');
 
-/**
- * Components the console uses that the showcase does not render yet, and
- * `sheet`, which only `sidebar` uses. Each should leave this list by getting a
- * showcase section; the check fails when one does, or when its file is gone,
- * so the list cannot go stale. Add to it only with a reason next to the entry.
- */
-const NOT_IN_SHOWCASE = new Map([
-  ['alert', 'used by the console; no showcase section yet'],
-  ['badge', 'used by the console; no showcase section yet'],
-  ['brand-mark', 'used by the console; no showcase section yet'],
-  ['checkbox', 'used by the console; no showcase section yet'],
-  ['empty', 'used by the console; no showcase section yet'],
-  ['icons', 'the lucide re-export; the showcase imports lucide directly'],
-  ['label', 'used by the console; no showcase section yet'],
-  ['radio-group', 'used by the console; no showcase section yet'],
-  ['search-input', 'used by the console; no showcase section yet'],
-  ['sheet', 'internal to sidebar (its mobile drawer)'],
-  ['skeleton', 'used by the console; no showcase section yet'],
-  ['sonner', 'used by the console; no showcase section yet'],
-  ['table', 'used by the DataTable kit; no showcase section yet'],
-  ['toggle', 'used by the console; no showcase section yet'],
-]);
-
-/** Every source file under `dir`, recursively, skipping build output. */
+/** Every source file under `dir`, recursively. */
 function sourceFiles(dir) {
   const files = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) files.push(...sourceFiles(path));
-    else if (/\.(ts|tsx|mdx?)$/.test(entry.name)) files.push(path);
+    else if (/\.tsx?$/.test(entry.name)) files.push(path);
   }
   return files;
 }
 
-const showcaseSource = sourceFiles(showcaseDir)
-  .map((path) => readFileSync(path, 'utf8'))
-  .join('\n');
-const showcased = (name) =>
-  new RegExp(`@oppenheimer/design-system-web/${name}['"]`).test(showcaseSource);
-const showcaseProblems = [];
+const listed = new Map();
+for (const match of readFileSync(tocPath, 'utf8').matchAll(
+  /id:\s*'([^']+)'[^}]*?components:\s*\[([^\]]*)\]/g,
+)) {
+  for (const name of match[2].match(/'[^']+'/g) ?? []) {
+    const file = name.slice(1, -1);
+    listed.set(file, [...(listed.get(file) ?? []), match[1]]);
+  }
+}
+const showcaseImports = new Set(
+  sourceFiles(showcaseDir)
+    .flatMap((path) => importSpecifiers(readFileSync(path, 'utf8')))
+    .filter((spec) => spec.startsWith('@oppenheimer/design-system-web/'))
+    .map((spec) => spec.slice('@oppenheimer/design-system-web/'.length)),
+);
+const inventoryProblems = [];
 for (const name of componentNames) {
-  if (!showcased(name) && !NOT_IN_SHOWCASE.has(name)) {
-    showcaseProblems.push(`  ${name}: not imported by apps/web-showcase`);
+  const items = listed.get(name) ?? [];
+  if (items.length === 0) inventoryProblems.push(`  ${name}: in no toc.ts item's components`);
+  if (items.length > 1) inventoryProblems.push(`  ${name}: listed by ${items.join(', ')}`);
+  if (!showcaseImports.has(name)) {
+    inventoryProblems.push(
+      `  ${name}: the showcase never imports @oppenheimer/design-system-web/${name}`,
+    );
   }
 }
-for (const name of NOT_IN_SHOWCASE.keys()) {
+for (const [name, items] of listed) {
   if (!componentNames.includes(name)) {
-    showcaseProblems.push(`  ${name}: in NOT_IN_SHOWCASE, but the file is gone`);
-  } else if (showcased(name)) {
-    showcaseProblems.push(`  ${name}: in NOT_IN_SHOWCASE, but the showcase imports it now`);
+    inventoryProblems.push(
+      `  ${name}: listed by ${items.join(', ')}, but src/components/ has no such file`,
+    );
   }
 }
-if (showcaseProblems.length > 0) {
+if (inventoryProblems.length > 0) {
   failures.push(
     [
-      'Showcase coverage:',
-      ...showcaseProblems,
-      'Give a new component a showcase section (apps/web-showcase/src/lib/toc.ts),',
-      'or delete it if nothing uses it. Take an entry off NOT_IN_SHOWCASE once',
-      'the showcase imports it or the file is deleted.',
+      'Inventory (apps/web-showcase/src/lib/toc.ts):',
+      ...inventoryProblems,
+      'A public component gets a <Spec> on the showcase page and its file name in',
+      "that item's components. One only another component uses belongs in",
+      'src/internal/; one nothing uses is deleted.',
     ].join('\n'),
   );
 }
@@ -219,4 +242,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`check-exports: ${componentFiles.length} components, all registered`);
+console.log(
+  `check-exports: ${componentNames.length} components, ${internalNames.length} internal, all accounted for`,
+);

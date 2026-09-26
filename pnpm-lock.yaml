@@ -348,7 +348,7 @@ importers:
         version: 8.2.1
       nuqs:
         specifier: ^2.10.1
-        version: 2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3)
+        version: 2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3)
       posthog-js:
         specifier: ^1.432.0
         version: 1.432.0(@types/react@19.2.14)(react@19.2.3)
@@ -422,9 +422,6 @@ importers:
       '@oppenheimer/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      lucide-react:
-        specifier: ^1.46.0
-        version: 1.46.0(react@19.2.3)
       next:
         specifier: ^16.3.5
         version: 16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1082,9 +1079,6 @@ importers:
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@2.2.0)
-      nuqs:
-        specifier: ^2.10.1
-        version: 2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3)
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -21788,7 +21782,7 @@ snapshots:
       schema-utils: 3.3.0
       webpack: 5.98.0(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.28))(html-minifier-terser@7.2.0)(postcss@8.5.28)
 
-  nuqs@2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3):
+  nuqs@2.10.1(@tanstack/react-router@1.170.36(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(next@16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-router-dom@5.3.4(react@19.2.3))(react-router@5.3.4(react@19.2.3))(react@19.2.3):
     dependencies:
       '@standard-schema/spec': 1.1.0
       react: 19.2.3

@@ -63,8 +63,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   the route composes, and the screen that branches on a session's state is the
   one that asked for it. `pnpm check:structure` fails a query a screen holds
   for one sibling, and a prop that is only forwarded.
-- Hand-rolling a table or an error callout while `DataTable` and `Alert` sit
-  exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
+- Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
 what the markup looks like is [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md).

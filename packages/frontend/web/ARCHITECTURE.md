@@ -4,7 +4,7 @@ The web kit is what `apps/web` builds on below its routes.
 Its top level is **concerns**, not kinds: `src/<concern>/<kind>/`, where the
 kinds are the ones a feature has (`components/`, `dialogs/`, `hooks/`,
 `lib/`). A concern is a subject of the app's UI — the shell, the auth
-chrome, the table — and everything that subject needs sits in one directory.
+chrome, the forms — and everything that subject needs sits in one directory.
 
 The package is source-exported: `main` and `exports` point at
 `src/index.ts`, so each app's Vite build compiles it and tree-shakes it.
@@ -19,9 +19,8 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `useZodResolver` | leaf |
+| `forms` | `useZodResolver`, `useDebouncedCallback`, `useSearchDraft` | leaf |
 | `hosts` | `HostPairingChrome` — the token clock and the status line that the onboarding step and the console's Add host dialog both show | leaf |
-| `table` | `DataTable` (a shell over a header, a body and a footer, so a keystroke in the search field does not re-render the rows), its column/facet/sort types, `useTableQuery`, `useClampedPage`, `useDebouncedCallback`, `paginateRows`, `downloadCsv` | middle |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
@@ -38,7 +37,7 @@ Nothing imports upwards.
 
 The rule exists because `shell` is where everything is tempting to put. Left
 unlayered, a date formatter would import `useShell` for the workspace's
-locale, the table would import the sidebar for its width, and the shell would
+locale, a page header would import the sidebar for its width, and the shell would
 become the dependency of every file in the package — one import cycle away
 from being unbuildable, and impossible to render in a test without mounting
 the whole app. Keeping `shell` and `auth` at the top means they compose the
@@ -148,7 +147,7 @@ page. An app with only the sign-in half would call `redirectSignedIn` from its
 - `no-circular` — no import cycles, counting value imports only.
 - `leaves-stay-leaves` — `platform`, `theme`, `i18n`, `analytics`, `forms`
   never import a middle or top concern.
-- `middle-below-top` — `table`, `layout`, `roles` never import `shell` or
+- `middle-below-top` — `layout`, `roles` never import `shell` or
   `auth`.
 - `concerns-meet-at-their-index` — a concern reaches another only through
   that concern's `index.ts`.

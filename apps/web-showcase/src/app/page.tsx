@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@oppenheimer/design-system-web/avatar';
 import { BrandGlyph } from '@oppenheimer/design-system-web/brand-glyph';
+import { BrandMark } from '@oppenheimer/design-system-web/brand-mark';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
   Card,
@@ -48,7 +49,7 @@ import {
   Settings2Icon,
   TerminalIcon,
   XIcon,
-} from 'lucide-react';
+} from '@oppenheimer/design-system-web/icons';
 import {
   AccountMenuDemo,
   CarouselDemo,
@@ -93,6 +94,7 @@ import {
   TypeLadder,
   Weights,
 } from '@/components/foundations';
+import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/components/feedback';
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
 
@@ -181,8 +183,8 @@ export default function Page() {
 
       <Spec
         id="wordmark"
-        title="Wordmark"
-        meta="wordmark.tsx"
+        title="Wordmark · BrandMark"
+        meta="wordmark.tsx · brand-mark.tsx"
         desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em. The product suffix is the one place uppercase is allowed."
         code={`<Wordmark product="Console" />`}
       >
@@ -196,6 +198,9 @@ export default function Page() {
           <div className="dark rounded-md bg-canvas px-5 py-3">
             <Wordmark product="Console" />
           </div>
+        </Swatch>
+        <Swatch label="BrandMark, the auth chrome's glyph">
+          <BrandMark size={28} />
         </Swatch>
       </Spec>
 
@@ -330,6 +335,16 @@ export default function Page() {
             <Link href="#links">Privacy Policy</Link>.
           </p>
         </Swatch>
+      </Spec>
+
+      <Spec
+        id="badges"
+        title="Badge"
+        meta="badge.tsx"
+        desc="Lifecycle state and quiet metadata. The four status variants carry the run-state hues; neutral is the quiet chip for a role or a count. Never a call to action."
+        code={`<Badge variant="active">Active</Badge>`}
+      >
+        <BadgeDemo />
       </Spec>
 
       <Spec
@@ -643,6 +658,16 @@ export default function Page() {
         </div>
       </Spec>
 
+      <Spec
+        id="skeleton"
+        title="Skeleton"
+        meta="skeleton.tsx"
+        desc="Still loading: the shape of what is coming, on the off track, pulsing. Never a spinner in place of content that has a shape."
+        code={`<Skeleton className="h-4 w-2/3" />`}
+      >
+        <SkeletonDemo />
+      </Spec>
+
       {/* ── Forms ────────────────────────────────────────────────────────── */}
       <GroupHead>Forms</GroupHead>
 
@@ -821,6 +846,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="alert"
+        title="Alert"
+        meta="alert.tsx"
+        desc="A whole-form or whole-page failure, on the flat card with the hue in the ink and the hairline. A note under a form is a Callout; a success is a toast."
+        code={`<Alert variant="destructive"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
+      >
+        <AlertDemo />
+      </Spec>
+
+      <Spec
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
@@ -850,6 +885,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="command"
+        title="Command"
+        meta="command.tsx"
+        desc="The command palette's parts: a search row over grouped rows, each with its icon tile and an optional shortcut. Every row filters as you type."
+        code={`<Command><CommandInput placeholder="Search…" /><CommandList><CommandGroup heading="Actions"><CommandItem>…`}
+      >
+        <CommandDemo />
+      </Spec>
+
+      <Spec
         id="tooltip"
         title="Tooltip"
         meta="tooltip.tsx"
@@ -857,6 +902,16 @@ export default function Page() {
         code={`<Tooltip><TooltipTrigger render={<IconButton aria-label="Filter" />}>…</TooltipTrigger><TooltipContent>Filter sessions</TooltipContent></Tooltip>`}
       >
         <TooltipDemo />
+      </Spec>
+
+      <Spec
+        id="toast"
+        title="Toast"
+        meta="sonner.tsx"
+        desc="A success is a toast, never an inline row or an Alert. Mount one Toaster per app; call toast.success() where the work finished."
+        code={`toast.success('Host renamed')`}
+      >
+        <ToastDemo />
       </Spec>
 
       {/* ── Navigation ───────────────────────────────────────────────────── */}

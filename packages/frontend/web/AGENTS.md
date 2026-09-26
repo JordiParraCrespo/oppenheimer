@@ -36,7 +36,7 @@ pnpm --filter @oppenheimer/frontend-web typecheck   # source-exported: no dist t
 
 - Importing `@oppenheimer/frontend-consumer` to finish a component. `kit-knows-no-product` fails; take the data as props, or leave
   the component in the app.
-- Reaching into another concern's file (`../table/hooks/use-table-query`).
+- Reaching into another concern's file (`../layout/dialogs/confirm-dialog`).
   Concerns meet at their `index.ts` — `concerns-meet-at-their-index`.
 - Importing `shell` or `auth` from a leaf like `theme` or `platform`.
   The layering exists so `shell` does not become everything's dependency;

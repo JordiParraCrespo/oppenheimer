@@ -62,9 +62,10 @@ const {
   layer on gives two competing sets of messages.
 - `data-invalid` on the `Field` drives the destructive styling; `aria-invalid`
   on the control is what assistive tech reads. Set both.
-- Anything that is not a plain input — `Select`, `Checkbox` groups, the
-  `PermissionPicker` — needs a `Controller`, because there is no ref to
-  register.
+- Anything that is not a plain input — a `ChipSelect` or `FieldSelect`, a
+  `SegmentedControl`, the `PermissionMenu` — needs a `Controller`, because
+  there is no ref to register: `value` and `onValueChange` go to the field's
+  `value` and `onChange`.
 
 ## Schemas must not carry their own messages
 

@@ -1,7 +1,7 @@
 # @oppenheimer/frontend-web
 
 The web platform kit: what `apps/web` builds on below its routes — the
-authenticated shell, the auth chrome, the data table, page
+authenticated shell, the auth chrome, page
 layout, form plumbing, theming, i18n, analytics and browser glue. It is
 source-exported (`main` points at `src/index.ts`), so the app's Vite build
 compiles it and tree-shakes what it does not use.
@@ -9,7 +9,7 @@ compiles it and tree-shakes what it does not use.
 The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
-`theme`, `i18n`, `analytics` and `forms` are leaves, `table`, `layout` and
+`theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
 `roles` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
@@ -25,10 +25,9 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **auth** — `AuthLayout`, `AuthArtPanel`, `BrandLogo`, `PasswordInput`,
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
   password-requirement helpers, the provider icons, `redirectSignedIn`.
-- **table** — `DataTable`, `DataTableColumn`, `useTableQuery`,
-  `useClampedPage`, `downloadCsv`, the pagination helpers.
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`; `useErrorMessage` is owned by frontend core and
+- **forms** — `useZodResolver`, `useDebouncedCallback`, `useSearchDraft`;
+  `useErrorMessage` is owned by frontend core and
   re-exported for compatibility.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.
 - **i18n** — `i18n`, `i18nReady`, `LOCALE_STORAGE_KEY`, `LanguageSwitcher`,
