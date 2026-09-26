@@ -56,6 +56,7 @@ import {
   ComposerDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
+  CheckboxDemo,
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
@@ -731,6 +732,16 @@ export default function Page() {
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
+      </Spec>
+
+      <Spec
+        id="checkbox"
+        title="Checkbox"
+        meta="checkbox.tsx"
+        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryRowList and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
+        code={`<FieldLabel className="flex items-center gap-2.5"><Checkbox checked={discard} onCheckedChange={setDiscard} /> Discard unpushed work</FieldLabel>`}
+      >
+        <CheckboxDemo />
       </Spec>
 
       <Spec

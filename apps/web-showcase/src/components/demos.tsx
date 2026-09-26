@@ -152,6 +152,7 @@ import { TemplateGrid, TemplateItem } from '@oppenheimer/design-system-web/templ
 import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
+import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ChevronDownIcon,
@@ -631,6 +632,18 @@ export function SegmentedDemo() {
       <SegmentedControlItem value="cmd">Command</SegmentedControlItem>
       <SegmentedControlItem value="prompt">Agent prompt</SegmentedControlItem>
     </SegmentedControl>
+  );
+}
+
+/* ── Checkbox ────────────────────────────────────────────────────────────── */
+
+export function CheckboxDemo() {
+  const [discard, setDiscard] = React.useState(false);
+  return (
+    <FieldLabel className="flex items-center gap-2.5">
+      <Checkbox checked={discard} onCheckedChange={(checked) => setDiscard(checked === true)} />
+      Discard work that is not pushed
+    </FieldLabel>
   );
 }
 

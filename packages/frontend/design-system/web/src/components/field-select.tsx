@@ -4,7 +4,7 @@ import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import { Checkbox } from '../internal/checkbox';
+import { Checkbox } from './checkbox';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 

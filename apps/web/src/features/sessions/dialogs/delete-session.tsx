@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Label,
+  FieldLabel,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
@@ -54,14 +54,14 @@ export function DeleteSessionDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 px-7">
-          <Label className="flex items-center gap-2.5 text-sm text-fg">
+          <FieldLabel className="flex items-center gap-2.5">
             <Checkbox
               checked={discard}
               onCheckedChange={(checked) => setDiscard(checked === true)}
               disabled={close.isPending}
             />
             {t('sessions.deleteSession.discard')}
-          </Label>
+          </FieldLabel>
           {close.isError ? (
             <Alert variant="destructive">
               <AlertDescription>

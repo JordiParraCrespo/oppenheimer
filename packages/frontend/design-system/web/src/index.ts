@@ -36,6 +36,7 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card';
+export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
 export type {
