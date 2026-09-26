@@ -24,9 +24,9 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
-| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and routines, the sidebar grouped by project, terminal, composer |
-| [`Routines`](version1/Routines.dc.html) | The console on its routines page — routines grouped by project, their triggers, steps and run history |
-| [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (add, rename, remove, install command, agent prompt) |
+| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and automations, the sidebar grouped by project, terminal, composer |
+| [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
+| [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
 States inside the onboarding screens are live: the workspace address checks
@@ -37,11 +37,17 @@ projects (each with default repositories, host and agent), a session row
 renames, moves to another project or deletes, a new session shows a
 "Starting your session" wait, and the terminal header marks the link as
 live or reconnecting. `Components` adds the Callout (neutral, info, success,
-warning, error), and the parts the routines and settings pages are built
-from: rail, routine rows and table, run history, templates, settings nav and
-group, host card, page header, segmented tabs. The console's styles moved
+warning, error), and the parts the automations and settings pages are built
+from: rail, automation rows and table, run history, templates, settings nav
+and group, host card, page header, segmented tabs. The console's styles moved
 into `version1/console.css`, shared by `SessionsConsole` and `Components`;
-`Routines` is `SessionsConsole` opened on its routines page.
+`Routines` is `SessionsConsole` opened on its automations page.
+
+Routines were renamed Automations in the 2026-09-26 evening export. The
+rename is in the copy only: the file is still `Routines.dc.html` and the
+frames' internal names (`page="routines"`, the `routine` state) are
+unchanged. The same export turned Add a host from a dialog into a page,
+in the console and in Settings.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -77,8 +83,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - The 2026-09-24 export also carried a `version2/` canvas (a chat view); it
   is not part of the MVP and was left out, as were `screens/` and
   `screenshots/`. The 2026-09-26 export has no `version2/`.
-- Routines and the Settings page are in the version-1 frames as of the
-  2026-09-26 export, but `../00-scope.md` still lists routines as a later
+- Automations (formerly routines) and the Settings page are in the
+  version-1 frames as of the 2026-09-26 exports, but `../00-scope.md` still
+  lists routines as a later
   slice and `../05-screens.md` still says the MVP has no settings page.
   The notes have not been reconciled with these frames yet.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
