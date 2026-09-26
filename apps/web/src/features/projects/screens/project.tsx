@@ -169,7 +169,11 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   // The recap under the title reads the name as it is typed; this page is the
   // lowest component that shows it, so the subscription is here.
   const name = useWatch({ control, name: 'name' });
-  const block = projectBlock(name ?? '', { rows, defaultHostId, defaultAgent });
+  const block = projectBlock(
+    name ?? '',
+    { rows, defaultHostId, defaultAgent },
+    { holdsNone: fixed },
+  );
   const summary = repositorySummary(rows);
   const hostName = hosts.data?.find((host) => host.id === defaultHostId)?.name;
   const agentLabel = defaultAgent ? CODING_AGENTS[defaultAgent].label : undefined;
@@ -179,12 +183,21 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
     const input = {
       // Unassigned keeps its name, so the name is not sent for it.
       ...(fixed ? {} : { name: values.name.trim() }),
-      repositories: toProjectRepositoryInputs(shown, defaultBranches),
+      // Unassigned with no repository leaves the list as it is: the API holds a
+      // project's repositories to at least one whenever they are sent.
+      ...(fixed && shown.length === 0
+        ? {}
+        : { repositories: toProjectRepositoryInputs(shown, defaultBranches) }),
       defaultHostId,
       defaultAgent,
     };
     if (project) update.mutate({ id: project.id, input });
-    else create.mutate({ ...input, name: values.name.trim() });
+    else
+      create.mutate({
+        ...input,
+        name: values.name.trim(),
+        repositories: toProjectRepositoryInputs(shown, defaultBranches),
+      });
   }
 
   const back = editing ? { to: '/sessions' as const } : { to: '/sessions/new' as const };

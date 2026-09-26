@@ -103,6 +103,7 @@ describe('OrganizationsService', () => {
   const memberRecords = { findOne: vi.fn().mockResolvedValue(null) };
   const sessions = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
   const accessGrants = { delete: vi.fn().mockResolvedValue({ affected: 0 }) };
+  const events = { emitAsync: vi.fn().mockResolvedValue([]) };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -133,6 +134,7 @@ describe('OrganizationsService', () => {
       memberRecords as never,
       sessions as never,
       accessGrants as never,
+      events as never,
     );
   });
 
@@ -167,6 +169,18 @@ describe('OrganizationsService', () => {
       api.createOrganization.mockResolvedValue(orgRecord);
       const result = await service.create(headers, { name: 'Acme' });
       expect(result.id).toBe('org1');
+    });
+
+    // The caller's own workspace, made on /onboarding: announced as sign-up's
+    // is, so the projects module gives it its Unassigned project.
+    it('announces the workspace it provisioned', async () => {
+      api.createOrganization.mockResolvedValue(orgRecord);
+      api.getSession.mockResolvedValue({ user: { id: 'u1' } });
+      await service.create(headers, { name: 'Acme' });
+      expect(events.emitAsync).toHaveBeenCalledWith(
+        'PersonalWorkspaceProvisionedDomainEvent',
+        expect.objectContaining({ aggregateId: 'org1' }),
+      );
     });
 
     /**

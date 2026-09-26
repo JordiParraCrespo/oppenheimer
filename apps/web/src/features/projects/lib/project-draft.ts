@@ -20,10 +20,18 @@ export type ProjectBlock = 'name' | 'repositories' | 'default';
  * least one repository, at least one of them default. A base branch is never
  * empty on this side, because a row without a choice reads the repository's
  * own default.
+ *
+ * The workspace's Unassigned project (`holdsNone`) may hold no repository at
+ * all — it is where work that names no project goes — so an empty list does
+ * not block it; one it does hold still needs a default.
  */
-export function projectBlock(name: string, draft: ProjectDraft): ProjectBlock | null {
+export function projectBlock(
+  name: string,
+  draft: ProjectDraft,
+  options: { holdsNone?: boolean } = {},
+): ProjectBlock | null {
   if (!name.trim()) return 'name';
-  if (draft.rows.length === 0) return 'repositories';
+  if (draft.rows.length === 0) return options.holdsNone ? null : 'repositories';
   if (!draft.rows.some((row) => row.isDefault)) return 'default';
   return null;
 }

@@ -61,9 +61,11 @@ test.describe('New session', () => {
     // there: it is where a session that names none is listed. The way to a
     // named one is inside the chip, a page over the main column (the
     // 2026-09-26 evening export).
-    await expect(page.getByRole('button', { name: 'Project' })).toContainText('Unassigned');
-    await page.getByRole('button', { name: 'Project' }).click();
-    await page.getByRole('option', { name: 'New project…' }).click();
+    await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
+      'Unassigned',
+    );
+    await page.getByRole('button', { name: 'Project', exact: true }).click();
+    await page.getByRole('button', { name: 'New project…' }).click();
     await expect(page).toHaveURL(/\/projects\/new$/);
     // Save is off until the project is whole, and the recap says what is missing.
     await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
@@ -75,7 +77,7 @@ test.describe('New session', () => {
     // Creating lands back on New session with the project in the address…
     await expect(page).toHaveURL(/\/sessions\/new\?project=/);
     // …and picking it prefilled the host and the repository from its defaults.
-    await expect(page.getByRole('button', { name: 'Project' })).toContainText('XRP');
+    await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
       STUB_REPOSITORIES.web.name,
