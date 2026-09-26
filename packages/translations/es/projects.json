@@ -1,43 +1,66 @@
 {
-  "unassigned": "Sin asignar",
-  "new": {
-    "title": "Nuevo proyecto",
-    "back": "Atrás",
-    "nameLabel": "Nombre del proyecto",
+  "page": {
+    "newTitle": "Nuevo proyecto",
+    "editTitle": "Ajustes del proyecto",
+    "name": "Nombre del proyecto",
     "namePlaceholder": "Ponle nombre al proyecto",
+    "back": "Atrás",
+    "crumbSessions": "Sesiones",
+    "crumbNewSession": "Nueva sesión",
     "create": "Crear proyecto",
     "creating": "Creando…",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
     "failed": "No se pudo crear el proyecto.",
+    "saveFailed": "No se pudo guardar el proyecto.",
     "recap": {
       "name": "Ponle nombre al proyecto y elige sus repositorios.",
-      "repository": "Elige al menos un repositorio.",
-      "default": "Marca al menos un repositorio como predeterminado."
+      "repositories": "Elige al menos un repositorio.",
+      "default": "Marca al menos un repositorio por defecto."
     },
-    "repositories": {
-      "title": "Repositorios",
-      "subtitle": "El código que pueden clonar las sesiones de este proyecto.",
-      "summary_one": "{{count}} repositorio · {{defaults}} predeterminado",
-      "summary_other": "{{count}} repositorios · {{defaults}} predeterminados",
-      "defaults": "Repositorios predeterminados",
-      "defaultsHint": "Marcados en cada sesión nueva. Añade otros en cada sesión.",
-      "defaultCount": "{{defaults}} de {{total}} por defecto",
-      "search": "Buscar repositorios…",
-      "noMatch": "Ningún repositorio coincide con «{{query}}».",
-      "none": "Todavía no hay ningún repositorio conectado.",
-      "default": "Predeterminado",
-      "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-      "branchSearch": "Buscar ramas",
-      "branchEmpty": "No hay ninguna rama llamada «{{query}}»",
-      "branchLabel": "Rama base de {{name}}"
+    "summary": {
+      "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
+      "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
     },
-    "host": {
-      "title": "Host predeterminado",
-      "subtitle": "Dónde se ejecutan las sesiones nuevas si no eliges otro.",
-      "none": "Todavía no hay ningún host emparejado."
+    "steps": {
+      "repositories": {
+        "title": "Repositorios",
+        "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
+        "label": "Repositorios por defecto",
+        "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
+        "defaultCount": "{{defaults}} de {{count}} por defecto",
+        "search": "Buscar repositorios…",
+        "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+        "none": "Todavía no hay ningún repositorio conectado.",
+        "default": "Por defecto",
+        "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+        "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
+      },
+      "host": {
+        "title": "Host por defecto",
+        "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
+        "none": "Todavía no hay ningún host emparejado."
+      },
+      "agent": {
+        "title": "Agente por defecto",
+        "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
+      }
     },
-    "agent": {
-      "title": "Agente predeterminado",
-      "subtitle": "Se inicia en cada sesión nueva. Cámbialo en cada sesión."
-    }
-  }
+    "delete": {
+      "title": "Eliminar proyecto",
+      "hint": "Elimina este proyecto.",
+      "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
+      "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
+      "action": "Eliminar proyecto",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar el proyecto."
+    },
+    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+  },
+  "deleteDialog": {
+    "title": "¿Eliminar {{name}}?",
+    "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
+    "confirm": "Eliminar proyecto"
+  },
+  "unassigned": "Sin asignar"
 }

@@ -30,9 +30,7 @@ function toEntity(data: ProjectResponseDto): ProjectEntity {
         githubRepoId: Number(repository.githubRepoId),
       }),
       installationId: repository.installationId,
-      // The API sends a bigint as a string; the console compares it with the
-      // ids the installation listing serves, which are numbers.
-      githubRepoId: Number(repository.githubRepoId),
+      githubRepoId: repository.githubRepoId,
       fullName: repository.repositoryFullName,
       isDefault: repository.isDefault,
       baseBranch: repository.baseBranch,

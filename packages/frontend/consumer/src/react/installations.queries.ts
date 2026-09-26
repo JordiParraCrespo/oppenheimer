@@ -17,7 +17,6 @@ import type {
   InstallationEntity,
   RepositoryEntity,
 } from '../modules/installations/installation.entity';
-import type { RepositoryRef } from '../modules/installations/repository-key';
 import { useConsumerApp } from './context';
 
 /**
@@ -162,7 +161,11 @@ export function useRepositoryBranches(
   });
 }
 
-export type { RepositoryRef } from '../modules/installations/repository-key';
+/** One repository, as a picker names it: our installation row plus GitHub's id. */
+export interface RepositoryRef {
+  installationId: string;
+  githubRepoId: number;
+}
 
 /**
  * The branches of several repositories at once — what New session needs, since

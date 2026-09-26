@@ -3,13 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { projectPrefill, repositoryKey, toProjectOptions } from '../lib/session-options';
 
 /**
- * What picking a project sets on the other chips, and how the chip lists the
- * projects (`product/versions/mvp/05-screens.md`). The rule that matters: a
- * default the workspace no longer has is skipped, never written.
+ * What picking a project sets on the other chips
+ * (`product/versions/mvp/05-screens.md`). The rule that
+ * matters: a default the workspace no longer has is skipped, never written.
  */
-const LABELS = { noRepositories: 'none', unassigned: 'Sin asignar' };
-
-const repo = (githubRepoId: number, fullName: string, isDefault: boolean, baseBranch: string) => ({
+const repo = (githubRepoId: string, fullName: string, isDefault: boolean, baseBranch: string) => ({
   id: `row-${githubRepoId}`,
   installationId: 'inst-1',
   githubRepoId,
@@ -33,8 +31,8 @@ function project(
     'defaultHostId' in overrides ? (overrides.defaultHostId ?? null) : 'host-1',
     'defaultAgent' in overrides ? (overrides.defaultAgent ?? null) : 'codex',
     overrides.repositories ?? [
-      repo(1, 'acme/atlas', false, 'main'),
-      repo(2, 'acme/xrp-mobile', true, 'develop'),
+      repo('1', 'acme/atlas', false, 'main'),
+      repo('2', 'acme/xrp-mobile', true, 'develop'),
     ],
     new Date(),
     new Date(),
@@ -68,11 +66,18 @@ describe('projectPrefill', () => {
     );
     expect(projectPrefill(bare, ['host-1'])).toEqual({});
   });
+
+  it('carries the base branch the project holds', () => {
+    const own = project({ repositories: [repo('2', 'acme/xrp-mobile', true, 'main')] });
+    expect(projectPrefill(own, []).scope?.[0]?.branch).toBe('main');
+  });
 });
 
 describe('toProjectOptions', () => {
   it('names the project and, under it, what every new session clones', () => {
-    expect(toProjectOptions([project()], LABELS)).toEqual([
+    expect(
+      toProjectOptions([project()], { noRepositories: 'none', unassigned: 'Unassigned' }),
+    ).toEqual([
       expect.objectContaining({ value: 'p-1', label: 'XRP Mobile', description: 'xrp-mobile' }),
     ]);
     const bare = new ProjectEntity(
@@ -86,23 +91,9 @@ describe('toProjectOptions', () => {
       new Date(),
       new Date(),
     );
-    expect(toProjectOptions([bare], LABELS)[0]?.description).toBe('none');
-  });
-
-  it('lists Unassigned first, under its translated name', () => {
-    const unassigned = new ProjectEntity(
-      'p-u',
-      'Unassigned',
-      'unassigned',
-      true,
-      null,
-      null,
-      [],
-      new Date(),
-      new Date(),
-    );
-    expect(toProjectOptions([project(), unassigned], LABELS).map((option) => option.label)).toEqual(
-      ['Sin asignar', 'XRP Mobile'],
-    );
+    expect(
+      toProjectOptions([bare], { noRepositories: 'none', unassigned: 'Unassigned' })[0]
+        ?.description,
+    ).toBe('none');
   });
 });

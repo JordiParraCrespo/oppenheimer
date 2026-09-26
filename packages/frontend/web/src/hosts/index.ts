@@ -1,1 +1,6 @@
-export { HostPairingChrome, type PairingHost } from './components/pairing-chrome';
+export {
+  HostPairingChrome,
+  HostPairingStatus,
+  HostPairingToken,
+  type PairingHost,
+} from './components/pairing-chrome';

@@ -26,22 +26,19 @@ import {
 } from '@oppenheimer/shared/agents';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
 
+// The key a picker's row is named by is the console's, kept in the product
+// package; re-exported so the chips beside this file read one vocabulary.
+export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consumer';
+
 /**
  * Entities in, option shapes out. Nothing here renders, and nothing here
  * fetches: this is the one place that knows both the console's vocabulary and
  * the design system's, so a picker cannot drift from what the API answered.
  *
- * The one genuinely tricky mapping is the repository's **id**. A picker's rows
- * need one string each, and `githubRepoId` alone is not unique across two
- * installations of the App — so a row is keyed by the pair, and the pair is
- * what is parsed back out when a session is created.
+ * The one genuinely tricky mapping is the repository's **id**: a row is keyed
+ * by the installation and GitHub's id together (`repositoryKey`, the product
+ * package's), and the pair is parsed back out when a session is created.
  */
-
-export {
-  parseRepositoryKey,
-  type RepositoryRef,
-  repositoryKey,
-} from '@oppenheimer/frontend-consumer';
 
 /**
  * The hosts, as the host chip's rows.
@@ -194,14 +191,15 @@ export function capRepositories(
 
 /**
  * The projects, as the project chip's rows: the name, and under it the
- * repositories a new session is offered — or the word for a project that
- * holds none. Unassigned comes first, under its translated name: it is where
- * work that names no project goes, and the API's spelling is English.
+ * repositories every new session clones — or the word for a project that
+ * holds none.
  */
 export function toProjectOptions(
   projects: readonly ProjectEntity[],
   labels: { noRepositories: string; unassigned: string },
 ): ChipSelectOption[] {
+  // Unassigned first, under its translated name: it is where work that names
+  // no project goes, and the API's spelling of it is English.
   const ordered = [
     ...projects.filter((project) => project.isUnassigned),
     ...projects.filter((project) => !project.isUnassigned),
@@ -243,7 +241,7 @@ export function projectPrefill(
           installationId: first.installationId,
           githubRepoId: first.githubRepoId,
         }),
-        branch: first.baseBranch,
+        branch: first.baseBranch ?? '',
       },
     ];
   }

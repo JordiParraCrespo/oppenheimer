@@ -35,9 +35,9 @@ import { NewSessionSend } from './new-session-send';
  * (`product/versions/mvp/05-screens.md`); then the host, the
  * repository, and the branch while exactly one repository is selected.
  */
-export function NewSessionForm({ projectId }: { projectId?: string }) {
+export function NewSessionForm() {
   const { t } = useTranslation();
-  const form = useNewSessionForm(projectId);
+  const form = useNewSessionForm();
 
   return (
     <NewSessionFormContext.Provider value={form}>

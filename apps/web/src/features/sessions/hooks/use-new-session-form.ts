@@ -1,8 +1,6 @@
-import { useHostsSnapshot, useProjectsSnapshot } from '@oppenheimer/frontend-consumer/react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { type UseFormReturn, useForm } from 'react-hook-form';
 import { initialDraft, type NewSessionDraft, rememberDraft } from '../lib/new-session-draft';
-import { projectPrefill } from '../lib/session-options';
 
 /**
  * The New session draft, as one React Hook Form store the chips subscribe to
@@ -26,28 +24,10 @@ export type NewSessionDraftForm = UseFormReturn<NewSessionDraft>;
 
 export const NewSessionFormContext = createContext<NewSessionDraftForm | null>(null);
 
-/**
- * Create the draft's store, seeded from the last visit and remembering this one.
- *
- * `projectId` is a project the URL names — the one New project just made — and
- * it wins over the remembered one, with its defaults applied as a pick would
- * apply them. It is read from the cache once, when the store is made: the
- * create put it there before navigating here.
- */
-export function useNewSessionForm(projectId?: string): NewSessionDraftForm {
-  const projects = useProjectsSnapshot();
-  const hosts = useHostsSnapshot();
-  // Read storage and the cache once, not on every render of the section.
-  const [defaultValues] = useState(() => {
-    const draft = initialDraft();
-    const named = projectId ? projects()?.find((project) => project.id === projectId) : undefined;
-    if (!named) return draft;
-    const prefill = projectPrefill(
-      named,
-      (hosts() ?? []).map((host) => host.id),
-    );
-    return { ...draft, ...prefill, projectId: named.id };
-  });
+/** Create the draft's store, seeded from the last visit and remembering this one. */
+export function useNewSessionForm(): NewSessionDraftForm {
+  // Read storage once, not on every render of the section.
+  const [defaultValues] = useState(initialDraft);
   const form = useForm<NewSessionDraft>({ defaultValues });
 
   // `localStorage`: the five remembered fields are written out as they change.

@@ -413,6 +413,7 @@ are never reissued.
 | `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
 | `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
 | `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
+| `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -435,6 +436,10 @@ the command of every agent it can launch, installed or not, so a host whose last
 inventory has no entry for that command runs a build that would refuse the
 launch; updating the runner is the fix. Whether the agent is *installed* is never
 checked here — that is a hint on the engine button, and the terminal says so.
+
+`SESSIONS_018` is no longer raised. It refused a move to a project that did not hold the
+session's repositories; a session moves to any project now, because a project is
+metadata. The code stays reserved.
 
 `SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
 (`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not

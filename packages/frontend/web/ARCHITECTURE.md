@@ -20,7 +20,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `useZodResolver`, `useSearchDraft` | leaf |
-| `hosts` | `HostPairingChrome` — the token clock and the status line that the onboarding step and the console's Add host dialog both show | leaf |
+| `hosts` | `HostPairingChrome`, and its two halves `HostPairingToken` and `HostPairingStatus` — the token clock and the status line that the onboarding step and the console's Add a host page both show | leaf |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |

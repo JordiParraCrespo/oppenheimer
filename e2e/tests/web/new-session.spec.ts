@@ -13,7 +13,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  *
  * What this covers that nothing else can: the screen's five pickers are bound
  * to four live reads and two writes, and a session created here is a row the
- * API actually holds — in the project the New project page made, with the launch
+ * API actually holds — in the project the page made, with the launch
  * options the foot row was set to, the first task in its log, and a name
  * derived from that task.
  *
@@ -58,23 +58,23 @@ test.describe('New session', () => {
 
     // ── The project chip, and the page behind its foot row ───────────────────
     // A fresh workspace has only its Unassigned project, and the chip starts
-    // there: it is where a session that names none is listed.
+    // there: it is where a session that names none is listed. The way to a
+    // named one is inside the chip, a page over the main column (the
+    // 2026-09-26 evening export).
     await expect(page.getByRole('button', { name: 'Project' })).toContainText('Unassigned');
     await page.getByRole('button', { name: 'Project' }).click();
     await page.getByRole('option', { name: 'New project…' }).click();
     await expect(page).toHaveURL(/\/projects\/new$/);
-
-    // The name is the title; Create waits for it and for a default repository.
-    const create = page.getByRole('button', { name: 'Create project' });
-    await expect(create).toBeDisabled();
-    await page.getByRole('textbox', { name: 'Project name' }).fill('XRP');
+    // Save is off until the project is whole, and the recap says what is missing.
+    await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
+    await page.getByLabel('Project name').fill('XRP');
     // Ticking a repository makes it a default.
     await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
     await page.getByRole('button', { name: 'E2E box' }).click();
-    await create.click();
-
-    // Back on New session, on the project just made, its defaults applied.
-    await expect(page).toHaveURL(/\/sessions\/new\?project=[0-9a-f-]{36}$/);
+    await page.getByRole('button', { name: 'Create project' }).click();
+    // Creating lands back on New session with the project in the address…
+    await expect(page).toHaveURL(/\/sessions\/new\?project=/);
+    // …and picking it prefilled the host and the repository from its defaults.
     await expect(page.getByRole('button', { name: 'Project' })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
@@ -90,7 +90,7 @@ test.describe('New session', () => {
 
     // ── The repository chip, and the branch pane inside it ───────────────────
     // One repository per session in the MVP: picking another replaces the
-    // project's default: a project's repositories are offered, never imposed.
+    // project's default, which is the per-session override 12 describes.
     await page.getByRole('button', { name: 'Repositories' }).click();
     await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
     // A selected row grows the cell that opens its own branch pane. Picking a

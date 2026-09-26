@@ -88,7 +88,7 @@ export const SESSION_EVENT_KINDS = {
   NAMED: 'session.named',
   /**
    * The session is listed under another project. Payload `{ from, to }`. Nothing
-   * moves on disk: the tree stays in its home project's directory.
+   * moves on disk: a session's directory and branch never name a project.
    */
   MOVED: 'session.moved',
   /** A repository was added to a session. */
@@ -329,7 +329,12 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
     case SESSION_EVENT_KINDS.MOVED:
       // Listing only. A resolved session is a tombstone and stays where it ended.
       if (next.state === 'resolved') return next;
-      next.projectId = stringField(event.payload, 'to') ?? next.projectId;
+      // `{ from, to }`; an entry written before the payload was settled carries
+      // `{ projectId, fromProjectId }`, and a replay still has to read it.
+      next.projectId =
+        stringField(event.payload, 'to') ??
+        stringField(event.payload, 'projectId') ??
+        next.projectId;
       return next;
     case SESSION_EVENT_KINDS.CWD_SET:
       next.cwdCheckoutId = stringField(event.payload, 'checkoutId');

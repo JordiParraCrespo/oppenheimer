@@ -1,10 +1,11 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
-import { useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
+import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ProjectSelect } from '../components/project-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
+import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
@@ -14,12 +15,12 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  *
  * It subscribes to the projects because it draws them. The hosts it only
  * reads at pick time, to know which project default is still a machine this
- * workspace has, so a refetch of the host list does not re-render it.
- *
- * With no project picked it shows the workspace's Unassigned project, which is
- * where the API lists a session that names none — so what the chip says and
- * where the session lands never disagree. New project… is a page: it comes
- * back here with what it made (`?project=`), and the draft starts on it.
+ * workspace has, so a refetch of the host list does not re-render it — what
+ * it subscribes to is only whether that list has answered, because a pick
+ * made before it has would drop the project's default host as if it were
+ * gone. New project… is the project page (`/projects/new`), which lands back
+ * here with what it made in the address — the same `?project=` the sidebar's
+ * "New session here" names — and the chip picks it once the lists can.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
@@ -27,13 +28,18 @@ export function NewSessionProject() {
   const { field } = useController({ control, name: 'projectId' });
   const navigate = useNavigate();
 
+  const search = useSearch({ from: '/_authenticated/sessions/new' });
   const projects = useProjects();
   const hosts = useHostsSnapshot();
+  // A boolean that flips once, so the settle re-renders this chip once and a
+  // refetch that changes the rows never does.
+  const { data: hostsReady } = useHosts({ select: () => true });
 
   // A remembered project the workspace no longer has, or one not yet loaded,
   // is shown as Unassigned rather than as an id: the list is the truth once it
   // answers, and only then is "that project is gone" a fact. The send leaves
-  // such an id out, and the API lists the session in Unassigned.
+  // such an id out, and the API lists the session in Unassigned — so what the
+  // chip says and where the session lands never disagree.
   const value = projects.data?.some((project) => project.id === field.value)
     ? field.value
     : (projects.data?.find((project) => project.isUnassigned)?.id ?? null);
@@ -50,6 +56,9 @@ export function NewSessionProject() {
     if (prefill.agent !== undefined) setValue('agent', prefill.agent);
     if (prefill.model !== undefined) setValue('model', prefill.model);
   }
+
+  // The sidebar's "New session here" names the project in the address.
+  useSearchPick(search.project, projects.data, hostsReady === true, pick);
 
   return (
     <ProjectSelect

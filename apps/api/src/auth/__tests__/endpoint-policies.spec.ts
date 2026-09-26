@@ -62,8 +62,8 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'GET /sessions/:id/events': { controller: FindSessionEventsHttpController, handler: 'list' },
   'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
   'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
-  'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
   'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
+  'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
   'POST /sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
   'DELETE /sessions/:id/checkouts/:checkoutId': {
     controller: RemoveCheckoutHttpController,

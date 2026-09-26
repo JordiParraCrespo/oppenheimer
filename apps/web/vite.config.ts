@@ -53,7 +53,6 @@ export default defineConfig({
       // flags and the effort stops out of it.
       '@oppenheimer/shared/agents',
       '@oppenheimer/shared/schemas/session',
-      '@oppenheimer/shared/schemas/project',
       // The attach socket's control vocabulary and close codes.
       '@oppenheimer/shared/protocol',
     ],

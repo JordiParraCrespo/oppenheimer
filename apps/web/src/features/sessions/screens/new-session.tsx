@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { NewSessionForm } from '../sections/new-session-form';
 
@@ -10,13 +9,10 @@ import { NewSessionForm } from '../sections/new-session-form';
  * composer (`product/versions/mvp/05-screens.md`).
  *
  * The screen composes and nothing else. Every read this pane makes belongs to
- * the section below it, which is the component that renders the result. The
- * one thing it reads is the URL's `project`: the project New project just
- * made, which the draft starts on.
+ * the section below it, which is the component that renders the result.
  */
 export function NewSessionScreen() {
   const { t } = useTranslation();
-  const { project } = useSearch({ from: '/_authenticated/sessions/new' });
 
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas">
@@ -28,7 +24,7 @@ export function NewSessionScreen() {
           <p className="mt-1.5 text-base text-fg-muted">{t('sessions.new.subtitle')}</p>
         </div>
 
-        <NewSessionForm projectId={project} />
+        <NewSessionForm />
       </div>
     </div>
   );

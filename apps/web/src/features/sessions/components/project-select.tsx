@@ -13,8 +13,8 @@ import { useTranslation } from 'react-i18next';
  *
  * Props in, choice out — the list is read by the section above. What this
  * file owns is the chip's copy and its foot row, **New project…**, which
- * opens the project page: the chip only says "open it", and where the reader
- * goes is the section's.
+ * opens the dialog the section holds: the chip only says "open it", and where
+ * the project it makes lands — the draft — is the section's.
  */
 export function ProjectSelect({
   projects,

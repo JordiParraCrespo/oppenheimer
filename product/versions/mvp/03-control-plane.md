@@ -172,6 +172,7 @@ POST   /api/v1/sessions                                 create Session  sessions
 PATCH  /api/v1/sessions/{id}                            update Session  sessions:write
 POST   /api/v1/sessions/{id}/stop                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/restart                    update Session  sessions:write
+POST   /api/v1/sessions/{id}/move                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/attach-ticket              update Session  sessions:write
 POST   /api/v1/sessions/{id}/checkouts                  update Session  sessions:write
 DELETE /api/v1/sessions/{id}/checkouts/{checkoutId}     update Session  sessions:write
@@ -289,6 +290,17 @@ overwrites a name a person typed, and that rule is in the fold; it is also
 what stops a second naming, since the *first* prompt is the one it names from
 and there is only one of those. The one line that leaves the host is the
 person's own prompt.
+
+**A session moves between projects as one event, and nothing else moves.**
+`POST /sessions/{id}/move` appends `session.moved` (`{ from, to }`; an entry
+written while the payload was `{ projectId, fromProjectId }` still folds),
+which the fold projects onto `projectId`. Any active project can take any
+session — a project is metadata, so there is no rule about its repositories
+(`SESSIONS_018` is retired) — an archived one cannot (`SESSIONS_006`), and a
+move to the project the session is already in is a no-op. Nothing on the
+host changes, because nothing on the host names a project: the session's
+directory is `workspaces/<org>/sessions/<slug>` and its branch
+`oppenheimer/<slug>`. Like a rename, a move tells no host anything.
 
 ## The relay, as built
 

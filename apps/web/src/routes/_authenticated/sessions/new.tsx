@@ -5,15 +5,18 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
  * New session. `full`, like the rest of `/sessions`: the composer is the
  * console's main pane in the artboards, not a page inside it.
  *
- * `?project=` names a project to start on — New project sends the reader back
- * here with the one it just made. Unknown keys pass through, so nuqs keeps
- * whatever it wrote.
+ * `?project=` is the sidebar's "New session here" and what a new project
+ * lands with: the project chip starts on that project and its defaults
+ * prefill the rest (`product/versions/mvp/05-screens.md`).
+ * `?host=` is what Add a host lands with: the host chip starts on the
+ * machine it paired. Unknown keys are carried through, as `__root.tsx` asks.
  */
 export const Route = createFileRoute('/_authenticated/sessions/new')({
-  validateSearch: (search: Record<string, unknown>): { project?: string } => ({
-    ...search,
-    project: typeof search.project === 'string' ? search.project : undefined,
-  }),
   component: NewSessionScreen,
   staticData: { pane: 'full' },
+  validateSearch: (search: Record<string, unknown>): { project?: string; host?: string } => ({
+    ...search,
+    project: typeof search.project === 'string' ? search.project : undefined,
+    host: typeof search.host === 'string' ? search.host : undefined,
+  }),
 });

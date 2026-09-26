@@ -48,6 +48,19 @@ export interface NavLink {
   labelKey: keyof Messages['nav'];
 }
 
+/** A row of the Settings sidebar: a link with an icon and a `settings.nav.*` label. Data only. */
+export interface SettingsNavItemConfig {
+  to: NavTo;
+  icon: LucideIcon;
+  labelKey: keyof Messages['settings']['nav'];
+}
+
+/** One eyebrow-labelled group of the Settings sidebar (Account, Workspace). */
+export interface SettingsNavGroupConfig {
+  labelKey: keyof Messages['settings']['nav'];
+  items: readonly SettingsNavItemConfig[];
+}
+
 /** What the shell shows as the workspace in the sidebar header. */
 export interface ShellWorkspace {
   name: string;

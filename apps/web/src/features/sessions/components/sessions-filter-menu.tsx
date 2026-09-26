@@ -14,10 +14,13 @@ import {
 } from '@oppenheimer/design-system-web';
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
-import type { FilterOption, SessionFilters, SessionSort } from '../lib/session-filters';
-
-/** The facets, in the order the artboard's menu lists them. */
-const FACETS = ['repository', 'agent', 'host'] as const;
+import {
+  FACETS,
+  type FilterOption,
+  type SessionFacet,
+  type SessionFilters,
+  type SessionSort,
+} from '../lib/session-filters';
 
 /** The orders it offers, likewise. */
 const SORTS: SessionSort[] = ['recent', 'oldest', 'name'];
@@ -42,13 +45,13 @@ export function SessionsFilterMenu({
   onClear,
 }: {
   filters: SessionFilters;
-  options: Record<(typeof FACETS)[number], FilterOption[]>;
+  options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
 }) {
   const { t } = useTranslation();
-  const labelFor = (facet: (typeof FACETS)[number]) =>
+  const labelFor = (facet: SessionFacet) =>
     options[facet].find((option) => option.value === filters[facet])?.label ?? '';
 
   return (

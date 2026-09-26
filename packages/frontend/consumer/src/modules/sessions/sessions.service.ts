@@ -43,12 +43,20 @@ export class SessionsService {
     return this.repository.create(input, idempotencyKey);
   }
 
+  stop(id: string): Promise<SessionEntity> {
+    return this.repository.stop(id);
+  }
+
+  rename(id: string, name: string): Promise<SessionEntity> {
+    return this.repository.rename(id, name);
+  }
+
   move(id: string, projectId: string): Promise<SessionEntity> {
     return this.repository.move(id, projectId);
   }
 
-  stop(id: string): Promise<SessionEntity> {
-    return this.repository.stop(id);
+  close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
+    return this.repository.close(id, acceptUnpushedWork);
   }
 
   /** A single-use pass to one window's terminal; see the repository. */

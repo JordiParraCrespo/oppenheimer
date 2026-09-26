@@ -22,6 +22,12 @@ export interface ShellConfig {
    */
   sidebar?: ReactNode;
   /**
+   * A strip to the left of the sidebar, outside it: the console's `Rail`,
+   * which switches between its lists (sessions, routines). Absent, the
+   * sidebar is the leftmost thing on the page.
+   */
+  rail?: ReactNode;
+  /**
    * What the sidebar's top row shows, replacing the workspace avatar and name.
    *
    * The console puts its wordmark there: version 1 has one workspace per

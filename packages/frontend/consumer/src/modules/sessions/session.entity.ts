@@ -169,6 +169,5 @@ export interface CreateSessionInput {
   /** The composer's first task. It names the session and reaches the agent. */
   prompt?: string;
   name?: string;
-  /** The project the session is listed under. Absent is the workspace's Unassigned project. */
   projectId?: string;
 }

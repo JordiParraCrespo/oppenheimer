@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ProjectEntity, shortName } from '../project.entity';
 
-const repo = (githubRepoId: number, fullName: string, isDefault = false) => ({
+const repo = (githubRepoId: string, fullName: string, isDefault = false) => ({
   id: `row-${githubRepoId}`,
   installationId: 'inst-1',
   githubRepoId,
@@ -10,7 +10,7 @@ const repo = (githubRepoId: number, fullName: string, isDefault = false) => ({
   baseBranch: 'main',
 });
 
-const project = (repositories = [repo(1, 'acme/atlas'), repo(2, 'acme/xrp-mobile', true)]) =>
+const project = (repositories = [repo('1', 'acme/atlas'), repo('2', 'acme/xrp-mobile', true)]) =>
   new ProjectEntity(
     'p-1',
     'XRP Mobile',

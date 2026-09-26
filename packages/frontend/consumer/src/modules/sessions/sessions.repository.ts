@@ -29,6 +29,9 @@ import { SessionsErrors } from './sessions.errors';
  */
 /** Entries per page of the start log, and how many pages a start may span. */
 const START_LOG_PAGE = 50;
+/** The API's largest page (`PAGINATION.MAX_LIMIT`), so the whole list is as few requests as it can be. */
+const LIST_PAGE_LIMIT = 100;
+
 const MAX_START_LOG_PAGES = 20;
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
@@ -105,12 +108,24 @@ export class SessionsRepository {
    * the body.
    */
   @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
+  /**
+   * Every session in the workspace, whatever the endpoint's page size: the
+   * sidebar groups, searches and filters the whole list in the browser, so a
+   * page would be a list that silently ends. Pages are walked at the largest
+   * size the API allows until the total the first page reports is in hand.
+   */
   async findAll(): Promise<SessionEntity[]> {
-    const { data, error } = await heyApiSdk.listSessions();
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // would render "no sessions" over a request that never succeeded.
-    if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
-    return data.data.map(toEntity);
+    const sessions: SessionEntity[] = [];
+    for (let page = 1; ; page += 1) {
+      const { data, error } = await heyApiSdk.listSessions({
+        query: { page, limit: LIST_PAGE_LIMIT },
+      });
+      // An absent body is a failed read, not an empty collection — returning
+      // `[]` would render "no sessions" over a request that never succeeded.
+      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
+      sessions.push(...data.data.map(toEntity));
+      if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
+    }
   }
 
   /**
@@ -179,10 +194,22 @@ export class SessionsRepository {
     return entries;
   }
 
-  /**
-   * List the session under another project. Nothing moves on the host: a project
-   * is metadata, and a session's directory and branch never name it.
-   */
+  @MapApiError(SessionsErrors.STOP_FAILED)
+  async stop(id: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.stopSession({ path: { id } });
+    if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
+    return toEntity(data);
+  }
+
+  /** Display only: the slug, the directory and the branch never change. */
+  @MapApiError(SessionsErrors.RENAME_FAILED)
+  async rename(id: string, name: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.renameSession({ path: { id }, body: { name } });
+    if (error || !data) throw new AppError(SessionsErrors.RENAME_FAILED);
+    return toEntity(data);
+  }
+
+  /** To a project that holds the session's repository; nothing on the host moves. */
   @MapApiError(SessionsErrors.MOVE_FAILED)
   async move(id: string, projectId: string): Promise<SessionEntity> {
     const { data, error } = await heyApiSdk.moveSession({ path: { id }, body: { projectId } });
@@ -190,10 +217,18 @@ export class SessionsRepository {
     return toEntity(data);
   }
 
-  @MapApiError(SessionsErrors.STOP_FAILED)
-  async stop(id: string): Promise<SessionEntity> {
-    const { data, error } = await heyApiSdk.stopSession({ path: { id } });
-    if (error || !data) throw new AppError(SessionsErrors.STOP_FAILED);
+  /**
+   * Close: the session stops, its worktree leaves the host, and the row stays
+   * resolved so its directory name and branch are never reissued. Work that is
+   * not pushed refuses the close unless the caller accepts losing it.
+   */
+  @MapApiError(SessionsErrors.CLOSE_FAILED)
+  async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.closeSession({
+      path: { id },
+      query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
+    });
+    if (error || !data) throw new AppError(SessionsErrors.CLOSE_FAILED);
     return toEntity(data);
   }
 

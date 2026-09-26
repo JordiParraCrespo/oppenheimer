@@ -56,6 +56,7 @@ import {
   ComposerDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
+  CheckboxDemo,
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
@@ -67,6 +68,8 @@ import {
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
+  EditorPageDemo,
+  SettingsShellDemo,
   PageHeaderDemo,
   RunHistoryDemo,
   RoutineTableDemo,
@@ -734,6 +737,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="checkbox"
+        title="Checkbox"
+        meta="checkbox.tsx"
+        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryRowList and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
+        code={`<FieldLabel className="flex items-center gap-2.5"><Checkbox checked={discard} onCheckedChange={setDiscard} /> Discard unpushed work</FieldLabel>`}
+      >
+        <CheckboxDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
@@ -958,6 +971,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="editorpage"
+        title="EditorPage"
+        meta="editor-page.tsx"
+        desc="The page over the main column — New project, Add a host, the automation editor — and nothing in it: a canvas column that scrolls on its own, a 760px body with the export's padding, and the Back pill above the page header. The console mounts it once from a layout route and each page fills the body."
+        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>`}
+      >
+        <EditorPageDemo />
+      </Spec>
+
+      <Spec
         id="pageheader"
         title="PageHeader"
         meta="page-header.tsx"
@@ -1047,6 +1070,16 @@ export default function Page() {
 
       {/* ── Settings ─────────────────────────────────────────────────────── */}
       <GroupHead>Settings</GroupHead>
+
+      <Spec
+        id="settingsshell"
+        title="SettingsShell"
+        meta="settings-shell.tsx"
+        desc="The Settings pages' frame and nothing in it. SettingsShell is the row: SettingsNav on the left, SettingsMain the column on the canvas that scrolls on its own, SettingsContent the measured column inside it with its sections spaced, SettingsTitle how a section opens — the h2 stop, a muted line, one action on the right. The console mounts the frame once from the /settings layout route and each section fills the column."
+        code={`<SettingsShell><SettingsNav>…</SettingsNav><SettingsMain><SettingsContent><SettingsTitle title="Hosts" description="…" action={<Button>Add host</Button>} />…</SettingsContent></SettingsMain></SettingsShell>`}
+      >
+        <SettingsShellDemo />
+      </Spec>
 
       <Spec
         id="settingsnav"

@@ -17,6 +17,7 @@ export const namespaces = namespaceList as unknown as readonly [
   'projects',
   'sessions',
   'hosts',
+  'settings',
   'home',
   'nav',
   'control',

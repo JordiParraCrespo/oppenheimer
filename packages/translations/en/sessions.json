@@ -60,16 +60,6 @@
       "add": "Add host…",
       "offline": "Offline"
     },
-    "addHost": {
-      "title": "Add a host",
-      "description": "A server you control — a cloud VM, a build box, or your own workstation.",
-      "instruction": "Run this on it, once",
-      "format": "How to read it",
-      "command": "Command",
-      "agentPrompt": "Agent prompt",
-      "use": "Use this host",
-      "defaultName": "New host"
-    },
     "project": {
       "label": "Project",
       "placeholder": "Project",
@@ -154,14 +144,48 @@
       "dismiss": "Dismiss"
     }
   },
+  "sidebar": {
+    "projects": "Projects",
+    "newProject": "New project",
+    "search": "Search sessions",
+    "clearSearch": "Clear search",
+    "noMatches": "No sessions match “{{query}}”.",
+    "empty": "No projects yet. The first one you create appears here with its sessions.",
+    "emptyProject": "No sessions yet.",
+    "startOne": "Start one",
+    "newSessionHere": "New session in {{name}}",
+    "projectSettings": "{{name}} settings",
+    "unfiled": "Other sessions",
+    "actions": "Session actions",
+    "rename": "Rename",
+    "renameLabel": "Session name",
+    "move": "Move to project…",
+    "moveTitle": "Move to project",
+    "moveNone": "No other project holds this session's repository.",
+    "delete": "Delete",
+    "routines": "Routines",
+    "routinesSoon": "Automations are not here yet.",
+    "writeFailed": "That change did not land. Try again."
+  },
+  "deleteSession": {
+    "title": "Delete “{{name}}”?",
+    "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
+    "confirm": "Delete session",
+    "deleting": "Deleting…",
+    "failed": "The session could not be deleted.",
+    "discard": "Also discard work that is not pushed",
+    "keeps": "Deleting stops if the session has work that is not pushed."
+  },
   "filters": {
     "label": "Filter sessions",
+    "project": "Project",
     "repository": "Repository",
     "agent": "Agent",
     "host": "Host",
     "sort": "Sort by",
     "clear": "Clear filters",
     "remove": "Clear filter",
+    "allProjects": "All projects",
     "allRepositories": "All repositories",
     "allAgents": "All agents",
     "allHosts": "All hosts",

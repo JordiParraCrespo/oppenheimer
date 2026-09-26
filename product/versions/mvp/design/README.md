@@ -83,15 +83,17 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - The 2026-09-24 export also carried a `version2/` canvas (a chat view); it
   is not part of the MVP and was left out, as were `screens/` and
   `screenshots/`. The 2026-09-26 export has no `version2/`.
-- Automations (formerly routines) and the Settings page are in the
-  version-1 frames as of the 2026-09-26 exports, but `../00-scope.md` still
-  lists routines as a later
-  slice and `../05-screens.md` still says the MVP has no settings page.
-  The notes have not been reconciled with these frames yet.
+- Automations (formerly routines) are in the version-1 frames as of the
+  2026-09-26 exports, but `../00-scope.md` still lists routines as a
+  later slice; that note has not been reconciled with the frames yet.
+  Settings is: `../05-screens.md` records it as the one destination
+  beside the console, with its routes, the catalog row and the decision
+  log in `../README.md` say the same, and `../../../brief.html` follows.
 - Projects as the frames draw them are in the notes as of 2026-09-26:
-  the project chip, the New project page and Move in `../05-screens.md`, the
-  schema in `../10-api-modules-and-data-model.md`. The sidebar's grouping
-  by project, and Rename and Delete in the row menu, wait for the design
-  of how sessions are organized.
+  the project chip, the project page, the grouped sidebar and Move in
+  `../05-screens.md`, the schema in `../10-api-modules-and-data-model.md`.
+  One departure from the frames: Move lists every other project rather
+  than only those that include the session's repository, because a
+  project is metadata and a session may move anywhere (10).
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

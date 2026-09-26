@@ -17,7 +17,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 02 | [Runner](02-runner.md) | The Go binary: process shape, subcommands, package map, the link, sessions, tmux, streaming, credentials, screen manifests, state, failure modes |
 | 03 | [Control plane](03-control-plane.md) | Data model, API, relay, GitHub App, token minting, and the runner-facing surfaces: register, host JWTs, the link's server half, release rollout |
 | 04 | [Guest image](04-guest-image.md) | Deferred with the VM slice; kept for later |
-| 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, settings drawer; components and states |
+| 05 | [Screens](05-screens.md) | Sign-in, sidebar, Create session, session view, Settings; components and states |
 | 06 | [Step-one spike](06-step-one-spike.md) | Exactly what to build in week one and how the latency gate is measured |
 | 07 | [Security checklist](07-security-checklist.md) | The findings from note 04 that the MVP must satisfy, as a checklist |
 | 08 | [Auth](08-auth.md) | Identity, the personal workspace, host ownership, session attach; one page instead of the starter's kernel design |
@@ -400,7 +400,22 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   project made in the dialog has no origin, so the auto-created path for
   callers that send only checkouts is unchanged. The grouped sidebar and
   the row menu are the next slice. (12 was folded into 05 and 10 and
-  deleted the same day; the next entry changed most of it.)
+  deleted the same day; the entries below changed most of it.)
+- 2026-09-26: **a session's paths keep the project that created it.** A
+  session moves between projects (`POST /sessions/{id}/move`, one
+  `session.moved` event the row folds, 03), and its worktree and branch do
+  not: `work_session.projectSlug` snapshots the directory name at request,
+  and every later launch reads it from the row rather than from the project
+  the session is in now. (Reversed the same day: the layout lost its
+  project level, so a move touches nothing on disk and there is no slug to
+  keep; see the entry on projects as metadata below.)
+- 2026-09-26: **Settings is a page, not a drawer.** The export draws it
+  beside the console, opened from the account menu: `/settings` with
+  Profile and Hosts as sections, Add host opening the console's one
+  pairing page with `?from=settings`. It goes through the console's guard
+  and no-workspace redirect and draws its own chrome. The drawer 05
+  described for hosts is gone; the host card's rows come with the hosts
+  slice (05).
 - 2026-09-26: **a project is a saved scope a person creates, and metadata
   only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
   offered by default or not) and a default host and agent; none is
@@ -408,7 +423,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   workspace's **Unassigned** project, which cannot be renamed or archived.
   Nothing on a host is named after a project — the layout is
   `workspaces/<org>/{repos,sessions}` and the branch `oppenheimer/<session>`
-  — so moving a session to any project is a label change. New project is a
-  page, as the evening export draws it, not a dialog. A session checks out
-  any repositories, usually one; how sessions are organized is owed its own
-  design.
+  — so moving a session to any project is a label change, with no rule about
+  its repositories (`SESSIONS_018` retired). `work_session.projectSlug` goes
+  with the project level. The console is the evening export's: the grouped
+  sidebar with Unassigned first, the project page, Move to any project. A
+  session checks out any repositories, usually one.

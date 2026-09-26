@@ -29,10 +29,12 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *    directory is `workspaces/<org>/sessions/<slug>` and its branch
  *    `oppenheimer/<slug>`, so a session can move between projects without
  *    anything moving. The new constraint is added before the old one is
- *    dropped, so the tombstone is never absent.
+ *    dropped, so the tombstone is never absent. `work_session.projectSlug`
+ *    (`AddSessionProjectSlug`), the snapshot of the project directory a
+ *    session's paths used to carry, goes with the project level.
  */
-export class NameProjectsAndFlattenSessions1789800000000 implements MigrationInterface {
-  name = 'NameProjectsAndFlattenSessions1789800000000';
+export class NameProjectsAndFlattenSessions1789900000000 implements MigrationInterface {
+  name = 'NameProjectsAndFlattenSessions1789900000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -156,9 +158,16 @@ export class NameProjectsAndFlattenSessions1789800000000 implements MigrationInt
     await queryRunner.query(
       `ALTER TABLE "work_session" DROP CONSTRAINT "UQ_work_session_project_slug"`,
     );
+    await queryRunner.query(`ALTER TABLE "work_session" DROP COLUMN "projectSlug"`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "work_session" ADD "projectSlug" character varying`);
+    await queryRunner.query(
+      `UPDATE "work_session" ws SET "projectSlug" = p."slug"
+         FROM "project" p WHERE p."id" = ws."projectId"`,
+    );
+    await queryRunner.query(`ALTER TABLE "work_session" ALTER COLUMN "projectSlug" SET NOT NULL`);
     await queryRunner.query(`
       ALTER TABLE "work_session"
         ADD CONSTRAINT "UQ_work_session_project_slug" UNIQUE ("projectId", "slug")

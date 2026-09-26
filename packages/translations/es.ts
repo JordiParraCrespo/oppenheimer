@@ -13,6 +13,7 @@ import pages from './es/pages.json';
 import projects from './es/projects.json';
 import publicCopy from './es/public.json';
 import sessions from './es/sessions.json';
+import settings from './es/settings.json';
 import theme from './es/theme.json';
 import toasts from './es/toasts.json';
 import validation from './es/validation.json';
@@ -33,6 +34,7 @@ const es = {
   projects,
   sessions,
   hosts,
+  settings,
   theme,
   toasts,
   emails,

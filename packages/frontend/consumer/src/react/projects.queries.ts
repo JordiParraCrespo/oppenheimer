@@ -65,13 +65,7 @@ export function useCreateProject(
 
   return useMutation({
     mutationFn: (input: CreateProjectInput) => app.projects.create(input),
-    ...withCacheOnSuccess(options, (created) => {
-      // In the list before the caller's own `onSuccess` runs, so a screen it
-      // navigates to can read the new project from the cache at once; the
-      // refetch then settles the order.
-      queryClient.setQueryData<ProjectEntity[]>(projectsKeys.list(), (current) =>
-        current ? [created, ...current.filter((project) => project.id !== created.id)] : current,
-      );
+    ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
     }),
   });

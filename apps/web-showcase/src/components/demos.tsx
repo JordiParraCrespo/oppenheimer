@@ -122,6 +122,13 @@ import {
   RoutineRunList,
   RoutineRunsEmpty,
 } from '@oppenheimer/design-system-web/routine-item';
+import { EditorPage, EditorPageBack, EditorPageBody } from '@oppenheimer/design-system-web/editor-page';
+import {
+  SettingsContent,
+  SettingsMain,
+  SettingsShell,
+  SettingsTitle,
+} from '@oppenheimer/design-system-web/settings-shell';
 import { RoutineStep, RoutineStepFields, RoutineSteps } from '@oppenheimer/design-system-web/routine-steps';
 import {
   RoutineTable,
@@ -152,6 +159,7 @@ import { TemplateGrid, TemplateItem } from '@oppenheimer/design-system-web/templ
 import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
 import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
 import { Input } from '@oppenheimer/design-system-web/input';
+import { Checkbox } from '@oppenheimer/design-system-web/checkbox';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ChevronDownIcon,
@@ -166,6 +174,7 @@ import {
   MoonIcon,
   PlayIcon,
   PlusIcon,
+  ServerIcon,
   Settings2Icon,
   SettingsIcon,
   ShieldCheckIcon,
@@ -631,6 +640,18 @@ export function SegmentedDemo() {
       <SegmentedControlItem value="cmd">Command</SegmentedControlItem>
       <SegmentedControlItem value="prompt">Agent prompt</SegmentedControlItem>
     </SegmentedControl>
+  );
+}
+
+/* ── Checkbox ────────────────────────────────────────────────────────────── */
+
+export function CheckboxDemo() {
+  const [discard, setDiscard] = React.useState(false);
+  return (
+    <FieldLabel className="flex items-center gap-2.5">
+      <Checkbox checked={discard} onCheckedChange={(checked) => setDiscard(checked === true)} />
+      Discard work that is not pushed
+    </FieldLabel>
   );
 }
 
@@ -1104,6 +1125,50 @@ export function PillTabsDemo() {
 
 /* ── PageHeader ──────────────────────────────────────────────────────────── */
 
+export function EditorPageDemo() {
+  return (
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+      <EditorPage>
+        <EditorPageBody>
+        <EditorPageBack href="#editorpage">Back</EditorPageBack>
+        <PageHeader className="mb-7">
+          <PageHeaderCrumbs>
+            <button type="button">New session</button>
+            <span>/</span>
+            <PageHeaderHere>Add a host</PageHeaderHere>
+          </PageHeaderCrumbs>
+          <PageHeaderRow
+            icon={<ServerIcon />}
+            title="Add a host"
+            actions={
+              <>
+                <Button variant="secondary" size="sm">
+                  Cancel
+                </Button>
+                <Button size="sm" disabled>
+                  Use this host
+                </Button>
+              </>
+            }
+          />
+          <PageHeaderMeta>
+            <span>Nothing on the host is exposed to the internet.</span>
+          </PageHeaderMeta>
+        </PageHeader>
+        <RoutineSteps>
+          <RoutineStep number={1} title="Install" subtitle="Run this once on the machine.">
+            <div className="h-24 rounded-md bg-hover-surface" />
+          </RoutineStep>
+          <RoutineStep number={2} title="Connect" subtitle="The runner registers itself." last>
+            <div className="h-11 rounded-2xl border border-border-subtle bg-card" />
+          </RoutineStep>
+        </RoutineSteps>
+        </EditorPageBody>
+      </EditorPage>
+    </div>
+  );
+}
+
 export function PageHeaderDemo() {
   const [paused, setPaused] = React.useState(true);
   return (
@@ -1562,6 +1627,36 @@ export function RoutineItemsDemo() {
 }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
+
+export function SettingsShellDemo() {
+  return (
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+      <SettingsShell className="h-full">
+        <SettingsNav>
+          <SettingsNavBack>Back to console</SettingsNavBack>
+          <SettingsNavGroup label="Account">
+            <SettingsNavItem icon={<UserIcon />}>Profile</SettingsNavItem>
+          </SettingsNavGroup>
+          <SettingsNavGroup label="Workspace">
+            <SettingsNavItem icon={<CpuIcon />} count={3} active>
+              Hosts
+            </SettingsNavItem>
+          </SettingsNavGroup>
+        </SettingsNav>
+        <SettingsMain>
+          <SettingsContent>
+            <SettingsTitle
+              title="Hosts"
+              description="Servers your sessions run on."
+              action={<Button size="sm">Add host</Button>}
+            />
+            <div className="h-24 rounded-2xl border border-border-subtle bg-card" />
+          </SettingsContent>
+        </SettingsMain>
+      </SettingsShell>
+    </div>
+  );
+}
 
 export function SettingsNavDemo() {
   const [page, setPage] = React.useState('profile');
