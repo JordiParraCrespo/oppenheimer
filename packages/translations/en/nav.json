@@ -17,7 +17,7 @@
   "commandTitle": "Command palette",
   "commandDescription": "Search for a page or an action.",
   "sidebarTitle": "Navigation",
-  "sidebarDescription": "Your sessions and your account.",
+  "sidebarDescription": "Your sessions, your automations and your account.",
   "settings": "Settings",
   "automations": "Automations"
 }

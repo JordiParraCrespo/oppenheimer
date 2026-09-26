@@ -1,7 +1,8 @@
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web';
 import { Terminal, Zap } from '@oppenheimer/design-system-web/icons';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
-import { Link, useMatchRoute } from '@tanstack/react-router';
+import { useConsoleList } from '@oppenheimer/frontend-web';
+import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -10,9 +11,9 @@ import { useTranslation } from 'react-i18next';
  * `…/13-automations.md`).
  *
  * Two lists, two links: Sessions with its count, and Automations. Which is
- * current is the router's answer — the automations list is everything under
- * `/automations`, and the sessions list is everything else the console
- * shows, New session and a project page included.
+ * current is `useConsoleList`'s answer, the one the shell picks the sidebar
+ * by: the automations list is everything under `/automations`, and the
+ * sessions list is everything else the console shows.
  *
  * A section rather than kit, because the count is a product read; it is the
  * same list the sidebar subscribes to, so the read costs nothing extra.
@@ -20,8 +21,7 @@ import { useTranslation } from 'react-i18next';
 export function ConsoleRail() {
   const { t } = useTranslation();
   const { data: sessions } = useSessions();
-  const matchRoute = useMatchRoute();
-  const automations = Boolean(matchRoute({ to: '/automations', fuzzy: true }));
+  const list = useConsoleList();
 
   return (
     <Rail aria-label={t('nav.primaryNavigation')}>
@@ -29,14 +29,14 @@ export function ConsoleRail() {
       <RailItem
         label={t('nav.sessions')}
         count={sessions?.length}
-        active={!automations}
+        active={list === 'sessions'}
         render={<Link to="/sessions" />}
       >
         <Terminal />
       </RailItem>
       <RailItem
         label={t('nav.automations')}
-        active={automations}
+        active={list === 'automations'}
         render={<Link to="/automations" />}
       >
         <Zap />

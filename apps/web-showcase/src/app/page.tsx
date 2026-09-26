@@ -71,7 +71,7 @@ import {
   EditorPageDemo,
   SettingsShellDemo,
   PageHeaderDemo,
-  OverviewPageDemo,
+  EditorPageWideDemo,
   RunHistoryDemo,
   RoutineTableDemo,
   RunsListDemo,
@@ -975,10 +975,14 @@ export default function Page() {
         id="editorpage"
         title="EditorPage"
         meta="editor-page.tsx"
-        desc="The page over the main column — New project, Add a host, the automation editor — and nothing in it: a canvas column that scrolls on its own, a 760px body with the export's padding, and the Back pill above the page header. The console mounts it once from a layout route and each page fills the body."
-        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>`}
+        desc="The page over the main column — New project, Add a host, the automations overview and its editor — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
+        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>
+<EditorPage><EditorPageBody wide><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
       >
-        <EditorPageDemo />
+        <div className="flex w-full flex-col gap-6">
+          <EditorPageDemo />
+          <EditorPageWideDemo />
+        </div>
       </Spec>
 
       <Spec
@@ -1018,16 +1022,6 @@ export default function Page() {
 
       {/* ── Routines ─────────────────────────────────────────────────────── */}
       <GroupHead>Routines</GroupHead>
-
-      <Spec
-        id="overviewpage"
-        title="OverviewPage"
-        meta="overview-page.tsx"
-        desc="The automations pages' frame and nothing in it. OverviewPage is the canvas column that scrolls on its own, OverviewPageBody the measured body — wider than the editor's, for a table — with its blocks spaced, OverviewPageTop the first row: the view tabs on the left, the page's one action on the right. The console mounts the frame from the automations routes and each view fills the body."
-        code={`<OverviewPage><OverviewPageBody><OverviewPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></OverviewPageTop>…</OverviewPageBody></OverviewPage>`}
-      >
-        <OverviewPageDemo />
-      </Spec>
 
       <Spec
         id="runhistory"

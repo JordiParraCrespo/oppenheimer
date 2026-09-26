@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AutomationsScreen } from '@/features/routines/screens/automations';
+import { AutomationsTable } from '@/features/automations/sections/automations-table';
 
-/** The overview on its Automations tab: the table and the templates. */
+/** The overview on its Automations tab: the table. */
 export const Route = createFileRoute('/_authenticated/automations/')({
-  component: AutomationsScreen,
+  component: AutomationsTable,
 });

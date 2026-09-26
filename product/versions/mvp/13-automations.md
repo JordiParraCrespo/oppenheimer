@@ -1,11 +1,12 @@
-# 13 — Automations: the second list, its pages and their routes
+# 13 — Automations: the console's second list, ahead of its API
 
 The 2026-09-26 export (`design/version1/Routines.dc.html`, which is
 `SessionsConsole` opened on its automations page) draws the console's
-second list. Its copy says **Automations**; the frames' internal names and
-this repo's file names stay `routines` (`design/README.md`). This note
-works out the console's side — the list, the pages and their routes —
-so the API behind it can be built against a shape that exists.
+second list. Its copy says **Automations**; the export's internal names
+stay `routines` (`design/README.md`), and the console uses the product
+word. Automations themselves — the scheduler, the GitHub trigger, the
+runs — stay out of the MVP (00); what this note records is the console's
+side, built so the rail is whole, and what the export draws for the rest.
 
 ## What the export draws
 
@@ -30,45 +31,39 @@ so the API behind it can be built against a shape that exists.
   effort).
 - **A run** opens the session it started, in the console's session pane.
 
-## Decided
-
-### Routes (built 2026-09-26)
+## Built (2026-09-26)
 
 | URL | What |
 |---|---|
-| `/automations` | The overview on its Automations tab |
-| `/automations/runs` | The overview on its Runs tab |
-| `/automations/{id}` | One automation |
-| `/automations/new` | The editor; `?project=` is where the sidebar opened it from |
-| `/automations/{id}/edit` | The editor on an existing automation |
+| `/automations` | The overview on its Automations tab: the table, empty |
+| `/automations/runs` | The overview on its Runs tab: the runs list, empty |
+| `/automations/new` | The editor's header, Back and a Create that stays off; `?project=` is kept for the Where step |
 
-- `/automations` is a layout route under `_authenticated` that declares
-  `list: 'automations'`, which is what swaps the sidebar for the
-  automations list; the rail's two items are links, and the one under
-  the address is current.
-- The editor pages sit under the `_editor` layout, the frame the project
-  page and Add a host already use; the overview and the automation page
-  fill `OverviewPage`, the wider frame the export gives a table.
-- The console's feature is `routines/` (a module of the product package,
-  `modules/routines`, whose entity is the shape above); a run that opens
-  is the session it started, so it is `sessions/`' pane.
-
-### What is built, and what waits
-
-The frame, the routes and the way between them are built: the sidebar's
-list with the projects as its groups, the overview's tabs and its empty
-table and runs list, the automation page's address, the editor's header
-and its four steps by name. Everything that needs an automation to exist
-— the rows, the run history, the templates, the editor's fields and its
-save, the automation page's header and runs — waits for the API, which
-is this note's next slice: the `routine` and `routine_run` tables, the
-scheduler, the GitHub trigger, and the endpoints the pages read.
+- Which list is beside the rail is the address's: everything under
+  `/automations` is the automations list, the editor included, and the
+  rest is the sessions list. One predicate (`useConsoleList`, the kit's)
+  answers both the rail's current item and the sidebar the shell mounts.
+- `/automations` is a layout route that mounts the overview's frame once
+  — `EditorPage` with its wide body, the view tabs as links, New
+  automation — and outlets the tab's view.
+- The editor sits under the `_editor` layout, the frame the project page
+  and Add a host use.
+- The sidebar lists the projects as groups, each empty until an
+  automation exists; the search and the rows arrive with them.
+- The console's feature is `apps/web/src/features/automations/`, on the
+  app's allowlist because its pages render no entity yet; the product
+  package gains its module when the control plane names the resource.
+- Not built, on purpose: a page for one automation, and the editor's
+  steps. A route with an id that no loader can refuse would answer every
+  address with an empty page, and numbered steps without a field are a
+  facade.
 
 ## Open
 
 - **The data model.** A routine is a session template plus a trigger; a
   run is a session the trigger started. Whether a run is a row of its own
-  or a session with a `routineId` decides most of the API.
+  or a session with a `routineId` decides most of the API, and 03, 10
+  and 11 own the tables and endpoints when they are decided.
 - **Templates.** The export's grid is a fixed catalog by category; whether
   templates are code, rows, or both.
 - **Where runs are opened.** The export opens a run in the session pane

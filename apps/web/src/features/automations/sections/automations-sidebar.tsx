@@ -5,34 +5,31 @@ import {
   RoutineItem,
   SidebarEmptyRow,
   SidebarProjectHeader,
-  SidebarSearch,
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
-import { Link, useMatchRoute, useNavigate } from '@tanstack/react-router';
+import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
  * The console's sidebar body on its automations list
  * (`product/versions/mvp/13-automations.md`): New automation on top, the
- * Projects line with its count, the live search, then All automations and a
- * folding header per project — each with New automation in it — over the
- * project's automations.
+ * Projects line with its count, then All automations and a folding header
+ * per project — each with New automation in it — over the project's
+ * automations.
  *
- * The frame of the list, built ahead of its rows: the projects are read
- * because the groups are theirs, and every group is empty until the API
- * behind automations lands, which is what the empty row says. The rows, the
- * expanded runs under the selected one and the search's matches arrive with
- * that slice.
+ * The projects are read because the groups are theirs; every group is empty
+ * until the API behind automations lands, and the empty row says so. The
+ * rows, the search that narrows them and the expanded runs under the
+ * selected one arrive with that slice — a search with nothing to narrow is
+ * not mounted.
  */
 export function AutomationsSidebar() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const projects = useProjects();
-  const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
@@ -51,14 +48,6 @@ export function AutomationsSidebar() {
           <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
         ) : null}
       </div>
-
-      <SidebarSearch
-        value={query}
-        onValueChange={setQuery}
-        placeholder={t('automations.sidebar.search')}
-        aria-label={t('automations.sidebar.search')}
-        clearLabel={t('automations.sidebar.clearSearch')}
-      />
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         <div className="px-3 pt-2">
@@ -95,9 +84,7 @@ export function AutomationsSidebar() {
                       size="xs"
                       variant="quiet"
                       aria-label={t('automations.sidebar.newHere', { name: project.name })}
-                      onClick={() =>
-                        navigate({ to: '/automations/new', search: { project: project.id } })
-                      }
+                      render={<Link to="/automations/new" search={{ project: project.id }} />}
                     >
                       <Plus />
                     </IconButton>
@@ -106,14 +93,9 @@ export function AutomationsSidebar() {
                 {open ? (
                   <SidebarEmptyRow>
                     {t('automations.sidebar.emptyProject')}{' '}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate({ to: '/automations/new', search: { project: project.id } })
-                      }
-                    >
+                    <Link to="/automations/new" search={{ project: project.id }}>
                       {t('automations.sidebar.createOne')}
-                    </button>
+                    </Link>
                   </SidebarEmptyRow>
                 ) : null}
               </div>
@@ -123,7 +105,9 @@ export function AutomationsSidebar() {
           <div className="px-3 pt-2">
             <EmptyState compact>
               <EmptyState.Header>
-                <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+                <EmptyState.Description>
+                  {t('automations.sidebar.noProjects')}
+                </EmptyState.Description>
               </EmptyState.Header>
             </EmptyState>
           </div>

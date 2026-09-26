@@ -108,7 +108,12 @@ export {
   DropdownMenuTrigger,
   DropdownMenuValue,
 } from './components/dropdown-menu';
-export { EditorPage, EditorPageBack, EditorPageBody } from './components/editor-page';
+export {
+  EditorPage,
+  EditorPageBack,
+  EditorPageBody,
+  EditorPageTop,
+} from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
 export { EFFORT_STOPS, EffortPicker, EffortSlider } from './components/effort-slider';
 export { EmptyState } from './components/empty-state';
@@ -147,7 +152,6 @@ export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
-export { OverviewPage, OverviewPageBody, OverviewPageTop } from './components/overview-page';
 export {
   PageHeader,
   PageHeaderCrumbs,

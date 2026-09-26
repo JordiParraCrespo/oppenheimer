@@ -4,8 +4,9 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * Automations, in a browser: the router setup
  * (`product/versions/mvp/13-automations.md`) — the rail's second item, the
- * list beside it, the overview's two tabs, the editor and the way back —
- * rather than any automation, which needs the API behind it.
+ * list beside it, the overview's two tabs as links, the editor with the
+ * list still beside it, and the way back — rather than any automation,
+ * which needs the API behind it.
  */
 test('the rail switches to the automations list, and its pages link up', async ({ page }) => {
   const owner = await provisionedUser('automations');
@@ -20,14 +21,17 @@ test('the rail switches to the automations list, and its pages link up', async (
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'New session', exact: true })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Runs' }).click();
+  // The views are links: the address says which is open.
+  await page.getByRole('link', { name: 'Runs', exact: true }).click();
   await expect(page).toHaveURL(/\/automations\/runs$/);
-  await page.getByRole('button', { name: 'Automations', exact: true }).click();
+  await page.getByRole('link', { name: 'Automations', exact: true }).last().click();
   await expect(page).toHaveURL(/\/automations$/);
 
+  // The editor keeps the automations list beside the rail.
   await page.getByRole('link', { name: 'New automation', exact: true }).first().click();
   await expect(page).toHaveURL(/\/automations\/new$/);
   await expect(page.getByRole('button', { name: 'Create automation' })).toBeDisabled();
+  await expect(page.getByRole('link', { name: 'New session', exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: 'Cancel' }).click();
   await expect(page).toHaveURL(/\/automations$/);
 

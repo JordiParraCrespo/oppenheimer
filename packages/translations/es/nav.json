@@ -17,7 +17,7 @@
   "commandTitle": "Paleta de comandos",
   "commandDescription": "Busca una página o una acción.",
   "sidebarTitle": "Navegación",
-  "sidebarDescription": "Tus sesiones y tu cuenta.",
+  "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
   "settings": "Ajustes",
   "automations": "Automatizaciones"
 }

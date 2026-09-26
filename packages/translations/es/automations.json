@@ -2,14 +2,11 @@
   "sidebar": {
     "new": "Nueva automatización",
     "projects": "Proyectos",
-    "search": "Buscar automatizaciones",
-    "clearSearch": "Borrar búsqueda",
     "all": "Todas las automatizaciones",
-    "noMatches": "Ninguna automatización coincide con “{{query}}”.",
     "emptyProject": "Todavía no hay automatizaciones.",
     "createOne": "Crea una",
     "newHere": "Nueva automatización en {{name}}",
-    "unfiled": "Otras automatizaciones"
+    "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
   },
   "page": {
     "tabs": {
@@ -17,42 +14,16 @@
       "runs": "Ejecuciones"
     },
     "new": "Nueva automatización",
-    "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub. Empieza con una plantilla.",
-    "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició.",
-    "templates": "Plantillas",
-    "templatesEmpty": "Las plantillas llegan con las primeras automatizaciones."
-  },
-  "detail": {
-    "crumb": "Automatizaciones",
-    "missing": "No hay ninguna automatización en esta dirección."
+    "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+    "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
   },
   "editor": {
     "newTitle": "Nueva automatización",
-    "editTitle": "Editar automatización",
     "name": "Nombre de la automatización",
     "namePlaceholder": "Ponle nombre a la automatización",
     "back": "Atrás",
     "crumb": "Automatizaciones",
     "create": "Crear automatización",
-    "save": "Guardar cambios",
-    "recap": "Ponle nombre a la automatización y di dónde se ejecuta.",
-    "steps": {
-      "where": {
-        "title": "Dónde",
-        "subtitle": "El código en el que trabaja y la máquina donde se ejecuta."
-      },
-      "when": {
-        "title": "Cuándo",
-        "subtitle": "Cualquier disparador inicia una ejecución."
-      },
-      "what": {
-        "title": "Qué",
-        "subtitle": "La tarea con la que empieza la sesión."
-      },
-      "agent": {
-        "title": "Agente",
-        "subtitle": "Quién hace el trabajo y con cuánta libertad."
-      }
-    }
+    "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
   }
 }

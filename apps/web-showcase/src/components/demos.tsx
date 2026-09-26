@@ -122,14 +122,18 @@ import {
   RoutineRunList,
   RoutineRunsEmpty,
 } from '@oppenheimer/design-system-web/routine-item';
-import { EditorPage, EditorPageBack, EditorPageBody } from '@oppenheimer/design-system-web/editor-page';
+import {
+  EditorPage,
+  EditorPageBack,
+  EditorPageBody,
+  EditorPageTop,
+} from '@oppenheimer/design-system-web/editor-page';
 import {
   SettingsContent,
   SettingsMain,
   SettingsShell,
   SettingsTitle,
 } from '@oppenheimer/design-system-web/settings-shell';
-import { OverviewPage, OverviewPageBody, OverviewPageTop } from '@oppenheimer/design-system-web/overview-page';
 import { RoutineStep, RoutineStepFields, RoutineSteps } from '@oppenheimer/design-system-web/routine-steps';
 import {
   RoutineTable,
@@ -1170,6 +1174,29 @@ export function EditorPageDemo() {
   );
 }
 
+export function EditorPageWideDemo() {
+  const [tab, setTab] = React.useState('automations');
+  return (
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+      <EditorPage>
+        <EditorPageBody wide>
+          <EditorPageTop>
+            <PillTabs value={tab} onValueChange={setTab}>
+              <PillTab value="automations">Automations</PillTab>
+              <PillTab value="runs">Runs</PillTab>
+            </PillTabs>
+            <Button variant="secondary" size="sm">
+              New automation
+            </Button>
+          </EditorPageTop>
+          <div className="h-28 rounded-2xl border border-border-subtle bg-card" />
+          <div className="h-40 rounded-2xl border border-border-subtle bg-card" />
+        </EditorPageBody>
+      </EditorPage>
+    </div>
+  );
+}
+
 export function PageHeaderDemo() {
   const [paused, setPaused] = React.useState(true);
   return (
@@ -1252,29 +1279,6 @@ const HISTORY: RunHistoryDay[] = Array.from({ length: 30 }, (_, i) => {
   const failed = i === 3 || i === 10 || i === 21 ? 1 : 0;
   return { date: `2026-${i < 4 ? '08' : '09'}-${String(i < 4 ? 27 + i : i - 3).padStart(2, '0')}`, ok, failed };
 });
-
-export function OverviewPageDemo() {
-  const [tab, setTab] = React.useState('automations');
-  return (
-    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
-      <OverviewPage>
-        <OverviewPageBody>
-          <OverviewPageTop>
-            <PillTabs value={tab} onValueChange={setTab}>
-              <PillTab value="automations">Automations</PillTab>
-              <PillTab value="runs">Runs</PillTab>
-            </PillTabs>
-            <Button variant="secondary" size="sm">
-              New automation
-            </Button>
-          </OverviewPageTop>
-          <div className="h-28 rounded-2xl border border-border-subtle bg-card" />
-          <div className="h-40 rounded-2xl border border-border-subtle bg-card" />
-        </OverviewPageBody>
-      </OverviewPage>
-    </div>
-  );
-}
 
 export function RunHistoryDemo() {
   return (

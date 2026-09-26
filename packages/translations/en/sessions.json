@@ -163,7 +163,6 @@
     "moveTitle": "Move to project",
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
-    "routines": "Routines",
     "writeFailed": "That change did not land. Try again."
   },
   "deleteSession": {
