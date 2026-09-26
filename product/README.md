@@ -196,3 +196,8 @@ earlier note:
   "Connect a repository…", back to the onboarding step. It is now
   "Manage repository access", a new-tab link to the GitHub App's
   installation page (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
+  a project chip. The 2026-09-26 export puts one first on New session, with
+  a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
+  works out the data model, the API and the console for it (2026-09-26).
+

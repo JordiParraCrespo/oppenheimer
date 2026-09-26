@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  UseGuards,
-  UseInterceptors,
-  Version,
-} from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
@@ -21,8 +12,8 @@ import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope
 import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectResponseDto } from '../../dtos/project.response.dto';
 import { ProjectMapper } from '../../project.mapper';
-import { UpdateProjectCommand } from './update-project.command';
-import { UpdateProjectRequest } from './update-project.request.dto';
+import { CreateProjectCommand } from './create-project.command';
+import { CreateProjectRequest } from './create-project.request.dto';
 
 @ApiTags('Projects')
 @ApiBearerAuth()
@@ -30,39 +21,45 @@ import { UpdateProjectRequest } from './update-project.request.dto';
 @UseGuards(ApiAuthGuard, PoliciesGuard)
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('projects')
-export class UpdateProjectHttpController {
+export class CreateProjectHttpController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly mapper: ProjectMapper,
   ) {}
 
-  @Patch(':id')
+  @Post()
   @Version('1')
-  @CheckPolicies({ action: 'update', subject: 'Project' })
+  @CheckPolicies({ action: 'create', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({
-    operationId: 'updateProject',
-    summary: 'Edit a project',
+    operationId: 'createProject',
+    summary: 'Create a project',
     description:
-      'Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.',
+      'A body of work with a name, the repositories it holds (each saying whether every new session clones it, and what it branches from), and the host and agent New session picks first. The directory name is derived from the first default repository, else the first repository, else the name, and never changes. A project made here has no origin repository: the one a first session creates for a repository is found by GitHub’s id, this one by its own.',
   })
-  @ApiResponse({ status: 200, type: ProjectResponseDto })
-  @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
+  @ApiResponse({ status: 201, type: ProjectResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 404,
+    description: 'GitHub installation not found',
+    code: 'GITHUB_001',
+  })
   @ApiProblemResponse({
     status: 404,
     description: 'That repository is not one this GitHub installation covers',
     code: 'GITHUB_010',
   })
-  async update(
+  @ApiProblemResponse({
+    status: 409,
+    description: 'That name is a directory another project already holds',
+    code: 'PROJECTS_006',
+  })
+  async create(
     @CurrentAccessScope() scope: AccessScope,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: UpdateProjectRequest,
+    @Body() body: CreateProjectRequest,
   ): Promise<ProjectResponseDto> {
-    // The command returns the renamed aggregate, so there is no follow-up query:
-    // the write already read the row back through the caller's scope.
-    const project = await this.commandBus.execute<UpdateProjectCommand, ProjectEntity>(
-      new UpdateProjectCommand({ scope, projectId: id, changes: body }),
+    const project = await this.commandBus.execute<CreateProjectCommand, ProjectEntity>(
+      new CreateProjectCommand({ scope, input: body }),
     );
     return this.mapper.toResponse(project);
   }

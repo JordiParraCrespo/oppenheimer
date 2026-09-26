@@ -344,6 +344,7 @@ and never renamed.
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
+| `PROJECTS_006` <a id="projects_006" /> | That name is a directory another project already holds | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -352,6 +353,11 @@ the scoped read cannot see it, and distinguishing the two would confirm the id.
 project" is a question only the module that owns sessions can answer, asked over the
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
+
+`PROJECTS_006` is a project made on the console with **no repository** whose
+name sanitises to a directory another project already holds. With a repository
+the directory name is derived from it and the last candidate carries GitHub's
+own id, so it cannot collide; with none the name is all there is.
 
 `PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
 name on every host that held it and is never reissued, so a session cannot be started

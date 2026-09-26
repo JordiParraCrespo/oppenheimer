@@ -1,6 +1,7 @@
 import { ArgumentInvalidException, ArgumentNotProvidedException } from '@oppenheimer/backend-ddd';
 import { describe, expect, it } from 'vitest';
 import { ProjectEntity } from '../domain/project.entity';
+import { ProjectRepositoryEntity } from '../domain/project-repository.entity';
 
 const VALID = { organizationId: 'org-1', name: 'xrp-mobile', slug: 'xrp-mobile' };
 
@@ -64,5 +65,53 @@ describe('ProjectEntity', () => {
     expect(ProjectEntity.createNew({ ...VALID, slug: 'acme--xrp-mobile' }).slug).toBe(
       'acme--xrp-mobile',
     );
+  });
+});
+
+describe('ProjectEntity: defaults and repositories', () => {
+  const repo = (githubRepoId: string, isDefault = false) =>
+    ProjectRepositoryEntity.createNew({
+      installationId: 'installation-1',
+      githubRepoId,
+      fullName: `acme/repo-${githubRepoId}`,
+      isDefault,
+    });
+
+  it('starts with no defaults and no repositories', () => {
+    const project = ProjectEntity.createNew(VALID);
+    expect(project.defaultHostId).toBeNull();
+    expect(project.defaultAgent).toBeNull();
+    expect(project.repositories).toEqual([]);
+    expect(project.defaultRepositories).toEqual([]);
+  });
+
+  it('changes only the fields given, and keeps the slug', () => {
+    const project = ProjectEntity.createNew(VALID);
+    project.change({ defaultHostId: 'host-1', repositories: [repo('1'), repo('2', true)] });
+    project.change({ name: 'XRP Mobile' });
+
+    expect(project.name).toBe('XRP Mobile');
+    expect(project.slug).toBe('xrp-mobile');
+    expect(project.defaultHostId).toBe('host-1');
+    expect(project.defaultRepositories.map((r) => r.githubRepoId)).toEqual(['2']);
+    expect(project.includesRepository('1')).toBe(true);
+    expect(project.includesRepository('9')).toBe(false);
+  });
+
+  it('refuses the same repository twice and an agent the catalog does not know', () => {
+    const project = ProjectEntity.createNew(VALID);
+    expect(() => project.change({ repositories: [repo('1'), repo('1')] })).toThrow(
+      ArgumentInvalidException,
+    );
+    expect(() => project.change({ defaultAgent: 'vim' as unknown as 'claude-code' })).toThrow(
+      ArgumentInvalidException,
+    );
+  });
+
+  it('reads a repository’s owner and name off its full name', () => {
+    const row = repo('5');
+    expect(row.owner).toBe('acme');
+    expect(row.name).toBe('repo-5');
+    expect(row.baseBranch).toBeNull();
   });
 });
