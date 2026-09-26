@@ -1,0 +1,98 @@
+# Build the host-agent binaries for every supported target and attach them to
+# a GitHub Release, together with the manifest hosts read.
+#
+# The release is **not signed here**. The Ed25519 key that authorises an
+# update lives offline and never enters CI — that is the whole property F26
+# buys (see product/versions/mvp/09-runner-install-and-update.md §5). This
+# workflow produces the artifacts and the unsigned manifest; whoever holds the
+# key signs it on their own machine and uploads `<channel>.json.sig`. A
+# manifest without its signature installs nowhere, which is the intended
+# failure mode.
+name: Release runner
+
+on:
+  push:
+    tags: ["runner-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build, without the runner-v prefix"
+        required: true
+      channel:
+        description: stable or beta
+        default: stable
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and publish artifacts
+    runs-on: gha-vm
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: apps/runner/go.mod
+          cache-dependency-path: apps/runner/go.sum
+
+      - name: Resolve version and channel
+        id: release
+        run: |
+          version="${{ inputs.version }}"
+          [ -n "$version" ] || version="${GITHUB_REF_NAME#runner-v}"
+          channel="${{ inputs.channel }}"
+          [ -n "$channel" ] || channel=stable
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+      # The public half of the signing key is a repository variable, not a
+      # secret: it is public by nature, and it must be identical in every
+      # binary we ship. An empty value builds runners that refuse every
+      # update rather than runners that trust anything.
+      - name: Build every target
+        env:
+          RELEASE_PUBLIC_KEYS: ${{ vars.RUNNER_RELEASE_PUBLIC_KEYS }}
+          RELEASE_BASE_URL: ${{ vars.RUNNER_RELEASE_BASE_URL }}
+          MIN_SUPPORTED: ${{ vars.RUNNER_MIN_SUPPORTED }}
+        run: scripts/runner/release.sh "${{ steps.release.outputs.version }}" "${{ steps.release.outputs.channel }}"
+
+      - name: Check the binaries run
+        run: |
+          tar -xzf "dist/runner/runner_${{ steps.release.outputs.version }}_linux_amd64.tar.gz" -C dist
+          "dist/runner_${{ steps.release.outputs.version }}_linux_amd64/runner" version
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: runner-${{ steps.release.outputs.version }}
+          path: |
+            dist/runner/*.tar.gz
+            dist/runner/SHA256SUMS
+            dist/runner/${{ steps.release.outputs.channel }}.json
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "runner ${{ steps.release.outputs.version }}" --generate-notes || true
+          gh release upload "$GITHUB_REF_NAME" dist/runner/*.tar.gz dist/runner/SHA256SUMS \
+            "dist/runner/${{ steps.release.outputs.channel }}.json" --clobber
+
+      - name: Say what is left to do
+        run: |
+          {
+            echo "### Runner ${{ steps.release.outputs.version }} built"
+            echo
+            echo "Not yet installable: the manifest is unsigned. On the machine holding the offline key:"
+            echo
+            echo '```'
+            echo "gh release download $GITHUB_REF_NAME -p '${{ steps.release.outputs.channel }}.json'"
+            echo "scripts/runner/sign-release.sh ${{ steps.release.outputs.channel }}.json release.key"
+            echo "gh release upload $GITHUB_REF_NAME ${{ steps.release.outputs.channel }}.json.sig"
+            echo '```'
+            echo
+            echo "Then publish both to the release host; hosts read \`<base>/<channel>.json\` and \`.sig\`."
+          } >> "$GITHUB_STEP_SUMMARY"

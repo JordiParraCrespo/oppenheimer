@@ -1,0 +1,52 @@
+{
+  "skill_name": "shadcn",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "In apps/web (Vite + TanStack Router, @oppenheimer/design-system-web on Base UI, icons from @oppenheimer/design-system-web/icons), create a settings form with fields for full name, email address, and notification preferences (email, SMS, push as independent toggles). Validate with the Zod schema from @oppenheimer/shared and show field errors.",
+      "expected_output": "A React Hook Form component over the shared Zod schema via useZodResolver, laid out with FieldGroup/Field, Switch toggles, FieldError per field, gap-* spacing and brand colour tokens.",
+      "files": [],
+      "expectations": [
+        "Uses React Hook Form with the resolver wired through useZodResolver, not useState per field or safeParse in the submit handler",
+        "Uses FieldGroup and Field components for form layout instead of raw div with space-y",
+        "Uses Switch for independent on/off notification toggles (not looping Button with manual active state)",
+        "Field validation renders through FieldError, not a hand-styled paragraph",
+        "Uses gap-* (e.g. gap-4, gap-6) instead of space-y-* or space-x-* for spacing",
+        "Uses the brand colour tokens (text-ink-*, bg-surface-*, --status-*) and no raw colours (bg-red-500) or shadcn aliases (text-muted-foreground)",
+        "No manual dark: color overrides",
+        "Every user-facing string goes through t()"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "In apps/web, create a dialog for editing a user profile: the user's avatar at the top, inputs for name and bio, Save/Cancel buttons with icons. The bio can be long, so the dialog must cope with a short viewport. Components come from @oppenheimer/design-system-web (Base UI), icons from @oppenheimer/design-system-web/icons.",
+      "expected_output": "A Dialog with DialogTitle, DialogBody around the fields, Avatar + AvatarFallback, data-icon on icon buttons with no icon sizing classes, using the render prop for custom triggers.",
+      "files": [],
+      "expectations": [
+        "Includes DialogTitle for accessibility (visible or with sr-only class)",
+        "Wraps the scrolling middle in DialogBody instead of putting overflow-y-auto or max-h-* on DialogContent",
+        "Avatar component includes AvatarFallback",
+        "Icons on buttons use the data-icon attribute (data-icon=\"inline-start\" or data-icon=\"inline-end\")",
+        "No sizing classes on icons inside components (no size-4, w-4, h-4, etc.)",
+        "Imports icons from @oppenheimer/design-system-web/icons, not lucide-react or @tabler/icons-react",
+        "Uses the Base UI render prop for custom triggers, not asChild",
+        "Places the dialog in src/components/<feature>/, not inside the route file"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "In apps/web, create a dashboard section with 4 stat cards in a grid. Each card has a title, a large number, a percentage-change badge and a loading skeleton state. The counts come from a TanStack Query hook that may still be loading.",
+      "expected_output": "Full Card composition, Skeleton while loading, Badge for the change, brand tokens, gap-* spacing, and no number rendered until the query resolves.",
+      "files": [],
+      "expectations": [
+        "Uses full Card composition with CardHeader, CardTitle, CardContent (not dumping everything into CardContent)",
+        "Uses Skeleton component for loading placeholders instead of custom animate-pulse divs",
+        "Uses Badge component for percentage change instead of custom styled spans, with a neutral or status variant rather than secondary/outline",
+        "Renders no placeholder or hardcoded number while the query is loading or undefined",
+        "Uses the brand colour tokens (text-ink-*, bg-surface-*, --status-*) and no raw colours (bg-green-500) or shadcn aliases (text-muted-foreground)",
+        "Uses gap-* instead of space-y-* or space-x-* for spacing",
+        "Uses size-* when width and height are equal instead of separate w-* h-*"
+      ]
+    }
+  ]
+}

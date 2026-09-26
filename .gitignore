@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+# oppenheimer:begin web-showcase
+.next/
+# oppenheimer:end web-showcase
+.docusaurus/
+*.tsbuildinfo
+node-compile-cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Turbo
+.turbo/
+
+# Docker
+docker/**/*.log
+
+# Test
+coverage/
+
+# Sentry
+.sentryclirc
+
+# pnpm
+.pnpm-debug.log
+
+# Claude Code scratchpad (temp workflow scripts, not part of the repo)
+scratchpad/
+
+# Design handoff material — reference deliverables used to build the brand,
+# not part of the codebase. Large, and carries third-party branding.
+/CRM SaaS Design Pages.zip
+/Adri Rodrigo - Design System.html
+
+# Redis snapshot, written when a local redis-server is used instead of docker.
+dump.rdb
+
+# Claude Code agent worktrees (isolated checkouts, never repo content)
+.claude/worktrees/
+
+# The local stack (scripts/stack/stack.mjs): pids, logs, the host account
+.stack/

@@ -1,0 +1,11 @@
+{
+  "preamble": "You are working in the Oppenheimer monorepo. Make the change the way this codebase already does this kind of thing. When you are done, `@oppenheimer/frontend-consumer` must build (`pnpm --filter @oppenheimer/frontend-consumer build`) and its tests must pass. Do not commit and do not open a pull request.",
+  "tasks": [
+    {
+      "id": "host-rename",
+      "title": "Rename a host",
+      "prompt": "Settings → Hosts is getting a Rename action. Wire up the data layer for it in `@oppenheimer/frontend-consumer`:\n\n- `HostsService.rename(id: string, name: string): Promise<HostEntity>`. The API is `PATCH /api/v1/hosts/{id}` with a `{ name }` body, and it answers with the renamed host.\n- A `useRenameHost(options?)` hook exported from `@oppenheimer/frontend-consumer/react`. Its variables are `{ id, name }`. The rename dialog will pass its own `onSuccess` to close itself and show a toast, and the host list must show the new name straight after.\n\nNo UI in this change.",
+      "plugins": ["mutation-on-success"]
+    }
+  ]
+}

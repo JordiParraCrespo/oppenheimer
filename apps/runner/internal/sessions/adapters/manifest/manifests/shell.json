@@ -1,0 +1,17 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "shell",
+  "version": "2026.09.18.1",
+  "minEngine": 1,
+  "notes": "A tab with no agent in it. There is little to say about a shell: it is either sitting at a prompt or it is not, and 'not' is unknown rather than working — a long build and a hung command look identical from outside.",
+  "rules": [
+    {
+      "id": "prompt",
+      "state": "idle",
+      "priority": 800,
+      "region": "bottom:2",
+      "any": ["(?m)[$#%❯]\\s*$"],
+      "note": "The last line ends in a prompt character, so the shell is waiting for the person."
+    }
+  ]
+}
