@@ -12,7 +12,7 @@ export function PublicSiteLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-svh bg-background text-ink-900">
+    <div className="min-h-svh bg-canvas text-ink-900">
       <header className="border-b border-border-default">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5 lg:px-8">
           <Link to="/about" aria-label={t('public.navigation.home')}>

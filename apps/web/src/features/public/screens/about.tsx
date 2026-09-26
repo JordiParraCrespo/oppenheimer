@@ -41,29 +41,26 @@ export function AboutScreen() {
           </div>
         </div>
 
-        <aside className="rounded-3xl border border-border-default bg-surface-50 p-8 shadow-sm">
+        <aside className="rounded-3xl border border-border-default bg-surface-sunken p-8 shadow-sm">
           <p className="text-sm font-medium text-ink-500">{t('public.home.google.eyebrow')}</p>
           <h2 className="mt-3 text-2xl font-semibold text-ink-900">
             {t('public.home.google.title')}
           </h2>
           <p className="mt-4 leading-7 text-ink-600">{t('public.home.google.body')}</p>
-          <p className="mt-5 rounded-2xl bg-background p-4 text-sm leading-6 text-ink-600">
+          <p className="mt-5 rounded-2xl bg-canvas p-4 text-sm leading-6 text-ink-600">
             {t('public.home.google.scope')}
           </p>
         </aside>
       </section>
 
-      <section className="border-t border-border-default bg-surface-50">
+      <section className="border-t border-border-default bg-surface-sunken">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:px-8 lg:py-20">
           <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-ink-900">
             {t('public.home.featuresTitle')}
           </h2>
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             {features.map(({ key, icon: Icon }) => (
-              <article
-                key={key}
-                className="rounded-2xl border border-border-default bg-background p-6"
-              >
+              <article key={key} className="rounded-2xl border border-border-default bg-canvas p-6">
                 <Icon className="size-6 text-accent-blue" />
                 <h3 className="mt-5 text-lg font-semibold text-ink-900">
                   {t(`public.home.features.${key}.title`)}

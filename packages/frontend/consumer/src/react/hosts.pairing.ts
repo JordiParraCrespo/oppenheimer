@@ -7,12 +7,19 @@ import { useCurrentPairing, useHosts, usePairingTokens, useReplacePairing } from
 /** How often a pairing surface asks whether its token has been spent yet. */
 const POLL_MS = 3000;
 
+/** The longest delay `setTimeout` honours; a later one fires at once. */
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
+
 /** What a surface running the pairing flow is showing. */
 export interface HostPairingFlow {
   /** The minted token and the two forms of the instruction that spend it. */
   pairing: HostPairing | undefined;
-  /** Seconds left on that token. The surface decides how to say it. */
-  secondsLeft: number;
+  /**
+   * When that token runs out. A countdown is the surface's to draw, in the
+   * leaf that shows it (the kit's `TokenCountdown`): a tick held here
+   * re-rendered the whole dialog or step every second.
+   */
+  expiresAt: Date | null;
   /** Whether the token has run out, so the surface can offer a new one. */
   expired: boolean;
   /** The machine **this token** paired, once a runner has spent it. */
@@ -50,32 +57,35 @@ export interface HostPairingFlow {
  * looked up. A regenerated token is a different id, so the host it offered
  * goes with it.
  *
- * One effect, and it synchronises with the clock. `secondsLeft` is derived
- * from `expiresAt` and the clock rather than decremented, so a backgrounded tab
- * that missed a hundred ticks still shows the right number when it comes back
- * — and it is a count, not a string: `mm:ss` is the surface's, not the flow's.
+ * One effect, and it synchronises with the clock — but only with the one
+ * moment that changes what the flow does: the token's expiry, which stops the
+ * poll and offers a new token. It used to tick once a second so it could hand
+ * out `secondsLeft`, and that tick re-rendered every surface running the flow,
+ * code blocks and all, for a number one line of it shows. The flow hands out
+ * `expiresAt` now, and the countdown ticks in the leaf that draws it.
  */
 export function useHostPairing(hostName: string): HostPairingFlow {
   const { data: pairing, isPending, error } = useCurrentPairing(hostName);
   const replace = useReplacePairing(hostName);
-  const [now, setNow] = useState(() => Date.now());
+  // The token that has run out, by id, so a regenerated token starts unexpired
+  // without anything having to reset this.
+  const [expiredId, setExpiredId] = useState<string | null>(null);
 
-  // Advance the clock once a second while a token is on screen.
+  // The clock: one timeout per token, at the moment it expires. A background
+  // tab's timers are throttled but never fire early, so the token is never
+  // called dead while it can still pair.
   useEffect(() => {
     if (!pairing) return;
 
-    setNow(Date.now());
-    const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(tick);
+    const remaining = pairing.expiresAt.getTime() - Date.now();
+    if (remaining > MAX_TIMEOUT_MS) return;
+    const timer = setTimeout(() => setExpiredId(pairing.id), Math.max(0, remaining));
+    return () => clearTimeout(timer);
   }, [pairing]);
 
-  // Derived in render, not set by the effect: the render that first holds a
-  // token already has its count, so it is never read as expired while the
-  // effect has yet to run. `now` is at most a tick old.
-  const secondsLeft = pairing
-    ? Math.max(0, Math.floor((pairing.expiresAt.getTime() - now) / 1000))
-    : 0;
-  const expired = Boolean(pairing) && secondsLeft <= 0;
+  // A fresh token is never read as expired, not even for the render it
+  // arrives in: nothing here has expired it yet.
+  const expired = Boolean(pairing) && expiredId === pairing?.id;
 
   // Poll the token, not the host list. Stops once this token names a host, and
   // once it has expired: a dead token can pair nothing, so polling past that is
@@ -108,7 +118,7 @@ export function useHostPairing(hostName: string): HostPairingFlow {
 
   return {
     pairing,
-    secondsLeft,
+    expiresAt: pairing?.expiresAt ?? null,
     expired,
     host,
     isPending: isPending || replace.isPending,

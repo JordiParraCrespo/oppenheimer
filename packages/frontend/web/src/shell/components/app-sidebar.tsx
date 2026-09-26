@@ -53,7 +53,7 @@ export function AppSidebar() {
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
-    <Sidebar>
+    <Sidebar mobileTitle={t('nav.sidebarTitle')} mobileDescription={t('nav.sidebarDescription')}>
       <SidebarHeader className="h-14 flex-none flex-row items-center justify-between gap-2 py-0 pr-3 pl-4">
         {brand ?? (
           <div className="flex min-w-0 items-center gap-2.5">

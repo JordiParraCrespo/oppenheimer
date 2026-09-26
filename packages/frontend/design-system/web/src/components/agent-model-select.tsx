@@ -42,12 +42,14 @@ type Engine = { agent: string; model: string | null };
 /** Rows visible before the list scrolls, as on the artboard. */
 const VISIBLE_ROWS = 4;
 
+const defaultEmptyText = (query: string): React.ReactNode => `No model matches “${query}”.`;
+
 function AgentModelSelect({
   agents,
   value,
   onValueChange,
   searchPlaceholder = 'Search models…',
-  emptyText = (query) => `No model matches “${query}”.`,
+  emptyText: emptyTextProp,
   disabled,
   className,
   'aria-label': ariaLabel = 'Agent and model',
@@ -61,6 +63,9 @@ function AgentModelSelect({
   className?: string;
   'aria-label'?: string;
 }) {
+  // Defaults resolved in the body, not the signature: the React Compiler
+  // leaves a component whose default parameter is a function uncompiled.
+  const emptyText = emptyTextProp ?? defaultEmptyText;
   const [open, setOpen] = React.useState(false);
   const [pane, setPane] = React.useState<string | null>(null);
   const [query, setQuery] = React.useState('');

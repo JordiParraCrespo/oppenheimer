@@ -127,6 +127,9 @@ export function OnboardingWorkspaceScreen() {
             size="lg"
             prefix={prefix}
             placeholder={t('onboarding.flow.workspace.addressPlaceholder')}
+            checkingLabel={t('onboarding.flow.workspace.checkingLabel')}
+            okLabel={t('onboarding.flow.workspace.availableLabel')}
+            takenLabel={t('onboarding.flow.workspace.takenLabel')}
             value={address}
             status={claimedAddress ? 'ok' : status}
             // Permanent once claimed: the field shows it and stops taking edits.

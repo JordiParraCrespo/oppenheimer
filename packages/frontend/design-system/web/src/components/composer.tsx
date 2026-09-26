@@ -31,6 +31,30 @@ import { IconButton } from './icon-button';
  */
 type ComposerAttachment = { id: string; name: string };
 
+/**
+ * What the composer's icon buttons say to a screen reader. English by default
+ * for the showcase; a product passes its own, translated, since a label nobody
+ * can override ships in one language to everyone.
+ */
+type ComposerLabels = {
+  send: string;
+  stop: string;
+  attach: string;
+  dictate: string;
+  stopRecording: string;
+  /** The remove button on one attachment chip. */
+  removeAttachment: (name: string) => string;
+};
+
+const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
+  send: 'Send',
+  stop: 'Stop',
+  attach: 'Attach a file',
+  dictate: 'Dictate',
+  stopRecording: 'Stop recording',
+  removeAttachment: (name) => `Remove ${name}`,
+};
+
 function Composer({
   value,
   onValueChange,
@@ -48,6 +72,7 @@ function Composer({
   engine,
   scope,
   minRows = 3,
+  labels,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -72,7 +97,10 @@ function Composer({
   /** The scope chips, in the band fused to the top of the field (`ChipSelectTrigger variant="tab"`). */
   scope?: React.ReactNode;
   minRows?: number;
+  /** The icon buttons' accessible names; any left out stay in English. */
+  labels?: Partial<ComposerLabels>;
 }) {
+  const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
   const canSend = value.trim().length > 0 && !disabled;
 
   function submit() {
@@ -127,7 +155,7 @@ function Composer({
               <span className="truncate">{file.name}</span>
               <button
                 type="button"
-                aria-label={`Remove ${file.name}`}
+                aria-label={label.removeAttachment(file.name)}
                 onClick={() => onRemoveAttachment?.(file.id)}
                 className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
               >
@@ -140,7 +168,7 @@ function Composer({
       <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
         {onAttach ? (
           <IconButton
-            aria-label="Attach a file"
+            aria-label={label.attach}
             size="sm"
             shape="square"
             onClick={onAttach}
@@ -154,7 +182,7 @@ function Composer({
         {engine}
         {onRecord ? (
           <IconButton
-            aria-label={recording ? 'Stop recording' : 'Dictate'}
+            aria-label={recording ? label.stopRecording : label.dictate}
             aria-pressed={recording}
             size="sm"
             shape="square"
@@ -168,7 +196,7 @@ function Composer({
           </IconButton>
         ) : null}
         <IconButton
-          aria-label={busy ? 'Stop' : 'Send'}
+          aria-label={busy ? label.stop : label.send}
           variant="primary"
           size="sm"
           onClick={submit}
@@ -251,4 +279,4 @@ function ComposerToolButton({
 }
 
 export { Composer, ComposerToolButton };
-export type { ComposerAttachment };
+export type { ComposerAttachment, ComposerLabels };
