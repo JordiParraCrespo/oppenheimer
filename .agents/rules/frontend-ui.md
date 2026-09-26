@@ -24,33 +24,33 @@ multi-line, so a grep for `export` misses most of them.
 | Field validation                      | `Field` + `FieldError`        | either of the above                                   |
 | "Nothing here" / "still loading"      | `EmptyState`, `Skeleton`      | a centred paragraph                                   |
 | A list with paging, search or filters (`apps/web`) | `DataTable` | `Table` primitives directly |
-| Picking one value out of a list the workspace grows | `Combobox` | `Select` over the first page of an endpoint |
+| Picking one value out of a list the workspace grows | `ChipSelect` (searchable) | a `<select>` over the first page of an endpoint |
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |
 | A dialog taller than the viewport | `DialogBody` around its middle | `overflow-y-auto` on `DialogContent` |
 | A command with two ways to read it (Command / Agent prompt) | `CodeBlock layout="panel"` with `tabs` | two `CodeBlock`s, a `SegmentedControl` beside a label |
-| Two views of one pane | `SegmentedControl` | `Tabs`, two `Button`s |
+| Two views of one pane | `SegmentedControl` | a tab strip, two `Button`s |
 | An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
 | A coding agent's logo | `AgentMark` | an `<img>` of a copied PNG |
 | A text trigger in the composer's foot row | `ComposerToolButton` | a `Button variant="ghost"` |
-| Which agent and model drive a session | `AgentModelSelect` | two `Select`s |
-| How hard the agent thinks | `EffortPicker` | a `Select` of five words |
-| What the agent may touch unattended | `PermissionMenu` | a `Switch` |
+| Which agent and model drive a session | `AgentModelSelect` | two pickers |
+| How hard the agent thinks | `EffortPicker` | a dropdown of five words |
+| What the agent may touch unattended | `PermissionMenu` | a toggle |
 | Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
 | Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
-| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | `Tabs`, `SegmentedControl` |
+| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
-| A labelled picker in the routine editor | `FieldSelect` | `Combobox`, `Select` |
-| A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of `Select`s |
+| A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
+| A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of pickers |
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | `Table` primitives, cards |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
-| A host on Settings | `HostCard` | `AgentCard`, a table row |
+| A host on Settings | `HostCard` | a `Card`, a table row |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
@@ -67,19 +67,21 @@ the table (`GroupHeading`), never inside the bar.
 
 | The options are | Use |
 | --- | --- |
-| Fixed and short, known at build time (a stage, a status) | `Select` |
-| A workspace list, one value, in a labelled field | `Combobox` |
-| Thousands, several values, fetched per keystroke | `AsyncMultiSelect` |
-| A toolbar filter rather than a field | `SelectMenu` (one) / `FilterMenu` (many) |
-| A scope chip on the console (project, host, branch) | `ChipSelect`, always searchable; `variant="tab"` inside the composer's scope band |
+| Two to four views of one pane | `SegmentedControl` |
+| Fixed and short, known at build time, inside a menu | `DropdownMenuRadioGroup` |
+| A scope chip on the console (project, host, branch, agent) | `ChipSelect`, always searchable; `variant="tab"` inside the composer's scope band |
+| A labelled pick in the routine editor | `FieldSelect` |
 | Several repositories, each on its own branch | `RepositorySelect` |
+| A filter over a list rather than a field | `DropdownMenuSub` per facet, `DropdownMenuRadioGroup` inside (the sessions filter menu) |
 
-The threshold: if the option list is fetched from an endpoint, it is an
-autocomplete. `Combobox` is a form control (`Field` + `FieldLabel` +
-`Combobox`, wired through a `Controller`, see [`forms.md`](./forms.md)), with
-`clearLabel` for the "Unassigned" row. Point `onQueryChange` at the query that
-fetches the options so the search is the API's to answer. Why: two `Select`s
-fed `{ limit: 100 }` could not reach any record past the hundredth.
+The design system ships no Base UI `Select`, `Combobox` or multi-select: the
+starter's were removed unused, and every picker the console has filters
+([the design system's notes](../../packages/frontend/design-system/AGENTS.md)). `ChipSelect` filters the
+options it is given in the browser. The threshold still holds: if the option
+list is fetched from an endpoint, the search is the API's to answer, so the
+first picker over a list that can outgrow one page gives `ChipSelect` a query
+callback rather than fetching `{ limit: 100 }` and filtering that. Why: two
+pickers fed `{ limit: 100 }` could not reach any record past the hundredth.
 
 ## A tall modal scrolls in its body, never in its card
 
@@ -154,8 +156,8 @@ A colour genuinely outside the palette becomes a named token in
 `packages/frontend/design-system/web/src/styles/globals.css` with a comment saying why.
 
 Primitives in `packages/frontend/design-system/web` are the exception on `dark:`. A
-variant that is not a colour swap (`avatar.tsx` switches blend modes,
-`chart.tsx` selects the dark chart theme) belongs there and nowhere else.
+variant that is not a colour swap (`avatar.tsx` switches blend modes)
+belongs there and nowhere else.
 
 ## The design-system linter enforces the two rules above
 

@@ -1,18 +1,24 @@
 /**
- * Fails when a component file exports something the package entry point does
- * not re-export.
+ * Holds the component inventory to one list: the files in `src/components/`.
+ * Fails when any of the three places that register a component disagrees
+ * with it.
  *
- * Every component also has a `./name` subpath in package.json, so a missing
- * barrel entry is not *technically* unreachable — but every consumer in this
- * repo imports from the root, so in practice it is invisible. Nobody gets an
- * error; they just re-implement the component by hand. `Breadcrumb` and
- * `Collapsible` sat that way until an audit went looking, by which time the
- * lead detail page had already hand-rolled a breadcrumb.
- *
- * The rule is deliberately absolute: everything a file in `src/components/`
- * exports belongs in the barrel. If something genuinely needs to stay internal,
- * do not export it from its own module either — a non-exported helper is
- * invisible to this check, which is the honest way to say "internal".
+ * 1. The barrel. Every name a component file exports is re-exported from
+ *    `src/index.ts`. Every component also has a `./name` subpath, but
+ *    `apps/web` imports from the root, so a missing barrel entry is invisible
+ *    in practice. Nobody gets an error; they just re-implement the component
+ *    by hand. `Breadcrumb` sat that way until an audit went looking, by which
+ *    time a detail page had already hand-rolled a breadcrumb. If something
+ *    genuinely needs to stay internal, do not export it from its own module
+ *    either: a non-exported helper is invisible to this check, which is the
+ *    honest way to say "internal".
+ * 2. The subpaths. `package.json` `exports` has `./name` for every file and no
+ *    subpath for a file that is gone, so the map cannot drift from the folder.
+ * 3. The showcase. Every component is imported by `apps/web-showcase` (which
+ *    imports each one by subpath), or is named in `NOT_IN_SHOWCASE` with the
+ *    reason. A component with neither is how forty-one of them sat in this
+ *    folder unused, next to the ones an agent should reach for, until an
+ *    audit removed them.
  *
  * Run: `pnpm --filter @oppenheimer/design-system-web test`
  */
@@ -23,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const componentsDir = join(root, 'src', 'components');
 const indexPath = join(root, 'src', 'index.ts');
+const packagePath = join(root, 'package.json');
 
 /**
  * Files deliberately left out of the barrel. Keep this at zero or one entry —
@@ -86,29 +93,130 @@ function exportedNames(source) {
   return names;
 }
 
+const componentFiles = readdirSync(componentsDir)
+  .filter((file) => /\.tsx?$/.test(file))
+  .sort();
+const componentNames = componentFiles.map((file) => file.replace(/\.tsx?$/, ''));
+const failures = [];
+
+// 1. The barrel.
 const published = exportedNames(readFileSync(indexPath, 'utf8'));
 const missing = [];
-
-for (const file of readdirSync(componentsDir).sort()) {
-  if (!/\.tsx?$/.test(file)) continue;
+for (const file of componentFiles) {
   if (NOT_IN_BARREL.has(file)) continue;
-
   const names = exportedNames(readFileSync(join(componentsDir, file), 'utf8'));
   const absent = [...names].filter((name) => !published.has(name)).sort();
   if (absent.length > 0) missing.push({ file, absent });
 }
-
 if (missing.length > 0) {
-  console.error('\nUnreachable exports — these are not re-exported from src/index.ts:\n');
-  for (const { file, absent } of missing) {
-    console.error(`  src/components/${file}`);
-    for (const name of absent) console.error(`    · ${name}`);
-  }
-  console.error(
-    '\nAdd them to src/index.ts, or stop exporting them from their own module\n' +
-      'if they are meant to be internal.\n',
+  failures.push(
+    [
+      'Unreachable exports — these are not re-exported from src/index.ts:',
+      ...missing.flatMap(({ file, absent }) => [
+        `  src/components/${file}`,
+        ...absent.map((name) => `    · ${name}`),
+      ]),
+      'Add them to src/index.ts, or stop exporting them from their own module',
+      'if they are meant to be internal.',
+    ].join('\n'),
   );
+}
+
+// 2. The subpaths.
+const { exports: subpaths } = JSON.parse(readFileSync(packagePath, 'utf8'));
+const subpathProblems = [];
+for (const [index, name] of componentNames.entries()) {
+  const expected = `./src/components/${componentFiles[index]}`;
+  if (subpaths[`./${name}`] !== expected) {
+    subpathProblems.push(`  "./${name}": "${expected}" is missing`);
+  }
+}
+for (const [key, target] of Object.entries(subpaths)) {
+  if (typeof target !== 'string' || !target.startsWith('./src/components/')) continue;
+  const file = target.slice('./src/components/'.length);
+  if (!componentFiles.includes(file) || key !== `./${file.replace(/\.tsx?$/, '')}`) {
+    subpathProblems.push(`  "${key}": "${target}" names no component file under its own name`);
+  }
+}
+if (subpathProblems.length > 0) {
+  failures.push(
+    ['package.json exports disagree with src/components/:', ...subpathProblems].join('\n'),
+  );
+}
+
+// oppenheimer:begin web-showcase
+// 3. The showcase.
+const showcaseDir = join(root, '..', '..', '..', '..', 'apps', 'web-showcase', 'src');
+
+/**
+ * Components the console uses that the showcase does not render yet, and
+ * `sheet`, which only `sidebar` uses. Each should leave this list by getting a
+ * showcase section; the check fails when one does, or when its file is gone,
+ * so the list cannot go stale. Add to it only with a reason next to the entry.
+ */
+const NOT_IN_SHOWCASE = new Map([
+  ['alert', 'used by the console; no showcase section yet'],
+  ['badge', 'used by the console; no showcase section yet'],
+  ['brand-mark', 'used by the console; no showcase section yet'],
+  ['checkbox', 'used by the console; no showcase section yet'],
+  ['empty', 'used by the console; no showcase section yet'],
+  ['icons', 'the lucide re-export; the showcase imports lucide directly'],
+  ['label', 'used by the console; no showcase section yet'],
+  ['radio-group', 'used by the console; no showcase section yet'],
+  ['search-input', 'used by the console; no showcase section yet'],
+  ['sheet', 'internal to sidebar (its mobile drawer)'],
+  ['skeleton', 'used by the console; no showcase section yet'],
+  ['sonner', 'used by the console; no showcase section yet'],
+  ['table', 'used by the DataTable kit; no showcase section yet'],
+  ['toggle', 'used by the console; no showcase section yet'],
+]);
+
+/** Every source file under `dir`, recursively, skipping build output. */
+function sourceFiles(dir) {
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...sourceFiles(path));
+    else if (/\.(ts|tsx|mdx?)$/.test(entry.name)) files.push(path);
+  }
+  return files;
+}
+
+const showcaseSource = sourceFiles(showcaseDir)
+  .map((path) => readFileSync(path, 'utf8'))
+  .join('\n');
+const showcased = (name) =>
+  new RegExp(`@oppenheimer/design-system-web/${name}['"]`).test(showcaseSource);
+const showcaseProblems = [];
+for (const name of componentNames) {
+  if (!showcased(name) && !NOT_IN_SHOWCASE.has(name)) {
+    showcaseProblems.push(`  ${name}: not imported by apps/web-showcase`);
+  }
+}
+for (const name of NOT_IN_SHOWCASE.keys()) {
+  if (!componentNames.includes(name)) {
+    showcaseProblems.push(`  ${name}: in NOT_IN_SHOWCASE, but the file is gone`);
+  } else if (showcased(name)) {
+    showcaseProblems.push(`  ${name}: in NOT_IN_SHOWCASE, but the showcase imports it now`);
+  }
+}
+if (showcaseProblems.length > 0) {
+  failures.push(
+    [
+      'Showcase coverage:',
+      ...showcaseProblems,
+      'Give a new component a showcase section (apps/web-showcase/src/lib/toc.ts),',
+      'or delete it if nothing uses it. Take an entry off NOT_IN_SHOWCASE once',
+      'the showcase imports it or the file is deleted.',
+    ].join('\n'),
+  );
+}
+// oppenheimer:end web-showcase
+
+if (failures.length > 0) {
+  console.error(`\n${failures.join('\n\n')}\n`);
   process.exit(1);
 }
 
-console.log(`check-exports: every export in src/components/ is reachable from src/index.ts`);
+console.log(`check-exports: ${componentFiles.length} components, all registered`);
