@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/runner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "The Oppenheimer host agent: pairing, service install, signed self-update, and the REST + WebSocket service it grew from",
   "scripts": {
