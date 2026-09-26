@@ -4,6 +4,7 @@ import {
   AlertDescription,
   Button,
   Chip,
+  EditorPageBack,
   Field,
   FieldDescription,
   FieldLabel,
@@ -19,7 +20,7 @@ import {
   RoutineSteps,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { ChevronLeft, Folder } from '@oppenheimer/design-system-web/icons';
+import { Folder } from '@oppenheimer/design-system-web/icons';
 import {
   type ProjectEntity,
   parseRepositoryKey,
@@ -79,6 +80,9 @@ function rowsOf(project: ProjectEntity | undefined): RepositoryRowValue[] {
  * blocked while the project holds unresolved sessions, because the API
  * refuses exactly that.
  *
+ * The frame around it — the scrolling column and the body — is the `_editor`
+ * layout route's; this is what fills it.
+ *
  * It owns its mutations and its reads because it is the component that
  * renders each result. The branches are read only for the ticked rows, as
  * on the scope chip: a call per row nobody ticked is a rate limit spent on
@@ -91,11 +95,7 @@ export function ProjectScreen({ projectId }: { projectId?: string }) {
   const editing = projectId !== undefined;
 
   if (editing && !project) {
-    return projects.isPending ? (
-      <div className="flex-1 bg-canvas p-8">
-        <Skeleton className="h-9 w-64" />
-      </div>
-    ) : null;
+    return projects.isPending ? <Skeleton className="h-9 w-64" /> : null;
   }
 
   return <ProjectForm key={project?.id ?? 'new'} project={project} />;
@@ -187,22 +187,9 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   const repositoriesDone = summary.count > 0 && summary.defaults > 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas">
-      <form
-        onSubmit={handleSubmit(submit)}
-        noValidate
-        className="mx-auto flex w-full max-w-190 flex-col px-8 pt-6 pb-18"
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="-ml-2 mb-4.5 self-start"
-          render={<Link {...back} />}
-        >
-          <ChevronLeft />
-          {t('projects.page.back')}
-        </Button>
+    <>
+      <form onSubmit={handleSubmit(submit)} noValidate className="flex flex-col">
+        <EditorPageBack render={<Link {...back} />}>{t('projects.page.back')}</EditorPageBack>
 
         <PageHeader className="mb-7">
           <PageHeaderCrumbs>
@@ -401,6 +388,6 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
           onDeleted={() => navigate({ to: '/sessions' })}
         />
       ) : null}
-    </div>
+    </>
   );
 }

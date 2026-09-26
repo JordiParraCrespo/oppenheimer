@@ -68,6 +68,7 @@ import {
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
+  EditorPageDemo,
   PageHeaderDemo,
   RunHistoryDemo,
   RoutineTableDemo,
@@ -966,6 +967,16 @@ export default function Page() {
         code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
       >
         <PillTabsDemo />
+      </Spec>
+
+      <Spec
+        id="editorpage"
+        title="EditorPage"
+        meta="editor-page.tsx"
+        desc="The page over the main column — New project, Add a host, the automation editor — and nothing in it: a canvas column that scrolls on its own, a 760px body with the export's padding, and the Back pill above the page header. The console mounts it once from a layout route and each page fills the body."
+        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>`}
+      >
+        <EditorPageDemo />
       </Spec>
 
       <Spec

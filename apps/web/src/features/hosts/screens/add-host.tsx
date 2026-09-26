@@ -3,6 +3,7 @@ import {
   AlertDescription,
   Button,
   CodeBlock,
+  EditorPageBack,
   PageHeader,
   PageHeaderCrumbs,
   PageHeaderHere,
@@ -14,7 +15,7 @@ import {
   SegmentedControlItem,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { ChevronLeft, Server } from '@oppenheimer/design-system-web/icons';
+import { Server } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
@@ -47,6 +48,9 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * that resolves in place when a runner spends the token. Both steps tick
  * themselves done on the same event, because installing is what connects.
  *
+ * The frame around it — the scrolling column and the body — is the `_editor`
+ * layout route's; this is what fills it.
+ *
  * The footer's primary arms on a **registered** host rather than an online
  * one, unlike onboarding's Continue: a session may be started on a machine
  * whose runner is still coming up — the control plane records it and owes
@@ -70,130 +74,117 @@ export function AddHostScreen() {
   const connected = host !== null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-canvas">
-      <div className="mx-auto flex w-full max-w-190 flex-col px-8 pt-6 pb-18">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="-ml-2 mb-4.5 self-start"
-          render={<Link to="/sessions/new" />}
-        >
-          <ChevronLeft />
-          {t('hosts.add.back')}
-        </Button>
+    <>
+      <EditorPageBack render={<Link to="/sessions/new" />}>{t('hosts.add.back')}</EditorPageBack>
 
-        <PageHeader className="mb-7">
-          <PageHeaderCrumbs>
-            <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
-            <span>/</span>
-            <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
-          </PageHeaderCrumbs>
-          <PageHeaderRow
-            icon={<Server />}
-            title={t('hosts.add.title')}
-            actions={
-              <>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  render={<Link to="/sessions/new" />}
-                >
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!host}
-                  onClick={() =>
-                    host && navigate({ to: '/sessions/new', search: { host: host.id } })
-                  }
-                >
-                  {t('hosts.add.use')}
-                </Button>
-              </>
-            }
-          />
-          <PageHeaderMeta>
-            <span>{t('hosts.add.meta')}</span>
-          </PageHeaderMeta>
-        </PageHeader>
-
-        {error ? (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>
-              {resolveError(error, t('hosts.pairing.mintFailed')).message}
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        <RoutineSteps>
-          <RoutineStep
-            number={1}
-            title={t('hosts.add.install.title')}
-            subtitle={t('hosts.add.install.subtitle')}
-            done={connected}
-            summary={t('hosts.add.install.done')}
-          >
-            <div className="flex flex-col gap-2">
-              <SegmentedControl
-                value={format}
-                onValueChange={(next) => {
-                  // `SegmentedControl` speaks strings; the guard is what keeps
-                  // that at the boundary instead of casting it away.
-                  if (isFormat(next)) setFormat(next);
-                }}
-                aria-label={t('hosts.add.install.format')}
-                className="self-start"
+      <PageHeader className="mb-7">
+        <PageHeaderCrumbs>
+          <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
+          <span>/</span>
+          <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
+        </PageHeaderCrumbs>
+        <PageHeaderRow
+          icon={<Server />}
+          title={t('hosts.add.title')}
+          actions={
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                render={<Link to="/sessions/new" />}
               >
-                {FORMATS.map((option) => (
-                  <SegmentedControlItem key={option} value={option}>
-                    {t(`hosts.add.install.${option}` as const)}
-                  </SegmentedControlItem>
-                ))}
-              </SegmentedControl>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!host}
+                onClick={() => host && navigate({ to: '/sessions/new', search: { host: host.id } })}
+              >
+                {t('hosts.add.use')}
+              </Button>
+            </>
+          }
+        />
+        <PageHeaderMeta>
+          <span>{t('hosts.add.meta')}</span>
+        </PageHeaderMeta>
+      </PageHeader>
 
-              {pairing ? (
-                <CodeBlock
-                  layout="panel"
-                  code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
-                  maxLines={CODE_MAX_LINES}
-                  note={
-                    format === 'command' && pairing.installScriptSha256
-                      ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
-                      : undefined
-                  }
-                  copyLabel={t('common.copy')}
-                  copiedLabel={t('common.copied')}
-                />
-              ) : (
-                <Skeleton className="h-19 w-full" />
-              )}
+      {error ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>
+            {resolveError(error, t('hosts.pairing.mintFailed')).message}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
-              <HostPairingToken
-                expiresAt={expiresAt}
-                expired={expired}
-                onRegenerate={regenerate}
-                busy={isPending}
+      <RoutineSteps>
+        <RoutineStep
+          number={1}
+          title={t('hosts.add.install.title')}
+          subtitle={t('hosts.add.install.subtitle')}
+          done={connected}
+          summary={t('hosts.add.install.done')}
+        >
+          <div className="flex flex-col gap-2">
+            <SegmentedControl
+              value={format}
+              onValueChange={(next) => {
+                // `SegmentedControl` speaks strings; the guard is what keeps
+                // that at the boundary instead of casting it away.
+                if (isFormat(next)) setFormat(next);
+              }}
+              aria-label={t('hosts.add.install.format')}
+              className="self-start"
+            >
+              {FORMATS.map((option) => (
+                <SegmentedControlItem key={option} value={option}>
+                  {t(`hosts.add.install.${option}` as const)}
+                </SegmentedControlItem>
+              ))}
+            </SegmentedControl>
+
+            {pairing ? (
+              <CodeBlock
+                layout="panel"
+                code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
+                maxLines={CODE_MAX_LINES}
+                note={
+                  format === 'command' && pairing.installScriptSha256
+                    ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
+                    : undefined
+                }
+                copyLabel={t('common.copy')}
+                copiedLabel={t('common.copied')}
               />
-            </div>
-          </RoutineStep>
+            ) : (
+              <Skeleton className="h-19 w-full" />
+            )}
 
-          <RoutineStep
-            number={2}
-            title={t('hosts.add.connect.title')}
-            subtitle={t('hosts.add.connect.subtitle')}
-            done={connected}
-            summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
-            last
-          >
-            <div className="rounded-2xl border border-border-subtle bg-card px-3.5">
-              <HostPairingStatus host={host} />
-            </div>
-          </RoutineStep>
-        </RoutineSteps>
-      </div>
-    </div>
+            <HostPairingToken
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
+            />
+          </div>
+        </RoutineStep>
+
+        <RoutineStep
+          number={2}
+          title={t('hosts.add.connect.title')}
+          subtitle={t('hosts.add.connect.subtitle')}
+          done={connected}
+          summary={host ? [host.name, host.os].filter(Boolean).join(' · ') : undefined}
+          last
+        >
+          <div className="rounded-2xl border border-border-subtle bg-card px-3.5">
+            <HostPairingStatus host={host} />
+          </div>
+        </RoutineStep>
+      </RoutineSteps>
+    </>
   );
 }

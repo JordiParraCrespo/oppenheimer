@@ -6,7 +6,6 @@ import { AddHostScreen } from '@/features/hosts/screens/add-host';
  * (`product/versions/mvp/05-screens.md`). The machine it pairs is handed back
  * to New session as `?host=`.
  */
-export const Route = createFileRoute('/_authenticated/hosts/new')({
+export const Route = createFileRoute('/_authenticated/_editor/hosts/new')({
   component: AddHostScreen,
-  staticData: { pane: 'full' },
 });
