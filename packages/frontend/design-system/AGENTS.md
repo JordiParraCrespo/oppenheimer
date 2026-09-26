@@ -70,6 +70,18 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   `DropdownMenuBack` on top of it), the way the engine button slides to its
   models. `DropdownMenuSub` stays for the filter facets, which are several
   independent picks.
+- **A trigger reads as a sentence.** In the routine editor every variable
+  part of a trigger is an `InlineToken` in a `TokenSentence` ("Every
+  [weekday] at [09:00]"), never a form to decode; mono tokens hold values a
+  human compares. `TimeGrid` behind a time token disables past hours rather
+  than hiding them, so the grid never reflows. The editor is `RoutineSteps`:
+  a finished step inverts its number to a tick and prints its summary.
+- **Status glyphs belong to finished things.** The check and alert circles
+  appear only in `RunsList`, where each row is a finished run. Live state is
+  a `StatusDot` and a word, and `RunHistory` is bars and dots, not a chart.
+- **A callout never carries a button.** `Callout` is a note in the flow on
+  a tonal fill; `neutral` is the default and takes no hue; a tinted tone
+  only when something is in that state. The action lives in the form.
 - **One instruction block, one Copy.** Add a host shows the install command
   and the agent prompt as tabs on the header band of one
   `CodeBlock layout="panel"`, at a fixed height so the token line under it

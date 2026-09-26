@@ -92,19 +92,87 @@ import {
   TooltipTrigger,
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
+import { Callout } from '@oppenheimer/design-system-web/callout';
+import { FieldSelect } from '@oppenheimer/design-system-web/field-select';
+import { HostCard } from '@oppenheimer/design-system-web/host-card';
+import {
+  AddRow,
+  InlineToken,
+  TokenLiveDot,
+  TokenMono,
+  TokenSentence,
+  TriggerCard,
+  WeekdayStrip,
+} from '@oppenheimer/design-system-web/inline-token';
+import {
+  PageHeader,
+  PageHeaderCrumbs,
+  PageHeaderHere,
+  PageHeaderMeta,
+  PageHeaderNote,
+  PageHeaderRow,
+  PageHeaderSep,
+  PageHeaderTitleInput,
+} from '@oppenheimer/design-system-web/page-header';
+import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
+import { Popover, PopoverTrigger } from '@oppenheimer/design-system-web/popover';
+import {
+  RoutineItem,
+  RoutineRun,
+  RoutineRunList,
+  RoutineRunsEmpty,
+} from '@oppenheimer/design-system-web/routine-item';
+import { RoutineStep, RoutineStepFields, RoutineSteps } from '@oppenheimer/design-system-web/routine-steps';
+import {
+  RoutineTable,
+  RoutineTableHead,
+  RoutineTableRow,
+} from '@oppenheimer/design-system-web/routine-table';
+import { RunHistory, type RunHistoryDay } from '@oppenheimer/design-system-web/run-history';
+import {
+  RunRow,
+  RunsList,
+  RunsListFilters,
+  RunsListFoot,
+  RunsListHead,
+} from '@oppenheimer/design-system-web/runs-list';
+import {
+  SettingsGroup,
+  SettingsHeading,
+  SettingsRow,
+  SettingsSaveRow,
+} from '@oppenheimer/design-system-web/settings-group';
+import {
+  SettingsNav,
+  SettingsNavBack,
+  SettingsNavGroup,
+  SettingsNavItem,
+} from '@oppenheimer/design-system-web/settings-nav';
+import { TemplateGrid, TemplateItem } from '@oppenheimer/design-system-web/template-grid';
+import { TimeGrid } from '@oppenheimer/design-system-web/time-grid';
+import { ChipSelectPopup } from '@oppenheimer/design-system-web/chip-select';
+import { Input } from '@oppenheimer/design-system-web/input';
+import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ChevronDownIcon,
+  ClockIcon,
   CpuIcon,
   EllipsisIcon,
+  FileTextIcon,
   GitBranchIcon,
+  GitPullRequestIcon,
   GlobeIcon,
   LogOutIcon,
   MoonIcon,
+  PlayIcon,
   PlusIcon,
   Settings2Icon,
   SettingsIcon,
+  ShieldCheckIcon,
   SlidersHorizontalIcon,
   TerminalIcon,
+  TriangleAlertIcon,
+  UserIcon,
   ZapIcon,
 } from 'lucide-react';
 import * as React from 'react';
@@ -983,6 +1051,602 @@ export function RepositoryRowListDemo() {
         </span>
       </div>
       <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+    </div>
+  );
+}
+
+/* ── Callout ─────────────────────────────────────────────────────────────── */
+
+export function CalloutDemo() {
+  return (
+    <div className="flex w-full max-w-[440px] flex-col gap-3.5">
+      <Callout>No account yet for that sign-in. The provider buttons create one in a single step.</Callout>
+      <Callout tone="info">
+        A worktree is created per session, so two runs on one repository never share a checkout.
+      </Callout>
+      <Callout tone="success">Runner connected. 12 repositories are available to this host.</Callout>
+      <Callout tone="warning">This host has been unreachable for 6 minutes. Sessions on it are paused.</Callout>
+      <Callout tone="danger">The install token expired. Generate a new one and run the command again.</Callout>
+    </div>
+  );
+}
+
+/* ── PillTabs ────────────────────────────────────────────────────────────── */
+
+export function PillTabsDemo() {
+  const [view, setView] = React.useState('routines');
+  const [status, setStatus] = React.useState('all');
+  return (
+    <div className="flex flex-col gap-4">
+      <PillTabs value={view} onValueChange={setView} aria-label="View">
+        <PillTab value="routines">Routines</PillTab>
+        <PillTab value="runs">Runs</PillTab>
+      </PillTabs>
+      <div className="rounded-lg bg-card p-1.5">
+        <PillTabs value={status} onValueChange={setStatus} size="sm" aria-label="Status">
+          <PillTab value="all" count={48}>
+            All
+          </PillTab>
+          <PillTab value="running" count={1}>
+            Running
+          </PillTab>
+          <PillTab value="succeeded" count={44}>
+            Succeeded
+          </PillTab>
+          <PillTab value="failed" count={3}>
+            Failed
+          </PillTab>
+        </PillTabs>
+      </div>
+    </div>
+  );
+}
+
+/* ── PageHeader ──────────────────────────────────────────────────────────── */
+
+export function PageHeaderDemo() {
+  const [paused, setPaused] = React.useState(true);
+  return (
+    <div className="flex w-full flex-col gap-8">
+      <PageHeader>
+        <PageHeaderCrumbs>
+          <button type="button">Routines</button>
+          <span>/</span>
+          <PageHeaderHere>Nightly dependency audit</PageHeaderHere>
+        </PageHeaderCrumbs>
+        <PageHeaderRow
+          size="lg"
+          icon={<ClockIcon />}
+          title="Nightly dependency audit"
+          actions={
+            <>
+              <Button variant="secondary" size="sm">
+                <PlayIcon /> Run now
+              </Button>
+              <Button variant="secondary" size="sm">
+                Edit
+              </Button>
+              <IconButton aria-label="More" size="sm">
+                <EllipsisIcon />
+              </IconButton>
+            </>
+          }
+        />
+        <PageHeaderMeta>
+          <StatusDot state={paused ? 'paused' : 'active'} className="items-center text-[13px]">
+            {paused ? 'Paused' : 'Active'}
+          </StatusDot>
+          <PageHeaderSep />
+          <span>Every weekday at 09:00</span>
+          <PageHeaderSep />
+          <span>XRP Mobile · optimus</span>
+        </PageHeaderMeta>
+        {paused ? (
+          <PageHeaderNote
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setPaused(false)}>
+                Resume
+              </Button>
+            }
+          >
+            Paused. Triggers are ignored until you resume it; Run now still works.
+          </PageHeaderNote>
+        ) : null}
+      </PageHeader>
+      <PageHeader>
+        <PageHeaderCrumbs>
+          <button type="button">Routines</button>
+          <span>/</span>
+          <PageHeaderHere>New routine</PageHeaderHere>
+        </PageHeaderCrumbs>
+        <PageHeaderRow
+          icon={<ZapIcon />}
+          title={<PageHeaderTitleInput placeholder="Name this routine" aria-label="Routine name" />}
+          actions={
+            <>
+              <Button variant="secondary" size="sm">
+                Cancel
+              </Button>
+              <Button size="sm" disabled>
+                Create routine
+              </Button>
+            </>
+          }
+        />
+        <PageHeaderMeta>Name the routine to continue.</PageHeaderMeta>
+      </PageHeader>
+    </div>
+  );
+}
+
+/* ── RunHistory ──────────────────────────────────────────────────────────── */
+
+const HISTORY: RunHistoryDay[] = Array.from({ length: 30 }, (_, i) => {
+  const ok = i < 5 ? [1, 2, 2, 3, 3][i] : i === 5 ? 0 : i < 12 ? [2, 3, 2, 3, 4, 0, 0][i - 6] : i < 18 ? [3, 3, 3, 3, 3, 0][i - 12] : i < 24 ? [0, 3, 4, 3, 3, 2][i - 18] : [0, 0, 3, 3, 0, 0][i - 24];
+  const failed = i === 3 || i === 10 || i === 21 ? 1 : 0;
+  return { date: `2026-${i < 4 ? '08' : '09'}-${String(i < 4 ? 27 + i : i - 3).padStart(2, '0')}`, ok, failed };
+});
+
+export function RunHistoryDemo() {
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <RunHistory days={HISTORY} axis={['27 Aug', '26 Sep']} />
+      <RunHistory days={HISTORY} axis={['27 Aug', '26 Sep']} link={{ label: '65 runs' }} />
+    </div>
+  );
+}
+
+/* ── RoutineTable ────────────────────────────────────────────────────────── */
+
+export function RoutineTableDemo() {
+  return (
+    <RoutineTable className="w-full">
+      <RoutineTableHead />
+      <RoutineTableRow
+        icon={<ClockIcon />}
+        name="Nightly dependency audit"
+        sub="XRP Mobile · Claude Code"
+        trigger="Every weekday at 09:00"
+        next="Mon 09:00"
+        nextRelative="in 2d 14h"
+        status="active"
+        statusLabel="Active"
+        action={
+          <IconButton aria-label="Routine actions" size="sm">
+            <EllipsisIcon />
+          </IconButton>
+        }
+      />
+      <RoutineTableRow
+        icon={<BrandGlyph name="github" size={14} />}
+        name="Review new pull requests"
+        sub="Atlas · Codex"
+        trigger="When a PR is opened on main"
+        next="On event"
+        status="running"
+        statusLabel="Running"
+        action={
+          <IconButton aria-label="Routine actions" size="sm">
+            <EllipsisIcon />
+          </IconButton>
+        }
+      />
+      <RoutineTableRow
+        icon={<ClockIcon />}
+        name="Weekly changelog"
+        sub="Flama AI · Claude Code"
+        trigger="Fridays at 17:00"
+        next="—"
+        status="paused"
+        statusLabel="Paused"
+        paused
+        action={
+          <IconButton aria-label="Routine actions" size="sm">
+            <EllipsisIcon />
+          </IconButton>
+        }
+      />
+    </RoutineTable>
+  );
+}
+
+/* ── RunsList ────────────────────────────────────────────────────────────── */
+
+export function RunsListDemo() {
+  const [status, setStatus] = React.useState('all');
+  return (
+    <RunsList className="w-full">
+      <RunsListFilters>
+        <PillTabs value={status} onValueChange={setStatus} size="sm" aria-label="Status">
+          <PillTab value="all" count={65}>
+            All
+          </PillTab>
+          <PillTab value="completed" count={62}>
+            Completed
+          </PillTab>
+          <PillTab value="failed" count={3}>
+            Failed
+          </PillTab>
+          <PillTab value="running" count={0}>
+            Running
+          </PillTab>
+        </PillTabs>
+        <span className="flex-1" />
+        <InlineToken size="sm">All routines</InlineToken>
+        <InlineToken size="sm">All projects</InlineToken>
+        <InlineToken size="sm">Last 30 days</InlineToken>
+      </RunsListFilters>
+      <RunsListHead />
+      <RunRow state="failed" title="Dependency audit · 3 safe bumps" routine="Nightly dependency audit" date="Sep 26" time="02:00" />
+      <RunRow state="completed" title="Review #124 · Harden API config loading" routine="Review new pull requests" date="Sep 25" time="18:08" />
+      <RunRow state="running" title="Standup digest · Fri 25 Sep" routine="Standup digest" date="Sep 25" time="08:30" />
+      <RunsListFoot range="1–3 of 65" onNext={() => {}} />
+    </RunsList>
+  );
+}
+
+/* ── TemplateGrid ────────────────────────────────────────────────────────── */
+
+export function TemplateGridDemo() {
+  const [cat, setCat] = React.useState('all');
+  return (
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <h3 className="m-0 flex-1 text-[17px] font-semibold tracking-[-0.012em]">Templates</h3>
+        <PillTabs value={cat} onValueChange={setCat} size="sm" aria-label="Category">
+          <PillTab value="all">All</PillTab>
+          <PillTab value="review">Review</PillTab>
+          <PillTab value="maintenance">Maintenance</PillTab>
+          <PillTab value="reporting">Reporting</PillTab>
+        </PillTabs>
+      </div>
+      <TemplateGrid>
+        <TemplateItem
+          icon={<GitPullRequestIcon />}
+          name="Pull request review"
+          description="Reviews each new pull request against your contributing guide and posts one verdict."
+          meta={
+            <>
+              <BrandGlyph name="github" size={12} /> On pull request opened
+            </>
+          }
+          action={
+            <Button variant="secondary" size="sm">
+              Add
+            </Button>
+          }
+        />
+        <TemplateItem
+          icon={<TriangleAlertIcon />}
+          name="Fix failing checks"
+          description="Reproduces a red check on the same branch and pushes the smallest fix."
+          meta={
+            <>
+              <BrandGlyph name="github" size={12} /> On check failed
+            </>
+          }
+          action={
+            <Button variant="secondary" size="sm">
+              Add
+            </Button>
+          }
+        />
+        <TemplateItem
+          icon={<ShieldCheckIcon />}
+          name="Dependency audit"
+          description="Scans manifests for advisories and opens one PR with the safe bumps."
+          meta={
+            <>
+              <ClockIcon /> Every Mon at 07:00
+            </>
+          }
+          action={
+            <Button variant="secondary" size="sm">
+              Add
+            </Button>
+          }
+        />
+        <TemplateItem
+          icon={<FileTextIcon />}
+          name="Release notes drafter"
+          description="Drafts user-facing notes each time a pull request merges to main."
+          meta={
+            <>
+              <BrandGlyph name="github" size={12} /> On pull request merged
+            </>
+          }
+          action={
+            <Button variant="secondary" size="sm">
+              Add
+            </Button>
+          }
+        />
+      </TemplateGrid>
+    </div>
+  );
+}
+
+/* ── RoutineSteps · FieldSelect · InlineToken · TimeGrid ────────────────── */
+
+const HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map((h) => `${String(h).padStart(2, '0')}:00`);
+
+export function TimeTokenDemo() {
+  const [open, setOpen] = React.useState(false);
+  const [time, setTime] = React.useState('09:00');
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={<InlineToken mono open={open} />}>{time}</PopoverTrigger>
+      <ChipSelectPopup width={292} maxHeight={480} side="bottom" align="start" className="p-3">
+        <TimeGrid
+          groups={[
+            { label: 'Morning', cells: HOURS.slice(0, 6).map((h) => ({ value: h, label: h, disabled: h < '08:00' })) },
+            { label: 'Afternoon', cells: HOURS.slice(6).map((h) => ({ value: h, label: h })) },
+          ]}
+          value={time}
+          onValueChange={(next) => {
+            setTime(next);
+            setOpen(false);
+          }}
+        />
+      </ChipSelectPopup>
+    </Popover>
+  );
+}
+
+export function RoutineEditorDemo() {
+  const [project, setProject] = React.useState<string | null>('xrp');
+  const [repos, setRepos] = React.useState<string[]>(['xrp-mobile']);
+  const [host, setHost] = React.useState<string | null>('optimus');
+  const [days, setDays] = React.useState('weekdays');
+  const [what, setWhat] = React.useState('');
+  const [addOpen, setAddOpen] = React.useState(false);
+  return (
+    <RoutineSteps className="w-full">
+      <RoutineStep number={1} title="Where" subtitle="The code it works on, and the machine it runs on." done summary="XRP Mobile · optimus">
+        <RoutineStepFields>
+          <Field>
+            <FieldLabel>Project</FieldLabel>
+            <FieldSelect
+              value={project}
+              onValueChange={setProject}
+              meta="1 repo"
+              searchPlaceholder="Search projects"
+              options={[
+                { value: 'xrp', label: 'XRP Mobile', description: 'xrp-mobile' },
+                { value: 'atlas', label: 'Atlas', description: 'atlas, flama-ai' },
+                { value: 'client', label: 'Client sites', description: 'flama-ai, adri-rodriguez' },
+              ]}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Repositories</FieldLabel>
+            <FieldSelect
+              multiple
+              value={repos}
+              onValueChange={setRepos}
+              searchPlaceholder="Search repositories"
+              options={[
+                { value: 'xrp-mobile', label: 'xrp-mobile', description: 'default · main', group: 'In XRP Mobile' },
+                { value: 'atlas', label: 'atlas', description: 'optional · develop', group: 'In XRP Mobile' },
+                { value: 'flama-ai', label: 'flama-ai', description: 'not in project' },
+              ]}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Host</FieldLabel>
+            <FieldSelect
+              value={host}
+              onValueChange={setHost}
+              meta="idle"
+              searchPlaceholder="Search hosts"
+              options={[
+                { value: 'optimus', label: 'optimus', description: 'Ubuntu 24.04 · idle' },
+                { value: 'mac', label: 'jordis-mac-studio', description: 'macOS 15 · running' },
+                { value: 'fable', label: 'fable', description: 'Debian 12 · offline', disabled: true },
+              ]}
+            />
+          </Field>
+        </RoutineStepFields>
+      </RoutineStep>
+      <RoutineStep number={2} title="When" subtitle="Any trigger starts a run." done summary="Weekdays at 09:00">
+        <TriggerCard
+          icon={<ClockIcon />}
+          onRemove={() => {}}
+          preview={
+            <>
+              <WeekdayStrip
+                days={['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, i) => ({
+                  label,
+                  fires: days === 'weekdays' ? i > 0 && i < 6 : true,
+                  next: i === 1,
+                }))}
+              />
+              <span>Next run</span>
+              <TokenMono>Mon 28 Sep, 09:00</TokenMono>
+              <span>· in</span>
+              <TokenMono>1d 21h 26m</TokenMono>
+            </>
+          }
+        >
+          <TokenSentence>
+            <span>Every</span>
+            <InlineToken onClick={() => setDays((d) => (d === 'weekdays' ? 'day' : 'weekdays'))}>
+              {days === 'weekdays' ? 'weekday' : 'day'}
+            </InlineToken>
+            <span>at</span>
+            <TimeTokenDemo />
+            <span>CEST</span>
+          </TokenSentence>
+        </TriggerCard>
+        <TriggerCard
+          icon={<BrandGlyph name="github" size={14} />}
+          onRemove={() => {}}
+          preview={
+            <>
+              <TokenLiveDot />
+              <span>Listening on xrp-mobile · would have run 4 times in the last 7 days</span>
+            </>
+          }
+        >
+          <TokenSentence>
+            <span>When a pull request is</span>
+            <InlineToken>opened</InlineToken>
+            <span>against</span>
+            <InlineToken mono>main</InlineToken>
+          </TokenSentence>
+        </TriggerCard>
+        <AddRow open={addOpen} onClick={() => setAddOpen((o) => !o)}>
+          Add another trigger
+        </AddRow>
+      </RoutineStep>
+      <RoutineStep
+        number={3}
+        title="What"
+        subtitle="Instructions for every run."
+        note="The pull request, issue or commit that fired the run is passed in as context."
+      >
+        <Textarea
+          value={what}
+          onChange={(e) => setWhat(e.target.value)}
+          placeholder="What should the agent do each time it runs?"
+          className="min-h-28"
+        />
+      </RoutineStep>
+      <RoutineStep
+        number={4}
+        title="Agent"
+        subtitle="Each run is its own session."
+        done
+        summary="Claude Code · Claude Sonnet 4.6"
+        note="Works on a fresh opp/ branch, so nothing lands on main without a pull request."
+        last
+      >
+        <RoutineStepFields>
+          <Field>
+            <FieldLabel>Agent</FieldLabel>
+            <FieldSelect value="claude" onValueChange={() => {}} options={[{ value: 'claude', label: 'Claude Code' }, { value: 'codex', label: 'Codex' }]} />
+          </Field>
+          <Field>
+            <FieldLabel>Model</FieldLabel>
+            <FieldSelect value="sonnet" onValueChange={() => {}} options={[{ value: 'sonnet', label: 'Claude Sonnet 4.6' }, { value: 'opus', label: 'Claude Opus 4.2' }]} />
+          </Field>
+        </RoutineStepFields>
+      </RoutineStep>
+    </RoutineSteps>
+  );
+}
+
+/* ── RoutineItem ─────────────────────────────────────────────────────────── */
+
+export function RoutineItemsDemo() {
+  const [active, setActive] = React.useState('review');
+  return (
+    <div className="flex w-[264px] flex-col gap-px rounded-lg border border-sidebar-border bg-sidebar p-3">
+      <RoutineItem name="Review new pull requests" meta={26} icon={<BrandGlyph name="github" size={13} className="opacity-80" />} running active={active === 'review'} onClick={() => setActive('review')} />
+      {active === 'review' ? (
+        <RoutineRunList>
+          <RoutineRun title="Review #124 · Harden API config loading" ago="17h" active />
+          <RoutineRun title="Review #123 · Bump react-native to 0.76.3" ago="18h" />
+          <RoutineRun title="Review #118 · Split wallet store by account" ago="2d" state="failed" />
+        </RoutineRunList>
+      ) : null}
+      <RoutineItem name="Standup digest" meta="in 45h" active={active === 'standup'} onClick={() => setActive('standup')} />
+      {active === 'standup' ? (
+        <RoutineRunList>
+          <RoutineRunsEmpty>No runs yet.</RoutineRunsEmpty>
+        </RoutineRunList>
+      ) : null}
+      <RoutineItem name="Triage bug reports" meta="Paused" paused icon={<BrandGlyph name="github" size={13} className="opacity-80" />} active={active === 'triage'} onClick={() => setActive('triage')} />
+    </div>
+  );
+}
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+
+export function SettingsNavDemo() {
+  const [page, setPage] = React.useState('profile');
+  return (
+    <SettingsNav className="h-[360px] rounded-lg border border-sidebar-border">
+      <SettingsNavBack>Back to console</SettingsNavBack>
+      <SettingsNavGroup label="Account">
+        <SettingsNavItem icon={<UserIcon />} active={page === 'profile'} onClick={() => setPage('profile')}>
+          Profile
+        </SettingsNavItem>
+      </SettingsNavGroup>
+      <SettingsNavGroup label="Workspace">
+        <SettingsNavItem icon={<CpuIcon />} count={3} active={page === 'hosts'} onClick={() => setPage('hosts')}>
+          Hosts
+        </SettingsNavItem>
+      </SettingsNavGroup>
+    </SettingsNav>
+  );
+}
+
+export function SettingsGroupDemo() {
+  const [name, setName] = React.useState('Jordi Parra Crespo');
+  const dirty = name !== 'Jordi Parra Crespo';
+  return (
+    <div className="flex w-full max-w-[680px] flex-col gap-6">
+      <SettingsGroup>
+        <SettingsRow label="Profile picture" hint="Shown beside your sessions and routines">
+          <Avatar size="lg" variant="accent">
+            <AvatarFallback>JP</AvatarFallback>
+          </Avatar>
+          <Button variant="secondary" size="sm">
+            Upload
+          </Button>
+        </SettingsRow>
+        <SettingsRow label="Email" hint="Used to sign in and for run notifications">
+          <span>jordiparra99@gmail.com</span>
+          <Button variant="secondary" size="sm">
+            Change
+          </Button>
+        </SettingsRow>
+        <SettingsRow label="Full name">
+          <Input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" className="w-[280px]" />
+        </SettingsRow>
+        {dirty ? (
+          <SettingsSaveRow>
+            <Button variant="ghost" size="sm" onClick={() => setName('Jordi Parra Crespo')}>
+              Discard
+            </Button>
+            <Button size="sm">Save changes</Button>
+          </SettingsSaveRow>
+        ) : null}
+      </SettingsGroup>
+      <SettingsHeading>Account</SettingsHeading>
+      <SettingsGroup>
+        <SettingsRow label="Delete account" hint="Stops every session and removes your routines and host registrations. This cannot be undone.">
+          <Button variant="destructive" size="sm">
+            Delete account
+          </Button>
+        </SettingsRow>
+      </SettingsGroup>
+    </div>
+  );
+}
+
+export function HostCardsDemo() {
+  const action = (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<IconButton aria-label="Host actions" size="sm" />}>
+        <EllipsisIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-50">
+        <DropdownMenuItem>Rename</DropdownMenuItem>
+        <DropdownMenuItem>
+          Copy host ID <DropdownMenuShortcut className="figures">h_b40e</DropdownMenuShortcut>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive">Remove host</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+  return (
+    <div className="flex w-full max-w-[680px] flex-col gap-2.5">
+      <HostCard name="jordis-mac-studio" meta="macOS 15 · local · runner 0.14.2" status="running" state="Running · 2 sessions" seen="connected" action={action} />
+      <HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={action} />
+      <HostCard name="fable" meta="Debian 12 · 16 vCPU · us-east · runner 0.13.8" status="offline" state="Offline" seen="last seen 2 days ago" action={action} />
     </div>
   );
 }

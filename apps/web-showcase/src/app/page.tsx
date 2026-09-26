@@ -64,6 +64,18 @@ import {
   ScopeChips,
   RepositoryRowListDemo,
   SidebarDemo,
+  CalloutDemo,
+  PillTabsDemo,
+  PageHeaderDemo,
+  RunHistoryDemo,
+  RoutineTableDemo,
+  RunsListDemo,
+  TemplateGridDemo,
+  RoutineEditorDemo,
+  RoutineItemsDemo,
+  SettingsNavDemo,
+  SettingsGroupDemo,
+  HostCardsDemo,
   StepperDemo,
   TerminalDemo,
   TooltipDemo,
@@ -785,8 +797,28 @@ export default function Page() {
         </Swatch>
       </Spec>
 
+      <Spec
+        id="fieldselect"
+        title="FieldSelect"
+        meta="field-select.tsx"
+        desc="The routine editor's picker: a 42px labelled field whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked."
+        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>`}
+      >
+        <RoutineEditorDemo />
+      </Spec>
+
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
       <GroupHead>Overlays</GroupHead>
+
+      <Spec
+        id="callout"
+        title="Callout"
+        meta="callout.tsx"
+        desc="A note in the flow, not a card: flat tonal fill, hairline-free, 13px text. It never outweighs the form it sits above, and it never carries a button; if an action is needed, the action lives in the form. Neutral is the default and carries no hue. The four tinted tones take a status hue at 11–14% behind full-opacity ink, and only when something actually is in that state."
+        code={`<Callout tone="warning">This host has been unreachable for 6 minutes. Sessions on it are paused.</Callout>`}
+      >
+        <CalloutDemo />
+      </Spec>
 
       <Spec
         id="dialog"
@@ -851,6 +883,36 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="routineitem"
+        title="RoutineItem"
+        meta="routine-item.tsx"
+        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the run count, the next run as a mono countdown, or Paused, and the selected routine expands its last runs inline, each with a state dot and its age. A paused routine dims its name."
+        code={`<RoutineItem name="Standup digest" meta="in 45h" active /><RoutineRunList><RoutineRun title="Standup digest · Fri 25 Sep" ago="1d" /></RoutineRunList>`}
+      >
+        <RoutineItemsDemo />
+      </Spec>
+
+      <Spec
+        id="pilltabs"
+        title="PillTabs"
+        meta="pill-tabs.tsx"
+        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes: 32px for a page's top row, 28px inside a card."
+        code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
+      >
+        <PillTabsDemo />
+      </Spec>
+
+      <Spec
+        id="pageheader"
+        title="PageHeader"
+        meta="page-header.tsx"
+        desc="Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
+        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow size="lg" icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+      >
+        <PageHeaderDemo />
+      </Spec>
+
+      <Spec
         id="stepper"
         title="Stepper"
         meta="stepper.tsx"
@@ -873,6 +935,92 @@ export default function Page() {
         <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
           <TerminalDemo />
         </ThemePair>
+      </Spec>
+
+      {/* ── Routines ─────────────────────────────────────────────────────── */}
+      <GroupHead>Routines</GroupHead>
+
+      <Spec
+        id="runhistory"
+        title="RunHistory"
+        meta="run-history.tsx"
+        desc="One column per day. Height is successful runs; a red dot above means at least one failed. Empty days keep a 3px stub so the time axis never compresses. Hovering a column dims the rest. The header carries the legend, or a link when the counts live elsewhere."
+        code={`<RunHistory days={days} axis={['27 Aug', '26 Sep']} />`}
+      >
+        <RunHistoryDemo />
+      </Spec>
+
+      <Spec
+        id="routinetable"
+        title="RoutineTable"
+        meta="routine-table.tsx"
+        desc="The Routines overview. The trigger reads in words, the next run gives both clock time and a relative countdown, the status is a dot and a word, and the row actions stay behind the ellipsis. Paused rows dim."
+        code={`<RoutineTable><RoutineTableHead /><RoutineTableRow icon={<ClockIcon />} name="Nightly dependency audit" sub="XRP Mobile · Claude Code" trigger="Every weekday at 09:00" next="Mon 09:00" nextRelative="in 2d 14h" status="active" statusLabel="Active" action={…} /></RoutineTable>`}
+      >
+        <RoutineTableDemo />
+      </Spec>
+
+      <Spec
+        id="runslist"
+        title="RunsList"
+        meta="runs-list.tsx"
+        desc="The Runs tab: status tabs with counts and the facet tokens in the filter row, then a row per run with its routine and time. Step-level glyphs (check circle, alert circle) are allowed here because each row is a finished run, not a live state; a run still going shows the pulsing dot."
+        code={`<RunsList><RunsListFilters>…</RunsListFilters><RunsListHead /><RunRow state="failed" title="Dependency audit · 3 safe bumps" routine="Nightly dependency audit" date="Sep 26" time="02:00" /><RunsListFoot range="1–10 of 65" onNext={next} /></RunsList>`}
+      >
+        <RunsListDemo />
+      </Spec>
+
+      <Spec
+        id="templates"
+        title="TemplateGrid"
+        meta="template-grid.tsx"
+        desc="Starting points under the routine table, filtered by category tabs. Each names its trigger in the meta line; Add opens the editor prefilled."
+        code={`<TemplateGrid><TemplateItem icon={<GitPullRequestIcon />} name="Pull request review" description="…" meta={<>…On pull request opened</>} action={<Button size="sm">Add</Button>} /></TemplateGrid>`}
+      >
+        <TemplateGridDemo />
+      </Spec>
+
+      <Spec
+        id="routinesteps"
+        title="RoutineSteps · InlineToken · TimeGrid"
+        meta="routine-steps.tsx · inline-token.tsx · time-grid.tsx"
+        desc="The routine editor is four numbered steps: Where, When, What, Agent. A finished step inverts its number to a tick and prints a one-line summary on the right, so the whole routine reads top to bottom before you save. A trigger reads as a sentence and every variable part is a token you click to change; mono tokens hold values a human compares. The time token opens a grid of hours where past times are disabled rather than hidden. A weekly schedule previews its days as a strip with the next one ringed; a GitHub event previews what it would have matched. The dashed row adds another trigger."
+        code={`<RoutineSteps><RoutineStep number={2} title="When" subtitle="Any trigger starts a run." done summary="Weekdays at 09:00"><TriggerCard icon={<ClockIcon />} onRemove={remove} preview={…}><TokenSentence>Every <InlineToken>weekday</InlineToken> at <InlineToken mono>09:00</InlineToken></TokenSentence></TriggerCard><AddRow>Add another trigger</AddRow></RoutineStep></RoutineSteps>`}
+      >
+        <RoutineEditorDemo />
+      </Spec>
+
+      {/* ── Settings ─────────────────────────────────────────────────────── */}
+      <GroupHead>Settings</GroupHead>
+
+      <Spec
+        id="settingsnav"
+        title="SettingsNav"
+        meta="settings-nav.tsx"
+        desc="A plain sidebar: a way back to the console, then eyebrow-labelled groups. Counts ride on the right in mono."
+        code={`<SettingsNav><SettingsNavBack>Back to console</SettingsNavBack><SettingsNavGroup label="Workspace"><SettingsNavItem icon={<CpuIcon />} count={3} active>Hosts</SettingsNavItem></SettingsNavGroup></SettingsNav>`}
+      >
+        <SettingsNavDemo />
+      </Spec>
+
+      <Spec
+        id="settingsgroup"
+        title="SettingsGroup"
+        meta="settings-group.tsx"
+        desc="One card per group, one row per setting: label and a one-line hint on the left, the control on the right, hairlines between. A save row appears at the foot only when something changed. The destructive group is its own card under a heading."
+        code={`<SettingsGroup><SettingsRow label="Full name"><Input … /></SettingsRow><SettingsSaveRow><Button variant="ghost" size="sm">Discard</Button><Button size="sm">Save changes</Button></SettingsSaveRow></SettingsGroup>`}
+      >
+        <SettingsGroupDemo />
+      </Spec>
+
+      <Spec
+        id="hostcard"
+        title="HostCard"
+        meta="host-card.tsx"
+        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host."
+        code={`<HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={…} />`}
+      >
+        <HostCardsDemo />
       </Spec>
 
       {/* ── Media ────────────────────────────────────────────────────────── */}

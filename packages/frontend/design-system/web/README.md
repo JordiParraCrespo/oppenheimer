@@ -44,9 +44,14 @@ Wire the styles into the app's CSS entry alongside Tailwind:
     `RepositoryRowList`,
     `Composer` with `ComposerToolButton`, `AgentModelSelect`, `EffortSlider`
     and `EffortPicker`, `PermissionMenu`
-  - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
+  - overlays: `Callout`, `Dialog`, `DropdownMenu`, `Tooltip`
   - navigation: `Rail`, `Sidebar` (with `SidebarSearch`, `SidebarProjectHeader`,
-    `SidebarEmptyRow`), `SessionItem`, `Stepper`
+    `SidebarEmptyRow`), `SessionItem`, `RoutineItem`, `PillTabs`, `PageHeader`,
+    `Stepper`
+  - routines: `RunHistory`, `RoutineTable`, `RunsList`, `TemplateGrid`,
+    `RoutineSteps`, `FieldSelect`, `InlineToken` (with `TriggerCard`,
+    `WeekdayStrip`, `AddRow`), `TimeGrid`
+  - settings: `SettingsNav`, `SettingsGroup`, `HostCard`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`
     with `TerminalStatusLink`
   - media: `ImageCarousel`

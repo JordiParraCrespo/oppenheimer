@@ -41,6 +41,16 @@ multi-line, so a grep for `export` misses most of them.
 | Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
 | Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
+| A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
+| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | `Tabs`, `SegmentedControl` |
+| How a routine page opens | `PageHeader` parts | a hand-built title row |
+| A labelled picker in the routine editor | `FieldSelect` | `Combobox`, `Select` |
+| A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of `Select`s |
+| A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
+| Runs per day | `RunHistory` | a chart library |
+| The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | `Table` primitives, cards |
+| A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
+| A host on Settings | `HostCard` | `AgentCard`, a table row |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
