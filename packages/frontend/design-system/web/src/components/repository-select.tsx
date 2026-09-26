@@ -13,6 +13,7 @@ import {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './chip-select';
+import type { ChipSelectAction, ChipSelectTriggerVariant } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
@@ -36,7 +37,7 @@ import { Popover, PopoverTrigger } from './popover';
  *   repositories={repos}
  *   value={scope}            // [{ id: 'xrp-mobile', branch: 'main' }]
  *   onValueChange={setScope}
- *   action={{ label: 'Add repository…', onSelect: connectMore }}
+ *   action={{ label: 'Manage repository access', icon: <BrandGlyph name="github" />, href: installUrl }}
  * />
  * ```
  */
@@ -78,6 +79,7 @@ function RepositorySelect({
   branchPaneTitle = (name) => `Branch for ${name}`,
   changeBranchLabel = 'Change branch',
   action,
+  variant,
   disabled,
   className,
   'aria-label': ariaLabel = 'Repositories',
@@ -103,7 +105,9 @@ function RepositorySelect({
   branchesLoadingText?: string;
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
-  action?: { label: string; icon?: React.ReactNode; onSelect: () => void };
+  action?: ChipSelectAction;
+  /** `tab` inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -167,6 +171,7 @@ function RepositorySelect({
           <ChipSelectTrigger
             icon={icon ?? <FolderIcon />}
             open={open}
+            variant={variant}
             placeholder={placeholder}
             aria-label={ariaLabel}
             disabled={disabled}
@@ -270,15 +275,7 @@ function RepositorySelect({
                 })}
             </ChipSelectList>
             {action ? (
-              <ChipSelectActionRow
-                icon={action.icon}
-                onClick={() => {
-                  setOpen(false);
-                  action.onSelect();
-                }}
-              >
-                {action.label}
-              </ChipSelectActionRow>
+              <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
             ) : null}
           </>
         )}

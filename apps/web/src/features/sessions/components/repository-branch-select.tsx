@@ -1,4 +1,5 @@
 import {
+  BrandGlyph,
   type RepositoryOption,
   type RepositoryScope,
   RepositorySelect,
@@ -35,7 +36,7 @@ export function RepositoryBranchSelect({
   repositories,
   value,
   onValueChange,
-  onConnect,
+  manageUrl,
   loading,
   branchesLoading,
   disabled,
@@ -43,7 +44,8 @@ export function RepositoryBranchSelect({
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
-  onConnect: () => void;
+  /** `github_app_install_url`; `null` when the deployment has no GitHub App. */
+  manageUrl: string | null;
   loading?: boolean;
   branchesLoading?: boolean;
   disabled?: boolean;
@@ -64,12 +66,20 @@ export function RepositoryBranchSelect({
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}
-      emptyText={t('sessions.new.repository.empty')}
+      emptyText={t(manageUrl ? 'sessions.new.repository.empty' : 'sessions.new.repository.noApp')}
       branchSearchPlaceholder={t('sessions.new.repository.branchSearch')}
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}
       changeBranchLabel={t('sessions.new.repository.changeBranch')}
-      action={{ label: t('sessions.new.repository.connect'), onSelect: onConnect }}
+      action={
+        manageUrl === null
+          ? undefined
+          : {
+              label: t('sessions.new.repository.manage'),
+              icon: <BrandGlyph name="github" size={15} />,
+              href: manageUrl,
+            }
+      }
     />
   );
 }
