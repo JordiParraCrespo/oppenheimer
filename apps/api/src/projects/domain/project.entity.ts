@@ -5,7 +5,14 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import {
+  type ProjectRepositoryProps,
+  projectRepositoriesProblem,
+} from './project-repositories.policy';
 import { PROJECT_SLUG_MAX_LENGTH, PROJECT_SLUG_PATTERN } from './project-slug.policy';
+
+/** How long a project's instructions may be, in characters. Kept equal to the shared schema's. */
+export const MAX_PROJECT_INSTRUCTIONS = 8000;
 
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
@@ -29,13 +36,44 @@ export interface ProjectProps {
    * that owns sessions can answer.
    */
   archivedAt: Date | null;
+  /** Who created the project on purpose; null for one the API made for a repository. */
+  createdByUserId: string | null;
+  /**
+   * The repositories the project holds, in the order a person put them. Empty
+   * only for a project from before projects held repositories whose origin had
+   * no checkout to backfill from; every write leaves at least one.
+   */
+  repositories: ProjectRepositoryProps[];
+  /** The host a new session is offered. A suggestion, never a grant. */
+  defaultHostId: string | null;
+  /** The agent a new session is offered, from the closed catalog. */
+  defaultAgent: string | null;
+  /** Handed to every new session's agent. Empty is none. */
+  instructions: string;
 }
 
 export interface CreateProjectProps {
   organizationId: string;
   name: string;
   slug: string;
+  /** At least one, and at least one of them a default. */
+  repositories: ProjectRepositoryProps[];
+  /** The id to create the row under, when the slug was derived from it. */
+  id?: string;
   originGithubRepoId?: string | null;
+  createdByUserId?: string | null;
+  defaultHostId?: string | null;
+  defaultAgent?: string | null;
+  instructions?: string;
+}
+
+/** What a person may change about a project; absent leaves a field as it is. */
+export interface ProjectSettings {
+  name?: string;
+  repositories?: ProjectRepositoryProps[];
+  defaultHostId?: string | null;
+  defaultAgent?: string | null;
+  instructions?: string;
 }
 
 /**
@@ -64,14 +102,20 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   /** Create a brand-new project with a generated id. */
   static createNew(props: CreateProjectProps): ProjectEntity {
+    assertHoldable(props.repositories);
     return new ProjectEntity({
-      id: randomUUID(),
+      id: props.id ?? randomUUID(),
       props: {
         organizationId: props.organizationId,
         name: props.name,
         slug: props.slug,
         originGithubRepoId: props.originGithubRepoId ?? null,
         archivedAt: null,
+        createdByUserId: props.createdByUserId ?? null,
+        repositories: props.repositories.map((repository) => ({ ...repository })),
+        defaultHostId: props.defaultHostId ?? null,
+        defaultAgent: props.defaultAgent ?? null,
+        instructions: props.instructions ?? '',
       },
     });
   }
@@ -98,6 +142,53 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   get isArchived(): boolean {
     return this.props.archivedAt !== null;
+  }
+
+  get createdByUserId(): string | null {
+    return this.props.createdByUserId;
+  }
+
+  /** A copy: the list is changed only through {@link configure}. */
+  get repositories(): ProjectRepositoryProps[] {
+    return this.props.repositories.map((repository) => ({ ...repository }));
+  }
+
+  get defaultHostId(): string | null {
+    return this.props.defaultHostId;
+  }
+
+  get defaultAgent(): string | null {
+    return this.props.defaultAgent;
+  }
+
+  get instructions(): string {
+    return this.props.instructions;
+  }
+
+  /** Whether the project holds every one of these repositories. Empty is trivially true. */
+  includesRepositories(githubRepoIds: readonly string[]): boolean {
+    const held = new Set(this.props.repositories.map((repository) => repository.githubRepoId));
+    return githubRepoIds.every((githubRepoId) => held.has(githubRepoId));
+  }
+
+  /**
+   * Change what a person may change: the name, the repositories as a whole set,
+   * the defaults and the instructions. Never the slug.
+   *
+   * The repositories are replaced, not merged, so the list's invariants hold after
+   * every call rather than after the last of several.
+   */
+  configure(settings: ProjectSettings): void {
+    if (settings.repositories !== undefined) {
+      assertHoldable(settings.repositories);
+      this.props.repositories = settings.repositories.map((repository) => ({ ...repository }));
+    }
+    if (settings.name !== undefined) this.props.name = settings.name;
+    if (settings.defaultHostId !== undefined) this.props.defaultHostId = settings.defaultHostId;
+    if (settings.defaultAgent !== undefined) this.props.defaultAgent = settings.defaultAgent;
+    if (settings.instructions !== undefined) this.props.instructions = settings.instructions;
+    this.setUpdatedAt(new Date());
+    this.validate();
   }
 
   /**
@@ -138,5 +229,21 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
+    if (this.props.instructions.length > MAX_PROJECT_INSTRUCTIONS) {
+      throw new ArgumentInvalidException(
+        `Project instructions must be at most ${MAX_PROJECT_INSTRUCTIONS} characters`,
+      );
+    }
+    // An empty list is a legacy row the backfill could not fill, and it is read,
+    // not written; anything non-empty must be a list a project can hold.
+    if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
+  }
+}
+
+/** Refuse a repository list a project cannot hold, naming what is wrong with it. */
+function assertHoldable(repositories: readonly ProjectRepositoryProps[]): void {
+  const problem = projectRepositoriesProblem(repositories);
+  if (problem) {
+    throw new ArgumentInvalidException(`Project repositories are invalid: ${problem}`);
   }
 }

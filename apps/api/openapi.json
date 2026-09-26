@@ -7596,6 +7596,80 @@
         ],
         "summary": "List the projects in the caller’s workspace",
         "tags": ["Projects"]
+      },
+      "post": {
+        "description": "A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host, agent and instructions a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.",
+        "operationId": "createProject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PROJECTS_006 — The repository list is not one a project can hold",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a project",
+        "tags": ["Projects"]
       }
     },
     "/api/v1/projects/{id}": {
@@ -7662,7 +7736,7 @@
         "tags": ["Projects"]
       },
       "patch": {
-        "description": "The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.",
+        "description": "The name, the repositories (replaced as a whole set), the default host and agent, and the instructions. Absent fields are left as they are and `null` clears a default. The slug is the project’s directory name on every host that holds it and cannot be changed. Running sessions are unaffected.",
         "operationId": "updateProject",
         "parameters": [
           {
@@ -7691,6 +7765,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PROJECTS_006 — The repository list is not one a project can hold",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -7731,7 +7815,7 @@
             "bearer": []
           }
         ],
-        "summary": "Rename a project",
+        "summary": "Change a project",
         "tags": ["Projects"]
       },
       "delete": {
@@ -7820,9 +7904,37 @@
     },
     "/api/v1/sessions": {
       "get": {
-        "description": "Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
+        "description": "Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
         "operationId": "listSessions",
         "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Default `recent`",
+            "schema": {
+              "enum": ["recent", "oldest", "name"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "agent",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": false,
+            "in": "query",
+            "description": "A live checkout of it",
+            "schema": {
+              "type": "number"
+            }
+          },
           {
             "name": "state",
             "required": false,
@@ -8846,6 +8958,91 @@
           }
         ],
         "summary": "Close a session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/move": {
+      "post": {
+        "description": "Nothing moves on disk: the worktrees and branches stay in the session’s home project (`homeProjectId`). The target must include every repository the session has checked out.",
+        "operationId": "moveSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_018 — That project does not include this session’s repositories\n\nSESSIONS_006 — That project is archived\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List a session under another project",
         "tags": ["Sessions"]
       }
     },
@@ -12401,6 +12598,42 @@
         },
         "required": ["enabled"]
       },
+      "ProjectRepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Our `github_installation` row, not GitHub’s number."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub’s repository id, as a string because the column is a bigint.",
+            "example": "821374923"
+          },
+          "repositoryFullName": {
+            "type": "string",
+            "description": "`owner/repo` as GitHub spelled it when the project was last saved. Display only.",
+            "example": "acme/xrp-mobile"
+          },
+          "baseBranch": {
+            "type": "string",
+            "description": "What a session’s branch is created from.",
+            "example": "main"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Offered to a new session. The API never applies it."
+          }
+        },
+        "required": [
+          "installationId",
+          "githubRepoId",
+          "repositoryFullName",
+          "baseBranch",
+          "isDefault"
+        ]
+      },
       "ProjectResponseDto": {
         "type": "object",
         "properties": {
@@ -12414,19 +12647,41 @@
           },
           "name": {
             "type": "string",
-            "description": "The GitHub repository’s name, as GitHub spells it. Display only.",
+            "description": "Display name. Free to change; the slug does not follow it.",
             "example": "xrp-mobile"
           },
           "slug": {
             "type": "string",
-            "description": "The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.",
+            "description": "The project’s directory name on every host that holds it. Immutable: derived once, from the name a person gave it or from the repository the API created it for.",
             "example": "xrp-mobile"
           },
           "originGithubRepoId": {
             "type": "string",
-            "description": "GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.",
+            "description": "Set only on a project the API created for a repository (a session that named no project): GitHub’s id for that repository, as a string because the column is a bigint.",
             "nullable": true,
             "example": "821374923"
+          },
+          "repositories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectRepositoryResponseDto"
+            }
+          },
+          "defaultHostId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it."
+          },
+          "defaultAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent a new session is offered, from the coding-agent catalog.",
+            "example": "claude-code"
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Handed to every new session’s agent. Empty is none."
           },
           "createdAt": {
             "format": "date-time",
@@ -12437,7 +12692,69 @@
             "type": "string"
           }
         },
-        "required": ["id", "organizationId", "name", "slug", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "organizationId",
+          "name",
+          "slug",
+          "repositories",
+          "instructions",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateProjectRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                },
+                "baseBranch": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              },
+              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
+            }
+          },
+          "defaultHostId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "defaultAgent": {
+            "type": "string",
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+            "nullable": true
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 8000
+          }
+        },
+        "required": ["name", "repositories"]
       },
       "UpdateProjectRequest": {
         "type": "object",
@@ -12446,9 +12763,50 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 200
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                },
+                "baseBranch": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              },
+              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
+            }
+          },
+          "defaultHostId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "defaultAgent": {
+            "type": "string",
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+            "nullable": true
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 8000
           }
-        },
-        "required": ["name"]
+        }
       },
       "SessionLaunchResponseDto": {
         "type": "object",
@@ -12546,7 +12904,13 @@
           },
           "projectId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The project the session is listed under."
+          },
+          "homeProjectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The project whose directory holds the session’s worktrees. Set at create and never changed, so moving a session to another project moves nothing on disk."
           },
           "hostId": {
             "type": "string",
@@ -12635,6 +12999,7 @@
           "id",
           "organizationId",
           "projectId",
+          "homeProjectId",
           "hostId",
           "name",
           "slug",
@@ -12897,6 +13262,16 @@
           }
         },
         "required": ["name"]
+      },
+      "MoveSessionRequest": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["projectId"]
       },
       "CapabilitiesResponseDto": {
         "type": "object",

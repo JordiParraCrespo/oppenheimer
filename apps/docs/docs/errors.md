@@ -332,10 +332,11 @@ sends whoever hit it to the right place.
 
 ## Projects
 
-A project is a body of work sessions belong to, and its `slug` is the name of its
-directory on every host that holds it — derived from the GitHub repository
-(`<repo>`, or `<owner>--<repo>` when another repository already holds that name)
-and never renamed.
+A project is a saved scope a person creates — the repositories its sessions usually
+work on and the defaults a new session is offered — and its `slug` is the name of its
+directory on every host that holds it. The slug is derived once, from the name (or,
+for a project the API made for a repository, from the repository) and never renamed.
+See `product/versions/mvp/12-projects.md`.
 
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
@@ -344,6 +345,8 @@ and never renamed.
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
+| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_007` <a id="projects_007" /> | No directory name is free for that project | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -352,6 +355,14 @@ the scoped read cannot see it, and distinguishing the two would confirm the id.
 project" is a question only the module that owns sessions can answer, asked over the
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
+
+`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
+default, one repository twice, more than twenty, or a blank base branch. The
+`detail` names which. The request schema refuses the same bodies earlier; this is the
+project holding its own invariants whatever the caller.
+
+`PROJECTS_007` should never be seen: the last directory name a new project tries
+carries part of its own id. It is reported rather than retried.
 
 `PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
 name on every host that held it and is never reissued, so a session cannot be started
@@ -385,6 +396,7 @@ are never reissued.
 | `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
 | `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
 | `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
+| `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repositories | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -404,6 +416,11 @@ the command of every agent it can launch, installed or not, so a host whose last
 inventory has no entry for that command runs a build that would refuse the
 launch; updating the runner is the fix. Whether the agent is *installed* is never
 checked here — that is a hint on the engine button, and the terminal says so.
+
+`SESSIONS_018` is moving a session to a project that does not hold every
+repository the session has checked out; the `detail` names the missing ones. Moving
+changes only where the session is listed — its worktrees stay in its home project's
+directory — and the rule is provisional while how sessions are organized is designed.
 
 `SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
 (`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not

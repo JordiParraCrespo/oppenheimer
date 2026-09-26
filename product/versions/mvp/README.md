@@ -24,6 +24,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
+| 12 | [Projects](12-projects.md) | Projects as a saved scope: their repositories, defaults and instructions, moving a session, the schema, endpoints and wire change |
 
 ## Decision log
 
@@ -391,3 +392,29 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with a screen manifest that is provisional until a soak. A session for an
   agent the host's runner never probed is refused at create rather than
   failed at launch, so a new row needs no protocol bump (01).
+- 2026-09-26: **a project is a saved scope a person creates** (12), after
+  the 2026-09-26 design export. It holds several repositories (each with a
+  base and a default flag, one repository in several projects), a default
+  host and agent, and instructions snapshotted onto each session. This
+  supersedes 10's "auto-created from the first session's repository, and the
+  MVP never shows a project chip": `POST /projects` exists and the console
+  always names the project, while auto-creation stays as the API fallback for
+  callers that name only a repository. A session's project becomes a
+  **label** and its directory a **home**: `homeProjectId` is immutable and
+  names the tree, `projectId` moves, so moving a session never touches disk
+  and the wire gains only an optional `instructions` field.
+- 2026-09-26: **a session takes several repositories, usually one, chosen
+  freely** (12). This reverses 2026-09-23's one repository per session as a
+  product rule; the cap in the code is the runner's single worktree and is
+  lifted with 11's R3. A project's default repositories are only offered,
+  never applied, and a session may check out repositories its project does
+  not hold. **How sessions are created and organized is deferred** to its
+  own design; 12 keeps only what the backend must hold for any answer and
+  marks the move rule and the list filters provisional.
+- 2026-09-26: **the projects backend is built** (12, steps 1–4): `POST
+  /projects`, the widened `PATCH`, `project_repository`, `homeProjectId` and
+  `POST /sessions/{id}/move`. Two details settled differently from the
+  draft: a project reports its default host as stored rather than filtering
+  it per reader (a join for nothing in a personal workspace), and the
+  instructions snapshot on the session waits for the runner step that reads
+  it, so no column lands without a reader.

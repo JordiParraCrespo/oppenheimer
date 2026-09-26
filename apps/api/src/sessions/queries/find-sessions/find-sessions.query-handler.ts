@@ -22,6 +22,9 @@ export class FindSessionsQueryHandler
       projectId: query.projectId,
       hostId: query.hostId,
       state: query.state,
+      githubRepoId: query.githubRepoId,
+      agent: query.agent,
+      sort: query.sort,
     });
   }
 }

@@ -46,6 +46,10 @@ export class ProjectLookupResolver implements ProjectLookupPort {
     return active(await this.projects.findOneById(scope, projectId));
   }
 
+  async findHomeOf(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>> {
+    return this.projects.findOneById(scope, projectId);
+  }
+
   async ensureForRepository(scope: AccessScope, origin: ProjectOrigin): Promise<ProjectEntity> {
     const { organizationId } = scope;
     if (!organizationId) {
@@ -76,6 +80,15 @@ export class ProjectLookupResolver implements ProjectLookupPort {
         name: origin.name,
         slug,
         originGithubRepoId: origin.githubRepoId,
+        repositories: [
+          {
+            installationId: origin.installationId,
+            githubRepoId: origin.githubRepoId,
+            repositoryFullName: origin.fullName,
+            baseBranch: origin.defaultBranch,
+            isDefault: true,
+          },
+        ],
       });
 
       const outcome = await this.projects.insertIfUnclaimed(project);

@@ -23,8 +23,11 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
 - **A session is a worktree plus a terminal on a host.** No VM, no
   container. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
-  to the browser. A session checks out **one repository** in the MVP
-  (changed 2026-09-23, #56): the runner makes one worktree per session,
+  to the browser. **Changed again 2026-09-26 (12):** a session checks
+  out several repositories, usually one, chosen freely rather than from
+  its project's defaults; what follows is the 2026-09-23 rule, which now
+  holds only until the runner makes several worktrees. A session checks
+  out **one repository** in the MVP (changed 2026-09-23, #56): the runner makes one worktree per session,
   and a session that asked for two was accepted, refused by the host and
   left spinning. The API refuses a second repository before a row is
   written. The model still keeps checkouts as a list with a primary

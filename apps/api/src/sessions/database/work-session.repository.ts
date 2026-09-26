@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, In, Repository } from 'typeorm';
+import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import { ProjectOrmEntity } from '../../projects/database/project.orm-entity';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
@@ -96,8 +96,9 @@ export class WorkSessionRepository
         `INSERT INTO "work_session"
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
-            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt",
+            "homeProjectId")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -125,6 +126,7 @@ export class WorkSessionRepository
           record.agentSessionId,
           record.lastEventAt,
           record.stoppedAt,
+          record.homeProjectId,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -166,6 +168,26 @@ export class WorkSessionRepository
       this.appendWithin(manager, session, events),
     );
     await this.flushEvents(session);
+    return outcome;
+  }
+
+  async appendMove(
+    session: WorkSessionEntity,
+    targetProjectId: string,
+    events: NewSessionEvent[],
+  ): Promise<'moved' | 'project-archived'> {
+    const outcome = await this.dataSource.transaction(async (manager) => {
+      const active: { id: string }[] = await manager.query(
+        `SELECT "id" FROM "project"
+          WHERE "id" = $1 AND "organizationId" = $2 AND "archivedAt" IS NULL
+          FOR SHARE`,
+        [targetProjectId, session.organizationId],
+      );
+      if (active.length === 0) return 'project-archived' as const;
+      await this.appendWithin(manager, session, events);
+      return 'moved' as const;
+    });
+    if (outcome === 'moved') await this.flushEvents(session);
     return outcome;
   }
 
@@ -211,9 +233,21 @@ export class WorkSessionRepository
     if (filters.projectId) query.andWhere('session.projectId = :projectId', filters);
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
     if (filters.state) query.andWhere('session.state = :state', filters);
+    if (filters.agent) query.andWhere('session.agent = :agent', filters);
+    if (filters.githubRepoId !== undefined) {
+      // A live checkout of the repository. The child table is read by the
+      // session ids the scoped root query already admits, never on its own.
+      query.andWhere(
+        `EXISTS (SELECT 1 FROM "session_checkout" checkout
+                  WHERE checkout."sessionId" = session.id
+                    AND checkout."githubRepoId" = :githubRepoId
+                    AND checkout."removedAt" IS NULL)`,
+        { githubRepoId: String(filters.githubRepoId) },
+      );
+    }
+    applySort(query, filters.sort ?? 'recent');
 
     const [records, count] = await query
-      .orderBy('session.createdAt', 'DESC')
       .skip((filters.page - 1) * filters.limit)
       .take(filters.limit)
       .getManyAndCount();
@@ -265,7 +299,9 @@ export class WorkSessionRepository
     const [checkouts, projects, prompts] = await Promise.all([
       this.checkoutsFor(ids),
       this.repository.manager.getRepository(ProjectOrmEntity).find({
-        where: { id: In([...new Set(records.map((record) => record.projectId))]) },
+        // The **home** project: its slug is the directory the tree is in, which a
+        // move never changes.
+        where: { id: In([...new Set(records.map((record) => record.homeProjectId))]) },
         select: { id: true, slug: true },
       }),
       this.repository.manager.getRepository(WorkSessionEventOrmEntity).find({
@@ -282,7 +318,7 @@ export class WorkSessionRepository
       }
     }
     return records.flatMap((record) => {
-      const projectSlug = slugs.get(record.projectId);
+      const projectSlug = slugs.get(record.homeProjectId);
       if (!projectSlug) return [];
       const prompt = firstPrompts.get(record.id);
       return [
@@ -443,6 +479,7 @@ export class WorkSessionRepository
                 "lastObservedState" = $10, "observedSince" = $11,
                 "reportHash" = $12, "ackedReportHash" = $13,
                 "launchModel" = $14, "launchPermission" = $15, "launchEffort" = $16,
+                "projectId" = $17,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -462,6 +499,7 @@ export class WorkSessionRepository
           record.launchModel,
           record.launchPermission,
           record.launchEffort,
+          record.projectId,
         ],
       );
       await this.outbox.stageEvents(manager, session.domainEvents);
@@ -531,4 +569,21 @@ export class WorkSessionRepository
     }
     return byId;
   }
+}
+
+/**
+ * The list's order. `recent` is last activity first, with sessions nothing has
+ * happened in yet by their creation; the id breaks every tie so a page boundary
+ * is stable.
+ */
+function applySort(
+  query: SelectQueryBuilder<WorkSessionOrmEntity>,
+  sort: NonNullable<SessionFilters['sort']>,
+): void {
+  if (sort === 'oldest') query.orderBy('session.createdAt', 'ASC');
+  else if (sort === 'name') query.orderBy('LOWER(session.name)', 'ASC');
+  else {
+    query.orderBy('COALESCE(session.lastEventAt, session.createdAt)', 'DESC');
+  }
+  query.addOrderBy('session.id', 'ASC');
 }

@@ -16,14 +16,21 @@ export interface ProjectOrigin {
   githubRepoId: string;
   owner: string;
   name: string;
+  /** Our `github_installation` row the repository was reached through. */
+  installationId: string;
+  /** `owner/repo` as GitHub spells it now. */
+  fullName: string;
+  /** The repository's default branch: the base the project offers for it. */
+  defaultBranch: string;
 }
 
 /**
- * How another module gets at the project a repository belongs to.
+ * How another module gets at the project a session belongs to.
  *
- * This is the module's published surface for the auto-creation rule: a session
- * created for a repository that has no project yet gets one, named after the
- * repository, without the console ever showing a project picker. It is a port
+ * The console always names the project. Auto-creation is the fallback for a
+ * caller that names only a repository (an API token, an MCP client): that session
+ * gets the project the API made for the repository, holding that one repository
+ * as its default (`product/versions/mvp/12-projects.md`). It is a port
  * rather than a command because the caller needs the project back in the middle
  * of its own work, and a bus round-trip for a lookup would only hide that.
  *
@@ -33,7 +40,9 @@ export interface ProjectOrigin {
  */
 export interface ProjectLookupPort {
   /**
-   * The project for this repository, creating it if it has none.
+   * The project the API made for this repository, creating it if there is none.
+   * Never "a project that happens to contain it": a repository can be in many, and
+   * that answer would change when somebody edited an unrelated project.
    *
    * Safe to call concurrently: two first sessions on the same repository resolve
    * to the same project.
@@ -51,4 +60,13 @@ export interface ProjectLookupPort {
    * every host that holds it.
    */
   findOneById(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>>;
+  /**
+   * A session's **home** project, archived or not: the directory its tree is in.
+   *
+   * A session moved out of a project keeps its tree in that project's directory,
+   * and that project may since have been archived — it held no session listed in
+   * it any more. Its slug is still the path segment every runner command names,
+   * so this read does not hide it. `None` only for a project the caller cannot see.
+   */
+  findHomeOf(scope: AccessScope, projectId: string): Promise<Option<ProjectEntity>>;
 }

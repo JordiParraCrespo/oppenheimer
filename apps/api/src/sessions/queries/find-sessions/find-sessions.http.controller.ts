@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import type { Paginated } from '@oppenheimer/backend-ddd';
-import { SESSION_STATES } from '@oppenheimer/shared';
+import { codingAgentSchema, SESSION_SORTS, SESSION_STATES } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -39,7 +39,7 @@ export class FindSessionsHttpController {
     operationId: 'listSessions',
     summary: 'List the sessions in the caller’s workspace',
     description:
-      'Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.',
+      'Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.',
   })
   @ApiQuery({
     name: 'page',
@@ -61,6 +61,14 @@ export class FindSessionsHttpController {
     enum: SESSION_STATES,
     description: 'The stored lifecycle, not the derived group.',
   })
+  @ApiQuery({
+    name: 'githubRepoId',
+    required: false,
+    type: Number,
+    description: 'A live checkout of it',
+  })
+  @ApiQuery({ name: 'agent', required: false, enum: codingAgentSchema.options })
+  @ApiQuery({ name: 'sort', required: false, enum: SESSION_SORTS, description: 'Default `recent`' })
   @ApiResponse({ status: 200, type: PaginatedSessionsResponseDto })
   async list(
     @CurrentAccessScope() scope: AccessScope,

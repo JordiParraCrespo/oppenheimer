@@ -221,3 +221,40 @@ describe('the minted slug', () => {
     expect(minted.size).toBeGreaterThan(495);
   });
 });
+
+describe('a moved session', () => {
+  it('starts listed in its home project', () => {
+    const work = session();
+
+    expect(work.projectId).toBe('project-1');
+    expect(work.homeProjectId).toBe('project-1');
+  });
+
+  it('is listed under the project the log moved it to, and keeps its home', () => {
+    // The home is the directory the tree is in; a move changes only the listing,
+    // so every path and branch is still built from the home project.
+    const work = session();
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }));
+
+    expect(work.projectId).toBe('project-2');
+    expect(work.homeProjectId).toBe('project-1');
+  });
+
+  it('stays where it ended once it is closed', () => {
+    const work = session();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CLOSED));
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }));
+
+    expect(work.projectId).toBe('project-1');
+  });
+
+  it('ignores a move that names no project', () => {
+    const work = session();
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1' }));
+
+    expect(work.projectId).toBe('project-1');
+  });
+});

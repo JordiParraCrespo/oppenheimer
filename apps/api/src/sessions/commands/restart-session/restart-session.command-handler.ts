@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
-import { requireActiveProject } from '../../application/require-active-project.policy';
+import { requireSessionHome } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
@@ -56,8 +56,8 @@ export class RestartSessionCommandHandler
       });
     }
 
-    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
-    const projectSlug = project.slug;
+    // The tree is in the home project's directory, wherever the session is listed.
+    const projectSlug = (await requireSessionHome(this.projects, command.scope, session)).slug;
 
     await this.sessions.appendEvents(session, [
       {

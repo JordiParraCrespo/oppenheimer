@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { AddSessionRolePermissions1789100100000 } from '../src/migrations/1789100100000-AddSessionRolePermissions';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
+import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
 import { ProjectMapper } from '../src/projects/project.mapper';
 import { SessionCheckoutOrmEntity } from '../src/sessions/database/session-checkout.orm-entity';
 import { WorkSessionOrmEntity } from '../src/sessions/database/work-session.orm-entity';
@@ -129,6 +130,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         SessionCheckoutOrmEntity,
         WorkSessionEventOrmEntity,
         ProjectOrmEntity,
+        ProjectRepositoryOrmEntity,
       ],
       synchronize: false,
     });
@@ -372,8 +374,9 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
+              "name", "slug", "agent")
+           VALUES ($1, $2, $3, $3, $4, $5, $6, $7, 'claude-code')`,
           [
             randomUUID(),
             organizationId,
@@ -385,6 +388,27 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           ],
         ),
       ).rejects.toThrow(/FK_work_session_project|foreign key/i);
+    });
+
+    it('rejects a session whose home is another workspace’s project', async () => {
+      await expect(
+        dataSource.query(
+          `INSERT INTO "work_session"
+             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
+              "name", "slug", "agent")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'claude-code')`,
+          [
+            randomUUID(),
+            organizationId,
+            projectId,
+            foreignProjectId,
+            userId,
+            hostId,
+            'x',
+            'bold-otter-000002',
+          ],
+        ),
+      ).rejects.toThrow(/FK_work_session_home_project|foreign key/i);
     });
 
     it('rejects a checkout through another workspace’s installation', async () => {
@@ -539,11 +563,12 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
+              "name", "slug", "agent")
+           VALUES ($1, $2, $3, $3, $4, $5, $6, $7, 'claude-code')`,
           [randomUUID(), organizationId, projectId, userId, hostId, 'x', 'bold-otter-abc123'],
         ),
-      ).rejects.toThrow(/UQ_work_session_project_slug|duplicate key/i);
+      ).rejects.toThrow(/UQ_work_session_home_project_slug|duplicate key/i);
     });
 
     it('nulls cwdCheckoutId when the checkout the agent was in is retired', async () => {
@@ -726,6 +751,57 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       // The invariant the pair exists to hold: never an archived project with
       // unresolved work in it.
       expect(row.archivedAt === null || count === 0).toBe(true);
+    });
+
+    it('moves a session’s listing and keeps its home, folded from the log', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const target = await insertProject(organizationId, 'client-sites', '5151');
+
+      const outcome = await repository.appendMove(work, target, [
+        {
+          idempotencyKey: `api:${randomUUID()}:${SESSION_EVENT_KINDS.MOVED}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.MOVED,
+          payload: { from: projectId, to: target },
+        },
+      ]);
+
+      expect(outcome).toBe('moved');
+      const [row] = await dataSource.query(
+        `SELECT "projectId", "homeProjectId" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row).toEqual({ projectId: target, homeProjectId: projectId });
+      // Counted where it is listed: the home no longer holds it for archiving.
+      expect(await repository.countUnresolvedForProject(scope(), projectId)).toBe(0);
+      expect(await repository.countUnresolvedForProject(scope(), target)).toBe(1);
+    });
+
+    it('refuses a move into a project an archive retired first, and writes nothing', async () => {
+      const work = session();
+      await repository.createIfUnclaimed(work, requested());
+      const target = await insertProject(organizationId, 'retired', '6161');
+      await dataSource.query(`UPDATE "project" SET "archivedAt" = now() WHERE "id" = $1`, [target]);
+
+      const outcome = await repository.appendMove(work, target, [
+        {
+          idempotencyKey: `api:${randomUUID()}:${SESSION_EVENT_KINDS.MOVED}`,
+          source: 'api',
+          kind: SESSION_EVENT_KINDS.MOVED,
+          payload: { from: projectId, to: target },
+        },
+      ]);
+
+      expect(outcome).toBe('project-archived');
+      const [row] = await dataSource.query(
+        `SELECT "projectId" FROM "work_session" WHERE "id" = $1`,
+        [work.id],
+      );
+      expect(row.projectId).toBe(projectId);
+      expect((await events(work.id)).map((event) => event.kind)).not.toContain(
+        SESSION_EVENT_KINDS.MOVED,
+      );
     });
   });
 

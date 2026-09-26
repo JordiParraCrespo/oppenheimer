@@ -50,6 +50,8 @@ export const ENDPOINT_POLICIES = {
   // directory name on every host that held it — is never reissued.
   'GET /projects': [{ action: 'read', subject: 'Project' }],
   'GET /projects/:id': [{ action: 'read', subject: 'Project' }],
+  'POST /projects': [{ action: 'create', subject: 'Project' }],
+  'PATCH /projects/:id': [{ action: 'update', subject: 'Project' }],
   'DELETE /projects/:id': [{ action: 'update', subject: 'Project' }],
 
   // The control plane's sessions. Opening a terminal is `update Session`: there is
@@ -62,6 +64,7 @@ export const ENDPOINT_POLICIES = {
   'DELETE /sessions/:id': [{ action: 'delete', subject: 'Session' }],
   'POST /sessions/:id/stop': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/restart': [{ action: 'update', subject: 'Session' }],
+  'POST /sessions/:id/move': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/checkouts': [{ action: 'update', subject: 'Session' }],
   'DELETE /sessions/:id/checkouts/:checkoutId': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/attach-ticket': [{ action: 'update', subject: 'Session' }],

@@ -4,7 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
-import { requireActiveProject } from '../../application/require-active-project.policy';
+import { requireSessionHome } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
@@ -73,7 +73,8 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
+    // The new worktree joins the others, in the home project's directory.
+    const project = await requireSessionHome(this.projects, command.scope, session);
 
     const checkout = await this.plan.attachCheckout(command.scope, session, project, command.input);
     await this.sessions.insertCheckout(session, checkout, [

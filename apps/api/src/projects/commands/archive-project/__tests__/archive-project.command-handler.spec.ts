@@ -31,6 +31,15 @@ function project(archivedAt: Date | null = null) {
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
     originGithubRepoId: '42',
+    repositories: [
+      {
+        installationId: 'installation-1',
+        githubRepoId: '42',
+        repositoryFullName: 'acme/xrp-mobile',
+        baseBranch: 'main',
+        isDefault: true,
+      },
+    ],
   });
   if (archivedAt) entity.archive(archivedAt);
   return entity;

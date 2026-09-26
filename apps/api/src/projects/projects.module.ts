@@ -2,15 +2,21 @@ import { Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { GithubModule } from '../github/github.module';
+import { HostsModule } from '../hosts/hosts.module';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
+import { ProjectSettingsResolver } from './application/project-settings.resolver';
 import type { ProjectUsagePort } from './application/project-usage.port';
 import { ProjectUsageRegistry } from './application/project-usage.registry';
 import { ArchiveProjectCommandHandler } from './commands/archive-project/archive-project.command-handler';
 import { ArchiveProjectHttpController } from './commands/archive-project/archive-project.http.controller';
+import { CreateProjectCommandHandler } from './commands/create-project/create-project.command-handler';
+import { CreateProjectHttpController } from './commands/create-project/create-project.http.controller';
 import { UpdateProjectCommandHandler } from './commands/update-project/update-project.command-handler';
 import { UpdateProjectHttpController } from './commands/update-project/update-project.http.controller';
 import { ProjectOrmEntity } from './database/project.orm-entity';
 import { ProjectRepository } from './database/project.repository';
+import { ProjectRepositoryOrmEntity } from './database/project-repository.orm-entity';
 import { ProjectMapper } from './project.mapper';
 import { PROJECT_LOOKUP, PROJECT_REPOSITORY } from './projects.di-tokens';
 import { ProjectResource } from './projects.resource';
@@ -24,11 +30,16 @@ import { FindProjectsQueryHandler } from './queries/find-projects/find-projects.
 const httpControllers = [
   FindProjectsHttpController,
   FindProjectHttpController,
+  CreateProjectHttpController,
   UpdateProjectHttpController,
   ArchiveProjectHttpController,
 ];
 
-const commandHandlers: Provider[] = [UpdateProjectCommandHandler, ArchiveProjectCommandHandler];
+const commandHandlers: Provider[] = [
+  CreateProjectCommandHandler,
+  UpdateProjectCommandHandler,
+  ArchiveProjectCommandHandler,
+];
 const queryHandlers: Provider[] = [FindProjectsQueryHandler, FindProjectQueryHandler];
 const mappers: Provider[] = [ProjectMapper];
 const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: ProjectRepository }];
@@ -36,7 +47,11 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([ProjectOrmEntity]),
+    // What a project's repositories are called, and whether the workspace still
+    // reaches them; and whether a default host is one the caller can use.
+    GithubModule,
+    HostsModule,
+    TypeOrmModule.forFeature([ProjectOrmEntity, ProjectRepositoryOrmEntity]),
     AuthzKernelModule.forFeature([ProjectResource]),
   ],
   controllers: [...httpControllers],
@@ -46,6 +61,7 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ...mappers,
     ...repositories,
     ProjectUsageRegistry,
+    ProjectSettingsResolver,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
   ],
   // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
