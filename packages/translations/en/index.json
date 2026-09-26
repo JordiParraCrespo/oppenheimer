@@ -372,7 +372,7 @@
         "branchEmpty": "No branch matches.",
         "branchPane": "Branch for {{name}}",
         "changeBranch": "Change branch",
-        "connect": "Connect a repository…",
+        "manage": "Manage repository access",
         "archived": "Archived"
       },
       "branch": {

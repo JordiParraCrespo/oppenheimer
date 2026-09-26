@@ -5,6 +5,7 @@ import {
   useInstallations,
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
+import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +55,9 @@ export function NewSessionForm() {
 
   const hosts = useHosts();
   const installations = useInstallations();
+  // Where "Manage repository access" leads: the App's installation page on
+  // GitHub, which is the only place the repository list changes.
+  const { data: deployment } = useDeploymentCapabilities();
   const repositories = useInstallationRepositoriesFor(
     (installations.data ?? []).map((installation) => installation.id),
   );
@@ -123,7 +127,7 @@ export function NewSessionForm() {
             repositories={repositoryOptions}
             value={draft.scope}
             onValueChange={(scope) => update({ scope })}
-            onConnect={() => navigate({ to: '/onboarding/github' })}
+            manageUrl={deployment?.github_app_install_url ?? undefined}
             loading={installations.isPending || repositories.isPending}
             branchesLoading={branches.isPending}
           />

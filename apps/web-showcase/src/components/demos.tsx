@@ -14,6 +14,7 @@ import {
   type PermissionLevel,
 } from '@oppenheimer/design-system-web/permission-menu';
 import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web/chip-select';
+import { BrandGlyph } from '@oppenheimer/design-system-web/brand-glyph';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { Field, FieldDescription, FieldLabel } from '@oppenheimer/design-system-web/field';
 import { Link } from '@oppenheimer/design-system-web/link';
@@ -454,7 +455,11 @@ export function ScopeChips() {
         repositories={REPOS}
         value={scope}
         onValueChange={setScope}
-        action={{ label: 'Add repository…', onSelect: () => {} }}
+        action={{
+          label: 'Manage repository access',
+          icon: <BrandGlyph name="github" size={15} />,
+          href: 'https://github.com/apps/oppenheimer-dev/installations/new',
+        }}
       />
       {single && singleRepo ? (
         <ChipSelect

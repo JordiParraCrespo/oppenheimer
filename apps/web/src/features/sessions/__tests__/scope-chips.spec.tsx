@@ -53,7 +53,7 @@ describe('the scope chips', () => {
         repositories={[]}
         value={[]}
         onValueChange={vi.fn()}
-        onConnect={vi.fn()}
+        manageUrl="https://github.com/apps/oppenheimer-stub/installations/new"
         loading
       />,
     );

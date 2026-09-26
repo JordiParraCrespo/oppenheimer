@@ -43,7 +43,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   search row and the empty line, even over three options, so the console's
   four chips behave as one thing. It is built on Popover, not Base UI
   Select, for that reason; `RepositorySelect` reuses its parts for the
-  multi-repo pane.
+  multi-repo pane. A foot action that leaves the console (`href`) is a link
+  in a new tab: the repository picker's "Manage repository access" goes to
+  the GitHub App's installation page with the GitHub mark, because the list
+  of repositories is decided there and nowhere in the console.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square and
   Grok's slashed circle from their published brand assets, in the vendor's colour where it has one

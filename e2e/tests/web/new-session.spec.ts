@@ -133,9 +133,7 @@ test.describe('New session', () => {
     await owner.api.dispose();
   });
 
-  test('offers the way to connect GitHub when there is a host but no repository', async ({
-    page,
-  }) => {
+  test('offers the way to GitHub when there is a host but no repository', async ({ page }) => {
     // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('norepo');
@@ -145,10 +143,13 @@ test.describe('New session', () => {
     await page.goto('/sessions/new');
 
     // The empty screens are gone: an account with nothing connected still gets
-    // the composer, and the way out is inside the chip that is empty.
+    // the composer, and the way out is inside the chip that is empty. Which
+    // repositories the App sees is decided on GitHub's own page, so the row is
+    // a link there, in a new tab, at the address the deployment reports.
     await page.getByRole('button', { name: 'Repositories' }).click();
-    await page.getByRole('button', { name: 'Connect a repository…' }).click();
-    await expect(page).toHaveURL(/\/onboarding\/github/);
+    const manage = page.getByRole('link', { name: 'Manage repository access' });
+    await expect(manage).toHaveAttribute('href', /github\.com\/apps\/oppenheimer-stub\//);
+    await expect(manage).toHaveAttribute('target', '_blank');
 
     await owner.api.dispose();
   });

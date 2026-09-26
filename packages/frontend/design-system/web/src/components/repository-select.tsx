@@ -13,6 +13,7 @@ import {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './chip-select';
+import type { ChipSelectAction } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
@@ -36,7 +37,7 @@ import { Popover, PopoverTrigger } from './popover';
  *   repositories={repos}
  *   value={scope}            // [{ id: 'xrp-mobile', branch: 'main' }]
  *   onValueChange={setScope}
- *   action={{ label: 'Add repository…', onSelect: connectMore }}
+ *   action={{ label: 'Manage repository access', icon: <BrandGlyph name="github" />, href: installUrl }}
  * />
  * ```
  */
@@ -103,7 +104,7 @@ function RepositorySelect({
   branchesLoadingText?: string;
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
-  action?: { label: string; icon?: React.ReactNode; onSelect: () => void };
+  action?: ChipSelectAction;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -272,9 +273,10 @@ function RepositorySelect({
             {action ? (
               <ChipSelectActionRow
                 icon={action.icon}
+                href={action.href}
                 onClick={() => {
                   setOpen(false);
-                  action.onSelect();
+                  action.onSelect?.();
                 }}
               >
                 {action.label}

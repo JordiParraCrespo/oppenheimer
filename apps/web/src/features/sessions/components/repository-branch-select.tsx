@@ -1,4 +1,5 @@
 import {
+  BrandGlyph,
   type RepositoryOption,
   type RepositoryScope,
   RepositorySelect,
@@ -30,12 +31,18 @@ import { capRepositories } from '../lib/session-options';
  * Every row carries the branches the section has loaded for it. Until that read
  * lands the picker falls back to the repository's `defaultBranch`, which is the
  * branch it would have chosen anyway.
+ *
+ * The foot row leaves the console. Which repositories the App can see is
+ * decided on GitHub's own installation page and nowhere here, so "Manage
+ * repository access" is a link to it, in a new tab, with the GitHub mark. The
+ * address is the deployment's (`github_app_install_url`); without it there is
+ * no row, rather than a link to a page that may not exist.
  */
 export function RepositoryBranchSelect({
   repositories,
   value,
   onValueChange,
-  onConnect,
+  manageUrl,
   loading,
   branchesLoading,
   disabled,
@@ -43,7 +50,8 @@ export function RepositoryBranchSelect({
   repositories: RepositoryOption[];
   value: RepositoryScope[];
   onValueChange: (value: RepositoryScope[]) => void;
-  onConnect: () => void;
+  /** The GitHub App's installation page, as the deployment reports it. */
+  manageUrl?: string;
   loading?: boolean;
   branchesLoading?: boolean;
   disabled?: boolean;
@@ -69,7 +77,15 @@ export function RepositoryBranchSelect({
       branchEmptyText={t('sessions.new.repository.branchEmpty')}
       branchPaneTitle={(name) => t('sessions.new.repository.branchPane', { name })}
       changeBranchLabel={t('sessions.new.repository.changeBranch')}
-      action={{ label: t('sessions.new.repository.connect'), onSelect: onConnect }}
+      action={
+        manageUrl
+          ? {
+              label: t('sessions.new.repository.manage'),
+              icon: <BrandGlyph name="github" size={15} />,
+              href: manageUrl,
+            }
+          : undefined
+      }
     />
   );
 }

@@ -80,7 +80,7 @@
       "branchEmpty": "Ninguna rama coincide.",
       "branchPane": "Rama de {{name}}",
       "changeBranch": "Cambiar de rama",
-      "connect": "Conectar un repositorio…",
+      "manage": "Gestionar el acceso a repositorios",
       "archived": "Archivado"
     },
     "branch": {

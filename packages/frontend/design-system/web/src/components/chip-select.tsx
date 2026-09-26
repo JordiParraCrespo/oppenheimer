@@ -56,7 +56,14 @@ type ChipSelectAction = {
   label: string;
   /** Defaults to a plus. */
   icon?: React.ReactNode;
-  onSelect: () => void;
+  /**
+   * Where the row leads when it leaves the console: it renders as a link that
+   * opens in a new tab. The repository picker's "Manage repository access"
+   * goes to the GitHub App's own page this way, because the list of
+   * repositories is decided there and nowhere in the console.
+   */
+  href?: string;
+  onSelect?: () => void;
 };
 
 /**
@@ -406,27 +413,53 @@ function ChipSelectList({
 /** The pinned band at the foot for "Add host…": a plus, the label, a chevron. */
 function ChipSelectActionRow({
   icon,
+  href,
   className,
   children,
+  onClick,
   ...props
-}: React.ComponentProps<'button'> & { icon?: React.ReactNode }) {
+}: Omit<React.ComponentProps<'button'>, 'onClick'> & {
+  icon?: React.ReactNode;
+  /** A destination outside the console; the row becomes a link in a new tab. */
+  href?: string;
+  onClick?: React.MouseEventHandler<HTMLElement>;
+}) {
+  const content = (
+    <>
+      <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
+        {icon ?? <PlusGlyph />}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+    </>
+  );
   return (
     <div
       data-slot="chip-select-footer"
       className="-mx-1 -mb-1 mt-1 border-t border-border-subtle p-1"
     >
-      <button
-        type="button"
-        data-slot="chip-select-action"
-        className={cn(ITEM_CLASSES, className)}
-        {...props}
-      >
-        <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
-          {icon ?? <PlusGlyph />}
-        </span>
-        <span className="min-w-0 flex-1 truncate">{children}</span>
-        <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
-      </button>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-slot="chip-select-action"
+          className={cn(ITEM_CLASSES, 'gap-2.5 cursor-pointer no-underline', className)}
+          onClick={onClick}
+        >
+          {content}
+        </a>
+      ) : (
+        <button
+          type="button"
+          data-slot="chip-select-action"
+          className={cn(ITEM_CLASSES, 'gap-2.5', className)}
+          onClick={onClick}
+          {...props}
+        >
+          {content}
+        </button>
+      )}
     </div>
   );
 }
@@ -573,9 +606,10 @@ function ChipSelect({
         {action ? (
           <ChipSelectActionRow
             icon={action.icon}
+            href={action.href}
             onClick={() => {
               setOpen(false);
-              action.onSelect();
+              action.onSelect?.();
             }}
           >
             {action.label}
