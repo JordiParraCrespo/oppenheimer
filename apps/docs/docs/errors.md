@@ -485,6 +485,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
 | `GIT_002` <a id="git_002" />           | A git command failed                         | 500  |
 | `GIT_003` <a id="git_003" />           | The branch could not be pushed               | 409  |
+| `GIT_004` <a id="git_004" />           | The repository needs a credential the runner could not supply | 403 |
+| `GIT_005` <a id="git_005" />           | A git command was abandoned before it finished | 503 |
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

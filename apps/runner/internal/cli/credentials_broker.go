@@ -27,7 +27,7 @@ const tokenRefreshMargin = 5 * time.Minute
 // held in memory until it expires or is revoked (02-runner §8; F21). Nothing
 // is written to disk and nothing is logged.
 type credentialBroker struct {
-	client   *link.Client
+	client   sender
 	unseal   func(sealed []byte) ([]byte, error)
 	sessions func(id string) (sessionsdomain.Session, error)
 	now      func() time.Time
@@ -35,6 +35,11 @@ type credentialBroker struct {
 	mu      sync.Mutex
 	tokens  map[string]cachedToken     // session id → token
 	waiting map[string]chan grantReply // request id → the ask waiting on it
+}
+
+// sender is the link, as far as the broker needs it.
+type sender interface {
+	Send(message any) error
 }
 
 type cachedToken struct {
@@ -50,7 +55,7 @@ type grantReply struct {
 
 var errNoCredential = errors.New("no credential for this session")
 
-func newCredentialBroker(client *link.Client, unseal func([]byte) ([]byte, error), sessions func(string) (sessionsdomain.Session, error)) *credentialBroker {
+func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), sessions func(string) (sessionsdomain.Session, error)) *credentialBroker {
 	return &credentialBroker{
 		client: client, unseal: unseal, sessions: sessions, now: time.Now,
 		tokens: map[string]cachedToken{}, waiting: map[string]chan grantReply{},
@@ -58,7 +63,9 @@ func newCredentialBroker(client *link.Client, unseal func([]byte) ([]byte, error
 }
 
 // Get answers the helper for one session: the cached token while it is fresh,
-// otherwise one asked for on the link and unsealed here.
+// otherwise one asked for on the link and unsealed here. A session whose
+// create is still running is one the session service already answers for,
+// so its clone gets a token like any git inside a session does.
 func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, error) {
 	if sessionID == "" {
 		return "", errNoCredential

@@ -35,8 +35,13 @@ type Service struct {
 	// save serialises writes to the store: two goroutines that both took a
 	// snapshot could otherwise write them in the opposite order and leave
 	// the older one on disk.
-	save       sync.Mutex
-	sessions   map[string]domain.Session
+	save     sync.Mutex
+	sessions map[string]domain.Session
+	// creating holds each create still running, keyed by session id. Get
+	// answers from it, so the session is there — `creating`, with its
+	// checkout — for the credential helper its own clone calls; and a second
+	// create for the same id joins the first instead of racing it.
+	creating   map[string]*creation
 	terminals  Terminals
 	worktrees  Worktrees
 	classifier Classifier
@@ -63,7 +68,8 @@ func New(opts Options) (*Service, error) {
 		env = func(domain.Session) map[string]string { return nil }
 	}
 	s := &Service{
-		sessions: map[string]domain.Session{}, terminals: opts.Terminals, worktrees: opts.Worktrees,
+		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
+		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
 		images: opts.Images, layout: opts.Layout, env: env, now: now,
 	}
@@ -153,10 +159,6 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 			return domain.Session{}, domain.ErrInvalidInput.WithDetail("generate a session id: %v", err).WithCause(err)
 		}
 		id = minted
-	} else if existing, err := s.Get(id); err == nil {
-		// Idempotent by session id: a create the link redelivered after a
-		// reconnect finds the session it already made.
-		return existing, nil
 	}
 	branch := in.Branch
 	if branch == "" {
@@ -166,6 +168,33 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 		return domain.Session{}, domain.ErrInvalidInput.WithDetail("%v", err).WithCause(err)
 	}
 
+	now := s.now().UTC()
+	session := domain.Session{
+		ID: id, Name: nameOr(in.Name, branch), Repo: in.Repo,
+		BaseBranch: base, Branch: branch, Worktree: s.layout.Worktree(in.Repo, domain.Slug(branch, id)),
+		Agent: agent, Launch: in.Launch,
+		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
+		State: domain.StateCreating, Created: now, Updated: now,
+		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
+	}
+	// Idempotent by session id: a create redelivered after a reconnect finds
+	// the session it already made, or joins the create still making it.
+	c, first, existing := s.begin(session)
+	if existing != nil {
+		return *existing, nil
+	}
+	if !first {
+		return c.wait(ctx)
+	}
+	created, err := s.create(domain.WithSession(ctx, id), in, session)
+	s.end(c, created, err)
+	return created, err
+}
+
+// create walks the stages. Each is observable on disk, so a failure half-way
+// leaves something a person can look at rather than a mystery — and something
+// the next attempt for the same session takes over (Worktrees.Add).
+func (s *Service) create(ctx context.Context, in CreateInput, session domain.Session) (domain.Session, error) {
 	// Every stage runs through run, so "started, then landed or failed" is
 	// the one shape a stage can have, and a new stage cannot report half of it.
 	run := func(stage domain.Stage, fn func() error) error {
@@ -187,31 +216,69 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	}); err != nil {
 		return domain.Session{}, err
 	}
-	worktree := s.layout.Worktree(in.Repo, domain.Slug(branch, id))
 	if err := run(domain.StageWorktree, func() error {
-		return s.worktrees.Add(ctx, in.Repo, worktree, branch, base, !in.Existing)
+		return s.worktrees.Add(ctx, in.Repo, session.Worktree, session.Branch, session.BaseBranch, !in.Existing)
 	}); err != nil {
 		return domain.Session{}, err
 	}
-
-	now := s.now().UTC()
-	session := domain.Session{
-		ID: id, Name: nameOr(in.Name, branch), Repo: in.Repo,
-		BaseBranch: base, Branch: branch, Worktree: worktree, Agent: agent, Launch: in.Launch,
-		CheckoutID: in.CheckoutID, GithubRepoID: in.GithubRepoID,
-		State: domain.StateStarting, Created: now, Updated: now,
-		Windows: []domain.Window{{Index: 0, Name: string(agent), Agent: true}},
-	}
+	session.State = domain.StateStarting
 	if err := run(domain.StageAgent, func() error {
-		return s.terminals.Create(ctx, session.TmuxName(), worktree, in.Launch.CommandLine(agent), s.env(session))
+		return s.terminals.Create(ctx, session.TmuxName(), session.Worktree, in.Launch.CommandLine(session.Agent), s.env(session))
 	}); err != nil {
 		// Leave the worktree: it is on disk, it is the user's, and a
 		// half-created session they can see beats one that vanished.
 		return domain.Session{}, err
 	}
-
-	s.put(session)
 	return session, nil
+}
+
+// creation is one create in flight.
+type creation struct {
+	session domain.Session
+	done    chan struct{}
+	result  domain.Session
+	err     error
+}
+
+// begin registers a create, or finds what is already there for its id: a
+// recorded session (existing), or a create still running (first is false).
+func (s *Service) begin(session domain.Session) (c *creation, first bool, existing *domain.Session) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if recorded, ok := s.sessions[session.ID]; ok {
+		clone := recorded.Clone()
+		return nil, false, &clone
+	}
+	if running, ok := s.creating[session.ID]; ok {
+		return running, false, nil
+	}
+	c = &creation{session: session, done: make(chan struct{})}
+	s.creating[session.ID] = c
+	return c, true, nil
+}
+
+// end records a create's outcome — the session, when it landed — and wakes
+// every create that joined it. The record is written before the pending entry
+// goes, so Get never finds neither.
+func (s *Service) end(c *creation, session domain.Session, err error) {
+	if err == nil {
+		s.put(session)
+	}
+	s.mu.Lock()
+	delete(s.creating, c.session.ID)
+	c.result, c.err = session, err
+	s.mu.Unlock()
+	close(c.done)
+}
+
+// wait is a joined create: the first one's outcome, or ctx's end.
+func (c *creation) wait(ctx context.Context) (domain.Session, error) {
+	select {
+	case <-c.done:
+		return c.result, c.err
+	case <-ctx.Done():
+		return domain.Session{}, ctx.Err()
+	}
 }
 
 // List returns every session this runner knows, newest first.
@@ -226,20 +293,39 @@ func (s *Service) List() []domain.Session {
 	return out
 }
 
-// Get returns one session.
+// Get returns one session: a recorded one, or one whose create is still
+// running, as `creating`.
 func (s *Service) Get(id string) (domain.Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	session, ok := s.sessions[id]
 	if !ok {
+		if running, creating := s.creating[id]; creating {
+			return running.session.Clone(), nil
+		}
 		return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
 	}
 	return session.Clone(), nil
 }
 
+// recorded is a session every operation but Get may act on: one whose create
+// has landed. A session still being created has no tmux session and maybe no
+// worktree to act on yet.
+func (s *Service) recorded(id string) (domain.Session, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if session, ok := s.sessions[id]; ok {
+		return session.Clone(), nil
+	}
+	if _, creating := s.creating[id]; creating {
+		return domain.Session{}, domain.ErrNotRunning.WithDetail("session %q is still being created", id)
+	}
+	return domain.Session{}, domain.ErrNotFound.WithDetail("no session %q on this host", id)
+}
+
 // OpenWindow adds a tab: a plain shell in the same worktree.
 func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Window{}, err
 	}
@@ -260,7 +346,7 @@ func (s *Service) OpenWindow(ctx context.Context, id string) (domain.Window, err
 // CloseWindow closes a tab. Window 0 is the agent and is closed by closing
 // the session, not by closing a tab.
 func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return err
 	}
@@ -288,7 +374,7 @@ func (s *Service) CloseWindow(ctx context.Context, id string, index int) error {
 // Attach opens a PTY onto one window. Several devices may attach to the same
 // window; tmux sizes it to the smallest attached client.
 func (s *Service) Attach(ctx context.Context, id string, window int, size Size) (Attachment, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +391,7 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size) 
 // Send types into a window, which is how the browser's keystrokes arrive
 // while nothing is attached.
 func (s *Service) Send(ctx context.Context, id string, window int, keys string) error {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return err
 	}
@@ -322,7 +408,7 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 // id (checked at the link, and refused by the store if it is not a plain
 // name), and a paste that does not land takes its file with it.
 func (s *Service) PasteImage(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return "", err
 	}
@@ -358,7 +444,7 @@ func (s *Service) PasteImage(ctx context.Context, id string, window int, command
 // what the poll loop calls: every second while a client is attached, every
 // ten when none is.
 func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -385,7 +471,7 @@ func (s *Service) Refresh(ctx context.Context, id string) (domain.Session, error
 // Restart recreates window 0 in the same worktree. It is the Restart button
 // on a session that stopped when the host rebooted.
 func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -409,7 +495,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 // which is what Restart needs afterwards. It is not Close: nothing is pushed
 // and nothing is removed (02-runner §5, "Stop is not close").
 func (s *Service) Stop(ctx context.Context, id string) (domain.Session, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
 	}
@@ -435,7 +521,7 @@ type CloseInput struct {
 // remove the worktree. A dirty worktree is not a reason to refuse — it is
 // reported, and the worktree is kept unless Force says otherwise.
 func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.Session, error) {
-	session, err := s.Get(id)
+	session, err := s.recorded(id)
 	if err != nil {
 		return domain.Session{}, err
 	}
