@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 /**
  * Lists the functions the React Compiler leaves uncompiled, and why.
  *
@@ -24,6 +25,10 @@ import { fileURLToPath } from 'node:url';
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// oppenheimer:begin web
+/** The app whose build runs the compiler; `oxc-transform-react` is its dependency. */
+const APP = 'apps/web';
+// oppenheimer:end web
 /** What the app compiles: its own source and every frontend package it bundles. */
 const SOURCES = [
   // oppenheimer:begin web
@@ -62,19 +67,10 @@ function lineOf(source, offset) {
 async function main() {
   const json = process.argv.includes('--json');
   const strict = process.argv.includes('--strict');
-  // The compiler is `apps/web`'s dependency; resolve it from there, or from the
-  // root when the app has been pruned and a package still wants the report.
   let transform;
   try {
-    const from = ['apps/web/package.json', 'package.json'].map((p) => createRequire(join(ROOT, p)));
-    const path = from.map((req) => {
-      try {
-        return req.resolve('oxc-transform-react');
-      } catch {
-        return null;
-      }
-    });
-    ({ transform } = await import(path.find(Boolean)));
+    const require = createRequire(join(ROOT, APP, 'package.json'));
+    ({ transform } = await import(require.resolve('oxc-transform-react')));
   } catch {
     console.error('oxc-transform-react is not installed; run `pnpm install` first.');
     process.exit(2);

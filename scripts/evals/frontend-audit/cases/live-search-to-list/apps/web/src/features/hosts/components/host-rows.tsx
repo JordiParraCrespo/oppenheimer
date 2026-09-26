@@ -4,9 +4,7 @@ import type { HostEntity } from '@oppenheimer/frontend-consumer';
 /** The hosts whose name contains `query`, one row each. */
 export function HostRows({ hosts, query }: { hosts: HostEntity[]; query: string }) {
   const needle = query.trim().toLowerCase();
-  const visible = needle
-    ? hosts.filter((host) => host.name.toLowerCase().includes(needle))
-    : hosts;
+  const visible = needle ? hosts.filter((host) => host.name.toLowerCase().includes(needle)) : hosts;
 
   return (
     <ul className="flex flex-col">
