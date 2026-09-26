@@ -1,5 +1,234 @@
 # @oppenheimer/api
 
+## 0.3.0
+
+### Minor Changes
+
+- ed28ce2: A runner's refusal of a session command is recorded on the session's log, so a start the host refuses fails instead of staying `starting`; adding a second repository to a session is `SESSIONS_010`.
+- 51c52fd: Credential kinds are now contributed to the auth kernel with `AuthModule.contributeCredentials`, so `auth` no longer imports the modules built on it.
+- f099524: Adopt the authorization kernel. A route that declares no policy no longer admits any authenticated caller, and two tenants can both define a `manager` role.
+- 7ff8b30: `@oppenheimer/backend-llm`: one `complete()` client over several LLM providers;
+  the API binds it from `LLM_*`.
+
+  Sessions are named from their first prompt: a model with a short deadline,
+  otherwise the prompt's own words. `SESSION_NAMER_PROVIDER`,
+  `SESSION_NAMER_BASE_URL`, `SESSION_NAMER_API_KEY` and `ANTHROPIC_API_KEY` are gone.
+
+- 64d3f7a: Remove the Stripe `billing` module and the `leads` example the project
+  inherited from the Flama starter. Neither was ever composed into the API, so no
+  endpoint a deployment served goes away; what goes is everything that existed
+  only for them. Stripe billing can be brought back from the Flama starter's
+  `billing` plugin, then `pnpm generate:api-client`.
+
+  These are breaking changes for anything that imported the removed names, which
+  is why the packages below take a minor bump while they are on 0.x.
+
+  - `@oppenheimer/api` drops `src/billing`, `src/leads`, the `stripe` config and
+    the `stripe` dependency, and the `stripe_billing` capability (and with it the
+    property on `GET /health/capabilities`). A new migration,
+    `1789600000000-DropBillingAndLeads`, drops the `lead`, `subscription` and
+    `billing_customer` tables, which nothing ever wrote; the migrations that
+    created them stay, since deployed databases have run them. The `STRIPE_*`
+    variables leave `.env.example`.
+  - `@oppenheimer/shared` drops the `billing` and `leads` scope resources and
+    permission groups (so the `billing:*` and `leads:*` scopes), the
+    `stripe_billing` deployment and client capability, the `Billing` subject, the
+    `GET /billing/subscriptions` endpoint policy and the billing and lead schemas.
+  - `@oppenheimer/api-client` drops the legacy `BillingApi` and `LeadsApi`
+    services and their models, and the regenerated types no longer carry the
+    removed scopes or `stripe_billing`.
+  - `@oppenheimer/translations` drops the `BILLING_*` and `LEAD_*` error copy and
+    the unused billing entry of the team page's permission areas.
+  - `@oppenheimer/backend-core`: the capabilities registry's docs no longer use
+    Stripe as their example.
+
+- f099524: An optional feature is enabled by its config being present rather than by a `'not-set'` sentinel, and `GET /health/capabilities` serves the client-facing set.
+- f099524: New `AuthErrors`, `OrganizationErrors` and `AdminErrors` catalogs; `betterAuthInvoker` folds Better Auth's upstream codes onto them, and the guards throw catalog errors — a missing principal is now 401 rather than 403.
+- a880b19: Connecting a host is hardened. An unpaired host is refused a link and stops dialling. The pairing-token cap holds under concurrent mints, and `POST /v1/hosts/pairing` takes `replaces` to retire the token on screen in the same write. The owner is emailed when a machine pairs. The agent prompt is a short template around the install command. `runner uninstall --force` keeps the pairing when a session cannot be ended, and a re-run of the installer restarts the systemd unit on the new release.
+- 79e30e5: Add the `github/` module: connect and disconnect a GitHub App installation, list what it covers live from GitHub, and mint a one-hour token narrowed to one repository. One table, `github_installation`, and no repository table — the installation is the allowlist and GitHub enforces it. `POST /installations` proves the caller can see the installation it claims by exchanging the OAuth code from the same redirect. The six `GITHUB_APP_*` settings are optional and surface as the `github_app` capability.
+- 8e2de68: Add `hosts/`: pairing tokens, host registration, and the host's boot assertion
+  as the `host` credential kind this module contributes to the auth kernel with
+  `AuthModule.contributeCredentials`.
+- 5bd4a8b: New session sets how a session is launched, and `POST /sessions` takes it.
+
+  The route grows a `launch` object — model, permission level, effort — and the
+  `prompt` typed into the composer. The launch is folded onto `work_session` so a
+  restart can relaunch a session the way it was launched without walking its log.
+  The prompt is a log entry and rides `session.create` to the host, where it
+  becomes the agent's trailing argument rather than something typed at a running
+  terminal — so nothing about the composer waits on the relay, and exactly one of
+  the two ends ever writes `prompt.first`. It also names the session, through a
+  new `openai-compatible` namer provider that covers Groq, Together, vLLM and a
+  local Ollama.
+
+  The agent catalog in `@oppenheimer/shared` grows each agent's models and the
+  argv its permission levels, effort stops and first task map to, read off
+  claude 2.1.278's and codex-cli 0.155.1's own `--help`.
+
+  **Breaking, `@oppenheimer/frontend-consumer`:** `SessionEntity` was modelling one
+  repository, one branch and a `running | idle | stopped` state the control plane
+  had stopped sending. It carries `checkouts`, the derived `state` group and the
+  stored `lifecycle` now, and `create` takes an idempotency key from its caller.
+
+- f099524: Domain events and queued jobs are staged in the same transaction as the write that owes them, so a crash between commit and dispatch no longer drops them.
+- f099524: Sign-up grants the default role and provisions the personal workspace through domain use cases rather than SQL in a Better Auth hook. A slug with no URL-safe characters falls back to `workspace-…` everywhere, and `ROLE_007` replaces a bare 500 when a system role is missing.
+- 8d78094: Add the `projects/` module: `GET /v1/projects`, `GET /v1/projects/{id}` and `PATCH /v1/projects/{id}` (name only — a project's slug is its directory name on every host that holds it).
+- f099524: `TOKEN_002` and `TOKEN_005` report the offending scopes in `detail` and as `ungrantableScopes` / `missingScopes`, instead of interpolating them into the catalog message.
+- f099524: Entry points load the root `.env` through `@oppenheimer/env/load`; the TypeORM CLI previously loaded no env file at all.
+- bbacd49: Build the runner ↔ control-plane link so a session can be created and run from the console.
+
+  - API: `relay/` mounts the two sockets of the protocol on the API's own HTTP server — the runner link (`GET /api/v1/relay/runner`, boot assertion as bearer, hello/welcome, heartbeat → host presence, `events.append` → the session log, acked by key) and the browser attach socket (`GET /api/v1/relay/attach`, single-use ticket as the subprotocol, re-checked against the session and the workspace membership). `links/` holds the per-host link registry and the real `SessionDispatchPort`, replacing the pending adapter.
+  - Runner: `internal/link` dials out with a per-dial EdDSA boot token, pins the control plane's key fingerprint from `welcome`, reconnects through the ladder with an epoch, streams PTY reads as attachment-id-prefixed frames and reports events with `<runId>:<n>` keys, resending what was not acked. `session.create` maps the structured launch onto the agent's argv through the catalog mirror; the sessions service gained `Stop` and a caller-provided id.
+  - Web: `SessionStream` is the real transport over the attach socket, minting a fresh ticket per (re)connect; the terminal shows `offline` while the host holds no link.
+  - Credentials: `credentials.token` is answered with a `credentials.grant` sealed to the host's key (Ed25519 → X25519, ephemeral ECDH, HKDF, AES-256-GCM); the runner's git credential helper pulls the token over the link, unseals it and holds it in memory until expiry or `credentials.revoke`. Hello reconciliation re-dispatches a launch the host never carried out and records stopped a session it lost. `attachment.credit` pauses PTY reads at 256 KB in flight; `host.preflight` and `host.update` are handled.
+  - Shared: the protocol gains `welcome`, `session.stop`, `session.detach`, `command.failed`, `attachment.closed` and the attach socket's own vocabulary; `CacheService` gains `take()` (`GETDEL`).
+
+- f099524: Conditional User permissions are enforced against the loaded record, and listing the global user directory requires `manage User`. A non-admin caller with only `read User` now receives 403; organization-scoped member endpoints cover tenant directories.
+- 8fab63d: Add server-evaluated feature flags, wired into the API and the console.
+
+  Flags are declared in code, targeted in the database, evaluated on the server
+  and read on every client from one endpoint — the shape Stripe and Revolut
+  describe for their own. Ported from the Flama starter.
+
+  - **`@oppenheimer/shared`** gains `feature-flags/`: the `FEATURE_FLAGS` catalog
+    (every flag the code may read, with its kind, owner, safe default and — for
+    temporary flags — expiry), the pure evaluator (ordered rules, segments,
+    semver targeting on the app build, deterministic MurmurHash3 percentage
+    splits bucketed by organization), and the Zod schemas for targeting writes.
+    Like `agents` and `protocol` it is reached through its own subpaths, not the
+    root barrel: `@oppenheimer/shared/feature-flags`, and the Zod-free
+    `@oppenheimer/shared/feature-flags/catalog` for the web bundle. A `flags`
+    scope group, a `FeatureFlag` subject and a `GET /feature-flags/admin`
+    endpoint policy join the catalogs.
+  - **`@oppenheimer/api`** gains a `feature-flags` module. Every replica holds
+    all targeting in memory and evaluates without I/O, polling a cheap
+    fingerprint to stay in sync and keeping its last good snapshot through a
+    database blip. `GET /v1/feature-flags` serves the caller's evaluated client
+    flags (signed out too); the endpoints under `/v1/feature-flags/admin`,
+    `/segments` and `/changes` edit targeting, pull kill switches, manage
+    segments, explain an evaluation and read the audit trail, which every change
+    lands on through the outbox. `@RequireFlag('key')` gates a route on a flag,
+    and token creation is now behind the `api_token_creation` kill switch. New
+    error codes `FLAG_001`–`FLAG_007`. Migration `AddFeatureFlags`, every point
+    in time `timestamptz`.
+  - **`@oppenheimer/api-client`**: the regenerated client carries the feature
+    flag operations and DTOs.
+  - **`@oppenheimer/frontend-core`**: a `feature-flags` kernel module and
+    `useFeatureFlag` / `useFeatureFlagValue` / `useFeatureFlags`, typed by the
+    catalog, reading the API rather than PostHog. Flags are prefetched as soon as
+    the session is known, persisted with the query cache, and an `experiment`
+    flag records a `feature_flag_exposed` event. `OppenheimerApp.create` takes
+    `featureFlags: { platform, appVersion }`.
+
+    **Breaking:** feature flags leave the analytics port. `IAnalyticsClient` no
+    longer has `getFeatureFlags` / `onFeatureFlags`, `AnalyticsService` no longer
+    serves flags, `analyticsKeys.flags` is gone, and `isFlagEnabled` moved to the
+    `feature-flags` module. `useFeatureFlag(key)` keeps its name but now takes a
+    catalog key and reads the server's answer.
+
+  - **`@oppenheimer/frontend-web`**: the PostHog adapter drops its flag methods
+    and switches PostHog's own flag loading off.
+  - **`@oppenheimer/translations`**: messages for `FLAG_001`–`FLAG_007`, and the
+    control-plane copy for a flags screen (`control.flags`, `nav.featureFlags`).
+  - **`@oppenheimer/web`** reports its platform and build when it asks for its
+    flags.
+
+  `pnpm check:flags` (in CI) fails on a temporary flag past its expiry date and
+  on a flag the catalog declares but no code reads.
+
+- f101364: Sessions, their checkouts and the append-only log the session row is a fold of,
+  behind eleven routes over three tables.
+
+  `DELETE /projects/{id}` archives a project and lands here too: it asks the module
+  that owns sessions whether any work is still open, through a port that module
+  registers, and refuses when nothing answers. Naming a session from its first prompt
+  is optional configuration — with no provider set, a session keeps its slug.
+
+- 1ad71b4: Module layout is now a machine-checked contract: `services/` is gone, a probe is not a use case, and `pnpm check:api-structure` enforces the shape.
+- f099524: Describe scope and permission-catalog responses properly in OpenAPI, so the generated client keeps their types. The wire format is unchanged.
+
+### Patch Changes
+
+- bb3c4e8: A runner link's event batches are recorded in the order they arrived.
+- 9492e18: Point an account's org-less sessions at the personal workspace in the transaction that provisions it. Sign-up's own session was written before the workspace existed, so it carried no active organization and every org-scoped route refused the workspace's owner until they signed in again.
+- f099524: Pin the controllers to `ENDPOINT_POLICIES`: a new catalog entry fails to compile until a handler is named for it.
+- e717f42: Harden the runner link. PTY bytes are no longer dropped when a queue fills,
+  and the runner's writer sends control frames first, then takes attachments in
+  turn, so one pane's output no longer delays another pane's echo. Both sides
+  now ping every 15 s, a runner the control plane cannot write to is closed
+  rather than skipped, and epochs keep rising across API restarts. The
+  terminal's transport (`SessionStream`, the resize coalescer, the replay
+  stream) moves from `apps/web` into `@oppenheimer/frontend-consumer`, behind
+  `SessionsService.openStream` and `useSessionStream`.
+- f099524: Add opt-in SQL query logging (`DB_LOG_QUERIES=true`) that never logs bound parameters.
+- 9604fe5: The browser attach socket keeps the frames a browser sends while its ticket is
+  redeemed. The console sends its viewport the moment the socket opens; when the
+  ticket lookups ran longer than that, `ws` dropped the frame with no listener,
+  and the relay waited out its two-second viewport timer before attaching at
+  80x24. A browser that closes during redemption no longer leaves an attachment
+  open on the link.
+- f099524: Take the Better Auth configuration from `@oppenheimer/auth` instead of a local copy.
+- a81af0d: Every date column is stored as `timestamptz`, so dates reach clients with their offset and no longer read out by the reader's time zone.
+- Updated dependencies [24d217d]
+- Updated dependencies [cb56034]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [7ff8b30]
+- Updated dependencies [64d3f7a]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [a880b19]
+- Updated dependencies [7945f7e]
+- Updated dependencies [f099524]
+- Updated dependencies [79e30e5]
+- Updated dependencies [79e30e5]
+- Updated dependencies [83f3617]
+- Updated dependencies [8e2de68]
+- Updated dependencies [8e2de68]
+- Updated dependencies [8e2de68]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [5bd4a8b]
+- Updated dependencies [ed28ce2]
+- Updated dependencies [f099524]
+- Updated dependencies [a23b14e]
+- Updated dependencies [8d78094]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [f099524]
+- Updated dependencies [1a51afc]
+- Updated dependencies [f099524]
+- Updated dependencies [bbacd49]
+- Updated dependencies [8e2de68]
+- Updated dependencies [cb56034]
+- Updated dependencies [f099524]
+- Updated dependencies [8fab63d]
+- Updated dependencies [bb3c4e8]
+- Updated dependencies [f101364]
+- Updated dependencies [f101364]
+- Updated dependencies [f099524]
+- Updated dependencies [a81af0d]
+- Updated dependencies [1a51afc]
+- Updated dependencies [1a51afc]
+  - @oppenheimer/translations@0.3.0
+  - @oppenheimer/shared@0.3.0
+  - @oppenheimer/backend-authz@0.2.0
+  - @oppenheimer/backend-llm@0.2.0
+  - @oppenheimer/backend-core@0.3.0
+  - @oppenheimer/backend-cache@0.2.0
+  - @oppenheimer/backend-ddd@0.3.0
+  - @oppenheimer/env@0.2.0
+  - @oppenheimer/auth@0.2.0
+  - @oppenheimer/backend-email@0.2.0
+  - @oppenheimer/backend-i18n@0.1.0
+  - @oppenheimer/backend-queue@0.1.1
+  - @oppenheimer/backend-storage@0.1.0
+
 ## 0.2.0
 
 ### Minor Changes
@@ -76,7 +305,6 @@
     token, token management with a permission catalog, users/roles/orgs/workspaces
     commands, `--json` output, profiles, and `oppenheimer mcp install` to connect an
     agent.
-
 
   Deploying runs a migration that adds the `api_token` and OAuth tables and grants
   every user permission over their own tokens. `pnpm generate:api-client` no
