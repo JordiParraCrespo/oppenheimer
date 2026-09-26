@@ -7,6 +7,7 @@ package cli
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
@@ -14,6 +15,65 @@ import (
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	updapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/app"
 )
+
+// startCreate runs a create beside the read loop. A clone takes as long as
+// the repository is big, and while it runs the loop must keep reading: the
+// pongs that keep the link up and the `credentials.grant` a private clone is
+// waiting on both arrive on it (#77, #79).
+func (h *linkHandler) startCreate(m link.SessionCreate) {
+	h.mu.Lock()
+	if _, running := h.creating[m.SessionID]; running {
+		h.mu.Unlock()
+		h.logger.Info("session.create redelivered while the first is still running; joining it",
+			slog.String("session", m.SessionID), slog.String("command", m.CommandID))
+		return
+	}
+	h.creating[m.SessionID] = nil
+	h.mu.Unlock()
+
+	life := h.life
+	if life == nil {
+		life = context.Background()
+	}
+	go func() {
+		h.create(life, m)
+		h.drainCreate(m.SessionID)
+	}()
+}
+
+// afterCreate runs a command for a session now or, while that session's
+// create is running, once it has ended — in the order the commands arrived,
+// which is the order the control plane sent them in.
+func (h *linkHandler) afterCreate(sessionID string, fn func()) {
+	h.mu.Lock()
+	if queued, running := h.creating[sessionID]; running {
+		h.creating[sessionID] = append(queued, fn)
+		h.mu.Unlock()
+		return
+	}
+	h.mu.Unlock()
+	fn()
+}
+
+// drainCreate runs what waited on a create, then lets later commands run
+// directly. The entry goes only once the queue is empty, under the lock, so
+// a command arriving during the drain queues behind the ones before it.
+func (h *linkHandler) drainCreate(sessionID string) {
+	for {
+		h.mu.Lock()
+		queued := h.creating[sessionID]
+		if len(queued) == 0 {
+			delete(h.creating, sessionID)
+			h.mu.Unlock()
+			return
+		}
+		h.creating[sessionID] = nil
+		h.mu.Unlock()
+		for _, fn := range queued {
+			fn()
+		}
+	}
+}
 
 func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 	steps := newStartSteps(func(p link.SessionStepPayload) {
@@ -35,6 +95,11 @@ func (h *linkHandler) create(ctx context.Context, m link.SessionCreate) {
 		return
 	}
 	first := m.Checkouts[0]
+	// The clone asks for a token before the session is recorded anywhere on
+	// this host; this is how the broker knows which checkout it is for.
+	if h.credentials != nil {
+		defer h.credentials.Creating(m.SessionID, first.CheckoutID, first.GithubRepoID)()
+	}
 	session, err := h.app.Sessions.Create(ctx, sessionsapp.CreateInput{
 		ID:         m.SessionID,
 		Repo:       first.RepositoryFullName,

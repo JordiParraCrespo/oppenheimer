@@ -183,7 +183,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (domain.Session, e
 	}
 
 	if err := run(domain.StageClone, func() error {
-		return s.worktrees.Ensure(ctx, in.Repo, in.Remote)
+		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, id)
 	}); err != nil {
 		return domain.Session{}, err
 	}
@@ -449,7 +449,7 @@ func (s *Service) Close(ctx context.Context, id string, in CloseInput) (domain.S
 	}
 	var pushErr error
 	if in.Push {
-		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch); pushErr != nil {
+		if _, pushErr = s.worktrees.Push(ctx, session.Worktree, session.Branch, session.ID); pushErr != nil {
 			// Report and keep going: the session is over either way, and
 			// the branch is still in the worktree we are about to name.
 			session.Dirty = true

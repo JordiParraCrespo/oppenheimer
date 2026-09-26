@@ -38,9 +38,21 @@ type linkHandler struct {
 	// bootToken mints the assertion an image pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
+	// life is the daemon's context. A create runs on it, not on the link's:
+	// the session is this host's work, and a link that drops mid-clone must
+	// not take the clone with it (#79). The outcome is reported through the
+	// reporter, which resends it on the next link.
+	life context.Context
+
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	epoch       uint64
+	// creating holds the sessions whose create is running, each with the
+	// commands for it that arrived meanwhile. A create the control plane
+	// redelivers after a reconnect joins the one under way instead of racing
+	// it for the same worktree, and an attach, input or stop sent right after
+	// a create waits for the session it names rather than finding none.
+	creating map[string][]func()
 	// decided holds the sessions whose stop the control plane ordered: the
 	// API already wrote that entry, so the observation it causes is not
 	// reported a second time. A stop the host sees on its own — tmux gone
@@ -75,7 +87,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	}
 	handler := &linkHandler{
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
-		bootToken: a.Pairing.BootToken,
+		creating: map[string][]func(){}, bootToken: a.Pairing.BootToken, life: ctx,
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -196,22 +208,22 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 	case "session.create":
 		var m link.SessionCreate
 		if msg.Decode(&m) == nil {
-			h.create(ctx, m)
+			h.startCreate(m)
 		}
 	case "session.attach":
 		var m link.SessionAttach
 		if msg.Decode(&m) == nil {
-			h.attach(ctx, m)
+			h.afterCreate(m.SessionID, func() { h.attach(ctx, m) })
 		}
 	case "session.input":
 		var m link.SessionInput
 		if msg.Decode(&m) == nil {
-			h.input(ctx, m)
+			h.afterCreate(m.SessionID, func() { h.input(ctx, m) })
 		}
 	case "session.image":
 		var m link.SessionImage
 		if msg.Decode(&m) == nil {
-			h.image(ctx, m)
+			h.afterCreate(m.SessionID, func() { h.image(ctx, m) })
 		}
 	case "session.resize":
 		var m link.SessionResize
@@ -226,7 +238,7 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		var m link.SessionCommand
 		if msg.Decode(&m) == nil {
-			h.lifecycle(ctx, m)
+			h.afterCreate(m.SessionID, func() { h.lifecycle(ctx, m) })
 		}
 	case "attachment.credit":
 		var m link.AttachmentCredit

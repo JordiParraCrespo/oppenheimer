@@ -17,5 +17,12 @@ var (
 	ErrGitCommand    = problem.New("GIT_002", http.StatusInternalServerError, "A git command failed")
 	ErrPushRejected  = problem.New("GIT_003", http.StatusConflict, "The branch could not be pushed")
 	ErrSessionExists = problem.New("SESS_004", http.StatusConflict, "A session already exists for that worktree")
-	ErrImage         = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The image cannot be given to the session")
+	// ErrGitCredential is git asking for a credential the runner had none to
+	// give: a private repository, and no token for the session it is for.
+	ErrGitCredential = problem.New("GIT_004", http.StatusForbidden, "The repository needs a credential the runner could not supply")
+	// ErrGitAbandoned is a git command whose context ended before it did —
+	// the runner stopped waiting, git did not fail — so what it did first may
+	// be on disk.
+	ErrGitAbandoned = problem.New("GIT_005", http.StatusServiceUnavailable, "A git command was abandoned before it finished")
+	ErrImage        = problem.New("SESS_005", http.StatusUnsupportedMediaType, "The image cannot be given to the session")
 )

@@ -27,7 +27,7 @@ const tokenRefreshMargin = 5 * time.Minute
 // held in memory until it expires or is revoked (02-runner §8; F21). Nothing
 // is written to disk and nothing is logged.
 type credentialBroker struct {
-	client   *link.Client
+	client   sender
 	unseal   func(sealed []byte) ([]byte, error)
 	sessions func(id string) (sessionsdomain.Session, error)
 	now      func() time.Time
@@ -35,6 +35,22 @@ type credentialBroker struct {
 	mu      sync.Mutex
 	tokens  map[string]cachedToken     // session id → token
 	waiting map[string]chan grantReply // request id → the ask waiting on it
+	// creating holds the checkout of each session whose create is still
+	// running. The clone is the create's first step and needs a token for a
+	// private repository, but the session is recorded only once the create
+	// lands — so until then, this is how the broker knows what it is for.
+	creating map[string]creatingCheckout
+}
+
+// sender is the link, as far as the broker needs it.
+type sender interface {
+	Send(message any) error
+}
+
+// creatingCheckout is what a credential ask names for a session in creation.
+type creatingCheckout struct {
+	checkoutID   string
+	githubRepoID int64
 }
 
 type cachedToken struct {
@@ -50,11 +66,41 @@ type grantReply struct {
 
 var errNoCredential = errors.New("no credential for this session")
 
-func newCredentialBroker(client *link.Client, unseal func([]byte) ([]byte, error), sessions func(string) (sessionsdomain.Session, error)) *credentialBroker {
+func newCredentialBroker(client sender, unseal func([]byte) ([]byte, error), sessions func(string) (sessionsdomain.Session, error)) *credentialBroker {
 	return &credentialBroker{
 		client: client, unseal: unseal, sessions: sessions, now: time.Now,
 		tokens: map[string]cachedToken{}, waiting: map[string]chan grantReply{},
+		creating: map[string]creatingCheckout{},
 	}
+}
+
+// Creating lets the broker answer for a session whose create is running,
+// before the session service has a record of it; the returned func ends
+// that, once the create has landed or failed.
+func (b *credentialBroker) Creating(sessionID, checkoutID string, githubRepoID int64) func() {
+	b.mu.Lock()
+	b.creating[sessionID] = creatingCheckout{checkoutID: checkoutID, githubRepoID: githubRepoID}
+	b.mu.Unlock()
+	return func() {
+		b.mu.Lock()
+		delete(b.creating, sessionID)
+		b.mu.Unlock()
+	}
+}
+
+// checkout is the checkout a session's credential is for: the recorded
+// session's, or the one its running create named.
+func (b *credentialBroker) checkout(sessionID string) (string, int64, bool) {
+	if session, err := b.sessions(sessionID); err == nil && session.CheckoutID != "" {
+		return session.CheckoutID, session.GithubRepoID, true
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	pending, ok := b.creating[sessionID]
+	if !ok || pending.checkoutID == "" {
+		return "", 0, false
+	}
+	return pending.checkoutID, pending.githubRepoID, true
 }
 
 // Get answers the helper for one session: the cached token while it is fresh,
@@ -69,8 +115,8 @@ func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, e
 	if ok && b.now().Add(tokenRefreshMargin).Before(cached.expiresAt) {
 		return cached.token, nil
 	}
-	session, err := b.sessions(sessionID)
-	if err != nil || session.CheckoutID == "" {
+	checkoutID, githubRepoID, ok := b.checkout(sessionID)
+	if !ok {
 		return "", errNoCredential
 	}
 
@@ -90,7 +136,7 @@ func (b *credentialBroker) Get(ctx context.Context, sessionID string) (string, e
 
 	err = b.client.Send(link.CredentialsToken{
 		Type: "credentials.token", RequestID: requestID, SessionID: sessionID,
-		CheckoutID: session.CheckoutID, GithubRepoID: session.GithubRepoID,
+		CheckoutID: checkoutID, GithubRepoID: githubRepoID,
 	})
 	if err != nil {
 		return "", errNoCredential

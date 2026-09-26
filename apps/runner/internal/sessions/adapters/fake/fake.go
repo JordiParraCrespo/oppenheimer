@@ -301,6 +301,8 @@ type Worktrees struct {
 	mu sync.Mutex
 	// Mirrors records the repositories that have been cloned or fetched.
 	Mirrors map[string]int
+	// EnsuredFor records the session each clone or fetch was for, in order.
+	EnsuredFor []string
 	// Paths records the worktrees that exist.
 	Paths map[string]string
 	// DirtyPaths makes Dirty answer true for a worktree.
@@ -319,7 +321,7 @@ func NewWorktrees() *Worktrees {
 }
 
 // Ensure implements app.Worktrees.
-func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
+func (w *Worktrees) Ensure(_ context.Context, repo, _, session string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
@@ -329,6 +331,7 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
 		return w.EnsureErr
 	}
 	w.Mirrors[repo]++
+	w.EnsuredFor = append(w.EnsuredFor, session)
 	return nil
 }
 
@@ -336,7 +339,9 @@ func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
 func (w *Worktrees) Add(_ context.Context, _, path, branch, _ string, _ bool) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if _, exists := w.Paths[path]; exists {
+	// Like git's: the same path on the same branch is this session's own
+	// worktree, left by an attempt cut short, and is adopted.
+	if existing, exists := w.Paths[path]; exists && existing != branch {
 		return domain.ErrSessionExists.WithDetail("%s already exists", path)
 	}
 	w.Paths[path] = branch
@@ -362,7 +367,7 @@ func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 }
 
 // Push implements app.Worktrees.
-func (w *Worktrees) Push(_ context.Context, _, branch string) (bool, error) {
+func (w *Worktrees) Push(_ context.Context, _, branch, _ string) (bool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.PushErr != nil {
