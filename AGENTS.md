@@ -256,7 +256,11 @@ The frontend is split twice, and the two splits answer different questions:
 
 The placement rules, the render rules (state at the lowest reader, effects
 only in `hooks/`, the React Compiler on, no manual memo) and what enforces
-them are `.agents/rules/frontend-architecture.md`. The layer model and the
+them are `.agents/rules/frontend-architecture.md`. `/frontend-audit` reviews the
+frontend against them, including the re-renders the compiler does not
+prevent; a daily routine runs it and keeps one GitHub issue (label
+`frontend-audit`) current, and `scripts/evals/frontend-audit/` grades the
+prompt. The layer model and the
 cookbooks are `packages/frontend/ARCHITECTURE.md` and
 `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
 `pnpm check:structure` and Biome hold it.
@@ -317,6 +321,7 @@ pnpm check              # Biome lint + format
 pnpm arch               # Architecture boundaries (dependency-cruiser), API and frontend
 pnpm check:structure    # Frontend layout contract: feature names, kinds, route cap, docs
 pnpm check:flags        # Feature flags: none past expiry, none declared but unread
+pnpm check:compiler     # What the React Compiler leaves uncompiled, silently (oxc bailouts)
 pnpm docker:dev         # Start Postgres + Redis
 # oppenheimer:begin e2e
 node scripts/stack/stack.mjs up [--web]  # The stack the e2e suites run against (e2e/README.md)

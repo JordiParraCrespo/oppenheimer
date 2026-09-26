@@ -182,6 +182,12 @@ name the jobs and split *those*.
   the page, because the setter that a tick calls lives in the shell above it.
   A split isolates an update only when the state that update writes moves with
   it.
+
+  The compiler also gives up silently. The build runs its oxc port with
+  `panicThreshold: 'none'`, so a component it cannot compile (a ref written
+  during render, a default parameter that is an arrow function, a `throw`
+  inside `try`, react-hook-form's `watch()`) ships unmemoised and nothing
+  says so. `pnpm check:compiler` lists every one.
 - **A component whose cost is the point gets a render budget.** Name it
   `*-render.spec.tsx` and it runs in the `render-budget` vitest project, which
   does not enable the compiler. `data-table-render.spec.tsx` asserts that a
