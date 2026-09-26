@@ -33,7 +33,12 @@ export function CommandPalette({
   const entries = useAuthorizedNav();
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('nav.commandTitle')}
+      description={t('nav.commandDescription')}
+    >
       <CommandInput placeholder={t('nav.commandPlaceholder')} />
       <CommandList>
         <CommandEmpty>{t('nav.commandEmpty')}</CommandEmpty>

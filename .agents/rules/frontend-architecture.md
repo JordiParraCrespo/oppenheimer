@@ -202,6 +202,38 @@ name the jobs and split *those*.
 - **Contexts split by change rate.** A provider that holds a value and its
   setters exposes them so a toggle does not re-render the tree.
 
+  A form whose fields are spread over several sections is the common case, and
+  the answer is a store behind a context whose value never changes: New
+  session's draft is a React Hook Form store (`use-new-session-form.ts`), the
+  context carries the form object — one identity for its whole life, unlike
+  `FormProvider`, which spreads the methods into a new object on every render —
+  and each chip is a section that binds its own field with `useController` or
+  `useWatch` and fetches the list it draws. The section that owns the store
+  reads no field, so it renders once; `new-session-form-render.spec.tsx`
+  asserts that a pick renders only the chip that was picked.
+- **Generic React hooks live in the design system's `hooks/`.** `useControlled`
+  (the `value` / `defaultValue` / `onChange` triple), `useDebouncedValue`,
+  `useDebouncedCallback` and `useNow` are exported from `@oppenheimer/design-system-web`, the
+  lowest React package the kit, the apps and the design system's own
+  components all share. A hook there knows nothing of the product or of a
+  query; one that does belongs in a product package or a feature's `hooks/`.
+  Before writing a timer, a controlled/uncontrolled pair or a latest-ref,
+  check that directory.
+
+- **A clock is an input, never a read in render.** `Date.now()` or `new Date()`
+  inside render is cached by the compiler on the inputs it can see, so an age
+  stops moving. Take the time from `useNow(interval)` in the lowest component
+  that draws it, and hand a one-second tick to a leaf of its own — the
+  pairing countdown and the provisioning clock are elements in their parent's
+  slot, so a tick re-renders a line of text and not the dialog around it.
+- **Entity queries opt into `shareEntities`.** The entities are classes, which
+  TanStack Query's default structural sharing does not look into, so without
+  it every refetch hands every reader a new object per row. A query hook that
+  returns entities passes `structuralSharing: shareEntities` (from
+  `@oppenheimer/frontend-core/react`); a list hook takes a narrowing `select`,
+  and a read that only happens in an event handler uses the module's
+  `use…Snapshot()` rather than subscribing.
+
 ## Routing is its own skill
 
 `apps/web` routes with TanStack Router, where a file's

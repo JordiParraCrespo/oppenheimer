@@ -12,7 +12,7 @@ Consumed by `apps/web`, `apps/web-showcase` and `packages/frontend/web`.
 src/
 ├── components/   # the public components: one file each, all in the barrel
 ├── internal/     # building blocks only components import; not exported
-├── hooks/        # UI hooks
+├── hooks/        # generic React hooks (useControlled, useDebouncedValue, …), exported from index.ts
 ├── lib/          # utils (cn, variants, etc.)
 ├── styles/       # shared styles
 └── index.ts      # public exports

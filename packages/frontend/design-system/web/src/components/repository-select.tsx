@@ -62,6 +62,8 @@ function defaultBranchOf(repo: RepositoryOption) {
   return repo.defaultBranch ?? repo.branches[0]?.value ?? 'main';
 }
 
+const defaultBranchPaneTitle = (name: string): React.ReactNode => `Branch for ${name}`;
+
 function RepositorySelect({
   repositories,
   value,
@@ -76,7 +78,7 @@ function RepositorySelect({
   loadingText = 'Loading…',
   branchesLoading = false,
   branchesLoadingText = 'Loading…',
-  branchPaneTitle = (name) => `Branch for ${name}`,
+  branchPaneTitle: branchPaneTitleProp,
   changeBranchLabel = 'Change branch',
   action,
   variant,
@@ -112,6 +114,9 @@ function RepositorySelect({
   className?: string;
   'aria-label'?: string;
 }) {
+  // Defaults resolved in the body, not the signature: the React Compiler
+  // leaves a component whose default parameter is a function uncompiled.
+  const branchPaneTitle = branchPaneTitleProp ?? defaultBranchPaneTitle;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [pane, setPane] = React.useState<string | null>(null);

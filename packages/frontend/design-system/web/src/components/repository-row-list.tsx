@@ -47,17 +47,21 @@ type RepositoryRowValue = {
   branch: string;
 };
 
+const defaultEmptyText = (query: string): React.ReactNode => `No repository matches “${query}”.`;
+const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch named “${query}”`;
+const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
+
 function RepositoryRowList({
   repositories,
   value,
   onValueChange,
   searchPlaceholder = 'Search repositories…',
-  emptyText = (query) => `No repository matches “${query}”.`,
+  emptyText: emptyTextProp,
   defaultLabel = 'Default',
   defaultTitle = 'Cloned by default in new sessions',
   branchSearchPlaceholder = 'Search branches',
-  branchEmptyText = (query) => `No branch named “${query}”`,
-  branchLabel = (name) => `Base branch for ${name}`,
+  branchEmptyText: branchEmptyTextProp,
+  branchLabel: branchLabelProp,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onChange'> & {
@@ -72,6 +76,11 @@ function RepositoryRowList({
   branchEmptyText?: (query: string) => React.ReactNode;
   branchLabel?: (name: string) => string;
 }) {
+  // Defaults resolved in the body, not the signature: the React Compiler
+  // leaves a component whose default parameter is a function uncompiled.
+  const emptyText = emptyTextProp ?? defaultEmptyText;
+  const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
+  const branchLabel = branchLabelProp ?? defaultBranchLabel;
   const [query, setQuery] = React.useState('');
   const term = query.trim().toLowerCase();
   const shown = repositories.filter((repo) => (term ? repo.name.toLowerCase().includes(term) : true));

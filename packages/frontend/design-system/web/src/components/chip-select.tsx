@@ -511,6 +511,46 @@ function PlusGlyph() {
 
 /* ── The single-value picker ─────────────────────────────────────────────── */
 
+/**
+ * One option row of `ChipSelect`, memoised on purpose.
+ *
+ * The highlight moves on every row the pointer crosses and on every arrow key,
+ * and it lived in the picker: each move re-ran the whole list, so crossing a
+ * branch chip of a hundred rows re-rendered a hundred rows per row crossed. A
+ * row takes its own `highlighted` flag and two callbacks whose identity holds,
+ * so a move re-renders the row it left and the row it reached.
+ */
+const ChipSelectOptionRow = React.memo(function ChipSelectOptionRow({
+  option,
+  index,
+  selected,
+  highlighted,
+  onHighlight,
+  onChoose,
+}: {
+  option: ChipSelectOption;
+  index: number;
+  selected: boolean;
+  highlighted: boolean;
+  onHighlight: (index: number) => void;
+  onChoose: (option: ChipSelectOption) => void;
+}) {
+  return (
+    <ChipSelectItem
+      selected={selected}
+      highlighted={highlighted}
+      leading={option.leading}
+      description={option.description}
+      mono={option.mono}
+      data-disabled={option.disabled || undefined}
+      onMouseEnter={() => onHighlight(index)}
+      onClick={() => onChoose(option)}
+    >
+      {option.label}
+    </ChipSelectItem>
+  );
+});
+
 function ChipSelect({
   options,
   value,
@@ -566,10 +606,14 @@ function ChipSelect({
   const visible = onQueryChange ? options : options.filter((option) => matches(option, term));
   const selected = options.find((option) => option.value === value) ?? null;
 
-  function choose(option: ChipSelectOption) {
-    onValueChange(option.value);
-    setOpen(false);
-  }
+  // Stable across a highlight move, so the memoised rows can skip it.
+  const choose = React.useCallback(
+    (option: ChipSelectOption) => {
+      onValueChange(option.value);
+      setOpen(false);
+    },
+    [onValueChange],
+  );
 
   function onKeyDown(event: React.KeyboardEvent) {
     if (event.key === 'ArrowDown') {
@@ -633,19 +677,15 @@ function ChipSelect({
           empty={visible.length === 0}
         >
           {visible.map((option, index) => (
-            <ChipSelectItem
+            <ChipSelectOptionRow
               key={option.value}
+              option={option}
+              index={index}
               selected={option.value === value}
               highlighted={index === active}
-              leading={option.leading}
-              description={option.description}
-              mono={option.mono}
-              data-disabled={option.disabled || undefined}
-              onMouseEnter={() => setActive(index)}
-              onClick={() => choose(option)}
-            >
-              {option.label}
-            </ChipSelectItem>
+              onHighlight={setActive}
+              onChoose={choose}
+            />
           ))}
         </ChipSelectList>
         {action ? (

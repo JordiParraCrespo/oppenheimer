@@ -1,5 +1,6 @@
-import { StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
+import { Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import { TokenCountdown } from './token-countdown';
 
 /**
  * A machine as the pairing chrome names it. Structural rather than
@@ -10,11 +11,6 @@ export interface PairingHost {
   /** Whether the runner is dialled in right now, as the API reports it. */
   online: boolean;
   os: string | null;
-}
-
-/** `mm:ss`, from the seconds the flow hook counts down. */
-function clock(seconds: number): string {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 /**
@@ -40,15 +36,18 @@ function clock(seconds: number): string {
  * arrives with the capabilities themselves.
  */
 export function HostPairingChrome({
-  secondsLeft,
+  expiresAt,
   expired,
   onRegenerate,
   busy,
   host,
   layout = 'dialog',
 }: {
-  /** What is left on the token, counted down by the flow hook. */
-  secondsLeft: number;
+  /**
+   * When the token runs out. The countdown ticks in `TokenCountdown`, so a
+   * second passing re-renders that line and not this chrome or its surface.
+   */
+  expiresAt: Date | null;
   expired: boolean;
   onRegenerate: () => void;
   /** While a fresh token is being minted. */
@@ -77,9 +76,11 @@ export function HostPairingChrome({
         >
           {/* An expired token can pair nothing, so the line says so rather
               than counting down through zero. */}
-          {expired
-            ? t('hosts.pairing.tokenExpired')
-            : t('hosts.pairing.tokenExpires', { time: clock(secondsLeft) })}
+          {expired ? (
+            t('hosts.pairing.tokenExpired')
+          ) : expiresAt ? (
+            <TokenCountdown expiresAt={expiresAt} />
+          ) : null}
         </span>
         <TextLink
           className={step ? 'text-xs' : 'text-[11.5px] whitespace-nowrap'}
@@ -89,7 +90,7 @@ export function HostPairingChrome({
         </TextLink>
       </div>
 
-      <div className="h-px bg-border-subtle" />
+      <Separator />
 
       <div
         className={step ? 'flex min-h-13 flex-col justify-center' : 'flex min-h-13 items-center'}

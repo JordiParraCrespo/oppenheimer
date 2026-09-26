@@ -19,7 +19,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `theme` | `ThemeProvider`, `useTheme`, `ThemeToggle`, `BrandGlyph` | leaf |
 | `i18n` | the i18next instance and `i18nReady`, `useLocale`, `useApplyUserSettings`, `LanguageSwitcher`, the date and person-name formatters | leaf |
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
-| `forms` | `useZodResolver`, `useDebouncedCallback`, `useSearchDraft` | leaf |
+| `forms` | `useZodResolver`, `useSearchDraft` | leaf |
 | `hosts` | `HostPairingChrome` — the token clock and the status line that the onboarding step and the console's Add host dialog both show | leaf |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |

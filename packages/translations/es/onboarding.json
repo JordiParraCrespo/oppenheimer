@@ -30,7 +30,10 @@
       "claiming": "Guardando...",
       "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
       "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
-      "permanent": "{{address}} es la dirección de este espacio de trabajo."
+      "permanent": "{{address}} es la dirección de este espacio de trabajo.",
+      "checkingLabel": "Comprobando disponibilidad",
+      "availableLabel": "Disponible",
+      "takenLabel": "Ocupada"
     },
     "github": {
       "title": "Conecta GitHub",
@@ -64,7 +67,8 @@
       "go": "Ir a la consola",
       "noWorkspace": "Aún sin espacio de trabajo",
       "noGithub": "Sin conectar",
-      "noHost": "Aún sin host"
+      "noHost": "Aún sin host",
+      "doneLabel": "Listo"
     }
   }
 }

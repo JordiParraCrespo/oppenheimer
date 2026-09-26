@@ -26,7 +26,7 @@ Everything is re-exported from the package root (`src/index.ts`):
   `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
   password-requirement helpers, the provider icons, `redirectSignedIn`.
 - **layout** — `PageHead`, the section primitives, `ConfirmDialog`.
-- **forms** — `useZodResolver`, `useDebouncedCallback`, `useSearchDraft`;
+- **forms** — `useZodResolver`, `useSearchDraft`;
   `useErrorMessage` is owned by frontend core and
   re-exported for compatibility.
 - **theme** — `ThemeProvider`, `ThemeToggle`, `BrandGlyph`.

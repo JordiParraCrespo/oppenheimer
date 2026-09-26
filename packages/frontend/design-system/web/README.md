@@ -34,6 +34,10 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   system stacks (SF Pro and SF Mono on Apple platforms, the platform's UI face
   elsewhere)
 - `src/assets/imagery/` — the auth carousel photographs.
+- `src/hooks/` — the generic React hooks every UI layer shares, exported from
+  the root: `useControlled` (a controlled/uncontrolled `value`, written once),
+  `useDebouncedValue`, `useDebouncedCallback` and `useIsMobile`. Nothing here
+  knows about the product or fetches.
 - `src/components/` — the public components, one file each. The grouped
   inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
   every file under the section that draws it.

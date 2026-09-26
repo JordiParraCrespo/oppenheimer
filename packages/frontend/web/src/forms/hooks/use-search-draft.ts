@@ -1,5 +1,5 @@
+import { useDebouncedCallback } from '@oppenheimer/design-system-web';
 import { useState } from 'react';
-import { useDebouncedCallback } from './use-debounced-callback';
 
 /**
  * How long a search field holds a keystroke before it becomes a query.
