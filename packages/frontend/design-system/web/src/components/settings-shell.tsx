@@ -4,12 +4,10 @@ import { cn } from '../lib/utils';
 
 /**
  * SettingsShell — the Settings pages' frame and nothing in it
- * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left at
- * 264px, then a main column on the canvas that scrolls on its own, holding a
- * 760px content column with 64px over 40px of gutter and 96px of air
- * underneath, its sections 40px apart. What a page puts in the column — a
- * title, `SettingsGroup`s, `HostCard`s, or the Add a host page's header and
- * steps — is the page's.
+ * (`design/version1/Settings.dc.html`): the `SettingsNav` on the left, then
+ * a main column on the canvas that scrolls on its own, holding the measured
+ * content column with its sections spaced. What a page puts in the column —
+ * a `SettingsTitle`, `SettingsGroup`s, `HostCard`s — is the page's.
  *
  * ```tsx
  * <SettingsShell>
@@ -53,8 +51,9 @@ function SettingsContent({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * How a section opens: the 28px display title, a muted line under it, and
- * the section's one action on the right (Add host), aligned to the foot.
+ * How a section opens: the display title at the ladder's h2 stop, a muted
+ * line under it, and the section's one action on the right (Add host),
+ * aligned to the foot.
  */
 function SettingsTitle({
   title,
@@ -70,7 +69,7 @@ function SettingsTitle({
   return (
     <div data-slot="settings-title" className={cn('flex items-end gap-4', className)} {...props}>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <h1 className="m-0 font-display text-[28px] leading-[1.15] font-semibold tracking-[-0.02em] text-fg">
+        <h1 className="m-0 font-display text-h2 font-semibold text-fg">
           {title}
         </h1>
         {description ? <p className="m-0 text-sm text-pretty text-fg-muted">{description}</p> : null}

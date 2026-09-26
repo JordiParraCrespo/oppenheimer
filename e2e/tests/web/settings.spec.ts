@@ -30,10 +30,13 @@ test('settings opens from the account menu, walks its sections and comes back', 
   await expect(page).toHaveURL(/\/settings\/hosts$/);
   await expect(page.getByRole('heading', { name: 'Hosts' })).toBeVisible();
 
-  // Add a host is the same page as the composer's, under Hosts.
+  // Add host is the console's one pairing page, which reads where it was
+  // opened from: Hosts as its parent crumb, Done as its primary, Cancel back
+  // to the list.
   await page.getByRole('link', { name: 'Add host' }).click();
-  await expect(page).toHaveURL(/\/settings\/hosts\/new$/);
+  await expect(page).toHaveURL(/\/hosts\/new\?from=settings$/);
   await expect(page.getByRole('heading', { name: 'Add a host' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Done' })).toBeDisabled();
   await page.getByRole('link', { name: 'Cancel' }).click();
   await expect(page).toHaveURL(/\/settings\/hosts$/);
 

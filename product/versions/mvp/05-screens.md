@@ -27,8 +27,8 @@
   hover; a session still provisioning joins the list at once with a
   pulsing grey glyph; New session on top; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
-  the header; the account menu at the bottom with appearance and
-  language; hosts in a settings drawer. Since the 2026-09-26 export the
+  the header; the account menu at the bottom with appearance, language
+  and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists (Sessions current with its count; Automations — the
   2026-09-26 evening export's word for routines, in the copy only — drawn
@@ -55,14 +55,16 @@
   account menu's Settings link opens `/settings`, its own chrome — a
   plain sidebar with Back to console, then Account → Profile
   (`/settings/profile`) and Workspace → Hosts (`/settings/hosts`, with
-  the count) — and a 760px column the sections fill. `/settings` itself
-  lands on Profile. Hosts lists the machines as cards with Add host on
-  the right, which is the Add a host page under it
-  (`/settings/hosts/new`, Done rather than Use this host). The rows each
-  section draws — picture, name, email, password on Profile; rename,
-  remove, the install command and the preflight on a host card — are
-  their own slices; the frame, the routes and the way back are built
-  (2026-09-26). This supersedes the settings *drawer* below.
+  the count) — and the measured column the sections fill. `/settings`
+  itself lands on Profile. It goes through the same guard and the same
+  no-workspace redirect as the console. Hosts lists the machines as cards
+  with Add host on the right, which opens the console's one pairing page
+  (`/hosts/new?from=settings`): the header reads where it was opened
+  from — Hosts as the parent crumb, Done rather than Use this host, back
+  to the list. The rows each section draws — picture, name, email,
+  password on Profile; rename, remove, the install command and the
+  preflight on a host card — are their own slices; the frame, the routes
+  and the way back are built (2026-09-26).
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export; the project chip and its New project… page are
@@ -117,7 +119,8 @@
   foot action opens the **Add a host page** (`/hosts/new`; a dialog until
   the 2026-09-26 evening export made it a page over the main column, built
   like the automation editor: a page header, then two numbered steps,
-  Install and Connect): the same instruction in
+  Install and Connect; Settings → Hosts opens the same page with
+  `?from=settings`): the same instruction in
   two forms behind a Command / Agent prompt switch, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
@@ -196,11 +199,10 @@
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
-- ~~Settings drawer~~ Settings → Hosts (above): hosts with the install
-  command, the agent prompt, an online dot, and the preflight result
-  (git, tmux, claude). The 2026-09-26 export draws it as a page, not a
-  drawer; the card's rows are built with the slice that needs them.
-  Accounts arrive with the accounts slice.
+- Settings → Hosts (above): hosts with the install command, the agent
+  prompt, an online dot, and the preflight result (git, tmux, claude);
+  the card's rows are built with the slice that needs them. Accounts
+  arrive with the accounts slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it
   is **pinned** (and to what), and the **last update outcome** —

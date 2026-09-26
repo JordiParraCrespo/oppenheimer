@@ -85,8 +85,9 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `screenshots/`. The 2026-09-26 export has no `version2/`.
 - Automations (formerly routines) are in the version-1 frames as of the
   2026-09-26 exports, but `../00-scope.md` still lists routines as a
-  later slice; that note has not been reconciled with the frames yet. The
-  Settings page is reconciled: `../05-screens.md` records it as the one
-  destination beside the console, with its routes.
+  later slice; that note has not been reconciled with the frames yet.
+  Settings is: `../05-screens.md` records it as the one destination
+  beside the console, with its routes, the catalog row and the decision
+  log in `../README.md` say the same, and `../../../brief.html` follows.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

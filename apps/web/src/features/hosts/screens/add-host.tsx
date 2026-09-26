@@ -19,7 +19,7 @@ import { Server } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -55,17 +55,22 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * one, unlike onboarding's Continue: a session may be started on a machine
  * whose runner is still coming up — the control plane records it and owes
  * it to that host the moment it connects. Using the host lands on New session
- * with it picked (`?host=`), the way a new project lands there picked.
+ * with it picked (`?host=`), the way a new project lands there picked. Opened
+ * from Settings (`?from=settings`) the same page reads Hosts as its parent
+ * and Done as its primary, back to the list.
  *
  * Both forms of the instruction come from the API with the secret already in
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen({ from = 'new-session' }: { from?: 'new-session' | 'settings' }) {
+export function AddHostScreen() {
   const { t } = useTranslation();
-  // Settings' Hosts page draws the same page with Hosts as its parent crumb
-  // and Done as its primary: nothing there is picking a machine for a session.
-  const settings = from === 'settings';
+  // Where the page was opened from is in the address, and the header reads
+  // everything it says — crumb, Cancel, Back, the primary — off this one
+  // fact: from Settings the parent is Hosts and the primary is Done, because
+  // nothing there is picking a machine for a session.
+  const search = useSearch({ from: '/_authenticated/_editor/hosts/new' });
+  const settings = search.from === 'settings';
   const back = settings ? { to: '/settings/hosts' as const } : { to: '/sessions/new' as const };
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
@@ -83,7 +88,9 @@ export function AddHostScreen({ from = 'new-session' }: { from?: 'new-session' |
 
       <PageHeader className="mb-7">
         <PageHeaderCrumbs>
-          <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
+          <Link {...back}>
+            {settings ? t('hosts.add.crumbHosts') : t('hosts.add.crumbNewSession')}
+          </Link>
           <span>/</span>
           <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
         </PageHeaderCrumbs>
@@ -92,21 +99,21 @@ export function AddHostScreen({ from = 'new-session' }: { from?: 'new-session' |
           title={t('hosts.add.title')}
           actions={
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                render={<Link to="/sessions/new" />}
-              >
+              <Button type="button" variant="secondary" size="sm" render={<Link {...back} />}>
                 {t('common.cancel')}
               </Button>
               <Button
                 type="button"
                 size="sm"
                 disabled={!host}
-                onClick={() => host && navigate({ to: '/sessions/new', search: { host: host.id } })}
+                onClick={() =>
+                  host &&
+                  (settings
+                    ? navigate(back)
+                    : navigate({ to: '/sessions/new', search: { host: host.id } }))
+                }
               >
-                {t('hosts.add.use')}
+                {settings ? t('hosts.add.done') : t('hosts.add.use')}
               </Button>
             </>
           }

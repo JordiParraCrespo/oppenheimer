@@ -9,7 +9,8 @@
   "profile": {
     "title": "Perfil",
     "email": "Correo",
-    "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones"
+    "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
+    "failed": "No se pudo cargar el perfil."
   },
   "hosts": {
     "title": "Hosts",
@@ -18,6 +19,7 @@
     "empty": "Todavía no hay hosts",
     "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
     "online": "En línea",
-    "offline": "Sin conexión"
+    "offline": "Sin conexión",
+    "failed": "No se pudieron cargar los hosts."
   }
 }

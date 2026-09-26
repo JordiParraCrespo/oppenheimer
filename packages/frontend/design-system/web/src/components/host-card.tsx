@@ -4,12 +4,16 @@ import { cn } from '../lib/utils';
 
 /**
  * HostCard — one card per host on the Settings page: a status dot on the
- * left (green running, grey idle, a hollow ring when offline), the mono
- * name and a meta line (OS, size, region, runner version), the state and
- * last-seen on the right in mono, and an ellipsis whose menu holds
- * Rename, Copy host ID and Remove host.
+ * left (green running, a green ring when connected, grey idle, a hollow
+ * grey ring when offline), the mono name and a meta line (OS, size, region,
+ * runner version), the state and last-seen on the right in mono, and an
+ * ellipsis whose menu holds Rename, Copy host ID and Remove host.
+ *
+ * `connected` is "the runner is up", said by the control plane, and no
+ * more: whether it is running sessions or idle is a count this card is not
+ * always given. `running` and `idle` are for a caller that has it.
  */
-type HostCardStatus = 'running' | 'idle' | 'offline';
+type HostCardStatus = 'running' | 'connected' | 'idle' | 'offline';
 
 function HostCard({
   name,
@@ -45,6 +49,7 @@ function HostCard({
         className={cn(
           'size-[7px] shrink-0 rounded-pill',
           status === 'running' && 'bg-success',
+          status === 'connected' && 'border-[1.5px] border-success',
           status === 'idle' && 'bg-fg-subtle',
           status === 'offline' && 'border-[1.5px] border-fg-subtle',
         )}

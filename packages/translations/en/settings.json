@@ -9,7 +9,8 @@
   "profile": {
     "title": "Profile",
     "email": "Email",
-    "emailHint": "Used to sign in and for run notifications"
+    "emailHint": "Used to sign in and for run notifications",
+    "failed": "The profile could not be loaded."
   },
   "hosts": {
     "title": "Hosts",
@@ -18,6 +19,7 @@
     "empty": "No hosts yet",
     "emptyHint": "Add one and your sessions have somewhere to run.",
     "online": "Online",
-    "offline": "Offline"
+    "offline": "Offline",
+    "failed": "The hosts could not be loaded."
   }
 }

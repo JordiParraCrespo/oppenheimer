@@ -51,8 +51,8 @@ test('the account menu holds appearance, language and the way out — and nothin
   await expect(menu.getByRole('menuitem', { name: 'Appearance' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Language' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
-  // Settings and Profile are not hidden behind a permission — they are gone.
-  // Settings is the menu's one link since the 2026-09-26 export drew it there.
+  // Settings is the menu's one link since the 2026-09-26 export drew it there;
+  // Profile is not hidden behind a permission — it is not a page.
   await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'View profile' })).toHaveCount(0);
 
@@ -63,7 +63,7 @@ test('a URL the console does not have answers inside the shell', async ({ page }
   const owner = await provisionedUser('console404');
   await signInAs(page, owner.user);
 
-  await page.goto('/settings');
+  await page.goto('/nowhere');
 
   // The 404 keeps the sidebar: the reader is still in the product, with New
   // session one click away, rather than on a bare page.

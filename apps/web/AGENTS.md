@@ -52,11 +52,12 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 - Naming a feature after the page (`settings`, `console`) instead of the module
   it renders. The console's sidebar is `sessions/sections/sessions-sidebar.tsx`,
   because what it lists is sessions; the shell around it is the kit's.
-- Building a screen this console does not have. Settings (`/settings`) is its
-  own chrome beside the console, with Profile and Hosts as sections and Add a
-  host under Hosts; there is no profile page inside the console and no settings
-  pane in it. A host is paired on the Add a host page (`/hosts/new` from the
-  composer, `/settings/hosts/new` from Settings) or in onboarding
+- Building a screen this console does not have. There is no profile page
+  inside the console and no settings pane in it: Settings is its own chrome
+  beside the console (`routes/_authenticated/settings.tsx`), and its sections
+  are features named after their modules (`profile`, `hosts`). There is one
+  pairing surface, `/hosts/new`; the composer's host chip and Settings → Hosts
+  open the same screen, and `?from=settings` is how the header knows which
   (`product/versions/mvp/05-screens.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`

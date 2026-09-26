@@ -48,13 +48,11 @@ export interface NavLink {
   labelKey: keyof Messages['nav'];
 }
 
-/** A row of the Settings sidebar: a link with an icon, a `settings.nav.*` label and, maybe, a count. */
+/** A row of the Settings sidebar: a link with an icon and a `settings.nav.*` label. Data only. */
 export interface SettingsNavItemConfig {
   to: NavTo;
   icon: LucideIcon;
   labelKey: keyof Messages['settings']['nav'];
-  /** An element, so the app can hand a section that reads the count. */
-  count?: ReactNode;
 }
 
 /** One eyebrow-labelled group of the Settings sidebar (Account, Workspace). */

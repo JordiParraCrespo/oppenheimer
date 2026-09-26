@@ -14,15 +14,13 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
 import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/_editor'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
-import { Route as SettingsIndexRouteImport } from './routes/settings/index'
-import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as AuthPublicForgotPasswordRouteImport } from './routes/_auth/_public/forgot-password'
 import { Route as AuthPublicLoginRouteImport } from './routes/_auth/_public/login'
 import { Route as AuthPublicRegisterRouteImport } from './routes/_auth/_public/register'
@@ -35,11 +33,12 @@ import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onbo
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
-import { Route as SettingsHostsIndexRouteImport } from './routes/settings/hosts/index'
-import { Route as SettingsHostsNewRouteImport } from './routes/settings/hosts/new'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authenticated/_editor/hosts/new'
 import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
 import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
+import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -62,11 +61,6 @@ const AboutRoute = AboutRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -92,20 +86,15 @@ const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
   id: '/_editor',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => SettingsRoute,
 } as any)
 const AuthPublicForgotPasswordRoute =
   AuthPublicForgotPasswordRouteImport.update({
@@ -171,16 +160,18 @@ const AuthenticatedSessionsNewRoute =
     path: '/sessions/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const SettingsHostsIndexRoute = SettingsHostsIndexRouteImport.update({
-  id: '/hosts/',
-  path: '/hosts/',
-  getParentRoute: () => SettingsRoute,
-} as any)
-const SettingsHostsNewRoute = SettingsHostsNewRouteImport.update({
-  id: '/hosts/new',
-  path: '/hosts/new',
-  getParentRoute: () => SettingsRoute,
-} as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedEditorHostsNewRoute =
   AuthenticatedEditorHostsNewRouteImport.update({
     id: '/hosts/new',
@@ -199,18 +190,22 @@ const AuthenticatedEditorProjectsNewRoute =
     path: '/projects/new',
     getParentRoute: () => AuthenticatedEditorRoute,
   } as any)
+const AuthenticatedSettingsHostsIndexRoute =
+  AuthenticatedSettingsHostsIndexRouteImport.update({
+    id: '/hosts/',
+    path: '/hosts/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
-  '/settings': typeof SettingsRouteWithChildren
   '/terms': typeof TermsRoute
   '/onboarding': typeof AuthOnboardingRouteWithChildren
   '/$': typeof AuthenticatedSplatRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings/': typeof SettingsIndexRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
   '/register': typeof AuthPublicRegisterRoute
@@ -221,13 +216,14 @@ export interface FileRoutesByFullPath {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/hosts/new': typeof SettingsHostsNewRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/settings/hosts/': typeof SettingsHostsIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -236,8 +232,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/$': typeof AuthenticatedSplatRoute
   '/oauth/consent': typeof OauthConsentRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings': typeof SettingsIndexRoute
   '/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/login': typeof AuthPublicLoginRoute
   '/register': typeof AuthPublicRegisterRoute
@@ -248,13 +242,14 @@ export interface FileRoutesByTo {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/hosts/new': typeof SettingsHostsNewRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
-  '/settings/hosts': typeof SettingsHostsIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -263,15 +258,13 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/privacy': typeof PrivacyRoute
-  '/settings': typeof SettingsRouteWithChildren
   '/terms': typeof TermsRoute
   '/_auth/_public': typeof AuthPublicRouteWithChildren
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
   '/_authenticated/_editor': typeof AuthenticatedEditorRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/settings/': typeof SettingsIndexRoute
   '/_auth/_public/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/_auth/_public/login': typeof AuthPublicLoginRoute
   '/_auth/_public/register': typeof AuthPublicRegisterRoute
@@ -282,13 +275,14 @@ export interface FileRoutesById {
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
-  '/settings/hosts/new': typeof SettingsHostsNewRoute
+  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
-  '/settings/hosts/': typeof SettingsHostsIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -296,13 +290,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/privacy'
-    | '/settings'
     | '/terms'
     | '/onboarding'
     | '/$'
+    | '/settings'
     | '/oauth/consent'
-    | '/settings/profile'
-    | '/settings/'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -313,13 +305,14 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
-    | '/settings/hosts/new'
+    | '/settings/profile'
     | '/onboarding/'
     | '/sessions/'
-    | '/settings/hosts/'
+    | '/settings/'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -328,8 +321,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/$'
     | '/oauth/consent'
-    | '/settings/profile'
-    | '/settings'
     | '/forgot-password'
     | '/login'
     | '/register'
@@ -340,13 +331,14 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
-    | '/settings/hosts/new'
+    | '/settings/profile'
     | '/onboarding'
     | '/sessions'
-    | '/settings/hosts'
+    | '/settings'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts'
   id:
     | '__root__'
     | '/'
@@ -354,15 +346,13 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/privacy'
-    | '/settings'
     | '/terms'
     | '/_auth/_public'
     | '/_auth/onboarding'
     | '/_authenticated/$'
     | '/_authenticated/_editor'
+    | '/_authenticated/settings'
     | '/oauth/consent'
-    | '/settings/profile'
-    | '/settings/'
     | '/_auth/_public/forgot-password'
     | '/_auth/_public/login'
     | '/_auth/_public/register'
@@ -373,13 +363,14 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/workspace'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
-    | '/settings/hosts/new'
+    | '/_authenticated/settings/profile'
     | '/_auth/onboarding/'
     | '/_authenticated/sessions/'
-    | '/settings/hosts/'
+    | '/_authenticated/settings/'
     | '/_authenticated/_editor/hosts/new'
     | '/_authenticated/_editor/projects/$projectId'
     | '/_authenticated/_editor/projects/new'
+    | '/_authenticated/settings/hosts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -388,7 +379,6 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   PrivacyRoute: typeof PrivacyRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
   TermsRoute: typeof TermsRoute
   OauthConsentRoute: typeof OauthConsentRoute
 }
@@ -430,13 +420,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -472,26 +455,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditorRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/oauth/consent': {
       id: '/oauth/consent'
       path: '/oauth/consent'
       fullPath: '/oauth/consent'
       preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/settings/': {
-      id: '/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof SettingsRoute
-    }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof SettingsRoute
     }
     '/_auth/_public/forgot-password': {
       id: '/_auth/_public/forgot-password'
@@ -577,19 +553,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/settings/hosts/': {
-      id: '/settings/hosts/'
-      path: '/hosts'
-      fullPath: '/settings/hosts/'
-      preLoaderRoute: typeof SettingsHostsIndexRouteImport
-      parentRoute: typeof SettingsRoute
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/settings/hosts/new': {
-      id: '/settings/hosts/new'
-      path: '/hosts/new'
-      fullPath: '/settings/hosts/new'
-      preLoaderRoute: typeof SettingsHostsNewRouteImport
-      parentRoute: typeof SettingsRoute
+    '/_authenticated/settings/profile': {
+      id: '/_authenticated/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/_editor/hosts/new': {
       id: '/_authenticated/_editor/hosts/new'
@@ -611,6 +587,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/new'
       preLoaderRoute: typeof AuthenticatedEditorProjectsNewRouteImport
       parentRoute: typeof AuthenticatedEditorRoute
+    }
+    '/_authenticated/settings/hosts/': {
+      id: '/_authenticated/settings/hosts/'
+      path: '/hosts'
+      fullPath: '/settings/hosts/'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
   }
 }
@@ -681,9 +664,27 @@ const AuthenticatedEditorRouteChildren: AuthenticatedEditorRouteChildren = {
 const AuthenticatedEditorRouteWithChildren =
   AuthenticatedEditorRoute._addFileChildren(AuthenticatedEditorRouteChildren)
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
   AuthenticatedEditorRoute: typeof AuthenticatedEditorRouteWithChildren
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -692,6 +693,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
   AuthenticatedEditorRoute: AuthenticatedEditorRouteWithChildren,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
@@ -701,31 +703,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface SettingsRouteChildren {
-  SettingsProfileRoute: typeof SettingsProfileRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
-  SettingsHostsNewRoute: typeof SettingsHostsNewRoute
-  SettingsHostsIndexRoute: typeof SettingsHostsIndexRoute
-}
-
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsProfileRoute: SettingsProfileRoute,
-  SettingsIndexRoute: SettingsIndexRoute,
-  SettingsHostsNewRoute: SettingsHostsNewRoute,
-  SettingsHostsIndexRoute: SettingsHostsIndexRoute,
-}
-
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   PrivacyRoute: PrivacyRoute,
-  SettingsRoute: SettingsRouteWithChildren,
   TermsRoute: TermsRoute,
   OauthConsentRoute: OauthConsentRoute,
 }

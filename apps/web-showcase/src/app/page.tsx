@@ -1075,7 +1075,7 @@ export default function Page() {
         id="settingsshell"
         title="SettingsShell"
         meta="settings-shell.tsx"
-        desc="The Settings pages' frame and nothing in it: the SettingsNav at 264px, then a main column on the canvas that scrolls on its own, holding a 760px content column with the export's padding and its sections 40px apart. The console mounts it once from the /settings layout route and each section fills the column."
+        desc="The Settings pages' frame and nothing in it. SettingsShell is the row: SettingsNav on the left, SettingsMain the column on the canvas that scrolls on its own, SettingsContent the measured column inside it with its sections spaced, SettingsTitle how a section opens — the h2 stop, a muted line, one action on the right. The console mounts the frame once from the /settings layout route and each section fills the column."
         code={`<SettingsShell><SettingsNav>…</SettingsNav><SettingsMain><SettingsContent><SettingsTitle title="Hosts" description="…" action={<Button>Add host</Button>} />…</SettingsContent></SettingsMain></SettingsShell>`}
       >
         <SettingsShellDemo />
