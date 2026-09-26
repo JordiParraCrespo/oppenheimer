@@ -45,17 +45,24 @@
   menu listing the other projects that hold the session's repository,
   and Delete, a confirm over the close that says whether to discard work
   that is not pushed.
-- The sidebar **is** the console's navigation, and version 1 has no
-  other destination: no nav rows, no chrome bar over the pane, no
-  command palette, and no settings or profile page — the account menu
-  holds appearance, language and log out, and nothing else. The console
-  is one screen: a sidebar beside the pane a session opens in. The
-  settings drawer above is a later slice, and a drawer is not a route;
-  until it arrives the machines a workspace owns are *listed* nowhere —
-  a new one is paired on the Add a host page below, or in onboarding,
-  and there is no unpair control yet.
+- The sidebar **is** the console's navigation: no nav rows, no chrome
+  bar over the pane, no command palette. The console is one screen: a
+  sidebar beside the pane a session opens in.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
+- **Settings** is the one destination beside the console, since the
+  2026-09-26 export drew it (`design/version1/Settings.dc.html`): the
+  account menu's Settings link opens `/settings`, its own chrome — a
+  plain sidebar with Back to console, then Account → Profile
+  (`/settings/profile`) and Workspace → Hosts (`/settings/hosts`, with
+  the count) — and a 760px column the sections fill. `/settings` itself
+  lands on Profile. Hosts lists the machines as cards with Add host on
+  the right, which is the Add a host page under it
+  (`/settings/hosts/new`, Done rather than Use this host). The rows each
+  section draws — picture, name, email, password on Profile; rename,
+  remove, the install command and the preflight on a host card — are
+  their own slices; the frame, the routes and the way back are built
+  (2026-09-26). This supersedes the settings *drawer* below.
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export; the project chip and its New project… page are
@@ -189,10 +196,10 @@
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
-- Settings drawer: hosts with the install command, the agent prompt,
-  an online dot, and the preflight result (git, tmux, claude). Not in
-  version 1 — the frames draw no way to open it, so it is designed here
-  and built with the slice that needs it.
+- ~~Settings drawer~~ Settings → Hosts (above): hosts with the install
+  command, the agent prompt, an online dot, and the preflight result
+  (git, tmux, claude). The 2026-09-26 export draws it as a page, not a
+  drawer; the card's rows are built with the slice that needs them.
   Accounts arrive with the accounts slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it

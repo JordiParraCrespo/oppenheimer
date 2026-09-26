@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "back": "Volver a la consola",
+    "account": "Cuenta",
+    "workspace": "Espacio de trabajo",
+    "profile": "Perfil",
+    "hosts": "Hosts"
+  },
+  "profile": {
+    "title": "Perfil",
+    "email": "Correo",
+    "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones"
+  },
+  "hosts": {
+    "title": "Hosts",
+    "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
+    "add": "Añadir host",
+    "empty": "Todavía no hay hosts",
+    "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
+    "online": "En línea",
+    "offline": "Sin conexión"
+  }
+}

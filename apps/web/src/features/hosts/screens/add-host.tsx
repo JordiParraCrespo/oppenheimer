@@ -61,8 +61,12 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen() {
+export function AddHostScreen({ from = 'new-session' }: { from?: 'new-session' | 'settings' }) {
   const { t } = useTranslation();
+  // Settings' Hosts page draws the same page with Hosts as its parent crumb
+  // and Done as its primary: nothing there is picking a machine for a session.
+  const settings = from === 'settings';
+  const back = settings ? { to: '/settings/hosts' as const } : { to: '/sessions/new' as const };
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
   const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
@@ -75,7 +79,7 @@ export function AddHostScreen() {
 
   return (
     <>
-      <EditorPageBack render={<Link to="/sessions/new" />}>{t('hosts.add.back')}</EditorPageBack>
+      <EditorPageBack render={<Link {...back} />}>{t('hosts.add.back')}</EditorPageBack>
 
       <PageHeader className="mb-7">
         <PageHeaderCrumbs>

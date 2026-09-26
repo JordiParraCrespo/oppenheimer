@@ -52,7 +52,8 @@ test('the account menu holds appearance, language and the way out — and nothin
   await expect(menu.getByRole('menuitem', { name: 'Language' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
   // Settings and Profile are not hidden behind a permission — they are gone.
-  await expect(menu.getByRole('menuitem', { name: 'Settings' })).toHaveCount(0);
+  // Settings is the menu's one link since the 2026-09-26 export drew it there.
+  await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'View profile' })).toHaveCount(0);
 
   await owner.api.dispose();

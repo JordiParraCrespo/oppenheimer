@@ -535,7 +535,9 @@
       "connect": {
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
-      }
+      },
+      "crumbHosts": "Hosts",
+      "done": "Done"
     }
   },
   "projects": {
@@ -602,6 +604,29 @@
       "confirm": "Delete project"
     }
   },
+  "settings": {
+    "nav": {
+      "back": "Back to console",
+      "account": "Account",
+      "workspace": "Workspace",
+      "profile": "Profile",
+      "hosts": "Hosts"
+    },
+    "profile": {
+      "title": "Profile",
+      "email": "Email",
+      "emailHint": "Used to sign in and for run notifications"
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
+      "add": "Add host",
+      "empty": "No hosts yet",
+      "emptyHint": "Add one and your sessions have somewhere to run.",
+      "online": "Online",
+      "offline": "Offline"
+    }
+  },
   "home": {
     "greeting": "Welcome back, {{name}}",
     "greetingFallback": "Welcome back",
@@ -645,7 +670,8 @@
     "commandTitle": "Command palette",
     "commandDescription": "Search for a page or an action.",
     "sidebarTitle": "Navigation",
-    "sidebarDescription": "Your sessions and your account."
+    "sidebarDescription": "Your sessions and your account.",
+    "settings": "Settings"
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",

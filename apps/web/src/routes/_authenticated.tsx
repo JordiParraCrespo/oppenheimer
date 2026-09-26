@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
-import { NAV } from '@/lib/nav';
+import { NAV, USER_MENU } from '@/lib/nav';
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -52,6 +52,7 @@ function AuthenticatedShell() {
   return (
     <AppShell
       nav={NAV}
+      userMenuLinks={USER_MENU}
       rail={<ConsoleRail />}
       sidebar={<SessionsSidebar />}
       // The brand row names the product, not the workspace — version 1 has one

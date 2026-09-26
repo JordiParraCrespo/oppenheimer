@@ -206,6 +206,11 @@ earlier note:
   (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
   evening export, and the second rail item reads Automations. A project
   needs a repository to be saved from the console (2026-09-26).
+- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  described a settings drawer. The 2026-09-26 export draws Settings as a
+  page of its own beside the console (`/settings`, Profile and Hosts, Add
+  a host under Hosts), opened from the account menu; the drawer is
+  superseded (2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,

@@ -27,6 +27,8 @@
     "connect": {
       "title": "Connect",
       "subtitle": "The runner registers itself with the hostname it reports."
-    }
+    },
+    "crumbHosts": "Hosts",
+    "done": "Done"
   }
 }

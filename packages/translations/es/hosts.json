@@ -27,6 +27,8 @@
     "connect": {
       "title": "Conectar",
       "subtitle": "El runner se registra con el nombre de máquina que reporta."
-    }
+    },
+    "crumbHosts": "Hosts",
+    "done": "Listo"
   }
 }

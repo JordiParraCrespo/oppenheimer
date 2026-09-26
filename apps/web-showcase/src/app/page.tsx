@@ -69,6 +69,7 @@ import {
   CalloutDemo,
   PillTabsDemo,
   EditorPageDemo,
+  SettingsShellDemo,
   PageHeaderDemo,
   RunHistoryDemo,
   RoutineTableDemo,
@@ -1069,6 +1070,16 @@ export default function Page() {
 
       {/* ── Settings ─────────────────────────────────────────────────────── */}
       <GroupHead>Settings</GroupHead>
+
+      <Spec
+        id="settingsshell"
+        title="SettingsShell"
+        meta="settings-shell.tsx"
+        desc="The Settings pages' frame and nothing in it: the SettingsNav at 264px, then a main column on the canvas that scrolls on its own, holding a 760px content column with the export's padding and its sections 40px apart. The console mounts it once from the /settings layout route and each section fills the column."
+        code={`<SettingsShell><SettingsNav>…</SettingsNav><SettingsMain><SettingsContent><SettingsTitle title="Hosts" description="…" action={<Button>Add host</Button>} />…</SettingsContent></SettingsMain></SettingsShell>`}
+      >
+        <SettingsShellDemo />
+      </Spec>
 
       <Spec
         id="settingsnav"
