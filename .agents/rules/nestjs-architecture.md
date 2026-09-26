@@ -74,7 +74,11 @@ single-responsibility is enforced (no god-services).
 - Commands extend `CommandBase`, queries extend `QueryBase` (both from `@oppenheimer/backend-ddd`).
 - Controllers dispatch through `CommandBus` / `QueryBus`; they never call handlers directly.
 - **Commands return only the aggregate id** (or nothing). To return a full DTO
-  after a write, dispatch a follow-up query and map the result.
+  after a write, dispatch a follow-up query and map the result. The one thing
+  that may ride beside the id is what no query can read back because it is
+  about this request, not the aggregate. For example, sessions return
+  `{ sessionId, hints }`, where `hints` is what the control plane could not do
+  just now (`host_offline`). The entity itself never comes back from a command.
 - Queries are read-only and may bypass the domain to read optimized models.
 - Import `CqrsModule` in the feature module and register handlers as providers.
 

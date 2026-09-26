@@ -1634,6 +1634,10 @@ export type ChangePasswordErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
@@ -2087,6 +2091,10 @@ export type Create2Errors = {
      * TOKEN_009 — Active token limit reached
      */
     409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type Create2Error = Create2Errors[keyof Create2Errors];
@@ -3890,7 +3898,7 @@ export type MintErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
+     * HOSTS_006 / RATE_001 — The caller already holds as many unspent pairing tokens as one person may, or hit the rate limit
      */
     429: ProblemDetailsDto;
     /**
@@ -3954,6 +3962,10 @@ export type RegisterErrors = {
      * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
      */
     401: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
     /**
      * HOSTS_004 — This deployment has no runner release configured
      */
@@ -5376,6 +5388,10 @@ export type CreateSessionErrors = {
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
@@ -5454,6 +5470,10 @@ export type IssueAttachTicketErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
      * SESSIONS_008 — A terminal ticket could not be issued
      */
     503: ProblemDetailsDto;
@@ -5515,6 +5535,10 @@ export type PasteSessionImageErrors = {
      * SESSIONS_013 — Not an image
      */
     415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
     /**
      * SESSIONS_016 — The host is offline
      */

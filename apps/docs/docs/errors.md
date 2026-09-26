@@ -161,6 +161,17 @@ wrong place.
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
 | `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
 
+## Rate limiting
+
+| Code                           | Title             | HTTP |
+| ------------------------------ | ----------------- | ---- |
+| `RATE_001` <a id="rate_001" /> | Too many requests | 429  |
+
+Any route can answer `RATE_001`: the limiter is global, and it buckets by the
+calling credential, then the user, then the IP. The response carries a
+`Retry-After` header, and the same number of seconds in the `retryAfter`
+member. Wait that long before retrying.
+
 ## Hosts
 
 A host is a machine someone paired with this control plane. It belongs to the

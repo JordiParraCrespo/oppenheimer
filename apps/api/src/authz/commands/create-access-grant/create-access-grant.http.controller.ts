@@ -13,7 +13,7 @@ import { CurrentAccessScope } from '../../decorators/current-access-scope.decora
 import type { AccessGrantEntity } from '../../domain/access-grant.entity';
 import { AccessGrantResponseDto } from '../../dtos/access-grant.response.dto';
 import { AccessScopeInterceptor } from '../../interceptors/access-scope.interceptor';
-import { FindAccessGrantsQuery } from '../../queries/find-access-grants/find-access-grants.query';
+import { FindAccessGrantQuery } from '../../queries/find-access-grant/find-access-grant.query';
 import { CreateAccessGrantCommand } from './create-access-grant.command';
 import { CreateAccessGrantRequest } from './create-access-grant.request.dto';
 
@@ -59,10 +59,9 @@ export class CreateAccessGrantHttpController {
     );
 
     // Commands return only the aggregate id; read the row back for the DTO.
-    const grants = await this.queryBus.execute<FindAccessGrantsQuery, AccessGrantEntity[]>(
-      new FindAccessGrantsQuery({ scope }),
+    const grant = await this.queryBus.execute<FindAccessGrantQuery, AccessGrantEntity>(
+      new FindAccessGrantQuery({ scope, grantId }),
     );
-    const created = grants.find((grant) => grant.id === grantId);
-    return this.mapper.toResponse(created ?? grants[0]);
+    return this.mapper.toResponse(grant);
   }
 }

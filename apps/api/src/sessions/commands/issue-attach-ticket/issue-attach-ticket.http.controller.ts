@@ -59,6 +59,7 @@ export class IssueAttachTicketHttpController {
     description: 'A terminal ticket could not be issued',
     code: 'SESSIONS_008',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async issue(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
