@@ -14,6 +14,12 @@ import type { ProjectEntity } from '../domain/project.entity';
 export type ProjectInsertOutcome = 'inserted' | 'origin-taken' | 'slug-taken';
 
 /**
+ * What inserting a project a person created came back with. There is no origin to
+ * lose on, so the only race is the directory name.
+ */
+export type NamedProjectInsertOutcome = 'inserted' | 'slug-taken';
+
+/**
  * What archiving came back with. `in-use` and `archived` both carry the project,
  * because the caller reports on it either way; `not-found` covers a project that is
  * missing and one in another workspace alike.
@@ -46,14 +52,22 @@ export interface ProjectRepositoryPort {
    */
   insertIfUnclaimed(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
   /**
-   * Rename a project that is still active, returning the stored row.
+   * Insert a project a person created, with its repositories, in one transaction.
+   * `slug-taken` when another project of the workspace holds the directory name.
+   */
+  insertNamed(entity: ProjectEntity): Promise<NamedProjectInsertOutcome>;
+  /**
+   * Write what a person may change — the name, the defaults, the instructions and
+   * the repositories as a whole set — to a project that is still active, returning
+   * the stored project.
    *
    * `None` when nothing was updated: the project is gone or archived. A targeted
    * `UPDATE … WHERE "archivedAt" IS NULL` rather than writing the whole
-   * aggregate back, so a rename that loaded before an archive cannot carry a
-   * stale `archivedAt` over it.
+   * aggregate back, so a save that loaded before an archive cannot carry a
+   * stale `archivedAt` over it; the repositories are replaced in the same
+   * transaction, and only when that update landed.
    */
-  renameIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
+  saveSettingsIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>>;
   /**
    * Retire a project, in one transaction with the question that decides it.
    *

@@ -39,4 +39,25 @@ export const ProjectErrors = {
     message: 'That project still has open sessions',
     httpStatus: 409,
   },
+  /**
+   * A repository list a project cannot hold: none at all, none offered by default,
+   * one repository twice, more than twenty, or a blank base branch. The detail
+   * names which. The shared schema refuses the same bodies earlier; this is the
+   * aggregate holding its invariants whatever the caller.
+   */
+  INVALID_REPOSITORIES: {
+    code: 'PROJECTS_006',
+    message: 'A project needs at least one repository, one of them a default',
+    httpStatus: 400,
+  },
+  /**
+   * Every candidate directory name was taken. The last candidate carries the
+   * project's own id, so this is a bug or a collision nobody should ever see, and
+   * it is reported rather than retried.
+   */
+  SLUG_UNAVAILABLE: {
+    code: 'PROJECTS_007',
+    message: 'No directory name is free for that project',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

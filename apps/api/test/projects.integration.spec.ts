@@ -5,6 +5,7 @@ import { AddProjectRolePermissions1789000100000 } from '../src/migrations/178900
 import { ProjectLookupResolver } from '../src/projects/application/project-lookup.resolver';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
+import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
 import { ProjectEntity } from '../src/projects/domain/project.entity';
 import { ProjectMapper } from '../src/projects/project.mapper';
 import { runAllMigrations } from './run-migrations';
@@ -27,6 +28,25 @@ describe('projects: race-safe auto-creation (integration)', () => {
   let resolver: ProjectLookupResolver;
   let repository: ProjectRepository;
   let organizationId: string;
+  let installationId: string;
+
+  /** A repository as GitHub would describe it, reached through this workspace's installation. */
+  const origin = (githubRepoId: string, owner: string, name: string) => ({
+    githubRepoId,
+    owner,
+    name,
+    installationId,
+    fullName: `${owner}/${name}`,
+    defaultBranch: 'main',
+  });
+
+  const held = (githubRepoId: string, isDefault = true) => ({
+    installationId,
+    githubRepoId,
+    repositoryFullName: `acme/repo-${githubRepoId}`,
+    baseBranch: 'main',
+    isDefault,
+  });
 
   const scope = () => ({
     userId: randomUUID(),
@@ -69,7 +89,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
       // No Nest container here on purpose: the races live in the repository and
       // the resolver, and booting the application would only add Redis and
       // Better Auth to the set of things that can make this suite red.
-      entities: [ProjectOrmEntity],
+      entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity],
       synchronize: false,
     });
     await dataSource.initialize();
@@ -94,15 +114,33 @@ describe('projects: race-safe auto-creation (integration)', () => {
       `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
       [organizationId, 'Acme', `acme-${organizationId.slice(0, 8)}`],
     );
+    installationId = await insertInstallation(organizationId);
   });
 
+  async function insertInstallation(org: string): Promise<string> {
+    const id = randomUUID();
+    const [user] = await dataSource.query(
+      `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+       VALUES ($1, 'Ana', $2, 'Ana', 'Díaz') RETURNING "id"`,
+      [randomUUID(), `${randomUUID()}@example.com`],
+    );
+    await dataSource.query(
+      `INSERT INTO "github_installation"
+         ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
+          "repositorySelection", "installedByUserId")
+       VALUES ($1, $2, $3, 'acme', 'Organization', 'all', $4)`,
+      [id, org, Math.floor(Math.random() * 1_000_000_000), user.id],
+    );
+    return id;
+  }
+
   it('resolves two concurrent first sessions on one repository to a single project', async () => {
-    const origin = { githubRepoId: '4242', owner: 'acme', name: 'xrp-mobile' };
+    const repository = origin('4242', 'acme', 'xrp-mobile');
     const caller = scope();
 
     const [left, right] = await Promise.all([
-      resolver.ensureForRepository(caller, origin),
-      resolver.ensureForRepository(caller, origin),
+      resolver.ensureForRepository(caller, repository),
+      resolver.ensureForRepository(caller, repository),
     ]);
 
     expect(left.id).toBe(right.id);
@@ -117,16 +155,12 @@ describe('projects: race-safe auto-creation (integration)', () => {
     // The race a slug-keyed conflict target cannot win: both callers lose the
     // plain name to a different repository, both derive `<owner>--<repo>`, and
     // only the unique origin stops both of them landing.
-    await resolver.ensureForRepository(scope(), {
-      githubRepoId: '1',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
+    await resolver.ensureForRepository(scope(), origin('1', 'acme', 'xrp-mobile'));
 
-    const origin = { githubRepoId: '2', owner: 'other', name: 'xrp-mobile' };
+    const repository = origin('2', 'other', 'xrp-mobile');
     const [left, right] = await Promise.all([
-      resolver.ensureForRepository(scope(), origin),
-      resolver.ensureForRepository(scope(), origin),
+      resolver.ensureForRepository(scope(), repository),
+      resolver.ensureForRepository(scope(), repository),
     ]);
 
     expect(left.id).toBe(right.id);
@@ -145,18 +179,21 @@ describe('projects: race-safe auto-creation (integration)', () => {
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
       originGithubRepoId: '1',
+      repositories: [held('1')],
     });
     const sameSlug = ProjectEntity.createNew({
       organizationId,
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
       originGithubRepoId: '2',
+      repositories: [held('2')],
     });
     const sameOrigin = ProjectEntity.createNew({
       organizationId,
       name: 'xrp-mobile',
       slug: 'acme--xrp-mobile',
       originGithubRepoId: '1',
+      repositories: [held('1')],
     });
 
     expect(await repository.insertIfUnclaimed(first)).toBe('inserted');
@@ -168,44 +205,30 @@ describe('projects: race-safe auto-creation (integration)', () => {
   it('keeps the same repository’s project across a GitHub rename', async () => {
     const caller = scope();
 
-    const first = await resolver.ensureForRepository(caller, {
-      githubRepoId: '7',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
-    const again = await resolver.ensureForRepository(caller, {
-      githubRepoId: '7',
-      owner: 'acme',
-      name: 'xrp-wallet',
-    });
+    const first = await resolver.ensureForRepository(caller, origin('7', 'acme', 'xrp-mobile'));
+    const again = await resolver.ensureForRepository(caller, origin('7', 'acme', 'xrp-wallet'));
 
     expect(again.id).toBe(first.id);
   });
 
   it('scopes every read and every rename to the workspace', async () => {
     const caller = scope();
-    const project = await resolver.ensureForRepository(caller, {
-      githubRepoId: '11',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
+    const project = await resolver.ensureForRepository(caller, origin('11', 'acme', 'xrp-mobile'));
 
     const other = { ...caller, organizationId: randomUUID() };
     expect(await repository.findAll(other)).toEqual([]);
     expect((await repository.findOneById(other, project.id)).isNone()).toBe(true);
 
     project.rename('XRP Mobile');
-    expect((await repository.renameIfActive(other, project)).isNone()).toBe(true);
-    expect((await repository.renameIfActive(caller, project)).unwrap().name).toBe('XRP Mobile');
+    expect((await repository.saveSettingsIfActive(other, project)).isNone()).toBe(true);
+    expect((await repository.saveSettingsIfActive(caller, project)).unwrap().name).toBe(
+      'XRP Mobile',
+    );
   });
 
   it('never lets a rename revive a project that was retired meanwhile', async () => {
     const caller = scope();
-    const project = await resolver.ensureForRepository(caller, {
-      githubRepoId: '12',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
+    const project = await resolver.ensureForRepository(caller, origin('12', 'acme', 'xrp-mobile'));
 
     // The column the slice that owns sessions will write. The rename below loaded
     // before it was set, which is exactly the stale snapshot a whole-aggregate
@@ -215,7 +238,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
     ]);
     project.rename('XRP Mobile');
 
-    expect((await repository.renameIfActive(caller, project)).isNone()).toBe(true);
+    expect((await repository.saveSettingsIfActive(caller, project)).isNone()).toBe(true);
     const [row] = await dataSource.query(
       `SELECT "name", "archivedAt" FROM "project" WHERE "id" = $1`,
       [project.id],
@@ -224,6 +247,128 @@ describe('projects: race-safe auto-creation (integration)', () => {
     expect(row.name).toBe('xrp-mobile');
     // And the listing leaves a retired project out.
     expect(await repository.findAll(caller)).toEqual([]);
+  });
+
+  it('gives a project the API made for a repository that repository as its default', async () => {
+    const project = await resolver.ensureForRepository(scope(), origin('21', 'acme', 'atlas'));
+
+    const [stored] = await repository.findAll(scope());
+    expect(stored.id).toBe(project.id);
+    expect(stored.repositories).toEqual([
+      {
+        installationId,
+        githubRepoId: '21',
+        repositoryFullName: 'acme/atlas',
+        baseBranch: 'main',
+        isDefault: true,
+      },
+    ]);
+  });
+
+  it('creates a named project with its repositories, in order, and its defaults', async () => {
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client sites',
+      slug: 'client-sites',
+      repositories: [held('31'), held('32', false)],
+      defaultAgent: 'codex',
+      instructions: 'Run the tests.',
+    });
+
+    expect(await repository.insertNamed(project)).toBe('inserted');
+
+    const stored = (await repository.findOneById(scope(), project.id)).unwrap();
+    expect(stored.repositories.map((held) => held.githubRepoId)).toEqual(['31', '32']);
+    expect(stored.repositories.map((held) => held.isDefault)).toEqual([true, false]);
+    expect(stored.defaultAgent).toBe('codex');
+    expect(stored.instructions).toBe('Run the tests.');
+    expect(stored.originGithubRepoId).toBeNull();
+  });
+
+  it('reports a taken directory name, and leaves no repository rows behind', async () => {
+    const first = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client sites',
+      slug: 'client-sites',
+      repositories: [held('41')],
+    });
+    const second = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client Sites',
+      slug: 'client-sites',
+      repositories: [held('42')],
+    });
+
+    expect(await repository.insertNamed(first)).toBe('inserted');
+    expect(await repository.insertNamed(second)).toBe('slug-taken');
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int FROM "project_repository" WHERE "projectId" = $1`,
+      [second.id],
+    );
+    expect(count).toBe(0);
+  });
+
+  it('lets two projects hold the same repository', async () => {
+    for (const slug of ['one', 'two']) {
+      const project = ProjectEntity.createNew({
+        organizationId,
+        name: slug,
+        slug,
+        repositories: [held('51')],
+      });
+      expect(await repository.insertNamed(project)).toBe('inserted');
+    }
+
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int FROM "project_repository"
+        WHERE "organizationId" = $1 AND "githubRepoId" = '51'`,
+      [organizationId],
+    );
+    expect(count).toBe(2);
+  });
+
+  it('replaces the repository set on save, and keeps it on an archived project', async () => {
+    const caller = scope();
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Atlas',
+      slug: 'atlas',
+      repositories: [held('61'), held('62', false)],
+    });
+    await repository.insertNamed(project);
+
+    project.configure({ repositories: [held('63')], defaultHostId: null, instructions: 'x' });
+    const saved = (await repository.saveSettingsIfActive(caller, project)).unwrap();
+
+    expect(saved.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
+    expect(saved.instructions).toBe('x');
+
+    const archived = await repository.archiveIfUnused(caller, project.id, async () => false);
+    expect(archived.result).toBe('archived');
+    if (archived.result !== 'not-found') {
+      expect(archived.project.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
+    }
+  });
+
+  it('refuses a project holding another workspace’s installation, by constraint', async () => {
+    const otherOrganization = randomUUID();
+    await dataSource.query(
+      `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
+      [otherOrganization, 'Other', `other-${otherOrganization.slice(0, 8)}`],
+    );
+    const foreign = await insertInstallation(otherOrganization);
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Stolen',
+      slug: 'stolen',
+      repositories: [{ ...held('71'), installationId: foreign }],
+    });
+
+    await expect(repository.insertNamed(project)).rejects.toThrow(
+      /FK_project_repository_installation|foreign key/i,
+    );
+    // The transaction rolled the project back with its repositories.
+    expect((await repository.findOneById(scope(), project.id)).isNone()).toBe(true);
   });
 
   it('grants a workspace owner its projects, and bumps the cached role version', async () => {

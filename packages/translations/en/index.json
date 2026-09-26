@@ -125,6 +125,8 @@
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
       "PROJECTS_004": "That project is archived, so no new work can go in it.",
       "PROJECTS_005": "That project still has sessions nobody has closed.",
+      "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
+      "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
       "SESSIONS_001": "We could not find that session.",
       "SESSIONS_002": "Choose a workspace before working with sessions.",
       "SESSIONS_003": "We could not find that checkout on this session.",
@@ -166,6 +168,7 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
+      "SESSIONS_018": "That project doesn't include this session's repositories. Add them to the project first, or pick another one.",
       "HOSTS_007": "No image is waiting for that command."
     },
     "notFound": {

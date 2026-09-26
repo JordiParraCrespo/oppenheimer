@@ -43,6 +43,7 @@ export class WorkSessionMapper
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.projectId = entity.projectId;
+    record.homeProjectId = entity.homeProjectId;
     record.createdByUserId = entity.createdByUserId;
     record.hostId = entity.hostId;
     record.name = entity.name;
@@ -77,7 +78,7 @@ export class WorkSessionMapper
       updatedAt: record.updatedAt,
       props: {
         organizationId: record.organizationId,
-        projectId: record.projectId,
+        homeProjectId: record.homeProjectId,
         createdByUserId: record.createdByUserId,
         hostId: record.hostId,
         slug: record.slug,
@@ -85,6 +86,8 @@ export class WorkSessionMapper
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         ...this.foldOf(record),
+        // After the fold: on a row the listed project is never null.
+        projectId: record.projectId,
       },
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
@@ -117,6 +120,7 @@ export class WorkSessionMapper
         permission: launchPermissionFor(record.agent, record.launchPermission),
         effort: record.launchEffort,
       },
+      projectId: record.projectId,
     };
   }
 
@@ -291,6 +295,7 @@ export class WorkSessionMapper
     dto.id = entity.id;
     dto.organizationId = entity.organizationId;
     dto.projectId = entity.projectId;
+    dto.homeProjectId = entity.homeProjectId;
     dto.hostId = entity.hostId;
     dto.name = entity.name;
     dto.slug = entity.slug;

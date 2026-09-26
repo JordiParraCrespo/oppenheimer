@@ -10,11 +10,10 @@ import { defineResource } from '@oppenheimer/backend-authz';
  * query is not narrowed further. Adding a dimension later means adding a column,
  * which is the point of declaring the mapping here rather than in each query.
  *
- * Two actions, and only two: a project is created by the first session that
- * needs one, through a port inside the process, so no route and no credential
- * exercises a `create` — declaring one would put a permission in every role
- * builder and token scope that nobody can use. `delete` arrives with archiving,
- * in the slice that can answer whether a project still has work in it.
+ * Three actions. A person creates projects (`POST /projects`), and the API also
+ * creates one for a repository when a session names no project
+ * (`product/versions/mvp/12-projects.md`). Archiving is `update`, because nothing
+ * is deleted: the row outlives the project so its slug is never reissued.
  */
 export const ProjectResource = defineResource({
   subject: 'Project',
@@ -23,7 +22,8 @@ export const ProjectResource = defineResource({
 
   actions: [
     { name: 'read', label: 'View projects' },
-    { name: 'update', label: 'Rename projects' },
+    { name: 'create', label: 'Create projects' },
+    { name: 'update', label: 'Change and archive projects' },
   ],
 
   /** The columns each scope dimension filters on. */

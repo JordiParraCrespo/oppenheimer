@@ -62,6 +62,25 @@ export class ProjectOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   archivedAt!: Date | null;
 
+  /** Who created the project on purpose; null for one the API created for a repository. */
+  @Column({ type: 'uuid', nullable: true })
+  createdByUserId!: string | null;
+
+  /**
+   * The host a new session is offered. A suggestion, never a grant: creating a
+   * session still loads the host through the caller's own-or-grant scope.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  defaultHostId!: string | null;
+
+  /** The agent a new session is offered, from the closed catalog. */
+  @Column({ type: 'varchar', nullable: true })
+  defaultAgent!: string | null;
+
+  /** Handed to every new session's agent. Empty is none. */
+  @Column({ type: 'text', default: '' })
+  instructions!: string;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

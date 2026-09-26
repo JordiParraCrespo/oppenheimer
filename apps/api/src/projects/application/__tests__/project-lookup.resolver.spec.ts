@@ -55,8 +55,17 @@ describe('ProjectLookupResolver', () => {
     resolver = new ProjectLookupResolver(projects.port as ProjectRepositoryPort);
   });
 
+  const origin = (owner: string, name: string, githubRepoId: string) => ({
+    githubRepoId,
+    owner,
+    name,
+    installationId: 'installation-1',
+    fullName: `${owner}/${name}`,
+    defaultBranch: 'main',
+  });
+
   const ensure = (owner: string, name: string, githubRepoId: string) =>
-    resolver.ensureForRepository(scope(), { githubRepoId, owner, name });
+    resolver.ensureForRepository(scope(), origin(owner, name, githubRepoId));
 
   it('creates the project on a repository’s first session, named after it', async () => {
     const project = await ensure('acme', 'xrp-mobile', '42');
@@ -66,6 +75,17 @@ describe('ProjectLookupResolver', () => {
     // The display name is GitHub's, not the sanitised directory name.
     expect(project.name).toBe('xrp-mobile');
     expect(project.originGithubRepoId).toBe('42');
+    // It holds the repository it was made for, as its one default, on the
+    // repository's own default branch.
+    expect(project.repositories).toEqual([
+      {
+        installationId: 'installation-1',
+        githubRepoId: '42',
+        repositoryFullName: 'acme/xrp-mobile',
+        baseBranch: 'main',
+        isDefault: true,
+      },
+    ]);
   });
 
   it('keeps GitHub’s spelling as the display name', async () => {
@@ -144,11 +164,10 @@ describe('ProjectLookupResolver', () => {
 
   it('refuses when the caller has no active workspace', async () => {
     await expect(
-      resolver.ensureForRepository(scope({ organizationId: null }), {
-        githubRepoId: '42',
-        owner: 'acme',
-        name: 'xrp-mobile',
-      }),
+      resolver.ensureForRepository(
+        scope({ organizationId: null }),
+        origin('acme', 'xrp-mobile', '42'),
+      ),
     ).rejects.toMatchObject({ code: 'PROJECTS_002' });
   });
 

@@ -2,16 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
-import { Repository } from 'typeorm';
+import { type EntityManager, In, Repository } from 'typeorm';
 import type { ProjectEntity } from '../domain/project.entity';
 import { ProjectMapper } from '../project.mapper';
 import { ProjectResource } from '../projects.resource';
 import { ProjectOrmEntity } from './project.orm-entity';
 import type {
   ArchiveOutcome,
+  NamedProjectInsertOutcome,
   ProjectInsertOutcome,
   ProjectRepositoryPort,
 } from './project.repository.port';
+import { ProjectRepositoryOrmEntity } from './project-repository.orm-entity';
 
 /** Postgres' unique-violation class, and the constraint that guards a directory name. */
 const UNIQUE_VIOLATION = '23505';
@@ -56,25 +58,58 @@ export class ProjectRepository
     const record = this.mapper.toPersistence(entity);
     const table = this.repository.metadata.tableName;
     try {
-      const inserted: { id: string }[] = await this.repository.manager.query(
-        `INSERT INTO "${table}" ("id", "organizationId", "name", "slug", "originGithubRepoId")
-         VALUES ($1, $2, $3, $4, $5)
-         -- The index is partial, so its predicate has to be repeated here or
-         -- Postgres cannot infer which constraint is meant.
-         ON CONFLICT ("organizationId", "originGithubRepoId")
-           WHERE "originGithubRepoId" IS NOT NULL
-           DO NOTHING
-         RETURNING "id"`,
-        [record.id, record.organizationId, record.name, record.slug, record.originGithubRepoId],
-      );
-      return inserted.length > 0 ? 'inserted' : 'origin-taken';
+      return await this.repository.manager.transaction(async (manager) => {
+        const inserted: { id: string }[] = await manager.query(
+          `INSERT INTO "${table}"
+             ("id", "organizationId", "name", "slug", "originGithubRepoId",
+              "createdByUserId", "defaultHostId", "defaultAgent", "instructions")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           -- The index is partial, so its predicate has to be repeated here or
+           -- Postgres cannot infer which constraint is meant.
+           ON CONFLICT ("organizationId", "originGithubRepoId")
+             WHERE "originGithubRepoId" IS NOT NULL
+             DO NOTHING
+           RETURNING "id"`,
+          [
+            record.id,
+            record.organizationId,
+            record.name,
+            record.slug,
+            record.originGithubRepoId,
+            record.createdByUserId,
+            record.defaultHostId,
+            record.defaultAgent,
+            record.instructions,
+          ],
+        );
+        if (inserted.length === 0) return 'origin-taken' as const;
+        await this.insertRepositories(manager, entity);
+        return 'inserted' as const;
+      });
+    } catch (error) {
+      // Outside the transaction: the violation aborted it, and it has rolled back.
+      if (isSlugConflict(error)) return 'slug-taken';
+      throw error;
+    }
+  }
+
+  async insertNamed(entity: ProjectEntity): Promise<NamedProjectInsertOutcome> {
+    try {
+      await this.repository.manager.transaction(async (manager) => {
+        await manager.getRepository(ProjectOrmEntity).insert(this.mapper.toPersistence(entity));
+        await this.insertRepositories(manager, entity);
+      });
+      return 'inserted';
     } catch (error) {
       if (isSlugConflict(error)) return 'slug-taken';
       throw error;
     }
   }
 
-  async renameIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>> {
+  async saveSettingsIfActive(
+    scope: AccessScope,
+    entity: ProjectEntity,
+  ): Promise<Option<ProjectEntity>> {
     // The scope's own predicate, reused verbatim as a sub-query: an UPDATE cannot
     // carry the kernel's clauses directly, and rewriting them here by hand is how
     // a write ends up scoped differently from the reads beside it.
@@ -82,17 +117,38 @@ export class ProjectRepository
       .select(`${this.alias}.id`)
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
-    // TypeORM's Postgres driver returns `[rows, affectedCount]` for an UPDATE.
-    const [updated]: [ProjectOrmEntity[], number] = await this.repository.manager.query(
-      `UPDATE "${table}"
-          SET "name" = $${parameters.length + 1}, "updatedAt" = now()
-        WHERE "id" = $${parameters.length + 2}
-          AND "archivedAt" IS NULL
-          AND "id" IN (${reachable})
-        RETURNING *`,
-      [...parameters, entity.name, entity.id],
-    );
-    return updated.length > 0 ? Some(this.mapper.toDomain(updated[0])) : None;
+    const at = parameters.length;
+
+    return this.repository.manager.transaction(async (manager) => {
+      // TypeORM's Postgres driver returns `[rows, affectedCount]` for an UPDATE.
+      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
+        `UPDATE "${table}"
+            SET "name" = $${at + 1},
+                "defaultHostId" = $${at + 2},
+                "defaultAgent" = $${at + 3},
+                "instructions" = $${at + 4},
+                "updatedAt" = now()
+          WHERE "id" = $${at + 5}
+            AND "archivedAt" IS NULL
+            AND "id" IN (${reachable})
+          RETURNING *`,
+        [
+          ...parameters,
+          entity.name,
+          entity.defaultHostId,
+          entity.defaultAgent,
+          entity.instructions,
+          entity.id,
+        ],
+      );
+      if (updated.length === 0) return None;
+
+      // The whole set, replaced: a project's repositories are configuration, and
+      // what a session checked out lives on the session's own rows.
+      await manager.getRepository(ProjectRepositoryOrmEntity).delete({ projectId: entity.id });
+      const repositories = await this.insertRepositories(manager, entity);
+      return Some(this.mapper.toDomain(updated[0], repositories));
+    });
   }
 
   /**
@@ -127,7 +183,8 @@ export class ProjectRepository
       );
       if (locked.length === 0) return { result: 'not-found' as const };
 
-      const project = this.mapper.toDomain(locked[0]);
+      const repositories = await this.repositoriesOf([projectId], manager);
+      const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
       // Already retired: nothing to ask and nothing to write, and a retried request
       // after a lost response is not a conflict.
       if (project.isArchived) return { result: 'archived' as const, project };
@@ -141,7 +198,10 @@ export class ProjectRepository
         RETURNING *`,
         [projectId, project.archivedAt],
       );
-      return { result: 'archived' as const, project: this.mapper.toDomain(updated[0]) };
+      return {
+        result: 'archived' as const,
+        project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
+      };
     });
   }
 
@@ -152,19 +212,60 @@ export class ProjectRepository
     const query = this.scopedQuery(scope).orderBy('project.createdAt', 'DESC');
     if (!options.includeArchived) query.andWhere('project.archivedAt IS NULL');
     const records = await query.getMany();
-    return records.map((record) => this.mapper.toDomain(record));
+    const repositories = await this.repositoriesOf(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, repositories.get(record.id)));
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>> {
     const record = await this.scopedQuery(scope).andWhere('project.id = :id', { id }).getOne();
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    return this.withRepositories(record);
   }
 
   async findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>> {
     const record = await this.scopedQuery(scope)
       .andWhere('project.originGithubRepoId = :githubRepoId', { githubRepoId })
       .getOne();
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    return this.withRepositories(record);
+  }
+
+  /** One project and its repositories, read by the id the scoped read verified. */
+  private async withRepositories(record: ProjectOrmEntity | null): Promise<Option<ProjectEntity>> {
+    if (!record) return None;
+    const repositories = await this.repositoriesOf([record.id]);
+    return Some(this.mapper.toDomain(record, repositories.get(record.id)));
+  }
+
+  /**
+   * The child rows of projects the caller already reached through the scoped
+   * read. Never called with an id that did not come from one: the child table
+   * declares no resource and carries no scoping of its own.
+   */
+  private async repositoriesOf(
+    projectIds: readonly string[],
+    manager: EntityManager = this.repository.manager,
+  ): Promise<Map<string, ProjectRepositoryOrmEntity[]>> {
+    const byProject = new Map<string, ProjectRepositoryOrmEntity[]>();
+    if (projectIds.length === 0) return byProject;
+    const rows = await manager.getRepository(ProjectRepositoryOrmEntity).find({
+      where: { projectId: In([...projectIds]) },
+      order: { position: 'ASC' },
+    });
+    for (const row of rows) {
+      const list = byProject.get(row.projectId) ?? [];
+      list.push(row);
+      byProject.set(row.projectId, list);
+    }
+    return byProject;
+  }
+
+  private async insertRepositories(
+    manager: EntityManager,
+    entity: ProjectEntity,
+  ): Promise<ProjectRepositoryOrmEntity[]> {
+    const records = this.mapper.toRepositoryRecords(entity);
+    if (records.length === 0) return [];
+    await manager.getRepository(ProjectRepositoryOrmEntity).insert(records);
+    return records;
   }
 }
 

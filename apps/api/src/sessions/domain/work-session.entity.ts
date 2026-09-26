@@ -28,7 +28,13 @@ import type { WorkSessionEventEntity } from './work-session-event.entity';
 
 export interface WorkSessionProps extends SessionFold {
   organizationId: string;
+  /** Where the session is listed. Folded from `session.moved`; never null on a row. */
   projectId: string;
+  /**
+   * The project whose directory holds the session's tree. Set at create and never
+   * changed: every path and branch is built from it, so a move touches no disk.
+   */
+  homeProjectId: string;
   createdByUserId: string;
   /**
    * The host the work runs on. It is the one reference in the schema a handler
@@ -72,7 +78,7 @@ export interface CreateWorkSessionProps {
  * out of it.
  *
  * Rows are never hard-deleted. Closing records `session.closed`, the state folds
- * to `resolved` and the row stays for ever: `uq (projectId, slug)` is the
+ * to `resolved` and the row stays for ever: `uq (homeProjectId, slug)` is the
  * tombstone that stops a new session inheriting a retired session's directory
  * name, and therefore a stranger's agent conversation state.
  */
@@ -101,6 +107,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         },
         organizationId: props.organizationId,
         projectId: props.projectId,
+        homeProjectId: props.projectId,
         createdByUserId: props.createdByUserId,
         hostId: props.hostId,
         slug: props.slug,
@@ -132,6 +139,10 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get projectId(): string {
     return this.props.projectId;
+  }
+
+  get homeProjectId(): string {
+    return this.props.homeProjectId;
   }
 
   get createdByUserId(): string {
@@ -249,6 +260,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       reportHash: this.props.reportHash,
       ackedReportHash: this.props.ackedReportHash,
       launch: this.props.launch,
+      projectId: this.props.projectId,
     };
   }
 
@@ -275,6 +287,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.reportHash = fold.reportHash;
     this.props.ackedReportHash = fold.ackedReportHash;
     this.props.launch = fold.launch;
+    this.props.projectId = fold.projectId ?? this.props.projectId;
   }
 
   /**

@@ -157,4 +157,14 @@ export const SessionErrors = {
     message: 'The session’s host cannot take images until its runner is updated',
     httpStatus: 409,
   },
+  /**
+   * A session can only be moved to a project that holds every repository it has
+   * checked out (`product/versions/mvp/12-projects.md`). Provisional, with the
+   * rest of how sessions are organized; the detail names what is missing.
+   */
+  PROJECT_EXCLUDES_REPOSITORY: {
+    code: 'SESSIONS_018',
+    message: 'That project does not include this session’s repositories',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

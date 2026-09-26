@@ -411,3 +411,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   not hold. **How sessions are created and organized is deferred** to its
   own design; 12 keeps only what the backend must hold for any answer and
   marks the move rule and the list filters provisional.
+- 2026-09-26: **the projects backend is built** (12, steps 1–4): `POST
+  /projects`, the widened `PATCH`, `project_repository`, `homeProjectId` and
+  `POST /sessions/{id}/move`. Two details settled differently from the
+  draft: a project reports its default host as stored rather than filtering
+  it per reader (a join for nothing in a personal workspace), and the
+  instructions snapshot on the session waits for the runner step that reads
+  it, so no column lands without a reader.

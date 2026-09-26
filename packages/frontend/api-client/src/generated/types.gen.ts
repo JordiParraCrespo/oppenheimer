@@ -1093,27 +1093,85 @@ export type ToggleFeatureFlagRequest = {
     comment?: string;
 };
 
+export type ProjectRepositoryResponseDto = {
+    /**
+     * Our `github_installation` row, not GitHub’s number.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string because the column is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/repo` as GitHub spelled it when the project was last saved. Display only.
+     */
+    repositoryFullName: string;
+    /**
+     * What a session’s branch is created from.
+     */
+    baseBranch: string;
+    /**
+     * Offered to a new session. The API never applies it.
+     */
+    isDefault: boolean;
+};
+
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
     /**
-     * The GitHub repository’s name, as GitHub spells it. Display only.
+     * Display name. Free to change; the slug does not follow it.
      */
     name: string;
     /**
-     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
+     * The project’s directory name on every host that holds it. Immutable: derived once, from the name a person gave it or from the repository the API created it for.
      */
     slug: string;
     /**
-     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
+     * Set only on a project the API created for a repository (a session that named no project): GitHub’s id for that repository, as a string because the column is a bigint.
      */
     originGithubRepoId?: string | null;
+    repositories: Array<ProjectRepositoryResponseDto>;
+    /**
+     * The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it.
+     */
+    defaultHostId?: string | null;
+    /**
+     * The agent a new session is offered, from the coding-agent catalog.
+     */
+    defaultAgent?: string | null;
+    /**
+     * Handed to every new session’s agent. Empty is none.
+     */
+    instructions: string;
     createdAt: string;
     updatedAt: string;
 };
 
-export type UpdateProjectRequest = {
+export type CreateProjectRequest = {
     name: string;
+    repositories: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch: string;
+        isDefault: boolean;
+    }>;
+    defaultHostId?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    instructions?: string;
+};
+
+export type UpdateProjectRequest = {
+    name?: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        baseBranch: string;
+        isDefault: boolean;
+    }>;
+    defaultHostId?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    instructions?: string;
 };
 
 export type SessionLaunchResponseDto = {
@@ -1170,7 +1228,14 @@ export type SessionCheckoutResponseDto = {
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
+    /**
+     * The project the session is listed under.
+     */
     projectId: string;
+    /**
+     * The project whose directory holds the session’s worktrees. Set at create and never changed, so moving a session to another project moves nothing on disk.
+     */
+    homeProjectId: string;
     hostId: string;
     /**
      * Display name. It starts equal to the slug, then the first prompt names it.
@@ -1319,6 +1384,10 @@ export type AddCheckoutRequest = {
 
 export type RenameSessionRequest = {
     name: string;
+};
+
+export type MoveSessionRequest = {
+    projectId: string;
 };
 
 export type CapabilitiesResponseDto = {
@@ -5089,6 +5158,40 @@ export type ListProjectsResponses = {
 
 export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
 
+export type CreateProjectData = {
+    body: CreateProjectRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/projects';
+};
+
+export type CreateProjectErrors = {
+    /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
+
+export type CreateProjectResponses = {
+    201: ProjectResponseDto;
+};
+
+export type CreateProjectResponse = CreateProjectResponses[keyof CreateProjectResponses];
+
 export type ArchiveProjectData = {
     body?: never;
     path: {
@@ -5172,6 +5275,10 @@ export type UpdateProjectData = {
 
 export type UpdateProjectErrors = {
     /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -5197,6 +5304,15 @@ export type ListSessionsData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Default `recent`
+         */
+        sort?: 'recent' | 'oldest' | 'name';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        /**
+         * A live checkout of it
+         */
+        githubRepoId?: number;
         /**
          * The stored lifecycle, not the derived group.
          */
@@ -5685,6 +5801,46 @@ export type RenameSessionResponses = {
 };
 
 export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
+
+export type MoveSessionData = {
+    body: MoveSessionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/move';
+};
+
+export type MoveSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_018 — That project does not include this session’s repositories
+     *
+     * SESSIONS_006 — That project is archived
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type MoveSessionError = MoveSessionErrors[keyof MoveSessionErrors];
+
+export type MoveSessionResponses = {
+    201: SessionResponseDto;
+};
+
+export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
 
 export type CheckData = {
     body?: never;

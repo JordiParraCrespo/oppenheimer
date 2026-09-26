@@ -106,8 +106,15 @@ export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   organizationId!: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'The project the session is listed under.' })
   projectId!: string;
+
+  @ApiProperty({
+    format: 'uuid',
+    description:
+      'The project whose directory holds the session’s worktrees. Set at create and never changed, so moving a session to another project moves nothing on disk.',
+  })
+  homeProjectId!: string;
 
   @ApiProperty({ format: 'uuid' })
   hostId!: string;

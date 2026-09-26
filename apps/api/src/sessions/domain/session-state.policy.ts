@@ -86,6 +86,11 @@ export const SESSION_EVENT_KINDS = {
   CLOSED: 'session.closed',
   /** The display name changed — by a person, or by the namer reading the first prompt. */
   NAMED: 'session.named',
+  /**
+   * The session is listed under another project. Payload `{ from, to }`. Nothing
+   * moves on disk: the tree stays in its home project's directory.
+   */
+  MOVED: 'session.moved',
   /** A repository was added to a session. */
   CHECKOUT_ADDED: 'session.checkout_added',
   /** A checkout was retired. Payload `{ checkoutId }`. The row stays; `removedAt` retires it. */
@@ -167,6 +172,11 @@ export interface SessionFold {
   ackedReportHash: string | null;
   /** The model, permission level and effort this session was launched with. */
   launch: SessionLaunchFold;
+  /**
+   * The project the session is listed under, once a move has said so. Null in a
+   * fold that has seen no move, where the row's own `projectId` stands.
+   */
+  projectId: string | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -183,6 +193,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   reportHash: null,
   ackedReportHash: null,
   launch: { model: null, permission: 'ask', effort: null },
+  projectId: null,
 };
 
 /**
@@ -315,6 +326,11 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       next.nameSource = source;
       return next;
     }
+    case SESSION_EVENT_KINDS.MOVED:
+      // Listing only. A resolved session is a tombstone and stays where it ended.
+      if (next.state === 'resolved') return next;
+      next.projectId = stringField(event.payload, 'to') ?? next.projectId;
+      return next;
     case SESSION_EVENT_KINDS.CWD_SET:
       next.cwdCheckoutId = stringField(event.payload, 'checkoutId');
       return next;

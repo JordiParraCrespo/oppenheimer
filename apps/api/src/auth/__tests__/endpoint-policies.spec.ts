@@ -8,12 +8,15 @@ import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-t
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
 import { MembersController } from '../../organizations/members.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
+import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
+import { UpdateProjectHttpController } from '../../projects/commands/update-project/update-project.http.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
 import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
 import { AddCheckoutHttpController } from '../../sessions/commands/add-checkout/add-checkout.http.controller';
 import { CloseSessionHttpController } from '../../sessions/commands/close-session/close-session.http.controller';
 import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { MoveSessionHttpController } from '../../sessions/commands/move-session/move-session.http.controller';
 import { PasteSessionImageHttpController } from '../../sessions/commands/paste-session-image/paste-session-image.http.controller';
 import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
@@ -51,6 +54,8 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   },
   'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
   'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
+  'POST /projects': { controller: CreateProjectHttpController, handler: 'create' },
+  'PATCH /projects/:id': { controller: UpdateProjectHttpController, handler: 'update' },
   'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
   'GET /sessions': { controller: FindSessionsHttpController, handler: 'list' },
   'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },
@@ -58,6 +63,7 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'DELETE /sessions/:id': { controller: CloseSessionHttpController, handler: 'close' },
   'POST /sessions/:id/stop': { controller: StopSessionHttpController, handler: 'stop' },
   'POST /sessions/:id/restart': { controller: RestartSessionHttpController, handler: 'restart' },
+  'POST /sessions/:id/move': { controller: MoveSessionHttpController, handler: 'move' },
   'POST /sessions/:id/checkouts': { controller: AddCheckoutHttpController, handler: 'add' },
   'DELETE /sessions/:id/checkouts/:checkoutId': {
     controller: RemoveCheckoutHttpController,

@@ -3,6 +3,7 @@ import {
   PROJECT_SLUG_MAX_LENGTH,
   PROJECT_SLUG_PATTERN,
   projectSlugCandidates,
+  projectSlugCandidatesFromName,
   projectSlugFromRepositoryName,
 } from '../domain/project-slug.policy';
 
@@ -92,5 +93,28 @@ describe('projectSlugCandidates', () => {
     const same = { owner: 'x', name: 'x', githubRepoId: '7' };
 
     expect(new Set(projectSlugCandidates(same)).size).toBe(projectSlugCandidates(same).length);
+  });
+});
+
+describe('projectSlugCandidatesFromName', () => {
+  const id = '3f9a7b2c-1d4e-4f60-8a9b-0c1d2e3f4a5b';
+
+  it('offers the name, then the name with the project’s own id', () => {
+    expect(projectSlugCandidatesFromName('Client sites', id)).toEqual([
+      'client-sites',
+      'client-sites-3f9a7b2c',
+    ]);
+  });
+
+  it('keeps the id whole when the name has to be cut', () => {
+    const [, unique] = projectSlugCandidatesFromName('a'.repeat(200), id);
+
+    expect(unique).toHaveLength(PROJECT_SLUG_MAX_LENGTH);
+    expect(unique.endsWith('-3f9a7b2c')).toBe(true);
+    expect(PROJECT_SLUG_PATTERN.test(unique)).toBe(true);
+  });
+
+  it('gives an unnameable name the fallback, still derived from the id', () => {
+    expect(projectSlugCandidatesFromName('!!!', id)).toEqual(['project', 'project-3f9a7b2c']);
   });
 });

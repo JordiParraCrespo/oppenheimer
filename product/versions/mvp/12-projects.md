@@ -150,11 +150,13 @@ project  (existing)  + createdByUserId  uuid null     audit; never on delete cas
 - **A default is a suggestion, never a grant.** `host` is person-owned (10);
   `project` is workspace-owned. `defaultHostId` does not let anyone use a
   host: `POST /sessions` still loads the host through the own-or-grant
-  scoped `HostRepository` and refuses on a miss, exactly as today. On read,
-  the project reports the default host only when the caller can see it and
-  it is not unpaired; otherwise `null`. Writing a default host the caller
-  cannot see is refused at write (`HOSTS_001`), so the column only ever holds
-  a host somebody could use when it was set.
+  scoped `HostRepository` and refuses on a miss, exactly as today. Writing a
+  default host the caller cannot use is refused at write (`HOSTS_001`), so
+  the column only ever holds a host somebody could use when it was set. On
+  read the project reports the id as stored; a client matches it against the
+  hosts it can list, and one it cannot list is simply not offered. (A first
+  draft filtered it on read; in a personal workspace that is a join for
+  nothing, and it moves to the teams slice.)
 - **`defaultAgent`** is validated against `CODING_AGENTS` by the Zod schema,
   the same enum `POST /sessions` uses. Whether the host's runner can start it
   is still answered at session create (`SESSIONS_011`). The model is not
@@ -268,9 +270,16 @@ It refuses when:
   (`homeProjectId`, the command, the event) does not depend on it. A session
   with no checkouts can move anywhere.
 
-`ProjectLookupPort` gains `includesRepositories(scope, projectId,
-githubRepoIds): Promise<boolean>`, so `sessions/` asks rather than reading
-`project_repository`.
+`sessions/` never reads `project_repository`: the project the lookup port
+already returns carries its repositories, and `ProjectEntity.includesRepositories`
+answers the rule. The port gains one read instead, `findHomeOf`, which returns
+a session's home project **even when it is archived** — a moved session's
+home may have been archived since, and its slug is still the path every
+runner command names. Restart and add-checkout check the *listed* project is
+active, as before, and build paths from the home. The move itself takes a
+share lock on the target project in the transaction that appends the event,
+the same lock creating a session takes, so a move and an archive cannot
+both win.
 
 A move is recorded in the log as an `api` event, `session.moved { from, to
 }`, and `projectId` is folded from it, like the name is. The fold stays the
@@ -378,14 +387,18 @@ starts. No protocol version bump.
 
 | Code | Title | HTTP |
 |---|---|---|
-| `PROJECTS_006` | A project needs at least one repository | 400 |
-| `PROJECTS_007` | A project needs a default repository | 400 |
-| `PROJECTS_008` | That repository is not available to this workspace | 409 |
-| `SESSIONS_018` | That project does not include this session's repository | 409 |
+| `PROJECTS_006` | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_007` | No directory name is free for that project | 409 |
+| `SESSIONS_018` | That project does not include this session’s repositories | 409 |
 
-`PROJECTS_006`/`007` duplicate the Zod refinements on purpose: the aggregate
-holds its invariants whatever the caller, the schema only gives a console
-the early message. Each needs its row in `apps/docs/docs/errors.md`.
+`PROJECTS_006` is one code for every list a project cannot hold (none, no
+default, a repository twice, more than twenty, a blank base); the `detail`
+names which. It duplicates the Zod refinements on purpose: the aggregate
+holds its invariants whatever the caller. A repository the workspace's
+installation no longer covers needs no code of its own: GitHub's 404 is
+`GITHUB_010`, as it is for a checkout. `PROJECTS_007` should never be seen,
+because the last candidate carries the project's id. All three have rows in
+`apps/docs/docs/errors.md` and messages in every locale.
 
 ### The migration
 
@@ -402,7 +415,8 @@ One migration, in this order, each step lock-safe on tables this size:
    repositories until someone edits it; the invariant is enforced on write,
    not assumed on read.
 4. `work_session`: add `homeProjectId`, backfill it from `projectId`, set
-   `not null`, add its composite key; add `instructions text null`.
+   `not null`, add its composite key. (`instructions text null` lands with
+   step 5 of the build order, with the runner that reads it.)
 5. Swap `unique (projectId, slug)` for `unique (homeProjectId, slug)`
    (create the new one first, then drop the old).
 
@@ -422,20 +436,25 @@ three things, and this design already provides them:
 
 ## Build order
 
-Each step lands alone and keeps the console working.
+Each step lands alone and keeps the console working. Steps 1–4 are built
+(2026-09-26), except the instructions snapshot and its wire field, which
+move to step 5 so the column and the field land with the runner that reads
+them.
 
-1. **Shared**: the project schemas, `codingAgentSchema` reused for `defaultAgent`,
-   `SESSIONS_018` and the `PROJECTS_006–008` rows, the optional
-   `instructions` on `session.create` (and its Go struct).
-2. **Migration** and the ORM entities, with the backfill.
-3. **`projects/`**: `ProjectRepositoryEntity` inside the aggregate,
-   `CreateProjectCommand`, the widened `UpdateProjectCommand`, the name-based
-   slug candidates, `includesRepositories` on the lookup port, the new
-   response DTO; `ensureForRepository` creates the one-repository project.
-4. **`sessions/`**: `homeProjectId` everywhere a path is built,
-   `MoveSessionCommand` and `session.moved` in the fold, the instructions
-   snapshot on create, the new list filters.
-5. **Runner**: deliver `instructions` per catalog entry.
+1. **Shared** *(built)*: the project schemas, `codingAgentSchema` reused for
+   `defaultAgent`, the move schema, the list filters, the endpoint policies.
+2. **Migration** *(built)*: `AddProjectScopes`, with the backfill.
+3. **`projects/`** *(built)*: the repositories and defaults on the aggregate
+   (a value list, not a child entity), `POST /projects`, the widened
+   `PATCH`, the name-based slug candidates, `findHomeOf` on the lookup port,
+   the new response DTO; `ensureForRepository` creates the one-repository
+   project.
+4. **`sessions/`** *(built)*: `homeProjectId` everywhere a path is built,
+   `POST /sessions/{id}/move` and `session.moved` in the fold, the list
+   filters and sort.
+5. **Instructions**: the `work_session.instructions` snapshot on create, the
+   optional `instructions` on `session.create` (and its Go struct), and the
+   runner delivering it per catalog entry.
 6. **Several repositories per session**: the runner makes one worktree per
    checkout (11's R3), then `MAX_SESSION_CHECKOUTS` rises and the
    add-checkout handler drops `SESSIONS_010`. Independent of steps 1–5.

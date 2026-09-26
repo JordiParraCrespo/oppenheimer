@@ -41,8 +41,8 @@ export class SessionPlanFactory {
    * origin is the first checkout's repository — created on the spot if that
    * repository has never had a session.
    *
-   * The console shows no project chip, which is why the second path exists: a fifth
-   * chip on the most-used screen, for a concept with one instance, is real friction.
+   * The console always names the project; the second path is for a caller that
+   * names only a repository (`product/versions/mvp/12-projects.md`).
    */
   async resolveProject(
     scope: AccessScope,
@@ -61,6 +61,9 @@ export class SessionPlanFactory {
       githubRepoId: String(repository.githubRepoId),
       owner,
       name: repository.name,
+      installationId: first.installationId,
+      fullName: repository.fullName,
+      defaultBranch: repository.defaultBranch,
     });
   }
 

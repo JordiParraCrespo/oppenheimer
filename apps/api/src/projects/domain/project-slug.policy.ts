@@ -83,3 +83,24 @@ export function projectSlugCandidates(source: ProjectSlugSource): string[] {
 
   return [...new Set([name, qualified, unique])];
 }
+
+/**
+ * The directory names to try for a project a person created, in order, each
+ * derived from the project itself.
+ *
+ * A project made on purpose has no repository to take a name from, so the slug
+ * comes from its **name**, once, at creation — and never again: renaming the
+ * project later changes nothing on disk.
+ *
+ * 1. `<name>` sanitised;
+ * 2. `<name>-<first 8 hex of the project's UUID>` — the id is minted before the
+ *    insert, so the fallback is derived from the row itself and cannot collide
+ *    in practice.
+ */
+export function projectSlugCandidatesFromName(name: string, projectId: string): string[] {
+  const base = projectSlugFromRepositoryName(name);
+  const suffix = projectId.replace(/-/g, '').slice(0, 8).toLowerCase() || '0';
+  const room = PROJECT_SLUG_MAX_LENGTH - suffix.length - 1;
+  const unique = `${base.slice(0, room).replace(/-+$/g, '') || FALLBACK_SLUG}-${suffix}`;
+  return [...new Set([base, unique])];
+}

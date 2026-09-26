@@ -126,10 +126,13 @@ describe('the declaration itself', () => {
   });
 
   it('declares only the actions a route or a credential can exercise', () => {
-    // No `create`: a project is created by the first session that needs one,
-    // through a port inside the process, so a `create Project` permission would
-    // appear in every role builder and token scope with nothing behind it.
-    expect(ProjectResource.actions.map((action) => action.name)).toEqual(['read', 'update']);
+    // `create` is `POST /projects`; archiving is `update`, because nothing is
+    // deleted. No `delete`: it would be a permission with nothing behind it.
+    expect(ProjectResource.actions.map((action) => action.name)).toEqual([
+      'read',
+      'create',
+      'update',
+    ]);
   });
 
   it('is reachable by scoped credentials', () => {
