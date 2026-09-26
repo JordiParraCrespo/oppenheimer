@@ -13,5 +13,9 @@
   "featureFlags": "Feature flags",
   "toggleSidebar": "Mostrar u ocultar el menú",
   "sessions": "Sesiones",
-  "newSession": "Nueva sesión"
+  "newSession": "Nueva sesión",
+  "commandTitle": "Paleta de comandos",
+  "commandDescription": "Busca una página o una acción.",
+  "sidebarTitle": "Navegación",
+  "sidebarDescription": "Tus sesiones y tu cuenta."
 }

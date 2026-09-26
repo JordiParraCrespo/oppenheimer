@@ -1,7 +1,7 @@
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
-import githubApp from './github-app.json';
+import githubApp from './github-app.json' with { type: 'json' };
 import { claimInstallation } from './github-stub';
 
 /**

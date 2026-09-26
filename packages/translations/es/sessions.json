@@ -123,7 +123,9 @@
       "default": "Por defecto"
     },
     "agent": {
-      "label": "Agente y modelo"
+      "label": "Agente y modelo",
+      "search": "Buscar modelos…",
+      "empty": "Ningún modelo coincide con «{{query}}»."
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -146,12 +148,18 @@
       "low": "Bajo",
       "medium": "Medio",
       "high": "Alto",
-      "max": "Máximo"
+      "max": "Máximo",
+      "faster": "Más rápido",
+      "smarter": "Más inteligente",
+      "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
     },
     "composer": {
-      "placeholder": "Describe una tarea o haz una pregunta"
+      "placeholder": "Describe una tarea o haz una pregunta",
+      "send": "Enviar",
+      "stop": "Detener"
     },
-    "queued": "Tu primera tarea está en cola para este host."
+    "queued": "Tu primera tarea está en cola para este host.",
+    "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {

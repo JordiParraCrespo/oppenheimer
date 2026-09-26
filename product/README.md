@@ -24,6 +24,7 @@ for the detail and sources.
 | 15 | [Sessions in microVMs](15-sessions-in-microvms.md) | The v0.2 runtime, read off the session that wrote it: a Firecracker microVM per session that exists only while active, on a kept disk, booted again in two seconds on wake; no NIC, vsock to the host, egress through the proxy; two states instead of three tiers; which hosts sell KVM (own box, AWS m8i, Oracle E5); what it costs; Firecracker, not libvirt |
 | 16 | [Lessons from DigitalOcean Managed Agents](16-lessons-from-digitalocean-managed-agents.md) | DigitalOcean's Firecracker agent sessions read from the docs and from the source of `doctl`, `godo` and `pydo`: every model call rides an API key, so it cannot be our runtime; what to take instead — agent state from hooks and approvals as records, a resumable session event feed, a reconnect policy that knows which failures are final, idle measured between turns, a tee for Codex's app-server; what not to take |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -244,4 +245,9 @@ earlier note:
   a project chip. The 2026-09-26 export puts one first on New session, with
   a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
   works out the data model, the API and the console for it (2026-09-26).
-
+- The order after the MVP was VMs with sleep tiers, the accounts model,
+  then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
+  On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
+  0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
+  display. Multi-account (note 06) is on the list with no version yet.
+  VMs are not placed. See `next-steps/README.md`.

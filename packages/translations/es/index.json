@@ -282,7 +282,9 @@
           "alt": "La puerta principal del laboratorio de Los Álamos",
           "caption": "Los Álamos, 1943"
         }
-      }
+      },
+      "dots": "Diapositivas",
+      "slide": "Diapositiva {{position}}"
     },
     "firstNamePlaceholder": "Tu nombre",
     "hidePassword": "Ocultar contraseña",
@@ -297,7 +299,8 @@
       "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
-    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
+    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "sessions": {
     "home": {
@@ -424,7 +427,9 @@
         "default": "Por defecto"
       },
       "agent": {
-        "label": "Agente y modelo"
+        "label": "Agente y modelo",
+        "search": "Buscar modelos…",
+        "empty": "Ningún modelo coincide con «{{query}}»."
       },
       "permission": {
         "label": "Nivel de permisos",
@@ -447,12 +452,18 @@
         "low": "Bajo",
         "medium": "Medio",
         "high": "Alto",
-        "max": "Máximo"
+        "max": "Máximo",
+        "faster": "Más rápido",
+        "smarter": "Más inteligente",
+        "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
       },
       "composer": {
-        "placeholder": "Describe una tarea o haz una pregunta"
+        "placeholder": "Describe una tarea o haz una pregunta",
+        "send": "Enviar",
+        "stop": "Detener"
       },
-      "queued": "Tu primera tarea está en cola para este host."
+      "queued": "Tu primera tarea está en cola para este host.",
+      "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {
@@ -542,7 +553,11 @@
     "featureFlags": "Feature flags",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
-    "newSession": "Nueva sesión"
+    "newSession": "Nueva sesión",
+    "commandTitle": "Paleta de comandos",
+    "commandDescription": "Busca una página o una acción.",
+    "sidebarTitle": "Navegación",
+    "sidebarDescription": "Tus sesiones y tu cuenta."
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -812,7 +827,9 @@
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
     "noRedirect": "El servidor no ha indicado a dónde continuar.",
-    "sensitiveScope": "Sensible"
+    "sensitiveScope": "Sensible",
+    "unknownClient": "Una aplicación",
+    "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
     "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
@@ -846,7 +863,10 @@
         "claiming": "Guardando...",
         "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
         "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
-        "permanent": "{{address}} es la dirección de este espacio de trabajo."
+        "permanent": "{{address}} es la dirección de este espacio de trabajo.",
+        "checkingLabel": "Comprobando disponibilidad",
+        "availableLabel": "Disponible",
+        "takenLabel": "Ocupada"
       },
       "github": {
         "title": "Conecta GitHub",
@@ -880,7 +900,8 @@
         "go": "Ir a la consola",
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
-        "noHost": "Aún sin host"
+        "noHost": "Aún sin host",
+        "doneLabel": "Listo"
       }
     }
   },
@@ -1169,19 +1190,6 @@
       },
       "title": "Términos del servicio"
     }
-  },
-  "table": {
-    "clearFilter": "Quitar el filtro",
-    "clearSelection": "Quitar la selección",
-    "nextPage": "Página siguiente",
-    "page": "Página {{page}} de {{totalPages}}",
-    "previousPage": "Página anterior",
-    "range": "{{first}}–{{last}} de {{total}}",
-    "rowActions": "Acciones de la fila",
-    "selectPage": "Seleccionar todas las filas de esta página",
-    "selectRow": "Seleccionar fila",
-    "selected_one": "{{count}} seleccionado",
-    "selected_other": "{{count}} seleccionados"
   },
   "theme": {
     "toggle": "Cambiar tema",

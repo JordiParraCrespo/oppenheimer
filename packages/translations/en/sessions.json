@@ -123,7 +123,9 @@
       "default": "Default"
     },
     "agent": {
-      "label": "Agent and model"
+      "label": "Agent and model",
+      "search": "Search models…",
+      "empty": "No model matches “{{query}}”."
     },
     "permission": {
       "label": "Permission level",
@@ -146,12 +148,18 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High",
-      "max": "Max"
+      "max": "Max",
+      "faster": "Faster",
+      "smarter": "Smarter",
+      "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
     },
     "composer": {
-      "placeholder": "Describe a task or ask a question"
+      "placeholder": "Describe a task or ask a question",
+      "send": "Send",
+      "stop": "Stop"
     },
-    "queued": "Your first task is queued for this host."
+    "queued": "Your first task is queued for this host.",
+    "failed": "The session could not be created."
   },
   "session": {
     "status": {

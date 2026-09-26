@@ -63,7 +63,7 @@ export function AddHostDialog({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { pairing, secondsLeft, expired, host, isPending, error, regenerate } = useHostPairing(
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
     t('sessions.new.addHost.defaultName'),
   );
   // Which way the same instruction is being read. The dialog is the lowest
@@ -132,7 +132,7 @@ export function AddHostDialog({
             </div>
 
             <HostPairingChrome
-              secondsLeft={secondsLeft}
+              expiresAt={expiresAt}
               expired={expired}
               onRegenerate={regenerate}
               busy={isPending}

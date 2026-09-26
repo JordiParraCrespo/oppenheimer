@@ -11,7 +11,7 @@ import {
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { Kbd } from '@oppenheimer/design-system-web/kbd';
 import { useSidebar } from '@oppenheimer/design-system-web/sidebar';
-import { MoonIcon, PanelLeftIcon, SearchIcon, SunIcon } from 'lucide-react';
+import { MoonIcon, PanelLeftIcon, SearchIcon, SunIcon } from '@oppenheimer/design-system-web/icons';
 import * as React from 'react';
 import { TOC } from '@/lib/toc';
 

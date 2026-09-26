@@ -47,6 +47,7 @@ export {
   shouldDehydrateQuery,
 } from './persistence';
 export { MEMBER_LISTS_KEY, withFeaturePrefix } from './query-keys';
+export { shareEntities } from './share-entities';
 export { userSettingsKeys, useUpdateUserSettings, useUserSettings } from './user-settings.queries';
 export {
   useDeleteUser,

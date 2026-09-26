@@ -91,7 +91,7 @@ shared ─► core ─► consumer ─► apps/web
 
 ## The kit is concerns, not kinds, at its top level
 
-`packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`, `table`,
+`packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
 `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
@@ -135,19 +135,19 @@ name the jobs and split *those*.
   What a reader is typing is the field's state until it settles. Hand the list
   the settled value.
 
-  `DataTable` took `search.value` as a controlled prop, so every character
-  re-rendered the header, all eight rows, forty cells, eight row menus and the
-  pager — for a query that was debounced anyway and had not been asked yet, and
-  through a render-phase `setSelection` that ran again each time. `DataTableSearch`
-  keeps the half-typed word now and calls `onChange` once per burst. If you need
-  the same shape elsewhere, copy that: state in the field, debounce on the way
-  out, settled value on the way back down.
+  The kit's `DataTable` (deleted since, unmounted) took `search.value` as a
+  controlled prop, so every character re-rendered the header, all eight rows,
+  forty cells, eight row menus and the pager — for a query that was debounced
+  anyway and had not been asked yet, and through a render-phase `setSelection`
+  that ran again each time. The fix was a search field that kept the half-typed
+  word and called `onChange` once per burst. Copy that shape: state in the
+  field, debounce on the way out, settled value on the way back down.
 
 - **State lives in the lowest component that reads it.** A toggle belongs to
   the input, an open menu to the row, a draft to the field. A page holds only
   what two siblings share. The exception worth knowing: a dialog opened from a
   `rowActions` menu cannot own its own open state, because that menu's content
-  unmounts when the popup closes — those stay with the table, and cost it
+  unmounts when the popup closes — those stay with the list, and cost it
   nothing.
 - **Subscribe at the leaf.** `useWatch`, `useController` and `useFormState`
   take `control` and run in the component that shows the value; `select`
@@ -156,8 +156,9 @@ name the jobs and split *those*.
   held one flat `Scope[]` for eleven groups, so granting one re-rendered
   thirty-three toggles; each row takes its own field off the form now.
 - **A component owns one job, and the job is named by what updates it.**
-  `data-table.tsx` held the search field, the rows and the selection: three
-  things on three different clocks, so each one's update redrew the other two.
+  The old `data-table.tsx` held the search field, the rows and the selection:
+  three things on three different clocks, so each one's update redrew the other
+  two.
   The split that matters is by clock, not by length — a keystroke, a page, a
   tick. When you cannot name the second job, there isn't one.
 - **One component per file.** Biome's `noNestedComponentDefinitions` is on.
@@ -178,8 +179,9 @@ name the jobs and split *those*.
   than profiled, and why a `*-render.spec.tsx` runs with the compiler **off**.
 
   The converse is the trap: splitting a component into files does not isolate
-  anything by itself. `DataTableRow` is its own file and a tick still redraws
-  the page, because the setter that a tick calls lives in the shell above it.
+  anything by itself. The old `DataTableRow` was its own file and a tick still
+  redrew the page, because the setter that a tick calls lived in the shell above
+  it.
   A split isolates an update only when the state that update writes moves with
   it.
 
@@ -190,16 +192,47 @@ name the jobs and split *those*.
   says so. `pnpm check:compiler` lists every one.
 - **A component whose cost is the point gets a render budget.** Name it
   `*-render.spec.tsx` and it runs in the `render-budget` vitest project, which
-  does not enable the compiler. `data-table-render.spec.tsx` asserts that a
-  keystroke renders no rows; `permission-picker-render.spec.tsx` that one click
-  renders one row *and* that a keystroke in the catalog's search renders none.
-  Budget every clock the component has, not the one you just fixed: the search
-  field was added to that dialog with the query one component too high, and it
+  does not enable the compiler. `new-session-composer-render.spec.tsx` asserts
+  that a keystroke in the composer re-renders none of the chips beside it.
+  Budget every clock the component has, not the one you just fixed: a search
+  field was once added to a permission dialog with the query one component too high, and it
   was the missing burst assertion that let it through. Write the harness so the
   value feeds back the way the real caller feeds it, or the test passes on the
   shape it was meant to forbid.
 - **Contexts split by change rate.** A provider that holds a value and its
   setters exposes them so a toggle does not re-render the tree.
+
+  A form whose fields are spread over several sections is the common case, and
+  the answer is a store behind a context whose value never changes: New
+  session's draft is a React Hook Form store (`use-new-session-form.ts`), the
+  context carries the form object — one identity for its whole life, unlike
+  `FormProvider`, which spreads the methods into a new object on every render —
+  and each chip is a section that binds its own field with `useController` or
+  `useWatch` and fetches the list it draws. The section that owns the store
+  reads no field, so it renders once; `new-session-form-render.spec.tsx`
+  asserts that a pick renders only the chip that was picked.
+- **Generic React hooks live in the design system's `hooks/`.** `useControlled`
+  (the `value` / `defaultValue` / `onChange` triple), `useDebouncedValue`,
+  `useDebouncedCallback` and `useNow` are exported from `@oppenheimer/design-system-web`, the
+  lowest React package the kit, the apps and the design system's own
+  components all share. A hook there knows nothing of the product or of a
+  query; one that does belongs in a product package or a feature's `hooks/`.
+  Before writing a timer, a controlled/uncontrolled pair or a latest-ref,
+  check that directory.
+
+- **A clock is an input, never a read in render.** `Date.now()` or `new Date()`
+  inside render is cached by the compiler on the inputs it can see, so an age
+  stops moving. Take the time from `useNow(interval)` in the lowest component
+  that draws it, and hand a one-second tick to a leaf of its own — the
+  pairing countdown and the provisioning clock are elements in their parent's
+  slot, so a tick re-renders a line of text and not the dialog around it.
+- **Entity queries opt into `shareEntities`.** The entities are classes, which
+  TanStack Query's default structural sharing does not look into, so without
+  it every refetch hands every reader a new object per row. A query hook that
+  returns entities passes `structuralSharing: shareEntities` (from
+  `@oppenheimer/frontend-core/react`); a list hook takes a narrowing `select`,
+  and a read that only happens in an event handler uses the module's
+  `use…Snapshot()` rather than subscribing.
 
 ## Routing is its own skill
 
