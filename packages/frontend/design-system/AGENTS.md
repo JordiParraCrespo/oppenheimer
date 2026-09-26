@@ -58,6 +58,18 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   slot, a grey band fused to the top of the field, each chip a
   `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
   so where the work happens reads as one sentence over the box.
+- **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
+  switches between the sessions and routines lists; the sidebar groups rows
+  under `SidebarProjectHeader`s whose actions appear on hover, with
+  `SidebarSearch` and the facet chips above the groups and `SidebarEmptyRow`
+  inside an empty one. A `SessionItem` takes its ellipsis as `action` and its
+  rename as an inline input; both hide the age while they show.
+- **A pane, not a submenu, when the pick belongs to the row.** Appearance
+  and Language in the account menu, and Move to project… in a row's menu,
+  slide the same menu to a pane (`DropdownMenuPaneItem`, then
+  `DropdownMenuBack` on top of it), the way the engine button slides to its
+  models. `DropdownMenuSub` stays for the filter facets, which are several
+  independent picks.
 - **One instruction block, one Copy.** Add a host shows the install command
   and the agent prompt as tabs on the header band of one
   `CodeBlock layout="panel"`, at a fixed height so the token line under it

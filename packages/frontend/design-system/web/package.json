@@ -58,6 +58,8 @@
     "./select-menu": "./src/components/select-menu.tsx",
     "./separator": "./src/components/separator.tsx",
     "./sheet": "./src/components/sheet.tsx",
+    "./rail": "./src/components/rail.tsx",
+    "./repository-row-list": "./src/components/repository-row-list.tsx",
     "./sidebar": "./src/components/sidebar.tsx",
     "./skeleton": "./src/components/skeleton.tsx",
     "./sonner": "./src/components/sonner.tsx",

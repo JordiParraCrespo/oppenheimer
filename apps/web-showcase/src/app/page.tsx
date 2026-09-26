@@ -62,6 +62,7 @@ import {
   EffortDemo,
   PermissionDemo,
   ScopeChips,
+  RepositoryRowListDemo,
   SidebarDemo,
   StepperDemo,
   TerminalDemo,
@@ -720,6 +721,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="reporows"
+        title="RepositoryRowList"
+        meta="repository-row-list.tsx"
+        desc="The project dialog's repository picker: a 14px card with a search row and one row per repository the App can see. Tick a row to include it; it then grows a Default toggle (cloned into every new session) and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Untied rows keep the controls' space but not their ink, so the list never reflows. The caller renders the label, the help glyph and the count above it."
+        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
+      >
+        <RepositoryRowListDemo />
+      </Spec>
+
+      <Spec
         id="composer"
         title="Composer"
         meta="composer.tsx"
@@ -792,8 +803,9 @@ export default function Page() {
         id="dropdown"
         title="DropdownMenu"
         meta="dropdown-menu.tsx"
-        desc="The popover tier: 14px radius, 14px rows, submenus for facets. The console's menus share every part: filters with values, the account menu with its e-mail header and destructive Log out, the permission menu with icon rows and a warning tone."
-        code={`<DropdownMenuSubTrigger>Repository <DropdownMenuValue>All repositories</DropdownMenuValue></DropdownMenuSubTrigger>`}
+        desc="The popover tier: 14px radius, 14px rows, submenus for the filter facets. The console's menus share every part: filters with values; the account menu with its e-mail header, Appearance and Language as pane rows that slide the same menu to their options behind a back row, and a destructive Log out; the permission menu with icon rows and a warning tone."
+        code={`<DropdownMenuPaneItem value="Match system" onClick={() => setPane('theme')}><MoonIcon /> Appearance</DropdownMenuPaneItem>
+<DropdownMenuBack onClick={() => setPane('root')}>Appearance</DropdownMenuBack>`}
       >
         <Swatch label="filters">
           <FilterMenuDemo />
@@ -820,9 +832,9 @@ export default function Page() {
 
       <Spec
         id="sidebar"
-        title="Sidebar · SessionItem"
-        meta="sidebar.tsx · session-item.tsx"
-        desc="The 264px rail on its own surface tier: wordmark, the New session button, an eyebrow header with count and filter, the session list, and the account footer. A session row is a glyph coloured by state and a name; the age appears on hover and on the active row. A session still provisioning is pending: the grey glyph pulses."
+        title="Rail · Sidebar · SessionItem"
+        meta="rail.tsx · sidebar.tsx · session-item.tsx"
+        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses."
         bare
       >
         <div className="flex flex-wrap gap-6">

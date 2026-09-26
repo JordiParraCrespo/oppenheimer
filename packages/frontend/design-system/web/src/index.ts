@@ -162,12 +162,14 @@ export {
 } from './components/drawer';
 export {
   DropdownMenu,
+  DropdownMenuBack,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPaneItem,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -317,8 +319,15 @@ export {
   QuestionnaireTitle,
 } from './components/questionnaire';
 export { RadioGroup, RadioGroupItem } from './components/radio-group';
+export { Rail, RailItem, RailMark } from './components/rail';
 export { RecentItem } from './components/recent-item';
 export { ReplyBox } from './components/reply-box';
+export type {
+  RepositoryRowBranch,
+  RepositoryRowOption,
+  RepositoryRowValue,
+} from './components/repository-row-list';
+export { RepositoryRowList } from './components/repository-row-list';
 export type {
   RepositoryBranch,
   RepositoryOption,
@@ -342,6 +351,7 @@ export {
 } from './components/select';
 export { SelectMenu } from './components/select-menu';
 export { Separator } from './components/separator';
+export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList } from './components/session-item';
 export {
   Sheet,
@@ -356,6 +366,7 @@ export {
 export {
   Sidebar,
   SidebarContent,
+  SidebarEmptyRow,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,
@@ -374,8 +385,10 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarProjectHeader,
   SidebarProvider,
   SidebarRail,
+  SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,

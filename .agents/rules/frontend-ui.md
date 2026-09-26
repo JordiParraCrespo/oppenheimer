@@ -38,6 +38,9 @@ multi-line, so a grep for `export` misses most of them.
 | Which agent and model drive a session | `AgentModelSelect` | two `Select`s |
 | How hard the agent thinks | `EffortPicker` | a `Select` of five words |
 | What the agent may touch unattended | `PermissionMenu` | a `Switch` |
+| Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
+| Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
+| A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,

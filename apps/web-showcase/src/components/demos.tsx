@@ -43,12 +43,15 @@ import {
 } from '@oppenheimer/design-system-web/dialog';
 import {
   DropdownMenu,
+  DropdownMenuBack,
   DropdownMenuContent,
   DropdownMenuHeader,
   DropdownMenuItem,
+  DropdownMenuPaneItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -59,7 +62,17 @@ import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
 import { FilterChip } from '@oppenheimer/design-system-web/chip';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ImageCarousel } from '@oppenheimer/design-system-web/image-carousel';
+import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web/rail';
+import {
+  RepositoryRowList,
+  type RepositoryRowValue,
+} from '@oppenheimer/design-system-web/repository-row-list';
 import { SessionItem, SessionList } from '@oppenheimer/design-system-web/session-item';
+import {
+  SidebarEmptyRow,
+  SidebarProjectHeader,
+  SidebarSearch,
+} from '@oppenheimer/design-system-web/sidebar';
 import { Stepper } from '@oppenheimer/design-system-web/stepper';
 import {
   Terminal,
@@ -80,14 +93,19 @@ import {
 } from '@oppenheimer/design-system-web/tooltip';
 import { Wordmark } from '@oppenheimer/design-system-web/wordmark';
 import {
-  ChevronsUpDownIcon,
+  ChevronDownIcon,
   CpuIcon,
+  EllipsisIcon,
   GitBranchIcon,
   GlobeIcon,
   LogOutIcon,
   MoonIcon,
+  PlusIcon,
   Settings2Icon,
+  SettingsIcon,
+  SlidersHorizontalIcon,
   TerminalIcon,
+  ZapIcon,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -252,8 +270,13 @@ export function FilterMenuDemo() {
 }
 
 export function AccountMenuDemo() {
+  const [pane, setPane] = React.useState<'root' | 'theme' | 'lang'>('root');
+  const [theme, setTheme] = React.useState('system');
+  const [lang, setLang] = React.useState('en');
+  const themeLabel = { light: 'Light', dark: 'Dark', system: 'Match system' }[theme];
+  const langLabel = { en: 'English', es: 'Español' }[lang];
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => !open && setPane('root')}>
       <DropdownMenuTrigger
         render={
           <button
@@ -266,37 +289,46 @@ export function AccountMenuDemo() {
           <AvatarFallback>JP</AvatarFallback>
         </Avatar>
         <span className="flex-1 truncate text-operate">Jordi Parra</span>
-        <ChevronsUpDownIcon className="size-3.5 text-fg-subtle" />
+        <ChevronDownIcon className="size-3.5 text-fg-subtle" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" className="min-w-62.5">
-        <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <MoonIcon /> Appearance <DropdownMenuValue>Match system</DropdownMenuValue>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup defaultValue="system">
+        {pane === 'root' ? (
+          <>
+            <DropdownMenuHeader>jordiparra99@gmail.com</DropdownMenuHeader>
+            <DropdownMenuItem>
+              <SlidersHorizontalIcon /> Settings
+            </DropdownMenuItem>
+            <DropdownMenuPaneItem value={themeLabel} onClick={() => setPane('theme')}>
+              <MoonIcon /> Appearance
+            </DropdownMenuPaneItem>
+            <DropdownMenuPaneItem value={langLabel} onClick={() => setPane('lang')}>
+              <GlobeIcon /> Language
+            </DropdownMenuPaneItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive">
+              <LogOutIcon /> Log out
+            </DropdownMenuItem>
+          </>
+        ) : pane === 'theme' ? (
+          <>
+            <DropdownMenuBack onClick={() => setPane('root')}>Appearance</DropdownMenuBack>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
               <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="system">Match system</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <GlobeIcon /> Language <DropdownMenuValue>English</DropdownMenuValue>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup defaultValue="en">
+          </>
+        ) : (
+          <>
+            <DropdownMenuBack onClick={() => setPane('root')}>Language</DropdownMenuBack>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={lang} onValueChange={setLang}>
               <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="es">Español</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive">
-          <LogOutIcon /> Log out
-        </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -580,70 +612,222 @@ export function ComposerDemo({ full }: { full?: boolean }) {
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 
-const SESSIONS: [string, string, 'running' | 'needs-input' | 'failed' | 'idle' | 'pending'][] = [
-  ['xrp-mobile +1 · main', '', 'pending'],
-  ['PR #121 porting to peersyst', '2m', 'running'],
-  ['nightly ingest', '14m', 'running'],
-  ['invoice triage', '1h', 'needs-input'],
-  ['XRP Mobile API cleanup', '3h', 'needs-input'],
-  ['retriever eval', '5h', 'failed'],
-  ['First version page design', '1d', 'idle'],
-  ['doc summariser', '2d', 'idle'],
+type DemoState = 'running' | 'needs-input' | 'failed' | 'idle' | 'pending';
+type DemoProject = { name: string; sessions: [string, string, DemoState][] };
+
+const PROJECTS: DemoProject[] = [
+  {
+    name: 'XRP Mobile',
+    sessions: [
+      ['PR #121 porting to peersyst', '2m', 'running'],
+      ['XRP Mobile API cleanup', '3h', 'needs-input'],
+      ['tool router', '1d', 'idle'],
+    ],
+  },
+  {
+    name: 'Atlas',
+    sessions: [
+      ['nightly ingest', '14m', 'running'],
+      ['invoice triage', '1h', 'needs-input'],
+      ['retriever eval', '5h', 'failed'],
+      ['doc summariser', '2d', 'idle'],
+    ],
+  },
+  { name: 'Client sites', sessions: [] },
 ];
 
-export function SidebarDemo({ empty }: { empty?: boolean }) {
-  const [active, setActive] = React.useState(1);
-  const [filters, setFilters] = React.useState<string[]>(empty ? [] : ['Running only']);
+function RowMenu({
+  open,
+  onOpenChange,
+  onRename,
+  projects,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onRename: () => void;
+  projects: string[];
+}) {
+  const [pane, setPane] = React.useState<'root' | 'move'>('root');
   return (
-    <div className="flex h-[560px] w-[264px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-      <div className="flex h-14 items-center px-4">
-        <Wordmark product="Console" />
-      </div>
-      <div className="px-3">
-        <Button variant={empty ? 'secondary' : 'primary'} size="md" block>
-          New session
-        </Button>
-      </div>
-      <div className="mt-4 flex h-[26px] items-center gap-2 px-5">
-        <span className="eyebrow">Sessions</span>
-        <span className="figures ml-auto text-[11px] text-sidebar-muted">{empty ? 0 : SESSIONS.length}</span>
-        <FilterMenuDemo />
-      </div>
-      {filters.length ? (
-        <div className="flex flex-wrap gap-1 px-3 pb-2">
-          {filters.map((f) => (
-            <FilterChip key={f} onRemove={() => setFilters((x) => x.filter((y) => y !== f))}>
-              {f}
-            </FilterChip>
-          ))}
-        </div>
-      ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto px-3">
-        {empty ? (
-          <EmptyState compact>
-            <EmptyState.Header>
-              <EmptyState.Description>
-                No sessions yet. The one you start appears here with its live state.
-              </EmptyState.Description>
-            </EmptyState.Header>
-          </EmptyState>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) setPane('root');
+      }}
+    >
+      <DropdownMenuTrigger render={<IconButton aria-label="Session actions" size="xs" variant="quiet" />}>
+        <EllipsisIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-47.5">
+        {pane === 'root' ? (
+          <>
+            <DropdownMenuItem onClick={onRename}>
+              Rename <DropdownMenuShortcut>R</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuPaneItem onClick={() => setPane('move')}>
+              Move to project… <DropdownMenuShortcut className="ml-0">M</DropdownMenuShortcut>
+            </DropdownMenuPaneItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive">
+              Delete <DropdownMenuShortcut>D</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </>
         ) : (
-          <SessionList>
-            {SESSIONS.map(([name, age, state], i) => (
-              <SessionItem
-                key={name}
-                name={name}
-                age={age || undefined}
-                state={state}
-                active={i === active}
-                onClick={() => setActive(i)}
-              />
+          <>
+            <DropdownMenuBack onClick={() => setPane('root')}>Move to project</DropdownMenuBack>
+            <DropdownMenuSeparator />
+            {projects.map((name) => (
+              <DropdownMenuItem key={name}>{name}</DropdownMenuItem>
             ))}
-          </SessionList>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <PlusIcon /> New project…
+            </DropdownMenuItem>
+          </>
         )}
-      </div>
-      <div className="border-t border-sidebar-border px-2 py-2">
-        <AccountMenuDemo />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function SidebarDemo({ empty }: { empty?: boolean }) {
+  const [active, setActive] = React.useState('PR #121 porting to peersyst');
+  const [query, setQuery] = React.useState('');
+  const [filters, setFilters] = React.useState<string[]>(empty ? [] : ['Host: optimus']);
+  const [closed, setClosed] = React.useState<string[]>([]);
+  const [menu, setMenu] = React.useState<string | null>(null);
+  const [renaming, setRenaming] = React.useState<{ name: string; draft: string } | null>(null);
+  const [names, setNames] = React.useState<Record<string, string>>({});
+  const term = query.trim().toLowerCase();
+  const projects = empty ? [] : PROJECTS;
+  const total = projects.reduce((n, p) => n + p.sessions.length, 0);
+  return (
+    <div className="flex h-[600px] shrink-0 overflow-hidden">
+      <Rail>
+        <RailMark>O</RailMark>
+        <RailItem label="Sessions" count={total} active>
+          <TerminalIcon />
+        </RailItem>
+        <RailItem label="Routines" count={5}>
+          <ZapIcon />
+        </RailItem>
+      </Rail>
+      <div className="flex w-[264px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="flex h-14 items-center px-4">
+          <Wordmark product="Console" />
+        </div>
+        <div className="px-3">
+          <Button variant={empty ? 'secondary' : 'primary'} size="md" block>
+            New session
+          </Button>
+        </div>
+        <div className="mt-4 flex h-[26px] items-center gap-2 pr-2.5 pl-5">
+          <span className="eyebrow">Projects</span>
+          <span className="figures ml-auto text-[11px] text-sidebar-muted">{projects.length}</span>
+          <IconButton aria-label="New project" size="xs" variant="quiet">
+            <PlusIcon />
+          </IconButton>
+          <FilterMenuDemo />
+        </div>
+        <SidebarSearch value={query} onValueChange={setQuery} placeholder="Search sessions" />
+        {filters.length ? (
+          <div className="flex flex-wrap gap-1 px-3 pb-2">
+            {filters.map((f) => (
+              <FilterChip key={f} onRemove={() => setFilters((x) => x.filter((y) => y !== f))}>
+                {f}
+              </FilterChip>
+            ))}
+          </div>
+        ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto pb-2">
+          {empty ? (
+            <div className="px-3">
+              <EmptyState compact>
+                <EmptyState.Header>
+                  <EmptyState.Description>
+                    No projects yet. The first one you create appears here with its sessions.
+                  </EmptyState.Description>
+                </EmptyState.Header>
+              </EmptyState>
+            </div>
+          ) : (
+            projects.map((project) => {
+              const open = !closed.includes(project.name);
+              const rows = project.sessions.filter(([name]) =>
+                term ? (names[name] ?? name).toLowerCase().includes(term) : true,
+              );
+              return (
+                <div key={project.name} className="mt-1.5 flex flex-col">
+                  <SidebarProjectHeader
+                    name={project.name}
+                    count={project.sessions.length}
+                    open={open}
+                    onOpenChange={(next) =>
+                      setClosed((c) => (next ? c.filter((n) => n !== project.name) : [...c, project.name]))
+                    }
+                    current={project.sessions.some(([name]) => name === active)}
+                    actions={
+                      <>
+                        <IconButton aria-label="New session here" size="xs" variant="quiet">
+                          <PlusIcon />
+                        </IconButton>
+                        <IconButton aria-label={`${project.name} settings`} size="xs" variant="quiet">
+                          <SettingsIcon />
+                        </IconButton>
+                      </>
+                    }
+                  />
+                  {open ? (
+                    project.sessions.length === 0 ? (
+                      <SidebarEmptyRow>
+                        No sessions yet. <button type="button">Start one</button>
+                      </SidebarEmptyRow>
+                    ) : (
+                      <SessionList className="px-3">
+                        {rows.map(([name, age, state]) => (
+                          <SessionItem
+                            key={name}
+                            name={names[name] ?? name}
+                            age={age || undefined}
+                            state={state}
+                            active={name === active}
+                            onClick={() => setActive(name)}
+                            menuOpen={menu === name}
+                            rename={
+                              renaming?.name === name
+                                ? {
+                                    value: renaming.draft,
+                                    onValueChange: (draft) => setRenaming({ name, draft }),
+                                    onCommit: () => {
+                                      setNames((n) => ({ ...n, [name]: renaming.draft || name }));
+                                      setRenaming(null);
+                                    },
+                                    onCancel: () => setRenaming(null),
+                                  }
+                                : undefined
+                            }
+                            action={
+                              <RowMenu
+                                open={menu === name}
+                                onOpenChange={(next) => setMenu(next ? name : null)}
+                                onRename={() => setRenaming({ name, draft: names[name] ?? name })}
+                                projects={PROJECTS.filter((p) => p.name !== project.name).map((p) => p.name)}
+                              />
+                            }
+                          />
+                        ))}
+                      </SessionList>
+                    )
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div className="border-t border-sidebar-border px-2 py-2">
+          <AccountMenuDemo />
+        </div>
       </div>
     </div>
   );
@@ -771,6 +955,34 @@ export function CarouselDemo() {
           position,
         }))}
       />
+    </div>
+  );
+}
+
+/* ── RepositoryRowList ───────────────────────────────────────────────────── */
+
+const PROJECT_REPOS = [
+  { id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [{ value: 'main', description: 'default · updated 3h ago' }, { value: 'develop', description: 'updated 1d ago' }, { value: 'port/121-api-config-hardening', description: 'ahead 4 · updated 32m ago' }] },
+  { id: 'atlas', name: 'atlas', defaultBranch: 'develop', branches: [{ value: 'develop', description: 'default' }, { value: 'main' }] },
+  { id: 'flama-ai', name: 'flama-ai', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+  { id: 'adri-rodriguez', name: 'adri-rodriguez', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+];
+
+export function RepositoryRowListDemo() {
+  const [rows, setRows] = React.useState<RepositoryRowValue[]>([
+    { id: 'xrp-mobile', isDefault: true, branch: 'main' },
+    { id: 'atlas', isDefault: false, branch: 'develop' },
+  ]);
+  const defaults = rows.filter((r) => r.isDefault).length;
+  return (
+    <div className="flex w-full max-w-[484px] flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-fg">Default repositories</span>
+        <span className="figures text-[11.5px] text-fg-subtle">
+          {defaults} of {rows.length} by default
+        </span>
+      </div>
+      <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
     </div>
   );
 }

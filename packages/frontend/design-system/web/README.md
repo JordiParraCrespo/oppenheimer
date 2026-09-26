@@ -41,10 +41,12 @@ Wire the styles into the app's CSS entry alongside Tailwind:
     `AgentMark`
   - forms: `Field`, `Input`, `PasswordInput`, `SlugInput`, `Textarea`,
     `SegmentedControl`, `ChipSelect` (and its parts), `RepositorySelect`,
+    `RepositoryRowList`,
     `Composer` with `ComposerToolButton`, `AgentModelSelect`, `EffortSlider`
     and `EffortPicker`, `PermissionMenu`
   - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
-  - navigation: `Sidebar`, `SessionItem`, `Stepper`
+  - navigation: `Rail`, `Sidebar` (with `SidebarSearch`, `SidebarProjectHeader`,
+    `SidebarEmptyRow`), `SessionItem`, `Stepper`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`
     with `TerminalStatusLink`
   - media: `ImageCarousel`

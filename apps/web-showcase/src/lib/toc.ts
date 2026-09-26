@@ -7,6 +7,7 @@ import {
   KeyboardIcon,
   LayersIcon,
   LinkIcon,
+  ListChecksIcon,
   ListOrderedIcon,
   type LucideIcon,
   MenuIcon,
@@ -34,7 +35,6 @@ import {
   SlidersHorizontalIcon,
   ShieldCheckIcon,
   CircleCheckIcon,
-  ListChecksIcon,
   ListStartIcon,
   ToggleLeftIcon,
   AtSignIcon,
@@ -91,6 +91,7 @@ export const TOC: TocGroup[] = [
       { id: 'segmented', label: 'SegmentedControl', icon: ToggleLeftIcon },
       { id: 'textarea', label: 'Textarea', icon: TextIcon },
       { id: 'chipselect', label: 'ChipSelect', icon: SquareChevronDownIcon },
+      { id: 'reporows', label: 'RepositoryRowList', icon: ListChecksIcon },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon },
       { id: 'engine', label: 'AgentModelSelect', icon: BotIcon },
       { id: 'effort', label: 'EffortSlider', icon: SlidersHorizontalIcon },
@@ -108,7 +109,7 @@ export const TOC: TocGroup[] = [
   {
     group: 'Navigation',
     items: [
-      { id: 'sidebar', label: 'Sidebar', icon: PanelLeftIcon },
+      { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon },
       { id: 'stepper', label: 'Stepper', icon: ListOrderedIcon },
     ],
   },
