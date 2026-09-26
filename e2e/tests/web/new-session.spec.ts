@@ -3,6 +3,7 @@ import {
   connectInstallation,
   pairHost,
   STUB_BRANCH,
+  STUB_INSTALL_URL,
   STUB_REPOSITORIES,
 } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
@@ -143,12 +144,10 @@ test.describe('New session', () => {
     await page.goto('/sessions/new');
 
     // The empty screens are gone: an account with nothing connected still gets
-    // the composer, and the way out is inside the chip that is empty. Which
-    // repositories the App sees is decided on GitHub's own page, so the row is
-    // a link there, in a new tab, at the address the deployment reports.
+    // the composer, and the way out is inside the chip that is empty.
     await page.getByRole('button', { name: 'Repositories' }).click();
     const manage = page.getByRole('link', { name: 'Manage repository access' });
-    await expect(manage).toHaveAttribute('href', /github\.com\/apps\/oppenheimer-stub\//);
+    await expect(manage).toHaveAttribute('href', STUB_INSTALL_URL);
     await expect(manage).toHaveAttribute('target', '_blank');
 
     await owner.api.dispose();

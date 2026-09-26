@@ -192,3 +192,7 @@ earlier note:
   runner's writer orders frames, and that liveness is ping/pong.
 - `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
+- `versions/mvp/05-screens.md`: the repository chip's foot row was
+  "Connect a repository…", back to the onboarding step. It is now
+  "Manage repository access", a new-tab link to the GitHub App's
+  installation page (2026-09-26).

@@ -275,16 +275,7 @@ function RepositorySelect({
                 })}
             </ChipSelectList>
             {action ? (
-              <ChipSelectActionRow
-                icon={action.icon}
-                href={action.href}
-                onClick={() => {
-                  setOpen(false);
-                  action.onSelect?.();
-                }}
-              >
-                {action.label}
-              </ChipSelectActionRow>
+              <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
             ) : null}
           </>
         )}

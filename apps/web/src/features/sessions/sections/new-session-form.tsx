@@ -41,11 +41,15 @@ import {
  * action only says "open it", and where the machine it pairs lands — the draft
  * — is here.
  *
- * Three reads, and they are not the same read four times: the hosts, the
- * installations' repositories, and the branches of the repositories somebody
- * has actually picked. The last is deliberately last — the API answers branches
- * live from GitHub, so a call per row of a picker nobody has opened is a rate
- * limit spent on nothing.
+ * Four reads, and they are not the same read four times: the hosts, the
+ * installations' repositories, the branches of the repositories somebody has
+ * actually picked, and the deployment's GitHub App install URL. The branches
+ * are deliberately late — the API answers them live from GitHub, so a call per
+ * row of a picker nobody has opened is a rate limit spent on nothing. The
+ * install URL is the kernel's capabilities read, the one the sign-in and
+ * onboarding screens share: cached and persisted, so it costs no request here.
+ * The repository chip holds a `string | null` of it, and is loading until the
+ * answer is in.
  */
 export function NewSessionForm() {
   const { t } = useTranslation();
@@ -55,9 +59,9 @@ export function NewSessionForm() {
 
   const hosts = useHosts();
   const installations = useInstallations();
-  // Where "Manage repository access" leads: the App's installation page on
-  // GitHub, which is the only place the repository list changes.
-  const { data: deployment } = useDeploymentCapabilities();
+  const installUrl = useDeploymentCapabilities({
+    select: (deployment) => deployment.github_app_install_url,
+  });
   const repositories = useInstallationRepositoriesFor(
     (installations.data ?? []).map((installation) => installation.id),
   );
@@ -127,8 +131,8 @@ export function NewSessionForm() {
             repositories={repositoryOptions}
             value={draft.scope}
             onValueChange={(scope) => update({ scope })}
-            manageUrl={deployment?.github_app_install_url ?? undefined}
-            loading={installations.isPending || repositories.isPending}
+            manageUrl={installUrl.data ?? null}
+            loading={installations.isPending || repositories.isPending || installUrl.isPending}
             branchesLoading={branches.isPending}
           />
           {onlyScope ? (
