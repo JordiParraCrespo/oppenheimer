@@ -1,33 +1,31 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Projects become a saved scope a person creates
- * (`product/versions/mvp/12-projects.md`).
+ * Projects become a saved scope a person creates, and metadata only
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  *  - **`project` gains its defaults.** `defaultHostId` is a suggestion, never a
  *    grant: creating a session still loads the host through the own-or-grant
  *    scoped repository. It is `ON DELETE SET NULL` because a default that points
- *    at nothing is simply no default. `createdByUserId` is audit and, like
- *    `github_installation.installedByUserId`, never cascades: the project is the
- *    workspace's, not the person's who clicked.
+ *    at nothing is simply no default. `createdByUserId` is audit and never
+ *    cascades: the project is the workspace's, not the person's who clicked.
  *  - **`project_repository` is configuration, not history.** A removed repository
  *    is a deleted row; sessions keep what they checked out on their own
  *    `session_checkout` rows. The two composite keys make "a project holding
  *    another workspace's installation" unrepresentable, as they do for checkouts.
- *    `(organizationId, githubRepoId)` answers "which projects include this
- *    repository", which moving a session asks.
- *  - **The backfill** gives every existing auto-created project its origin as its
- *    one default repository, reading the installation, the name snapshot and the
- *    base branch from the most recent checkout of that repository in that
+ *  - **The backfill** gives every project that was auto-created from a
+ *    repository that repository as its one default, reading the installation,
+ *    the name snapshot and the base branch from its most recent checkout in the
  *    workspace. A project with no checkout to read them from gets no row; the
  *    one-repository invariant is enforced on write, not assumed on read.
- *  - **`work_session.homeProjectId`** is the project whose directory holds the
- *    session's tree. It is set once and never changes, so moving a session to
- *    another project (`projectId`) never moves anything on disk. The slug's
- *    uniqueness moves with it: `(homeProjectId, slug)` is the directory, and
- *    `(projectId, slug)` would refuse a move for a name clash that is not a
- *    directory clash at all. The new constraint is added before the old one is
- *    dropped, so the tombstone is never absent.
+ *  - **`originGithubRepoId` goes, after the backfill has read it.** A project is
+ *    created on purpose and never derived from a repository, so nothing looks a
+ *    project up by one any more.
+ *  - **A session's slug is unique per workspace**, not per project. The session's
+ *    directory is `workspaces/<org>/sessions/<slug>` and its branch
+ *    `oppenheimer/<slug>`: a project names nothing on disk, so a session can be
+ *    listed under another project without anything moving. The new constraint is
+ *    added before the old one is dropped, so the tombstone is never absent.
  */
 export class AddProjectScopes1789700000000 implements MigrationInterface {
   name = 'AddProjectScopes1789700000000';
@@ -105,20 +103,12 @@ export class AddProjectScopes1789700000000 implements MigrationInterface {
        WHERE p."originGithubRepoId" IS NOT NULL
        ORDER BY p."id", c."createdAt" DESC
     `);
+    await queryRunner.query(`DROP INDEX "UQ_project_organization_origin"`);
+    await queryRunner.query(`ALTER TABLE "project" DROP COLUMN "originGithubRepoId"`);
 
-    await queryRunner.query(`ALTER TABLE "work_session" ADD COLUMN "homeProjectId" uuid`);
-    await queryRunner.query(`UPDATE "work_session" SET "homeProjectId" = "projectId"`);
-    await queryRunner.query(`ALTER TABLE "work_session" ALTER COLUMN "homeProjectId" SET NOT NULL`);
     await queryRunner.query(`
       ALTER TABLE "work_session"
-        ADD CONSTRAINT "FK_work_session_home_project"
-          FOREIGN KEY ("organizationId", "homeProjectId")
-          REFERENCES "project"("organizationId", "id")
-          ON DELETE RESTRICT ON UPDATE NO ACTION
-    `);
-    await queryRunner.query(`
-      ALTER TABLE "work_session"
-        ADD CONSTRAINT "UQ_work_session_home_project_slug" UNIQUE ("homeProjectId", "slug")
+        ADD CONSTRAINT "UQ_work_session_organization_slug" UNIQUE ("organizationId", "slug")
     `);
     await queryRunner.query(
       `ALTER TABLE "work_session" DROP CONSTRAINT "UQ_work_session_project_slug"`,
@@ -126,21 +116,23 @@ export class AddProjectScopes1789700000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // A session that moved has `projectId` ≠ `homeProjectId`; putting it back in
-    // its home is the only state the old schema can describe, because the old
-    // schema's project *was* the directory.
-    await queryRunner.query(`UPDATE "work_session" SET "projectId" = "homeProjectId"`);
     await queryRunner.query(`
       ALTER TABLE "work_session"
         ADD CONSTRAINT "UQ_work_session_project_slug" UNIQUE ("projectId", "slug")
     `);
     await queryRunner.query(
-      `ALTER TABLE "work_session" DROP CONSTRAINT "UQ_work_session_home_project_slug"`,
+      `ALTER TABLE "work_session" DROP CONSTRAINT "UQ_work_session_organization_slug"`,
     );
+
+    // The origin comes back empty: a project a person created has none, and
+    // guessing one from its repositories could claim a repository for two
+    // projects, which the restored unique index forbids.
+    await queryRunner.query(`ALTER TABLE "project" ADD COLUMN "originGithubRepoId" bigint`);
     await queryRunner.query(
-      `ALTER TABLE "work_session" DROP CONSTRAINT "FK_work_session_home_project"`,
+      `CREATE UNIQUE INDEX "UQ_project_organization_origin"
+         ON "project" ("organizationId", "originGithubRepoId")
+       WHERE "originGithubRepoId" IS NOT NULL`,
     );
-    await queryRunner.query(`ALTER TABLE "work_session" DROP COLUMN "homeProjectId"`);
 
     await queryRunner.query(`DROP TABLE "project_repository"`);
 

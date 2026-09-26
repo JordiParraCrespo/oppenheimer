@@ -176,18 +176,18 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       [hostId, userId, 'devbox', 'key', randomUUID()],
     );
 
-    projectId = await insertProject(organizationId, 'xrp-mobile', '4242');
-    foreignProjectId = await insertProject(otherOrganizationId, 'xrp-mobile', '9999');
+    projectId = await insertProject(organizationId, 'xrp-mobile');
+    foreignProjectId = await insertProject(otherOrganizationId, 'xrp-mobile');
     installationId = await insertInstallation(organizationId, 1);
     foreignInstallationId = await insertInstallation(otherOrganizationId, 2);
   });
 
-  async function insertProject(org: string, slug: string, origin: string): Promise<string> {
+  async function insertProject(org: string, slug: string): Promise<string> {
     const id = randomUUID();
     await dataSource.query(
-      `INSERT INTO "project" ("id", "organizationId", "name", "slug", "originGithubRepoId")
-       VALUES ($1, $2, $3, $4, $5)`,
-      [id, org, slug, slug, origin],
+      `INSERT INTO "project" ("id", "organizationId", "name", "slug")
+       VALUES ($1, $2, $3, $4)`,
+      [id, org, slug, slug],
     );
     return id;
   }
@@ -374,9 +374,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
-              "name", "slug", "agent")
-           VALUES ($1, $2, $3, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
           [
             randomUUID(),
             organizationId,
@@ -388,27 +387,6 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
           ],
         ),
       ).rejects.toThrow(/FK_work_session_project|foreign key/i);
-    });
-
-    it('rejects a session whose home is another workspace’s project', async () => {
-      await expect(
-        dataSource.query(
-          `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
-              "name", "slug", "agent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'claude-code')`,
-          [
-            randomUUID(),
-            organizationId,
-            projectId,
-            foreignProjectId,
-            userId,
-            hostId,
-            'x',
-            'bold-otter-000002',
-          ],
-        ),
-      ).rejects.toThrow(/FK_work_session_home_project|foreign key/i);
     });
 
     it('rejects a checkout through another workspace’s installation', async () => {
@@ -558,17 +536,16 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.state).toBe('resolved');
       expect(row.stoppedAt).not.toBeNull();
 
-      // The tombstone: the slug cannot be taken again inside this project, which is
+      // The tombstone: the slug cannot be taken again in this workspace, which is
       // what stops a new session inheriting a retired agent's conversation state.
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "homeProjectId", "createdByUserId", "hostId",
-              "name", "slug", "agent")
-           VALUES ($1, $2, $3, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
           [randomUUID(), organizationId, projectId, userId, hostId, 'x', 'bold-otter-abc123'],
         ),
-      ).rejects.toThrow(/UQ_work_session_home_project_slug|duplicate key/i);
+      ).rejects.toThrow(/UQ_work_session_organization_slug|duplicate key/i);
     });
 
     it('nulls cwdCheckoutId when the checkout the agent was in is retired', async () => {
@@ -753,10 +730,10 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       expect(row.archivedAt === null || count === 0).toBe(true);
     });
 
-    it('moves a session’s listing and keeps its home, folded from the log', async () => {
+    it('moves a session’s listing, folded from the log, and nothing else', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
-      const target = await insertProject(organizationId, 'client-sites', '5151');
+      const target = await insertProject(organizationId, 'client-sites');
 
       const outcome = await repository.appendMove(work, target, [
         {
@@ -769,11 +746,11 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
 
       expect(outcome).toBe('moved');
       const [row] = await dataSource.query(
-        `SELECT "projectId", "homeProjectId" FROM "work_session" WHERE "id" = $1`,
+        `SELECT "projectId", "slug" FROM "work_session" WHERE "id" = $1`,
         [work.id],
       );
-      expect(row).toEqual({ projectId: target, homeProjectId: projectId });
-      // Counted where it is listed: the home no longer holds it for archiving.
+      expect(row).toEqual({ projectId: target, slug: work.slug });
+      // Counted where it is listed: the old project no longer holds it for archiving.
       expect(await repository.countUnresolvedForProject(scope(), projectId)).toBe(0);
       expect(await repository.countUnresolvedForProject(scope(), target)).toBe(1);
     });
@@ -781,7 +758,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     it('refuses a move into a project an archive retired first, and writes nothing', async () => {
       const work = session();
       await repository.createIfUnclaimed(work, requested());
-      const target = await insertProject(organizationId, 'retired', '6161');
+      const target = await insertProject(organizationId, 'retired');
       await dataSource.query(`UPDATE "project" SET "archivedAt" = now() WHERE "id" = $1`, [target]);
 
       const outcome = await repository.appendMove(work, target, [

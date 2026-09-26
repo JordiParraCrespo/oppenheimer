@@ -1,7 +1,12 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
 import { signedUpContext } from '../../support/auth';
 import { attach, FLEET_CAN, type FleetHost, pairedHosts, waitForHost } from '../../support/fleet';
-import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../support/sessions';
+import {
+  connectInstallation,
+  createProject,
+  createSession,
+  STUB_REPOSITORIES,
+} from '../../support/sessions';
 
 /**
  * Several machines on one account, driven through the real control plane.
@@ -121,6 +126,7 @@ test('another account neither sees a machine nor runs a session on it', async ()
 
   const stranger = await signedUpContext('fleetstranger');
   const installationId = await connectInstallation(stranger.api);
+  const projectId = await createProject(stranger.api, installationId);
   const listed = (await (await stranger.api.get('/api/v1/hosts')).json()) as { id: string }[];
   expect(listed.map((row) => row.id)).not.toContain(box.id);
 
@@ -128,6 +134,7 @@ test('another account neither sees a machine nor runs a session on it', async ()
     headers: { 'Idempotency-Key': `fleet-stranger-${Date.now()}` },
     data: {
       hostId: box.id,
+      projectId,
       agent: 'claude-code',
       checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
     },

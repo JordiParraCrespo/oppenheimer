@@ -8963,7 +8963,7 @@
     },
     "/api/v1/sessions/{id}/move": {
       "post": {
-        "description": "Nothing moves on disk: the worktrees and branches stay in the session’s home project (`homeProjectId`). The target must include every repository the session has checked out.",
+        "description": "Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.",
         "operationId": "moveSession",
         "parameters": [
           {
@@ -9027,7 +9027,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_018 — That project does not include this session’s repositories\n\nSESSIONS_006 — That project is archived\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_006 — That project is archived\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12652,14 +12652,8 @@
           },
           "slug": {
             "type": "string",
-            "description": "The project’s directory name on every host that holds it. Immutable: derived once, from the name a person gave it or from the repository the API created it for.",
+            "description": "The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.",
             "example": "xrp-mobile"
-          },
-          "originGithubRepoId": {
-            "type": "string",
-            "description": "Set only on a project the API created for a repository (a session that named no project): GitHub’s id for that repository, as a string because the column is a bigint.",
-            "nullable": true,
-            "example": "821374923"
           },
           "repositories": {
             "type": "array",
@@ -12907,11 +12901,6 @@
             "format": "uuid",
             "description": "The project the session is listed under."
           },
-          "homeProjectId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The project whose directory holds the session’s worktrees. Set at create and never changed, so moving a session to another project moves nothing on disk."
-          },
           "hostId": {
             "type": "string",
             "format": "uuid"
@@ -12999,7 +12988,6 @@
           "id",
           "organizationId",
           "projectId",
-          "homeProjectId",
           "hostId",
           "name",
           "slug",
@@ -13126,7 +13114,7 @@
             "maxLength": 2048
           }
         },
-        "required": ["hostId", "agent", "checkouts"]
+        "required": ["hostId", "agent", "projectId", "checkouts"]
       },
       "SessionEventResponseDto": {
         "type": "object",

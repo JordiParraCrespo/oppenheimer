@@ -13,13 +13,13 @@ import {
  * A project is a **saved scope a person creates**: the repositories its sessions
  * usually work on, the base each one branches from, which of them are offered by
  * default, and the host, agent and instructions a new session starts with
- * (`product/versions/mvp/12-projects.md`). The defaults are offered, never
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). The defaults are offered, never
  * applied: a session chooses its own repositories, and they need not be in its
  * project at all.
  *
- * `slug` is in no request body: it is a directory name on every host that holds
- * the project, derived once at creation and never again, so renaming a project
- * never moves a directory with live sessions inside it.
+ * `slug` is in no request body: it is the project's stable handle, derived once
+ * from its first name and never reissued. A project is metadata; nothing on a
+ * host is named after it.
  *
  * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
@@ -102,8 +102,8 @@ export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
  * `GET /projects`.
  *
  * Archived projects are left out by default: a retired project's slug stays
- * claimed for ever so its directory name is never reissued, which means the
- * listing would otherwise grow monotonically with rows nobody can put work in.
+ * claimed for ever so it is never reissued, which means the listing would
+ * otherwise grow monotonically with rows nobody can put work in.
  * `includeArchived` is what the settings screen passes to show the history.
  */
 export const listProjectsQuerySchema = z.object({

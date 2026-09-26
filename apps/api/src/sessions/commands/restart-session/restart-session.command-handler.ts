@@ -3,7 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
-import { requireSessionHome } from '../../application/require-active-project.policy';
+import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import type { WorkSessionRepositoryPort } from '../../database/work-session.repository.port';
@@ -56,8 +56,8 @@ export class RestartSessionCommandHandler
       });
     }
 
-    // The tree is in the home project's directory, wherever the session is listed.
-    const projectSlug = (await requireSessionHome(this.projects, command.scope, session)).slug;
+    // Nothing restarts under a retired project.
+    await requireActiveProject(this.projects, command.scope, session.projectId);
 
     await this.sessions.appendEvents(session, [
       {
@@ -70,10 +70,7 @@ export class RestartSessionCommandHandler
         payload: { requestedBy: 'api' },
       },
     ]);
-    const { hints } = await this.dispatch.restart(
-      session,
-      await this.launches.build(session, projectSlug),
-    );
+    const { hints } = await this.dispatch.restart(session, await this.launches.build(session));
     return { session, hints };
   }
 }

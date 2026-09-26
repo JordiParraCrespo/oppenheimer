@@ -121,7 +121,15 @@
     "composer": {
       "placeholder": "Describe a task or ask a question"
     },
-    "queued": "Your first task is queued for this host."
+    "queued": "Your first task is queued for this host.",
+    "project": {
+      "label": "Project",
+      "placeholder": "Project",
+      "search": "Search projects…",
+      "empty": "No project matches.",
+      "loading": "Loading projects…",
+      "add": "New project…"
+    }
   },
   "session": {
     "status": {
@@ -158,5 +166,27 @@
   "agents": {
     "claude-code": "Claude Code",
     "codex": "Codex"
+  },
+  "project": {
+    "newTitle": "New project",
+    "newDescription": "The repositories its sessions usually work on, and what a new session starts with.",
+    "name": "Name",
+    "namePlaceholder": "XRP Mobile",
+    "repositories": "Repositories",
+    "repositoriesRequired": "Pick at least one repository, and make one of them a default.",
+    "default": "Default",
+    "defaultTitle": "Offered to every new session of the project",
+    "defaultHost": "Default host",
+    "defaultAgent": "Default agent",
+    "none": "None",
+    "instructions": "Instructions",
+    "instructionsPlaceholder": "Run pnpm test before every commit.",
+    "create": "Create project",
+    "createFailed": "The project could not be created."
+  },
+  "row": {
+    "actions": "Session actions",
+    "move": "Move to project…",
+    "moveTitle": "Move to project"
   }
 }

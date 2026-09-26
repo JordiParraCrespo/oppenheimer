@@ -28,13 +28,11 @@ import type { WorkSessionEventEntity } from './work-session-event.entity';
 
 export interface WorkSessionProps extends SessionFold {
   organizationId: string;
-  /** Where the session is listed. Folded from `session.moved`; never null on a row. */
-  projectId: string;
   /**
-   * The project whose directory holds the session's tree. Set at create and never
-   * changed: every path and branch is built from it, so a move touches no disk.
+   * The project the session is listed under. Folded from `session.moved`; never
+   * null on a row. A project is metadata, so nothing on disk depends on it.
    */
-  homeProjectId: string;
+  projectId: string;
   createdByUserId: string;
   /**
    * The host the work runs on. It is the one reference in the schema a handler
@@ -78,7 +76,7 @@ export interface CreateWorkSessionProps {
  * out of it.
  *
  * Rows are never hard-deleted. Closing records `session.closed`, the state folds
- * to `resolved` and the row stays for ever: `uq (homeProjectId, slug)` is the
+ * to `resolved` and the row stays for ever: `uq (organizationId, slug)` is the
  * tombstone that stops a new session inheriting a retired session's directory
  * name, and therefore a stranger's agent conversation state.
  */
@@ -107,7 +105,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         },
         organizationId: props.organizationId,
         projectId: props.projectId,
-        homeProjectId: props.projectId,
         createdByUserId: props.createdByUserId,
         hostId: props.hostId,
         slug: props.slug,
@@ -141,8 +138,13 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.projectId;
   }
 
-  get homeProjectId(): string {
-    return this.props.homeProjectId;
+  /**
+   * The session's working branch, as its checkouts recorded it, or null before it
+   * has any. Every checkout of a session is on the same branch, and a recorded
+   * branch is never re-derived: sessions from before the flat layout keep theirs.
+   */
+  get branch(): string | null {
+    return this.props.checkouts[0]?.branch ?? null;
   }
 
   get createdByUserId(): string {

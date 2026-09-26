@@ -10,24 +10,17 @@ import {
 } from 'typeorm';
 
 /**
- * A body of work, and the name its directory takes on every host.
+ * A project: a saved scope a person creates — the repositories its sessions
+ * usually work on and the defaults a new session is offered
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * Two uniqueness rules, and they answer different questions.
- * `UQ_project_organization_origin` is the **identity**: one GitHub repository
- * maps to one project, as a database fact rather than as application hope, and
- * it is the conflict target the create statement names. It is partial because a
- * project with no origin is possible and several of them must not collide on
- * `NULL`. `UQ_project_organization_slug` is the **directory name**, which two
- * different repositories can derive alike (`acme/xrp-mobile` and
- * `other/xrp-mobile`), so it is what makes the second of them take the next
- * candidate.
+ * `UQ_project_organization_slug` keeps a project's slug unique in its workspace
+ * for ever: a slug is the project's stable handle and is never reissued, so an
+ * archived project keeps it. A project is metadata only; nothing on a host is
+ * named after it.
  */
 @Entity('project')
 @Index(['organizationId'])
-@Index('UQ_project_organization_origin', ['organizationId', 'originGithubRepoId'], {
-  unique: true,
-  where: '"originGithubRepoId" IS NOT NULL',
-})
 @Unique('UQ_project_organization_slug', ['organizationId', 'slug'])
 export class ProjectOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -36,33 +29,22 @@ export class ProjectOrmEntity {
   @Column({ type: 'uuid' })
   organizationId!: string;
 
-  /** The GitHub repository's name as GitHub spells it. Display only. */
+  /** Display name. Free to change. */
   @Column({ type: 'varchar' })
   name!: string;
 
-  /** Lower-case kebab, immutable, and a directory name — never re-derived. */
+  /** Lower-case kebab, derived from the name once and never changed or reissued. */
   @Column({ type: 'varchar' })
   slug!: string;
 
   /**
-   * The GitHub repository whose first session created this project. Every session
-   * after the first finds the project by this id rather than by re-deriving a
-   * string. A bigint column, which the driver exchanges as a string — and which
-   * the domain keeps as one.
-   */
-  @Column({ type: 'bigint', nullable: true })
-  originGithubRepoId!: string | null;
-
-  /**
-   * Reserved for the slice that owns sessions: retiring a project has to be able
-   * to refuse while work is still going on inside its directory, which needs
-   * sessions to answer. Nothing writes this column yet, and the listing already
-   * excludes rows that carry it.
+   * When the project was retired. Archiving refuses while sessions nobody has
+   * closed are listed in it; the listing leaves archived rows out.
    */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   archivedAt!: Date | null;
 
-  /** Who created the project on purpose; null for one the API created for a repository. */
+  /** Who created the project. Audit only; null once that account is gone. */
   @Column({ type: 'uuid', nullable: true })
   createdByUserId!: string | null;
 

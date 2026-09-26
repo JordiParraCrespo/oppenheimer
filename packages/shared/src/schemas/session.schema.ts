@@ -100,7 +100,8 @@ export const MAX_SESSION_CHECKOUTS = 1;
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
   agent: codingAgentSchema,
-  projectId: z.string().uuid().optional(),
+  /** Every session is listed under a project, and names it: none is derived. */
+  projectId: z.string().uuid(),
   name: displayNameSchema.optional(),
   /**
    * At most one in the MVP: a runner makes one worktree per session, so a
@@ -272,9 +273,9 @@ export const closeSessionSchema = z.object({
 export type CloseSessionDto = z.infer<typeof closeSessionSchema>;
 
 /**
- * `POST /sessions/{id}/move`. Lists the session under another project; its
- * worktrees and branches stay where they are, because a session's directory is
- * its home project's and never moves (`product/versions/mvp/12-projects.md`).
+ * `POST /sessions/{id}/move`. Lists the session under another project. Nothing
+ * moves on disk: a project is metadata, and a session's directory and branch
+ * never name it (`product/versions/mvp/10-api-modules-and-data-model.md`).
  */
 export const moveSessionSchema = z.object({
   projectId: z.string().uuid(),
@@ -294,7 +295,7 @@ export type SessionSortDto = z.infer<typeof sessionSortSchema>;
  * because a group is computed on read and cannot be an index.
  *
  * `githubRepoId`, `agent` and `sort` are the frames' sidebar filters, and
- * provisional with the rest of how sessions are organized (12): `recent` is last
+ * provisional with the rest of how sessions are organized (05): `recent` is last
  * activity first and is the default, `oldest` is creation order, `name` is
  * alphabetical.
  */

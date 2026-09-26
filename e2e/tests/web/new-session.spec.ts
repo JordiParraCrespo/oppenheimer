@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   connectInstallation,
+  createProject,
   pairHost,
   STUB_BRANCH,
   STUB_INSTALL_URL,
@@ -34,7 +35,10 @@ test.describe('New session', () => {
     test.slow();
     const owner = await provisionedUser('newsession');
     const hostId = await pairHost(owner.api, 'E2E box');
-    await connectInstallation(owner.api);
+    const installationId = await connectInstallation(owner.api);
+    // Every session names its project; the chip's own New project dialog is
+    // covered by the API route, so the project is made the quick way here.
+    await createProject(owner.api, installationId, 'E2E project');
 
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
@@ -52,6 +56,11 @@ test.describe('New session', () => {
     // second one would trip the per-IP throttle this file already works around.
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 112px tall').toBe(112);
+
+    // ── The project chip ─────────────────────────────────────────────────────
+    await page.getByRole('button', { name: 'Project' }).click();
+    await page.getByRole('option', { name: /E2E project/ }).click();
+    await expect(page.getByRole('button', { name: 'Project' })).toContainText('E2E project');
 
     // ── The host chip ────────────────────────────────────────────────────────
     await page.getByRole('button', { name: 'Host' }).click();

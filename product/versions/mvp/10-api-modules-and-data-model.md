@@ -19,7 +19,7 @@ whose contract the API serves.
 |---|---|---|
 | **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
-| **Projects** | `projects/` → `project` | yes |
+| **Projects** | `projects/` → `project`, `project_repository` (the repositories a project holds, and its defaults) | yes |
 | **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event` | yes |
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
@@ -31,15 +31,25 @@ an oversight.
 
 ## Decided
 
-### A project holds sessions; a session holds checkouts
+### A project lists sessions; a session holds checkouts
 
 This is the shape the whole design turns on, so it comes first.
 
-- A **project** is a body of work — "XRP Mobile". It is the unit a
-  person thinks in, and it outlives any session in it. Later it also
-  holds agents and documents ([the layout](#the-layout-on-a-host)).
-- A **session** is one piece of work inside a project: a terminal, an
-  agent, and a set of checkouts.
+- A **project** is a saved scope a person creates — "XRP Mobile": a
+  name, the repositories its sessions usually work on (each with a base
+  branch, and whether a new session is offered it), a default host and
+  agent, and instructions. It is the unit a person thinks in, and it
+  outlives any session in it. It is **metadata only**: nothing on a host
+  is named after it, so a session can be listed under any project and
+  moved between projects without anything moving
+  ([the layout](#the-layout-on-a-host)).
+- A **session** is one piece of work, listed under exactly one project:
+  a terminal, an agent, and a set of checkouts. Every session names its
+  project; none is derived from a repository.
+- A project's repositories are **offered, never required**. A session
+  checks out whatever repositories it chooses — usually one, sometimes
+  several, in its project or not — and may be moved to any project in
+  the workspace. There is no membership rule.
 - A **checkout** is one repository, checked out for one session, on its
   own branch. A session has **zero or more**: zero is a real session
   working in `sessions/<slug>/` with no git at all, which is what a
@@ -152,12 +162,11 @@ routes check `read Installation` — the scope resource is still called
 `repositories`, because that is what a token holder thinks in, and no
 Octokit type leaves `infrastructure/`.
 
-**`projects/`** owns the bodies of work and — load-bearing — **the
-names their directories take**. `project.slug` is a directory name on
-every host, so its uniqueness is a database constraint rather than a
-convention two runner versions could implement differently. It is a
-thin module today, deliberately: it grows to own the project's agents
-and documents, which are the next things inside that directory.
+**`projects/`** owns the saved scopes: a project's name, the
+repositories it holds and the defaults a new session is offered. A
+project is created on purpose (`POST /projects`) and nothing creates one
+on the side. Its slug is a stable, URL-safe handle derived once from its
+first name and never reissued; it names nothing on disk.
 
 **`sessions/`** owns what a session is, what it checked out, what
 happened to it, what state that implies, and who may open a terminal on
@@ -186,33 +195,36 @@ by knowledge owned is what rules them out.
 │
 ├── workspaces/
 │   └── jordi/                             ← organization.slug
-│       └── projects/
-│           └── xrp-mobile/                ← project.slug
-│               │
-│               ├── repos/                 ← bare stores. Nobody works here.
-│               │   ├── acme--xrp-mobile.git/
-│               │   └── acme--design-system.git/
-│               │
-│               ├── sessions/
-│               │   ├── bold-otter-3f9a7k/     ← work_session.slug
-│               │   │   ├── .oppenheimer       ← provenance marker
-│               │   │   ├── xrp-mobile/        ← checkout, the agent's cwd
-│               │   │   └── design-system/     ← second checkout, a sibling
-│               │   └── quiet-heron-b210c4/
-│               │       └── xrp-mobile/
-│               │
-│               ├── agents/                ← later
-│               └── docs/                  ← later
+│       │
+│       ├── repos/                         ← bare stores, one per repository. Nobody works here.
+│       │   ├── acme--xrp-mobile.git/
+│       │   └── acme--design-system.git/
+│       │
+│       └── sessions/
+│           ├── bold-otter-3f9a7k/         ← work_session.slug
+│           │   ├── .oppenheimer           ← provenance marker
+│           │   ├── xrp-mobile/            ← checkout, the agent's cwd
+│           │   └── design-system/         ← second checkout, a sibling
+│           └── quiet-heron-b210c4/
+│               └── xrp-mobile/
 │
 └── accounts/                              ← later (note 06): the person's, not a workspace's
 ```
 
 This replaces [`11-workspace-layout.md`](../../11-workspace-layout.md)
-§1. Five differences, each with a reason:
+§1. **There is no project level** (2026-09-26): a project is metadata,
+so a session listed under another project names the same directory and
+the same branch, one bare store serves a repository whichever projects
+hold it, and a project's slug is free to be only a handle. An earlier
+draft had `workspaces/<org>/projects/<project>/{repos,sessions}`, which
+made moving a session a question of disk; no runner ever built it (the
+runner's layout is still `<owner>/<repo>/{main,worktrees/<slug>}`, 02),
+so nothing on a host has to be migrated. Five points, each with a
+reason:
 
 1. **A workspace level, because the host is the person's.** One machine
-   serves every workspace its owner is in, and `project.slug` is unique
-   per workspace, so two workspaces could each own a `xrp-mobile`.
+   serves every workspace its owner is in, and a session's slug is unique
+   per workspace, so two workspaces could each own a `bold-otter-3f9a7k`.
    `workspaces/<organization.slug>/` keeps them apart, and the word is
    now used for the thing it means in this API — the `organization`
    row. `organization.slug` is globally unique
@@ -221,14 +233,12 @@ This replaces [`11-workspace-layout.md`](../../11-workspace-layout.md)
    the id: a slug rename would move a tree with live sessions in it.
    `accounts/` sits beside `workspaces/`, not inside one, because a
    login is the person's (note 06).
-2. **`projects/`, not `workspaces/`, for the bodies of work.** The word
-   is taken, by the level above.
+2. **No project level.** A project is metadata; see above.
 3. **No `main/` level.** It existed only so `worktrees/` could sit
    beside it inside the repo folder. Worktrees now live under
    `sessions/`, so `repos/<name>.git/` *is* the store.
 4. **The store is bare.** On this repo `.git` is 41 MB and the working
-   tree 67 MB, so bare saves the larger half per repository per
-   project, and makes "never edited" structurally true instead of a
+   tree 67 MB, so bare saves the larger half per repository, and makes "never edited" structurally true instead of a
    rule in a document. `git worktree add` works from a bare repo.
    One gotcha: `git clone --bare` sets no fetch refspec, so the runner
    must add `+refs/heads/*:refs/remotes/origin/*` or `git fetch` will
@@ -248,8 +258,8 @@ This replaces [`11-workspace-layout.md`](../../11-workspace-layout.md)
 Paths are then fully derived, every segment a unique-constrained column:
 
 ```
-store     workspaces/{organization.slug}/projects/{project.slug}/repos/{session_checkout.storeDirectoryName}   (as the runner reported it)
-checkout  workspaces/{organization.slug}/projects/{project.slug}/sessions/{work_session.slug}/{session_checkout.directoryName}
+store     workspaces/{organization.slug}/repos/{session_checkout.storeDirectoryName}   (as the runner reported it)
+checkout  workspaces/{organization.slug}/sessions/{work_session.slug}/{session_checkout.directoryName}
 ```
 
 ### Worktree when we can, clone when we cannot
@@ -269,7 +279,7 @@ The repository chip selects **several** repositories, and for each one
 a **base branch**. That is `session_checkout.baseBranch`, defaulting to
 the repository's `defaultBranch`, and `GET /repositories/{id}/branches`
 is what fills the picker. The checkout's own branch is always
-`oppenheimer/<project.slug>/<work_session.slug>`, created from the
+`oppenheimer/<work_session.slug>`, created from the
 base — never the base itself. Three reasons, one of them hard: git
 refuses to add a worktree on a branch another worktree already has
 checked out, so two sessions "on `main`" would fail at the second; the
@@ -311,8 +321,8 @@ space.
    landing on a retired name inherits a stranger's history — a bug that
    is near-impossible to diagnose from the symptom. Here this is free
    *provided* `work_session` rows are **never hard-deleted**: closing
-   sets `stoppedAt`, the row remains, and `uq (projectId, slug)` is a
-   permanent tombstone. That is a rule, not an accident.
+   sets `stoppedAt`, the row remains, and `uq (organizationId, slug)` is
+   a permanent tombstone. That is a rule, not an accident.
 
 Orca also gates a new name on four things before committing to it —
 retired names, a local branch, a remote branch, and an existing pull
@@ -399,12 +409,15 @@ Two rules that are easy to get wrong and both load-bearing:
 ### Branch names carry the session id
 
 ```
-oppenheimer/<project.slug>/<work_session.slug>
+oppenheimer/<work_session.slug>
 ```
 
-Both segments are unique-constrained (`uq (organizationId, slug)` and
-`uq (projectId, slug)`), so a branch name is **self-identifying and
-collision-free by construction**. Two sessions can never want the same
+The slug is unique in its workspace (`uq (organizationId, slug)`), and
+its random tail keeps two workspaces holding one repository apart, so a
+branch name is **self-identifying and collision-free by construction**.
+It names no project, so moving a session renames nothing. A session
+created before 2026-09-26 keeps the `oppenheimer/<project>/<session>`
+branch its checkouts recorded; a recorded branch is never re-derived. Two sessions can never want the same
 branch of the same repository, which is what three independent reviewers
 flagged as unconstrained — and it needs no partial index, no pre-flight
 check against GitHub, and no race. herdr-projects does the same thing
@@ -780,70 +793,69 @@ there.
 
 **`projects/`**
 
-> **Superseded in part, 2026-09-26.** A project is now a saved scope a
-> person creates, holding several repositories and a session's defaults;
-> auto-creation is only the API's fallback, and a session can move between
-> projects. See [`12-projects.md`](12-projects.md). This section is kept as
-> written.
+- `project` — `id`, `organizationId`, `name`, `slug`, `defaultHostId`
+  null, `defaultAgent` null, `instructions` text (≤ 8 000 characters),
+  `createdByUserId` null (audit, `ON DELETE SET NULL`), `archivedAt`,
+  timestamps. Unique `(organizationId, slug)` and `(organizationId, id)`,
+  the second added by the sessions migration for the composite keys that
+  reference it.
 
-- `project` — `id`, `organizationId`, `name`, `slug`,
-  `originGithubRepoId` bigint null, `archivedAt`, timestamps. Unique
-  `(organizationId, slug)` and, partial on non-null,
-  `(organizationId, originGithubRepoId)`; the `(organizationId, id)`
-  unique that the sessions composite key needs is added **by the
-  sessions migration**, not before it (a constraint for a table that
-  is not in the tree is speculative schema).
+  **A project is created on purpose and is metadata only.**
+  `POST /projects` is the one way a project comes to exist; every
+  session names its project, and nothing is derived from a repository.
+  (An earlier cut auto-created a project per repository on its first
+  session, keyed by an `originGithubRepoId`; it was removed on
+  2026-09-26, and the migration that did so backfilled each such
+  project's origin as its one default repository before dropping the
+  column.) Nothing on a host is named after a project, so moving a
+  session is a label change and a project's slug is only a handle: lower
+  case, derived once from the first name (`<name>`, then
+  `<name>-<first 8 hex of the id>`, the id minted before the insert so the
+  fallback cannot collide in practice), never changed and never
+  reissued. `name` is free.
 
-  **Both come from the GitHub repository.** Auto-created on the first
-  session for a repository: `name` is the repository's name as GitHub
-  spells it, `slug` is its sanitised form, and `originGithubRepoId`
-  records which repository did it, so the next session on that
-  repository finds its project by GitHub's id rather than by
-  re-deriving a string. Inside the API the id travels as a string, as
-  the driver exchanges a bigint; the wire's number becomes a string at
-  the boundary. The MVP never shows a project chip —
-  `00-scope.md` decided four chips, and a fifth is real friction on the
-  most-used screen for a concept with one instance. `POST /sessions`
-  takes an optional `projectId`; absent, the project is the one whose
-  origin is the first checkout's repository.
+  **A default is a suggestion, never a grant.** `defaultHostId` is a
+  foreign key to `host`, `ON DELETE SET NULL`, and a host the caller
+  cannot use is refused at write (`HOSTS_001`); creating a session still
+  loads its host through the own-or-grant-scoped repository. The project
+  reports the id as stored — in a personal workspace a per-reader filter
+  is a join for nothing, and it moves to the teams slice. `defaultAgent`
+  is a catalog id, checked by the same enum `POST /sessions` uses.
+  `instructions` are stored on the project and **not yet delivered** to
+  a session: 01 carries no such field, and when it does it will be
+  capability-gated the way `session.image` is, never an optional field
+  an older runner drops.
 
-  **Auto-creation is a race and is written as one, on the origin.**
-  `INSERT … ON CONFLICT (organizationId, originGithubRepoId) DO
-  NOTHING RETURNING id`; a miss reselects by origin and returns the
-  winner. Only a *slug* conflict from a different origin —
-  `acme/xrp-mobile` and `other/xrp-mobile` sanitise to the same word —
-  moves to the next candidate, and the candidates are **deterministic**,
-  the rule [`11-workspace-layout.md`](../../11-workspace-layout.md)
-  already wrote: `<repo>`, then `<owner>--<repo>`, then
-  `<owner>--<repo>-<githubRepoId>`. No random suffix, no retry budget,
-  no "could not reserve a name" error: a directory name can always be
-  derived from the repository, and two runner versions cannot disagree
-  about it. Never a second query that assumes the first won.
+- `project_repository` — `id`, `organizationId`, `projectId`,
+  `installationId`, `githubRepoId` bigint, `repositoryFullName` (display
+  snapshot, refreshed on every write), `baseBranch`, `isDefault`,
+  `position`, timestamps. Composite keys `(organizationId, projectId) →
+  project` (`ON DELETE CASCADE`) and `(organizationId, installationId) →
+  github_installation`, so a project holding another workspace's
+  installation is unrepresentable. Unique `(projectId, githubRepoId)`;
+  index `(organizationId, githubRepoId)` for "which projects hold this
+  repository", and `(organizationId, installationId)` behind its key.
 
-  **Rows are never hard-deleted**; closing sets `archivedAt`, so
-  `uq (organizationId, slug)` is a permanent tombstone for the directory
-  name, exactly as `work_session.slug` is. A tombstone is a tombstone
-  on the create path too: `ensureForRepository` never returns an
-  archived project, and a first session on an archived origin is
-  refused rather than silently reopening a retired directory. Archiving
-  ships **with the sessions slice**, because "has open sessions" is the
-  one question the archive command must ask, and a placeholder that
-  answers no is fail-open on the destructive path. herdr-projects is the warning
-  here: deleting a project there frees its slug immediately while the
-  privilege grants keyed by its path survive, so a new project of the
-  same name silently inherits the old one's approvals — their own code
-  prints a warning about it. Grants here key on the project's UUID and
-  the slug is never reissued, so neither half of that can happen.
+  A child of the project aggregate, like `session_checkout` of the
+  session: no resource of its own, only read by a `projectId` the scoped
+  read has verified. It is **configuration, not history**: the set is
+  replaced whole on every write, in one transaction with the project
+  row, and a removed repository is a deleted row. Each repository is
+  resolved live through `RepositoryAccessPort` on write (GitHub's 404 is
+  `GITHUB_010`). The aggregate holds at least one repository, at least
+  one of them a default, at most twenty, none twice, each with a base
+  (`PROJECTS_006`). A repository may sit in several projects. The
+  defaults are offered to a new session, never applied, and there is no
+  rule tying a session's checkouts to its project's repositories.
 
-  **`slug` is immutable; `name` is free.** The slug is a directory name
-  on every host, so a rename that changed it would have to move
-  `projects/<old>/` on every machine holding the project, with live
-  sessions inside it. Splitting them makes renaming display-only and
-  free. This is the same lesson as rule 1 above: a path is never an
-  identity. The cost is that a project's directory keeps its first
-  repository's name for ever, so `projects/xrp-mobile/` can hold a
-  project called something else — cheap against moving directories
-  under running sessions.
+  **Rows are never hard-deleted**; deleting a project archives it
+  (`archivedAt`), which refuses while sessions nobody has closed are
+  listed in it (`PROJECTS_005`, failing closed as `PROJECTS_003` when
+  nothing answers). A resolved session listed in an archived project
+  stays there; it is a tombstone the console does not show, and nothing
+  new is listed under a retired project (`SESSIONS_006`). Grants key on
+  the project's UUID and the slug is never reissued, so a new project can
+  never inherit a retired one's approvals (herdr-projects' warning).
 
 **`sessions/`**
 
@@ -854,7 +866,7 @@ there.
   `agentSessionId`, `lastEventAt`, `stoppedAt`, timestamps.
   Index `(organizationId, state, createdAt DESC)` for the sidebar;
   `(projectId, state)`; `(hostId, state)` for runner reconciliation;
-  unique `(projectId, slug)`, `(organizationId, id)`, and
+  unique `(organizationId, slug)`, `(organizationId, id)`, and
   `(organizationId, idempotencyKey) WHERE idempotencyKey IS NOT NULL`.
 
   **Cross-tenant references are unrepresentable, not just unchecked.**
@@ -891,7 +903,7 @@ there.
   and the session degrades to its root rather than dangling.
 
   **Rows are never hard-deleted.** Closing sets `stoppedAt`. See rule 4
-  above: `uq (projectId, slug)` is the tombstone that stops a new
+  above: `uq (organizationId, slug)` is the tombstone that stops a new
   session inheriting a retired session's agent conversation state.
 
 - `session_checkout` — `id`, `organizationId`, `sessionId`,
@@ -986,16 +998,19 @@ DELETE /installations/{id}        delete Installation repositories:write
 GET    /installations/{id}/repositories            read Installation  repositories:read   live from GitHub, cached 60 s
 GET    /installations/{id}/repositories/{githubRepoId}/branches  read Installation  repositories:read   live: GET /repositories/{id} then its branches; GitHub's 404 is the refusal
 
-GET    /projects                  read Project       projects:read
+GET    /projects                  read Project       projects:read    with their repositories and defaults
 GET    /projects/{id}             read Project       projects:read
-PATCH  /projects/{id}             update Project     projects:write
+POST   /projects                  create Project     projects:write   name, repositories, defaults, instructions
+PATCH  /projects/{id}             update Project     projects:write   any of those; repositories replaced as a set
+DELETE /projects/{id}             update Project     projects:write   archive; refuses while sessions are listed in it
 
-GET    /sessions                  read Session       sessions:read
+GET    /sessions                  read Session       sessions:read    projectId, hostId, state, githubRepoId, agent, sort
 GET    /sessions/{id}             read Session       sessions:read
 POST   /sessions                  create Session     sessions:write   Idempotency-Key header
 PATCH  /sessions/{id}             update Session     sessions:write
 POST   /sessions/{id}/stop        update Session     sessions:write
 POST   /sessions/{id}/restart     update Session     sessions:write
+POST   /sessions/{id}/move        update Session     sessions:write   { projectId }: a label change, nothing moves on disk
 DELETE /sessions/{id}             delete Session     sessions:write
 GET    /sessions/{id}/events      read Session       sessions:read
 POST   /sessions/{id}/attach-ticket  update Session  sessions:write
@@ -1026,15 +1041,26 @@ hints. The **link's** vocabulary is 01's closed set,
 `host_offline`, which only the console has a use for — a runner must
 not be able to say it about itself, so the two are two schemas.
 
-`POST /sessions` takes `{ hostId, agent, projectId?, name?, checkouts:
+`POST /sessions` takes `{ hostId, agent, projectId, name?, checkouts:
 [{ installationId, githubRepoId, baseBranch? }], cwdGithubRepoId? }`:
 repositories named by GitHub's own ids — at most one in the MVP (00,
 `SESSIONS_010` on adding a second later) — since the picker is a
 live listing and a row may not exist yet, each with its base branch,
 the agent launched in the first unless `cwdGithubRepoId` says
 otherwise, and no branch name, because the branch is always the
-session's. `name` is optional and
-usually absent; the first prompt names the session.
+session's. `projectId` is required: every session is listed under a
+project, and none is derived (`SESSIONS_009`). The repositories need not
+be the project's. `name` is optional and usually absent; the first
+prompt names the session.
+
+`POST /sessions/{id}/move` lists a session under another active project
+of the workspace. It is an `api` entry in the log, `session.moved
+{ from, to }`, folded onto `projectId` like the name is, and appended in
+one transaction with a share lock on the target project — the lock
+creating a session takes — so a move and an archive cannot both win. No
+host is told: the session's directory and branch never name a project.
+Any session may move to any project; a resolved one stays where it
+ended.
 
 Unauthenticated by design, and therefore carrying no `@RequireScopes`:
 
@@ -1127,7 +1153,7 @@ interface SessionDto {
 }
 
 interface CreateSessionInput {
-  hostId; agent; projectId?; name?;
+  hostId; agent; projectId; name?;
   checkouts: { installationId; githubRepoId; baseBranch? }[];
   cwdGithubRepoId?;
 }
@@ -1168,7 +1194,9 @@ Each step is a vertical slice that can land alone.
    `redeem-host-pairing` — the smallest slice that exercises a new scope
    resource, a new CASL resource, a scoped repository, a single-use
    credential and a public route at once.
-4. `projects/` — one aggregate, auto-creation, and the slug constraint.
+4. `projects/` — one aggregate, its repositories and defaults, and the
+   slug constraint (built with `POST /projects` on 2026-09-26; the first
+   cut auto-created projects and was replaced the same day).
 5. `sessions/` — the row, the checkouts, the log and the fold, with no
    relay: create, list, stop, events.
 6. `relay/` — the runner uplink and the browser attach, which turns the
@@ -1286,7 +1314,7 @@ each at the place it changed:
 7. `<runId>:<n>` runner keys and per-row `ON CONFLICT DO NOTHING`;
 8. branch names carry the ids;
 9. `project.originGithubRepoId` and the auto-create race written as
-   one;
+   one (superseded 2026-09-26: projects are no longer auto-created);
 10. gateways live in `relay/infrastructure/`, are unguarded by default,
     and authenticate in the handshake with a spec each;
 11. superseded by the live listing: with no mirror there is nothing for

@@ -1,6 +1,6 @@
 /**
  * What makes a project's repository list one a project can hold
- * (`product/versions/mvp/12-projects.md`).
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  * Pure: the list in, the first thing wrong with it out, or `null`. The aggregate
  * refuses a list with a problem, and the handlers ask first so the caller gets the

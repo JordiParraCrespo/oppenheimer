@@ -5,19 +5,22 @@ import { AppError } from '@oppenheimer/backend-core';
 import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import { ProjectEntity } from '../../domain/project.entity';
-import { projectSlugCandidatesFromName } from '../../domain/project-slug.policy';
+import { projectSlugCandidates } from '../../domain/project-slug.policy';
 import { ProjectErrors } from '../../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { CreateProjectCommand } from './create-project.command';
 
 /**
  * Creates a project a person asked for: a name, the repositories it holds and the
- * defaults a new session is offered (`product/versions/mvp/12-projects.md`).
+ * defaults a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ *
+ * This is the only way a project comes to exist: a session always names its
+ * project, and nothing creates one on the side.
  *
  * The slug is derived from the **name**, once. The id is minted first so the
  * fallback candidate can be derived from the row itself; the only race is the
- * directory name, and the database's unique constraint is what answers it —
- * nothing here asks whether a name is free and then acts on the answer.
+ * slug, and the database's unique constraint is what answers it — nothing here
+ * asks whether a slug is free and then acts on the answer.
  */
 @CommandHandler(CreateProjectCommand)
 export class CreateProjectCommandHandler
@@ -37,7 +40,7 @@ export class CreateProjectCommandHandler
     const repositories = await this.settings.repositories(scope, input.repositories);
 
     const id = randomUUID();
-    for (const slug of projectSlugCandidatesFromName(input.name, id)) {
+    for (const slug of projectSlugCandidates(input.name, id)) {
       const project = ProjectEntity.createNew({
         id,
         organizationId,
@@ -49,13 +52,13 @@ export class CreateProjectCommandHandler
         defaultAgent: input.defaultAgent ?? null,
         instructions: input.instructions ?? '',
       });
-      if ((await this.projects.insertNamed(project)) === 'inserted') return project;
+      if ((await this.projects.insert(project)) === 'inserted') return project;
     }
 
     // The last candidate carries the project's own id, so this is not a name
     // somebody else is using by accident; report it rather than loop.
     throw new AppError(ProjectErrors.SLUG_UNAVAILABLE, {
-      detail: `Every directory name derived from “${input.name}” is taken`,
+      detail: `Every slug derived from “${input.name}” is taken`,
     });
   }
 }

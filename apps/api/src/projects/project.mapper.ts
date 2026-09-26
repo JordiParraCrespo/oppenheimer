@@ -5,13 +5,7 @@ import { ProjectRepositoryOrmEntity } from './database/project-repository.orm-en
 import { ProjectEntity } from './domain/project.entity';
 import { ProjectRepositoryResponseDto, ProjectResponseDto } from './dtos/project.response.dto';
 
-/**
- * Maps the project aggregate between its domain, persistence and response shapes.
- *
- * `originGithubRepoId` crosses every boundary as the string the driver exchanges
- * a bigint as. Nothing coerces it: GitHub's ids fit in a JavaScript number today
- * and the column type says they are not promised to.
- */
+/** Maps the project aggregate between its domain, persistence and response shapes. */
 @Injectable()
 export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, ProjectResponseDto> {
   toPersistence(entity: ProjectEntity): ProjectOrmEntity {
@@ -20,7 +14,6 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     record.organizationId = entity.organizationId;
     record.name = entity.name;
     record.slug = entity.slug;
-    record.originGithubRepoId = entity.originGithubRepoId;
     record.archivedAt = entity.archivedAt;
     record.createdByUserId = entity.createdByUserId;
     record.defaultHostId = entity.defaultHostId;
@@ -62,7 +55,6 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
         organizationId: record.organizationId,
         name: record.name,
         slug: record.slug,
-        originGithubRepoId: record.originGithubRepoId,
         archivedAt: record.archivedAt,
         createdByUserId: record.createdByUserId ?? null,
         defaultHostId: record.defaultHostId ?? null,
@@ -87,7 +79,6 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     dto.organizationId = entity.organizationId;
     dto.name = entity.name;
     dto.slug = entity.slug;
-    dto.originGithubRepoId = entity.originGithubRepoId;
     dto.repositories = entity.repositories.map((repository) => {
       const item = new ProjectRepositoryResponseDto();
       item.installationId = repository.installationId;

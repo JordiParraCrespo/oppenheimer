@@ -1124,13 +1124,9 @@ export type ProjectResponseDto = {
      */
     name: string;
     /**
-     * The project’s directory name on every host that holds it. Immutable: derived once, from the name a person gave it or from the repository the API created it for.
+     * The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.
      */
     slug: string;
-    /**
-     * Set only on a project the API created for a repository (a session that named no project): GitHub’s id for that repository, as a string because the column is a bigint.
-     */
-    originGithubRepoId?: string | null;
     repositories: Array<ProjectRepositoryResponseDto>;
     /**
      * The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it.
@@ -1232,10 +1228,6 @@ export type SessionResponseDto = {
      * The project the session is listed under.
      */
     projectId: string;
-    /**
-     * The project whose directory holds the session’s worktrees. Set at create and never changed, so moving a session to another project moves nothing on disk.
-     */
-    homeProjectId: string;
     hostId: string;
     /**
      * Display name. It starts equal to the slug, then the first prompt names it.
@@ -1301,7 +1293,7 @@ export type PaginatedSessionsResponseDto = {
 export type CreateSessionRequest = {
     hostId: string;
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
-    projectId?: string;
+    projectId: string;
     name?: string;
     checkouts: Array<{
         installationId: string;
@@ -5825,8 +5817,6 @@ export type MoveSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_018 — That project does not include this session’s repositories
-     *
      * SESSIONS_006 — That project is archived
      *
      * SESSIONS_005 — That session is closed

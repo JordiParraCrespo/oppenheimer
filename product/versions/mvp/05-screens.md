@@ -28,7 +28,12 @@
   pulsing grey glyph; New session on top; a filter menu (repository,
   agent, host, sort) with the active filters as chips under the header;
   the account menu at the bottom with appearance and language; hosts in
-  a settings drawer.
+  a settings drawer. Each row has an ellipsis menu with **Move to
+  project…**, a second pane listing the workspace's other projects;
+  moving is a label change (nothing on the host moves, 10), so it asks
+  for no confirmation. The frames also group the list by project, with
+  Rename and Delete in the same menu; how sessions are organized is its
+  own design, owed later (2026-09-26), so the list stays flat until then.
 - The sidebar **is** the console's navigation, and version 1 has no
   other destination: no nav rows, no chrome bar over the pane, no
   command palette, and no settings or profile page — the account menu
@@ -40,12 +45,21 @@
   and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
-- New session: chips for host, repository, branch; a composer for the
+- New session: chips for **project**, host, repository, branch; a
+  composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
-  the right. The agent lives in the engine button, not a chip: opening it
+  the right. The project chip leads the row, because every session names
+  a project and send waits for one; its foot action is **New project…**,
+  a dialog with a name, the repositories (`RepositoryRowList`: a row per
+  repository the App can see, ticked rows growing a Default toggle and a
+  base-branch pill), a default host and agent, and instructions. Picking
+  a project offers its defaults — its host, its agent, its first default
+  repository on its base — and the chips stay the person's to change: a
+  repository outside the project is as good as one inside it (10). The
+  agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
   (Minimal to Max) in a popover, not a list.

@@ -370,9 +370,6 @@
         "organizationSlug": {
           "$ref": "#/$defs/gitRef"
         },
-        "projectSlug": {
-          "$ref": "#/$defs/gitRef"
-        },
         "sessionSlug": {
           "$ref": "#/$defs/gitRef"
         },
@@ -461,7 +458,6 @@
         "commandId",
         "sessionId",
         "organizationSlug",
-        "projectSlug",
         "sessionSlug",
         "agent",
         "launch",

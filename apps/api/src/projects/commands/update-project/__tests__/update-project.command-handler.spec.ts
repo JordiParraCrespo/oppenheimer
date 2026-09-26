@@ -36,7 +36,6 @@ describe('UpdateProjectCommandHandler', () => {
       organizationId: 'org-acme',
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
-      originGithubRepoId: '42',
       repositories: [XRP],
     });
     projects = {

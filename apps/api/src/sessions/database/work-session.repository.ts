@@ -4,7 +4,6 @@ import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-aut
 import { OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
-import { ProjectOrmEntity } from '../../projects/database/project.orm-entity';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -96,9 +95,8 @@ export class WorkSessionRepository
         `INSERT INTO "work_session"
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
-            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt",
-            "homeProjectId")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -126,7 +124,6 @@ export class WorkSessionRepository
           record.agentSessionId,
           record.lastEventAt,
           record.stoppedAt,
-          record.homeProjectId,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -296,20 +293,13 @@ export class WorkSessionRepository
     if (records.length === 0) return [];
 
     const ids = records.map((record) => record.id);
-    const [checkouts, projects, prompts] = await Promise.all([
+    const [checkouts, prompts] = await Promise.all([
       this.checkoutsFor(ids),
-      this.repository.manager.getRepository(ProjectOrmEntity).find({
-        // The **home** project: its slug is the directory the tree is in, which a
-        // move never changes.
-        where: { id: In([...new Set(records.map((record) => record.homeProjectId))]) },
-        select: { id: true, slug: true },
-      }),
       this.repository.manager.getRepository(WorkSessionEventOrmEntity).find({
         where: { sessionId: In(ids), kind: SESSION_EVENT_KINDS.PROMPT_FIRST },
         select: { sessionId: true, payload: true },
       }),
     ]);
-    const slugs = new Map(projects.map((project) => [project.id, project.slug]));
     const firstPrompts = new Map<string, string>();
     for (const event of prompts) {
       const text = (event.payload as { text?: unknown } | null)?.text;
@@ -318,13 +308,10 @@ export class WorkSessionRepository
       }
     }
     return records.flatMap((record) => {
-      const projectSlug = slugs.get(record.homeProjectId);
-      if (!projectSlug) return [];
       const prompt = firstPrompts.get(record.id);
       return [
         {
           session: this.mapper.toDomain(record, checkouts.get(record.id) ?? []),
-          projectSlug,
           ...(prompt ? { prompt } : {}),
         },
       ];

@@ -3,21 +3,10 @@ import type { Option } from 'oxide.ts';
 import type { ProjectEntity } from '../domain/project.entity';
 
 /**
- * What an insert that may lose a race came back with.
- *
- * Three outcomes rather than a boolean, because the two failures mean opposite
- * things: losing on the **origin** means somebody else created this
- * repository's project and it is the project; losing on the **slug** means a
- * different repository holds the directory name and this one needs the next
- * candidate.
+ * What inserting a project came back with. The only race is the slug: another
+ * project of the workspace may hold it.
  */
-export type ProjectInsertOutcome = 'inserted' | 'origin-taken' | 'slug-taken';
-
-/**
- * What inserting a project a person created came back with. There is no origin to
- * lose on, so the only race is the directory name.
- */
-export type NamedProjectInsertOutcome = 'inserted' | 'slug-taken';
+export type ProjectInsertOutcome = 'inserted' | 'slug-taken';
 
 /**
  * What archiving came back with. `in-use` and `archived` both carry the project,
@@ -42,20 +31,10 @@ export type ArchiveOutcome =
  */
 export interface ProjectRepositoryPort {
   /**
-   * Insert the project, reporting which uniqueness rule stopped it if one did.
-   *
-   * `INSERT … ON CONFLICT ("organizationId", "originGithubRepoId") DO NOTHING`:
-   * the statement itself answers whether this caller created the project, so no
-   * second query has to assume it won. Creation raises **no domain event**, which
-   * is why this is the one write that does not go through the outbox — an insert
-   * that may legitimately not land cannot owe an event either way.
+   * Insert a project with its repositories, in one transaction. `slug-taken` when
+   * another project of the workspace holds the slug.
    */
-  insertIfUnclaimed(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
-  /**
-   * Insert a project a person created, with its repositories, in one transaction.
-   * `slug-taken` when another project of the workspace holds the directory name.
-   */
-  insertNamed(entity: ProjectEntity): Promise<NamedProjectInsertOutcome>;
+  insert(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
   /**
    * Write what a person may change — the name, the defaults, the instructions and
    * the repositories as a whole set — to a project that is still active, returning
@@ -92,13 +71,4 @@ export interface ProjectRepositoryPort {
   findAll(scope: AccessScope, options?: { includeArchived?: boolean }): Promise<ProjectEntity[]>;
   /** `None` both for a missing project and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>>;
-  /**
-   * The project a repository created, by GitHub's own id.
-   *
-   * Archived rows are **included**, because the origin is unique per workspace and
-   * the caller has to be able to tell "no project yet" from "the project for this
-   * repository is retired". `ProjectLookupResolver` is what turns the second into a
-   * refusal rather than a new project the constraint would reject anyway.
-   */
-  findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>>;
 }

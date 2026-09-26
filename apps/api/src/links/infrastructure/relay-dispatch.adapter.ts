@@ -161,7 +161,6 @@ function createMessage(session: WorkSessionEntity, spec: SessionLaunchSpec): Ses
     commandId: randomUUID(),
     sessionId: session.id,
     organizationSlug: spec.organizationSlug,
-    projectSlug: spec.projectSlug,
     sessionSlug: session.slug,
     agent: session.agent,
     launch: {

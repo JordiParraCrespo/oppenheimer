@@ -42,4 +42,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_012',
     message: 'That image is too large to give the session',
   },
+  MOVE_FAILED: {
+    code: 'SESSIONS_CLIENT_008',
+    message: 'Failed to move the session',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

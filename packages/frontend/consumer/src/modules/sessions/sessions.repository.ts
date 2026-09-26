@@ -91,7 +91,7 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
     ...(input.name ? { name: input.name } : {}),
-    ...(input.projectId ? { projectId: input.projectId } : {}),
+    projectId: input.projectId,
   };
 }
 
@@ -177,6 +177,17 @@ export class SessionsRepository {
       afterSeq = data.nextSeq;
     }
     return entries;
+  }
+
+  /**
+   * List the session under another project. Nothing moves on the host: a project
+   * is metadata, and a session's directory and branch never name it.
+   */
+  @MapApiError(SessionsErrors.MOVE_FAILED)
+  async move(id: string, projectId: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.moveSession({ path: { id }, body: { projectId } });
+    if (error || !data) throw new AppError(SessionsErrors.MOVE_FAILED);
+    return toEntity(data);
   }
 
   @MapApiError(SessionsErrors.STOP_FAILED)

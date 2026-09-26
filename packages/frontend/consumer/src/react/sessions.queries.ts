@@ -153,6 +153,32 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
   });
 }
 
+/** What moving a session posts. */
+export interface MoveSessionVariables {
+  sessionId: string;
+  projectId: string;
+}
+
+/**
+ * List a session under another project. The list is invalidated rather than
+ * patched: the sidebar groups by project, and a stale group would show the
+ * session where it no longer is.
+ */
+export function useMoveSession(
+  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, projectId }: MoveSessionVariables) =>
+      app.sessions.move(sessionId, projectId),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
+    }),
+  });
+}
+
 /**
  * Paste an image into one window's prompt. Nothing is cached and no key is
  * kept: success is the path appearing in the terminal, which the terminal

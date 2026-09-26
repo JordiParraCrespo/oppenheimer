@@ -135,7 +135,7 @@
       "SESSIONS_006": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
       "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
-      "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
+      "SESSIONS_009": "Elige un proyecto para esta sesión.",
       "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
       "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
@@ -168,7 +168,6 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "SESSIONS_018": "Ese proyecto no incluye los repositorios de esta sesión. Añádelos primero al proyecto o elige otro.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
@@ -423,7 +422,15 @@
       "composer": {
         "placeholder": "Describe una tarea o haz una pregunta"
       },
-      "queued": "Tu primera tarea está en cola para este host."
+      "queued": "Tu primera tarea está en cola para este host.",
+      "project": {
+        "label": "Proyecto",
+        "placeholder": "Proyecto",
+        "search": "Buscar proyectos…",
+        "empty": "Ningún proyecto coincide.",
+        "loading": "Cargando proyectos…",
+        "add": "Nuevo proyecto…"
+      }
     },
     "session": {
       "status": {
@@ -460,6 +467,28 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    },
+    "project": {
+      "newTitle": "Nuevo proyecto",
+      "newDescription": "Los repositorios en los que suelen trabajar sus sesiones y con qué empieza una sesión nueva.",
+      "name": "Nombre",
+      "namePlaceholder": "XRP Mobile",
+      "repositories": "Repositorios",
+      "repositoriesRequired": "Elige al menos un repositorio y marca uno como predeterminado.",
+      "default": "Predeterminado",
+      "defaultTitle": "Se ofrece a cada sesión nueva del proyecto",
+      "defaultHost": "Equipo predeterminado",
+      "defaultAgent": "Agente predeterminado",
+      "none": "Ninguno",
+      "instructions": "Instrucciones",
+      "instructionsPlaceholder": "Ejecuta pnpm test antes de cada commit.",
+      "create": "Crear proyecto",
+      "createFailed": "No se ha podido crear el proyecto."
+    },
+    "row": {
+      "actions": "Acciones de la sesión",
+      "move": "Mover a un proyecto…",
+      "moveTitle": "Mover a un proyecto"
     }
   },
   "hosts": {

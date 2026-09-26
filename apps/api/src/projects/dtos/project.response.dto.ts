@@ -43,19 +43,10 @@ export class ProjectResponseDto {
 
   @ApiProperty({
     description:
-      'The project’s directory name on every host that holds it. Immutable: derived once, from the name a person gave it or from the repository the API created it for.',
+      'The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.',
     example: 'xrp-mobile',
   })
   slug!: string;
-
-  @ApiPropertyOptional({
-    description:
-      'Set only on a project the API created for a repository (a session that named no project): GitHub’s id for that repository, as a string because the column is a bigint.',
-    nullable: true,
-    type: String,
-    example: '821374923',
-  })
-  originGithubRepoId!: string | null;
 
   @ApiProperty({ type: [ProjectRepositoryResponseDto] })
   repositories!: ProjectRepositoryResponseDto[];

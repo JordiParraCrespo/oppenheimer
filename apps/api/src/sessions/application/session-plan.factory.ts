@@ -37,34 +37,17 @@ export class SessionPlanFactory {
   ) {}
 
   /**
-   * The project this session belongs in: the one the caller named, or the one whose
-   * origin is the first checkout's repository — created on the spot if that
-   * repository has never had a session.
-   *
-   * The console always names the project; the second path is for a caller that
-   * names only a repository (`product/versions/mvp/12-projects.md`).
+   * The project the session is listed under: the one the caller named. There is
+   * no other way to find one — a project is created on purpose, never derived
+   * from a repository (`product/versions/mvp/10-api-modules-and-data-model.md`).
+   * The schema already requires the id; this refuses a caller that got past it.
    */
   async resolveProject(
     scope: AccessScope,
-    input: Pick<CreateSessionDto, 'projectId' | 'checkouts'>,
+    input: Pick<CreateSessionDto, 'projectId'>,
   ): Promise<ProjectEntity> {
-    if (input.projectId) {
-      return requireActiveProject(this.projects, scope, input.projectId);
-    }
-
-    const first = input.checkouts[0];
-    if (!first) throw new AppError(SessionErrors.PROJECT_REQUIRED);
-
-    const repository = await this.repositoryOf(scope, first);
-    const [owner] = repository.fullName.split('/');
-    return this.projects.ensureForRepository(scope, {
-      githubRepoId: String(repository.githubRepoId),
-      owner,
-      name: repository.name,
-      installationId: first.installationId,
-      fullName: repository.fullName,
-      defaultBranch: repository.defaultBranch,
-    });
+    if (!input.projectId) throw new AppError(SessionErrors.PROJECT_REQUIRED);
+    return requireActiveProject(this.projects, scope, input.projectId);
   }
 
   /**
@@ -78,7 +61,6 @@ export class SessionPlanFactory {
   async attachCheckout(
     scope: AccessScope,
     session: WorkSessionEntity,
-    project: ProjectEntity,
     input: SessionCheckoutInputDto,
   ): Promise<SessionCheckoutEntity> {
     const repository = await this.repositoryOf(scope, input);
@@ -103,7 +85,9 @@ export class SessionPlanFactory {
       // The base defaults to the repository's default branch; the session's own
       // branch is created from it and is never the base itself.
       baseBranch: input.baseBranch ?? repository.defaultBranch,
-      branch: sessionBranchName(project.slug, session.slug),
+      // Every checkout of a session is on its one branch; a session that already
+      // has one keeps the name it recorded.
+      branch: session.branch ?? sessionBranchName(session.slug),
     });
     session.attachCheckout(checkout);
     return checkout;

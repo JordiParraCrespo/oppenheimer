@@ -43,6 +43,10 @@ export class SessionsService {
     return this.repository.create(input, idempotencyKey);
   }
 
+  move(id: string, projectId: string): Promise<SessionEntity> {
+    return this.repository.move(id, projectId);
+  }
+
   stop(id: string): Promise<SessionEntity> {
     return this.repository.stop(id);
   }

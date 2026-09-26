@@ -121,7 +121,15 @@
     "composer": {
       "placeholder": "Describe una tarea o haz una pregunta"
     },
-    "queued": "Tu primera tarea está en cola para este host."
+    "queued": "Tu primera tarea está en cola para este host.",
+    "project": {
+      "label": "Proyecto",
+      "placeholder": "Proyecto",
+      "search": "Buscar proyectos…",
+      "empty": "Ningún proyecto coincide.",
+      "loading": "Cargando proyectos…",
+      "add": "Nuevo proyecto…"
+    }
   },
   "session": {
     "status": {
@@ -158,5 +166,27 @@
   "agents": {
     "claude-code": "Claude Code",
     "codex": "Codex"
+  },
+  "project": {
+    "newTitle": "Nuevo proyecto",
+    "newDescription": "Los repositorios en los que suelen trabajar sus sesiones y con qué empieza una sesión nueva.",
+    "name": "Nombre",
+    "namePlaceholder": "XRP Mobile",
+    "repositories": "Repositorios",
+    "repositoriesRequired": "Elige al menos un repositorio y marca uno como predeterminado.",
+    "default": "Predeterminado",
+    "defaultTitle": "Se ofrece a cada sesión nueva del proyecto",
+    "defaultHost": "Equipo predeterminado",
+    "defaultAgent": "Agente predeterminado",
+    "none": "Ninguno",
+    "instructions": "Instrucciones",
+    "instructionsPlaceholder": "Ejecuta pnpm test antes de cada commit.",
+    "create": "Crear proyecto",
+    "createFailed": "No se ha podido crear el proyecto."
+  },
+  "row": {
+    "actions": "Acciones de la sesión",
+    "move": "Mover a un proyecto…",
+    "moveTitle": "Mover a un proyecto"
   }
 }

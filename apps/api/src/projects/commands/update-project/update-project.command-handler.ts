@@ -10,9 +10,8 @@ import { UpdateProjectCommand } from './update-project.command';
 
 /**
  * Changes what a person may change about a project: its name, its repositories as
- * a whole set, its defaults and its instructions. Never the slug — it is a
- * directory name on every host holding the project, and the aggregate offers no
- * way to change it.
+ * a whole set, its defaults and its instructions. Never the slug — it is the
+ * project's stable handle, and the aggregate offers no way to change it.
  *
  * Editing a project never reaches into a session: what a session checked out is
  * on its own checkout rows, and a session keeps the instructions it was launched

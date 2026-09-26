@@ -162,7 +162,6 @@ type SessionCreate struct {
 	CommandID        string        `json:"commandId"`
 	SessionID        string        `json:"sessionId"`
 	OrganizationSlug string        `json:"organizationSlug"`
-	ProjectSlug      string        `json:"projectSlug"`
 	SessionSlug      string        `json:"sessionSlug"`
 	Agent            string        `json:"agent"`
 	Launch           LaunchOptions `json:"launch"`

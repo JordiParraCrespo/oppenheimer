@@ -164,9 +164,16 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
+  it('refuses a session that names no project: none is derived', () => {
+    expect(
+      createSessionSchema.safeParse({ hostId: uuid, agent: 'claude-code', checkouts: [] }).success,
+    ).toBe(false);
+  });
+
   it('accepts a host, an agent and one checkout with its own base branch', () => {
     const parsed = createSessionSchema.parse({
       hostId: uuid,
+      projectId: uuid,
       agent: 'claude-code',
       checkouts: [{ installationId: otherUuid, githubRepoId: 43, baseBranch: 'develop' }],
       cwdGithubRepoId: 43,
@@ -178,6 +185,7 @@ describe('createSessionSchema', () => {
   it('refuses a second repository: a session checks out one in the MVP (#56)', () => {
     const result = createSessionSchema.safeParse({
       hostId: uuid,
+      projectId: uuid,
       agent: 'claude-code',
       checkouts: [
         { installationId: otherUuid, githubRepoId: 42 },
@@ -190,13 +198,15 @@ describe('createSessionSchema', () => {
 
   it('accepts no checkouts at all — a session with no git is a real session', () => {
     expect(
-      createSessionSchema.parse({ hostId: uuid, agent: 'codex', checkouts: [] }).checkouts,
+      createSessionSchema.parse({ hostId: uuid, projectId: uuid, agent: 'codex', checkouts: [] })
+        .checkouts,
     ).toEqual([]);
   });
 
   it('takes no branch: the working branch is always the session’s own', () => {
     const parsed = createSessionSchema.parse({
       hostId: uuid,
+      projectId: uuid,
       agent: 'codex',
       checkouts: [{ installationId: otherUuid, githubRepoId: 42, baseBranch: 'main' }],
     });
@@ -227,6 +237,7 @@ describe('createSessionSchema', () => {
       expect(
         createSessionSchema.safeParse({
           hostId: uuid,
+          projectId: uuid,
           agent: 'codex',
           checkouts: [{ installationId: otherUuid, githubRepoId }],
         }).success,
@@ -243,6 +254,7 @@ describe('createSessionSchema', () => {
       expect(
         createSessionSchema.safeParse({
           hostId: uuid,
+          projectId: uuid,
           agent: 'codex',
           checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
           cwdGithubRepoId: 42,
@@ -253,6 +265,7 @@ describe('createSessionSchema', () => {
     it('refuses a cwd that is not', () => {
       const result = createSessionSchema.safeParse({
         hostId: uuid,
+        projectId: uuid,
         agent: 'codex',
         checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
         cwdGithubRepoId: 99,
@@ -267,6 +280,7 @@ describe('createSessionSchema', () => {
       expect(
         createSessionSchema.safeParse({
           hostId: uuid,
+          projectId: uuid,
           agent: 'codex',
           checkouts: [],
           cwdGithubRepoId: 42,
@@ -276,7 +290,12 @@ describe('createSessionSchema', () => {
 
     it('leaves a session with no cwd alone', () => {
       expect(
-        createSessionSchema.safeParse({ hostId: uuid, agent: 'codex', checkouts: [] }).success,
+        createSessionSchema.safeParse({
+          hostId: uuid,
+          projectId: uuid,
+          agent: 'codex',
+          checkouts: [],
+        }).success,
       ).toBe(true);
     });
   });

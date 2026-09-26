@@ -29,6 +29,7 @@ const SCOPE = {
 
 const INPUT = {
   hostId: 'host-1',
+  projectId: 'project-1',
   agent: 'claude-code' as const,
   checkouts: [{ installationId: 'installation-1', githubRepoId: 42 }],
 };
@@ -38,7 +39,6 @@ function project() {
     organizationId: 'org-acme',
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
-    originGithubRepoId: '42',
     repositories: [
       {
         installationId: 'installation-1',

@@ -8,7 +8,7 @@ import { ArchiveProjectCommandHandler } from '../archive-project.command-handler
 /**
  * Archiving is the destructive path in this module, and the whole of its design is
  * that it **fails closed**: it asks whoever contributed an answer whether any work
- * is still going on inside the project's directory, and refuses if nothing did.
+ * is still listed in the project, and refuses if nothing did.
  * That refusal is a DI fact — an empty registry — rather than a caught exception,
  * which is what these tests pin.
  *
@@ -30,7 +30,6 @@ function project(archivedAt: Date | null = null) {
     organizationId: 'org-acme',
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
-    originGithubRepoId: '42',
     repositories: [
       {
         installationId: 'installation-1',

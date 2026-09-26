@@ -23,7 +23,7 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
 - **A session is a worktree plus a terminal on a host.** No VM, no
   container. The runner creates a git worktree under the fixed layout,
   starts a tmux session in it, launches the agent, and streams the PTY
-  to the browser. **Changed again 2026-09-26 (12):** a session checks
+  to the browser. **Changed again 2026-09-26 (10):** a session checks
   out several repositories, usually one, chosen freely rather than from
   its project's defaults; what follows is the 2026-09-23 rule, which now
   holds only until the runner makes several worktrees. A session checks
@@ -35,13 +35,19 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   repositories, one worktree each, is the next runner slice (11's R3)
   rather than a schema change; it was decided on 2026-09-19 and is
   deferred, not dropped.
+- **Projects:** a session is listed under a project, a saved scope a
+  person creates (name, repositories with their base branches and
+  defaults, a default host and agent, instructions). A project is
+  metadata: a session can be moved between projects and nothing on a
+  host moves (10, 2026-09-26).
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
   (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
   personalities and the like come later (note 11 §1).
-- **Create session chips:** host, repository, branch, agent, every one
-  of them searchable. The repository chip picks one repository and
+- **Create session chips:** project, host, repository, branch, every
+  one of them searchable (the project chip joined on 2026-09-26; the
+  agent moved to the engine button on 2026-09-20). The repository chip picks one repository and
   carries its branch; picking another replaces it (above). The agent
   lives in the engine button (05) and lists Claude Code, Codex, OpenCode,
   Grok and a blank terminal, with the vendors' marks where they exist. All

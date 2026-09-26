@@ -257,7 +257,6 @@ describe.skipIf(!enabled)('the runner and the relay, end to end', () => {
       commandId: randomUUID(),
       sessionId: SESSION,
       organizationSlug: 'jordi',
-      projectSlug: 'hello-world',
       sessionSlug: 'bold-otter-3f9a7k',
       agent: 'claude-code',
       launch: { model: 'opus', permission: 'ask', effort: 'medium' },

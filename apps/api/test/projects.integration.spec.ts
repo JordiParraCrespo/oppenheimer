@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { AddProjectRolePermissions1789000100000 } from '../src/migrations/1789000100000-AddProjectRolePermissions';
-import { ProjectLookupResolver } from '../src/projects/application/project-lookup.resolver';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
@@ -11,34 +10,22 @@ import { ProjectMapper } from '../src/projects/project.mapper';
 import { runAllMigrations } from './run-migrations';
 
 /**
- * The auto-creation races, against a real Postgres.
+ * Projects against a real Postgres: the slug constraint, the repository set and
+ * its composite keys, the scoped writes and the archive.
  *
- * The unit tests double the two unique constraints; this is the layer that
- * proves Postgres behaves the way the double claims — and that the migration
- * actually created the constraints the statements name. Get either wrong and two
- * concurrent first sessions on one repository quietly produce two projects, two
- * directories and two branches, which is a bug no unit test could catch.
+ * The unit tests double the constraints; this is the layer that proves Postgres
+ * behaves the way the doubles claim, and that the migration created what the
+ * statements name.
  *
  * The schema is built by running the **whole migration chain**, so a mistake in a
  * migration fails here rather than in production.
  */
-describe('projects: race-safe auto-creation (integration)', () => {
+describe('projects: the saved scope (integration)', () => {
   let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
-  let resolver: ProjectLookupResolver;
   let repository: ProjectRepository;
   let organizationId: string;
   let installationId: string;
-
-  /** A repository as GitHub would describe it, reached through this workspace's installation. */
-  const origin = (githubRepoId: string, owner: string, name: string) => ({
-    githubRepoId,
-    owner,
-    name,
-    installationId,
-    fullName: `${owner}/${name}`,
-    defaultBranch: 'main',
-  });
 
   const held = (githubRepoId: string, isDefault = true) => ({
     installationId,
@@ -55,13 +42,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
     grants: new Map<string, Set<string>>(),
     bypass: false,
   });
-
-  const projectRows = (): Promise<{ id: string; slug: string; name: string }[]> =>
-    dataSource.query(
-      `SELECT "id", "slug", "name", "originGithubRepoId" FROM "project"
-        WHERE "organizationId" = $1 ORDER BY "createdAt"`,
-      [organizationId],
-    );
 
   beforeAll(async () => {
     pgContainer = await new GenericContainer('postgres:16-alpine')
@@ -86,9 +66,9 @@ describe('projects: race-safe auto-creation (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      // No Nest container here on purpose: the races live in the repository and
-      // the resolver, and booting the application would only add Redis and
-      // Better Auth to the set of things that can make this suite red.
+      // No Nest container here on purpose: what is proved lives in the repository,
+      // and booting the application would only add Redis and Better Auth to the
+      // set of things that can make this suite red.
       entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity],
       synchronize: false,
     });
@@ -98,7 +78,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
       dataSource.getRepository(ProjectOrmEntity),
       new ProjectMapper(),
     );
-    resolver = new ProjectLookupResolver(repository);
   }, 180000);
 
   afterAll(async () => {
@@ -107,8 +86,8 @@ describe('projects: race-safe auto-creation (integration)', () => {
   });
 
   beforeEach(async () => {
-    // A workspace per test: `project.organizationId` has a foreign key, and both
-    // uniqueness rules are per workspace.
+    // A workspace per test: `project.organizationId` has a foreign key, and the
+    // slug is unique per workspace.
     organizationId = randomUUID();
     await dataSource.query(
       `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
@@ -134,86 +113,13 @@ describe('projects: race-safe auto-creation (integration)', () => {
     return id;
   }
 
-  it('resolves two concurrent first sessions on one repository to a single project', async () => {
-    const repository = origin('4242', 'acme', 'xrp-mobile');
+  const newProject = (slug: string, repositories = [held('11')]) =>
+    ProjectEntity.createNew({ organizationId, name: slug, slug, repositories });
+
+  it('scopes every read and every save to the workspace', async () => {
     const caller = scope();
-
-    const [left, right] = await Promise.all([
-      resolver.ensureForRepository(caller, repository),
-      resolver.ensureForRepository(caller, repository),
-    ]);
-
-    expect(left.id).toBe(right.id);
-    const rows = await projectRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: left.id, slug: 'xrp-mobile', name: 'xrp-mobile' });
-    // A bigint comes back as a string, and stays one.
-    expect(rows[0].originGithubRepoId).toBe('4242');
-  });
-
-  it('holds the origin unique even when the plain directory name is already taken', async () => {
-    // The race a slug-keyed conflict target cannot win: both callers lose the
-    // plain name to a different repository, both derive `<owner>--<repo>`, and
-    // only the unique origin stops both of them landing.
-    await resolver.ensureForRepository(scope(), origin('1', 'acme', 'xrp-mobile'));
-
-    const repository = origin('2', 'other', 'xrp-mobile');
-    const [left, right] = await Promise.all([
-      resolver.ensureForRepository(scope(), repository),
-      resolver.ensureForRepository(scope(), repository),
-    ]);
-
-    expect(left.id).toBe(right.id);
-    expect(left.slug).toBe('other--xrp-mobile');
-    const rows = await projectRows();
-    expect(rows).toHaveLength(2);
-    expect(rows.map((row) => row.slug)).toEqual(['xrp-mobile', 'other--xrp-mobile']);
-  });
-
-  it('reports each conflict as what it is, from the statement itself', async () => {
-    // The two outcomes on their own: a second repository wanting a taken
-    // directory name, and a second create for a repository that already has a
-    // project. Both come back from the write rather than as a thrown violation.
-    const first = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'xrp-mobile',
-      originGithubRepoId: '1',
-      repositories: [held('1')],
-    });
-    const sameSlug = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'xrp-mobile',
-      originGithubRepoId: '2',
-      repositories: [held('2')],
-    });
-    const sameOrigin = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'acme--xrp-mobile',
-      originGithubRepoId: '1',
-      repositories: [held('1')],
-    });
-
-    expect(await repository.insertIfUnclaimed(first)).toBe('inserted');
-    expect(await repository.insertIfUnclaimed(sameSlug)).toBe('slug-taken');
-    expect(await repository.insertIfUnclaimed(sameOrigin)).toBe('origin-taken');
-    expect(await projectRows()).toHaveLength(1);
-  });
-
-  it('keeps the same repository’s project across a GitHub rename', async () => {
-    const caller = scope();
-
-    const first = await resolver.ensureForRepository(caller, origin('7', 'acme', 'xrp-mobile'));
-    const again = await resolver.ensureForRepository(caller, origin('7', 'acme', 'xrp-wallet'));
-
-    expect(again.id).toBe(first.id);
-  });
-
-  it('scopes every read and every rename to the workspace', async () => {
-    const caller = scope();
-    const project = await resolver.ensureForRepository(caller, origin('11', 'acme', 'xrp-mobile'));
+    const project = newProject('xrp-mobile');
+    await repository.insert(project);
 
     const other = { ...caller, organizationId: randomUUID() };
     expect(await repository.findAll(other)).toEqual([]);
@@ -226,13 +132,13 @@ describe('projects: race-safe auto-creation (integration)', () => {
     );
   });
 
-  it('never lets a rename revive a project that was retired meanwhile', async () => {
+  it('never lets a save revive a project that was retired meanwhile', async () => {
     const caller = scope();
-    const project = await resolver.ensureForRepository(caller, origin('12', 'acme', 'xrp-mobile'));
+    const project = newProject('xrp-mobile');
+    await repository.insert(project);
 
-    // The column the slice that owns sessions will write. The rename below loaded
-    // before it was set, which is exactly the stale snapshot a whole-aggregate
-    // save would write back over the archive.
+    // The save below loaded before the archive landed, which is exactly the stale
+    // snapshot a whole-aggregate write would put back over it.
     await dataSource.query(`UPDATE "project" SET "archivedAt" = now() WHERE "id" = $1`, [
       project.id,
     ]);
@@ -249,22 +155,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
     expect(await repository.findAll(caller)).toEqual([]);
   });
 
-  it('gives a project the API made for a repository that repository as its default', async () => {
-    const project = await resolver.ensureForRepository(scope(), origin('21', 'acme', 'atlas'));
-
-    const [stored] = await repository.findAll(scope());
-    expect(stored.id).toBe(project.id);
-    expect(stored.repositories).toEqual([
-      {
-        installationId,
-        githubRepoId: '21',
-        repositoryFullName: 'acme/atlas',
-        baseBranch: 'main',
-        isDefault: true,
-      },
-    ]);
-  });
-
   it('creates a named project with its repositories, in order, and its defaults', async () => {
     const project = ProjectEntity.createNew({
       organizationId,
@@ -275,14 +165,13 @@ describe('projects: race-safe auto-creation (integration)', () => {
       instructions: 'Run the tests.',
     });
 
-    expect(await repository.insertNamed(project)).toBe('inserted');
+    expect(await repository.insert(project)).toBe('inserted');
 
     const stored = (await repository.findOneById(scope(), project.id)).unwrap();
     expect(stored.repositories.map((held) => held.githubRepoId)).toEqual(['31', '32']);
     expect(stored.repositories.map((held) => held.isDefault)).toEqual([true, false]);
     expect(stored.defaultAgent).toBe('codex');
     expect(stored.instructions).toBe('Run the tests.');
-    expect(stored.originGithubRepoId).toBeNull();
   });
 
   it('reports a taken directory name, and leaves no repository rows behind', async () => {
@@ -299,8 +188,8 @@ describe('projects: race-safe auto-creation (integration)', () => {
       repositories: [held('42')],
     });
 
-    expect(await repository.insertNamed(first)).toBe('inserted');
-    expect(await repository.insertNamed(second)).toBe('slug-taken');
+    expect(await repository.insert(first)).toBe('inserted');
+    expect(await repository.insert(second)).toBe('slug-taken');
     const [{ count }] = await dataSource.query(
       `SELECT count(*)::int FROM "project_repository" WHERE "projectId" = $1`,
       [second.id],
@@ -316,7 +205,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
         slug,
         repositories: [held('51')],
       });
-      expect(await repository.insertNamed(project)).toBe('inserted');
+      expect(await repository.insert(project)).toBe('inserted');
     }
 
     const [{ count }] = await dataSource.query(
@@ -335,7 +224,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
       slug: 'atlas',
       repositories: [held('61'), held('62', false)],
     });
-    await repository.insertNamed(project);
+    await repository.insert(project);
 
     project.configure({ repositories: [held('63')], defaultHostId: null, instructions: 'x' });
     const saved = (await repository.saveSettingsIfActive(caller, project)).unwrap();
@@ -364,7 +253,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
       repositories: [{ ...held('71'), installationId: foreign }],
     });
 
-    await expect(repository.insertNamed(project)).rejects.toThrow(
+    await expect(repository.insert(project)).rejects.toThrow(
       /FK_project_repository_installation|foreign key/i,
     );
     // The transaction rolled the project back with its repositories.

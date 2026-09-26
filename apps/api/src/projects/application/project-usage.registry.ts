@@ -5,8 +5,8 @@ import type { ProjectUsagePort } from './project-usage.port';
  * What the running application can say a project is still being used for,
  * collected at boot.
  *
- * Archiving a project has to refuse while work is still going on inside its
- * directory, and this module cannot answer that: sessions are somebody else's
+ * Archiving a project has to refuse while sessions nobody has closed are listed
+ * in it, and this module cannot answer that: sessions are somebody else's
  * aggregate, and the dependency only runs one way — a session needs the project it
  * belongs to. So the question is a port this module declares and another module
  * contributes an implementation of, through

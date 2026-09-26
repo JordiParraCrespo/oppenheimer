@@ -25,7 +25,6 @@ function project(id: string, githubRepoIds: string[]): ProjectEntity {
       organizationId: 'org-acme',
       name: `Project ${id}`,
       slug: id,
-      originGithubRepoId: null,
       archivedAt: null,
       createdByUserId: 'user-1',
       defaultHostId: null,
@@ -100,11 +99,10 @@ describe('MoveSessionCommandHandler', () => {
   const move = (projectId: string) =>
     handler.execute(new MoveSessionCommand({ scope: SCOPE, sessionId: work.id, projectId }));
 
-  it('lists the session under the target and keeps its home', async () => {
+  it('lists the session under the target', async () => {
     const { session: moved, hints } = await move('wide');
 
     expect(moved.projectId).toBe('wide');
-    expect(moved.homeProjectId).toBe('home');
     expect(hints).toEqual([]);
     expect(vi.mocked(sessions.appendMove).mock.calls[0][2]).toEqual([
       expect.objectContaining({
@@ -115,18 +113,11 @@ describe('MoveSessionCommandHandler', () => {
     ]);
   });
 
-  it('refuses a project that does not hold the session’s repository, naming it', async () => {
-    await expect(move('narrow')).rejects.toMatchObject({
-      code: 'SESSIONS_018',
-      detail: expect.stringContaining('acme/repo-42'),
-    });
-    expect(sessions.appendMove).not.toHaveBeenCalled();
-  });
-
-  it('lets a session with no checkouts move anywhere', async () => {
-    work = session([]);
-
+  it('moves a session to a project that does not hold its repository', async () => {
+    // No membership rule: a project's repositories are suggestions, and a
+    // session may work on any repository in any project.
     expect((await move('narrow')).session.projectId).toBe('narrow');
+    expect(sessions.appendMove).toHaveBeenCalledTimes(1);
   });
 
   it('writes nothing when the session is already there', async () => {

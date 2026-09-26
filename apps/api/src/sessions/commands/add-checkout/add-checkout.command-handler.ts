@@ -4,7 +4,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared';
 import type { ProjectLookupPort } from '../../../projects/application/project-lookup.port';
 import { PROJECT_LOOKUP } from '../../../projects/projects.di-tokens';
-import { requireSessionHome } from '../../application/require-active-project.policy';
+import { requireActiveProject } from '../../application/require-active-project.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionPlanFactory } from '../../application/session-plan.factory';
@@ -73,10 +73,9 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    // The new worktree joins the others, in the home project's directory.
-    const project = await requireSessionHome(this.projects, command.scope, session);
+    await requireActiveProject(this.projects, command.scope, session.projectId);
 
-    const checkout = await this.plan.attachCheckout(command.scope, session, project, command.input);
+    const checkout = await this.plan.attachCheckout(command.scope, session, command.input);
     await this.sessions.insertCheckout(session, checkout, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -95,7 +94,7 @@ export class AddCheckoutCommandHandler
     const { hints } = await this.dispatch.addCheckout(
       session,
       checkout,
-      await this.launches.build(session, project.slug, { branch: checkout.branch }),
+      await this.launches.build(session),
     );
     return { session, hints };
   }

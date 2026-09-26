@@ -44,7 +44,7 @@ export class MoveSessionHttpController {
     operationId: 'moveSession',
     summary: 'List a session under another project',
     description:
-      'Nothing moves on disk: the worktrees and branches stay in the session’s home project (`homeProjectId`). The target must include every repository the session has checked out.',
+      'Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.',
   })
   @ApiResponse({ status: 201, type: SessionResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
@@ -53,11 +53,6 @@ export class MoveSessionHttpController {
     status: 409,
     description: 'That project is archived',
     code: 'SESSIONS_006',
-  })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'That project does not include this session’s repositories',
-    code: 'SESSIONS_018',
   })
   async move(
     @CurrentAccessScope() scope: AccessScope,

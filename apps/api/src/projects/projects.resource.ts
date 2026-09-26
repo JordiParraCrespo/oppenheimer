@@ -12,7 +12,7 @@ import { defineResource } from '@oppenheimer/backend-authz';
  *
  * Three actions. A person creates projects (`POST /projects`), and the API also
  * creates one for a repository when a session names no project
- * (`product/versions/mvp/12-projects.md`). Archiving is `update`, because nothing
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). Archiving is `update`, because nothing
  * is deleted: the row outlives the project so its slug is never reissued.
  */
 export const ProjectResource = defineResource({

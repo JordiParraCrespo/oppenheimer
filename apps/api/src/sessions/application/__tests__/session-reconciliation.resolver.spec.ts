@@ -23,7 +23,7 @@ function session(state: 'starting' | 'open'): WorkSessionEntity {
   return entity;
 }
 
-function harness(rows: { session: WorkSessionEntity; projectSlug: string; prompt?: string }[]) {
+function harness(rows: { session: WorkSessionEntity; prompt?: string }[]) {
   const sessions = {
     findUnresolvedForHostForMachine: vi.fn().mockResolvedValue(rows),
     appendEvents: vi.fn().mockResolvedValue({ accepted: ['k'], rejected: [], appended: [] }),
@@ -45,13 +45,12 @@ function harness(rows: { session: WorkSessionEntity; projectSlug: string; prompt
 describe('SessionReconciliationResolver', () => {
   it('dispatches again a launch the host never carried out, with its prompt', async () => {
     const owed = session('starting');
-    const h = harness([{ session: owed, projectSlug: 'xrp', prompt: 'fix it' }]);
+    const h = harness([{ session: owed, prompt: 'fix it' }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
     expect(outcome).toEqual({ redispatched: [owed.id], stopped: [] });
     expect(h.dispatch.create).toHaveBeenCalledWith(owed, {
       organizationSlug: 'jordi',
-      projectSlug: 'xrp',
-      branch: 'oppenheimer/xrp/bold-otter-3f9a7k',
+      branch: 'oppenheimer/bold-otter-3f9a7k',
       prompt: 'fix it',
     });
     expect(h.sessions.appendEvents).not.toHaveBeenCalled();
@@ -59,7 +58,7 @@ describe('SessionReconciliationResolver', () => {
 
   it('records stopped an open session the host no longer holds, keyed by the run', async () => {
     const lost = session('open');
-    const h = harness([{ session: lost, projectSlug: 'xrp' }]);
+    const h = harness([{ session: lost }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', []);
     expect(outcome).toEqual({ redispatched: [], stopped: [lost.id] });
     expect(h.sessions.appendEvents).toHaveBeenCalledWith(lost, [
@@ -73,7 +72,7 @@ describe('SessionReconciliationResolver', () => {
 
   it('leaves alone what the host holds, and what is already stopped', async () => {
     const held = session('open');
-    const h = harness([{ session: held, projectSlug: 'xrp' }]);
+    const h = harness([{ session: held }]);
     const outcome = await h.resolver.reconcile(HOST, 'run-1', [held.id]);
     expect(outcome).toEqual({ redispatched: [], stopped: [] });
     expect(h.dispatch.create).not.toHaveBeenCalled();

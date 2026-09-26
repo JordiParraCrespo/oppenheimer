@@ -10,6 +10,7 @@ import type {
   CreateSessionCheckout,
   CreateSessionInput,
   HostEntity,
+  ProjectEntity,
   RepositoryEntity,
 } from '@oppenheimer/frontend-consumer';
 import {
@@ -200,4 +201,52 @@ export function capRepositories(
   if (next.length <= MAX_SESSION_CHECKOUTS) return next;
   const added = next.filter((scope) => !previous.some((kept) => kept.id === scope.id));
   return (added.length ? added : next).slice(-MAX_SESSION_CHECKOUTS);
+}
+
+/**
+ * The workspace's projects, as the project chip's rows: the name, and the
+ * repositories it holds underneath so two projects of one name read apart.
+ */
+export function toProjectOptions(projects: readonly ProjectEntity[]): ChipSelectOption[] {
+  return projects.map((project) => ({
+    value: project.id,
+    label: project.name,
+    description:
+      project.repositories.map((repository) => repository.repositoryFullName).join(', ') ||
+      undefined,
+  }));
+}
+
+/**
+ * What picking a project offers the composer: its default host and agent, and
+ * its first default repository on that repository's base. Offered, never
+ * required — the chips stay the person's to change, and a repository outside
+ * the project is as good as one inside it.
+ */
+export function projectDefaults(project: ProjectEntity): {
+  hostId?: string;
+  agent?: CodingAgentId;
+  scope?: RepositoryScope[];
+} {
+  const first = project.defaultRepositories[0];
+  const agent = project.defaultAgent;
+  return {
+    ...(project.defaultHostId ? { hostId: project.defaultHostId } : {}),
+    ...(agent && (CODING_AGENT_IDS as readonly string[]).includes(agent)
+      ? { agent: agent as CodingAgentId }
+      : {}),
+    ...(first
+      ? {
+          scope: [
+            {
+              id: repositoryKey({
+                installationId: first.installationId,
+                githubRepoId: first.githubRepoId,
+              }),
+              branch: first.baseBranch,
+            },
+          ],
+        }
+      : {}),
+  };
 }

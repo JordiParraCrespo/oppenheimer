@@ -1355,7 +1355,7 @@ export const renameSession = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List a session under another project
  *
- * Nothing moves on disk: the worktrees and branches stay in the session’s home project (`homeProjectId`). The target must include every repository the session has checked out.
+ * Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.
  */
 export const moveSession = <ThrowOnError extends boolean = false>(options: Options<MoveSessionData, ThrowOnError>): RequestResult<MoveSessionResponses, MoveSessionErrors, ThrowOnError> => (options.client ?? client).post<MoveSessionResponses, MoveSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

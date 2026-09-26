@@ -3,6 +3,7 @@ import {
   useHosts,
   useInstallationRepositoriesFor,
   useInstallations,
+  useProjects,
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
@@ -15,17 +16,21 @@ import { EffortSelect } from '../components/effort-select';
 import { HostSelect } from '../components/host-select';
 import { NewSessionComposer } from '../components/new-session-composer';
 import { PermissionSelect } from '../components/permission-select';
+import { ProjectSelect } from '../components/project-select';
 import { RepositoryBranchSelect } from '../components/repository-branch-select';
 import { AddHostDialog } from '../dialogs/add-host';
+import { NewProjectDialog } from '../dialogs/new-project';
 import { useNewSessionDraft } from '../hooks/use-new-session-draft';
 import {
   launchControlsFor,
   parseRepositoryKey,
+  projectDefaults,
   toAgentOptions,
   toBranchOptions,
   toCheckouts,
   toHostOptions,
   toLaunchInput,
+  toProjectOptions,
   toRepositoryOptions,
 } from '../lib/session-options';
 
@@ -41,8 +46,8 @@ import {
  * action only says "open it", and where the machine it pairs lands — the draft
  * — is here.
  *
- * Four reads, and they are not the same read four times: the hosts, the
- * installations' repositories, the branches of the repositories somebody has
+ * Five reads, and they are not the same read five times: the projects, the
+ * hosts, the installations' repositories, the branches of the repositories somebody has
  * actually picked, and the deployment's GitHub App install URL. The branches
  * are deliberately late — the API answers them live from GitHub, so a call per
  * row of a picker nobody has opened is a rate limit spent on nothing. The
@@ -56,7 +61,9 @@ export function NewSessionForm() {
   const navigate = useNavigate();
   const { draft, update, setEngine } = useNewSessionDraft();
   const [addingHost, setAddingHost] = useState(false);
+  const [addingProject, setAddingProject] = useState(false);
 
+  const projects = useProjects();
   const hosts = useHosts();
   const installations = useInstallations();
   const installUrl = useDeploymentCapabilities({
@@ -96,11 +103,26 @@ export function NewSessionForm() {
   const controls = launchControlsFor(draft.agent);
   const onlyBranches = onlyRef ? (branches.byRepository.get(onlyRef.githubRepoId) ?? []) : [];
 
+  // A remembered project that has since been archived is no choice at all.
+  const projectId =
+    draft.projectId && projects.data?.some((project) => project.id === draft.projectId)
+      ? draft.projectId
+      : null;
+
+  /** Picking a project offers its defaults; the chips stay the person's to change. */
+  function pickProject(id: string) {
+    const project = projects.data?.find((candidate) => candidate.id === id);
+    const defaults = project ? projectDefaults(project) : {};
+    update({ projectId: id, ...defaults });
+    if (defaults.agent) setEngine(defaults.agent, null);
+  }
+
   function start(prompt: string) {
-    if (!draft.hostId) return;
+    if (!draft.hostId || !projectId) return;
     create.mutate({
       idempotencyKey: idempotencyKey.current,
       input: {
+        projectId,
         hostId: draft.hostId,
         agent: draft.agent,
         checkouts: toCheckouts(draft.scope),
@@ -117,6 +139,13 @@ export function NewSessionForm() {
           decision — where this session runs — and a screen reader announces
           the legend once for all of them. */}
         <fieldset aria-label={t('sessions.new.title')} className="flex flex-wrap gap-2">
+          <ProjectSelect
+            projects={toProjectOptions(projects.data ?? [])}
+            value={projectId}
+            onValueChange={pickProject}
+            onNewProject={() => setAddingProject(true)}
+            loading={projects.isPending}
+          />
           {/* Pending is `loading`, settled-and-empty is the empty line plus the
               chip's own foot action, and `disabled` is only for a chip this
               screen forbids — which none of these are. */}
@@ -150,7 +179,7 @@ export function NewSessionForm() {
         <NewSessionComposer
           onSubmit={start}
           busy={create.isPending}
-          disabled={!draft.hostId}
+          disabled={!draft.hostId || !projectId}
           tools={
             controls.permission ? (
               <PermissionSelect
@@ -181,6 +210,16 @@ export function NewSessionForm() {
           </p>
         ) : null}
       </div>
+
+      {addingProject ? (
+        <NewProjectDialog
+          onClose={() => setAddingProject(false)}
+          onCreated={(project) => {
+            setAddingProject(false);
+            update({ projectId: project.id, ...projectDefaults(project) });
+          }}
+        />
+      ) : null}
 
       {addingHost ? (
         <AddHostDialog

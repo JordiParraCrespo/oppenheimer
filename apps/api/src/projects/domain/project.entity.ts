@@ -17,31 +17,22 @@ export const MAX_PROJECT_INSTRUCTIONS = 8000;
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
   organizationId: string;
-  /** Display name: the GitHub repository's name as GitHub spells it. Free to change. */
+  /** Display name. Free to change. */
   name: string;
-  /**
-   * Directory name under `projects/` on every host holding the project. There is
-   * no setter: see the class comment.
-   */
+  /** The project's stable handle, derived from its first name. There is no setter. */
   slug: string;
-  /**
-   * GitHub's repository id, kept as the string the driver exchanges a bigint as.
-   * GitHub's ids are inside the safe integer range today and the column says
-   * they will not stay there, so nothing here converts.
-   */
-  originGithubRepoId: string | null;
   /**
    * When the project was retired. Set by the archive command, which refuses while
    * the project still holds sessions nobody has closed — a question only the module
    * that owns sessions can answer.
    */
   archivedAt: Date | null;
-  /** Who created the project on purpose; null for one the API made for a repository. */
+  /** Who created the project. Audit only; null once that account is gone. */
   createdByUserId: string | null;
   /**
    * The repositories the project holds, in the order a person put them. Empty
-   * only for a project from before projects held repositories whose origin had
-   * no checkout to backfill from; every write leaves at least one.
+   * only for a project from before projects held repositories that had no
+   * checkout to backfill from; every write leaves at least one.
    */
   repositories: ProjectRepositoryProps[];
   /** The host a new session is offered. A suggestion, never a grant. */
@@ -60,7 +51,6 @@ export interface CreateProjectProps {
   repositories: ProjectRepositoryProps[];
   /** The id to create the row under, when the slug was derived from it. */
   id?: string;
-  originGithubRepoId?: string | null;
   createdByUserId?: string | null;
   defaultHostId?: string | null;
   defaultAgent?: string | null;
@@ -77,22 +67,14 @@ export interface ProjectSettings {
 }
 
 /**
- * Project aggregate root — a body of work, and the name its directory takes.
+ * Project aggregate root — a saved scope a person creates: the repositories its
+ * sessions usually work on, and the host, agent and instructions a new session
+ * is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * A project sits above the repository on disk, because a session may check out
- * several:
- * `~/oppenheimer-ai/workspaces/<org.slug>/projects/<project.slug>/`
- * (`product/11-workspace-layout.md`, `product/versions/mvp/03-control-plane.md`).
- *
- * **The slug is immutable and the name is free**, and that split is the whole
- * design of this aggregate. The slug is a directory on every host that holds the
- * project, with work inside it, so a rename that changed it would have to move
- * `projects/<old>/` on every one of those machines; the name is only ever
- * displayed, so renaming is free. The cost is that a project's directory keeps
- * the name of the repository that created it for ever, which is cheap against
- * moving directories under running work.
- *
- * `archivedAt` is the column that keeps a retired slug out of circulation.
+ * A project is **metadata only**. Nothing on a host is named after it, so a
+ * session can be listed under any project without anything moving, and renaming
+ * is free. The slug is a stable handle derived from the first name; archiving
+ * keeps it, so it is never reissued.
  */
 export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /** Rehydrate an existing project (used by the mapper). */
@@ -109,7 +91,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         organizationId: props.organizationId,
         name: props.name,
         slug: props.slug,
-        originGithubRepoId: props.originGithubRepoId ?? null,
         archivedAt: null,
         createdByUserId: props.createdByUserId ?? null,
         repositories: props.repositories.map((repository) => ({ ...repository })),
@@ -130,10 +111,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   get slug(): string {
     return this.props.slug;
-  }
-
-  get originGithubRepoId(): string | null {
-    return this.props.originGithubRepoId;
   }
 
   get archivedAt(): Date | null {
@@ -165,12 +142,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return this.props.instructions;
   }
 
-  /** Whether the project holds every one of these repositories. Empty is trivially true. */
-  includesRepositories(githubRepoIds: readonly string[]): boolean {
-    const held = new Set(this.props.repositories.map((repository) => repository.githubRepoId));
-    return githubRepoIds.every((githubRepoId) => held.has(githubRepoId));
-  }
-
   /**
    * Change what a person may change: the name, the repositories as a whole set,
    * the defaults and the instructions. Never the slug.
@@ -194,16 +165,15 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /**
    * Retire the project. Idempotent: the first archive is the one that counts.
    *
-   * There is no un-archive, and that is the point. The slug is a directory name on
-   * every host that held the project and it is never reissued, so archiving is a
-   * one-way door by construction rather than by policy.
+   * There is no un-archive. The slug stays with the retired row and is never
+   * reissued, so a link to a retired project can never land on a new one.
    */
   archive(at: Date): void {
     this.props.archivedAt = this.props.archivedAt ?? at;
     this.setUpdatedAt(new Date());
   }
 
-  /** Rename the project. Display only: the slug and every path stay as they are. */
+  /** Rename the project. Display only: the slug stays as it is. */
   rename(name: string): void {
     this.props.name = name;
     this.setUpdatedAt(new Date());
@@ -217,8 +187,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (!this.props.name?.trim()) {
       throw new ArgumentNotProvidedException('Project name cannot be empty');
     }
-    // The slug is a directory name, so an invalid one is not a display problem a
-    // client could work around — it is a path that cannot be created.
+    // The slug is a handle that sits in URLs, so it is held to its shape here.
     if (!PROJECT_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(
         'Project slug must be lower-case letters, digits and dashes',

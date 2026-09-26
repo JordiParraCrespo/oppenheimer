@@ -3,7 +3,7 @@ import type { ProjectRepositoryInputDto } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectSettingsResolver } from '../../../application/project-settings.resolver';
 import type {
-  NamedProjectInsertOutcome,
+  ProjectInsertOutcome,
   ProjectRepositoryPort,
 } from '../../../database/project.repository.port';
 import type { ProjectEntity } from '../../../domain/project.entity';
@@ -32,14 +32,14 @@ const INPUT = {
 
 describe('CreateProjectCommandHandler', () => {
   let taken: Set<string>;
-  let projects: Pick<ProjectRepositoryPort, 'insertNamed'>;
+  let projects: Pick<ProjectRepositoryPort, 'insert'>;
   let settings: Pick<ProjectSettingsResolver, 'repositories' | 'assertUsableHost'>;
   let handler: CreateProjectCommandHandler;
 
   beforeEach(() => {
     taken = new Set();
     projects = {
-      insertNamed: vi.fn(async (entity: ProjectEntity): Promise<NamedProjectInsertOutcome> => {
+      insert: vi.fn(async (entity: ProjectEntity): Promise<ProjectInsertOutcome> => {
         if (taken.has(entity.slug)) return 'slug-taken';
         taken.add(entity.slug);
         return 'inserted';
@@ -73,7 +73,6 @@ describe('CreateProjectCommandHandler', () => {
     expect(project.slug).toBe('client-sites');
     expect(project.organizationId).toBe('org-acme');
     expect(project.createdByUserId).toBe('member-1');
-    expect(project.originGithubRepoId).toBeNull();
     expect(project.defaultHostId).toBe('host-1');
     expect(project.defaultAgent).toBe('claude-code');
     expect(project.instructions).toBe('Run pnpm test before every commit.');
@@ -81,7 +80,7 @@ describe('CreateProjectCommandHandler', () => {
     expect(settings.assertUsableHost).toHaveBeenCalledWith(scope(), 'host-1');
   });
 
-  it('takes the id-suffixed directory name when the plain one is held', async () => {
+  it('takes the id-suffixed slug when the plain one is held', async () => {
     taken.add('client-sites');
 
     const project = await handler.execute(
@@ -98,7 +97,7 @@ describe('CreateProjectCommandHandler', () => {
         new CreateProjectCommand({ scope: scope({ organizationId: null }), input: INPUT }),
       ),
     ).rejects.toMatchObject({ code: 'PROJECTS_002' });
-    expect(projects.insertNamed).not.toHaveBeenCalled();
+    expect(projects.insert).not.toHaveBeenCalled();
   });
 
   it('writes nothing when a repository cannot be resolved', async () => {
@@ -107,6 +106,6 @@ describe('CreateProjectCommandHandler', () => {
     await expect(
       handler.execute(new CreateProjectCommand({ scope: scope(), input: INPUT })),
     ).rejects.toThrow('GITHUB_010');
-    expect(projects.insertNamed).not.toHaveBeenCalled();
+    expect(projects.insert).not.toHaveBeenCalled();
   });
 });

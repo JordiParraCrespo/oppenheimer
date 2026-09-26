@@ -20,23 +20,15 @@ const VALID = {
 };
 
 describe('ProjectEntity', () => {
-  it('starts un-archived, with the origin repository recorded as a string', () => {
-    const project = ProjectEntity.createNew({ ...VALID, originGithubRepoId: '821374923' });
+  it('starts un-archived', () => {
+    const project = ProjectEntity.createNew(VALID);
 
     expect(project.archivedAt).toBeNull();
     expect(project.isArchived).toBe(false);
-    // A bigint id stays a string all the way through: it is not promised to fit
-    // in a JavaScript number.
-    expect(project.originGithubRepoId).toBe('821374923');
-  });
-
-  it('defaults the origin to null rather than undefined', () => {
-    expect(ProjectEntity.createNew(VALID).originGithubRepoId).toBeNull();
   });
 
   it('keeps the slug when the project is renamed', () => {
-    // The whole point of splitting the two: the slug is a directory on every host
-    // holding the project, so renaming must not touch it.
+    // The slug is the project's stable handle; renaming is display only.
     const project = ProjectEntity.createNew(VALID);
 
     project.rename('XRP Mobile (v2)');
@@ -46,9 +38,9 @@ describe('ProjectEntity', () => {
   });
 
   it('offers no way to change the slug, and archives one way only', () => {
-    // A slug setter would be a directory move on every host with live work
-    // inside it. `archive` exists and has no counterpart: a retired slug is never
-    // reissued, so archiving is a one-way door by construction.
+    // A slug setter would break every link to the project. `archive` exists and
+    // has no counterpart: a retired slug is never reissued, so archiving is a
+    // one-way door by construction.
     const descriptor = (name: string) =>
       Object.getOwnPropertyDescriptor(ProjectEntity.prototype, name);
     const methods = Object.getOwnPropertyNames(ProjectEntity.prototype).filter(
@@ -72,12 +64,12 @@ describe('ProjectEntity', () => {
     expect(() => ProjectEntity.createNew(VALID).rename('')).toThrow(ArgumentNotProvidedException);
   });
 
-  it('refuses a slug that is not a directory name, and admits the owner--repo form', () => {
-    for (const slug of ['XRP Mobile', 'xrp_mobile', 'xrp---mobile', '-xrp', 'xrp-', '']) {
+  it('refuses a slug that is not lower-case kebab', () => {
+    for (const slug of ['XRP Mobile', 'xrp_mobile', 'xrp--mobile', '-xrp', 'xrp-', '']) {
       expect(() => ProjectEntity.createNew({ ...VALID, slug })).toThrow(ArgumentInvalidException);
     }
-    expect(ProjectEntity.createNew({ ...VALID, slug: 'acme--xrp-mobile' }).slug).toBe(
-      'acme--xrp-mobile',
+    expect(ProjectEntity.createNew({ ...VALID, slug: 'client-sites-3f9a7b2c' }).slug).toBe(
+      'client-sites-3f9a7b2c',
     );
   });
 });
@@ -159,17 +151,6 @@ describe('a project’s repositories and defaults', () => {
     expect(() => project.configure({ instructions: 'x'.repeat(8001) })).toThrow(
       ArgumentInvalidException,
     );
-  });
-
-  it('includes every repository it holds, and a session with none trivially', () => {
-    const project = ProjectEntity.createNew({
-      ...VALID,
-      repositories: [repo('1', true), repo('2')],
-    });
-
-    expect(project.includesRepositories(['1', '2'])).toBe(true);
-    expect(project.includesRepositories(['1', '3'])).toBe(false);
-    expect(project.includesRepositories([])).toBe(true);
   });
 
   it('hands out copies, so the list changes only through configure', () => {

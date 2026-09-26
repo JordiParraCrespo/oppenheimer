@@ -17,11 +17,11 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
  * Three of the constraints here are not checks a handler could forget, because
  * they are not checks at all. `uq (organizationId, id)` exists so
  * `session_checkout` can reference a session **with its workspace in the key**,
- * and `uq (homeProjectId, slug)` is a permanent tombstone: rows are never
+ * and `uq (organizationId, slug)` is a permanent tombstone: rows are never
  * hard-deleted, so a retired session's directory name and branch can never be
- * reissued. The home project is the directory; `projectId` is only where the
- * session is listed, and moving it never touches disk
- * (`product/versions/mvp/12-projects.md`). The `(organizationId, projectId)` composite foreign key in the
+ * reissued. The slug is unique per workspace because the directory is
+ * `workspaces/<org>/sessions/<slug>`: a project is metadata, and `projectId` is
+ * only where the session is listed. The `(organizationId, projectId)` composite foreign key in the
  * migration is what makes a session in another workspace's project
  * unrepresentable.
  *
@@ -35,7 +35,7 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
 @Index('IDX_work_session_organization_state', ['organizationId', 'state', 'createdAt'])
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
-@Unique('UQ_work_session_home_project_slug', ['homeProjectId', 'slug'])
+@Unique('UQ_work_session_organization_slug', ['organizationId', 'slug'])
 @Unique('UQ_work_session_organization_id', ['organizationId', 'id'])
 export class WorkSessionOrmEntity {
   /**
@@ -51,13 +51,6 @@ export class WorkSessionOrmEntity {
   /** The project the session is listed under. Moving a session changes this. */
   @Column({ type: 'uuid' })
   projectId!: string;
-
-  /**
-   * The project whose directory holds the session's tree. Set at create, equal to
-   * `projectId`, and never changed: every path and branch is built from it.
-   */
-  @Column({ type: 'uuid' })
-  homeProjectId!: string;
 
   @Column({ type: 'uuid' })
   createdByUserId!: string;

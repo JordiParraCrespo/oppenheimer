@@ -6,12 +6,18 @@ import {
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
-import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
+import {
+  useHosts,
+  useMoveSession,
+  useProjects,
+  useSessions,
+} from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionFilterChips } from '../components/session-filter-chips';
+import { SessionRowMenu } from '../components/session-row-menu';
 import { SessionsFilterMenu } from '../components/sessions-filter-menu';
 import {
   ALL,
@@ -83,6 +89,11 @@ export function SessionsSidebar() {
   const { data: hosts } = useHosts();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
+  // The projects a row can be moved to. The row menu is the one reader, but a
+  // list read once here is one request rather than one per row.
+  const { data: projects } = useProjects();
+  const move = useMoveSession();
+  const [menu, setMenu] = useState<string | null>(null);
 
   const all = sessions ?? [];
   const options = {
@@ -147,7 +158,18 @@ export function SessionsSidebar() {
           // that one says so here, in `.op-emptylist`.
           <SessionList>
             {visible.map((session) => (
-              <SessionRow key={session.id} session={session} pathname={pathname} />
+              <SessionRow
+                key={session.id}
+                session={session}
+                pathname={pathname}
+                menuOpen={menu === session.id}
+                onMenuOpenChange={(open) => setMenu(open ? session.id : null)}
+                projects={(projects ?? []).filter((project) => project.id !== session.projectId)}
+                onMove={(projectId) => {
+                  setMenu(null);
+                  move.mutate({ sessionId: session.id, projectId });
+                }}
+              />
             ))}
             {dirty && visible.length === 0 ? (
               <EmptyState compact>
@@ -166,7 +188,21 @@ export function SessionsSidebar() {
  * the unit and the count, and the words are ours to translate — `null` is
  * "less than a minute", which the artboard leaves blank rather than labelling.
  */
-function SessionRow({ session, pathname }: { session: SessionEntity; pathname: string }) {
+function SessionRow({
+  session,
+  pathname,
+  menuOpen,
+  onMenuOpenChange,
+  projects,
+  onMove,
+}: {
+  session: SessionEntity;
+  pathname: string;
+  menuOpen: boolean;
+  onMenuOpenChange: (open: boolean) => void;
+  projects: { id: string; name: string }[];
+  onMove: (projectId: string) => void;
+}) {
   const { t } = useTranslation();
   const age = compactAge(session.createdAt);
 
@@ -177,6 +213,15 @@ function SessionRow({ session, pathname }: { session: SessionEntity; pathname: s
       state={dotFor(session)}
       active={pathname === `/sessions/${session.id}`}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
+      menuOpen={menuOpen}
+      action={
+        <SessionRowMenu
+          open={menuOpen}
+          onOpenChange={onMenuOpenChange}
+          projects={projects}
+          onMove={onMove}
+        />
+      }
     />
   );
 }

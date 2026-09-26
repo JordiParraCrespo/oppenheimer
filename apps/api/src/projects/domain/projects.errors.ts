@@ -16,8 +16,8 @@ export const ProjectErrors = {
     httpStatus: 400,
   },
   /**
-   * Archiving has to refuse while work is still going on inside the project's
-   * directory, and the question "is any session still open here" is answered by
+   * Archiving has to refuse while sessions nobody has closed are still listed in
+   * the project, and the question "is any session still open here" is answered by
    * the module that owns sessions, over the query bus. If nothing answers it,
    * archiving refuses: a destructive path that assumes "no work" when it cannot
    * ask is fail-open, and this is the fail-closed half of that.
@@ -27,7 +27,7 @@ export const ProjectErrors = {
     message: 'Projects cannot be archived right now',
     httpStatus: 503,
   },
-  /** Sessions cannot be started in a retired project: its directory is out of use. */
+  /** Nothing new goes into a retired project. */
   ARCHIVED: {
     code: 'PROJECTS_004',
     message: 'That project is archived',
@@ -51,13 +51,13 @@ export const ProjectErrors = {
     httpStatus: 400,
   },
   /**
-   * Every candidate directory name was taken. The last candidate carries the
-   * project's own id, so this is a bug or a collision nobody should ever see, and
-   * it is reported rather than retried.
+   * Every candidate slug was taken. The last candidate carries the project's own
+   * id, so this is a bug or a collision nobody should ever see, and it is
+   * reported rather than retried.
    */
   SLUG_UNAVAILABLE: {
     code: 'PROJECTS_007',
-    message: 'No directory name is free for that project',
+    message: 'No slug is free for that project',
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

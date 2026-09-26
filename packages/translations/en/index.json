@@ -135,7 +135,7 @@
       "SESSIONS_006": "That project is archived, so no new work can go in it.",
       "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
-      "SESSIONS_009": "Choose a project, or add a repository to take one from.",
+      "SESSIONS_009": "Choose a project for this session.",
       "SESSIONS_010": "A session works on one repository. Start a new session for another.",
       "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
       "HOSTS_001": "That host could not be found.",
@@ -168,7 +168,6 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-      "SESSIONS_018": "That project doesn't include this session's repositories. Add them to the project first, or pick another one.",
       "HOSTS_007": "No image is waiting for that command."
     },
     "notFound": {
@@ -423,7 +422,15 @@
       "composer": {
         "placeholder": "Describe a task or ask a question"
       },
-      "queued": "Your first task is queued for this host."
+      "queued": "Your first task is queued for this host.",
+      "project": {
+        "label": "Project",
+        "placeholder": "Project",
+        "search": "Search projects…",
+        "empty": "No project matches.",
+        "loading": "Loading projects…",
+        "add": "New project…"
+      }
     },
     "session": {
       "status": {
@@ -460,6 +467,28 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    },
+    "project": {
+      "newTitle": "New project",
+      "newDescription": "The repositories its sessions usually work on, and what a new session starts with.",
+      "name": "Name",
+      "namePlaceholder": "XRP Mobile",
+      "repositories": "Repositories",
+      "repositoriesRequired": "Pick at least one repository, and make one of them a default.",
+      "default": "Default",
+      "defaultTitle": "Offered to every new session of the project",
+      "defaultHost": "Default host",
+      "defaultAgent": "Default agent",
+      "none": "None",
+      "instructions": "Instructions",
+      "instructionsPlaceholder": "Run pnpm test before every commit.",
+      "create": "Create project",
+      "createFailed": "The project could not be created."
+    },
+    "row": {
+      "actions": "Session actions",
+      "move": "Move to project…",
+      "moveTitle": "Move to project"
     }
   },
   "hosts": {

@@ -69,12 +69,11 @@ export interface SessionEventPage {
  */
 /**
  * A session on a host as the link's hello reconciliation reads it: the row,
- * the project's slug (a path segment on the host) and the first prompt if the
+ * and the first prompt if the
  * log holds one — everything a re-dispatched `session.create` needs.
  */
 export interface HostSessionRow {
   session: WorkSessionEntity;
-  projectSlug: string;
   prompt?: string;
 }
 

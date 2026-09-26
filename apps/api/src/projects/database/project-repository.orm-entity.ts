@@ -11,7 +11,7 @@ import {
 
 /**
  * One repository a project holds: which one, the base its sessions branch from,
- * and whether it is offered by default (`product/versions/mvp/12-projects.md`).
+ * and whether it is offered by default (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  * A child of the project aggregate, like `session_checkout` is of the session: it
  * declares no resource, is never queried outside `projects/database/`, and is

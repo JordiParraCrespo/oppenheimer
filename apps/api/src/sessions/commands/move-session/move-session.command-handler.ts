@@ -16,12 +16,10 @@ import { MoveSessionCommand } from './move-session.command';
  * Lists a session under another project — an **entry in its log**, folded onto
  * `projectId`, like a rename.
  *
- * Nothing moves on disk and no host is told. The session's tree stays in its home
- * project's directory, which every path and branch is built from, so this is the
- * whole of a move (`product/versions/mvp/12-projects.md`).
- *
- * The target must hold every repository the session has checked out. That rule is
- * the frames' and is **provisional**, with the rest of how sessions are organized.
+ * Nothing moves on disk and no host is told: a project is metadata, and a
+ * session's directory and branch never name it, so this is the whole of a move
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). There is no rule
+ * about repositories: a session may work on any, in any project.
  */
 @CommandHandler(MoveSessionCommand)
 export class MoveSessionCommandHandler
@@ -51,16 +49,6 @@ export class MoveSessionCommandHandler
     if (session.projectId === command.projectId) return { session, hints: [] };
 
     const target = await requireActiveProject(this.projects, command.scope, command.projectId);
-    const repositories = session.liveCheckouts.map((checkout) => checkout.githubRepoId);
-    if (!target.includesRepositories(repositories)) {
-      const missing = session.liveCheckouts
-        .filter((checkout) => !target.includesRepositories([checkout.githubRepoId]))
-        .map((checkout) => checkout.repositoryFullName);
-      throw new AppError(SessionErrors.PROJECT_EXCLUDES_REPOSITORY, {
-        detail: `${target.name} does not include ${missing.join(', ')}`,
-      });
-    }
-
     const outcome = await this.sessions.appendMove(session, target.id, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(command.id, SESSION_EVENT_KINDS.MOVED),

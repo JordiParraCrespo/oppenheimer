@@ -79,14 +79,13 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A session with no checkouts and no project named. Zero checkouts is a real
-   * session — a project of notes and documents needs no git at all — but then
-   * nothing says which project's directory it belongs in, and the project cannot
-   * be derived from a repository that was not asked for.
+   * A session that names no project. Every session is listed under one, and a
+   * project is created on purpose, never derived from a repository — so there is
+   * nothing to fall back to. The request schema refuses the same body first.
    */
   PROJECT_REQUIRED: {
     code: 'SESSIONS_009',
-    message: 'A session with no repositories must name its project',
+    message: 'A session must name its project',
     httpStatus: 400,
   },
   /**
@@ -155,16 +154,6 @@ export const SessionErrors = {
   HOST_CANNOT_TAKE_IMAGES: {
     code: 'SESSIONS_017',
     message: 'The session’s host cannot take images until its runner is updated',
-    httpStatus: 409,
-  },
-  /**
-   * A session can only be moved to a project that holds every repository it has
-   * checked out (`product/versions/mvp/12-projects.md`). Provisional, with the
-   * rest of how sessions are organized; the detail names what is missing.
-   */
-  PROJECT_EXCLUDES_REPOSITORY: {
-    code: 'SESSIONS_018',
-    message: 'That project does not include this session’s repositories',
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

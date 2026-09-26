@@ -9,13 +9,12 @@ import { ProjectResource } from '../projects.resource';
 import { ProjectOrmEntity } from './project.orm-entity';
 import type {
   ArchiveOutcome,
-  NamedProjectInsertOutcome,
   ProjectInsertOutcome,
   ProjectRepositoryPort,
 } from './project.repository.port';
 import { ProjectRepositoryOrmEntity } from './project-repository.orm-entity';
 
-/** Postgres' unique-violation class, and the constraint that guards a directory name. */
+/** Postgres' unique-violation class, and the constraint that guards a slug. */
 const UNIQUE_VIOLATION = '23505';
 const SLUG_CONSTRAINT = 'UQ_project_organization_slug';
 
@@ -42,58 +41,7 @@ export class ProjectRepository
     super();
   }
 
-  /**
-   * One statement, and what it comes back with is the answer.
-   *
-   * The conflict target is the **origin**, because that is the identity two
-   * concurrent first sessions on one repository race for: `DO NOTHING` plus
-   * `RETURNING` means zero rows says "somebody else created this repository's
-   * project" without a second query that assumes otherwise. A **slug** collision
-   * is a different event — another repository holds that directory name — and
-   * arrives as the unique violation it is, so the caller knows to derive the next
-   * candidate instead of adopting a stranger's project. Written as SQL because
-   * both of those targets are the point of the statement.
-   */
-  async insertIfUnclaimed(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
-    const record = this.mapper.toPersistence(entity);
-    const table = this.repository.metadata.tableName;
-    try {
-      return await this.repository.manager.transaction(async (manager) => {
-        const inserted: { id: string }[] = await manager.query(
-          `INSERT INTO "${table}"
-             ("id", "organizationId", "name", "slug", "originGithubRepoId",
-              "createdByUserId", "defaultHostId", "defaultAgent", "instructions")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-           -- The index is partial, so its predicate has to be repeated here or
-           -- Postgres cannot infer which constraint is meant.
-           ON CONFLICT ("organizationId", "originGithubRepoId")
-             WHERE "originGithubRepoId" IS NOT NULL
-             DO NOTHING
-           RETURNING "id"`,
-          [
-            record.id,
-            record.organizationId,
-            record.name,
-            record.slug,
-            record.originGithubRepoId,
-            record.createdByUserId,
-            record.defaultHostId,
-            record.defaultAgent,
-            record.instructions,
-          ],
-        );
-        if (inserted.length === 0) return 'origin-taken' as const;
-        await this.insertRepositories(manager, entity);
-        return 'inserted' as const;
-      });
-    } catch (error) {
-      // Outside the transaction: the violation aborted it, and it has rolled back.
-      if (isSlugConflict(error)) return 'slug-taken';
-      throw error;
-    }
-  }
-
-  async insertNamed(entity: ProjectEntity): Promise<NamedProjectInsertOutcome> {
+  async insert(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
     try {
       await this.repository.manager.transaction(async (manager) => {
         await manager.getRepository(ProjectOrmEntity).insert(this.mapper.toPersistence(entity));
@@ -221,13 +169,6 @@ export class ProjectRepository
     return this.withRepositories(record);
   }
 
-  async findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>> {
-    const record = await this.scopedQuery(scope)
-      .andWhere('project.originGithubRepoId = :githubRepoId', { githubRepoId })
-      .getOne();
-    return this.withRepositories(record);
-  }
-
   /** One project and its repositories, read by the id the scoped read verified. */
   private async withRepositories(record: ProjectOrmEntity | null): Promise<Option<ProjectEntity>> {
     if (!record) return None;
@@ -269,7 +210,7 @@ export class ProjectRepository
   }
 }
 
-/** Whether a driver error is the directory-name constraint refusing the insert. */
+/** Whether a driver error is the slug constraint refusing the insert. */
 function isSlugConflict(error: unknown): boolean {
   const driver = error as { code?: string; constraint?: string };
   return driver?.code === UNIQUE_VIOLATION && driver?.constraint === SLUG_CONSTRAINT;

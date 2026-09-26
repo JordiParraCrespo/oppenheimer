@@ -37,7 +37,7 @@ export class ArchiveProjectHttpController {
   @Delete(':id')
   @Version('1')
   // `update Project`, not `delete`: nothing is deleted. The row outlives the
-  // project so its directory name is never reissued on any host that held it.
+  // project so its slug is never reissued.
   @CheckPolicies({ action: 'update', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({

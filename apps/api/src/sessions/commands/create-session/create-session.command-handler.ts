@@ -72,7 +72,7 @@ export class CreateSessionCommandHandler
     });
 
     for (const checkout of input.checkouts) {
-      await this.plan.attachCheckout(scope, session, project, checkout);
+      await this.plan.attachCheckout(scope, session, checkout);
     }
 
     const created = await this.sessions.createIfUnclaimed(
@@ -106,7 +106,7 @@ export class CreateSessionCommandHandler
 
     const { hints } = await this.dispatch.create(
       created.session,
-      await this.launches.build(created.session, project.slug, { prompt: input.prompt }),
+      await this.launches.build(created.session, { prompt: input.prompt }),
     );
 
     await this.naming.record(

@@ -174,8 +174,9 @@ What belongs here is what the runner does with it:
 
 A session is a directory of checkouts plus a tmux session plus its
 windows. The layout and every name in it are 10's
-(`workspaces/<org>/projects/<project>/{repos,sessions}`; it supersedes
-note 11 §1). Create, in order, each step resumable because the previous
+(`workspaces/<org>/{repos,sessions}`; it supersedes note 11 §1). There
+is no project level: a project is metadata the control plane keeps, and
+`session.create` does not name one (2026-09-26, 10). Create, in order, each step resumable because the previous
 one is observable on disk, and each reported as a `session.step` (01)
 as it starts and lands: `host` running when the frame arrives and done
 once create accepts it, then `clone` (the stores), `worktree` (the
@@ -184,11 +185,11 @@ it took on the host. A failure is `session.failed`; the step that
 started last is the one that failed:
 
 1. Write the `.oppenheimer` marker into
-   `projects/<project>/sessions/<slug>/` **before** anything else. Only
+   `sessions/<slug>/` **before** anything else. Only
    a directory carrying it is ours to delete, ever (10, the rules
    learned from Orca).
-2. For each checkout, ensure the project's bare store
-   `projects/<project>/repos/<store>.git` exists and is fetched
+2. For each checkout, ensure the workspace's bare store
+   `repos/<store>.git` exists and is fetched
    (`git clone --bare` the first time, then `git fetch`, with the
    `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
    set), authenticated through the credential helper (§8). The store
@@ -201,7 +202,8 @@ started last is the one that failed:
    A first clone lands beside its final name and is renamed into place
    whole, so one cut short leaves nothing that looks like a store.
 3. `git worktree add sessions/<slug>/<dir>` from the store, on the
-   branch `oppenheimer/<project>/<slug>` created from the chosen base.
+   branch `session.create` names — `oppenheimer/<slug>`, or the one its
+   checkouts already recorded — created from the chosen base.
    When a worktree is not possible, clone instead and **report which
    mode was used**, because cleanup differs. A session may have zero
    checkouts.
@@ -468,7 +470,7 @@ One tree, named here and pointed at from 09:
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3
-~/oppenheimer-ai/workspaces/<org>/projects/<project>/{repos/<store>.git, sessions/<slug>/<dir>}   the user's code (10)
+~/oppenheimer-ai/workspaces/<org>/{repos/<store>.git, sessions/<slug>/<dir>}   the user's code (10)
 ```
 
 **The boot path trusts tmux.** It is the only one of the three that

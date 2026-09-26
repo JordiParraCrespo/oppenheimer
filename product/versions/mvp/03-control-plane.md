@@ -127,6 +127,32 @@ The App's six settings (`GITHUB_APP_*`, the slug included) are the
 connected yet" from "this deployment has no App". Without them the module
 boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 
+## Projects, as built
+
+A project is a saved scope a person creates, and metadata only (10 has
+the schema). Four routes:
+
+- `POST /projects` — a name, the repositories (each with a base branch
+  and whether a new session is offered it; at least one, one of them a
+  default), a default host and agent, and instructions. Each repository
+  is resolved live through the `github/` module's `RepositoryAccessPort`;
+  a default host the caller cannot use is `HOSTS_001`. The slug is derived
+  once from the name.
+- `PATCH /projects/{id}` — any of those; the repositories are replaced as
+  a whole set in one transaction with the project row, and a save that
+  loaded before an archive landed finds nothing to update.
+- `GET /projects`, `GET /projects/{id}` — with the repositories embedded.
+- `DELETE /projects/{id}` — archives; refuses while sessions nobody has
+  closed are listed in it, and fails closed when nothing can answer that.
+
+Sessions reach projects through one read, `ProjectLookupPort.findOneById`,
+which hides an archived project. `POST /sessions` requires `projectId`;
+`POST /sessions/{id}/move` changes it, and nothing else — no host is told,
+because nothing on a host names a project. A project's defaults are
+offered by the console; the API never applies them, and a session may
+check out repositories its project does not hold. A project's
+instructions are stored and not yet delivered (01).
+
 ## Sessions, checkouts and the log
 
 The work itself: `work_session`, `session_checkout` — which is also **where a
@@ -352,12 +378,15 @@ coverage they get.
 users, installations, repositories (**not a table**: listed live from
 GitHub through the installation; a repository is remembered only by the
 checkout that took it, as GitHub's own id plus the installation and a
-name snapshot), hosts, host pairing tokens, projects (the body of work a
-session belongs to; auto-created from the first repository a session checks
-out, and found again by that repository's GitHub id; its slug is a directory
-name on every host and is never reissued), **work_session**
+name snapshot), hosts, host pairing tokens, projects (a saved scope a
+person creates: the repositories its sessions usually work on, each on a
+base branch and marked default or not, and a default host, agent and
+instructions — metadata only, so nothing on a host is named after it; see
+10, changed 2026-09-26 from projects auto-created per repository),
+**work_session**
 (workspace, project, host, agent, slug, name, the checkout the agent runs
-in, and the fold of its log) — a session belongs to a project —,
+in, and the fold of its log) — a session is listed under one project and
+can be moved to another, which moves nothing on a host —,
 **session_checkout** (one repository per session, on the session's own
 branch, and where a repository is remembered), **work_session_event** (the
 append-only log the row is a fold of). Attach tickets are **not a table**: a

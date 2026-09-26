@@ -6,11 +6,12 @@ import type { WorkSessionEntity } from '../domain/work-session.entity';
 import type { SessionLaunchSpec } from './session-dispatch.port';
 
 /**
- * Builds what the host is told to make, from the session and the two names it
- * cannot read off it: the project's slug (the handler already loaded the
- * project) and the workspace's, asked of `organizations/` through its port.
- * One place, so every command that dispatches a launch — create, restart, add a
- * checkout, the hello reconciliation — names the same directories.
+ * Builds what the host is told to make, from the session and the one name it
+ * cannot read off it: the workspace's slug, asked of `organizations/` through its
+ * port. One place, so every command that dispatches a launch — create, restart,
+ * add a checkout, the hello reconciliation — names the same directories. No
+ * project name travels: a project is metadata, and nothing on a host is named
+ * after it.
  */
 @Injectable()
 export class SessionLaunchSpecFactory {
@@ -21,8 +22,7 @@ export class SessionLaunchSpecFactory {
 
   async build(
     session: WorkSessionEntity,
-    projectSlug: string,
-    extra: { branch?: string; prompt?: string } = {},
+    extra: { prompt?: string } = {},
   ): Promise<SessionLaunchSpec> {
     const organizationSlug = await this.workspaces.slugOf(session.organizationId);
     // The session row was written in this workspace; a missing slug is a broken
@@ -30,8 +30,9 @@ export class SessionLaunchSpecFactory {
     if (!organizationSlug) throw new Error(`workspace ${session.organizationId} has no slug`);
     return {
       organizationSlug,
-      projectSlug,
-      branch: extra.branch ?? sessionBranchName(projectSlug, session.slug),
+      // The branch the checkouts recorded wins: a session from before the flat
+      // layout keeps the name its worktrees are already on.
+      branch: session.branch ?? sessionBranchName(session.slug),
       ...(extra.prompt ? { prompt: extra.prompt } : {}),
     };
   }

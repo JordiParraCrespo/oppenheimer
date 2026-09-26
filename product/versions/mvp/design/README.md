@@ -81,9 +81,10 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   2026-09-26 export, but `../00-scope.md` still lists routines as a later
   slice and `../05-screens.md` still says the MVP has no settings page.
   The notes have not been reconciled with these frames yet.
-- Projects as the frames draw them (a saved scope with several
-  repositories, defaults and instructions; sessions grouped by project and
-  movable between them) are designed on the control-plane side in
-  [`../12-projects.md`](../12-projects.md).
+- Projects as the frames draw them are in the notes as of 2026-09-26:
+  the project chip, New project and Move in `../05-screens.md`, the
+  schema in `../10-api-modules-and-data-model.md`. The sidebar's grouping
+  by project, and Rename and Delete in the row menu, wait for the design
+  of how sessions are organized.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

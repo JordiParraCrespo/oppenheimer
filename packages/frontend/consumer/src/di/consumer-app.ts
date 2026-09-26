@@ -9,6 +9,8 @@ import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
+import type { ProjectsService } from '../modules/projects';
+import { ProjectsModule } from '../modules/projects';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import { TOKENS } from './tokens';
@@ -24,6 +26,7 @@ export const consumerModules = [
   ApiTokensModule,
   OrganizationsModule,
   ProfileModule,
+  ProjectsModule,
 ];
 
 /**
@@ -79,5 +82,10 @@ export class ConsumerApp {
 
   get profile(): ProfileService {
     return this.kernel.container.get(TOKENS.ProfileService);
+  }
+
+  /** The saved scopes sessions are listed under. */
+  get projects(): ProjectsService {
+    return this.kernel.container.get(TOKENS.ProjectsService);
   }
 }
