@@ -56,21 +56,25 @@ Wire the styles into the app's CSS entry alongside Tailwind:
     with `TerminalStatusLink`
   - media: `ImageCarousel`
 
-  Everything else in that folder is legacy from the starter, kept so `apps/web`
-  keeps building until its screens are rebuilt.
+  - also used by the console, not yet in the showcase: `Alert`, `Badge`,
+    `BrandMark`, `Checkbox`, `Empty`, `Label`, `RadioGroup`, `SearchInput`,
+    `Skeleton`, `Toaster` (sonner), `Table`, `Toggle`, and `Sheet` inside
+    `Sidebar`
+
+  Nothing else lives there: a component nothing uses is deleted.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the
 showcase, `pnpm --filter @oppenheimer/web-showcase dev` on port 3002.
 
-`react`, `react-dom` and `recharts` are peer dependencies supplied by the app.
+`react` and `react-dom` are peer dependencies supplied by the app.
 
 ## Scripts
 
 ```bash
 pnpm build   # tsup -> dist
 pnpm dev     # tsup --watch
-pnpm test    # every component export is reachable from the barrel
+pnpm test    # each component is in the barrel, the package exports and the showcase
 ```
 
 ## Design-system lint

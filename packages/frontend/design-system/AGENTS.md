@@ -102,7 +102,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   component is ported.
 - The MVP component inventory (what the nine screens need, and nothing more)
   is the showcase's table of contents: `apps/web-showcase/src/lib/toc.ts`.
-  Components in `web/src/components/` not on that list are legacy from the
-  starter and not part of the system.
+  Every file in `web/src/components/` is part of the system: the starter's
+  unused components were deleted, and the package's `test` fails on a
+  component the showcase does not import unless it is listed, with a reason,
+  in `NOT_IN_SHOWCASE` in `web/scripts/check-exports.mjs` (the few the console
+  uses before the showcase draws them). A component nothing uses is deleted,
+  not kept for later; git has it.
 - Preview every change in `apps/web-showcase`, in **both** themes; the top
   bar carries the switch.
