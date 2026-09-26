@@ -186,6 +186,37 @@ export class SessionsRepository {
     return toEntity(data);
   }
 
+  /** Display only: the slug, the directory and the branch never change. */
+  @MapApiError(SessionsErrors.RENAME_FAILED)
+  async rename(id: string, name: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.renameSession({ path: { id }, body: { name } });
+    if (error || !data) throw new AppError(SessionsErrors.RENAME_FAILED);
+    return toEntity(data);
+  }
+
+  /** To a project that holds the session's repository; nothing on the host moves. */
+  @MapApiError(SessionsErrors.MOVE_FAILED)
+  async move(id: string, projectId: string): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.moveSession({ path: { id }, body: { projectId } });
+    if (error || !data) throw new AppError(SessionsErrors.MOVE_FAILED);
+    return toEntity(data);
+  }
+
+  /**
+   * Close: the session stops, its worktree leaves the host, and the row stays
+   * resolved so its directory name and branch are never reissued. Work that is
+   * not pushed refuses the close unless the caller accepts losing it.
+   */
+  @MapApiError(SessionsErrors.CLOSE_FAILED)
+  async close(id: string, acceptUnpushedWork = false): Promise<SessionEntity> {
+    const { data, error } = await heyApiSdk.closeSession({
+      path: { id },
+      query: acceptUnpushedWork ? { acceptUnpushedWork } : undefined,
+    });
+    if (error || !data) throw new AppError(SessionsErrors.CLOSE_FAILED);
+    return toEntity(data);
+  }
+
   /**
    * A pass to open one window's terminal.
    *

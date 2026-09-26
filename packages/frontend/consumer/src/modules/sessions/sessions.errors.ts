@@ -38,6 +38,18 @@ export const SessionsErrors = {
    * upload: a file that would be refused is not worth sending, and the reader
    * sees the same words either way.
    */
+  RENAME_FAILED: {
+    code: 'SESSIONS_CLIENT_008',
+    message: 'Failed to rename the session',
+  },
+  MOVE_FAILED: {
+    code: 'SESSIONS_CLIENT_009',
+    message: 'Failed to move the session',
+  },
+  CLOSE_FAILED: {
+    code: 'SESSIONS_CLIENT_010',
+    message: 'Failed to delete the session',
+  },
   IMAGE_TOO_LARGE: {
     code: 'SESSIONS_012',
     message: 'That image is too large to give the session',
