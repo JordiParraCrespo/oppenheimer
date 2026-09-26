@@ -120,6 +120,17 @@ describe('the session fold', () => {
     expect(fold.nameSource).toBe('user');
   });
 
+  it('moves the session with the last moved event, and leaves the row’s project alone otherwise', () => {
+    expect(foldSessionLog([entry(SESSION_EVENT_KINDS.REQUESTED)]).projectId).toBeNull();
+    const moved = foldSessionLog([
+      entry(SESSION_EVENT_KINDS.REQUESTED),
+      entry(SESSION_EVENT_KINDS.MOVED, { projectId: 'p-2', fromProjectId: 'p-1' }),
+      entry(SESSION_EVENT_KINDS.MOVED, { projectId: 'p-3', fromProjectId: 'p-2' }),
+      entry(SESSION_EVENT_KINDS.MOVED, {}),
+    ]);
+    expect(moved.projectId).toBe('p-3');
+  });
+
   it('keeps a name a person typed against the prompt-derived fallback', () => {
     const fold = foldSessionLog([
       entry(SESSION_EVENT_KINDS.NAMED, { name: 'Fix the wallet list', source: 'user' }),

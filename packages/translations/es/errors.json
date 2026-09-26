@@ -124,6 +124,7 @@
     "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
     "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
     "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+    "SESSIONS_018": "Ese proyecto no incluye el repositorio de esta sesión. Añádeselo primero.",
     "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
   },
   "notFound": {

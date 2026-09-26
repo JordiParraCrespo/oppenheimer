@@ -241,6 +241,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       agentSessionId: this.props.agentSessionId,
       lastEventAt: this.props.lastEventAt,
       stoppedAt: this.props.stoppedAt,
+      projectId: this.props.projectId,
       name: this.props.name,
       nameSource: this.props.nameSource,
       cwdCheckoutId: this.props.cwdCheckoutId,
@@ -267,6 +268,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.agentSessionId = fold.agentSessionId;
     this.props.lastEventAt = fold.lastEventAt;
     this.props.stoppedAt = fold.stoppedAt;
+    if (fold.projectId) this.props.projectId = fold.projectId;
     this.props.name = fold.name;
     this.props.nameSource = fold.nameSource;
     this.props.cwdCheckoutId = fold.cwdCheckoutId;
