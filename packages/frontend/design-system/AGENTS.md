@@ -100,9 +100,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   are kept as **legacy aliases** so the unported components in `apps/web`
   still render. Author nothing new against them; they go when the last
   component is ported.
-- The MVP component inventory (what the nine screens need, and nothing more)
-  is the showcase's table of contents: `apps/web-showcase/src/lib/toc.ts`.
-  Components in `web/src/components/` not on that list are legacy from the
-  starter and not part of the system.
+- **The inventory is `web/src/components/`.** Every file there is public, and
+  each is named in exactly one item's `components` in the showcase's
+  `apps/web-showcase/src/lib/toc.ts`, which is where it is drawn.
+  `web/src/internal/` holds what only components import. Nothing else is a
+  list: the package's `test` fails when the folder, the barrel and `toc.ts`
+  disagree. A component nothing uses is deleted, not kept for later.
 - Preview every change in `apps/web-showcase`, in **both** themes; the top
   bar carries the switch.

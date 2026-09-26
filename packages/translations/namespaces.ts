@@ -24,7 +24,6 @@ export const namespaces = namespaceList as unknown as readonly [
   'onboarding',
   'pages',
   'public',
-  'table',
   'theme',
   'toasts',
   'emails',

@@ -12,7 +12,6 @@ import onboarding from './en/onboarding.json';
 import pages from './en/pages.json';
 import publicCopy from './en/public.json';
 import sessions from './en/sessions.json';
-import table from './en/table.json';
 import theme from './en/theme.json';
 import toasts from './en/toasts.json';
 import validation from './en/validation.json';
@@ -33,7 +32,6 @@ const en = {
   public: publicCopy,
   sessions,
   hosts,
-  table,
   theme,
   toasts,
   emails,

@@ -91,7 +91,7 @@ shared ─► core ─► consumer ─► apps/web
 
 ## The kit is concerns, not kinds, at its top level
 
-`packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`, `table`,
+`packages/frontend/web/src/<concern>/<kind>/` — `shell`, `auth`,
 `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`, `roles`. Each
 concern has an `index.ts`; a concern imports another only through it. The
 concerns are layered (leaves → middle → top) and `pnpm arch` holds the order.
@@ -135,19 +135,19 @@ name the jobs and split *those*.
   What a reader is typing is the field's state until it settles. Hand the list
   the settled value.
 
-  `DataTable` took `search.value` as a controlled prop, so every character
-  re-rendered the header, all eight rows, forty cells, eight row menus and the
-  pager — for a query that was debounced anyway and had not been asked yet, and
-  through a render-phase `setSelection` that ran again each time. `DataTableSearch`
-  keeps the half-typed word now and calls `onChange` once per burst. If you need
-  the same shape elsewhere, copy that: state in the field, debounce on the way
-  out, settled value on the way back down.
+  The kit's `DataTable` (deleted since, unmounted) took `search.value` as a
+  controlled prop, so every character re-rendered the header, all eight rows,
+  forty cells, eight row menus and the pager — for a query that was debounced
+  anyway and had not been asked yet, and through a render-phase `setSelection`
+  that ran again each time. The fix was a search field that kept the half-typed
+  word and called `onChange` once per burst. Copy that shape: state in the
+  field, debounce on the way out, settled value on the way back down.
 
 - **State lives in the lowest component that reads it.** A toggle belongs to
   the input, an open menu to the row, a draft to the field. A page holds only
   what two siblings share. The exception worth knowing: a dialog opened from a
   `rowActions` menu cannot own its own open state, because that menu's content
-  unmounts when the popup closes — those stay with the table, and cost it
+  unmounts when the popup closes — those stay with the list, and cost it
   nothing.
 - **Subscribe at the leaf.** `useWatch`, `useController` and `useFormState`
   take `control` and run in the component that shows the value; `select`
@@ -156,8 +156,9 @@ name the jobs and split *those*.
   held one flat `Scope[]` for eleven groups, so granting one re-rendered
   thirty-three toggles; each row takes its own field off the form now.
 - **A component owns one job, and the job is named by what updates it.**
-  `data-table.tsx` held the search field, the rows and the selection: three
-  things on three different clocks, so each one's update redrew the other two.
+  The old `data-table.tsx` held the search field, the rows and the selection:
+  three things on three different clocks, so each one's update redrew the other
+  two.
   The split that matters is by clock, not by length — a keystroke, a page, a
   tick. When you cannot name the second job, there isn't one.
 - **One component per file.** Biome's `noNestedComponentDefinitions` is on.
@@ -178,8 +179,9 @@ name the jobs and split *those*.
   than profiled, and why a `*-render.spec.tsx` runs with the compiler **off**.
 
   The converse is the trap: splitting a component into files does not isolate
-  anything by itself. `DataTableRow` is its own file and a tick still redraws
-  the page, because the setter that a tick calls lives in the shell above it.
+  anything by itself. The old `DataTableRow` was its own file and a tick still
+  redrew the page, because the setter that a tick calls lived in the shell above
+  it.
   A split isolates an update only when the state that update writes moves with
   it.
 
@@ -190,11 +192,10 @@ name the jobs and split *those*.
   says so. `pnpm check:compiler` lists every one.
 - **A component whose cost is the point gets a render budget.** Name it
   `*-render.spec.tsx` and it runs in the `render-budget` vitest project, which
-  does not enable the compiler. `data-table-render.spec.tsx` asserts that a
-  keystroke renders no rows; `permission-picker-render.spec.tsx` that one click
-  renders one row *and* that a keystroke in the catalog's search renders none.
-  Budget every clock the component has, not the one you just fixed: the search
-  field was added to that dialog with the query one component too high, and it
+  does not enable the compiler. `new-session-composer-render.spec.tsx` asserts
+  that a keystroke in the composer re-renders none of the chips beside it.
+  Budget every clock the component has, not the one you just fixed: a search
+  field was once added to a permission dialog with the query one component too high, and it
   was the missing burst assertion that let it through. Write the harness so the
   value feeds back the way the real caller feeds it, or the test passes on the
   shape it was meant to forbid.

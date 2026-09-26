@@ -1,4 +1,4 @@
-import { icons as LUCIDE } from 'lucide-react';
+import { icons as LUCIDE } from '@oppenheimer/design-system-web/icons';
 import { DURATIONS } from '@/lib/toc';
 import { ThemePair } from '@/components/page-shell';
 

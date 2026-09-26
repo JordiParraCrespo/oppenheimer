@@ -174,7 +174,7 @@ import {
   TriangleAlertIcon,
   UserIcon,
   ZapIcon,
-} from 'lucide-react';
+} from '@oppenheimer/design-system-web/icons';
 import * as React from 'react';
 
 /* ── Dialog ──────────────────────────────────────────────────────────────── */

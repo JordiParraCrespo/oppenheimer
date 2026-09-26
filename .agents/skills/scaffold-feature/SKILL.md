@@ -56,8 +56,8 @@ screen; nothing else, and never past 120 lines.
 - No manual `useMemo`/`useCallback`/`memo` outside `hooks/`: the React
   Compiler is on. Biome enforces it.
 - Reach for the kit and the design system before writing markup:
-  `PageHead`, `SectionCard`, `DataTable`, `ConfirmDialog`, `AuthField`,
-  `useTableQuery`, `useErrorMessage` are already there
+  `PageHead`, `SectionCard`, `ConfirmDialog`, `AuthField`,
+  `useErrorMessage` are already there
   (`packages/frontend/web/src/index.ts`).
 - Every user-facing string goes through `t()`; keys live in
   `packages/translations/<locale>/index.json`.

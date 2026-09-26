@@ -561,6 +561,7 @@ function ChipSelect({
   emptyText = 'No matches.',
   loading = false,
   loadingText = 'Loading…',
+  onQueryChange,
   action,
   width,
   maxHeight,
@@ -579,6 +580,16 @@ function ChipSelect({
   /** The options are still being fetched: the chip stays live and says so. */
   loading?: boolean;
   loadingText?: string;
+  /**
+   * Hands the search to the caller. Each change of the typed text goes out
+   * here (and `''` when the popup closes), and `options` is taken as the
+   * answer, never filtered again in the browser. Use it once the list comes
+   * from an endpoint that can hold more than one page: point it at the query
+   * that fetches the options, debounce there, and set `loading` while the
+   * answer is in flight. Keep the selected option in `options` so the chip
+   * can still name it.
+   */
+  onQueryChange?: (query: string) => void;
   action?: ChipSelectAction;
   width?: number;
   maxHeight?: number;
@@ -592,7 +603,7 @@ function ChipSelect({
   const [query, setQuery] = React.useState('');
   const [active, setActive] = React.useState(0);
   const term = query.trim().toLowerCase();
-  const visible = options.filter((option) => matches(option, term));
+  const visible = onQueryChange ? options : options.filter((option) => matches(option, term));
   const selected = options.find((option) => option.value === value) ?? null;
 
   // Stable across a highlight move, so the memoised rows can skip it.
@@ -624,7 +635,10 @@ function ChipSelect({
       onOpenChange={(next) => {
         setOpen(next);
         setActive(0);
-        if (!next) setQuery('');
+        if (!next && query !== '') {
+          setQuery('');
+          onQueryChange?.('');
+        }
       }}
     >
       <PopoverTrigger
@@ -650,6 +664,7 @@ function ChipSelect({
           onChange={(event) => {
             setQuery(event.target.value);
             setActive(0);
+            onQueryChange?.(event.target.value);
           }}
           onKeyDown={onKeyDown}
         />
