@@ -151,6 +151,11 @@
   copies when text is selected and interrupts otherwise, and
   **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
   on macOS), because tmux owns plain drags.
+- The session cursor is a **steady block**. It is the default, not a
+  fence: a program that asks for a blinking cursor (DECSET 12, DECSCUSR)
+  gets one, and tmux sets it back to steady each time it shows the cursor
+  (`cnorm`). Either way a program's hide, draw, show is painted as one
+  frame (02 §6), so a working agent's status line does not flicker it.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here
