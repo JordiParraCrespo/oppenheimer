@@ -71,6 +71,13 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar' })
   slug!: string;
 
+  /**
+   * The project's directory name when the session was requested, which every
+   * path on the host carries. A move changes `projectId`, never this.
+   */
+  @Column({ type: 'varchar' })
+  projectSlug!: string;
+
   /** The coding agent, from the closed catalog in `@oppenheimer/shared`. */
   @Column({ type: 'varchar' })
   agent!: string;

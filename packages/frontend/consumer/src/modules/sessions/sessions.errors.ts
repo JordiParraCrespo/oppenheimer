@@ -33,6 +33,18 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_007',
     message: 'Failed to give the image to the session',
   },
+  RENAME_FAILED: {
+    code: 'SESSIONS_CLIENT_008',
+    message: 'Failed to rename the session',
+  },
+  MOVE_FAILED: {
+    code: 'SESSIONS_CLIENT_009',
+    message: 'Failed to move the session',
+  },
+  CLOSE_FAILED: {
+    code: 'SESSIONS_CLIENT_010',
+    message: 'Failed to delete the session',
+  },
   /**
    * The API's own code for an image over the cap, raised here before the
    * upload: a file that would be refused is not worth sending, and the reader

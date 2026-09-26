@@ -60,16 +60,6 @@
       "add": "Añadir host…",
       "offline": "Desconectado"
     },
-    "addHost": {
-      "title": "Añadir un host",
-      "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
-      "instruction": "Ejecuta esto en él, una vez",
-      "format": "Cómo leerlo",
-      "command": "Comando",
-      "agentPrompt": "Instrucción para el agente",
-      "use": "Usar este host",
-      "defaultName": "Nuevo host"
-    },
     "project": {
       "label": "Proyecto",
       "placeholder": "Proyecto",
@@ -78,27 +68,6 @@
       "loading": "Cargando proyectos…",
       "add": "Nuevo proyecto…",
       "noRepositories": "Sin repositorios"
-    },
-    "projectDialog": {
-      "title": "Nuevo proyecto",
-      "description": "Un cuerpo de trabajo: los repositorios que contiene y con qué empieza una sesión nueva en él.",
-      "name": "Nombre",
-      "namePlaceholder": "XRP Mobile",
-      "repositories": "Repositorios por defecto",
-      "repositoriesHint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-      "defaultCount": "{{defaults}} de {{count}} por defecto",
-      "search": "Buscar repositorios…",
-      "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-      "noRepositories": "Todavía no hay ningún repositorio conectado.",
-      "default": "Por defecto",
-      "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
-      "host": "Host por defecto",
-      "noHost": "Todavía no hay ningún host emparejado.",
-      "agent": "Agente por defecto",
-      "create": "Crear proyecto",
-      "creating": "Creando…",
-      "failed": "No se pudo crear el proyecto."
     },
     "repository": {
       "label": "Repositorios",
@@ -175,14 +144,48 @@
       "dismiss": "Cerrar"
     }
   },
+  "sidebar": {
+    "projects": "Proyectos",
+    "newProject": "Nuevo proyecto",
+    "search": "Buscar sesiones",
+    "clearSearch": "Borrar búsqueda",
+    "noMatches": "Ninguna sesión coincide con “{{query}}”.",
+    "empty": "Todavía no hay proyectos. El primero que crees aparecerá aquí con sus sesiones.",
+    "emptyProject": "Todavía no hay sesiones.",
+    "startOne": "Empieza una",
+    "newSessionHere": "Nueva sesión en {{name}}",
+    "projectSettings": "Ajustes de {{name}}",
+    "unfiled": "Otras sesiones",
+    "actions": "Acciones de la sesión",
+    "rename": "Renombrar",
+    "renameLabel": "Nombre de la sesión",
+    "move": "Mover a un proyecto…",
+    "moveTitle": "Mover a un proyecto",
+    "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
+    "delete": "Eliminar",
+    "routines": "Rutinas",
+    "routinesSoon": "Las automatizaciones todavía no están aquí.",
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+  },
+  "deleteSession": {
+    "title": "¿Eliminar “{{name}}”?",
+    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+    "confirm": "Eliminar sesión",
+    "deleting": "Eliminando…",
+    "failed": "No se pudo eliminar la sesión.",
+    "discard": "Descartar también el trabajo sin enviar",
+    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
+  },
   "filters": {
     "label": "Filtrar sesiones",
+    "project": "Proyecto",
     "repository": "Repositorio",
     "agent": "Agente",
     "host": "Equipo",
     "sort": "Ordenar por",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
+    "allProjects": "Todos los proyectos",
     "allRepositories": "Todos los repositorios",
     "allAgents": "Todos los agentes",
     "allHosts": "Todos los equipos",

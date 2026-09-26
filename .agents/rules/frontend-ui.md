@@ -48,6 +48,7 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
+| A page over the main column that fills a thing in steps (New project, Add a host) | `EditorPage` from the `_editor` layout route, then `PageHeader` parts + `RoutineSteps` | a `Dialog`, a `Card` of `Field`s, a hand-rolled scroll column |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 

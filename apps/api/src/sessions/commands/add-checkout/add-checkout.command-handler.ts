@@ -73,9 +73,9 @@ export class AddCheckoutCommandHandler
       });
     }
 
-    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
+    await requireActiveProject(this.projects, command.scope, session.projectId);
 
-    const checkout = await this.plan.attachCheckout(command.scope, session, project, command.input);
+    const checkout = await this.plan.attachCheckout(command.scope, session, command.input);
     await this.sessions.insertCheckout(session, checkout, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(
@@ -94,7 +94,7 @@ export class AddCheckoutCommandHandler
     const { hints } = await this.dispatch.addCheckout(
       session,
       checkout,
-      await this.launches.build(session, project.slug, { branch: checkout.branch }),
+      await this.launches.build(session, session.projectSlug, { branch: checkout.branch }),
     );
     return { sessionId: session.id, hints };
   }

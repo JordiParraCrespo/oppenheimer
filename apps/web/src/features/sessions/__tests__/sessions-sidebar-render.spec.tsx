@@ -72,10 +72,20 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { data: sessions, isPending: false };
   },
   useHosts: () => ({ data: [] }),
+  // No project holds these rows, so they all sit under the one unfiled group.
+  useProjects: () => ({ data: [], isPending: false }),
+  useRenameSession: () => ({ mutate: vi.fn(), error: null }),
+  useMoveSession: () => ({ mutate: vi.fn(), error: null }),
+}));
+
+vi.mock('@oppenheimer/frontend-core/react', async (original) => ({
+  ...(await original<typeof import('@oppenheimer/frontend-core/react')>()),
+  useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: () => null,
+  useNavigate: () => vi.fn(),
   // Applies the caller's `select`, as the router does, and compares its result.
   useRouterState: ({
     select,
@@ -87,8 +97,8 @@ vi.mock('@tanstack/react-router', () => ({
     ),
 }));
 
-vi.mock('../components/sessions-filter-menu', () => ({ SessionsFilterMenu: () => null }));
-vi.mock('../components/session-filter-chips', () => ({ SessionFilterChips: () => null }));
+vi.mock('../components/sessions-sidebar-head', () => ({ SessionsSidebarHead: () => null }));
+vi.mock('../components/session-row-menu', () => ({ SessionRowMenu: () => null }));
 
 const MINUTE = 60_000;
 const START = Date.parse('2026-09-26T10:00:00Z');
@@ -100,7 +110,9 @@ function session(id: string, minutesOld: number): SessionEntity {
     agent: 'claude-code',
     hostId: 'host-1',
     state: 'working',
+    lifecycle: 'running',
     isProvisioning: false,
+    projectId: 'project-1',
     checkouts: [],
     createdAt: new Date(START - minutesOld * MINUTE),
   } as unknown as SessionEntity;

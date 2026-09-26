@@ -56,6 +56,7 @@ import {
   ComposerDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
+  CheckboxDemo,
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
@@ -67,6 +68,7 @@ import {
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
+  EditorPageDemo,
   PageHeaderDemo,
   RunHistoryDemo,
   RoutineTableDemo,
@@ -734,6 +736,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="checkbox"
+        title="Checkbox"
+        meta="checkbox.tsx"
+        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryRowList and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
+        code={`<FieldLabel className="flex items-center gap-2.5"><Checkbox checked={discard} onCheckedChange={setDiscard} /> Discard unpushed work</FieldLabel>`}
+      >
+        <CheckboxDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
@@ -955,6 +967,16 @@ export default function Page() {
         code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
       >
         <PillTabsDemo />
+      </Spec>
+
+      <Spec
+        id="editorpage"
+        title="EditorPage"
+        meta="editor-page.tsx"
+        desc="The page over the main column — New project, Add a host, the automation editor — and nothing in it: a canvas column that scrolls on its own, a 760px body with the export's padding, and the Back pill above the page header. The console mounts it once from a layout route and each page fills the body."
+        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>`}
+      >
+        <EditorPageDemo />
       </Spec>
 
       <Spec

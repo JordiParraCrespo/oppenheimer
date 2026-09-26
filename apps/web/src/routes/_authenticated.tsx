@@ -4,6 +4,7 @@ import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
+import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { NAV } from '@/lib/nav';
 
@@ -51,6 +52,7 @@ function AuthenticatedShell() {
   return (
     <AppShell
       nav={NAV}
+      rail={<ConsoleRail />}
       sidebar={<SessionsSidebar />}
       // The brand row names the product, not the workspace — version 1 has one
       // workspace per account. `chrome={false}` is the bar, the palette and

@@ -58,10 +58,16 @@ export {
   useUpdateProject,
 } from './projects.queries';
 export {
+  type CloseSessionVariables,
   type CreateSessionVariables,
+  type MoveSessionVariables,
+  type RenameSessionVariables,
   sessionsKeys,
+  useCloseSession,
   useCreateSession,
+  useMoveSession,
   usePasteSessionImage,
+  useRenameSession,
   useSession,
   useSessionStartProgress,
   useSessions,

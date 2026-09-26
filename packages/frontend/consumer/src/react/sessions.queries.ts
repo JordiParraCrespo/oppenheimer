@@ -150,6 +150,73 @@ export function useCreateSession(
   });
 }
 
+export interface RenameSessionVariables {
+  id: string;
+  name: string;
+}
+
+export interface MoveSessionVariables {
+  id: string;
+  projectId: string;
+}
+
+/**
+ * A write to one session's row that the API answers with the row: the detail
+ * takes the answer and the list is re-read. Rename and move are this shape,
+ * and the next patch will be too.
+ */
+function useSessionPatch<TVariables>(
+  patch: (app: ReturnType<typeof useConsumerApp>, variables: TVariables) => Promise<SessionEntity>,
+  options?: UseMutationOptions<SessionEntity, Error, TVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: TVariables) => patch(app, variables),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export function useRenameSession(
+  options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
+) {
+  return useSessionPatch(({ sessions }, { id, name }) => sessions.rename(id, name), options);
+}
+
+export function useMoveSession(
+  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+) {
+  return useSessionPatch(
+    ({ sessions }, { id, projectId }) => sessions.move(id, projectId),
+    options,
+  );
+}
+
+export interface CloseSessionVariables {
+  id: string;
+  acceptUnpushedWork?: boolean;
+}
+
+/** The row stays, resolved; the list drops it, so the whole feature is invalidated. */
+export function useCloseSession(
+  options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
+      app.sessions.close(id, acceptUnpushedWork),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
+    }),
+  });
+}
+
 export function useStopSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

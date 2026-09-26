@@ -8,5 +8,25 @@
     "online": "Runner connected",
     "mintFailed": "We could not create a registration token.",
     "installerDigest": "Installer SHA-256: {{digest}}"
+  },
+  "add": {
+    "title": "Add a host",
+    "meta": "Nothing on the host is exposed to the internet.",
+    "back": "Back",
+    "crumbNewSession": "New session",
+    "use": "Use this host",
+    "defaultName": "New host",
+    "install": {
+      "title": "Install",
+      "subtitle": "Run this once on the machine, or hand it to an agent already there.",
+      "done": "Installed",
+      "format": "Install format",
+      "command": "Command",
+      "agentPrompt": "Agent prompt"
+    },
+    "connect": {
+      "title": "Connect",
+      "subtitle": "The runner registers itself with the hostname it reports."
+    }
   }
 }
