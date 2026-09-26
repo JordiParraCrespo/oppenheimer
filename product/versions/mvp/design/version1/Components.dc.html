@@ -9,6 +9,7 @@
 <x-dc>
 <helmet>
 <script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
 <style>
 html,body{margin:0;padding:0}
 body{background:var(--canvas)}
@@ -42,6 +43,8 @@ a:hover{text-decoration:underline}
 <a href="#overlays" class="op-chip">Overlays</a>
 <a href="#terminal" class="op-chip">Terminal</a>
 <a href="#session" class="op-chip">Session</a>
+<a href="#routines" class="op-chip">Routines</a>
+<a href="#settings" class="op-chip">Settings</a>
 </div>
 </div>
 
@@ -75,6 +78,27 @@ a:hover{text-decoration:underline}
 <x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" shape="square" hint-size="auto,34px">Square</x-import>
 <x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="primary" loading="{{ true }}" hint-size="auto,34px">Queueing</x-import>
 <x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Button" variant="secondary" disabled="{{ true }}" hint-size="auto,34px">Disabled</x-import>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Social button · Separator</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-btn--social · op-btn__glyph · op-btn__glyph--color · op-sep--h</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The auth screens only. Google keeps its four colours — a third party’s identity, not our accent; GitHub is monochrome and flips in dark mode. The “or” rule is the one place a separator divides two blocks.</p>
+</div>
+<div style="max-width:380px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="op-btn op-btn--social op-btn--lg op-btn--block" type="button" style="background:var(--card);border-color:var(--border)"><img class="op-btn__glyph op-btn__glyph--color" src="./assets/brand/google-color.svg" alt="">Continue with Google</button>
+<button class="op-btn op-btn--social op-btn--lg op-btn--block" type="button" style="background:var(--card);border-color:var(--border)"><img class="op-btn__glyph" src="./assets/brand/github.svg" alt="">Continue with GitHub</button>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<div class="op-sep op-sep--h" style="flex:1;width:auto"></div>
+<span style="font-size:11px;color:var(--fg-subtle);letter-spacing:.02em">OR</span>
+<div class="op-sep op-sep--h" style="flex:1;width:auto"></div>
+</div>
 </div>
 </div>
 
@@ -189,6 +213,15 @@ a:hover{text-decoration:underline}
 <label class="op-label" for="f-name">Session name</label>
 <div class="op-input op-input--md"><input class="op-input__el" id="f-name" type="text" placeholder="ledger-reconcile"></div>
 </div>
+<div class="op-field">
+<label class="op-label" for="f-pw">Password</label>
+<div class="op-input op-input--lg"><input class="op-input__el" id="f-pw" type="password" value="correct-horse"><button class="op-input__icon" type="button" aria-label="Show password" style="background:none;border:0;padding:0;margin:0;display:flex;align-items:center;color:var(--fg-subtle);cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+<span class="op-hint">At least 12 characters.</span>
+</div>
+<div class="op-field">
+<label class="op-label" for="f-user">Username</label>
+<div class="op-input op-input--md"><span class="op-input__icon" style="font-family:var(--font-mono);font-size:13px">@</span><input class="op-input__el" id="f-user" type="text" value="jordiparra99" style="font-family:var(--font-mono);font-size:13px"></div>
+</div>
 </div>
 </div>
 
@@ -287,62 +320,241 @@ a:hover{text-decoration:underline}
 </div>
 </div>
 </div>
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Checkbox · Repository row</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-check · op-check__box · op-prepo · op-bpick · op-cbox</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">From project settings: tick a repository to include it, mark it Default to clone it into every new session, and pick the base branch beside it. Inside listboxes, multi-select uses the compact <code style="font-family:var(--font-mono);font-size:12px">op-cbox</code> instead.</p>
+</div>
+<div style="max-width:540px;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--popover)">
+<div class="op-prepo" data-on="true">
+<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">xrp-mobile</span></span></label>
+<button class="op-chip" type="button" data-selected="true" style="flex:none;visibility:visible">Default</button>
+<div class="op-prepo__base"><button class="op-bpick" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v">main</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></div>
+</div>
+<div class="op-prepo" data-on="true">
+<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">atlas</span></span></label>
+<button class="op-chip" type="button" data-selected="false" style="flex:none;visibility:visible">Default</button>
+<div class="op-prepo__base"><button class="op-bpick" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v">develop</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></div>
+</div>
+<div class="op-prepo" data-on="false">
+<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox"><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">flama-ai</span></span></label>
+<button class="op-chip" type="button" data-selected="false" style="flex:none;visibility:hidden">Default</button>
+<div class="op-prepo__base"><button class="op-bpick" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v">main</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Field select</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-fsel · op-fsel__btn · __val · __meta · __search · __list · __empty</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The routine editor’s picker: a labelled field whose value and a muted count sit on one line. It opens the same listbox as the chip select, with an optional search row and checkboxes when more than one can be picked.</p>
+</div>
+<div class="op-st__grid" data-cols="3" style="max-width:720px">
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Project</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">XRP Mobile</span><span class="op-fsel__meta"></span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div><div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Repositories</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">xrp-mobile</span><span class="op-fsel__meta">+1</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div><div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Host</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">optimus</span><span class="op-fsel__meta">idle</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;min-height:220px">
+<div class="op-fsel" style="width:260px">
+<button class="op-fsel__btn" type="button" data-open="true"><span class="op-fsel__val">xrp-mobile</span><span class="op-fsel__meta">+1</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<div class="op-listbox" role="listbox" style="left:0;right:0;min-width:0;padding:4px">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search" placeholder="Search repositories"></div>
+<div class="op-tpop__label" style="padding:6px 10px 4px">In XRP Mobile</div>
+<div class="op-fsel__list"><button class="op-option" type="button" role="option" data-selected="true" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-cbox" data-on="true"></span><span class="op-option__stack"><span>xrp-mobile</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">default · main</span></span><span class="op-option__check">✓</span></button><button class="op-option" type="button" role="option" data-selected="true" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-cbox" data-on="true"></span><span class="op-option__stack"><span>atlas</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">optional · develop</span></span><span class="op-option__check">✓</span></button><button class="op-option" type="button" role="option" data-selected="false" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-cbox" data-on="false"></span><span class="op-option__stack"><span>flama-ai</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">not in project</span></span><span class="op-option__check">✓</span></button></div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Inline token</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rd__toks · op-tok · op-tok__btn · data-mono · data-open</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">A trigger reads as a sentence and every variable part is a token you click to change — no separate form to decode. Mono tokens hold values a human compares: times, branch names.</p>
+</div>
+<div class="op-rd__trig" style="max-width:640px"><div class="op-rd__trow">
+<span class="op-rd__ticon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></span>
+<div class="op-rd__toks"><span>Every</span><span class="op-tok"><button class="op-tok__btn" type="button"><span class="op-tok__val">weekday</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></span><span>at</span><span class="op-tok"><button class="op-tok__btn" type="button" data-mono="true" data-open="true"><span class="op-tok__val">09:00</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></span></div>
+</div>
+<div class="op-rd__preview"><span class="op-rd__wk"><span class="op-rd__wd" data-fires="true" data-next="true">M</span><span class="op-rd__wd" data-fires="true" data-next="false">T</span><span class="op-rd__wd" data-fires="true" data-next="false">W</span><span class="op-rd__wd" data-fires="true" data-next="false">T</span><span class="op-rd__wd" data-fires="true" data-next="false">F</span><span class="op-rd__wd" data-fires="false" data-next="false">S</span><span class="op-rd__wd" data-fires="false" data-next="false">S</span></span><span>Next run</span><span class="op-rd__mono">Mon 09:00</span><span>· in</span><span class="op-rd__mono">2d 14h</span></div>
+</div>
+<div class="op-rd__trig" style="max-width:640px"><div class="op-rd__trow">
+<span class="op-rd__ticon"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></span>
+<div class="op-rd__toks"><span>When a pull request is</span><span class="op-tok"><button class="op-tok__btn" type="button"><span class="op-tok__val">opened</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></span><span>against</span><span class="op-tok"><button class="op-tok__btn" type="button" data-mono="true"><span class="op-tok__val">main</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></span></div>
+</div>
+<div class="op-rd__preview"><span class="op-rd__live"></span><span>2 open pull requests would match right now</span></div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Time grid</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-tpop · op-hgrid · op-hhead · op-hcell · data-on · data-sans</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The popover behind a time token. Hours are mono; weekday cells switch to sans with <code style="font-family:var(--font-mono);font-size:12px">data-sans</code>. Past times are disabled rather than hidden so the grid never reflows.</p>
+</div>
+<div class="op-listbox op-tpop" style="position:static;width:300px">
+<span class="op-tpop__label">Morning</span>
+<div class="op-hgrid" data-cols="4"><button class="op-hcell" type="button" data-on="false" disabled>06:00</button><button class="op-hcell" type="button" data-on="false">07:00</button><button class="op-hcell" type="button" data-on="false">08:00</button><button class="op-hcell" type="button" data-on="true">09:00</button><button class="op-hcell" type="button" data-on="false">10:00</button><button class="op-hcell" type="button" data-on="false">11:00</button><button class="op-hcell" type="button" data-on="false">12:00</button><button class="op-hcell" type="button" data-on="false">13:00</button><button class="op-hcell" type="button" data-on="false">14:00</button><button class="op-hcell" type="button" data-on="false">15:00</button><button class="op-hcell" type="button" data-on="false">16:00</button><button class="op-hcell" type="button" data-on="false">17:00</button></div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Effort</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-effort · __fill · __dots · __knob · op-effort__value</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">A five-stop ramp from faster to smarter inside the effort menu. Drag or use the arrow keys; the label changes in place.</p>
+</div>
+<div class="op-menu op-modelmenu" role="menu" style="position:static;min-width:268px;width:268px;max-height:none;padding:13px 14px;display:flex;flex-direction:column;gap:11px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--fg-muted)">Effort</span><span class="op-effort__value" style="font-size:13px;color:var(--fg)">Medium</span></div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg-muted)"><span>Faster</span><span>Smarter</span></div>
+<div class="op-effort" data-effort="medium" role="slider" tabindex="0" aria-label="Effort" aria-valuemin="1" aria-valuemax="5" aria-valuenow="3"><div class="op-effort__fill" style="width:50%"></div><div class="op-effort__dots"><span class="op-effort__dot"></span><span class="op-effort__dot"></span><span class="op-effort__dot"></span><span class="op-effort__dot"></span><span class="op-effort__dot"></span></div><span class="op-effort__knob" style="left:50%"></span></div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Permission menu</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-permbtn · op-permrow · op-modelopt · data-perm</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Three levels, each one line of consequence. Full access is the only level allowed a warning tone, because it changes a machine unattended.</p>
+</div>
+<div class="op-menu op-modelmenu" role="menu" style="position:static;width:296px;min-width:296px">
+<button class="op-menu__item op-permrow" type="button" data-perm-row="ask" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Ask for approval</span><span class="op-modelopt__desc" style="font-size:11.5px">Every edit and command waits for you.</span></span><span class="op-menu__tick"></span></button>
+<button class="op-menu__item op-permrow" type="button" data-perm-row="auto" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Approve for me</span><span class="op-modelopt__desc" style="font-size:11.5px">Edits in the worktree run; anything outside asks.</span></span><span class="op-menu__tick">✓</span></button>
+<button class="op-menu__item op-permrow" type="button" data-perm-row="full" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Full access</span><span class="op-modelopt__desc" style="font-size:11.5px">Runs any command on the host without asking.</span></span><span class="op-menu__tick"></span></button>
+</div>
+</div>
+
 </section>
 
 <section id="navigation" style="display:flex;flex-direction:column;gap:28px">
 <div style="display:flex;flex-direction:column;gap:6px">
 <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 03</span>
 <h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Navigation</h2>
-<p style="margin:0;font-size:14px;color:var(--fg-muted)">The sidebar rail and the theme switch.</p>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">How an operator moves: the rail, the sidebar, the account menu, and the headers and tabs inside a page.</p>
 </div>
 
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Sidebar</h3>
-<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">head · list head · scroll · session row · foot</code>
+<h3 style="margin:0;font-size:17px;font-weight:600">Rail · Sidebar</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rail · op-sbsearch · op-filterchip · op-pgroup · op-phead · op-srow · op-pempty</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The console rail as it stands: wordmark, New session, the session list with its count and facet filter, and the account row. 264px, on its own surface tier, and it collapses to nothing when a terminal pane is expanded.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The 56px rail switches between Sessions and Routines; its tooltips carry the counts. The sidebar groups sessions by project — each header collapses, and its actions appear on hover. Search and facet filters sit above the list, and active filters stay visible as removable chips. Row actions (rename, move, delete) hide behind the ellipsis until hover.</p>
 </div>
-<div style="height:420px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;background:var(--background)">
-<nav class="op-sidebar">
-<div class="op-sidebar__head">
-<span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
-</div>
-<div style="padding:0 12px 10px">
-<button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button>
-</div>
-<div class="op-listhead">
-<span class="op-listhead__title">Sessions</span>
-<span class="op-listhead__count">4</span>
-<div class="op-filterwrap">
-<button class="op-iconbtn-sm" type="button" aria-label="Filter sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg></button>
-</div>
-</div>
-<div class="op-sidebar__scroll">
-<div class="op-sessionlist">
-<button class="op-session" type="button" data-active="{{ true }}" data-state="running">
-<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">ledger-reconcile</span><span class="op-session__age">2m</span>
-</button>
-<button class="op-session" type="button" data-state="waiting">
-<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">deploy-canary</span><span class="op-session__age">6m</span>
-</button>
-<button class="op-session" type="button" data-state="failed">
-<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">index-rebuild</span><span class="op-session__age">1h</span>
-</button>
-<button class="op-session" type="button" data-state="idle">
-<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">archive-sweep</span><span class="op-session__age">1d</span>
-</button>
-</div>
-</div>
-<div class="op-sidebar__foot" style="border-top:0">
-<button class="op-navitem" type="button"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta" style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
-</div>
+<div style="height:520px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;background:var(--background)">
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="true" aria-label="Sessions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Routines"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import></button>
 </nav>
-<div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:24px">
-<span style="font-size:13px;color:var(--fg-subtle)">Main column scrolls alone.</span>
+<nav class="op-sidebar" style="width:264px;min-width:264px">
+<div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span></div>
+<div style="padding:0 12px 10px"><button class="op-btn op-btn--sm op-btn--block op-btn--secondary" type="button">New session</button></div>
+<div class="op-listhead"><span class="op-listhead__title">Projects</span><span class="op-listhead__count">2</span><button class="op-iconbtn-sm" type="button" aria-label="New project" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button><div class="op-filterwrap"><button class="op-iconbtn-sm" type="button" aria-label="Filter sessions" data-dirty="true"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="sliders" size="15" hint-size="15px,15px"></x-import></button></div></div>
+<div class="op-sbsearch" data-on="true"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" value="port"><button class="op-sbsearch__x" type="button" aria-label="Clear search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></div>
+<div class="op-filterchips"><span class="op-filterchip"><span>Host: optimus</span><button class="op-filterchip__x" type="button" aria-label="Clear filter">×</button></span></div>
+<div class="op-sidebar__scroll"><div class="op-sessionlist">
+<div class="op-pgroup"><div class="op-phead" data-open="true" data-current="true"><button class="op-phead__toggle" type="button"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">XRP Mobile</span><span class="op-phead__count">3</span></button><button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New session"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button><button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="Project settings"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-active="true" data-state="running"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">PR #121 porting to peersyst</span><span class="op-session__age">2m</span></button><button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Session actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-active="false" data-state="waiting"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">Fix wallet import on Android</span><span class="op-session__age">6m</span></button><button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Session actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button></div>
+<div class="op-srow"><button class="op-session" type="button" data-active="false" data-state="failed"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">Bump RN to 0.76</span><span class="op-session__age">1h</span></button><button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Session actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button></div>
+</div>
+<div class="op-pgroup"><div class="op-phead" data-open="true" data-current="false"><button class="op-phead__toggle" type="button"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">Atlas</span><span class="op-phead__count">0</span></button><button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New session"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button><button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="Project settings"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></button></div><p class="op-pempty">No sessions yet. <button type="button">Start one</button></p></div>
+</div></div>
+<div class="op-sidebar__foot" style="border-top:0"><button class="op-navitem" type="button"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta" style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button></div>
+</nav>
+<div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;padding:24px"><span style="font-size:13px;color:var(--fg-subtle)">Main column scrolls alone.</span></div>
 </div>
 </div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Routine rows</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rrow · op-rruns · op-rrun · data-state · data-paused</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">In Routines mode the same list holds routines: a clock or GitHub glyph names the trigger, and the selected routine expands its last runs inline, each with a state dot. A paused routine dims its name.</p>
+</div>
+<div style="max-width:300px;background:var(--sidebar);border:1px solid var(--border-subtle);border-radius:14px;padding:6px;display:flex;flex-direction:column">
+<div class="op-sessionlist">
+<button class="op-session op-rrow" type="button" data-active="true" data-state="running"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">Nightly dependency audit</span><span class="op-session__age" style="opacity:1">09:00</span></button>
+<div class="op-rruns">
+<button class="op-rrun" type="button" data-state="running" data-active="true"><span class="op-rrun__dot"></span><span class="op-rrun__title">Audit · 26 Sep</span><span class="op-rrun__ago">now</span></button>
+<button class="op-rrun" type="button" data-state="done"><span class="op-rrun__dot"></span><span class="op-rrun__title">Audit · 25 Sep</span><span class="op-rrun__ago">1d</span></button>
+<button class="op-rrun" type="button" data-state="failed"><span class="op-rrun__dot"></span><span class="op-rrun__title">Audit · 24 Sep</span><span class="op-rrun__ago">2d</span></button>
+</div>
+<button class="op-session op-rrow" type="button" data-paused="true"><span class="op-session__glyph" style="display:flex"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:13px;height:13px;filter:var(--brand-glyph-filter,none)"></span><span class="op-session__name">Review new pull requests</span><span class="op-session__age" style="opacity:1">paused</span></button>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Account menu</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-accountwrap · op-accountmenu · op-accountmenu__id · op-menu__icon</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Opens upward from the account row. Settings leads out of the console; Appearance and Language open a nested pane in place, and Log out is the only danger row.</p>
+</div>
+<div class="op-menu op-accountmenu" role="menu" style="position:static;width:248px">
+<div class="op-accountmenu__id">jordiparra99@gmail.com</div>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button"><span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="15" hint-size="15px,15px"></x-import></span><span class="op-menu__label-text">Settings</span></button>
+<button class="op-menu__item" type="button"><span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="moon" size="15" hint-size="15px,15px"></x-import></span><span class="op-menu__label-text">Appearance</span><span class="op-menu__value">System</span><span class="op-menu__shortcut">›</span></button>
+<button class="op-menu__item" type="button"><span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="globe" size="15" hint-size="15px,15px"></x-import></span><span class="op-menu__label-text">Language</span><span class="op-menu__value">English</span><span class="op-menu__shortcut">›</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" data-variant="danger"><span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="log-out" size="15" hint-size="15px,15px"></x-import></span><span class="op-menu__label-text">Log out</span></button>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Segmented tabs</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rp__tabs · op-rp__tab · data-on · op-runs__n</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Switches views inside a page — Routines / Runs, template categories, run status. The selected tab takes a tonal fill, never a colour. Counts ride inside the tab in mono.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:14px">
+<div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true">Routines</button><button class="op-rp__tab" type="button">Runs</button></div>
+<div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true">All<span class="op-runs__n">48</span></button><button class="op-rp__tab" type="button">Running<span class="op-runs__n">1</span></button><button class="op-rp__tab" type="button">Succeeded<span class="op-runs__n">44</span></button><button class="op-rp__tab" type="button">Failed<span class="op-runs__n">3</span></button></div>
+</div></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Page header</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-ph · __crumbs · __here · __row · __icon · __title · __actions · __meta · __note</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none">
+<header class="op-ph">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button">Routines</button><span>/</span><span class="op-ph__here">Nightly dependency audit</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="17" hint-size="17px,17px"></x-import></span>
+<h1 class="op-ph__title">Nightly dependency audit</h1>
+<div class="op-ph__actions"><button class="op-btn op-btn--secondary op-btn--sm" type="button" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="12" hint-size="12px,12px"></x-import>Run now</button><button class="op-btn op-btn--secondary op-btn--sm" type="button">Edit</button><button class="op-iconbtn-sm" type="button" aria-label="More actions" style="width:30px;height:30px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></div>
+</div>
+<div class="op-ph__meta"><span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span><span class="op-ph__sep">·</span><span>Every weekday at 09:00</span><span class="op-ph__sep">·</span><span>XRP Mobile · optimus</span></div>
+<div class="op-ph__note"><span>Paused. Triggers are ignored until you resume it; Run now still works.</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Resume</button></div>
+</header>
+</div></div>
 </div>
 
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
@@ -402,63 +614,77 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Dialog</h3>
+<h3 style="margin:0;font-size:17px;font-weight:600">Dialog · Add a host</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · __head · __body · __foot · op-scrim</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">440px, 28px radius, on the popover tier — one of the three layers allowed a shadow. Add host is the only dialog in v1: one instruction, two ways to read it, and a status line that resolves in place so nothing below it moves.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">440px, 28px radius, on the popover tier. The same Add a host dialog opens from the composer’s host chip and from Settings → Hosts: one instruction block with Command / Agent prompt tabs sharing a single copy button, a token countdown, and a status line that resolves in place so nothing below it moves.</p>
 </div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
 <div class="op-dialog" style="margin:0;animation:none">
-
-<div class="op-dialog__head">
-<div style="flex:1;display:flex;flex-direction:column;gap:6px">
-<h4 class="op-dialog__title" style="flex:none;margin:0">Add a host</h4>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;letter-spacing:-0.008em;text-wrap:pretty">A server you control — a cloud VM, a build box, or your own workstation.</p>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" style="flex:none;border-radius:980px">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-</button>
-</div>
-
+<div class="op-dialog__head"><div style="flex:1;display:flex;flex-direction:column;gap:6px"><h4 class="op-dialog__title" style="flex:none;margin:0">Add a host</h4></div><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" style="flex:none;border-radius:980px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
 <div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
 <div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;align-items:center;gap:10px">
-<span class="op-label" style="flex:1;margin:0">Run this on it, once</span>
-<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
-<button type="button" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:var(--card);color:var(--fg)">Command</button>
-<button type="button" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:none;color:var(--fg-muted)">Agent prompt</button>
+<span class="op-label" style="margin:0">Run this once on the host</span>
+<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
+<button type="button" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:var(--card);color:var(--fg)">Command</button>
+<button type="button" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:transparent;color:var(--fg-muted)">Agent prompt</button>
 </div>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" style="gap:6px;width:86px;justify-content:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</button>
 </div>
-<div style="position:relative;border-radius:10px;background:var(--hover-surface)">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy" style="position:absolute;top:6px;right:6px">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>
-</button>
-<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+<pre style="margin:0;padding:12px;height:96px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
   | sh -s -- --token opk_7f3a9c</pre>
 </div>
-<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
-<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in 59:41 · single use</span>
-<a href="#new-token" style="font-size:11.5px;white-space:nowrap">New token</a>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in 59:41 · single use</span><a href="#new-token" style="font-size:11.5px;white-space:nowrap">New token</a></div>
 </div>
-</div>
-
 <div style="height:1px;background:var(--border-subtle)"></div>
-
 <div style="min-height:52px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
-<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
-<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
-<span style="flex:1"></span>
-<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span><span style="font-family:var(--font-mono);font-size:13px">mac-studio</span><span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span><span style="flex:1"></span><span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button">Use this host</button></div>
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Dialog · Destructive confirm</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · role=alertdialog · op-btn--danger</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Deleting a session, removing a host, deleting a project. The title names the thing, the body states the cost in one or two sentences, and the button repeats the verb — never “Confirm”. Smaller confirmations (deleting a routine) stay inside the menu that asked.</p>
+</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+<div class="op-dialog" role="alertdialog" style="margin:0;animation:none;max-width:420px">
+<div class="op-dialog__head"><h4 class="op-dialog__title" style="margin:0">Delete “Bump RN to 0.76”?</h4></div>
+<div class="op-dialog__body"><p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.</p></div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button">Cancel</button><button class="op-btn op-btn--danger op-btn--md" type="button">Delete session</button></div>
+</div>
+<div class="op-menu" role="menu" style="position:static;min-width:220px">
+<div style="display:flex;flex-direction:column;gap:10px;padding:8px 10px 6px;max-width:240px">
+<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this routine? Its triggers stop now. Past runs are kept.</span>
+<div style="display:flex;gap:6px;justify-content:flex-end"><button class="op-btn op-btn--ghost op-btn--sm" type="button">Cancel</button><button class="op-btn op-btn--secondary op-btn--sm" type="button" style="color:var(--danger)">Delete</button></div>
+</div>
+</div>
 </div>
 </div>
 
-<div class="op-dialog__foot">
-<button class="op-btn op-btn--secondary op-btn--md" type="button">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button">Use this host</button>
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Tooltip</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">Tooltip · label · side</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Explains a label without adding a line to the form — used on the help glyph beside “Default repositories”. Never on a control that already names itself.</p>
+</div>
+<div style="display:flex;align-items:center;gap:5px;padding-top:40px">
+<span class="op-label" style="margin:0">Default repositories</span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Tooltip" label="Ticked in every new session. Add others per session." side="top" hint-size="15px,15px"><button type="button" aria-label="About default repositories" style="display:flex;padding:0;border:0;background:none;color:var(--fg-subtle);cursor:help"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="14" hint-size="14px,14px"></x-import></button></x-import>
+</div>
 </div>
 
-</div>
-</div>
 </section>
 
 <section id="terminal" style="display:flex;flex-direction:column;gap:28px">
@@ -487,33 +713,30 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Terminal pane</h3>
-<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">titlebar · name · state dot · host · expand · close</code>
+<h3 style="margin:0;font-size:17px;font-weight:600">Conversation</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-term · __you · __turn · __out · __thinking · __prompt · __status · op-link</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">The console frames each session rather than running it full-bleed — a frame implies there can be a second one. The bar carries what the scrollback can't: which host, which branch, still running. Neither control stops the run: expand zooms the pane over the sidebar, close detaches the view.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The session view is one framed terminal. What you typed is set apart with a chevron; agent turns and raw tool output read as two different voices; Thinking… holds the place while a turn is pending. The status bar starts with the live link to the host — green when connected, amber and pulsing while it reconnects.</p>
 </div>
-<div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;height:260px;background:var(--card)">
-<div style="display:flex;align-items:center;gap:10px;flex:none;height:44px;padding:0 8px 0 14px;border-bottom:1px solid var(--border-subtle)">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg></span>
-<span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ledger-reconcile</span>
-<span style="display:flex;align-items:center;gap:6px;flex:none;font-size:12px;color:var(--fg-muted)"><span style="width:6px;height:6px;border-radius:980px;background:var(--success)"></span>optimus · orchestrator · main</span>
-<span style="flex:1"></span>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Expand"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close pane"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-</div>
+<div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;height:380px;background:var(--card)">
 <div class="op-term" style="flex:1;min-height:0">
 <div class="op-term__scroll">
-<div class="op-term__line op-term__cmd">op run ledger-reconcile</div>
-<div class="op-term__line" data-tone="dim">step 3/14  tool: diff.compute             812ms</div>
-<div class="op-term__line" data-tone="success">3 discrepancies found in 41,208 rows</div>
+<div class="op-term__you"><span class="op-term__youchev">❯</span><span class="op-term__youtext">Port PR #121 to the peersyst fork and run the wallet tests.</span></div>
+<div class="op-term__turn"><div class="op-term__turnbody"><div class="op-term__line">Cherry-picking the four commits from #121 onto peersyst/main.</div></div></div>
+<div class="op-term__out"><div class="op-term__line" data-tone="dim">$ git cherry-pick 3f2a91c..a07d4e2</div><div class="op-term__line" data-tone="success">4 commits applied, no conflicts</div><div class="op-term__line" data-tone="dim">$ yarn test wallet</div><div class="op-term__line" data-tone="warning">1 snapshot outdated: ImportScreen</div></div>
+<div class="op-term__turn"><div class="op-term__turnbody"><div class="op-term__line op-term__thinking">Thinking…</div></div></div>
 </div>
+<div class="op-term__prompt"><span class="op-term__chev">❯</span><input class="op-term__input" placeholder="Reply to Claude Code"></div>
 <div class="op-term__status">
-<span class="op-term__statusitem">context 62%</span>
-<span class="op-term__statusitem">echo 38 ms</span>
+<span class="op-term__statusitem op-link" data-link="live"><span class="op-link__dot"></span><span class="op-link__label">optimus · 38 ms</span></span>
+<span class="op-term__statusitem op-link" data-link="reconnecting"><span class="op-link__dot"></span><span class="op-link__label">Reconnecting…</span></span>
+<span class="op-term__statusitem">6% used · 4h 2m</span>
+<span class="op-term__statusitem">763.4 MB</span>
 </div>
 </div>
 </div>
 </div>
+
 </section>
 
 <section id="session" style="display:flex;flex-direction:column;gap:28px">
@@ -570,16 +793,17 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Composer</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">scope chips · textarea · attach + permissions · model + effort · dictate · send</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Three bands. The chips above the field fix <span style="color:var(--fg)">where</span> the work happens — host, repositories, branches. Bottom left is what it may touch: attachments and the permission level — ask for approval, approve for me, or full access, the one level allowed a warning tone because it changes a machine unattended. Bottom right is the engine — one button for harness and model (harness column, its models in a side panel, so the pair is always valid) and effort beside it as a five-stop ramp from faster to smarter.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted)">Tabbed, on the gray band: the scope chips sit in a tab row fused to the top of the field. Attachments collect as removable pills under the text. Three bands. The chips above the field fix <span style="color:var(--fg)">where</span> the work happens — host, repositories, branches. Bottom left is what it may touch: attachments and the permission level — ask for approval, approve for me, or full access, the one level allowed a warning tone because it changes a machine unattended. Bottom right is the engine — one button for harness and model (harness column, its models in a side panel, so the pair is always valid) and effort beside it as a five-stop ramp from faster to smarter.</p>
 </div>
 <div style="border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;background:var(--background)">
 <div class="op-newsession">
-<div class="op-newsession__inner">
+<div class="op-newsession__inner" data-composer="tabbed">
 <div>
 <h1 class="op-newsession__title">New session</h1>
 <p class="op-newsession__sub">Set the scope, then describe the work.</p>
 </div>
 
+<div class="op-cstack">
 <div class="op-chiprow">
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button">
@@ -600,6 +824,7 @@ a:hover{text-decoration:underline}
 
 <div class="op-composer">
 <textarea class="op-composer__input" id="spec-prompt" placeholder="Describe a task or ask a question"></textarea>
+<div class="op-attachrow"><span class="op-attach"><span class="op-attach__name">crash-log.txt</span><button class="op-attach__x" type="button" aria-label="Remove attachment">×</button></span><span class="op-attach"><span class="op-attach__name">import-screen.png</span><button class="op-attach__x" type="button" aria-label="Remove attachment">×</button></span></div>
 <div class="op-composer__foot">
 <button class="op-composer__tool" type="button" aria-label="Attach files" title="Attach files">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -630,11 +855,205 @@ a:hover{text-decoration:underline}
 </button>
 </div>
 </div>
+</div>
 
 </div>
 </div>
 </div>
 </div>
+</section>
+
+<section id="routines" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 07</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Routines</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">Sessions that start themselves — on a schedule or on a GitHub event — and the tables that account for them.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Status</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rtable__st · op-rtable__dot · data-st</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">A dot and a word, from the fixed vocabulary. Running pulses; paused is muted, not coloured.</p>
+</div>
+<div style="display:flex;gap:24px;flex-wrap:wrap"><span class="op-rtable__st" data-st="active"><span class="op-rtable__dot"></span>Active</span><span class="op-rtable__st" data-st="running"><span class="op-rtable__dot"></span>Running</span><span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span><span class="op-rtable__st" data-st="failed"><span class="op-rtable__dot"></span>Failed</span></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Run history</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-hist · __bars · __col · __ok · __fail · __axis · __leg</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">One column per day. Height is successful runs; a red dot above means at least one failed. Empty days keep a 3px stub so the time axis never compresses. Hovering a column dims the rest.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><div class="op-hist">
+<div class="op-hist__head"><span class="op-hist__title">Run history</span><span class="op-hist__sub">Last 30 days</span><span style="flex:1"></span><span class="op-hist__leg"><span class="op-hist__ld" data-k="ok"></span><span class="op-hist__ln">44</span>Succeeded</span><span class="op-hist__leg"><span class="op-hist__ld" data-k="fail"></span><span class="op-hist__ln">3</span>Failed</span></div>
+<div class="op-hist__bars"><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:42%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:28%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="false"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:42%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="false"></span><span class="op-hist__ok" data-none="false" style="height:84%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:42%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:84%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="false"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:42%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="true"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="true" style="height:0%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:70%"></span></div><div class="op-hist__col" data-on="true" data-zero="false"><span class="op-hist__fail" data-none="true"></span><span class="op-hist__ok" data-none="false" style="height:56%"></span></div></div>
+<div class="op-hist__axis"><span>27 Aug</span><span>26 Sep</span></div>
+</div></div></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Routine table</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rtable · __head · __row · __name · __trig · __next · __st</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Routines overview. The trigger reads in words, the next run gives both clock time and a relative countdown, and the row actions stay behind the ellipsis. Paused rows dim.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><div class="op-rtable">
+<div class="op-rtable__head"><span>Routine</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div>
+<div class="op-rtable__row" role="button" tabindex="0">
+<span class="op-rtable__name"><span class="op-rtable__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></span><span class="op-rtable__stack"><span class="op-rtable__title">Nightly dependency audit</span><span class="op-rtable__sub">XRP Mobile · Claude Code</span></span></span>
+<span class="op-rtable__trig" data-col="trig">Every weekday at 09:00</span>
+<span class="op-rtable__next" data-col="next"><span>Mon 09:00</span><span class="op-rtable__nextrel">in 2d 14h</span></span>
+<span class="op-rtable__st" data-st="active"><span class="op-rtable__dot"></span>Active</span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+</div>
+<div class="op-rtable__row" role="button" tabindex="0">
+<span class="op-rtable__name"><span class="op-rtable__icon"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></span><span class="op-rtable__stack"><span class="op-rtable__title">Review new pull requests</span><span class="op-rtable__sub">Atlas · Codex</span></span></span>
+<span class="op-rtable__trig" data-col="trig">When a PR is opened on main</span>
+<span class="op-rtable__next" data-col="next"><span>On event</span></span>
+<span class="op-rtable__st" data-st="running"><span class="op-rtable__dot"></span>Running</span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+</div>
+<div class="op-rtable__row" role="button" tabindex="0" data-paused="true">
+<span class="op-rtable__name"><span class="op-rtable__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></span><span class="op-rtable__stack"><span class="op-rtable__title">Weekly changelog</span><span class="op-rtable__sub">Flama AI · Claude Code</span></span></span>
+<span class="op-rtable__trig" data-col="trig">Fridays at 17:00</span>
+<span class="op-rtable__next" data-col="next"><span>—</span></span>
+<span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+</div>
+</div></div></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Runs list</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-runs__head · op-runrow · op-runs__foot</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Runs tab: a row per run with its routine and time. Step-level glyphs (check-circle, alert-circle) are allowed here because each row is a finished step, not a live state.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><div class="op-rtable">
+<div class="op-runs__head"><span>Run</span><span data-col="auto">Routine</span><span>Time</span></div>
+<button class="op-runrow" type="button" data-state="running"><span class="op-runrow__run"><span class="op-runrow__st"><span class="op-runrow__dot"></span></span><span class="op-runrow__title">Audit · 26 Sep</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Nightly dependency audit</span></span><span class="op-runrow__time"><span>26 Sep</span><span>09:00</span></span></button>
+<button class="op-runrow" type="button" data-state="done"><span class="op-runrow__run"><span class="op-runrow__st"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></span><span class="op-runrow__title">Review PR #214</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Review new pull requests</span></span><span class="op-runrow__time"><span>25 Sep</span><span>16:42</span></span></button>
+<button class="op-runrow" type="button" data-state="failed"><span class="op-runrow__run"><span class="op-runrow__st"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></span><span class="op-runrow__title">Audit · 24 Sep</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Nightly dependency audit</span></span><span class="op-runrow__time"><span>24 Sep</span><span>09:00</span></span></button>
+<div class="op-runs__foot"><span class="op-mono">1–3 of 48</span><span style="flex:1"></span><button class="op-iconbtn-sm" type="button" aria-label="Previous page" disabled style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button><button class="op-iconbtn-sm" type="button" aria-label="Next page" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button></div>
+</div></div></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Templates</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-tpl · __grid · __item · __icon · __name · __desc · __meta</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Starting points under the routine table, filtered by category tabs. Each names its trigger in the meta line; Add opens the editor pre-filled.</p>
+</div>
+<div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><section class="op-tpl" style="margin:0"><div class="op-tpl__grid">
+<div class="op-tpl__item"><span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="17" hint-size="17px,17px"></x-import></span><span class="op-tpl__stack"><span class="op-tpl__name">Dependency audit</span><span class="op-tpl__desc">Checks lockfiles for advisories and opens a PR with safe bumps.</span><span class="op-tpl__meta"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="12" hint-size="12px,12px"></x-import>Weekdays at 09:00</span></span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Add</button></div>
+<div class="op-tpl__item"><span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-pull-request" size="17" hint-size="17px,17px"></x-import></span><span class="op-tpl__stack"><span class="op-tpl__name">Review pull requests</span><span class="op-tpl__desc">Leaves a first-pass review on every new PR against main.</span><span class="op-tpl__meta"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:12px;height:12px;filter:var(--brand-glyph-filter,none)">On pull request</span></span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Add</button></div>
+<div class="op-tpl__item"><span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="file-text" size="17" hint-size="17px,17px"></x-import></span><span class="op-tpl__stack"><span class="op-tpl__name">Weekly changelog</span><span class="op-tpl__desc">Summarises merged PRs into CHANGELOG.md every Friday.</span><span class="op-tpl__meta"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="12" hint-size="12px,12px"></x-import>Fridays at 17:00</span></span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Add</button></div>
+<div class="op-tpl__item"><span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-triangle" size="17" hint-size="17px,17px"></x-import></span><span class="op-tpl__stack"><span class="op-tpl__name">Triage new issues</span><span class="op-tpl__desc">Labels and reproduces new issues, then comments with findings.</span><span class="op-tpl__meta"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:12px;height:12px;filter:var(--brand-glyph-filter,none)">On issue opened</span></span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Add</button></div>
+</div></section></div></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Routine steps</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-steps · op-st · __rail · __num · __head · __sum · __body · __note</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The routine editor is four numbered steps — Where, When, What, Agent. A finished step inverts its number to a tick and prints a one-line summary on the right, so the whole routine reads top to bottom before you save.</p>
+</div>
+<div class="op-rpage" style="position:static;inset:auto;height:auto;background:none"><div class="op-rpage__body" style="padding:0;max-width:720px"><div class="op-steps">
+<div class="op-st" data-done="true" data-last="false"><div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div><div class="op-st__main"><div class="op-st__head"><span class="op-st__title">Where</span><span class="op-st__sub">The code it works on, and the machine it runs on.</span><span class="op-st__sum">XRP Mobile · optimus</span></div></div></div>
+<div class="op-st" data-done="false" data-last="false"><div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div><div class="op-st__main"><div class="op-st__head"><span class="op-st__title">What</span><span class="op-st__sub">Instructions for every run.</span><span class="op-st__sum"></span></div><div class="op-st__body"><div class="op-rd__compose"><textarea class="op-rd__ta" aria-label="Instructions" placeholder="What should the agent do each time it runs?"></textarea></div><span class="op-st__note">The pull request, issue or commit that fired the run is passed in as context.</span></div></div></div>
+<div class="op-st" data-done="false" data-last="true"><div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">3</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div><div class="op-st__main"><div class="op-st__head"><span class="op-st__title">Agent</span><span class="op-st__sub">Each run is its own session.</span><span class="op-st__sum"></span></div></div></div>
+</div></div></div>
+</div>
+
+</section>
+
+<section id="settings" style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 08</span>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Settings</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted)">Account and workspace configuration, outside the console.</p>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Settings nav</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-sidebar · op-navitem · data-active</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">A plain sidebar: a way back to the console, then eyebrow-labelled groups. Counts ride on the right in mono.</p>
+</div>
+<div style="height:220px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;background:var(--background)">
+<nav class="op-sidebar" style="width:264px;min-width:264px;display:flex;flex-direction:column">
+<div style="padding:18px 12px 8px"><a href="#settings" class="op-navitem" style="text-decoration:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Back to console</span></a></div>
+<div style="padding:4px 12px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Account</span><button class="op-navitem" type="button" data-active="true"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="user" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Profile</span></button></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Workspace</span><button class="op-navitem" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Hosts</span><span class="op-navitem__meta" style="font-family:var(--font-mono);font-size:11px;color:var(--fg-subtle)">3</span></button></div>
+</div>
+</nav>
+<div style="flex:1"></div>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Settings group</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">label · hint · control · save row</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">One card per group, one row per setting: label and a one-line hint on the left, the control on the right, hairlines between. A save row appears at the foot only when something changed.</p>
+</div>
+<div style="max-width:760px;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and routines</span></div><span class="op-avatar op-avatar--lg op-avatar--accent">JP</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Upload</button></div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Email</span><span style="font-size:13px;color:var(--fg-muted)">Used to sign in and for run notifications</span></div><span style="color:var(--fg-muted);font-size:14px">jordiparra99@gmail.com</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Change</button></div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Full name</span></div><div class="op-input op-input--md" style="width:280px;flex:none"><input class="op-input__el" type="text" aria-label="Full name" value="Jordi Parra"></div></div>
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border-subtle)"><button class="op-btn op-btn--ghost op-btn--sm" type="button">Discard</button><button class="op-btn op-btn--primary op-btn--sm" type="button">Save changes</button></div>
+</div>
+<div style="max-width:760px;display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Delete account</span><span style="font-size:13px;color:var(--fg-muted)">Stops every session and removes your routines and host registrations. This cannot be undone.</span></div><button class="op-btn op-btn--danger op-btn--sm" type="button">Delete account</button></div>
+</div>
+
+<div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+<h3 style="margin:0;font-size:17px;font-weight:600">Host card</h3>
+<code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">status dot · name · meta · state · last seen · actions</code>
+</div>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID and Remove host.</p>
+</div>
+<div style="max-width:760px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success);box-shadow:none"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:var(--font-mono);font-size:14px">jordis-mac-studio</span><span style="font-size:12.5px;color:var(--fg-muted)">macOS 15 · local · runner 0.14.2</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:120px"><span style="font-size:13px">Running · 2 sessions</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">connected</span></div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Host actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);box-shadow:none"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:var(--font-mono);font-size:14px">optimus</span><span style="font-size:12.5px;color:var(--fg-muted)">Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:120px"><span style="font-size:13px">Idle</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">connected</span></div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Host actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--fg-subtle)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-family:var(--font-mono);font-size:14px">fable</span><span style="font-size:12.5px;color:var(--fg-muted)">Debian 12 · 16 vCPU · us-east · runner 0.13.8</span></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:120px"><span style="font-size:13px">Offline</span><span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">last seen 2 days ago</span></div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Host actions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+</div>
+</div>
+</div>
+
 </section>
 
 <footer style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline">
