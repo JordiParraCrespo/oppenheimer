@@ -22,7 +22,11 @@ export type { TerminalGrid } from '../lib/terminal-runtime';
  */
 export function useTerminal(
   createStream: () => SessionStream,
-  options: { onEnd?: (reason: StreamEnd) => void; agentWindow?: boolean } = {},
+  options: {
+    onEnd?: (reason: StreamEnd) => void;
+    agentWindow?: boolean;
+    onImage?: (image: File) => void;
+  } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [status, setStatus] = useState<StreamStatus>('connecting');
@@ -30,6 +34,8 @@ export function useTerminal(
   // Read through a ref so a new callback identity never rebuilds the terminal.
   const onEndRef = useRef(options.onEnd);
   onEndRef.current = options.onEnd;
+  const onImageRef = useRef(options.onImage);
+  onImageRef.current = options.onImage;
   const agentWindow = options.agentWindow ?? false;
 
   useEffect(() => {
@@ -37,7 +43,11 @@ export function useTerminal(
     if (!container) return;
 
     const stream = createStream();
-    const unmount = mountSessionTerminal(container, stream, { onGrid: setGrid, agentWindow });
+    const unmount = mountSessionTerminal(container, stream, {
+      onGrid: setGrid,
+      agentWindow,
+      onImage: (image) => onImageRef.current?.(image),
+    });
     const offStatus = stream.onStatus(setStatus);
     const offEnd = stream.onEnd((reason) => onEndRef.current?.(reason));
 

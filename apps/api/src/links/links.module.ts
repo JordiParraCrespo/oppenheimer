@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { SESSION_DISPATCH } from '../sessions/sessions.di-tokens';
+import { CacheParkedImageAdapter } from './infrastructure/cache-parked-image.adapter';
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
-import { LINK_REGISTRY } from './links.di-tokens';
+import { LINK_REGISTRY, PARKED_IMAGES } from './links.di-tokens';
 
 /**
  * Links: which host holds a live runner link, and the dispatcher that sends a
@@ -20,7 +21,8 @@ import { LINK_REGISTRY } from './links.di-tokens';
     // A factory, so the registry's clock parameter is not mistaken for a dependency.
     { provide: LINK_REGISTRY, useFactory: () => new InProcessLinkRegistry() },
     { provide: SESSION_DISPATCH, useClass: RelayDispatchAdapter },
+    { provide: PARKED_IMAGES, useClass: CacheParkedImageAdapter },
   ],
-  exports: [LINK_REGISTRY, SESSION_DISPATCH],
+  exports: [LINK_REGISTRY, SESSION_DISPATCH, PARKED_IMAGES],
 })
 export class LinksModule {}

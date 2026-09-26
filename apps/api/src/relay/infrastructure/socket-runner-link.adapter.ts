@@ -1,4 +1,4 @@
-import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
+import type { ProtocolMessage, RunnerCapability } from '@oppenheimer/shared/protocol';
 import type { WebSocket } from 'ws';
 import type {
   AttachmentSink,
@@ -27,6 +27,10 @@ const SESSION_COMMANDS = new Set([
   'session.close',
   'session.window.open',
   'session.window.close',
+  // A pasted image's refusal (the pull, the bytes, the window, a stopped
+  // pane) is the only word that the path never reached the prompt. The
+  // command is small: its image is pulled over HTTPS, never sent here.
+  'session.image',
 ]);
 
 /**
@@ -50,6 +54,7 @@ export class SocketRunnerLink implements RunnerLink {
     readonly runId: string,
     readonly epoch: number,
     private readonly socket: WebSocket,
+    readonly capabilities: readonly RunnerCapability[] = [],
   ) {}
 
   send(message: ProtocolMessage): boolean {

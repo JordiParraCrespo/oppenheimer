@@ -63,15 +63,25 @@ runner does with it and point back.
 
 ### What rides the link
 
-- `session.create | attach | input | resize | detach | window.open |
-  window.close | stop | close | restart`. `stop` ends the agent and the
+- `session.create | attach | input | image | resize | detach |
+  window.open | window.close | stop | close | restart`. `stop` ends the agent and the
   tmux session and keeps every checkout (02 §5, "Stop is not close");
   `detach` frees an attachment the browser let go of. `input` is the
   control plane's own path for a window nobody is watching (the
   composer's line on a session with no pane open); an attached browser's
   keystrokes are **not** it — they are binary frames on the attach socket,
   copied onto the link as binary frames under the attachment id, the
-  same layout as the PTY output the other way.
+  same layout as the PTY output the other way. `image` asks the runner to
+  put a picture into a window's prompt, because an agent reads its host's
+  clipboard and never the browser's (05). **The frame carries no bytes**:
+  control frames stay small, and one paste must not queue ahead of every
+  pane on the host. The control plane parks the image under the command
+  id and the runner pulls it once over HTTPS with its own assertion
+  (`GET /hosts/self/images/{commandId}`); what counts as an image is one
+  table in `packages/shared/src/protocol/session-image.ts` that the
+  runner's copy is generated from. It is sent only to a runner whose
+  `hello` names the `session.image` capability, so an older runner is
+  refused up front rather than sent a frame it ignores.
 - **`welcome`** is the control plane's answer to `hello`: the protocol
   version the two will speak and the fingerprint of the control plane's
   signing key, which the runner compares against the one it pinned at

@@ -342,6 +342,12 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - Resize goes straight through to the tmux window. The console holds a
   drag's sizes for 50 ms and sends the one it settles on, so the runner
   adds no timer of its own.
+- A **pasted image** (`session.image`) is pulled, not streamed: the
+  runner fetches it from the control plane over HTTPS on its own
+  goroutine, so the reader that pumps every pane never waits on it. It
+  re-checks the bytes against the generated image table, writes the file
+  (§11), and pastes the path through a tmux buffer named for the command,
+  as a bracketed paste. A paste that does not land deletes its file.
 
 ### 8. Git and credentials
 
@@ -437,6 +443,7 @@ One tree, named here and pointed at from 09:
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
+  images/<session>/    0700  images pasted into a session's prompt, 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
   bin/                       runner-<version> binaries and the `current` symlink (09 §5)
   run/                       runner.sock, runner.lock
   log/                       runner.log, rotated at 10 MB × 3

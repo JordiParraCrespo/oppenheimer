@@ -3937,6 +3937,35 @@ export type UninstallResponses = {
 
 export type UninstallResponse = UninstallResponses[keyof UninstallResponses];
 
+export type CollectSessionImageData = {
+    body?: never;
+    path: {
+        commandId: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/self/images/{commandId}';
+};
+
+export type CollectSessionImageErrors = {
+    /**
+     * HOSTS_005 — No valid host assertion was presented
+     */
+    401: ProblemDetailsDto;
+    /**
+     * HOSTS_007 — No image is waiting
+     */
+    404: ProblemDetailsDto;
+};
+
+export type CollectSessionImageError = CollectSessionImageErrors[keyof CollectSessionImageErrors];
+
+export type CollectSessionImageResponses = {
+    /**
+     * The image’s bytes
+     */
+    200: unknown;
+};
+
 export type UnpairData = {
     body?: never;
     path: {
@@ -5339,6 +5368,69 @@ export type IssueAttachTicketResponses = {
 };
 
 export type IssueAttachTicketResponse = IssueAttachTicketResponses[keyof IssueAttachTicketResponses];
+
+export type PasteSessionImageData = {
+    body: {
+        file: Blob | File;
+        /**
+         * The tmux window; 0 when absent.
+         */
+        window?: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/images';
+};
+
+export type PasteSessionImageErrors = {
+    /**
+     * SESSIONS_015 — No image attached
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_017 — The host’s runner cannot take images
+     *
+     * SESSIONS_014 — That session is stopped
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_012 — Image too large
+     */
+    413: ProblemDetailsDto;
+    /**
+     * SESSIONS_013 — Not an image
+     */
+    415: ProblemDetailsDto;
+    /**
+     * SESSIONS_016 — The host is offline
+     */
+    503: ProblemDetailsDto;
+};
+
+export type PasteSessionImageError = PasteSessionImageErrors[keyof PasteSessionImageErrors];
+
+export type PasteSessionImageResponses = {
+    /**
+     * The host has been told to pull the image
+     */
+    202: unknown;
+};
 
 export type StopSessionData = {
     body?: never;

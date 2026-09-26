@@ -156,6 +156,10 @@
   gets one, and tmux sets it back to steady each time it shows the cursor
   (`cnorm`). Either way a program's hide, draw, show is painted as one
   frame (02 §6), so a working agent's status line does not flicker it.
+- **An image pasted or dropped onto the terminal becomes a path in the
+  prompt**, as a drag-and-drop does in a local terminal (01
+  `session.image`). The status bar says while it travels; a refusal
+  stays on screen until dismissed.
 - **MicroVM sessions and cloud hosts (v0.2).** The host chip lists the
   person's own hosts first, then each connected cloud account as
   `<provider> <region>` with the host's per-hour price; the chip's foot

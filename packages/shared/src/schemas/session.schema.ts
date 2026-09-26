@@ -234,6 +234,16 @@ export const issueAttachTicketSchema = z.object({
 export type IssueAttachTicketDto = z.infer<typeof issueAttachTicketSchema>;
 
 /**
+ * `POST /sessions/{id}/images` — the form fields beside the file. A multipart
+ * field arrives as text, so the window is coerced; absent, it is the agent's.
+ */
+export const pasteSessionImageSchema = z.object({
+  window: z.coerce.number().int().min(0).optional(),
+});
+
+export type PasteSessionImageDto = z.infer<typeof pasteSessionImageSchema>;
+
+/**
  * `DELETE /sessions/{id}` — the close.
  *
  * Closing pushes each checkout's branch and then removes the worktrees, and it

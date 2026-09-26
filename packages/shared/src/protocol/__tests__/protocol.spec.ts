@@ -141,6 +141,13 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     window: 0,
     data: 'Zml4IHRoZSBwaWNrZXIK',
   },
+  'session.image': {
+    type: 'session.image',
+    commandId,
+    sessionId,
+    window: 0,
+    mediaType: 'image/png',
+  },
   'session.resize': {
     type: 'session.resize',
     commandId,

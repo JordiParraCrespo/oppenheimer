@@ -412,6 +412,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `codex` and `opencode` (02 §5, §9, §10); the composer table and the
   hide-and-do-not-send rule are 05's. The model seed follows Synara's
   model table and Orca's pricing table.
+- 2026-09-24: **a pasted or dropped image reaches the agent**: the console
+  uploads it, and the runner writes it outside the worktree and pastes its
+  path into the prompt (01, 02 §11, 05).
 - 2026-09-24: **connecting a host is hardened** (01, 02, 03, 05, 09).
   - An unpaired host is **terminal**: it gets no link, loses the one it
     has, and its runner stops dialling rather than retrying forever.

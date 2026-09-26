@@ -52,6 +52,7 @@ export {
   type CreateSessionVariables,
   sessionsKeys,
   useCreateSession,
+  usePasteSessionImage,
   useSession,
   useSessionStartProgress,
   useSessions,

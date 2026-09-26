@@ -1,6 +1,8 @@
 import { Terminal, TerminalStatusBar, TerminalStatusItem } from '@oppenheimer/design-system-web';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
+import { ImagePasteAlert } from '../components/image-paste-alert';
+import { useImagePaste } from '../hooks/use-image-paste';
 import { useSessionRefresh } from '../hooks/use-session-refresh';
 import { useTerminal } from '../hooks/use-terminal';
 
@@ -23,6 +25,10 @@ import { useTerminal } from '../hooks/use-terminal';
  * (`@oppenheimer/frontend-consumer`). Everything here holds a `SessionStream`,
  * not a socket.
  *
+ * **An image pasted or dropped onto the grid** goes to the host rather than
+ * to xterm: the agent reads its host's clipboard, never the browser's, so the
+ * runner saves the file and pastes its path into the prompt (05).
+ *
  * What the grid *contains* is drawn by the program on the far end. The
  * artboard's scrollback is hand-written DOM in the design's own vocabulary,
  * so plain output lands close to it and an agent drawing a full-screen TUI
@@ -35,9 +41,11 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const createStream = useSessionStream(sessionId, AGENT_WINDOW);
   const refresh = useSessionRefresh(sessionId);
+  const image = useImagePaste(sessionId, AGENT_WINDOW);
   const { containerRef, status } = useTerminal(createStream, {
     onEnd: refresh,
     agentWindow: true,
+    onImage: image.onImage,
   });
 
   return (
@@ -50,6 +58,12 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
         <div ref={containerRef} className="size-full" />
       </div>
 
+      {image.failure ? (
+        <div className="px-5 pb-3">
+          <ImagePasteAlert message={image.failure} onDismiss={image.dismiss} />
+        </div>
+      ) : null}
+
       <TerminalStatusBar>
         <TerminalStatusItem>
           <span
@@ -58,6 +72,9 @@ export function SessionTerminal({ sessionId }: { sessionId: string }) {
           />
           {t(`sessions.session.status.${status}`)}
         </TerminalStatusItem>
+        {image.sending ? (
+          <TerminalStatusItem>{t('sessions.session.image.sending')}</TerminalStatusItem>
+        ) : null}
         {/* The artboard's other items — context used, rate-limit windows,
             memory, permission mode, host count — are numbers the runner and
             the control plane report. They stay out until there is something

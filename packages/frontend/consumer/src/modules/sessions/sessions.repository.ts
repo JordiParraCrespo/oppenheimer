@@ -5,6 +5,7 @@ import {
   type SessionResponseDto,
 } from '@oppenheimer/api-client';
 import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
+import { SESSION_IMAGE_MAX_BYTES } from '@oppenheimer/shared/protocol';
 import { injectable } from 'inversify';
 import {
   type AttachTicket,
@@ -210,5 +211,27 @@ export class SessionsRepository {
       expiresAt: new Date(data.expiresAt),
       window: data.window,
     };
+  }
+
+  /**
+   * An image for one window's prompt. The agent reads its host's clipboard,
+   * not the browser's, so the image goes to the host and the runner pastes
+   * its path in. A file over the cap is refused here, before it is sent; the
+   * API judges the type by the bytes and answers an unreachable host as an
+   * error, so a resolved call means the host has it.
+   */
+  @MapApiError(SessionsErrors.PASTE_IMAGE_FAILED)
+  async pasteImage(id: string, image: Blob, window = 0): Promise<void> {
+    if (image.size > SESSION_IMAGE_MAX_BYTES) throw new AppError(SessionsErrors.IMAGE_TOO_LARGE);
+    const { error, response } = await heyApiSdk.pasteSessionImage({
+      path: { id },
+      body: { file: image, window },
+    });
+    if (error) {
+      throw toAppError(
+        { status: response?.status, body: error },
+        SessionsErrors.PASTE_IMAGE_FAILED,
+      );
+    }
   }
 }

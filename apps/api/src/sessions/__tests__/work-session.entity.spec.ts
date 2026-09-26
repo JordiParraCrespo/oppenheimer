@@ -101,6 +101,20 @@ describe('recordEvent is the only mutator of the fold', () => {
     expect(work.stoppedAt).not.toBeNull();
   });
 
+  it('says why it cannot take input: closed is final, stopped has no window', () => {
+    const open = session();
+    open.recordEvents([entry(SESSION_EVENT_KINDS.STARTED)]);
+    expect(open.inputRefusal).toBeNull();
+
+    const stopped = session();
+    stopped.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.STOPPED)]);
+    expect(stopped.inputRefusal?.code).toBe('SESSIONS_014');
+
+    const closed = session();
+    closed.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.CLOSED)]);
+    expect(closed.inputRefusal?.code).toBe('SESSIONS_005');
+  });
+
   it('reports a derived group, and a closed session reports resolved', () => {
     const work = session();
     work.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.CLOSED)]);

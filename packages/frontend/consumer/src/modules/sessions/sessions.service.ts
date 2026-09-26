@@ -52,6 +52,11 @@ export class SessionsService {
     return this.repository.issueAttachTicket(id, window);
   }
 
+  /** Give one window's prompt an image; see the repository. */
+  pasteImage(id: string, image: Blob, window = 0): Promise<void> {
+    return this.repository.pasteImage(id, image, window);
+  }
+
   /**
    * One window's terminal, live: the attach socket, its reconnect ladder, a
    * fresh ticket per dial and the byte credit (`01-protocol.md`). Nothing is

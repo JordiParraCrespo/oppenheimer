@@ -18,6 +18,8 @@ type Options struct {
 	Classifier Classifier
 	Store      Store
 	Publisher  Publisher
+	// Images keeps the pictures pasted into a session's prompt.
+	Images Images
 	// Layout is where repositories and worktrees live on this host.
 	Layout domain.Layout
 	// Env is added to every session's tmux environment, inherited by every
@@ -40,6 +42,7 @@ type Service struct {
 	classifier Classifier
 	store      Store
 	publisher  Publisher
+	images     Images
 	layout     domain.Layout
 	env        func(domain.Session) map[string]string
 	now        func() time.Time
@@ -62,7 +65,7 @@ func New(opts Options) (*Service, error) {
 	s := &Service{
 		sessions: map[string]domain.Session{}, terminals: opts.Terminals, worktrees: opts.Worktrees,
 		classifier: opts.Classifier, store: opts.Store, publisher: publisher,
-		layout: opts.Layout, env: env, now: now,
+		images: opts.Images, layout: opts.Layout, env: env, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -312,6 +315,45 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 	return s.terminals.SendKeys(ctx, session.Target(window), keys)
 }
 
+// PasteImage gives a window's program an image: it is written to the host
+// and its path pasted into the window, as a drag-and-drop does in a local
+// terminal — the agent reads its host's clipboard, never the browser's. The
+// bytes must be the type they claim to be, the file is named by the command
+// id (checked at the link, and refused by the store if it is not a plain
+// name), and a paste that does not land takes its file with it.
+func (s *Service) PasteImage(ctx context.Context, id string, window int, commandID, mediaType string, data []byte) (string, error) {
+	session, err := s.Get(id)
+	if err != nil {
+		return "", err
+	}
+	if !session.State.Live() {
+		return "", domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
+	}
+	if _, ok := session.Window(window); !ok {
+		return "", domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
+	}
+	if s.images == nil {
+		return "", domain.ErrImage.WithDetail("this runner keeps no images")
+	}
+	ext, ok := domain.ImageExtension(mediaType)
+	if !ok {
+		return "", domain.ErrImage.WithDetail("%q is not an image type a session takes", mediaType)
+	}
+	if sniffed := domain.SniffImage(data); sniffed != mediaType {
+		return "", domain.ErrImage.WithDetail("the bytes are not a %s image", mediaType)
+	}
+	name := commandID + ext
+	path, err := s.images.Save(session.ID, name, data)
+	if err != nil {
+		return "", domain.ErrImage.WithDetail("write the image: %v", err).WithCause(err)
+	}
+	if err := s.terminals.Paste(ctx, session.Target(window), commandID, path); err != nil {
+		_ = s.images.Delete(session.ID, name)
+		return "", err
+	}
+	return path, nil
+}
+
 // Refresh re-reads window 0 and updates the state and the login URL. It is
 // what the poll loop calls: every second while a client is attached, every
 // ten when none is.
@@ -542,6 +584,12 @@ func (s *Service) transition(session domain.Session, state domain.State, loginUR
 		session.Updated = s.now().UTC()
 	}
 	s.put(session)
+	// Pasted images were for the agent in the tmux session; once it is gone
+	// — stopped, closed, lost to a reboot — nothing will read them. Every way
+	// a session stops comes through here, so this is the one place they go.
+	if !state.Live() && s.images != nil {
+		_ = s.images.Discard(session.ID)
+	}
 	if changed {
 		s.mu.Lock()
 		publisher := s.publisher

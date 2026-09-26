@@ -4,6 +4,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 import { CursorFrames } from './cursor-frames';
+import { bindImageGestures } from './terminal-images';
 import { classifyKey } from './terminal-keys';
 import {
   readTerminalTheme,
@@ -25,6 +26,13 @@ export interface SessionTerminalOptions {
    * Shift+Enter as a newline. A shell window gets the chord as typed.
    */
   agentWindow?: boolean;
+  /**
+   * An image was pasted or dropped onto the terminal. The agent cannot read
+   * the browser's clipboard, so the caller uploads it and the runner pastes
+   * its path into the prompt (05). Without a handler, images are left to
+   * xterm, which pastes nothing for them.
+   */
+  onImage?: (image: File) => void;
 }
 
 /**
@@ -96,6 +104,9 @@ export function mountSessionTerminal(
     }
     return false;
   });
+
+  // Images, pasted or dropped, go to the caller rather than to xterm.
+  const unbindImages = options.onImage ? bindImageGestures(container, options.onImage) : () => {};
 
   // The wheel scrolls the session, not the program.
   //
@@ -222,6 +233,7 @@ export function mountSessionTerminal(
 
   return () => {
     if (frame !== null) cancelAnimationFrame(frame);
+    unbindImages();
     offData();
     offStatus();
     input.dispose();
