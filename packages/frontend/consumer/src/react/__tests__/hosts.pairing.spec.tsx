@@ -88,8 +88,31 @@ describe('useHostPairing', () => {
 
     await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
     expect(result.current.expired).toBe(false);
-    // A count, not `mm:ss`: how it is said belongs to the surface.
-    expect(result.current.secondsLeft).toBeGreaterThan(3500);
+    // The moment, not a count: the surface's countdown ticks, the flow does not.
+    expect(result.current.expiresAt).toEqual(PAIRING.expiresAt);
+  });
+
+  /**
+   * The flow used to tick once a second to count the token down, which
+   * re-rendered every surface running it — the dialog, its code blocks — for a
+   * number one line shows. It renders when something it hands out changes.
+   */
+  it('does not re-render while the token counts down', async () => {
+    const { wrapper } = setup([unredeemed], [OWNED]);
+    let renders = 0;
+    const { result } = renderHook(
+      () => {
+        renders += 1;
+        return useHostPairing('New host');
+      },
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    const settled = renders;
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    expect(renders).toBe(settled);
   });
 
   it('never reads a fresh token as expired, not even for the render it arrives in', async () => {
