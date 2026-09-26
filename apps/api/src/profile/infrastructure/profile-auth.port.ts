@@ -28,4 +28,10 @@ export interface ProfileAuthPort {
 
   /** Revoke every session except the one this request was made with. */
   revokeOtherSessions(headers: IncomingHttpHeaders, userId: string): Promise<void>;
+
+  /**
+   * Send a link to `newEmail` that moves the caller's account there when it
+   * is followed. Nothing changes until then.
+   */
+  requestEmailChange(headers: IncomingHttpHeaders, newEmail: string): Promise<void>;
 }

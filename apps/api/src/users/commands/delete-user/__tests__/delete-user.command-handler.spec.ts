@@ -16,6 +16,7 @@ function makeUser(): UserEntity {
       lastName: 'User',
       phone: null,
       jobTitle: null,
+      username: null,
       avatarUrl: null,
       role: 'user',
       isActive: true,

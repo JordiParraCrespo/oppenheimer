@@ -414,3 +414,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
+- 2026-09-26: **Settings → Profile is built, end to end.** Picture,
+  email, full name and a new username on the card; password and signed-in
+  devices under Sign-in and Devices; Delete account last. Changing the
+  email is a link to the new address; deleting the account stops the
+  sessions, unpairs the hosts and removes the personal workspace with it,
+  and every credential write is session-only (05, 08). Full name is two
+  fields where the export draws one.

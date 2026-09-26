@@ -16,5 +16,6 @@ export interface FindUsersParams {
  */
 export interface UserRepositoryPort extends RepositoryPort<UserEntity> {
   findOneByEmail(email: string): Promise<Option<UserEntity>>;
+  findOneByUsername(username: string): Promise<Option<UserEntity>>;
   findUsers(params: FindUsersParams): Promise<Paginated<UserEntity>>;
 }

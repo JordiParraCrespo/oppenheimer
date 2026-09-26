@@ -110,6 +110,30 @@ history) to work on the MVP.
   refuses it is the answer, so a stale credential never falls back to a
   session. What a credential authorizes (`ScopeContext`) and what the
   guards do with it are unchanged.
+- **The account's own settings** (Settings → Profile, 05). Every
+  write that touches a credential — the password, the email, signing
+  devices out, deleting the account — is **session-only**: no scope
+  admits an API token or an OAuth client to it, because a leaked token
+  that could do any of them is the account. Changing the **email** sends
+  Better Auth's verification link to the *new* address and moves the
+  account only when it is followed, for every account, verified or not:
+  an address nobody proved never becomes the sign-in address, which is
+  what linking a Google or GitHub identity to an existing account
+  (`requireLocalEmailVerified`) relies on. The answer is the same
+  whether another account holds the address. **Deleting the account**
+  is confirmed by typing its email, and takes with it every workspace
+  nobody else is a member of — the personal one — with its sessions,
+  projects and GitHub installations, then the hosts, tokens, grants,
+  preferences and sign-ins that hang off the user. Before anything is
+  erased, the live sessions are told to stop and the hosts are unpaired
+  through their own modules' commands, so an online runner stops its
+  agents and stops dialling; both are best-effort, and an offline host
+  does not keep anyone from leaving. Work the account left in a
+  workspace somebody else is in (a session it started, an installation
+  it connected) refuses the delete (`PROFILE_011`) rather than taking
+  that work from people who did not ask; with personal workspaces only,
+  that cannot happen yet. The **username** is the application's column,
+  not Better Auth's, unique and optional (2026-09-26).
 - **Roles.** The platform roles (`user`, `admin`, `superadmin`) and the
   org-scoped `owner` role are the only ones the MVP needs. The role
   editor and the admin console are carried for later, not part of the

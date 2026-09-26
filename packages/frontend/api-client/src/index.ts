@@ -94,11 +94,13 @@ export { WorkspacesApi } from './data-access/api/openapi/services/WorkspacesApi'
 export type {
   AddCheckoutRequest,
   AttachTicketResponseDto,
+  ChangeEmailRequest,
   ClientFeatureFlagsResponseDto,
   ConnectInstallationRequest,
   CreateFlagSegmentRequest,
   CreateProjectRequest,
   CreateSessionRequest,
+  DeleteAccountRequest,
   FeatureFlagConfigResponseDto,
   FeatureFlagResponseDto,
   FlagChangeResponseDto,

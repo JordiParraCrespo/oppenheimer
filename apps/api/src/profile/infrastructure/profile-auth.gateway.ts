@@ -1,7 +1,7 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable } from '@nestjs/common';
 import { DELEGATED_SESSION } from '../../auth/auth.di-tokens';
-import { auth } from '../../auth/infrastructure/better-auth.config';
+import { auth, frontendUrl } from '../../auth/infrastructure/better-auth.config';
 import { betterAuthHeaders } from '../../auth/infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../../auth/infrastructure/delegated-session.port';
 import { invokeProfileApi } from '../profile-error.mapper';
@@ -76,5 +76,20 @@ export class ProfileAuthGateway implements ProfileAuthPort {
     );
 
     await this.delegatedSessions.invalidateForUser(userId);
+  }
+
+  /**
+   * Better Auth mails the link to the new address through the verification
+   * email and, once it is followed, writes the address and marks it verified
+   * before redirecting to Settings → Profile, which reads `emailChanged` to
+   * say so.
+   */
+  async requestEmailChange(headers: IncomingHttpHeaders, newEmail: string): Promise<void> {
+    await invokeProfileApi(() =>
+      auth.api.changeEmail({
+        body: { newEmail, callbackURL: `${frontendUrl}/settings/profile?emailChanged=1` },
+        headers: betterAuthHeaders(headers),
+      }),
+    );
   }
 }

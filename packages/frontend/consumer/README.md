@@ -57,8 +57,9 @@ An app becomes the consumer product by loading `consumerModules` into
 - Organizations (personal workspace only): `useOrganizations`,
   `useCreateOrganization`, `useUpdateOrganization`, `organizationsKeys`.
 - Profile: `useMyProfile`, `useUpdateMyProfile`, `useChangeOwnPassword`,
-  `useUploadAvatar`, `useDeleteAvatar`, `useProfileSessions`,
-  `useRevokeProfileSession`, `useRevokeOtherProfileSessions`, `profileKeys`.
+  `useChangeEmail`, `useDeleteAccount`, `useUploadAvatar`, `useDeleteAvatar`,
+  `useProfileSessions`, `useRevokeProfileSession`,
+  `useRevokeOtherProfileSessions`, `profileKeys`.
 - API tokens: `useApiTokens`, `useCreateApiToken`, `useRevokeApiToken`,
   `useCurrentCredential`, `usePermissionCatalog`, `apiTokensKeys`.
 - Sign-up: `useRegister` (only this product has a registration flow).

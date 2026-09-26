@@ -16,6 +16,7 @@ function makeUser(): UserEntity {
       lastName: 'Rodrigo',
       phone: '+34 600 123 456',
       jobTitle: 'Founder',
+      username: null,
       avatarUrl: 'avatars/user-uuid.png',
       role: 'user',
       isActive: true,
@@ -26,13 +27,14 @@ function makeUser(): UserEntity {
 
 describe('UpdateProfileCommandHandler', () => {
   let service: UpdateProfileCommandHandler;
-  let repo: Pick<UserRepositoryPort, 'findOneById' | 'save'>;
+  let repo: Pick<UserRepositoryPort, 'findOneById' | 'findOneByUsername' | 'save'>;
   let user: UserEntity;
 
   beforeEach(() => {
     user = makeUser();
     repo = {
       findOneById: vi.fn().mockResolvedValue(Some(user)),
+      findOneByUsername: vi.fn().mockResolvedValue(None),
       save: vi.fn().mockImplementation(async (entity) => entity),
     };
     service = new UpdateProfileCommandHandler(repo as UserRepositoryPort);
@@ -87,6 +89,43 @@ describe('UpdateProfileCommandHandler', () => {
 
     expect(user.role).toBe('user');
     expect(user.isActive).toBe(true);
+  });
+
+  it('sets a username nobody holds', async () => {
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'adri' }));
+
+    expect(repo.findOneByUsername).toHaveBeenCalledWith('adri');
+    expect(user.username).toBe('adri');
+  });
+
+  it('refuses a username somebody else holds', async () => {
+    repo.findOneByUsername = vi.fn().mockResolvedValue(Some(makeUser()));
+
+    const error = await service
+      .execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'taken' }))
+      .catch((e) => e as AppError);
+
+    expect((error as AppError).code).toBe('USER_002');
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('does not look up the username the account already has', async () => {
+    // Saving the card again with the handle unchanged would otherwise find
+    // the caller holding it and refuse them their own name.
+    user.updateProfile({ username: 'adri' });
+
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'adri' }));
+
+    expect(repo.findOneByUsername).not.toHaveBeenCalled();
+  });
+
+  it('clears the username when sent null', async () => {
+    user.updateProfile({ username: 'adri' });
+
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: null }));
+
+    expect(user.username).toBeNull();
+    expect(repo.findOneByUsername).not.toHaveBeenCalled();
   });
 
   it('reports a missing profile', async () => {

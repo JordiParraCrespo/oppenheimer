@@ -165,6 +165,10 @@ earlier note:
   beside the console — `/settings`, opened from the account menu, with
   Profile and Hosts as its sections and the console's pairing page behind
   Add host — and 05 records that page; the drawer is gone (2026-09-26).
+- The 2026-09-26 export draws Profile's **Full name** as one field. The
+  account keeps first and last name apart, so `versions/mvp/05-screens.md`
+  records it as two fields in the same row rather than one string split
+  on its first space (2026-09-26).
 - `versions/mvp/10-api-modules-and-data-model.md` said a model was a
   launch option "recorded in the log, not a column", and made the
   promotion conditional on a reader needing it per row. `restart` is that

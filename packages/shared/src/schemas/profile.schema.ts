@@ -5,7 +5,8 @@ import { changePasswordSchema } from './auth.schema';
  * The caller's own account: the profile fields they may edit themselves.
  *
  * Identity (email, password, OAuth links) stays owned by Better Auth and is not
- * expressed here — the profile screen shows the email read-only on purpose.
+ * part of the profile update: the email moves through its own request
+ * (`changeEmailSchema`), which proves the new address before it is used.
  *
  * Schemas state the constraint only, never a message: an explicit string would
  * pin every consumer to English (see `.agents/rules/forms.md`).
@@ -29,6 +30,17 @@ export type AvatarMimeType = (typeof AVATAR_MIME_TYPES)[number];
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 /**
+ * A username: the handle session logs and commit trailers carry. Lowercase
+ * letters, digits and single hyphens between them, 1 to 39 characters — the
+ * shape GitHub allows, so the same handle reads the same in both places. It
+ * is stored as typed; a client lowercases on input rather than the schema
+ * rewriting what it was given.
+ */
+export const USERNAME_MAX_LENGTH = 39;
+export const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$/;
+export const usernameSchema = z.string().max(USERNAME_MAX_LENGTH).regex(USERNAME_PATTERN);
+
+/**
  * Editable profile fields. Every field is optional — the screen saves the whole
  * card, but a client may patch a single one. `phone` and `jobTitle` accept
  * `null` to clear them; omitting a field leaves it untouched.
@@ -38,6 +50,26 @@ export const updateProfileSchema = z.object({
   lastName: z.string().min(1).max(100).optional(),
   phone: z.string().min(1).max(32).nullable().optional(),
   jobTitle: z.string().min(1).max(120).nullable().optional(),
+  /** Unique across accounts; `null` clears it. */
+  username: usernameSchema.nullable().optional(),
+});
+
+/**
+ * Asking to move the account to another address. Nothing changes until the
+ * link sent to the new address is followed, so the address is proven before
+ * it becomes the one used to sign in.
+ */
+export const changeEmailSchema = z.object({
+  newEmail: z.string().email().max(254),
+});
+
+/**
+ * Deleting your own account. The confirmation is the account's email typed
+ * out, compared case-insensitively on the server: a destructive action that
+ * cannot be undone is not one a stray click or a replayed request completes.
+ */
+export const deleteAccountSchema = z.object({
+  confirmation: z.string().min(1).max(254),
 });
 
 /**
@@ -75,6 +107,7 @@ export const profileResponseSchema = z.object({
   lastName: z.string(),
   phone: z.string().nullable(),
   jobTitle: z.string().nullable(),
+  username: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   role: z.string(),
   emailVerified: z.boolean(),
@@ -109,6 +142,8 @@ export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
 export type UpdateUserSettingsDto = z.infer<typeof updateUserSettingsSchema>;
 export type UserSettingsDto = UpdateUserSettingsDto;
 export type UserSettingsResponse = z.infer<typeof userSettingsResponseSchema>;
+export type ChangeEmailDto = z.infer<typeof changeEmailSchema>;
+export type DeleteAccountDto = z.infer<typeof deleteAccountSchema>;
 export type ChangeOwnPasswordDto = z.infer<typeof changeOwnPasswordSchema>;
 export type ProfileResponse = z.infer<typeof profileResponseSchema>;
 export type UserSessionResponse = z.infer<typeof userSessionResponseSchema>;

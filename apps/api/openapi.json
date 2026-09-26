@@ -469,6 +469,75 @@
         "tags": ["Profile"]
       }
     },
+    "/api/v1/profile/email": {
+      "post": {
+        "description": "Session-authenticated only. Sends a link to the new address; the account moves when the link is followed. The answer is the same whether or not another account holds the address.",
+        "operationId": "changeEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Confirmation link sent to the new address"
+          },
+          "400": {
+            "description": "PROFILE_009 — The new address is the current one",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ask to change the current user’s email address",
+        "tags": ["Profile"]
+      }
+    },
     "/api/v1/profile": {
       "get": {
         "operationId": "getProfile",
@@ -584,6 +653,83 @@
           }
         ],
         "summary": "Update the current user’s profile",
+        "tags": ["Profile"]
+      },
+      "delete": {
+        "description": "Session-authenticated only. Stops the sessions and unpairs the hosts, then removes the workspaces nobody else is in, the account and every sign-in. Cannot be undone.",
+        "operationId": "deleteAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Account deleted"
+          },
+          "400": {
+            "description": "PROFILE_010 — The confirmation is not the account’s email",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PROFILE_011 — The account has work in a workspace shared with others",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete the current user’s account",
         "tags": ["Profile"]
       }
     },
@@ -9560,7 +9706,7 @@
           },
           "email": {
             "type": "string",
-            "description": "Read-only here — changing it is an admin operation."
+            "description": "Read-only here — `POST /profile/email` sends a link to a new address, which moves the account when followed."
           },
           "firstName": {
             "type": "string"
@@ -9575,6 +9721,11 @@
           "jobTitle": {
             "type": "string",
             "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "description": "The handle session logs and commit trailers carry; unique across accounts."
           },
           "avatarUrl": {
             "type": "string",
@@ -9606,6 +9757,7 @@
           "lastName",
           "phone",
           "jobTitle",
+          "username",
           "avatarUrl",
           "role",
           "emailVerified",
@@ -9674,6 +9826,17 @@
         },
         "required": ["currentPassword", "newPassword"]
       },
+      "ChangeEmailRequest": {
+        "type": "object",
+        "properties": {
+          "newEmail": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": ["newEmail"]
+      },
       "UpdateProfileRequest": {
         "type": "object",
         "properties": {
@@ -9698,8 +9861,25 @@
             "minLength": 1,
             "maxLength": 120,
             "nullable": true
+          },
+          "username": {
+            "type": "string",
+            "maxLength": 39,
+            "pattern": "^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$",
+            "nullable": true
           }
         }
+      },
+      "DeleteAccountRequest": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          }
+        },
+        "required": ["confirmation"]
       },
       "UserResponseDto": {
         "type": "object",

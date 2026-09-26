@@ -61,10 +61,31 @@
   with Add host on the right, which opens the console's one pairing page
   (`/hosts/new?from=settings`): the header reads where it was opened
   from — Hosts as the parent crumb, Done rather than Use this host, back
-  to the list. The rows each section draws — picture, name, email,
-  password on Profile; rename, remove, the install command and the
-  preflight on a host card — are their own slices; the frame, the routes
-  and the way back are built (2026-09-26).
+  to the list. The rows a host card draws — rename, remove, the install
+  command and the preflight — are the hosts slice's; the frame, the
+  routes and the way back are built (2026-09-26).
+
+  **Profile is built** (2026-09-26), in the export's order and then
+  what it left out. The card: the picture (Upload, and Remove once there
+  is one), the email with Change, Full name, Username with its `@`, and
+  the save row that appears only when something changed — Discard, Save
+  changes — and reads Saved until the next edit. Full name is **two
+  fields side by side**, not the export's one: the account keeps first
+  and last name apart (sign-up asks for both, the initials and the
+  member list are built from them), and splitting one string on its
+  first space would get every name that does not fit that shape wrong.
+  Username is lowercase letters, digits and single hyphens, up to 39 —
+  GitHub's shape, so the handle in a commit trailer reads the same on
+  both sides — unique across accounts, optional, and typed capitals
+  are lowered as you type. Change email sends a link to the new address
+  and moves nothing until it is followed; the link lands back on
+  `/settings/profile?emailChanged=1`, which says so. Then two groups the
+  export did not draw: **Sign-in**, the password in a dialog that signs
+  every other device out, and **Devices**, each browser signed in as
+  platform and browser with when it was last active, this one marked,
+  Sign out on each other and Sign out of all other devices under them.
+  **Account** is last, as drawn: Delete account opens a dialog that
+  asks for the email typed out (08 says what goes with it).
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export; the project chip and its New project… page are

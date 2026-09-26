@@ -11,4 +11,14 @@ export const UserErrors = {
     message: 'User not found',
     httpStatus: 404,
   },
+  /**
+   * Usernames are unique across accounts and somebody else holds this one.
+   * Raised by the profile's own update and by the repository when two
+   * requests race for the same handle, so the loser gets this and not a 500.
+   */
+  USERNAME_TAKEN: {
+    code: 'USER_002',
+    message: 'That username is already taken',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

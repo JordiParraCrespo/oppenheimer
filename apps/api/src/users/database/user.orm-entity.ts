@@ -40,6 +40,13 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   jobTitle!: string | null;
 
+  /**
+   * The handle the account chose, unique across accounts. The application's
+   * alone: Better Auth does not know the column, so sign-up leaves it `null`.
+   */
+  @Column({ type: 'varchar', length: 39, nullable: true, unique: true })
+  username!: string | null;
+
   @Column({ type: 'varchar', default: 'user' })
   role!: Role;
 

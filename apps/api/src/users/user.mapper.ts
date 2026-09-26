@@ -29,6 +29,7 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
     record.name = displayNameOf(entity);
     record.phone = entity.phone;
     record.jobTitle = entity.jobTitle;
+    record.username = entity.username;
     record.image = entity.avatarUrl;
     record.role = entity.role;
     record.isActive = entity.isActive;
@@ -47,6 +48,7 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
         lastName: record.lastName,
         phone: record.phone,
         jobTitle: record.jobTitle,
+        username: record.username,
         avatarUrl: record.image,
         role: record.role,
         isActive: record.isActive,

@@ -1,10 +1,16 @@
 import {
+  heyApiSdk,
   ProfileApi,
   type ProfileResponseDto,
   type UserSessionResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
-import type { ChangeOwnPasswordDto, UpdateProfileDto } from '@oppenheimer/shared/schemas/profile';
+import { AppError, MapApiError, toAppError } from '@oppenheimer/frontend-core';
+import type {
+  ChangeEmailDto,
+  ChangeOwnPasswordDto,
+  DeleteAccountDto,
+  UpdateProfileDto,
+} from '@oppenheimer/shared/schemas/profile';
 import { injectable } from 'inversify';
 import { ProfileEntity, UserSessionEntity } from './profile.entity';
 import { ProfileErrors } from './profile.errors';
@@ -17,6 +23,7 @@ function toProfile(data: ProfileResponseDto): ProfileEntity {
     data.lastName,
     data.phone,
     data.jobTitle,
+    data.username ?? null,
     data.avatarUrl,
     data.role,
     data.emailVerified,
@@ -73,6 +80,37 @@ export class ProfileRepository {
   @MapApiError(ProfileErrors.CHANGE_PASSWORD_FAILED)
   async changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
     await ProfileApi.changePassword(dto);
+  }
+
+  /**
+   * Ask for a link at the new address. The account moves only when it is
+   * followed, so nothing on the profile changes here.
+   *
+   * These two calls go through the generated SDK rather than the retired
+   * `ProfileApi` above, which predates them; `toAppError` keeps the problem
+   * document the API sent, so a wrong confirmation reads as that and not as a
+   * generic failure.
+   */
+  @MapApiError(ProfileErrors.CHANGE_EMAIL_FAILED)
+  async changeEmail(dto: ChangeEmailDto): Promise<void> {
+    const { error, response } = await heyApiSdk.changeEmail({ body: dto });
+    if (error) {
+      throw toAppError(
+        { status: response?.status, body: error },
+        ProfileErrors.CHANGE_EMAIL_FAILED,
+      );
+    }
+  }
+
+  @MapApiError(ProfileErrors.DELETE_ACCOUNT_FAILED)
+  async deleteAccount(dto: DeleteAccountDto): Promise<void> {
+    const { error, response } = await heyApiSdk.deleteAccount({ body: dto });
+    if (error) {
+      throw toAppError(
+        { status: response?.status, body: error },
+        ProfileErrors.DELETE_ACCOUNT_FAILED,
+      );
+    }
   }
 
   @MapApiError(ProfileErrors.FETCH_SESSIONS_FAILED)
