@@ -24,6 +24,7 @@ function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEnt
   const entity = WorkSessionEntity.request({
     organizationId: ORG,
     projectId: PROJECT,
+    projectSlug: 'xrp-mobile',
     createdByUserId: 'user-1',
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',

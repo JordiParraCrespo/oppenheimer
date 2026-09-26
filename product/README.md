@@ -21,6 +21,7 @@ for the detail and sources.
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -192,10 +193,29 @@ earlier note:
   runner's writer orders frames, and that liveness is ping/pong.
 - `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
+- `versions/mvp/05-screens.md`: the repository chip's foot row was
+  "Connect a repository…", back to the onboarding step. It is now
+  "Manage repository access", a new-tab link to the GitHub App's
+  installation page (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
+  a project chip. The 2026-09-26 export puts one first on New session, with
+  a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
+  works out the data model, the API and the console for it (2026-09-26).
+- `versions/mvp/05-screens.md` and `12-projects-on-the-console.md`: the
+  project dialog and the Add host dialog are pages over the main column
+  (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
+  evening export, and the second rail item reads Automations. A project
+  needs a repository to be saved from the console (2026-09-26).
+- The order after the MVP was VMs with sleep tiers, the accounts model,
+  then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
+  On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
+  0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
+  display. Multi-account (note 06) is on the list with no version yet.
+  VMs are not placed. See `next-steps/README.md`.
 - `versions/mvp/05-screens.md` said version 1 has no settings page and
   that hosts would be listed later in a drawer. The 2026-09-26 frames
   draw a Settings page with a Hosts section, and
-  `versions/mvp/12-hosts-settings.md` designs its backend. Two host
+  `versions/mvp/13-hosts-settings.md` designs its backend. Two host
   behaviours changed with it: removing a host now stops the sessions
   running on it (it used to close the link and leave them `open`), and
   `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
@@ -203,6 +223,6 @@ earlier note:
 - `versions/mvp/10-api-modules-and-data-model.md` kept a host's
   metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
   a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
-  heartbeat. `versions/mvp/13-host-metadata.md` splits it by rate of
+  heartbeat. `versions/mvp/14-host-metadata.md` splits it by rate of
   change into `host_inventory`, `host_presence`, `host_network` and
   `host_event`; the old columns go in a later contract step (2026-09-26).

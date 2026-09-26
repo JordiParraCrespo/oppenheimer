@@ -12,6 +12,7 @@ function session(state: 'starting' | 'open'): WorkSessionEntity {
   const entity = WorkSessionEntity.request({
     organizationId: 'org',
     projectId: 'project',
+    projectSlug: 'xrp-mobile',
     createdByUserId: 'user',
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',

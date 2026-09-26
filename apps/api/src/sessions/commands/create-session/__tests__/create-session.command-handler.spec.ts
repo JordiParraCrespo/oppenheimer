@@ -104,8 +104,11 @@ describe('CreateSessionCommandHandler', () => {
     });
 
   it('mints a slug, records the request and the cwd, and dispatches the job', async () => {
-    const { session, hints } = await handler.execute(command());
+    const { sessionId, hints } = await handler.execute(command());
+    // Commands answer with the id; the session is what the handler inserted.
+    const [session] = vi.mocked(sessions.createIfUnclaimed).mock.calls[0];
 
+    expect(sessionId).toBe(session.id);
     expect(session.slug).toMatch(/^[a-z]+-[a-z]+-[0-9a-z]{6}$/);
     expect(session.state).toBe('starting');
     // Two entries, one transaction, one action: the request and where the agent
@@ -135,6 +138,7 @@ describe('CreateSessionCommandHandler', () => {
       session: WorkSessionEntity.request({
         organizationId: 'org-acme',
         projectId: 'project-1',
+        projectSlug: 'xrp-mobile',
         createdByUserId: 'user-1',
         hostId: 'host-1',
         slug: 'bold-otter-3f9a7k',
@@ -152,6 +156,7 @@ describe('CreateSessionCommandHandler', () => {
     const existing = WorkSessionEntity.request({
       organizationId: 'org-acme',
       projectId: 'project-1',
+      projectSlug: 'xrp-mobile',
       createdByUserId: 'user-1',
       hostId: 'host-1',
       slug: 'bold-otter-3f9a7k',
@@ -160,7 +165,7 @@ describe('CreateSessionCommandHandler', () => {
     });
     vi.mocked(sessions.findOneByIdempotencyKey).mockResolvedValue(Some(existing));
 
-    await expect(handler.execute(command())).resolves.toMatchObject({ session: existing });
+    await expect(handler.execute(command())).resolves.toMatchObject({ sessionId: existing.id });
     // The point of the key: no second directory, no second branch, and no second
     // trip to GitHub or to the host.
     expect(hosts.assertUsable).not.toHaveBeenCalled();
@@ -172,6 +177,7 @@ describe('CreateSessionCommandHandler', () => {
     const other = WorkSessionEntity.request({
       organizationId: 'org-acme',
       projectId: 'project-1',
+      projectSlug: 'xrp-mobile',
       createdByUserId: 'user-1',
       hostId: 'host-1',
       slug: 'quiet-heron-b210c4',
@@ -184,7 +190,7 @@ describe('CreateSessionCommandHandler', () => {
       projectArchived: false,
     });
 
-    await expect(handler.execute(command())).resolves.toMatchObject({ session: other });
+    await expect(handler.execute(command())).resolves.toMatchObject({ sessionId: other.id });
     expect(dispatch.create).not.toHaveBeenCalled();
   });
 

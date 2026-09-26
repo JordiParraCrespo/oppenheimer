@@ -1,4 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 /**
  * The configuration the two stubs need, printed as `.env` lines.
@@ -16,6 +17,10 @@ import { generateKeyPairSync } from 'node:crypto';
  */
 const GITHUB_STUB = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 const NAMER_STUB = process.env.NAMER_STUB_URL ?? 'http://127.0.0.1:4320';
+/** The App's slug, shared with the specs that assert on the install URL. */
+const { slug: GITHUB_APP_SLUG } = JSON.parse(
+  readFileSync(new URL('./github-app.json', import.meta.url), 'utf8'),
+) as { slug: string };
 
 /** The App JWT is RS256, so the App's key is RSA. */
 function githubAppKey(): string {
@@ -47,7 +52,7 @@ const lines = [
   'GITHUB_APP_WEBHOOK_SECRET=stub-webhook-secret',
   'GITHUB_APP_CLIENT_ID=Iv1.stubclientid',
   'GITHUB_APP_CLIENT_SECRET=stub-client-secret',
-  'GITHUB_APP_SLUG=oppenheimer-stub',
+  `GITHUB_APP_SLUG=${GITHUB_APP_SLUG}`,
   `GITHUB_APP_API_URL=${GITHUB_STUB}`,
   `GITHUB_APP_OAUTH_URL=${GITHUB_STUB}`,
   '',

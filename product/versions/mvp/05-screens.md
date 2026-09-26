@@ -11,8 +11,8 @@
   permanent address under `oppenheimer.dev/`, checked for availability
   as you type with a spinner, a green check or a red cross and a hint
   in the same tone; Continue waits for an available address. (3)
-  Connect GitHub, all or selected repos, skippable but the repo chip
-  stays empty until done. (4) Add a host, with two copyable blocks, the
+  Connect GitHub, all or selected repos, skippable; until it is done the
+  repo chip lists nothing and its foot row is the way out (below). (4) Add a host, with two copyable blocks, the
   install command and the prompt for an AI agent, both carrying the
   same one-hour token, the screen flipping to the registered host when
   the runner registers. Then Ready: a success ring, "You're all set", a
@@ -25,10 +25,26 @@
   ending on New session"; decided 2026-09-19 with the version-1 frames.)
 - Sidebar: sessions as a branch glyph coloured by state, name, age on
   hover; a session still provisioning joins the list at once with a
-  pulsing grey glyph; New session on top; a filter menu (repository,
-  agent, host, sort) with the active filters as chips under the header;
-  the account menu at the bottom with appearance and language; hosts in
-  a settings drawer.
+  pulsing grey glyph; New session on top; a filter menu (project,
+  repository, agent, host, sort) with the active filters as chips under
+  the header; the account menu at the bottom with appearance and
+  language; hosts in a settings drawer. Since the 2026-09-26 export the
+  list is **grouped by project**: a rail left of the sidebar switches the
+  console's lists (Sessions current with its count; Automations — the
+  2026-09-26 evening export's word for routines, in the copy only — drawn
+  and disabled until its page lands), the head reads Projects with the
+  count, a New project button and the filter menu, a live search box
+  narrows the rows, and each project is a folding header with its count
+  and two hover actions — New session here (`/sessions/new?project=`,
+  which starts the composer on that project with its defaults) and
+  Project settings (the project page editing, `/projects/{id}`; Delete
+  project is the archive behind a confirm, and is disabled while the
+  project has unresolved sessions). An
+  empty project shows an empty row with a link to start one. A row's
+  ellipsis menu: Rename inline, Move to project… as a pane in the same
+  menu listing the other projects that hold the session's repository,
+  and Delete, a confirm over the close that says whether to discard work
+  that is not pushed.
 - The sidebar **is** the console's navigation, and version 1 has no
   other destination: no nav rows, no chrome bar over the pane, no
   command palette, and no settings or profile page — the account menu
@@ -36,11 +52,14 @@
   is one screen: a sidebar beside the pane a session opens in. The
   settings drawer above is a later slice, and a drawer is not a route;
   until it arrives the machines a workspace owns are *listed* nowhere —
-  a new one is paired from the Add host dialog below, or in onboarding,
+  a new one is paired on the Add a host page below, or in onboarding,
   and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
-- New session: chips for host, repository, branch; a composer for the
+- New session: chips for project, host, repository, branch, in the grey
+  band fused to the top of the composer (the tabbed composer of the
+  2026-09-26 export; the project chip and its New project… page are
+  12, which supersedes the four-chip sentence below); a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
@@ -80,8 +99,18 @@
   (`launchControlsFor`), not one predicate per control. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,
-  which opens a branch pane for that repository. The host chip's
-  foot action opens the **Add host dialog**: the same instruction in
+  which opens a branch pane for that repository. The repository chip's
+  foot row is **Manage repository access** with the GitHub mark: a link,
+  in a new tab, to the App's installation page (`github_app_install_url`
+  from the deployment's capabilities), because which repositories the App
+  sees is decided on GitHub and nowhere in the console. It no longer goes
+  back to the onboarding step (`/onboarding/github`). A deployment with no
+  App has no such page: the chip says so in its empty line and has no
+  foot row. The host chip's
+  foot action opens the **Add a host page** (`/hosts/new`; a dialog until
+  the 2026-09-26 evening export made it a page over the main column, built
+  like the automation editor: a page header, then two numbered steps,
+  Install and Connect): the same instruction in
   two forms behind a Command / Agent prompt switch, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
@@ -91,7 +120,7 @@
   enabled then. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,
   because a first-run flow that ends on a machine which never came up
-  has claimed something the console cannot use; the dialog is picking
+  has claimed something the console cannot use; the page is picking
   the host of a session, and a session may be started on a machine
   whose runner is still coming up — the control plane records it and
   owes it to that host the moment it connects, which is what the
@@ -169,7 +198,7 @@
   Settings *page* (`design/version1/Settings.dc.html`) with Profile and
   Hosts — each host with a status word and its running session count,
   rename, copy id, and a remove dialog that names what removal stops.
-  Its backend is 12; the screen is built with the Settings slice.
+  Its backend is 13; the screen is built with the Settings slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it
   is **pinned** (and to what), and the **last update outcome** —

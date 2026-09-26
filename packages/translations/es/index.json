@@ -110,6 +110,7 @@
       "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
       "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
       "GRANT_004": "Elige una organización antes de gestionar las concesiones de acceso.",
+      "RATE_001": "Estás enviando solicitudes demasiado rápido. Espera un momento y vuelve a intentarlo.",
       "GITHUB_001": "No hemos encontrado esa instalación de GitHub.",
       "GITHUB_002": "GitHub no está configurado en este servidor.",
       "GITHUB_003": "Otro espacio de trabajo ya ha conectado esa instalación de GitHub.",
@@ -125,6 +126,7 @@
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
       "PROJECTS_004": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
       "PROJECTS_005": "Ese proyecto todavía tiene sesiones sin cerrar.",
+      "PROJECTS_006": "Ese nombre ya es el directorio de otro proyecto. Añade un repositorio o elige otro nombre.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
       "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
       "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",
@@ -166,6 +168,7 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+      "SESSIONS_018": "Ese proyecto no incluye el repositorio de esta sesión. Añádeselo primero.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
@@ -280,7 +283,9 @@
           "alt": "La puerta principal del laboratorio de Los Álamos",
           "caption": "Los Álamos, 1943"
         }
-      }
+      },
+      "dots": "Diapositivas",
+      "slide": "Diapositiva {{position}}"
     },
     "firstNamePlaceholder": "Tu nombre",
     "hidePassword": "Ocultar contraseña",
@@ -295,7 +300,8 @@
       "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
-    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
+    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "sessions": {
     "home": {
@@ -359,15 +365,14 @@
         "add": "Añadir host…",
         "offline": "Desconectado"
       },
-      "addHost": {
-        "title": "Añadir un host",
-        "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
-        "instruction": "Ejecuta esto en él, una vez",
-        "format": "Cómo leerlo",
-        "command": "Comando",
-        "agentPrompt": "Instrucción para el agente",
-        "use": "Usar este host",
-        "defaultName": "Nuevo host"
+      "project": {
+        "label": "Proyecto",
+        "placeholder": "Proyecto",
+        "search": "Buscar proyectos…",
+        "empty": "Ningún proyecto coincide.",
+        "loading": "Cargando proyectos…",
+        "add": "Nuevo proyecto…",
+        "noRepositories": "Sin repositorios"
       },
       "repository": {
         "label": "Repositorios",
@@ -379,7 +384,8 @@
         "branchEmpty": "Ninguna rama coincide.",
         "branchPane": "Rama de {{name}}",
         "changeBranch": "Cambiar de rama",
-        "connect": "Conectar un repositorio…",
+        "manage": "Gestionar el acceso a repositorios",
+        "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
         "archived": "Archivado"
       },
       "branch": {
@@ -391,7 +397,9 @@
         "default": "Por defecto"
       },
       "agent": {
-        "label": "Agente y modelo"
+        "label": "Agente y modelo",
+        "search": "Buscar modelos…",
+        "empty": "Ningún modelo coincide con «{{query}}»."
       },
       "permission": {
         "label": "Nivel de permisos",
@@ -414,12 +422,18 @@
         "low": "Bajo",
         "medium": "Medio",
         "high": "Alto",
-        "max": "Máximo"
+        "max": "Máximo",
+        "faster": "Más rápido",
+        "smarter": "Más inteligente",
+        "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
       },
       "composer": {
-        "placeholder": "Describe una tarea o haz una pregunta"
+        "placeholder": "Describe una tarea o haz una pregunta",
+        "send": "Enviar",
+        "stop": "Detener"
       },
-      "queued": "Tu primera tarea está en cola para este host."
+      "queued": "Tu primera tarea está en cola para este host.",
+      "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {
@@ -435,14 +449,48 @@
         "dismiss": "Cerrar"
       }
     },
+    "sidebar": {
+      "projects": "Proyectos",
+      "newProject": "Nuevo proyecto",
+      "search": "Buscar sesiones",
+      "clearSearch": "Borrar búsqueda",
+      "noMatches": "Ninguna sesión coincide con “{{query}}”.",
+      "empty": "Todavía no hay proyectos. El primero que crees aparecerá aquí con sus sesiones.",
+      "emptyProject": "Todavía no hay sesiones.",
+      "startOne": "Empieza una",
+      "newSessionHere": "Nueva sesión en {{name}}",
+      "projectSettings": "Ajustes de {{name}}",
+      "unfiled": "Otras sesiones",
+      "actions": "Acciones de la sesión",
+      "rename": "Renombrar",
+      "renameLabel": "Nombre de la sesión",
+      "move": "Mover a un proyecto…",
+      "moveTitle": "Mover a un proyecto",
+      "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
+      "delete": "Eliminar",
+      "routines": "Rutinas",
+      "routinesSoon": "Las automatizaciones todavía no están aquí.",
+      "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+    },
+    "deleteSession": {
+      "title": "¿Eliminar “{{name}}”?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "confirm": "Eliminar sesión",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar la sesión.",
+      "discard": "Descartar también el trabajo sin enviar",
+      "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
+    },
     "filters": {
       "label": "Filtrar sesiones",
+      "project": "Proyecto",
       "repository": "Repositorio",
       "agent": "Agente",
       "host": "Equipo",
       "sort": "Ordenar por",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
+      "allProjects": "Todos los proyectos",
       "allRepositories": "Todos los repositorios",
       "allAgents": "Todos los agentes",
       "allHosts": "Todos los equipos",
@@ -468,6 +516,90 @@
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
       "installerDigest": "SHA-256 del instalador: {{digest}}"
+    },
+    "add": {
+      "title": "Añadir un host",
+      "meta": "Nada del host queda expuesto a internet.",
+      "back": "Atrás",
+      "crumbNewSession": "Nueva sesión",
+      "use": "Usar este host",
+      "defaultName": "Nuevo host",
+      "install": {
+        "title": "Instalar",
+        "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
+        "done": "Instalado",
+        "format": "Formato de instalación",
+        "command": "Comando",
+        "agentPrompt": "Instrucción para el agente"
+      },
+      "connect": {
+        "title": "Conectar",
+        "subtitle": "El runner se registra con el nombre de máquina que reporta."
+      }
+    }
+  },
+  "projects": {
+    "page": {
+      "newTitle": "Nuevo proyecto",
+      "editTitle": "Ajustes del proyecto",
+      "name": "Nombre del proyecto",
+      "namePlaceholder": "Ponle nombre al proyecto",
+      "back": "Atrás",
+      "crumbSessions": "Sesiones",
+      "crumbNewSession": "Nueva sesión",
+      "create": "Crear proyecto",
+      "creating": "Creando…",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "failed": "No se pudo crear el proyecto.",
+      "saveFailed": "No se pudo guardar el proyecto.",
+      "recap": {
+        "name": "Ponle nombre al proyecto y elige sus repositorios.",
+        "repositories": "Elige al menos un repositorio.",
+        "default": "Marca al menos un repositorio por defecto."
+      },
+      "summary": {
+        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
+        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
+      },
+      "steps": {
+        "repositories": {
+          "title": "Repositorios",
+          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
+          "label": "Repositorios por defecto",
+          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
+          "defaultCount": "{{defaults}} de {{count}} por defecto",
+          "search": "Buscar repositorios…",
+          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+          "none": "Todavía no hay ningún repositorio conectado.",
+          "default": "Por defecto",
+          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
+        },
+        "host": {
+          "title": "Host por defecto",
+          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
+          "none": "Todavía no hay ningún host emparejado."
+        },
+        "agent": {
+          "title": "Agente por defecto",
+          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
+        }
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "hint": "Elimina este proyecto.",
+        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
+        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
+        "action": "Eliminar proyecto",
+        "deleting": "Eliminando…",
+        "failed": "No se pudo eliminar el proyecto."
+      }
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar {{name}}?",
+      "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
+      "confirm": "Eliminar proyecto"
     }
   },
   "home": {
@@ -509,7 +641,11 @@
     "featureFlags": "Feature flags",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
-    "newSession": "Nueva sesión"
+    "newSession": "Nueva sesión",
+    "commandTitle": "Paleta de comandos",
+    "commandDescription": "Busca una página o una acción.",
+    "sidebarTitle": "Navegación",
+    "sidebarDescription": "Tus sesiones y tu cuenta."
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -779,7 +915,9 @@
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
     "noRedirect": "El servidor no ha indicado a dónde continuar.",
-    "sensitiveScope": "Sensible"
+    "sensitiveScope": "Sensible",
+    "unknownClient": "Una aplicación",
+    "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
     "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
@@ -813,7 +951,10 @@
         "claiming": "Guardando...",
         "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
         "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
-        "permanent": "{{address}} es la dirección de este espacio de trabajo."
+        "permanent": "{{address}} es la dirección de este espacio de trabajo.",
+        "checkingLabel": "Comprobando disponibilidad",
+        "availableLabel": "Disponible",
+        "takenLabel": "Ocupada"
       },
       "github": {
         "title": "Conecta GitHub",
@@ -847,7 +988,8 @@
         "go": "Ir a la consola",
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
-        "noHost": "Aún sin host"
+        "noHost": "Aún sin host",
+        "doneLabel": "Listo"
       }
     }
   },
@@ -1136,19 +1278,6 @@
       },
       "title": "Términos del servicio"
     }
-  },
-  "table": {
-    "clearFilter": "Quitar el filtro",
-    "clearSelection": "Quitar la selección",
-    "nextPage": "Página siguiente",
-    "page": "Página {{page}} de {{totalPages}}",
-    "previousPage": "Página anterior",
-    "range": "{{first}}–{{last}} de {{total}}",
-    "rowActions": "Acciones de la fila",
-    "selectPage": "Seleccionar todas las filas de esta página",
-    "selectRow": "Seleccionar fila",
-    "selected_one": "{{count}} seleccionado",
-    "selected_other": "{{count}} seleccionados"
   },
   "theme": {
     "toggle": "Cambiar tema",

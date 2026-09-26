@@ -24,6 +24,7 @@ import {
  */
 @Entity('project')
 @Index(['organizationId'])
+@Index('IDX_project_default_host', ['defaultHostId'])
 @Index('UQ_project_organization_origin', ['organizationId', 'originGithubRepoId'], {
   unique: true,
   where: '"originGithubRepoId" IS NOT NULL',
@@ -52,6 +53,12 @@ export class ProjectOrmEntity {
    */
   @Column({ type: 'bigint', nullable: true })
   originGithubRepoId!: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  defaultHostId!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  defaultAgent!: string | null;
 
   /**
    * Reserved for the slice that owns sessions: retiring a project has to be able

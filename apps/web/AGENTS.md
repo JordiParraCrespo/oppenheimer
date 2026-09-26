@@ -54,8 +54,8 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   because what it lists is sessions; the shell around it is the kit's.
 - Building a screen this console does not have. There is no settings page and
   no profile page — the version-1 artboards draw neither, and both were
-  deleted with their features. A host is paired from the Add host dialog or in
-  onboarding; the *list* of them comes back later as a drawer
+  deleted with their features. A host is paired on the Add a host page
+  (`/hosts/new`) or in onboarding; the *list* of them comes back later as a drawer
   (`product/versions/mvp/05-screens.md`), which is not a route.
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
@@ -63,8 +63,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   the route composes, and the screen that branches on a session's state is the
   one that asked for it. `pnpm check:structure` fails a query a screen holds
   for one sibling, and a prop that is only forwarded.
-- Hand-rolling a table or an error callout while `DataTable` and `Alert` sit
-  exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
+- Hand-rolling an error callout while `Alert` sits exported. Read `packages/frontend/design-system/web/src/index.ts` before styling a `div`.
 
 Placement is [`.agents/rules/frontend-architecture.md`](../../.agents/rules/frontend-architecture.md);
 what the markup looks like is [`.agents/rules/frontend-ui.md`](../../.agents/rules/frontend-ui.md).

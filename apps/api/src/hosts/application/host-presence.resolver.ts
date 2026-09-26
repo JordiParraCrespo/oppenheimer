@@ -28,7 +28,7 @@ export class HostPresenceResolver implements HostPresencePort {
 
     // Presence first: it is the write every beat owes, and the one `online`
     // reads. The host row itself is not touched — a heartbeat is not a change
-    // to the host (`product/versions/mvp/13-host-metadata.md`).
+    // to the host (`product/versions/mvp/14-host-metadata.md`).
     await this.metadata.recordVitals(
       hostId,
       {

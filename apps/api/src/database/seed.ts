@@ -29,6 +29,7 @@ import { OrganizationOrmEntity } from '../organizations/database/organization.or
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
+import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
 import { AssignDefaultRoleCommand } from '../roles/commands/assign-default-role/assign-default-role.command';
 import { AssignDefaultRoleCommandHandler } from '../roles/commands/assign-default-role/assign-default-role.command-handler';
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
@@ -72,6 +73,7 @@ const dataSource = new DataSource({
     MemberOrmEntity,
     InvitationOrmEntity,
     ProjectOrmEntity,
+    ProjectRepositoryOrmEntity,
     WorkSessionOrmEntity,
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,

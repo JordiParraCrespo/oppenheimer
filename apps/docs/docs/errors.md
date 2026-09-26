@@ -161,6 +161,17 @@ wrong place.
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
 | `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
 
+## Rate limiting
+
+| Code                           | Title             | HTTP |
+| ------------------------------ | ----------------- | ---- |
+| `RATE_001` <a id="rate_001" /> | Too many requests | 429  |
+
+Any route can answer `RATE_001`: the limiter is global, and it buckets by the
+calling credential, then the user, then the IP. The response carries a
+`Retry-After` header, and the same number of seconds in the `retryAfter`
+member. Wait that long before retrying.
+
 ## Hosts
 
 A host is a machine someone paired with this control plane. It belongs to the
@@ -344,6 +355,7 @@ and never renamed.
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
+| `PROJECTS_006` <a id="projects_006" /> | That name is a directory another project already holds | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -352,6 +364,11 @@ the scoped read cannot see it, and distinguishing the two would confirm the id.
 project" is a question only the module that owns sessions can answer, asked over the
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
+
+`PROJECTS_006` is a project made on the console with **no repository** whose
+name sanitises to a directory another project already holds. With a repository
+the directory name is derived from it and the last candidate carries GitHub's
+own id, so it cannot collide; with none the name is all there is.
 
 `PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
 name on every host that held it and is never reissued, so a session cannot be started
@@ -385,6 +402,7 @@ are never reissued.
 | `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
 | `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
 | `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
+| `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -404,6 +422,11 @@ the command of every agent it can launch, installed or not, so a host whose last
 inventory has no entry for that command runs a build that would refuse the
 launch; updating the runner is the fix. Whether the agent is *installed* is never
 checked here — that is a hint on the engine button, and the terminal says so.
+
+`SESSIONS_018` is a move (`POST /sessions/{id}/move`) to a project that does not hold
+every repository the session checked out. A project is what a session's repositories
+belong to, so one that lacks them would group work it cannot explain; the branch and
+the worktree never move, whichever project the session is in.
 
 `SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
 (`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not
@@ -485,6 +508,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
 | `GIT_002` <a id="git_002" />           | A git command failed                         | 500  |
 | `GIT_003` <a id="git_003" />           | The branch could not be pushed               | 409  |
+| `GIT_004` <a id="git_004" />           | The repository needs a credential the runner could not supply | 403 |
+| `GIT_005` <a id="git_005" />           | A git command was abandoned before it finished | 503 |
 
 <!-- oppenheimer:end runner -->
 ## Domain invariants

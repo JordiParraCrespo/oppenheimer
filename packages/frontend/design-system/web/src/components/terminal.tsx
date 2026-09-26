@@ -138,6 +138,37 @@ function TerminalStatusItem({ className, ...props }: React.ComponentProps<'span'
   );
 }
 
+/**
+ * The status bar's first item: the link to the host. A 6px dot, green while
+ * the session is live, amber and pulsing while the console reconnects, and
+ * the label beside it, which fades in each time it changes so the switch
+ * reads as an event rather than a flicker.
+ */
+type TerminalLinkState = 'live' | 'reconnecting';
+
+function TerminalStatusLink({
+  state,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'span'> & { state: TerminalLinkState }) {
+  return (
+    <TerminalStatusItem data-link={state} className={className} {...props}>
+      <span
+        aria-hidden
+        data-slot="terminal-link-dot"
+        className={cn(
+          'size-1.5 shrink-0 rounded-pill transition-colors duration-slow ease-standard',
+          state === 'live' ? 'bg-success' : 'bg-warning motion-safe:animate-pulse-dot',
+        )}
+      />
+      <span key={state} className="motion-safe:animate-label-in">
+        {children}
+      </span>
+    </TerminalStatusItem>
+  );
+}
+
 export {
   Terminal,
   TerminalLine,
@@ -146,6 +177,8 @@ export {
   TerminalSpacer,
   TerminalStatusBar,
   TerminalStatusItem,
+  TerminalStatusLink,
   TerminalTurn,
 };
+export type { TerminalLinkState };
 export type { TerminalTone };

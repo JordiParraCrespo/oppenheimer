@@ -7,26 +7,30 @@ import { useTranslation } from 'react-i18next';
  * The composer of New session: the first task, and the foot row of controls
  * that says how it will be run.
  *
- * **The draft lives here**, in the lowest component that reads it. That is the
- * point of this file existing at all: the section above holds the scope and
- * three lists, and a draft held up there would re-render the host chip, the
- * repository picker and the branch pane on every keystroke. What leaves this
- * component is the finished sentence, once.
+ * **The task's text lives here**, in the lowest component that reads it. That
+ * is the point of this file existing at all: the sections above hold the chips
+ * and the lists they draw, and text held up there would re-render the host
+ * chip, the repository picker and the branch pane on every keystroke. What
+ * leaves this component is the finished sentence, once.
  *
- * `tools` and `engine` are the foot row's two slots — scope of action on the
+ * `scope` is the band over the field and `tools` and `engine` are the foot
+ * row's two slots — where the work happens on top, scope of action on the
  * left, who drives it on the right — and they are passed in rather than built
- * here because each is a control bound to the draft above.
+ * here because each is a chip bound to the New session draft's store.
  */
 export function NewSessionComposer({
   onSubmit,
   busy,
   disabled,
+  scope,
   tools,
   engine,
 }: {
   onSubmit: (text: string) => void;
   busy?: boolean;
   disabled?: boolean;
+  /** The scope chips, in the band fused to the top of the field. */
+  scope?: ReactNode;
   tools?: ReactNode;
   engine?: ReactNode;
 }) {
@@ -40,6 +44,8 @@ export function NewSessionComposer({
       busy={busy}
       disabled={disabled}
       placeholder={t('sessions.new.composer.placeholder')}
+      labels={{ send: t('sessions.new.composer.send'), stop: t('sessions.new.composer.stop') }}
+      scope={scope}
       tools={tools}
       engine={engine}
       onSubmit={(text) => {

@@ -25,9 +25,18 @@ type CarouselSlide = {
 function ImageCarousel({
   slides,
   interval = 5200,
+  dotsLabel = 'Slides',
+  slideLabel,
   className,
   ...props
-}: React.ComponentProps<'figure'> & { slides: CarouselSlide[]; interval?: number }) {
+}: React.ComponentProps<'figure'> & {
+  slides: CarouselSlide[];
+  interval?: number;
+  /** The dot row's accessible name. */
+  dotsLabel?: string;
+  /** One dot's accessible name, from its position counted from 1. */
+  slideLabel?: (position: number) => string;
+}) {
   const [index, setIndex] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
 
@@ -73,14 +82,14 @@ function ImageCarousel({
           </p>
         ) : null}
         {slides.length > 1 ? (
-          <div className="flex gap-1.5" role="tablist" aria-label="Slides">
+          <div className="flex gap-1.5" role="tablist" aria-label={dotsLabel}>
             {slides.map((slide, i) => (
               <button
                 key={slide.src}
                 type="button"
                 role="tab"
                 aria-selected={i === index}
-                aria-label={`Slide ${i + 1}`}
+                aria-label={slideLabel ? slideLabel(i + 1) : `Slide ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={cn(
                   'h-[3px] w-[22px] rounded-pill transition-colors duration-base',

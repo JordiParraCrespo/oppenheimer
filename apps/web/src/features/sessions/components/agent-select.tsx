@@ -33,6 +33,8 @@ export function AgentSelect({
       onValueChange={onValueChange}
       disabled={disabled}
       aria-label={t('sessions.new.agent.label')}
+      searchPlaceholder={t('sessions.new.agent.search')}
+      emptyText={(query) => t('sessions.new.agent.empty', { query })}
     />
   );
 }

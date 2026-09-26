@@ -5,6 +5,7 @@
   "auth",
   "sessions",
   "hosts",
+  "projects",
   "home",
   "nav",
   "control",
@@ -13,7 +14,6 @@
   "onboarding",
   "pages",
   "public",
-  "table",
   "theme",
   "toasts",
   "emails"

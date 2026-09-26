@@ -49,6 +49,7 @@ export const ENDPOINT_POLICIES = {
   // because nothing is deleted: the row outlives the project so its slug — a
   // directory name on every host that held it — is never reissued.
   'GET /projects': [{ action: 'read', subject: 'Project' }],
+  'POST /projects': [{ action: 'create', subject: 'Project' }],
   'GET /projects/:id': [{ action: 'read', subject: 'Project' }],
   'DELETE /projects/:id': [{ action: 'update', subject: 'Project' }],
 
@@ -61,6 +62,7 @@ export const ENDPOINT_POLICIES = {
   'GET /sessions/:id/events': [{ action: 'read', subject: 'Session' }],
   'DELETE /sessions/:id': [{ action: 'delete', subject: 'Session' }],
   'POST /sessions/:id/stop': [{ action: 'update', subject: 'Session' }],
+  'POST /sessions/:id/move': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/restart': [{ action: 'update', subject: 'Session' }],
   'POST /sessions/:id/checkouts': [{ action: 'update', subject: 'Session' }],
   'DELETE /sessions/:id/checkouts/:checkoutId': [{ action: 'update', subject: 'Session' }],

@@ -31,6 +31,11 @@ type State string
 // States. `working`, `blocked` and `idle` come from the screen manifest;
 // `starting`, `stopped` and `closed` are lifecycle.
 const (
+	// StateCreating is a session whose create is still running: its mirror,
+	// worktree or tmux session may not exist yet. It is only ever held in
+	// memory, never saved and never reported, so a runner that dies
+	// mid-create leaves no record claiming a session it never finished.
+	StateCreating State = "creating"
 	StateStarting State = "starting"
 	StateWorking  State = "working"
 	StateBlocked  State = "blocked"
@@ -49,7 +54,7 @@ func (s State) Live() bool {
 	switch s {
 	case StateStarting, StateWorking, StateBlocked, StateIdle, StateDone, StateUnknown:
 		return true
-	case StateStopped, StateClosed:
+	case StateCreating, StateStopped, StateClosed:
 		return false
 	}
 	return false

@@ -5,7 +5,6 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './button';
-import { IconButton } from './icon-button';
 
 /**
  * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
@@ -18,20 +17,29 @@ import { IconButton } from './icon-button';
  * prompt) without changing what gets copied.
  *
  * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at
- * 11.5px, no header, and an icon-only copy in the corner that flips to a green
- * check for a moment. Same copy logic, second layout.
+ * 11.5px with a header band of its own — pill `tabs` on the left (Command,
+ * Agent prompt) and one small ghost Copy on the right, a hairline under it,
+ * then the code at a fixed height so switching tabs never moves the token
+ * line under it. One block, two ways to read it, one Copy: the same block
+ * opens from the composer's host chip and from Settings. Without `tabs` the
+ * band holds Copy alone.
  *
  * `copyLabel` and `copiedLabel` default to English because the design system
  * carries no catalog. Any app that translates must pass its own — the defaults
  * are for the showcase, not for a product screen, where leaving them is how a
  * Spanish reader ends up with an English button.
  */
+type CodeBlockTab = { value: string; label: React.ReactNode };
+
 function CodeBlock({
   code,
   title,
   note,
   dim,
   layout = 'card',
+  tabs,
+  tab,
+  onTabChange,
   maxLines,
   copyLabel = 'Copy',
   copiedLabel = 'Copied',
@@ -43,8 +51,12 @@ function CodeBlock({
   note?: React.ReactNode;
   /** A trailing substring of `code` to render faint. */
   dim?: string;
-  /** `card`: header row with a labelled Copy. `panel`: tonal panel, corner icon copy. */
+  /** `card`: header row with a labelled Copy. `panel`: tonal panel with its own header band. */
   layout?: 'card' | 'panel';
+  /** Panel only: the ways to read the block, as pill tabs in the band. The caller swaps `code`. */
+  tabs?: CodeBlockTab[];
+  tab?: string;
+  onTabChange?: (value: string) => void;
   /**
    * Cap the visible code at roughly this many lines and scroll past it.
    *
@@ -87,23 +99,55 @@ function CodeBlock({
       <div
         data-slot="code-block"
         data-layout="panel"
-        className={cn('relative min-w-0 rounded-sm bg-hover-surface text-left', className)}
+        className={cn('min-w-0 overflow-hidden rounded-sm bg-hover-surface text-left', className)}
         {...props}
       >
-        <IconButton
-          aria-label={copied ? copiedLabel : copyLabel}
-          aria-live="polite"
-          size="sm"
-          onClick={copy}
-          className={cn('absolute top-1.5 right-1.5', copied && 'text-success hover:text-success')}
+        <div
+          data-slot="code-block-band"
+          className="flex items-center justify-between gap-2.5 border-b border-border-subtle p-1.5"
         >
-          {copied ? <CheckIcon strokeWidth={2.2} /> : <CopyIcon />}
-        </IconButton>
+          {tabs && tabs.length > 0 ? (
+            <div role="tablist" aria-label="Format" className="flex gap-0.5">
+              {tabs.map((option) => {
+                const selected = option.value === tab;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    data-slot="code-block-tab"
+                    onClick={() => onTabChange?.(option.value)}
+                    className={cn(
+                      'rounded-pill px-2.5 py-1 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
+                      selected ? 'bg-card text-fg' : 'text-fg-muted hover:text-fg',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <span />
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copy}
+            aria-live="polite"
+            className={cn('w-[86px] shrink-0 justify-center gap-1.5', copied && 'text-success hover:text-success')}
+          >
+            {copied ? <CheckIcon strokeWidth={2.2} /> : <CopyIcon />}
+            {copied ? copiedLabel : copyLabel}
+          </Button>
+        </div>
         <pre
           // biome-ignore lint/style/noInlineStyles: the cap is a caller-supplied number
           style={capStyle}
           className={cn(
-            'm-0 min-h-[76px] py-3 pr-10 pl-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
+            'm-0 p-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
+            tabs ? 'h-24 overflow-y-auto' : 'min-h-[76px]',
             maxLines && 'max-h-[calc(var(--code-max-lines)*1.7em)] overflow-y-auto',
           )}
         >
@@ -158,3 +202,4 @@ function CodeBlock({
 }
 
 export { CodeBlock };
+export type { CodeBlockTab };

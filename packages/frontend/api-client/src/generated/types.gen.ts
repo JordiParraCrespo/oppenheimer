@@ -1237,11 +1237,35 @@ export type ToggleFeatureFlagRequest = {
     comment?: string;
 };
 
+export type ProjectRepositoryResponseDto = {
+    id: string;
+    /**
+     * The GitHub installation this repository’s tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string because the column is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * A display snapshot of `owner/repo`, refreshed whenever the project is saved.
+     */
+    fullName: string;
+    /**
+     * Cloned into every new session of the project.
+     */
+    isDefault: boolean;
+    /**
+     * What those sessions branch from. Null is the repository’s own default branch, read live.
+     */
+    baseBranch?: string | null;
+};
+
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
     /**
-     * The GitHub repository’s name, as GitHub spells it. Display only.
+     * The display name: what the person called it, or the repository’s name for a project a first session created.
      */
     name: string;
     /**
@@ -1249,15 +1273,47 @@ export type ProjectResponseDto = {
      */
     slug: string;
     /**
-     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
+     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint. Null for a project made on the console.
      */
     originGithubRepoId?: string | null;
+    /**
+     * The host New session picks first for this project. Null is the composer’s last choice.
+     */
+    defaultHostId?: string | null;
+    /**
+     * The agent New session picks first for this project. Null is the composer’s last choice.
+     */
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    /**
+     * The repositories the project holds, in the order they were added.
+     */
+    repositories: Array<ProjectRepositoryResponseDto>;
     createdAt: string;
     updatedAt: string;
 };
 
-export type UpdateProjectRequest = {
+export type CreateProjectRequest = {
     name: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        isDefault?: boolean;
+        baseBranch?: string;
+    }>;
+    defaultHostId?: string;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+};
+
+export type UpdateProjectRequest = {
+    name?: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        isDefault?: boolean;
+        baseBranch?: string;
+    }>;
+    defaultHostId?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
 };
 
 export type SessionLaunchResponseDto = {
@@ -1463,6 +1519,10 @@ export type AddCheckoutRequest = {
 
 export type RenameSessionRequest = {
     name: string;
+};
+
+export type MoveSessionRequest = {
+    projectId: string;
 };
 
 export type CapabilitiesResponseDto = {
@@ -1722,6 +1782,10 @@ export type ChangePasswordErrors = {
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */
     403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
@@ -2175,6 +2239,10 @@ export type Create2Errors = {
      * TOKEN_009 — Active token limit reached
      */
     409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type Create2Error = Create2Errors[keyof Create2Errors];
@@ -3983,7 +4051,7 @@ export type MintErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
+     * HOSTS_006 / RATE_001 — The caller already holds as many unspent pairing tokens as one person may, or hit the rate limit
      */
     429: ProblemDetailsDto;
     /**
@@ -4079,6 +4147,10 @@ export type RegisterErrors = {
      * HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown
      */
     401: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
     /**
      * HOSTS_004 — This deployment has no runner release configured
      */
@@ -5302,6 +5374,44 @@ export type ListProjectsResponses = {
 
 export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
 
+export type CreateProjectData = {
+    body: CreateProjectRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/projects';
+};
+
+export type CreateProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * GITHUB_001 — GitHub installation not found
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PROJECTS_006 — That name is a directory another project already holds
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
+
+export type CreateProjectResponses = {
+    201: ProjectResponseDto;
+};
+
+export type CreateProjectResponse = CreateProjectResponses[keyof CreateProjectResponses];
+
 export type ArchiveProjectData = {
     body?: never;
     path: {
@@ -5393,6 +5503,10 @@ export type UpdateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     *
      * PROJECTS_001 — Project not found
      */
     404: ProblemDetailsDto;
@@ -5491,6 +5605,10 @@ export type CreateSessionErrors = {
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
 };
 
 export type CreateSessionError = CreateSessionErrors[keyof CreateSessionErrors];
@@ -5569,6 +5687,10 @@ export type IssueAttachTicketErrors = {
      */
     409: ProblemDetailsDto;
     /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+    /**
      * SESSIONS_008 — A terminal ticket could not be issued
      */
     503: ProblemDetailsDto;
@@ -5630,6 +5752,10 @@ export type PasteSessionImageErrors = {
      * SESSIONS_013 — Not an image
      */
     415: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
     /**
      * SESSIONS_016 — The host is offline
      */
@@ -5898,6 +6024,48 @@ export type RenameSessionResponses = {
 };
 
 export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
+
+export type MoveSessionData = {
+    body: MoveSessionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/move';
+};
+
+export type MoveSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_018 — That project does not include this session’s repository
+     *
+     * SESSIONS_006 — That project is archived
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type MoveSessionError = MoveSessionErrors[keyof MoveSessionErrors];
+
+export type MoveSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
 
 export type CheckData = {
     body?: never;

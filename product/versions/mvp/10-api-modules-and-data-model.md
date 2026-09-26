@@ -710,7 +710,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 **`hosts/`**
 
-- `host` — (its metadata columns move to four side tables in 13) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
+- `host` — (its metadata columns move to four side tables in 14) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
   `runnerVersion`, `capabilities` jsonb (git/tmux/disk and the detected
   agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyFingerprint` null,
@@ -797,7 +797,9 @@ there.
   the driver exchanges a bigint; the wire's number becomes a string at
   the boundary. The MVP never shows a project chip —
   `00-scope.md` decided four chips, and a fifth is real friction on the
-  most-used screen for a concept with one instance. `POST /sessions`
+  most-used screen for a concept with one instance. (Superseded
+  2026-09-26 by 12: the export puts a project chip first, and a project
+  gains default repositories, a default host and a default agent.) `POST /sessions`
   takes an optional `projectId`; absent, the project is the one whose
   origin is the first checkout's repository.
 
@@ -965,14 +967,14 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 `@RequireScopes` + Swagger decorators:
 
 ```
-GET    /hosts                     read Host          hosts:read    ?include=unpaired (12)
+GET    /hosts                     read Host          hosts:read    ?include=unpaired (13)
 GET    /hosts/{id}                read Host          hosts:read
-GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (13)
+GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (14)
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }
 GET    /hosts/pairing             read Host          hosts:read    (F5: source IP)
-GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (12)
+GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (13)
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
 GET    /installations             read Installation  repositories:read

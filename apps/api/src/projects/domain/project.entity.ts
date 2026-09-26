@@ -5,6 +5,8 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import { type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
+import { type ProjectRepositoryEntity } from './project-repository.entity';
 import { PROJECT_SLUG_MAX_LENGTH, PROJECT_SLUG_PATTERN } from './project-slug.policy';
 
 export interface ProjectProps {
@@ -24,6 +26,20 @@ export interface ProjectProps {
    */
   originGithubRepoId: string | null;
   /**
+   * The host New session picks first for this project. Null is "the composer's
+   * last choice"; the column is `ON DELETE SET NULL`, so a removed machine reads
+   * back as no default rather than a dangling id.
+   */
+  defaultHostId: string | null;
+  /** The agent New session picks first for this project, or null for the last choice. */
+  defaultAgent: CodingAgentId | null;
+  /**
+   * The repositories the project holds, each saying whether every new session
+   * clones it and what it branches from. Owned here: nothing outside the
+   * aggregate adds or removes one.
+   */
+  repositories: ProjectRepositoryEntity[];
+  /**
    * When the project was retired. Set by the archive command, which refuses while
    * the project still holds sessions nobody has closed — a question only the module
    * that owns sessions can answer.
@@ -36,6 +52,17 @@ export interface CreateProjectProps {
   name: string;
   slug: string;
   originGithubRepoId?: string | null;
+  defaultHostId?: string | null;
+  defaultAgent?: CodingAgentId | null;
+  repositories?: ProjectRepositoryEntity[];
+}
+
+/** What the project dialog edits, as one change: absent leaves a field as it is. */
+export interface ProjectChanges {
+  name?: string;
+  defaultHostId?: string | null;
+  defaultAgent?: CodingAgentId | null;
+  repositories?: ProjectRepositoryEntity[];
 }
 
 /**
@@ -71,6 +98,9 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         name: props.name,
         slug: props.slug,
         originGithubRepoId: props.originGithubRepoId ?? null,
+        defaultHostId: props.defaultHostId ?? null,
+        defaultAgent: props.defaultAgent ?? null,
+        repositories: props.repositories ?? [],
         archivedAt: null,
       },
     });
@@ -90,6 +120,28 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   get originGithubRepoId(): string | null {
     return this.props.originGithubRepoId;
+  }
+
+  get defaultHostId(): string | null {
+    return this.props.defaultHostId;
+  }
+
+  get defaultAgent(): CodingAgentId | null {
+    return this.props.defaultAgent;
+  }
+
+  get repositories(): readonly ProjectRepositoryEntity[] {
+    return this.props.repositories;
+  }
+
+  /** The repositories every new session of the project clones, in the order they were listed. */
+  get defaultRepositories(): readonly ProjectRepositoryEntity[] {
+    return this.props.repositories.filter((repository) => repository.isDefault);
+  }
+
+  /** Whether the project holds this repository — what the move dialog asks. */
+  includesRepository(githubRepoId: string): boolean {
+    return this.props.repositories.some((repository) => repository.githubRepoId === githubRepoId);
   }
 
   get archivedAt(): Date | null {
@@ -119,6 +171,20 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     this.validate();
   }
 
+  /**
+   * Apply what the dialog edited. One method rather than a setter per field so
+   * the invariants — one row per repository, a real agent — are checked once
+   * over the whole change, and the slug is not among the fields by construction.
+   */
+  change(changes: ProjectChanges): void {
+    if (changes.name !== undefined) this.props.name = changes.name;
+    if (changes.defaultHostId !== undefined) this.props.defaultHostId = changes.defaultHostId;
+    if (changes.defaultAgent !== undefined) this.props.defaultAgent = changes.defaultAgent;
+    if (changes.repositories !== undefined) this.props.repositories = [...changes.repositories];
+    this.setUpdatedAt(new Date());
+    this.validate();
+  }
+
   public validate(): void {
     if (!this.props.organizationId?.trim()) {
       throw new ArgumentNotProvidedException('A project must belong to an organization');
@@ -137,6 +203,20 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
       throw new ArgumentInvalidException(
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
+    }
+    if (this.props.defaultAgent !== null && !isCodingAgentId(this.props.defaultAgent)) {
+      throw new ArgumentInvalidException(`Unknown agent ${String(this.props.defaultAgent)}`);
+    }
+    // One row per repository: the same repository twice is two base branches for
+    // one directory, which no session could honour.
+    const seen = new Set<string>();
+    for (const repository of this.props.repositories) {
+      if (seen.has(repository.githubRepoId)) {
+        throw new ArgumentInvalidException(
+          `Repository ${repository.fullName} is listed twice on this project`,
+        );
+      }
+      seen.add(repository.githubRepoId);
     }
   }
 }

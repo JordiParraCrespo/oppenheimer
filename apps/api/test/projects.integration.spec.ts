@@ -5,6 +5,7 @@ import { AddProjectRolePermissions1789000100000 } from '../src/migrations/178900
 import { ProjectLookupResolver } from '../src/projects/application/project-lookup.resolver';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
+import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
 import { ProjectEntity } from '../src/projects/domain/project.entity';
 import { ProjectMapper } from '../src/projects/project.mapper';
 import { runAllMigrations } from './run-migrations';
@@ -69,7 +70,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
       // No Nest container here on purpose: the races live in the repository and
       // the resolver, and booting the application would only add Redis and
       // Better Auth to the set of things that can make this suite red.
-      entities: [ProjectOrmEntity],
+      entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity],
       synchronize: false,
     });
     await dataSource.initialize();
@@ -195,8 +196,8 @@ describe('projects: race-safe auto-creation (integration)', () => {
     expect((await repository.findOneById(other, project.id)).isNone()).toBe(true);
 
     project.rename('XRP Mobile');
-    expect((await repository.renameIfActive(other, project)).isNone()).toBe(true);
-    expect((await repository.renameIfActive(caller, project)).unwrap().name).toBe('XRP Mobile');
+    expect((await repository.saveIfActive(other, project)).isNone()).toBe(true);
+    expect((await repository.saveIfActive(caller, project)).unwrap().name).toBe('XRP Mobile');
   });
 
   it('never lets a rename revive a project that was retired meanwhile', async () => {
@@ -215,7 +216,7 @@ describe('projects: race-safe auto-creation (integration)', () => {
     ]);
     project.rename('XRP Mobile');
 
-    expect((await repository.renameIfActive(caller, project)).isNone()).toBe(true);
+    expect((await repository.saveIfActive(caller, project)).isNone()).toBe(true);
     const [row] = await dataSource.query(
       `SELECT "name", "archivedAt" FROM "project" WHERE "id" = $1`,
       [project.id],

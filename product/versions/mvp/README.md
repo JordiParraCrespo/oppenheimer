@@ -24,8 +24,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Hosts in Settings](12-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
-| 13 | [Host metadata](13-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
+| 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
+| 13 | [Hosts in Settings](13-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
+| 14 | [Host metadata](14-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
 
 ## Decision log
 
@@ -393,15 +394,31 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with a screen manifest that is provisional until a soak. A session for an
   agent the host's runner never probed is refused at create rather than
   failed at launch, so a new row needs no protocol bump (01).
+- 2026-09-26: **the project is on the console** (12, reversing 10's "the MVP
+  never shows a project chip"). New session is the export's tabbed
+  composer with a project chip first, whose foot row makes a project in a
+  dialog: a name, default repositories with a base branch each, a default
+  host and a default agent, which prefill the other chips. The API grows
+  `POST /projects`, the two defaults and a `project_repository` table; a
+  project made in the dialog has no origin, so the auto-created path for
+  callers that send only checkouts is unchanged. The grouped sidebar and
+  the row menu are the next slice.
+- 2026-09-26: **a session's paths keep the project that created it.** A
+  session moves between projects (`POST /sessions/{id}/move`, one
+  `session.moved` event the row folds, 03), and its worktree and branch do
+  not: `work_session.projectSlug` snapshots the directory name at request,
+  and every later launch reads it from the row rather than from the project
+  the session is in now.
+
 - 2026-09-26: the version-1 frames gained a Settings page with a Hosts
-  section, and the hosts backend is designed against it (12). A host
+  section, and the hosts backend is designed against it (13). A host
   read now carries a derived `status` and the count of sessions running
   on it; `GET /hosts` leaves unpaired hosts out unless asked; removing a
   host stops the sessions running on it, where unpairing used to leave
   them `open`; `GET /hosts/pairing/{id}`, listed in 10, is built and
   returns the host the token paired; the runner reports its CPU count.
   05's "no settings page" is superseded for hosts by the frame.
-- 2026-09-26: host metadata moves off the `host` row (13). What the
+- 2026-09-26: host metadata moves off the `host` row (14). What the
   machine is goes to `host_inventory` (written only when its facts
   change), whether it is there to `host_presence` (one narrow row
   rewritten per heartbeat), where it connects from to `host_network`
@@ -409,6 +426,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   to `host_event` (append-only, 180 days). Heartbeat history is
   deliberately not stored. `host` keeps its old columns until the code
   switches over (expand, switch, contract).
-- 2026-09-26: 13's two open questions are settled. Geography comes from
+- 2026-09-26: 14's two open questions are settled. Geography comes from
   DB-IP Lite (free, no account), and the owner is emailed about a new
   network only when the host's country or ASN changes.

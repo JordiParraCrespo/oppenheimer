@@ -141,6 +141,7 @@ POST   /api/v1/sessions                                 create Session  sessions
 PATCH  /api/v1/sessions/{id}                            update Session  sessions:write
 POST   /api/v1/sessions/{id}/stop                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/restart                    update Session  sessions:write
+POST   /api/v1/sessions/{id}/move                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/attach-ticket              update Session  sessions:write
 POST   /api/v1/sessions/{id}/checkouts                  update Session  sessions:write
 DELETE /api/v1/sessions/{id}/checkouts/{checkoutId}     update Session  sessions:write
@@ -258,6 +259,18 @@ overwrites a name a person typed, and that rule is in the fold; it is also
 what stops a second naming, since the *first* prompt is the one it names from
 and there is only one of those. The one line that leaves the host is the
 person's own prompt.
+
+**A session moves between projects as one event, and its paths do not.**
+`POST /sessions/{id}/move` appends `session.moved` (`{ projectId,
+fromProjectId }`), which the fold projects onto `projectId`; only a project
+that holds every repository the session checked out can take it
+(`SESSIONS_018`), an archived one cannot (`SESSIONS_006`), and a move to the
+project the session is already in is a no-op. Nothing on the host changes:
+the worktree and the branch carry the slug of the project that created the
+session, so `work_session.projectSlug` snapshots that slug at request and a
+restart, a checkout added later and a re-dispatch after a hello all read it
+from the row, never from the project the session is in now. A path is never
+an identity. Like a rename, a move tells no host anything.
 
 ## The relay, as built
 
@@ -384,10 +397,10 @@ of its authorization:
 
 | Route | Credential |
 |---|---|
-| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (12) |
+| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (13) |
 | `POST /hosts/pairing`, `GET /hosts/pairing`, `GET /hosts/pairing/{id}`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
 | `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
-| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (13) |
+| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (14) |
 | `POST /hosts/register` | the registration token in the body, and nothing else |
 | `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
 
@@ -396,7 +409,7 @@ Two routes therefore delete a host and they are not the same operation:
 policies; `DELETE /hosts/self` is the machine saying it has been
 uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
 neither deletes the row, and both stop the sessions running on the host
-(one `session.stopped` each, from `sessions/`, on the unpaired event; 12).
+(one `session.stopped` each, from `sessions/`, on the unpaired event; 13).
 
 **The machine's own read of its host row is unscoped, by design.** A host
 is not tenant-scoped and there is no person on that request to scope by:

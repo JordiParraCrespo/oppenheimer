@@ -9,6 +9,7 @@
 <x-dc>
 <helmet>
 <script src="./ds-base.js"></script>
+<link rel="stylesheet" href="./console.css">
 <style>
 html,body{margin:0;height:100%;background:var(--canvas,#f5f5f7)}
 a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
@@ -36,12 +37,105 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <main style="flex:1;min-width:0;overflow-y:auto;background:var(--canvas)">
 <div style="max-width:760px;margin:0 auto;padding:64px 40px 96px;display:flex;flex-direction:column;gap:40px">
 
+<sc-if value="{{ addOpen }}">
+<button class="op-rpage__back" type="button" onClick="{{ closeAdd }}" style="margin-bottom:-22px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:-12px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ closeAdd }}">Hosts</button><span>/</span><span class="op-ph__here">Add a host</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
+<h1 class="op-ph__title">Add a host</h1>
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeAdd }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ closeAdd }}" disabled="{{ addWaiting }}">Done</button>
+</div>
+</div>
+<div class="op-ph__meta"><span>Nothing on the host is exposed to the internet.</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ addDoneS }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Install</span><span class="op-st__sub">Run this once on the machine, or hand it to an agent already there.</span><span class="op-st__sum">{{ addS1Sum }}</span></div>
+<div class="op-st__body">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
+<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
+<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
+</div>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
+<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
+<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
+</button>
+</div>
+<div style="position:relative">
+<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+  | sh -s -- --token opk_7f3a9c</pre>
+</sc-if>
+<sc-if value="{{ showingPrompt }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+
+1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
+2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
+3. Install the runner:
+   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
+4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
+5. Verify the service is running:
+   oppenheimer-runner status
+6. Run the preflight and paste its full output:
+   oppenheimer-runner preflight
+7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
+8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
+
+Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
+</sc-if>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ countdown }} · single use</span>
+<a href="#" onClick="{{ regenerate }}" style="font-size:11.5px;white-space:nowrap">New token</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ addDoneS }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Connect</span><span class="op-st__sub">The runner registers itself with the hostname it reports.</span><span class="op-st__sum">{{ addS2Sum }}</span></div>
+<div class="op-st__body">
+<div style="min-height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;background:var(--card);border:1px solid var(--border-subtle);border-radius:14px">
+<sc-if value="{{ addWaiting }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+Listening for this host…
+</div>
+</sc-if>
+<sc-if value="{{ addDone }}">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">build-02</span>
+<span style="font-size:12px;color:var(--fg-muted)">Ubuntu 24.04 · echo 41 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ true }}">
 <h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em">Profile</h1>
 
 <div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
 <div style="display:flex;align-items:center;gap:16px;padding:16px 20px">
-<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and routines</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and automations</span></div>
 <span class="op-avatar op-avatar--lg op-avatar--accent">{{ initials }}</span>
 <div style="display:flex;gap:6px"><button class="op-btn op-btn--secondary op-btn--sm" type="button">Upload</button></div>
 </div>
@@ -72,7 +166,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 <div style="display:flex;flex-direction:column;gap:12px">
 <h2 style="margin:0;padding:0 4px;font-size:17px;font-weight:600;letter-spacing:-0.012em">Account</h2>
 <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
-<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Delete account</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Stops every session and removes your routines and host registrations. This cannot be undone.</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Delete account</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Stops every session and removes your automations and host registrations. This cannot be undone.</span></div>
 <button class="op-btn op-btn--danger op-btn--sm" type="button">Delete account</button>
 </div>
 </div>
@@ -147,92 +241,7 @@ a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
 </div>
 </sc-if>
 
-<sc-if value="{{ addOpen }}">
-<div class="op-scrim" onClick="{{ closeAdd }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="addhost-title" onClick="{{ stop }}">
-<div class="op-dialog__head">
-<div style="flex:1;display:flex;flex-direction:column;gap:6px">
-<h2 class="op-dialog__title" id="addhost-title" style="flex:none">Add a host</h2>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAdd }}" style="flex:none;border-radius:980px">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-</button>
-</div>
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
 
-<div style="display:flex;flex-direction:column;gap:8px">
-<span class="op-label" style="margin:0">Run this once on the host</span>
-<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
-<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
-<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
-<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
-</div>
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
-<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
-<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
-</button>
-</div>
-<div style="position:relative">
-<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
-  | sh -s -- --token opk_7f3a9c</pre>
-</sc-if>
-<sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
-
-1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
-2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
-3. Install the runner:
-   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
-4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
-5. Verify the service is running:
-   oppenheimer-runner status
-6. Run the preflight and paste its full output:
-   oppenheimer-runner preflight
-7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
-8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
-
-Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
-</sc-if>
-</div>
-</div>
-
-<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
-<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ countdown }} · single use</span>
-<a href="#" onClick="{{ regenerate }}" style="font-size:11.5px;white-space:nowrap">New token</a>
-</div>
-</div>
-
-<div style="height:1px;background:var(--border-subtle)"></div>
-
-<div style="min-height:52px;display:flex;flex-direction:column;justify-content:center">
-<sc-if value="{{ addWaiting }}" hint-placeholder-val="{{ true }}">
-<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
-Listening for this host…
-</div>
-</sc-if>
-<sc-if value="{{ addDone }}">
-<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
-<span style="font-family:var(--font-mono);font-size:13px">build-02</span>
-<span style="font-size:12px;color:var(--fg-muted)">Ubuntu 24.04 · echo 41 ms</span>
-<span style="flex:1"></span>
-<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
-</div>
-</sc-if>
-</div>
-
-</div>
-
-<div class="op-dialog__foot">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeAdd }}">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ closeAdd }}" disabled="{{ addWaiting }}">Done</button>
-</div>
-</div>
-</div>
-</sc-if>
 
 </div>
 </x-dc>
@@ -283,8 +292,11 @@ class Component extends DCLogic {
     return {
       stop,
       closeMenus: () => { if (s.menu) this.setState({ menu: null }); },
-      isProfile: section === 'profile' ? 'true' : undefined,
-      isHosts: section === 'hosts' ? 'true' : undefined,
+      isProfile: section === 'profile' && !s.addOpen ? 'true' : undefined,
+      isHosts: section === 'hosts' && !s.addOpen ? 'true' : undefined,
+      addDoneS: s.addDone ? 'true' : 'false',
+      addS1Sum: s.addDone ? 'Installed' : '',
+      addS2Sum: s.addDone ? 'build-02 · Ubuntu 24.04' : '',
       goProfile: () => this.setState({ section: 'profile' }),
       goHosts: () => this.setState({ section: 'hosts' }),
       hostCount: hosts.length,
@@ -327,14 +339,14 @@ class Component extends DCLogic {
       removeName: rm ? rm.name : '',
       removeCost: !rm ? '' : rm.sessions
         ? `${rm.sessions} session${rm.sessions === 1 ? ' is' : 's are'} running on ${rm.name}. They are stopped and their terminals closed; logs are kept. The runner's token is revoked.`
-        : `No sessions are running on ${rm.name}. The runner's token is revoked and routines targeting it are paused.`,
+        : `No sessions are running on ${rm.name}. The runner's token is revoked and automations targeting it are paused.`,
       closeRemove: () => this.setState({ removeId: null }),
       confirmRemove: () => this.setState(st => ({ hosts: st.hosts.filter(h => h.id !== st.removeId), removeId: null })),
       addOpen: s.addOpen ? 'true' : undefined,
       addWaiting: s.addDone ? undefined : 'true',
       addDone: s.addDone ? 'true' : undefined,
       openAdd: () => {
-        this.setState({ addOpen: true, addDone: false, secs: 3600 });
+        this.setState({ addOpen: true, addDone: false, secs: 3600, section: 'hosts' });
         clearTimeout(this._reg);
         this._reg = setTimeout(() => this.setState(st => st.addOpen ? {
           addDone: true,

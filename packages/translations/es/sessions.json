@@ -60,15 +60,14 @@
       "add": "Añadir host…",
       "offline": "Desconectado"
     },
-    "addHost": {
-      "title": "Añadir un host",
-      "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
-      "instruction": "Ejecuta esto en él, una vez",
-      "format": "Cómo leerlo",
-      "command": "Comando",
-      "agentPrompt": "Instrucción para el agente",
-      "use": "Usar este host",
-      "defaultName": "Nuevo host"
+    "project": {
+      "label": "Proyecto",
+      "placeholder": "Proyecto",
+      "search": "Buscar proyectos…",
+      "empty": "Ningún proyecto coincide.",
+      "loading": "Cargando proyectos…",
+      "add": "Nuevo proyecto…",
+      "noRepositories": "Sin repositorios"
     },
     "repository": {
       "label": "Repositorios",
@@ -80,7 +79,8 @@
       "branchEmpty": "Ninguna rama coincide.",
       "branchPane": "Rama de {{name}}",
       "changeBranch": "Cambiar de rama",
-      "connect": "Conectar un repositorio…",
+      "manage": "Gestionar el acceso a repositorios",
+      "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
       "archived": "Archivado"
     },
     "branch": {
@@ -92,7 +92,9 @@
       "default": "Por defecto"
     },
     "agent": {
-      "label": "Agente y modelo"
+      "label": "Agente y modelo",
+      "search": "Buscar modelos…",
+      "empty": "Ningún modelo coincide con «{{query}}»."
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -115,12 +117,18 @@
       "low": "Bajo",
       "medium": "Medio",
       "high": "Alto",
-      "max": "Máximo"
+      "max": "Máximo",
+      "faster": "Más rápido",
+      "smarter": "Más inteligente",
+      "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
     },
     "composer": {
-      "placeholder": "Describe una tarea o haz una pregunta"
+      "placeholder": "Describe una tarea o haz una pregunta",
+      "send": "Enviar",
+      "stop": "Detener"
     },
-    "queued": "Tu primera tarea está en cola para este host."
+    "queued": "Tu primera tarea está en cola para este host.",
+    "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {
@@ -136,14 +144,48 @@
       "dismiss": "Cerrar"
     }
   },
+  "sidebar": {
+    "projects": "Proyectos",
+    "newProject": "Nuevo proyecto",
+    "search": "Buscar sesiones",
+    "clearSearch": "Borrar búsqueda",
+    "noMatches": "Ninguna sesión coincide con “{{query}}”.",
+    "empty": "Todavía no hay proyectos. El primero que crees aparecerá aquí con sus sesiones.",
+    "emptyProject": "Todavía no hay sesiones.",
+    "startOne": "Empieza una",
+    "newSessionHere": "Nueva sesión en {{name}}",
+    "projectSettings": "Ajustes de {{name}}",
+    "unfiled": "Otras sesiones",
+    "actions": "Acciones de la sesión",
+    "rename": "Renombrar",
+    "renameLabel": "Nombre de la sesión",
+    "move": "Mover a un proyecto…",
+    "moveTitle": "Mover a un proyecto",
+    "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
+    "delete": "Eliminar",
+    "routines": "Rutinas",
+    "routinesSoon": "Las automatizaciones todavía no están aquí.",
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
+  },
+  "deleteSession": {
+    "title": "¿Eliminar “{{name}}”?",
+    "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+    "confirm": "Eliminar sesión",
+    "deleting": "Eliminando…",
+    "failed": "No se pudo eliminar la sesión.",
+    "discard": "Descartar también el trabajo sin enviar",
+    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
+  },
   "filters": {
     "label": "Filtrar sesiones",
+    "project": "Proyecto",
     "repository": "Repositorio",
     "agent": "Agente",
     "host": "Equipo",
     "sort": "Ordenar por",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
+    "allProjects": "Todos los proyectos",
     "allRepositories": "Todos los repositorios",
     "allAgents": "Todos los agentes",
     "allHosts": "Todos los equipos",

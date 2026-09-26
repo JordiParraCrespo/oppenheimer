@@ -1,5 +1,3 @@
-export type { AgentGradient } from './components/agent-card';
-export { AGENT_GRADIENTS, AgentCard } from './components/agent-card';
 export type { AgentId } from './components/agent-mark';
 export { AgentMark } from './components/agent-mark';
 export type { AgentModel, AgentOption, Engine } from './components/agent-model-select';
@@ -10,32 +8,6 @@ export {
   AlertDescription,
   AlertTitle,
 } from './components/alert';
-export { AppIcon, AppTile } from './components/app-icon';
-export type { ApprovalStatus } from './components/approval';
-export {
-  Approval,
-  ApprovalActions,
-  ApprovalDescription,
-  ApprovalDetail,
-  ApprovalDetails,
-  ApprovalHeader,
-  ApprovalIcon,
-  ApprovalOutcome,
-  ApprovalTitle,
-} from './components/approval';
-export type { AsyncOption } from './components/async-multi-select';
-export { AsyncMultiSelect } from './components/async-multi-select';
-export {
-  Attachment,
-  AttachmentAction,
-  AttachmentActions,
-  AttachmentContent,
-  AttachmentDescription,
-  AttachmentGroup,
-  AttachmentMedia,
-  AttachmentTitle,
-  AttachmentTrigger,
-} from './components/attachment';
 export type { AvatarGradient } from './components/avatar';
 export {
   AVATAR_GRADIENTS,
@@ -51,24 +23,10 @@ export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system (product/versions/mvp/design) ───────────────────── */
 export { BrandGlyph } from './components/brand-glyph';
 export { BrandMark } from './components/brand-mark';
-export {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from './components/breadcrumb';
-export { BreakdownRow, TopItemRow } from './components/breakdown-row';
-export {
-  Bubble,
-  BubbleContent,
-  BubbleGroup,
-  BubbleReactions,
-} from './components/bubble';
 export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
+export type { CalloutTone } from './components/callout';
+export { Callout } from './components/callout';
 export {
   Card,
   CardAction,
@@ -78,17 +36,6 @@ export {
   CardHeader,
   CardTitle,
 } from './components/card';
-export type { ChartConfig } from './components/chart';
-export {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartStyle,
-  ChartTooltip,
-  ChartTooltipContent,
-} from './components/chart';
-export { ChatBubble, ChatMark, ChatTyping } from './components/chat-bubble';
-export { ChatMarkdown } from './components/chat-markdown';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
 export { Chip, chipVariants, FilterChip } from './components/chip';
@@ -96,6 +43,7 @@ export type {
   ChipSelectAction,
   ChipSelectDensity,
   ChipSelectOption,
+  ChipSelectTriggerVariant,
 } from './components/chip-select';
 export {
   ChipSelect,
@@ -108,14 +56,8 @@ export {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './components/chip-select';
+export type { CodeBlockTab } from './components/code-block';
 export { CodeBlock } from './components/code-block';
-export {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from './components/collapsible';
-export type { ComboboxOption } from './components/combobox';
-export { Combobox } from './components/combobox';
 export {
   Command,
   CommandDialog,
@@ -128,9 +70,8 @@ export {
   CommandSeparator,
   CommandShortcut,
 } from './components/command';
-export type { ComposerAttachment } from './components/composer';
+export type { ComposerAttachment, ComposerLabels } from './components/composer';
 export { Composer, ComposerToolButton } from './components/composer';
-export { DeltaText } from './components/delta-text';
 export {
   Dialog,
   DialogBody,
@@ -147,25 +88,15 @@ export {
   DialogTrigger,
 } from './components/dialog';
 export {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerPortal,
-  DrawerTitle,
-  DrawerTrigger,
-} from './components/drawer';
-export {
   DropdownMenu,
+  DropdownMenuBack,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPaneItem,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -177,18 +108,10 @@ export {
   DropdownMenuTrigger,
   DropdownMenuValue,
 } from './components/dropdown-menu';
+export { EditorPage, EditorPageBack, EditorPageBody } from './components/editor-page';
 export type { EffortStop } from './components/effort-slider';
 export { EFFORT_STOPS, EffortPicker, EffortSlider } from './components/effort-slider';
-export {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from './components/empty';
 export { EmptyState } from './components/empty-state';
-export { FeatureRow } from './components/feature-row';
 export {
   Field,
   FieldAction,
@@ -203,84 +126,42 @@ export {
   FieldSet,
   FieldTitle,
 } from './components/field';
-export type { FilterMenuOption } from './components/filter-menu';
-export { FilterMenu } from './components/filter-menu';
+export type { FieldSelectOption } from './components/field-select';
+export { FieldSelect } from './components/field-select';
+export type { HostCardStatus } from './components/host-card';
+export { HostCard } from './components/host-card';
 export type { IconButtonProps } from './components/icon-button';
 export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
+export {
+  AddRow,
+  InlineToken,
+  TokenLiveDot,
+  TokenMono,
+  TokenSentence,
+  TriggerCard,
+  WeekdayStrip,
+} from './components/inline-token';
 export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
-export {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-  InputGroupText,
-  InputGroupTextarea,
-} from './components/input-group';
 export { Kbd } from './components/kbd';
-export { Kpi, KpiCard } from './components/kpi';
-export { Label } from './components/label';
 export { Link } from './components/link';
-export type {
-  MailboxOption,
-  MailboxPickerLabels,
-} from './components/mailbox-picker';
-export { MailboxPicker } from './components/mailbox-picker';
 export {
-  MailboxRail,
-  MailboxRailDomain,
-  MailboxRailEmpty,
-  MailboxRailGroup,
-  MailboxRailGroupLabel,
-  MailboxRailItem,
-  MailboxRailRow,
-  MailboxRailSearch,
-} from './components/mailbox-rail';
-export { MailboxChip, MailboxTag } from './components/mailbox-tag';
-export {
-  Message,
-  MessageAvatar,
-  MessageContent,
-  MessageFooter,
-  MessageGroup,
-  MessageHeader,
-} from './components/message';
-export { MessageList, MessageListItem } from './components/message-list';
-export {
-  MessageAttachment,
-  MessageReader,
-  MessageReaderBody,
-  MessageReaderHeader,
-  MessageReaderIdentity,
-  MessageReaderLink,
-  MessageReaderMeta,
-  MessageReaderSubject,
-} from './components/message-reader';
-export {
-  MessageScroller,
-  MessageScrollerButton,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerProvider,
-  MessageScrollerViewport,
-  useMessageScroller,
-  useMessageScrollerScrollable,
-  useMessageScrollerVisibility,
-} from './components/message-scroller';
-export {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from './components/pagination';
+  PageHeader,
+  PageHeaderCrumbs,
+  PageHeaderHere,
+  PageHeaderMeta,
+  PageHeaderNote,
+  PageHeaderRow,
+  PageHeaderSep,
+  PageHeaderTitleInput,
+} from './components/page-header';
 export { PasswordInput } from './components/password-input';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
+export type { PillTabsSize } from './components/pill-tabs';
+export { PillTab, PillTabs } from './components/pill-tabs';
 export {
   Popover,
   PopoverContent,
@@ -289,71 +170,63 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/popover';
-export {
-  Progress,
-  ProgressIndicator,
-  ProgressLabel,
-  ProgressTrack,
-  ProgressValue,
-} from './components/progress';
-export { PromptCard } from './components/prompt-card';
-export {
-  Questionnaire,
-  QuestionnaireActions,
-  QuestionnaireChoice,
-  QuestionnaireChoiceDescription,
-  QuestionnaireChoices,
-  QuestionnaireDescription,
-  QuestionnaireError,
-  QuestionnaireInput,
-  QuestionnaireItem,
-  QuestionnaireNext,
-  QuestionnairePrevious,
-  QuestionnaireProgress,
-  QuestionnaireSkip,
-  QuestionnaireSubmit,
-  QuestionnaireTitle,
-} from './components/questionnaire';
-export { RadioGroup, RadioGroupItem } from './components/radio-group';
-export { RecentItem } from './components/recent-item';
-export { ReplyBox } from './components/reply-box';
+export { Rail, RailItem, RailMark } from './components/rail';
+export type {
+  RepositoryRowBranch,
+  RepositoryRowOption,
+  RepositoryRowValue,
+} from './components/repository-row-list';
+export { RepositoryRowList } from './components/repository-row-list';
 export type {
   RepositoryBranch,
   RepositoryOption,
   RepositoryScope,
 } from './components/repository-select';
 export { RepositorySelect } from './components/repository-select';
-export { SearchInput, searchInputVariants } from './components/search-input';
-export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-  selectTriggerVariants,
-} from './components/select';
-export { SelectMenu } from './components/select-menu';
+  RoutineItem,
+  RoutineRun,
+  RoutineRunList,
+  RoutineRunsEmpty,
+} from './components/routine-item';
+export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
+export {
+  RoutineTable,
+  RoutineTableEmpty,
+  RoutineTableHead,
+  RoutineTableRow,
+} from './components/routine-table';
+export type { RunHistoryDay } from './components/run-history';
+export { RunHistory } from './components/run-history';
+export type { RunState } from './components/runs-list';
+export {
+  RunRow,
+  RunsList,
+  RunsListEmpty,
+  RunsListFilters,
+  RunsListFoot,
+  RunsListHead,
+} from './components/runs-list';
+export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export { Separator } from './components/separator';
+export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList } from './components/session-item';
 export {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from './components/sheet';
+  SettingsGroup,
+  SettingsHeading,
+  SettingsRow,
+  SettingsSaveRow,
+} from './components/settings-group';
+export {
+  SettingsNav,
+  SettingsNavBack,
+  SettingsNavGroup,
+  SettingsNavItem,
+} from './components/settings-nav';
 export {
   Sidebar,
   SidebarContent,
+  SidebarEmptyRow,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,
@@ -372,8 +245,10 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarProjectHeader,
   SidebarProvider,
   SidebarRail,
+  SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
@@ -382,13 +257,6 @@ export { Skeleton } from './components/skeleton';
 export type { SlugStatus } from './components/slug-input';
 export { SlugInput } from './components/slug-input';
 export { Toaster, toast } from './components/sonner';
-export { Sparkline } from './components/sparkline';
-export type {
-  StageBreakdownItem,
-  StageBreakdownProps,
-  StageBreakdownTone,
-} from './components/stage-breakdown';
-export { StageBreakdown } from './components/stage-breakdown';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
 export { StepHeader } from './components/step-header';
@@ -396,27 +264,8 @@ export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';
 export { SummaryCard, SummaryRow } from './components/summary-card';
-export { Switch } from './components/switch';
-export {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './components/table';
-export {
-  Tabs,
-  TabsContent,
-  TabsCount,
-  TabsList,
-  TabsTrigger,
-  tabsListVariants,
-} from './components/tabs';
-export { Tag, tagVariants } from './components/tag';
-export type { TerminalTone } from './components/terminal';
+export { TemplateGrid, TemplateItem } from './components/template-grid';
+export type { TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
   TerminalLine,
@@ -425,22 +274,12 @@ export {
   TerminalSpacer,
   TerminalStatusBar,
   TerminalStatusItem,
+  TerminalStatusLink,
   TerminalTurn,
 } from './components/terminal';
 export { Textarea } from './components/textarea';
-export { Toggle, toggleVariants } from './components/toggle';
-export { ToggleGroup, ToggleGroupItem } from './components/toggle-group';
-export type { ToolCallStatus } from './components/tool-call';
-export {
-  ToolCall,
-  ToolCallContent,
-  ToolCallIcon,
-  ToolCallIndicator,
-  ToolCallLabel,
-  ToolCallPayload,
-  ToolCallSummary,
-  ToolCallTrigger,
-} from './components/tool-call';
+export type { TimeGridCell, TimeGridGroup } from './components/time-grid';
+export { TimeGrid } from './components/time-grid';
 export {
   Tooltip,
   TooltipContent,
@@ -448,5 +287,9 @@ export {
   TooltipTrigger,
 } from './components/tooltip';
 export { Wordmark } from './components/wordmark';
+export { useControlled } from './hooks/use-controlled';
+export { useDebouncedCallback } from './hooks/use-debounced-callback';
+export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useIsMobile } from './hooks/use-mobile';
+export { useNow } from './hooks/use-now';
 export { cn } from './lib/utils';

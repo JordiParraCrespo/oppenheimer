@@ -5,7 +5,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "./empty";
+} from "../internal/empty";
 
 /**
  * Compound empty-state API with the Adri Rodrigo visual treatment.

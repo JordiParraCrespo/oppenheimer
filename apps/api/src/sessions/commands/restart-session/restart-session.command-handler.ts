@@ -56,8 +56,9 @@ export class RestartSessionCommandHandler
       });
     }
 
-    const project = await requireActiveProject(this.projects, command.scope, session.projectId);
-    const projectSlug = project.slug;
+    // The project must still take work; the paths are the session's own.
+    await requireActiveProject(this.projects, command.scope, session.projectId);
+    const projectSlug = session.projectSlug;
 
     await this.sessions.appendEvents(session, [
       {
@@ -74,6 +75,6 @@ export class RestartSessionCommandHandler
       session,
       await this.launches.build(session, projectSlug),
     );
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

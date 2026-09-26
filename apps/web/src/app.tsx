@@ -77,6 +77,7 @@ export function App() {
 }
 
 function AppRoutes() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuthState();
   // Rehydrate a persisted session (tokens in localStorage) before the router's
   // route guards run, so a returning/refreshing authenticated user isn't bounced
@@ -92,10 +93,10 @@ function AppRoutes() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-background">
+      <div className="flex min-h-svh items-center justify-center bg-canvas">
         <div
           role="status"
-          aria-label="Loading"
+          aria-label={t('common.loading')}
           className="size-8 animate-spin rounded-full border-2 border-border-subtle border-t-surface-inverse"
         />
       </div>
@@ -122,7 +123,7 @@ function SessionRestoreError({
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background p-6">
+    <div className="flex min-h-svh items-center justify-center bg-canvas p-6">
       <Alert variant="destructive" className="max-w-sm">
         <AlertTitle>{t('auth.session.errorTitle')}</AlertTitle>
         <AlertDescription>{t('auth.session.errorMessage')}</AlertDescription>

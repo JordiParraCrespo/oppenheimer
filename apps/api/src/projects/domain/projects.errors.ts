@@ -39,4 +39,9 @@ export const ProjectErrors = {
     message: 'That project still has open sessions',
     httpStatus: 409,
   },
+  NAME_TAKEN: {
+    code: 'PROJECTS_006',
+    message: 'That name is a directory another project already holds',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

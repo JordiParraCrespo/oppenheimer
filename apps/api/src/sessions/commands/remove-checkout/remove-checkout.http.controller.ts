@@ -7,7 +7,7 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
@@ -18,7 +18,9 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
+import { FindSessionQuery } from '../../queries/find-session/find-session.query';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { RemoveCheckoutCommand } from './remove-checkout.command';
 
@@ -31,6 +33,7 @@ import { RemoveCheckoutCommand } from './remove-checkout.command';
 export class RemoveCheckoutHttpController {
   constructor(
     private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
     private readonly mapper: WorkSessionMapper,
   ) {}
 
@@ -56,10 +59,13 @@ export class RemoveCheckoutHttpController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('checkoutId', ParseUUIDPipe) checkoutId: string,
   ): Promise<SessionResponseDto> {
-    const { session, hints } = await this.commandBus.execute<
+    const { sessionId, hints } = await this.commandBus.execute<
       RemoveCheckoutCommand,
       SessionCommandResult
     >(new RemoveCheckoutCommand({ scope, sessionId: id, checkoutId }));
+    const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+      new FindSessionQuery({ scope, sessionId }),
+    );
     return this.mapper.toResponse(session, { hints });
   }
 }

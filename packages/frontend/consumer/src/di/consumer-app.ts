@@ -9,6 +9,8 @@ import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
+import type { ProjectsService } from '../modules/projects';
+import { ProjectsModule } from '../modules/projects';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import { TOKENS } from './tokens';
@@ -19,6 +21,7 @@ import { TOKENS } from './tokens';
  */
 export const consumerModules = [
   SessionsModule,
+  ProjectsModule,
   HostsModule,
   InstallationsModule,
   ApiTokensModule,
@@ -58,6 +61,11 @@ export class ConsumerApp {
   /** The product: sessions on hosts the user owns. */
   get sessions(): SessionsService {
     return this.kernel.container.get(TOKENS.SessionsService);
+  }
+
+  /** The bodies of work sessions belong to, and what New session is prefilled with. */
+  get projects(): ProjectsService {
+    return this.kernel.container.get(TOKENS.ProjectsService);
   }
 
   get hosts(): HostsService {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
-import { CheckIcon, ChevronRightIcon } from 'lucide-react';
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -317,6 +317,48 @@ function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.
   );
 }
 
+/**
+ * A row that leads into a pane inside the same menu — the account menu's
+ * Appearance and Language, the row menu's Move to project… — rather than a
+ * submenu beside it: an icon, the label, the current `value` right-aligned,
+ * a chevron. It does not close the menu; the caller swaps the content for
+ * the pane, whose first row is a `DropdownMenuBack`.
+ */
+function DropdownMenuPaneItem({
+  className,
+  value,
+  children,
+  ...props
+}: MenuPrimitive.Item.Props & { value?: React.ReactNode }) {
+  return (
+    <MenuPrimitive.Item
+      data-slot="dropdown-menu-pane-item"
+      closeOnClick={false}
+      className={cn(ITEM_CLASSES, className)}
+      {...props}
+    >
+      {children}
+      {value !== undefined ? <DropdownMenuValue>{value}</DropdownMenuValue> : null}
+      <ChevronRightIcon className={cn('size-3! text-fg-subtle', value === undefined && 'ml-auto')} />
+    </MenuPrimitive.Item>
+  );
+}
+
+/** The first row of a pane: a left chevron and the pane's name, back to the root. */
+function DropdownMenuBack({ className, children, ...props }: MenuPrimitive.Item.Props) {
+  return (
+    <MenuPrimitive.Item
+      data-slot="dropdown-menu-back"
+      closeOnClick={false}
+      className={cn(ITEM_CLASSES, 'text-fg-muted', className)}
+      {...props}
+    >
+      <ChevronLeftIcon className="size-3! text-fg-subtle" />
+      {children}
+    </MenuPrimitive.Item>
+  );
+}
+
 function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     <span
@@ -339,6 +381,8 @@ export {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuBack,
+  DropdownMenuPaneItem,
   DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,

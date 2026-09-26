@@ -17,6 +17,7 @@ function session() {
   return WorkSessionEntity.request({
     organizationId: 'org-acme',
     projectId: 'project-1',
+    projectSlug: 'xrp-mobile',
     createdByUserId: 'user-1',
     hostId: 'host-1',
     slug: 'bold-otter-3f9a7k',

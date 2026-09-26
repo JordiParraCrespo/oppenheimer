@@ -25,6 +25,11 @@ const dotVariants = cva('inline-block size-1.5 shrink-0 rounded-pill', {
       completed: 'bg-success',
       idle: 'bg-fg-subtle',
       pending: 'bg-border-strong',
+      // The routine vocabulary: active and paused are a routine's own states,
+      // beside the run states above. Running pulses; paused is muted, not
+      // coloured.
+      active: 'bg-success',
+      paused: 'bg-fg-subtle',
     },
   },
   defaultVariants: { state: 'idle' },
@@ -40,6 +45,8 @@ const STATUS_LABEL: Record<StatusState, string> = {
   completed: 'Completed',
   idle: 'Idle',
   pending: 'Pending',
+  active: 'Active',
+  paused: 'Paused',
 };
 
 function StatusDot({

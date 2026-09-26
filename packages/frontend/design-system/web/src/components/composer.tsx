@@ -20,9 +20,40 @@ import { IconButton } from './icon-button';
  * console's menus hang from. Attachments list under the textarea as
  * removable chips; they are never silently dropped.
  *
+ * `scope` is the tabbed form on New session: the scope chips sit in a grey
+ * band fused to the top of the field (control fill, 18px radii on the top
+ * corners, inset 18px from each side), each chip a `ChipSelectTrigger` in
+ * its `tab` variant. With a band the field is the taller one, 128px at 15px,
+ * because the sentence above it has already said where the work happens and
+ * the box is the whole page's presence.
+ *
  * Controlled — own `value`, handle `onSubmit`.
  */
 type ComposerAttachment = { id: string; name: string };
+
+/**
+ * What the composer's icon buttons say to a screen reader. English by default
+ * for the showcase; a product passes its own, translated, since a label nobody
+ * can override ships in one language to everyone.
+ */
+type ComposerLabels = {
+  send: string;
+  stop: string;
+  attach: string;
+  dictate: string;
+  stopRecording: string;
+  /** The remove button on one attachment chip. */
+  removeAttachment: (name: string) => string;
+};
+
+const DEFAULT_COMPOSER_LABELS: ComposerLabels = {
+  send: 'Send',
+  stop: 'Stop',
+  attach: 'Attach a file',
+  dictate: 'Dictate',
+  stopRecording: 'Stop recording',
+  removeAttachment: (name) => `Remove ${name}`,
+};
 
 function Composer({
   value,
@@ -39,7 +70,9 @@ function Composer({
   recording = false,
   tools,
   engine,
+  scope,
   minRows = 3,
+  labels,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onSubmit'> & {
@@ -61,8 +94,13 @@ function Composer({
   tools?: React.ReactNode;
   /** Controls before the mic: who drives it and how hard it thinks (agent, model, effort). */
   engine?: React.ReactNode;
+  /** The scope chips, in the band fused to the top of the field (`ChipSelectTrigger variant="tab"`). */
+  scope?: React.ReactNode;
   minRows?: number;
+  /** The icon buttons' accessible names; any left out stay in English. */
+  labels?: Partial<ComposerLabels>;
 }) {
+  const label = { ...DEFAULT_COMPOSER_LABELS, ...labels };
   const canSend = value.trim().length > 0 && !disabled;
 
   function submit() {
@@ -77,10 +115,11 @@ function Composer({
     }
   }
 
-  return (
+  const field = (
     <div
       data-slot="composer"
       data-disabled={disabled || undefined}
+      data-tabbed={scope ? '' : undefined}
       className={cn(
         'flex flex-col rounded-lg border border-field-border bg-field transition-[border-color,box-shadow] duration-fast ease-standard has-focus-visible:border-primary has-focus-visible:ring-3 has-focus-visible:ring-ring data-disabled:opacity-50',
         className,
@@ -101,7 +140,10 @@ function Composer({
         // (`.op-composer__input`), which is the prompt box having "real
         // presence" before anyone has typed into it — the whole point of the
         // control. `rows` stays for the no-`field-sizing` fallback.
-        className="field-sizing-content max-h-[40svh] min-h-28 w-full resize-none bg-transparent px-[18px] py-4 text-compose text-fg outline-none placeholder:text-field-placeholder"
+        className={cn(
+          'field-sizing-content max-h-[40svh] w-full resize-none bg-transparent px-[18px] py-4 text-fg outline-none placeholder:text-field-placeholder',
+          scope ? 'min-h-32 text-[15px] leading-normal' : 'min-h-28 text-compose',
+        )}
       />
       {attachments && attachments.length > 0 ? (
         <div data-slot="composer-attachments" className="flex flex-wrap gap-1.5 px-3 pb-2.5">
@@ -113,7 +155,7 @@ function Composer({
               <span className="truncate">{file.name}</span>
               <button
                 type="button"
-                aria-label={`Remove ${file.name}`}
+                aria-label={label.removeAttachment(file.name)}
                 onClick={() => onRemoveAttachment?.(file.id)}
                 className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-sm transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
               >
@@ -126,7 +168,7 @@ function Composer({
       <div data-slot="composer-foot" className="flex items-center gap-1.5 px-2.5 pb-2.5">
         {onAttach ? (
           <IconButton
-            aria-label="Attach a file"
+            aria-label={label.attach}
             size="sm"
             shape="square"
             onClick={onAttach}
@@ -140,7 +182,7 @@ function Composer({
         {engine}
         {onRecord ? (
           <IconButton
-            aria-label={recording ? 'Stop recording' : 'Dictate'}
+            aria-label={recording ? label.stopRecording : label.dictate}
             aria-pressed={recording}
             size="sm"
             shape="square"
@@ -154,7 +196,7 @@ function Composer({
           </IconButton>
         ) : null}
         <IconButton
-          aria-label={busy ? 'Stop' : 'Send'}
+          aria-label={busy ? label.stop : label.send}
           variant="primary"
           size="sm"
           onClick={submit}
@@ -168,6 +210,19 @@ function Composer({
           )}
         </IconButton>
       </div>
+    </div>
+  );
+
+  if (!scope) return field;
+  return (
+    <div data-slot="composer-stack" className="flex flex-col">
+      <div
+        data-slot="composer-scope"
+        className="mx-[18px] flex flex-wrap items-center gap-0.5 self-stretch rounded-t-lg bg-control px-2 py-1"
+      >
+        {scope}
+      </div>
+      {field}
     </div>
   );
 }
@@ -224,4 +279,4 @@ function ComposerToolButton({
 }
 
 export { Composer, ComposerToolButton };
-export type { ComposerAttachment };
+export type { ComposerAttachment, ComposerLabels };

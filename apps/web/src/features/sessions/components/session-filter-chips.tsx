@@ -1,6 +1,6 @@
 import { FilterChip } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
-import type { SessionFilters } from '../lib/session-filters';
+import type { SessionFacet } from '../lib/session-filters';
 
 /**
  * What the filter menu is currently hiding, stated under the header
@@ -12,8 +12,8 @@ export function SessionFilterChips({
   chips,
   onClear,
 }: {
-  chips: { key: keyof SessionFilters; label: string }[];
-  onClear: (key: keyof SessionFilters) => void;
+  chips: { key: SessionFacet; label: string }[];
+  onClear: (key: SessionFacet) => void;
 }) {
   const { t } = useTranslation();
 

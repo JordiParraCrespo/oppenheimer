@@ -1,16 +1,16 @@
-import type { WorkSessionEntity } from './work-session.entity';
+import type { AggregateID } from '@oppenheimer/backend-ddd';
 
 /**
  * What a command that talks to a host answers with.
  *
- * The session is the row as the append left it; `hints` is what the control plane
- * could not do for this request — `host_offline` when the command was recorded but
- * no link exists, so the work is owed. It travels with the session rather than in
- * a second envelope because the console renders the row it just changed, and it is
- * a *response* field rather than a log entry because "we could not reach the host
- * just now" is about this request, not about the session's history.
+ * The id of the session it changed, and `hints`: what the control plane could not
+ * do for this request — `host_offline` when the command was recorded but no link
+ * exists, so the work is owed. The controller reads the session back with
+ * `FindSessionQuery`, as every command does; `hints` rides beside the id because
+ * no query can read it back. It is about this request, not a log entry: "we could
+ * not reach the host just now" is not part of the session's history.
  */
 export interface SessionCommandResult {
-  session: WorkSessionEntity;
+  sessionId: AggregateID;
   hints: string[];
 }

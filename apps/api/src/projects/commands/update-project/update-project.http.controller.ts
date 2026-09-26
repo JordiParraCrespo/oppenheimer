@@ -42,12 +42,18 @@ export class UpdateProjectHttpController {
   @RequireScopes('projects:write')
   @ApiOperation({
     operationId: 'updateProject',
-    summary: 'Rename a project',
+    summary: 'Edit a project',
     description:
-      'The name is display-only. The slug is the project’s directory name on every host that holds it and cannot be changed.',
+      'Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.',
   })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
+  @ApiProblemResponse({
+    status: 404,
+    description: 'That repository is not one this GitHub installation covers',
+    code: 'GITHUB_010',
+  })
   async update(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
@@ -56,7 +62,7 @@ export class UpdateProjectHttpController {
     // The command returns the renamed aggregate, so there is no follow-up query:
     // the write already read the row back through the caller's scope.
     const project = await this.commandBus.execute<UpdateProjectCommand, ProjectEntity>(
-      new UpdateProjectCommand({ scope, projectId: id, name: body.name }),
+      new UpdateProjectCommand({ scope, projectId: id, changes: body }),
     );
     return this.mapper.toResponse(project);
   }

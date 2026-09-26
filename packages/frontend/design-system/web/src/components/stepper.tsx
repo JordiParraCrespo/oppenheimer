@@ -8,10 +8,12 @@ import { cn } from '../lib/utils';
  * be reached, the repo cloned, the branch checked out and the harness started.
  * Steps are named so a slow one is diagnosable instead of just slow.
  *
- * Each step: an 18px mark on a rail (a spinning ring while running, a green
- * check when done), a 14px label that lifts to full ink as it runs, and a mono
- * meta line. The rail between steps turns green as steps complete. The
- * footer carries a mono elapsed time and a status word.
+ * Each step: an 18px mark on a rail (an empty ring while pending, a spinning
+ * ring while running, a green check when done), a 14px label that lifts to
+ * full ink as it runs, and a mono meta line. The rail between steps turns
+ * green as steps complete. The footer carries a mono elapsed time ("1.4s")
+ * and a status word ("Working…"). Pending steps are not numbered: the order
+ * is the rail's, and a number would read as a count of what is left.
  */
 type StepState = 'pending' | 'running' | 'done' | 'failed';
 
@@ -60,8 +62,6 @@ function Stepper({
                   <CheckIcon className="size-2.5" strokeWidth={3} />
                 ) : step.state === 'failed' ? (
                   '×'
-                ) : step.state === 'pending' ? (
-                  index + 1
                 ) : null}
               </span>
               {index < steps.length - 1 ? (

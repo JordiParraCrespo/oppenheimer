@@ -13,6 +13,7 @@ import {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './chip-select';
+import type { ChipSelectAction, ChipSelectTriggerVariant } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
@@ -36,7 +37,7 @@ import { Popover, PopoverTrigger } from './popover';
  *   repositories={repos}
  *   value={scope}            // [{ id: 'xrp-mobile', branch: 'main' }]
  *   onValueChange={setScope}
- *   action={{ label: 'Add repository…', onSelect: connectMore }}
+ *   action={{ label: 'Manage repository access', icon: <BrandGlyph name="github" />, href: installUrl }}
  * />
  * ```
  */
@@ -61,6 +62,8 @@ function defaultBranchOf(repo: RepositoryOption) {
   return repo.defaultBranch ?? repo.branches[0]?.value ?? 'main';
 }
 
+const defaultBranchPaneTitle = (name: string): React.ReactNode => `Branch for ${name}`;
+
 function RepositorySelect({
   repositories,
   value,
@@ -75,9 +78,10 @@ function RepositorySelect({
   loadingText = 'Loading…',
   branchesLoading = false,
   branchesLoadingText = 'Loading…',
-  branchPaneTitle = (name) => `Branch for ${name}`,
+  branchPaneTitle: branchPaneTitleProp,
   changeBranchLabel = 'Change branch',
   action,
+  variant,
   disabled,
   className,
   'aria-label': ariaLabel = 'Repositories',
@@ -103,11 +107,16 @@ function RepositorySelect({
   branchesLoadingText?: string;
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
-  action?: { label: string; icon?: React.ReactNode; onSelect: () => void };
+  action?: ChipSelectAction;
+  /** `tab` inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
 }) {
+  // Defaults resolved in the body, not the signature: the React Compiler
+  // leaves a component whose default parameter is a function uncompiled.
+  const branchPaneTitle = branchPaneTitleProp ?? defaultBranchPaneTitle;
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [pane, setPane] = React.useState<string | null>(null);
@@ -167,6 +176,7 @@ function RepositorySelect({
           <ChipSelectTrigger
             icon={icon ?? <FolderIcon />}
             open={open}
+            variant={variant}
             placeholder={placeholder}
             aria-label={ariaLabel}
             disabled={disabled}
@@ -270,15 +280,7 @@ function RepositorySelect({
                 })}
             </ChipSelectList>
             {action ? (
-              <ChipSelectActionRow
-                icon={action.icon}
-                onClick={() => {
-                  setOpen(false);
-                  action.onSelect();
-                }}
-              >
-                {action.label}
-              </ChipSelectActionRow>
+              <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
             ) : null}
           </>
         )}

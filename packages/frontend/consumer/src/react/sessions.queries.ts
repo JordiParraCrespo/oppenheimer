@@ -1,6 +1,6 @@
 'use client';
 
-import { withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
+import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
   skipToken,
   type UseMutationOptions,
@@ -47,14 +47,17 @@ const PROVISIONING_POLL_MS = 2000;
  * session from the list renders on the click instead of waiting on a second
  * read of the same row. A detail read after this list was asked for is newer
  * than its row, or as new, and is left alone.
+ *
+ * Pass `select` to subscribe to less than the whole list: a screen that only
+ * asks whether there are any sessions should not re-render on every poll.
  */
-export function useSessions(
-  options?: Omit<UseQueryOptions<SessionEntity[], Error>, 'queryKey' | 'queryFn'>,
+export function useSessions<TData = SessionEntity[]>(
+  options?: Omit<UseQueryOptions<SessionEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 
-  return useQuery({
+  return useQuery<SessionEntity[], Error, TData>({
     queryKey: sessionsKeys.list(),
     queryFn: async () => {
       const askedAt = Date.now();
@@ -62,10 +65,15 @@ export function useSessions(
       for (const session of sessions) {
         const key = sessionsKeys.detail(session.id);
         if ((queryClient.getQueryState(key)?.dataUpdatedAt ?? 0) >= askedAt) continue;
-        queryClient.setQueryData(key, session);
+        // Shared against what the detail already holds, so a poll that
+        // changed nothing leaves the open session's screen alone.
+        queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
       }
       return sessions;
     },
+    // Entities are classes: without this every poll is a new object per row,
+    // and the sidebar re-renders every row every two seconds.
+    structuralSharing: shareEntities,
     refetchInterval: (query) =>
       query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
     ...options,
@@ -82,6 +90,7 @@ export function useSession(
     queryKey: sessionsKeys.detail(id),
     queryFn: id ? () => app.sessions.findById(id) : skipToken,
     refetchInterval: (query) => (query.state.data?.isProvisioning ? PROVISIONING_POLL_MS : false),
+    structuralSharing: shareEntities,
     ...options,
   });
 }
@@ -137,6 +146,73 @@ export function useCreateSession(
       app.sessions.create(input, idempotencyKey),
     ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export interface RenameSessionVariables {
+  id: string;
+  name: string;
+}
+
+export interface MoveSessionVariables {
+  id: string;
+  projectId: string;
+}
+
+/**
+ * A write to one session's row that the API answers with the row: the detail
+ * takes the answer and the list is re-read. Rename and move are this shape,
+ * and the next patch will be too.
+ */
+function useSessionPatch<TVariables>(
+  patch: (app: ReturnType<typeof useConsumerApp>, variables: TVariables) => Promise<SessionEntity>,
+  options?: UseMutationOptions<SessionEntity, Error, TVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (variables: TVariables) => patch(app, variables),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export function useRenameSession(
+  options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
+) {
+  return useSessionPatch(({ sessions }, { id, name }) => sessions.rename(id, name), options);
+}
+
+export function useMoveSession(
+  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+) {
+  return useSessionPatch(
+    ({ sessions }, { id, projectId }) => sessions.move(id, projectId),
+    options,
+  );
+}
+
+export interface CloseSessionVariables {
+  id: string;
+  acceptUnpushedWork?: boolean;
+}
+
+/** The row stays, resolved; the list drops it, so the whole feature is invalidated. */
+export function useCloseSession(
+  options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
+      app.sessions.close(id, acceptUnpushedWork),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
     }),
   });
 }

@@ -22,7 +22,7 @@ imports it.
 
 **By platform, for UI and glue.** A component, a hook over a browser API, an
 i18n bootstrap belong to a platform kit. `web` is the web kit (`shell`,
-`auth`, `table`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
+`auth`, `layout`, `forms`, `theme`, `i18n`, `analytics`, `platform`,
 `roles`, `hosts`). A kit is organised by concern, each concern with the kind
 directories a feature has.
 

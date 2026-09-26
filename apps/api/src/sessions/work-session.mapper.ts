@@ -43,6 +43,7 @@ export class WorkSessionMapper
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.projectId = entity.projectId;
+    record.projectSlug = entity.projectSlug;
     record.createdByUserId = entity.createdByUserId;
     record.hostId = entity.hostId;
     record.name = entity.name;
@@ -77,7 +78,7 @@ export class WorkSessionMapper
       updatedAt: record.updatedAt,
       props: {
         organizationId: record.organizationId,
-        projectId: record.projectId,
+        projectSlug: record.projectSlug,
         createdByUserId: record.createdByUserId,
         hostId: record.hostId,
         slug: record.slug,
@@ -85,6 +86,8 @@ export class WorkSessionMapper
         idempotencyKey: record.idempotencyKey,
         checkouts: [],
         ...this.foldOf(record),
+        // The fold's project is the row's; it is only ever null on the empty fold.
+        projectId: record.projectId,
       },
     });
     for (const checkout of checkouts) session.attachCheckout(this.checkoutToDomain(checkout));
@@ -103,6 +106,7 @@ export class WorkSessionMapper
       agentSessionId: record.agentSessionId,
       lastEventAt: record.lastEventAt,
       stoppedAt: record.stoppedAt,
+      projectId: record.projectId,
       name: record.name,
       nameSource: record.nameSource,
       cwdCheckoutId: record.cwdCheckoutId,

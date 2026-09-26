@@ -43,7 +43,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   search row and the empty line, even over three options, so the console's
   four chips behave as one thing. It is built on Popover, not Base UI
   Select, for that reason; `RepositorySelect` reuses its parts for the
-  multi-repo pane.
+  multi-repo pane. A foot action with `href` is a new-tab link.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square and
   Grok's slashed circle from their published brand assets, in the vendor's colour where it has one
@@ -53,7 +53,39 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   attach and the `PermissionMenu`. Right: `AgentModelSelect` (harness first,
   then its models, so the pair is always valid), `EffortPicker`, mic, send.
   All of them hang from `ComposerToolButton`. Full access is the one setting
-  allowed the warning tone, because it can change a machine unattended.
+  allowed the warning tone, because it can change a machine unattended. On
+  New session the composer is tabbed: the scope chips go in its `scope`
+  slot, a grey band fused to the top of the field, each chip a
+  `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
+  so where the work happens reads as one sentence over the box.
+- **The console's chrome is a rail and a grouped sidebar.** `Rail` (56px)
+  switches between the sessions and routines lists; the sidebar groups rows
+  under `SidebarProjectHeader`s whose actions appear on hover, with
+  `SidebarSearch` and the facet chips above the groups and `SidebarEmptyRow`
+  inside an empty one. A `SessionItem` takes its ellipsis as `action` and its
+  rename as an inline input; both hide the age while they show.
+- **A pane, not a submenu, when the pick belongs to the row.** Appearance
+  and Language in the account menu, and Move to project… in a row's menu,
+  slide the same menu to a pane (`DropdownMenuPaneItem`, then
+  `DropdownMenuBack` on top of it), the way the engine button slides to its
+  models. `DropdownMenuSub` stays for the filter facets, which are several
+  independent picks.
+- **A trigger reads as a sentence.** In the routine editor every variable
+  part of a trigger is an `InlineToken` in a `TokenSentence` ("Every
+  [weekday] at [09:00]"), never a form to decode; mono tokens hold values a
+  human compares. `TimeGrid` behind a time token disables past hours rather
+  than hiding them, so the grid never reflows. The editor is `RoutineSteps`:
+  a finished step inverts its number to a tick and prints its summary.
+- **Status glyphs belong to finished things.** The check and alert circles
+  appear only in `RunsList`, where each row is a finished run. Live state is
+  a `StatusDot` and a word, and `RunHistory` is bars and dots, not a chart.
+- **A callout never carries a button.** `Callout` is a note in the flow on
+  a tonal fill; `neutral` is the default and takes no hue; a tinted tone
+  only when something is in that state. The action lives in the form.
+- **One instruction block, one Copy.** Add a host shows the install command
+  and the agent prompt as tabs on the header band of one
+  `CodeBlock layout="panel"`, at a fixed height so the token line under it
+  never moves. Never two blocks with two copy buttons.
 
 ## Conventions
 
@@ -68,9 +100,11 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   are kept as **legacy aliases** so the unported components in `apps/web`
   still render. Author nothing new against them; they go when the last
   component is ported.
-- The MVP component inventory (what the nine screens need, and nothing more)
-  is the showcase's table of contents: `apps/web-showcase/src/lib/toc.ts`.
-  Components in `web/src/components/` not on that list are legacy from the
-  starter and not part of the system.
+- **The inventory is `web/src/components/`.** Every file there is public, and
+  each is named in exactly one item's `components` in the showcase's
+  `apps/web-showcase/src/lib/toc.ts`, which is where it is drawn.
+  `web/src/internal/` holds what only components import. Nothing else is a
+  list: the package's `test` fails when the folder, the barrel and `toc.ts`
+  disagree. A component nothing uses is deleted, not kept for later.
 - Preview every change in `apps/web-showcase`, in **both** themes; the top
   bar carries the switch.

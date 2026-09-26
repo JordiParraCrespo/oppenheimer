@@ -3,14 +3,15 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { PanelLeftIcon } from 'lucide-react';
+import { ChevronDownIcon, PanelLeftIcon, SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
+import { useControlled } from '../hooks/use-controlled';
 import { useIsMobile } from '../hooks/use-mobile';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Input } from './input';
 import { Separator } from './separator';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../internal/sheet';
 import { Skeleton } from './skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
@@ -59,24 +60,20 @@ function SidebarProvider({
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
-  const open = openProp ?? _open;
-  const setOpen = React.useCallback(
-    (value: boolean | ((value: boolean) => boolean)) => {
-      const openState = typeof value === 'function' ? value(open) : value;
-      if (setOpenProp) {
-        setOpenProp(openState);
-      } else {
-        _setOpen(openState);
-      }
-
-      // This sets the cookie to keep the sidebar state.
+  // The sidebar's own state until the caller passes `open`, and the cookie
+  // that keeps it between visits either way.
+  const onOpenChange = React.useCallback(
+    (openState: boolean) => {
+      setOpenProp?.(openState);
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [setOpenProp, open],
+    [setOpenProp],
   );
+  const [open, setOpen] = useControlled({
+    value: openProp,
+    defaultValue: defaultOpen,
+    onChange: onOpenChange,
+  });
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
@@ -140,6 +137,8 @@ function Sidebar({
   side = 'left',
   variant = 'sidebar',
   collapsible = 'offcanvas',
+  mobileTitle = 'Sidebar',
+  mobileDescription = 'Displays the mobile sidebar.',
   className,
   children,
   dir,
@@ -148,6 +147,10 @@ function Sidebar({
   side?: 'left' | 'right';
   variant?: 'sidebar' | 'floating' | 'inset';
   collapsible?: 'offcanvas' | 'icon' | 'none';
+  /** The mobile sheet's screen-reader title; the product passes its own, translated. */
+  mobileTitle?: string;
+  /** The mobile sheet's screen-reader description. */
+  mobileDescription?: string;
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
 
@@ -183,8 +186,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{mobileTitle}</SheetTitle>
+            <SheetDescription>{mobileDescription}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -304,6 +307,131 @@ function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input
       data-slot="sidebar-input"
       data-sidebar="input"
       className={cn('h-8 w-full bg-card shadow-none', className)}
+      {...props}
+    />
+  );
+}
+
+/**
+ * SidebarSearch — the 30px field under the list header: the hover fill at
+ * rest, a 10px radius, the search glyph, and a round clear button once
+ * there is a query. Focus lifts it onto the card surface with the ring.
+ * Controlled: the list it narrows reads the settled `value`.
+ */
+function SidebarSearch({
+  value,
+  onValueChange,
+  clearLabel = 'Clear search',
+  className,
+  ...props
+}: Omit<React.ComponentProps<'input'>, 'value' | 'onChange'> & {
+  value: string;
+  onValueChange: (value: string) => void;
+  clearLabel?: string;
+}) {
+  return (
+    <div
+      data-slot="sidebar-search"
+      data-on={value ? '' : undefined}
+      className={cn(
+        'mx-3 mb-2 flex h-[30px] items-center gap-2 rounded-sm bg-hover-surface pr-1.5 pl-2.5 text-fg-subtle transition-[background-color,box-shadow] duration-fast ease-standard focus-within:bg-card focus-within:ring-3 focus-within:ring-ring focus-within:outline-1 focus-within:outline-primary',
+        className,
+      )}
+    >
+      <SearchIcon className="size-3.5 shrink-0" aria-hidden />
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        className="min-w-0 flex-1 bg-transparent text-[13.5px] text-fg outline-none placeholder:text-fg-subtle"
+        {...props}
+      />
+      {value ? (
+        <button
+          type="button"
+          aria-label={clearLabel}
+          onClick={() => onValueChange('')}
+          className="flex size-5 shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-hover-surface hover:text-fg"
+        >
+          <XIcon className="size-3" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * SidebarProjectHeader — a project's row in the grouped list: a chevron
+ * that folds the group, the name, a mono count, and actions (new session,
+ * project settings) that only appear on hover or focus. 28px on a 6px
+ * radius, the hover wash across the whole row. `current` lifts the name to
+ * full ink while a session inside the group is open.
+ */
+function SidebarProjectHeader({
+  name,
+  count,
+  open = true,
+  onOpenChange,
+  current,
+  actions,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  name: React.ReactNode;
+  count?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  current?: boolean;
+  /** Icon buttons, 22px, shown on hover. */
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="sidebar-project-header"
+      data-open={open}
+      data-current={current || undefined}
+      className={cn(
+        'group/project relative mx-1.5 flex h-7 items-center gap-0.5 rounded-xs pr-1 pl-1.5 transition-colors duration-fast hover:bg-hover-surface',
+        className,
+      )}
+      {...props}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onOpenChange?.(!open)}
+        className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left text-[12.5px] font-medium tracking-[-0.006em] text-sidebar-muted outline-none transition-colors duration-fast hover:text-fg group-data-current/project:text-fg focus-visible:text-fg"
+      >
+        <ChevronDownIcon
+          className={cn(
+            'size-3.5 shrink-0 transition-transform duration-base ease-standard',
+            !open && '-rotate-90',
+          )}
+          aria-hidden
+        />
+        <span className="truncate">{name}</span>
+        {count !== undefined ? (
+          <span className="figures ml-0.5 text-[11px] font-normal text-fg-subtle">{count}</span>
+        ) : null}
+      </button>
+      {actions ? (
+        <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/project:opacity-100 group-focus-within/project:opacity-100 [&_button]:size-[22px] [&_button]:rounded-xs [&_button]:text-sidebar-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
+          {actions}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** The one-line note inside an empty group: "No sessions yet. Start one". */
+function SidebarEmptyRow({ className, ...props }: React.ComponentProps<'p'>) {
+  return (
+    <p
+      data-slot="sidebar-empty-row"
+      className={cn(
+        'mx-3.5 mt-0.5 mb-2 ml-8 text-xs leading-snug text-fg-subtle [&_a]:text-link [&_button]:text-link',
+        className,
+      )}
       {...props}
     />
   );
@@ -690,7 +818,10 @@ export {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
+  SidebarEmptyRow,
+  SidebarProjectHeader,
   SidebarRail,
+  SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,

@@ -55,7 +55,7 @@ export interface TimelinePage {
 
 /**
  * Port for a host's metadata: `host_inventory`, `host_presence`, `host_network`
- * and `host_event` (`product/versions/mvp/13-host-metadata.md`).
+ * and `host_event` (`product/versions/mvp/14-host-metadata.md`).
  *
  * None of these reads takes an access scope. Every caller already holds a host
  * it loaded under one — a person's list, a machine proving itself on the link —

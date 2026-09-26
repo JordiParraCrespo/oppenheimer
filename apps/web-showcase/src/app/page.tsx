@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@oppenheimer/design-system-web/avatar';
 import { BrandGlyph } from '@oppenheimer/design-system-web/brand-glyph';
+import { BrandMark } from '@oppenheimer/design-system-web/brand-mark';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
   Card,
@@ -48,13 +49,14 @@ import {
   Settings2Icon,
   TerminalIcon,
   XIcon,
-} from 'lucide-react';
+} from '@oppenheimer/design-system-web/icons';
 import {
   AccountMenuDemo,
   CarouselDemo,
   ComposerDemo,
   AddHostDialogDemo,
   DestructiveDialogDemo,
+  CheckboxDemo,
   SegmentedDemo,
   SlugFieldDemo,
   FilterMenuDemo,
@@ -62,7 +64,21 @@ import {
   EffortDemo,
   PermissionDemo,
   ScopeChips,
+  RepositoryRowListDemo,
   SidebarDemo,
+  CalloutDemo,
+  PillTabsDemo,
+  EditorPageDemo,
+  PageHeaderDemo,
+  RunHistoryDemo,
+  RoutineTableDemo,
+  RunsListDemo,
+  TemplateGridDemo,
+  RoutineEditorDemo,
+  RoutineItemsDemo,
+  SettingsNavDemo,
+  SettingsGroupDemo,
+  HostCardsDemo,
   StepperDemo,
   TerminalDemo,
   TooltipDemo,
@@ -80,6 +96,7 @@ import {
   TypeLadder,
   Weights,
 } from '@/components/foundations';
+import { AlertDemo, BadgeDemo, CommandDemo, SkeletonDemo, ToastDemo } from '@/components/feedback';
 import { GroupHead, PageHead, PageShell, Spec, Swatch, ThemePair } from '@/components/page-shell';
 import { TOC_COUNT } from '@/lib/toc';
 
@@ -168,8 +185,8 @@ export default function Page() {
 
       <Spec
         id="wordmark"
-        title="Wordmark"
-        meta="wordmark.tsx"
+        title="Wordmark · BrandMark"
+        meta="wordmark.tsx · brand-mark.tsx"
         desc="No logotype exists, so the name is the mark: SF Pro Display 600 at -0.032em. The product suffix is the one place uppercase is allowed."
         code={`<Wordmark product="Console" />`}
       >
@@ -183,6 +200,9 @@ export default function Page() {
           <div className="dark rounded-md bg-canvas px-5 py-3">
             <Wordmark product="Console" />
           </div>
+        </Swatch>
+        <Swatch label="BrandMark, the auth chrome's glyph">
+          <BrandMark size={28} />
         </Swatch>
       </Spec>
 
@@ -317,6 +337,16 @@ export default function Page() {
             <Link href="#links">Privacy Policy</Link>.
           </p>
         </Swatch>
+      </Spec>
+
+      <Spec
+        id="badges"
+        title="Badge"
+        meta="badge.tsx"
+        desc="Lifecycle state and quiet metadata. The four status variants carry the run-state hues; neutral is the quiet chip for a role or a count. Never a call to action."
+        code={`<Badge variant="active">Active</Badge>`}
+      >
+        <BadgeDemo />
       </Spec>
 
       <Spec
@@ -630,6 +660,16 @@ export default function Page() {
         </div>
       </Spec>
 
+      <Spec
+        id="skeleton"
+        title="Skeleton"
+        meta="skeleton.tsx"
+        desc="Still loading: the shape of what is coming, on the off track, pulsing. Never a spinner in place of content that has a shape."
+        code={`<Skeleton className="h-4 w-2/3" />`}
+      >
+        <SkeletonDemo />
+      </Spec>
+
       {/* ── Forms ────────────────────────────────────────────────────────── */}
       <GroupHead>Forms</GroupHead>
 
@@ -696,6 +736,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="checkbox"
+        title="Checkbox"
+        meta="checkbox.tsx"
+        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryRowList and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
+        code={`<FieldLabel className="flex items-center gap-2.5"><Checkbox checked={discard} onCheckedChange={setDiscard} /> Discard unpushed work</FieldLabel>`}
+      >
+        <CheckboxDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
@@ -720,11 +770,22 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="reporows"
+        title="RepositoryRowList"
+        meta="repository-row-list.tsx"
+        desc="The project dialog's repository picker: a 14px card with a search row and one row per repository the App can see. Tick a row to include it; it then grows a Default toggle (cloned into every new session) and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Untied rows keep the controls' space but not their ink, so the list never reflows. The caller renders the label, the help glyph and the count above it."
+        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
+      >
+        <RepositoryRowListDemo />
+      </Spec>
+
+      <Spec
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop."
+        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
+  scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
   engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker value={effort} onValueChange={setEffort} /></>} />`}
       >
@@ -773,14 +834,44 @@ export default function Page() {
         </Swatch>
       </Spec>
 
+      <Spec
+        id="fieldselect"
+        title="FieldSelect"
+        meta="field-select.tsx"
+        desc="The routine editor's picker: a 42px labelled field whose value and a muted mono count sit on one line. It opens the same listbox as the chip select, with a search row, group eyebrows, and checkboxes when more than one can be picked."
+        code={`<Field><FieldLabel>Repositories</FieldLabel><FieldSelect multiple value={repos} onValueChange={setRepos} options={options} /></Field>`}
+      >
+        <RoutineEditorDemo />
+      </Spec>
+
       {/* ── Overlays ─────────────────────────────────────────────────────── */}
       <GroupHead>Overlays</GroupHead>
+
+      <Spec
+        id="callout"
+        title="Callout"
+        meta="callout.tsx"
+        desc="A note in the flow, not a card: flat tonal fill, hairline-free, 13px text. It never outweighs the form it sits above, and it never carries a button; if an action is needed, the action lives in the form. Neutral is the default and carries no hue. The four tinted tones take a status hue at 11–14% behind full-opacity ink, and only when something actually is in that state."
+        code={`<Callout tone="warning">This host has been unreachable for 6 minutes. Sessions on it are paused.</Callout>`}
+      >
+        <CalloutDemo />
+      </Spec>
+
+      <Spec
+        id="alert"
+        title="Alert"
+        meta="alert.tsx"
+        desc="A whole-form or whole-page failure, on the flat card with the hue in the ink and the hairline. A note under a form is a Callout; a success is a toast."
+        code={`<Alert variant="destructive"><AlertTitle>Could not sign in</AlertTitle>…</Alert>`}
+      >
+        <AlertDemo />
+      </Spec>
 
       <Spec
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add host is the only dialog in v1: one instruction, two ways to read it, and a status line that resolves in place so nothing below it moves. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add a host opens from the composer's host chip and from Settings: one instruction block whose header band carries the Command / Agent prompt tabs and a single Copy, the code at a fixed height so the token line under it never moves, and a status line that resolves in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -791,8 +882,9 @@ export default function Page() {
         id="dropdown"
         title="DropdownMenu"
         meta="dropdown-menu.tsx"
-        desc="The popover tier: 14px radius, 14px rows, submenus for facets. The console's menus share every part: filters with values, the account menu with its e-mail header and destructive Log out, the permission menu with icon rows and a warning tone."
-        code={`<DropdownMenuSubTrigger>Repository <DropdownMenuValue>All repositories</DropdownMenuValue></DropdownMenuSubTrigger>`}
+        desc="The popover tier: 14px radius, 14px rows, submenus for the filter facets. The console's menus share every part: filters with values; the account menu with its e-mail header, Appearance and Language as pane rows that slide the same menu to their options behind a back row, and a destructive Log out; the permission menu with icon rows and a warning tone."
+        code={`<DropdownMenuPaneItem value="Match system" onClick={() => setPane('theme')}><MoonIcon /> Appearance</DropdownMenuPaneItem>
+<DropdownMenuBack onClick={() => setPane('root')}>Appearance</DropdownMenuBack>`}
       >
         <Swatch label="filters">
           <FilterMenuDemo />
@@ -805,6 +897,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="command"
+        title="Command"
+        meta="command.tsx"
+        desc="The command palette's parts: a search row over grouped rows, each with its icon tile and an optional shortcut. Every row filters as you type."
+        code={`<Command><CommandInput placeholder="Search…" /><CommandList><CommandGroup heading="Actions"><CommandItem>…`}
+      >
+        <CommandDemo />
+      </Spec>
+
+      <Spec
         id="tooltip"
         title="Tooltip"
         meta="tooltip.tsx"
@@ -814,14 +916,24 @@ export default function Page() {
         <TooltipDemo />
       </Spec>
 
+      <Spec
+        id="toast"
+        title="Toast"
+        meta="sonner.tsx"
+        desc="A success is a toast, never an inline row or an Alert. Mount one Toaster per app; call toast.success() where the work finished."
+        code={`toast.success('Host renamed')`}
+      >
+        <ToastDemo />
+      </Spec>
+
       {/* ── Navigation ───────────────────────────────────────────────────── */}
       <GroupHead>Navigation</GroupHead>
 
       <Spec
         id="sidebar"
-        title="Sidebar · SessionItem"
-        meta="sidebar.tsx · session-item.tsx"
-        desc="The 264px rail on its own surface tier: wordmark, the New session button, an eyebrow header with count and filter, the session list, and the account footer. A session row is a glyph coloured by state and a name; the age appears on hover and on the active row. A session still provisioning is pending: the grey glyph pulses."
+        title="Rail · Sidebar · SessionItem"
+        meta="rail.tsx · sidebar.tsx · session-item.tsx"
+        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses."
         bare
       >
         <div className="flex flex-wrap gap-6">
@@ -838,11 +950,51 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="routineitem"
+        title="RoutineItem"
+        meta="routine-item.tsx"
+        desc="The sidebar in routines mode: the same list holds routines. A clock or the GitHub mark names the trigger, the right edge carries the run count, the next run as a mono countdown, or Paused, and the selected routine expands its last runs inline, each with a state dot and its age. A paused routine dims its name."
+        code={`<RoutineItem name="Standup digest" meta="in 45h" active /><RoutineRunList><RoutineRun title="Standup digest · Fri 25 Sep" ago="1d" /></RoutineRunList>`}
+      >
+        <RoutineItemsDemo />
+      </Spec>
+
+      <Spec
+        id="pilltabs"
+        title="PillTabs"
+        meta="pill-tabs.tsx"
+        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes: 32px for a page's top row, 28px inside a card."
+        code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
+      >
+        <PillTabsDemo />
+      </Spec>
+
+      <Spec
+        id="editorpage"
+        title="EditorPage"
+        meta="editor-page.tsx"
+        desc="The page over the main column — New project, Add a host, the automation editor — and nothing in it: a canvas column that scrolls on its own, a 760px body with the export's padding, and the Back pill above the page header. The console mounts it once from a layout route and each page fills the body."
+        code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>`}
+      >
+        <EditorPageDemo />
+      </Spec>
+
+      <Spec
+        id="pageheader"
+        title="PageHeader"
+        meta="page-header.tsx"
+        desc="Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining."
+        code={`<PageHeader><PageHeaderCrumbs>…</PageHeaderCrumbs><PageHeaderRow size="lg" icon={<ClockIcon />} title="Nightly dependency audit" actions={…} /><PageHeaderMeta>…</PageHeaderMeta><PageHeaderNote action={<Button size="sm">Resume</Button>}>Paused.</PageHeaderNote></PageHeader>`}
+      >
+        <PageHeaderDemo />
+      </Spec>
+
+      <Spec
         id="stepper"
         title="Stepper"
         meta="stepper.tsx"
-        desc="The provisioning pane. Steps are named so a slow one is diagnosable: a spinning ring while running, a green check when done, the rail turning green behind it, mono elapsed time in the footer."
-        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="00:12" status="Provisioning" />`}
+        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word."
+        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
       >
         <StepperDemo />
       </Spec>
@@ -854,12 +1006,98 @@ export default function Page() {
         id="terminal"
         title="Terminal"
         meta="terminal.tsx"
-        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom."
+        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects."
         bare
       >
         <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">
           <TerminalDemo />
         </ThemePair>
+      </Spec>
+
+      {/* ── Routines ─────────────────────────────────────────────────────── */}
+      <GroupHead>Routines</GroupHead>
+
+      <Spec
+        id="runhistory"
+        title="RunHistory"
+        meta="run-history.tsx"
+        desc="One column per day. Height is successful runs; a red dot above means at least one failed. Empty days keep a 3px stub so the time axis never compresses. Hovering a column dims the rest. The header carries the legend, or a link when the counts live elsewhere."
+        code={`<RunHistory days={days} axis={['27 Aug', '26 Sep']} />`}
+      >
+        <RunHistoryDemo />
+      </Spec>
+
+      <Spec
+        id="routinetable"
+        title="RoutineTable"
+        meta="routine-table.tsx"
+        desc="The Routines overview. The trigger reads in words, the next run gives both clock time and a relative countdown, the status is a dot and a word, and the row actions stay behind the ellipsis. Paused rows dim."
+        code={`<RoutineTable><RoutineTableHead /><RoutineTableRow icon={<ClockIcon />} name="Nightly dependency audit" sub="XRP Mobile · Claude Code" trigger="Every weekday at 09:00" next="Mon 09:00" nextRelative="in 2d 14h" status="active" statusLabel="Active" action={…} /></RoutineTable>`}
+      >
+        <RoutineTableDemo />
+      </Spec>
+
+      <Spec
+        id="runslist"
+        title="RunsList"
+        meta="runs-list.tsx"
+        desc="The Runs tab: status tabs with counts and the facet tokens in the filter row, then a row per run with its routine and time. Step-level glyphs (check circle, alert circle) are allowed here because each row is a finished run, not a live state; a run still going shows the pulsing dot."
+        code={`<RunsList><RunsListFilters>…</RunsListFilters><RunsListHead /><RunRow state="failed" title="Dependency audit · 3 safe bumps" routine="Nightly dependency audit" date="Sep 26" time="02:00" /><RunsListFoot range="1–10 of 65" onNext={next} /></RunsList>`}
+      >
+        <RunsListDemo />
+      </Spec>
+
+      <Spec
+        id="templates"
+        title="TemplateGrid"
+        meta="template-grid.tsx"
+        desc="Starting points under the routine table, filtered by category tabs. Each names its trigger in the meta line; Add opens the editor prefilled."
+        code={`<TemplateGrid><TemplateItem icon={<GitPullRequestIcon />} name="Pull request review" description="…" meta={<>…On pull request opened</>} action={<Button size="sm">Add</Button>} /></TemplateGrid>`}
+      >
+        <TemplateGridDemo />
+      </Spec>
+
+      <Spec
+        id="routinesteps"
+        title="RoutineSteps · InlineToken · TimeGrid"
+        meta="routine-steps.tsx · inline-token.tsx · time-grid.tsx"
+        desc="The routine editor is four numbered steps: Where, When, What, Agent. A finished step inverts its number to a tick and prints a one-line summary on the right, so the whole routine reads top to bottom before you save. A trigger reads as a sentence and every variable part is a token you click to change; mono tokens hold values a human compares. The time token opens a grid of hours where past times are disabled rather than hidden. A weekly schedule previews its days as a strip with the next one ringed; a GitHub event previews what it would have matched. The dashed row adds another trigger."
+        code={`<RoutineSteps><RoutineStep number={2} title="When" subtitle="Any trigger starts a run." done summary="Weekdays at 09:00"><TriggerCard icon={<ClockIcon />} onRemove={remove} preview={…}><TokenSentence>Every <InlineToken>weekday</InlineToken> at <InlineToken mono>09:00</InlineToken></TokenSentence></TriggerCard><AddRow>Add another trigger</AddRow></RoutineStep></RoutineSteps>`}
+      >
+        <RoutineEditorDemo />
+      </Spec>
+
+      {/* ── Settings ─────────────────────────────────────────────────────── */}
+      <GroupHead>Settings</GroupHead>
+
+      <Spec
+        id="settingsnav"
+        title="SettingsNav"
+        meta="settings-nav.tsx"
+        desc="A plain sidebar: a way back to the console, then eyebrow-labelled groups. Counts ride on the right in mono."
+        code={`<SettingsNav><SettingsNavBack>Back to console</SettingsNavBack><SettingsNavGroup label="Workspace"><SettingsNavItem icon={<CpuIcon />} count={3} active>Hosts</SettingsNavItem></SettingsNavGroup></SettingsNav>`}
+      >
+        <SettingsNavDemo />
+      </Spec>
+
+      <Spec
+        id="settingsgroup"
+        title="SettingsGroup"
+        meta="settings-group.tsx"
+        desc="One card per group, one row per setting: label and a one-line hint on the left, the control on the right, hairlines between. A save row appears at the foot only when something changed. The destructive group is its own card under a heading."
+        code={`<SettingsGroup><SettingsRow label="Full name"><Input … /></SettingsRow><SettingsSaveRow><Button variant="ghost" size="sm">Discard</Button><Button size="sm">Save changes</Button></SettingsSaveRow></SettingsGroup>`}
+      >
+        <SettingsGroupDemo />
+      </Spec>
+
+      <Spec
+        id="hostcard"
+        title="HostCard"
+        meta="host-card.tsx"
+        desc="One card per host. Running is green, idle is a grey dot, offline is a hollow ring with its last-seen time. The ellipsis holds Rename, Copy host ID (with the id as a mono value) and Remove host."
+        code={`<HostCard name="optimus" meta="Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2" status="idle" state="Idle" seen="connected" action={…} />`}
+      >
+        <HostCardsDemo />
       </Spec>
 
       {/* ── Media ────────────────────────────────────────────────────────── */}

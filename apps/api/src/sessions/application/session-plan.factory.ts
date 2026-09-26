@@ -75,7 +75,6 @@ export class SessionPlanFactory {
   async attachCheckout(
     scope: AccessScope,
     session: WorkSessionEntity,
-    project: ProjectEntity,
     input: SessionCheckoutInputDto,
   ): Promise<SessionCheckoutEntity> {
     const repository = await this.repositoryOf(scope, input);
@@ -100,7 +99,7 @@ export class SessionPlanFactory {
       // The base defaults to the repository's default branch; the session's own
       // branch is created from it and is never the base itself.
       baseBranch: input.baseBranch ?? repository.defaultBranch,
-      branch: sessionBranchName(project.slug, session.slug),
+      branch: sessionBranchName(session.projectSlug, session.slug),
     });
     session.attachCheckout(checkout);
     return checkout;
