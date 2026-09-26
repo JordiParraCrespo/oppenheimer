@@ -21,6 +21,7 @@ for the detail and sources.
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
+| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -200,4 +201,9 @@ earlier note:
   a project chip. The 2026-09-26 export puts one first on New session, with
   a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
   works out the data model, the API and the console for it (2026-09-26).
-
+- The order after the MVP was VMs with sleep tiers, the accounts model,
+  then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
+  On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
+  0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
+  display. Multi-account (note 06) is on the list with no version yet.
+  VMs are not placed. See `next-steps/README.md`.
