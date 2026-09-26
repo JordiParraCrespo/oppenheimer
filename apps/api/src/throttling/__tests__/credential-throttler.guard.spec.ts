@@ -1,3 +1,4 @@
+import { AppError } from '@oppenheimer/backend-core';
 import { describe, expect, it } from 'vitest';
 import type { CredentialScopeResolver } from '../../auth/application/credential-scope.resolver';
 import { CredentialThrottlerGuard } from '../guards/credential-throttler.guard';
@@ -83,5 +84,27 @@ describe('CredentialThrottlerGuard', () => {
     expect(await guard.getTracker({ ip: '1.2.3.4' })).not.toBe(
       await anonymous().getTracker({ ip: '1.2.3.4' }),
     );
+  });
+});
+
+describe('CredentialThrottlerGuard – a blocked request', () => {
+  it('answers with the RATE_001 catalog error, not a codeless ThrottlerException', async () => {
+    // Nest's own exception reaches the client with no `code`, so nothing can
+    // tell a rate limit apart from any other 429.
+    const guard = guardWith(async () => null) as unknown as {
+      throwThrottlingException(
+        context: unknown,
+        limit: { timeToBlockExpire: number },
+      ): Promise<void>;
+    };
+
+    const error = await guard
+      .throwThrottlingException({}, { timeToBlockExpire: 42 })
+      .catch((e: unknown) => e as AppError);
+
+    expect(error).toBeInstanceOf(AppError);
+    expect((error as AppError).code).toBe('RATE_001');
+    expect((error as AppError).getStatus()).toBe(429);
+    expect((error as AppError).extensions).toEqual({ retryAfter: 42 });
   });
 });

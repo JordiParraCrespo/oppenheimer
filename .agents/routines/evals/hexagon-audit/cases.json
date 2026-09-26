@@ -1,0 +1,42 @@
+{
+  "prompt": ".agents/routines/hexagon-audit.md",
+  "runs": {
+    "planted": {
+      "setup": "worktree at origin/main + plant.mjs, committed as one commit",
+      "args": "--since HEAD~1 --module profile --dry-run <out>/planted.md",
+      "measures": "recall on planted violations; no false positives on decoys or on the profile deep dive"
+    },
+    "clean": {
+      "setup": "worktree at origin/main, untouched",
+      "args": "--since HEAD --module users --dry-run <out>/clean.md",
+      "measures": "false positives on the reference module (users/ is the one ARCHITECTURE.md tells you to copy)"
+    }
+  },
+  "expected": [
+    { "id": "P1", "key": "HEX-CMD-RETURN", "file": "users/commands/update-user/update-user.command-handler.ts", "section": "Findings" },
+    { "id": "P2", "key": "HEX-THIN-CONTROLLER", "file": "users/commands/delete-user/delete-user.http.controller.ts", "section": "Findings" },
+    { "id": "P3", "key": "HEX-ERRORS", "file": "users/commands/delete-user/delete-user.command-handler.ts", "section": "Findings", "note": "bare ForbiddenException" },
+    { "id": "P4", "key": "HEX-PORT-OPTION", "file": "users/database/user.repository.port.ts", "section": "Findings" },
+    { "id": "P5", "key": ["HEX-QUERY-WRITE", "HEX-ENCAPSULATION"], "file": "users/queries/find-user-by-id/find-user-by-id.query-handler.ts", "section": "Findings", "note": "either key counts; both is better" },
+    { "id": "P6", "key": "HEX-ERRORS", "file": "users/commands/update-user/update-user.command-handler.ts", "section": "Findings", "note": "interpolated catalog message" },
+    { "id": "P7", "key": "HEX-EVENTS", "file": "users/commands/delete-user/delete-user.command-handler.ts", "section": "Findings", "note": "EventEmitter2.emit from a handler, bypassing the outbox" },
+    { "id": "P8", "key": "mechanical:domain-stays-pure", "file": "users/domain/value-objects/email.value-object.ts", "section": "Findings", "note": "must be reported from the arch output, as blocking" },
+    { "id": "P9a", "key": "HEX-ALWAYS-VALID", "file": "users/domain/user.entity.ts", "section": "Findings", "note": "_id redeclared" },
+    { "id": "P9b", "key": "HEX-ALWAYS-VALID", "file": "users/domain/user.entity.ts", "section": "Findings or Worth a look", "note": "rename() skips validate(); empty first name possible" },
+    { "id": "P10", "key": "HEX-LEGACY-SHAPE", "file": "admin/admin.controller.ts", "section": "Findings" },
+    { "id": "P11a", "key": "ledger-drift", "file": "apps/api/.dependency-cruiser.cjs", "section": "Findings", "note": "added pathNot on handlers-depend-on-port-not-adapter" },
+    { "id": "P11b", "key": "HEX-PORT-INJECTION", "file": "users/queries/find-users/find-users.query-handler.ts", "section": "Findings", "note": "may be folded into P11a" }
+  ],
+  "must_not_flag": [
+    { "id": "N1", "file": "queue/infrastructure/email.processor.ts", "why": "plain Error on a path that never answers HTTP is explicitly allowed" },
+    { "id": "N2", "file": "users/domain/user.entity.ts#clearContactDetails", "why": "correct domain method: mutates through itself and re-validates" },
+    { "id": "N3", "file": "users/queries/find-user-by-id/find-user-by-id.http.controller.ts#assertCanAccessUser", "why": "row-level authorization after load is the documented pattern (user-access.policy)" },
+    { "id": "N4", "file": "the 56 unresolved domain-stays-pure → @oppenheimer/backend-ddd errors", "why": "artefact of running arch without turbo; the prompt warns about it" },
+    { "id": "N5", "file": "anything on the 18-entry LEDGER in scripts/check-api-structure.mjs", "why": "known debt, not new" }
+  ],
+  "scoring": {
+    "recall": "planted items found in the right section / 13 (P9b counts in either section)",
+    "precision": "true findings / all items under Findings, across both runs",
+    "pass": "recall ≥ 0.85, zero must_not_flag hits, and every finding cites a rule sentence"
+  }
+}

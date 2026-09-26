@@ -977,6 +977,16 @@
   background-size: 22px 22px;
 }
 
+/* No scrollbar at all, for a list that scrolls but draws its own edges — the
+   console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* A quiet 8px scrollbar for panes that scroll inside a card. */
 @utility scrollbar-thin {
   scrollbar-width: thin;

@@ -49,7 +49,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         body: JSON.stringify({ accept, consent_code: search.consent_code }),
       });
 
-      if (!response.ok) throw new Error(await readError(response));
+      if (!response.ok) throw new Error((await readError(response)) ?? t('consent.failed'));
 
       const { redirectURI } = (await response.json()) as {
         redirectURI?: string;
@@ -78,7 +78,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         <CardHeader>
           <CardTitle>
             {t('consent.title', {
-              client: search.client_id ?? 'An application',
+              client: search.client_id ?? t('consent.unknownClient'),
             })}
           </CardTitle>
           <CardDescription>

@@ -4,6 +4,7 @@ import {
   EmptyState,
   SessionList,
   Skeleton,
+  useNow,
 } from '@oppenheimer/design-system-web';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
@@ -14,10 +15,9 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ProjectGroup, type SessionRowActions } from '../components/project-group';
 import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import {
   ALL,
@@ -32,6 +32,8 @@ import {
   type SessionFilters,
 } from '../lib/session-filters';
 import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-groups';
+import { ProjectGroup } from './project-group';
+import type { SessionRowActions } from './session-row';
 
 /**
  * The dialogs load when first opened. The sidebar is on every authenticated
@@ -62,12 +64,13 @@ type Dialog =
  *
  * What lives here is the three reads — the sessions (the rows), the projects
  * (the groups, in the order the API lists them) and the hosts (a facet's
- * names) — the state two siblings share (the filters, the query, the folded
- * groups, which row's menu or rename is open, which dialog is up) and the two
- * mutations a row cannot own: a rename commits from the inline input, a move
- * from the row menu's pane. The head and each group are components that draw
- * what they are handed; the delete and the project dialog own their own
- * mutations.
+ * names) — the minute clock the ages are read against, the state two siblings
+ * share (the filters, the query, the folded groups, which row's menu or rename
+ * is open, which dialog is up) and the two mutations a row cannot own: a
+ * rename commits from the inline input, a move from the row menu's pane. The
+ * head is a component that draws what it is handed; each group and each row
+ * are sections, because the highlight is theirs to subscribe to; the delete
+ * and the project dialog own their own mutations.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -82,9 +85,11 @@ export function SessionsSidebar() {
   const { data: sessions, isPending } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
-  // an id is not a filter anyone can read.
-  const { data: hosts } = useHosts();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // an id is not a filter anyone can read. Selected down to plain pairs, which
+  // the query keeps by reference across a refetch that changes no name.
+  const { data: hosts } = useHosts({
+    select: (rows) => rows.map((host) => ({ id: host.id, name: host.name })),
+  });
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
   const [closed, setClosed] = useState<string[]>([]);
@@ -94,6 +99,10 @@ export function SessionsSidebar() {
 
   const rename = useRenameSession();
   const move = useMoveSession();
+  // One clock for every row's age, ticking once a minute. Every row redraws on
+  // the tick, because every age may have moved; that is one render a minute,
+  // where a clock read inside each row stopped the ages moving at all.
+  const now = useNow(60_000);
 
   const all = sessions ?? [];
   const options = sessions
@@ -124,7 +133,6 @@ export function SessionsSidebar() {
   }
 
   const rows: SessionRowActions = {
-    link: (session) => <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />,
     menuFor,
     onMenuOpenChange: (session, open) => setMenuFor(open ? session.id : null),
     renaming,
@@ -194,9 +202,9 @@ export function SessionsSidebar() {
                     next ? current.filter((id) => id !== key) : [...current, key],
                   )
                 }
-                pathname={pathname}
                 narrowed={narrowed}
                 query={query}
+                now={now}
                 onNewSessionHere={(target) =>
                   navigate({ to: '/sessions/new', search: { project: target.id } })
                 }

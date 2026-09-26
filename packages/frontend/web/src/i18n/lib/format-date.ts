@@ -58,15 +58,21 @@ export function formatRelativeTime(date: Date, locale: string, now = new Date())
  * `common.relative.*` instead, so the caller translates and this stays pure
  * date arithmetic. `null` means "less than a minute", which the caller words
  * itself — a thread list says "now", a session list says "Active now".
+ *
+ * `now` is required, and a timestamp from a ticking clock (`useNow`) is what
+ * a component passes. It used to default to `new Date()`, which read the clock
+ * during render where nobody could see it: the React Compiler cached the age
+ * on `date` alone, and "5m" stayed "5m".
  */
 export function compactAge(
   date: Date,
-  now = new Date(),
+  now: Date | number,
 ): {
   unit: 'minute' | 'hour' | 'day' | 'week' | 'month' | 'year';
   count: number;
 } | null {
-  const seconds = Math.max(0, (now.getTime() - date.getTime()) / 1000);
+  const nowMs = typeof now === 'number' ? now : now.getTime();
+  const seconds = Math.max(0, (nowMs - date.getTime()) / 1000);
   if (seconds < 60) return null;
 
   const minutes = seconds / 60;

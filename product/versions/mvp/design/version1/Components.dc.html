@@ -43,7 +43,7 @@ a:hover{text-decoration:underline}
 <a href="#overlays" class="op-chip">Overlays</a>
 <a href="#terminal" class="op-chip">Terminal</a>
 <a href="#session" class="op-chip">Session</a>
-<a href="#routines" class="op-chip">Routines</a>
+<a href="#routines" class="op-chip">Automations</a>
 <a href="#settings" class="op-chip">Settings</a>
 </div>
 </div>
@@ -330,12 +330,12 @@ a:hover{text-decoration:underline}
 </div>
 <div style="max-width:540px;display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;background:var(--popover)">
 <div class="op-prepo" data-on="true">
-<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">xrp-mobile</span></span></label>
+<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked="{{ true }}"><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">xrp-mobile</span></span></label>
 <button class="op-chip" type="button" data-selected="true" style="flex:none;visibility:visible">Default</button>
 <div class="op-prepo__base"><button class="op-bpick" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v">main</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></div>
 </div>
 <div class="op-prepo" data-on="true">
-<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">atlas</span></span></label>
+<label class="op-check" style="flex:1;min-width:0;align-items:center"><input type="checkbox" checked="{{ true }}"><span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px">atlas</span></span></label>
 <button class="op-chip" type="button" data-selected="false" style="flex:none;visibility:visible">Default</button>
 <div class="op-prepo__base"><button class="op-bpick" type="button"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v">develop</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button></div>
 </div>
@@ -353,7 +353,7 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Field select</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-fsel · op-fsel__btn · __val · __meta · __search · __list · __empty</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The routine editor’s picker: a labelled field whose value and a muted count sit on one line. It opens the same listbox as the chip select, with an optional search row and checkboxes when more than one can be picked.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The automation editor’s picker: a labelled field whose value and a muted count sit on one line. It opens the same listbox as the chip select, with an optional search row and checkboxes when more than one can be picked.</p>
 </div>
 <div class="op-st__grid" data-cols="3" style="max-width:720px">
 <div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Project</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">XRP Mobile</span><span class="op-fsel__meta"></span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div><div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Repositories</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">xrp-mobile</span><span class="op-fsel__meta">+1</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div><div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Host</span><div class="op-fsel"><button class="op-fsel__btn" type="button"><span class="op-fsel__val">optimus</span><span class="op-fsel__meta">idle</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button></div></div>
@@ -402,7 +402,7 @@ a:hover{text-decoration:underline}
 </div>
 <div class="op-listbox op-tpop" style="position:static;width:300px">
 <span class="op-tpop__label">Morning</span>
-<div class="op-hgrid" data-cols="4"><button class="op-hcell" type="button" data-on="false" disabled>06:00</button><button class="op-hcell" type="button" data-on="false">07:00</button><button class="op-hcell" type="button" data-on="false">08:00</button><button class="op-hcell" type="button" data-on="true">09:00</button><button class="op-hcell" type="button" data-on="false">10:00</button><button class="op-hcell" type="button" data-on="false">11:00</button><button class="op-hcell" type="button" data-on="false">12:00</button><button class="op-hcell" type="button" data-on="false">13:00</button><button class="op-hcell" type="button" data-on="false">14:00</button><button class="op-hcell" type="button" data-on="false">15:00</button><button class="op-hcell" type="button" data-on="false">16:00</button><button class="op-hcell" type="button" data-on="false">17:00</button></div>
+<div class="op-hgrid" data-cols="4"><button class="op-hcell" type="button" data-on="false" disabled="{{ true }}" style="opacity:.3">06:00</button><button class="op-hcell" type="button" data-on="false" disabled="{{ true }}" style="opacity:.3">07:00</button><button class="op-hcell" type="button" data-on="false">08:00</button><button class="op-hcell" type="button" data-on="true">09:00</button><button class="op-hcell" type="button" data-on="false">10:00</button><button class="op-hcell" type="button" data-on="false">11:00</button><button class="op-hcell" type="button" data-on="false">12:00</button><button class="op-hcell" type="button" data-on="false">13:00</button><button class="op-hcell" type="button" data-on="false">14:00</button><button class="op-hcell" type="button" data-on="false">15:00</button><button class="op-hcell" type="button" data-on="false">16:00</button><button class="op-hcell" type="button" data-on="false">17:00</button></div>
 </div>
 </div>
 
@@ -432,9 +432,9 @@ a:hover{text-decoration:underline}
 <p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Three levels, each one line of consequence. Full access is the only level allowed a warning tone, because it changes a machine unattended.</p>
 </div>
 <div class="op-menu op-modelmenu" role="menu" style="position:static;width:296px;min-width:296px">
-<button class="op-menu__item op-permrow" type="button" data-perm-row="ask" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Ask for approval</span><span class="op-modelopt__desc" style="font-size:11.5px">Every edit and command waits for you.</span></span><span class="op-menu__tick"></span></button>
+<button class="op-menu__item op-permrow" type="button" data-perm-row="ask" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Ask for approval</span><span class="op-modelopt__desc" style="font-size:11.5px">Every edit and command waits for you.</span></span><span class="op-menu__tick"></span></button>
 <button class="op-menu__item op-permrow" type="button" data-perm-row="auto" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Approve for me</span><span class="op-modelopt__desc" style="font-size:11.5px">Edits in the worktree run; anything outside asks.</span></span><span class="op-menu__tick">✓</span></button>
-<button class="op-menu__item op-permrow" type="button" data-perm-row="full" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Full access</span><span class="op-modelopt__desc" style="font-size:11.5px">Runs any command on the host without asking.</span></span><span class="op-menu__tick"></span></button>
+<button class="op-menu__item op-permrow" type="button" data-perm-row="full" style="gap:10px;padding:5px 10px"><span style="display:flex;padding-top:1px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span><span class="op-modelopt"><span class="op-modelopt__name" style="font-size:13px">Full access</span><span class="op-modelopt__desc" style="font-size:11.5px">Runs any command on the host without asking.</span></span><span class="op-menu__tick"></span></button>
 </div>
 </div>
 
@@ -453,13 +453,13 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Rail · Sidebar</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rail · op-sbsearch · op-filterchip · op-pgroup · op-phead · op-srow · op-pempty</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The 56px rail switches between Sessions and Routines; its tooltips carry the counts. The sidebar groups sessions by project — each header collapses, and its actions appear on hover. Search and facet filters sit above the list, and active filters stay visible as removable chips. Row actions (rename, move, delete) hide behind the ellipsis until hover.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The 56px rail switches between Sessions and Automations; its tooltips carry the counts. The sidebar groups sessions by project — each header collapses, and its actions appear on hover. Search and facet filters sit above the list, and active filters stay visible as removable chips. Row actions (rename, move, delete) hide behind the ellipsis until hover.</p>
 </div>
 <div style="height:520px;border:1px solid var(--border-subtle);border-radius:18px;overflow:hidden;display:flex;background:var(--background)">
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="true" aria-label="Sessions"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import></button>
-<button class="op-rail__btn" type="button" aria-label="Routines"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import></button>
+<button class="op-rail__btn" type="button" aria-label="Automations"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import></button>
 </nav>
 <nav class="op-sidebar" style="width:264px;min-width:264px">
 <div class="op-sidebar__head"><span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span></div>
@@ -484,10 +484,10 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Routine rows</h3>
+<h3 style="margin:0;font-size:17px;font-weight:600">Automation rows</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rrow · op-rruns · op-rrun · data-state · data-paused</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">In Routines mode the same list holds routines: a clock or GitHub glyph names the trigger, and the selected routine expands its last runs inline, each with a state dot. A paused routine dims its name.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">In Automations mode the same list holds automations: a clock or GitHub glyph names the trigger, and the selected automation expands its last runs inline, each with a state dot. A paused automation dims its name.</p>
 </div>
 <div style="max-width:300px;background:var(--sidebar);border:1px solid var(--border-subtle);border-radius:14px;padding:6px;display:flex;flex-direction:column">
 <div class="op-sessionlist">
@@ -527,11 +527,11 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Segmented tabs</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rp__tabs · op-rp__tab · data-on · op-runs__n</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Switches views inside a page — Routines / Runs, template categories, run status. The selected tab takes a tonal fill, never a colour. Counts ride inside the tab in mono.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Switches views inside a page — Automations / Runs, template categories, run status. The selected tab takes a tonal fill, never a colour. Counts ride inside the tab in mono.</p>
 </div>
 <div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:14px">
-<div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true">Routines</button><button class="op-rp__tab" type="button">Runs</button></div>
-<div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true">All<span class="op-runs__n">48</span></button><button class="op-rp__tab" type="button">Running<span class="op-runs__n">1</span></button><button class="op-rp__tab" type="button">Succeeded<span class="op-runs__n">44</span></button><button class="op-rp__tab" type="button">Failed<span class="op-runs__n">3</span></button></div>
+<div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true">Automations</button><button class="op-rp__tab" type="button">Runs</button></div>
+<div class="op-runs__filters"><div class="op-rp__tabs"><button class="op-rp__tab" type="button" data-on="true" style="gap:6px">All<span class="op-runs__n">48</span></button><button class="op-rp__tab" type="button" style="gap:6px">Running<span class="op-runs__n">1</span></button><button class="op-rp__tab" type="button" style="gap:6px">Succeeded<span class="op-runs__n">44</span></button><button class="op-rp__tab" type="button" style="gap:6px">Failed<span class="op-runs__n">3</span></button></div></div>
 </div></div>
 </div>
 
@@ -541,11 +541,11 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Page header</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-ph · __crumbs · __here · __row · __icon · __title · __actions · __meta · __note</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Every routine page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Every automation page opens with one: a breadcrumb back, the name at 28px beside its trigger glyph, actions on the right, and a meta line of facts. The title becomes an input when editing. A note band appears only when the state needs explaining.</p>
 </div>
 <div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none">
 <header class="op-ph">
-<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button">Routines</button><span>/</span><span class="op-ph__here">Nightly dependency audit</span></nav>
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button">Automations</button><span>/</span><span class="op-ph__here">Nightly dependency audit</span></nav>
 <div class="op-ph__row">
 <span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="17" hint-size="17px,17px"></x-import></span>
 <h1 class="op-ph__title">Nightly dependency audit</h1>
@@ -614,10 +614,10 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Dialog · Add a host</h3>
+<h3 style="margin:0;font-size:17px;font-weight:600">Add a host (page)</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · __head · __body · __foot · op-scrim</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">440px, 28px radius, on the popover tier. The same Add a host dialog opens from the composer’s host chip and from Settings → Hosts: one instruction block with Command / Agent prompt tabs sharing a single copy button, a token countdown, and a status line that resolves in place so nothing below it moves.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Add a host and New project are pages over the main column, built like the automation editor: page header, then numbered steps. The instruction block below is its Install step, shared by the composer’s host chip and Settings → Hosts: one instruction block with Command / Agent prompt tabs sharing a single copy button, a token countdown, and a status line that resolves in place so nothing below it moves.</p>
 </div>
 <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
 <div class="op-dialog" style="margin:0;animation:none">
@@ -654,7 +654,7 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Dialog · Destructive confirm</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-dialog · role=alertdialog · op-btn--danger</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Deleting a session, removing a host, deleting a project. The title names the thing, the body states the cost in one or two sentences, and the button repeats the verb — never “Confirm”. Smaller confirmations (deleting a routine) stay inside the menu that asked.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Deleting a session, removing a host, deleting a project. The title names the thing, the body states the cost in one or two sentences, and the button repeats the verb — never “Confirm”. Smaller confirmations (deleting a automation) stay inside the menu that asked.</p>
 </div>
 <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
 <div class="op-dialog" role="alertdialog" style="margin:0;animation:none;max-width:420px">
@@ -664,7 +664,7 @@ a:hover{text-decoration:underline}
 </div>
 <div class="op-menu" role="menu" style="position:static;min-width:220px">
 <div style="display:flex;flex-direction:column;gap:10px;padding:8px 10px 6px;max-width:240px">
-<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this routine? Its triggers stop now. Past runs are kept.</span>
+<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this automation? Its triggers stop now. Past runs are kept.</span>
 <div style="display:flex;gap:6px;justify-content:flex-end"><button class="op-btn op-btn--ghost op-btn--sm" type="button">Cancel</button><button class="op-btn op-btn--secondary op-btn--sm" type="button" style="color:var(--danger)">Delete</button></div>
 </div>
 </div>
@@ -866,7 +866,7 @@ a:hover{text-decoration:underline}
 <section id="routines" style="display:flex;flex-direction:column;gap:28px">
 <div style="display:flex;flex-direction:column;gap:6px">
 <span style="font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Group 07</span>
-<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Routines</h2>
+<h2 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.018em">Automations</h2>
 <p style="margin:0;font-size:14px;color:var(--fg-muted)">Sessions that start themselves — on a schedule or on a GitHub event — and the tables that account for them.</p>
 </div>
 
@@ -878,7 +878,7 @@ a:hover{text-decoration:underline}
 </div>
 <p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">A dot and a word, from the fixed vocabulary. Running pulses; paused is muted, not coloured.</p>
 </div>
-<div style="display:flex;gap:24px;flex-wrap:wrap"><span class="op-rtable__st" data-st="active"><span class="op-rtable__dot"></span>Active</span><span class="op-rtable__st" data-st="running"><span class="op-rtable__dot"></span>Running</span><span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span><span class="op-rtable__st" data-st="failed"><span class="op-rtable__dot"></span>Failed</span></div>
+<div style="display:flex;gap:24px;flex-wrap:wrap"><span class="op-rtable__st" data-st="active"><span class="op-rtable__dot"></span>Active</span><span class="op-rtable__st" data-st="running"><span class="op-rtable__dot"></span>Running</span><span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span></div>
 </div>
 
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
@@ -899,33 +899,33 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Routine table</h3>
+<h3 style="margin:0;font-size:17px;font-weight:600">Automation table</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-rtable · __head · __row · __name · __trig · __next · __st</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Routines overview. The trigger reads in words, the next run gives both clock time and a relative countdown, and the row actions stay behind the ellipsis. Paused rows dim.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Automations overview. The trigger reads in words, the next run gives both clock time and a relative countdown, and the row actions stay behind the ellipsis. Paused rows dim.</p>
 </div>
 <div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><div class="op-rtable">
-<div class="op-rtable__head"><span>Routine</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div>
+<div class="op-rtable__head"><span>Automation</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div>
 <div class="op-rtable__row" role="button" tabindex="0">
 <span class="op-rtable__name"><span class="op-rtable__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></span><span class="op-rtable__stack"><span class="op-rtable__title">Nightly dependency audit</span><span class="op-rtable__sub">XRP Mobile · Claude Code</span></span></span>
 <span class="op-rtable__trig" data-col="trig">Every weekday at 09:00</span>
 <span class="op-rtable__next" data-col="next"><span>Mon 09:00</span><span class="op-rtable__nextrel">in 2d 14h</span></span>
 <span class="op-rtable__st" data-st="active"><span class="op-rtable__dot"></span>Active</span>
-<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Automation actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
 </div>
 <div class="op-rtable__row" role="button" tabindex="0">
 <span class="op-rtable__name"><span class="op-rtable__icon"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></span><span class="op-rtable__stack"><span class="op-rtable__title">Review new pull requests</span><span class="op-rtable__sub">Atlas · Codex</span></span></span>
 <span class="op-rtable__trig" data-col="trig">When a PR is opened on main</span>
 <span class="op-rtable__next" data-col="next"><span>On event</span></span>
 <span class="op-rtable__st" data-st="running"><span class="op-rtable__dot"></span>Running</span>
-<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Automation actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
 </div>
 <div class="op-rtable__row" role="button" tabindex="0" data-paused="true">
 <span class="op-rtable__name"><span class="op-rtable__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></span><span class="op-rtable__stack"><span class="op-rtable__title">Weekly changelog</span><span class="op-rtable__sub">Flama AI · Claude Code</span></span></span>
 <span class="op-rtable__trig" data-col="trig">Fridays at 17:00</span>
 <span class="op-rtable__next" data-col="next"><span>—</span></span>
 <span class="op-rtable__st" data-st="paused"><span class="op-rtable__dot"></span>Paused</span>
-<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Routine actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
+<span style="display:flex;justify-content:flex-end"><button class="op-iconbtn-sm" type="button" aria-label="Automation actions" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button></span>
 </div>
 </div></div></div>
 </div>
@@ -936,10 +936,10 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Runs list</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-runs__head · op-runrow · op-runs__foot</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Runs tab: a row per run with its routine and time. Step-level glyphs (check-circle, alert-circle) are allowed here because each row is a finished step, not a live state.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The Runs tab: a row per run with its automation and time. Step-level glyphs (check-circle, alert-circle) are allowed here because each row is a finished step, not a live state.</p>
 </div>
 <div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><div class="op-rtable">
-<div class="op-runs__head"><span>Run</span><span data-col="auto">Routine</span><span>Time</span></div>
+<div class="op-runs__head"><span>Run</span><span data-col="auto">Automation</span><span>Time</span></div>
 <button class="op-runrow" type="button" data-state="running"><span class="op-runrow__run"><span class="op-runrow__st"><span class="op-runrow__dot"></span></span><span class="op-runrow__title">Audit · 26 Sep</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Nightly dependency audit</span></span><span class="op-runrow__time"><span>26 Sep</span><span>09:00</span></span></button>
 <button class="op-runrow" type="button" data-state="done"><span class="op-runrow__run"><span class="op-runrow__st"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></span><span class="op-runrow__title">Review PR #214</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Review new pull requests</span></span><span class="op-runrow__time"><span>25 Sep</span><span>16:42</span></span></button>
 <button class="op-runrow" type="button" data-state="failed"><span class="op-runrow__run"><span class="op-runrow__st"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></span><span class="op-runrow__title">Audit · 24 Sep</span></span><span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>Nightly dependency audit</span></span><span class="op-runrow__time"><span>24 Sep</span><span>09:00</span></span></button>
@@ -953,7 +953,7 @@ a:hover{text-decoration:underline}
 <h3 style="margin:0;font-size:17px;font-weight:600">Templates</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-tpl · __grid · __item · __icon · __name · __desc · __meta</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Starting points under the routine table, filtered by category tabs. Each names its trigger in the meta line; Add opens the editor pre-filled.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">Starting points under the automation table, filtered by category tabs. Each names its trigger in the meta line; Add opens the editor pre-filled.</p>
 </div>
 <div class="op-rp" style="position:static;padding:0;height:auto;background:none"><div class="op-rp__inner" style="padding:0;max-width:none;display:flex;flex-direction:column;gap:20px"><section class="op-tpl" style="margin:0"><div class="op-tpl__grid">
 <div class="op-tpl__item"><span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="shield" size="17" hint-size="17px,17px"></x-import></span><span class="op-tpl__stack"><span class="op-tpl__name">Dependency audit</span><span class="op-tpl__desc">Checks lockfiles for advisories and opens a PR with safe bumps.</span><span class="op-tpl__meta"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="12" hint-size="12px,12px"></x-import>Weekdays at 09:00</span></span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Add</button></div>
@@ -966,10 +966,10 @@ a:hover{text-decoration:underline}
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">
 <div style="display:flex;flex-direction:column;gap:4px">
 <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-<h3 style="margin:0;font-size:17px;font-weight:600">Routine steps</h3>
+<h3 style="margin:0;font-size:17px;font-weight:600">Automation steps</h3>
 <code style="font-family:var(--font-mono);font-size:12px;color:var(--fg-subtle)">op-steps · op-st · __rail · __num · __head · __sum · __body · __note</code>
 </div>
-<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The routine editor is four numbered steps — Where, When, What, Agent. A finished step inverts its number to a tick and prints a one-line summary on the right, so the whole routine reads top to bottom before you save.</p>
+<p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">The automation editor is four numbered steps — Where, When, What, Agent. A finished step inverts its number to a tick and prints a one-line summary on the right, so the whole automation reads top to bottom before you save.</p>
 </div>
 <div class="op-rpage" style="position:static;inset:auto;height:auto;background:none"><div class="op-rpage__body" style="padding:0;max-width:720px"><div class="op-steps">
 <div class="op-st" data-done="true" data-last="false"><div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div><div class="op-st__main"><div class="op-st__head"><span class="op-st__title">Where</span><span class="op-st__sub">The code it works on, and the machine it runs on.</span><span class="op-st__sum">XRP Mobile · optimus</span></div></div></div>
@@ -1016,12 +1016,12 @@ a:hover{text-decoration:underline}
 <p style="margin:0;max-width:64ch;font-size:13px;color:var(--fg-muted);text-wrap:pretty">One card per group, one row per setting: label and a one-line hint on the left, the control on the right, hairlines between. A save row appears at the foot only when something changed.</p>
 </div>
 <div style="max-width:760px;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
-<div style="display:flex;align-items:center;gap:16px;padding:16px 20px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and routines</span></div><span class="op-avatar op-avatar--lg op-avatar--accent">JP</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Upload</button></div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and automations</span></div><span class="op-avatar op-avatar--lg op-avatar--accent">JP</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Upload</button></div>
 <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Email</span><span style="font-size:13px;color:var(--fg-muted)">Used to sign in and for run notifications</span></div><span style="color:var(--fg-muted);font-size:14px">jordiparra99@gmail.com</span><button class="op-btn op-btn--secondary op-btn--sm" type="button">Change</button></div>
 <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Full name</span></div><div class="op-input op-input--md" style="width:280px;flex:none"><input class="op-input__el" type="text" aria-label="Full name" value="Jordi Parra"></div></div>
 <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border-subtle)"><button class="op-btn op-btn--ghost op-btn--sm" type="button">Discard</button><button class="op-btn op-btn--primary op-btn--sm" type="button">Save changes</button></div>
 </div>
-<div style="max-width:760px;display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Delete account</span><span style="font-size:13px;color:var(--fg-muted)">Stops every session and removes your routines and host registrations. This cannot be undone.</span></div><button class="op-btn op-btn--danger op-btn--sm" type="button">Delete account</button></div>
+<div style="max-width:760px;display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px"><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500;font-size:14px">Delete account</span><span style="font-size:13px;color:var(--fg-muted)">Stops every session and removes your automations and host registrations. This cannot be undone.</span></div><button class="op-btn op-btn--danger op-btn--sm" type="button">Delete account</button></div>
 </div>
 
 <div style="border-top:1px solid var(--border-subtle);padding-top:20px;display:flex;flex-direction:column;gap:16px">

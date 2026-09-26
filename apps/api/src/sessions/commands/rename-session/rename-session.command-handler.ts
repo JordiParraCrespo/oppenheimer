@@ -50,6 +50,6 @@ export class RenameSessionCommandHandler
     ]);
     // Renaming tells no host anything: the name is display only, and the slug the
     // runner keys every path on does not change.
-    return { session, hints: [] };
+    return { sessionId: session.id, hints: [] };
   }
 }

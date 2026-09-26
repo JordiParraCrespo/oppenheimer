@@ -39,11 +39,16 @@ export function describeScopes(
   return { scopes: matched, unknown: [...requested] };
 }
 
-export async function readError(response: Response): Promise<string> {
+/**
+ * The server's own message for a failed consent, when it sent one. `undefined`
+ * otherwise: the screen says it in the reader's language rather than showing a
+ * status code.
+ */
+export async function readError(response: Response): Promise<string | undefined> {
   try {
     const body = (await response.json()) as { message?: string };
-    return body.message ?? `Request failed with ${response.status}`;
+    return body.message;
   } catch {
-    return `Request failed with ${response.status}`;
+    return undefined;
   }
 }

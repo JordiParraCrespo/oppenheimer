@@ -23,6 +23,7 @@ import { RevokeAccessGrantHttpController } from './commands/revoke-access-grant/
 import { AccessGrantOrmEntity } from './database/access-grant.orm-entity';
 import { AccessGrantRepository } from './database/access-grant.repository';
 import { AccessScopeInterceptor } from './interceptors/access-scope.interceptor';
+import { FindAccessGrantQueryHandler } from './queries/find-access-grant/find-access-grant.query-handler';
 import { FindAccessGrantsHttpController } from './queries/find-access-grants/find-access-grants.http.controller';
 import { FindAccessGrantsQueryHandler } from './queries/find-access-grants/find-access-grants.query-handler';
 import { FindAuthzCatalogHttpController } from './queries/find-catalog/find-catalog.http.controller';
@@ -40,7 +41,11 @@ const commandHandlers: Provider[] = [
   CreateAccessGrantCommandHandler,
   RevokeAccessGrantCommandHandler,
 ];
-const queryHandlers: Provider[] = [FindAuthzCatalogQueryHandler, FindAccessGrantsQueryHandler];
+const queryHandlers: Provider[] = [
+  FindAuthzCatalogQueryHandler,
+  FindAccessGrantsQueryHandler,
+  FindAccessGrantQueryHandler,
+];
 const mappers: Provider[] = [AccessGrantMapper];
 const repositories: Provider[] = [
   { provide: ACCESS_GRANT_REPOSITORY, useClass: AccessGrantRepository },

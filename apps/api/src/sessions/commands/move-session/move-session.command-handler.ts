@@ -42,7 +42,7 @@ export class MoveSessionCommandHandler
       });
     }
     // Already there: a retried request after a lost response is not a change.
-    if (session.projectId === command.projectId) return { session, hints: [] };
+    if (session.projectId === command.projectId) return { sessionId: session.id, hints: [] };
 
     const project = await requireActiveProject(this.projects, command.scope, command.projectId);
     const missing = session.liveCheckouts.find(
@@ -62,6 +62,6 @@ export class MoveSessionCommandHandler
         payload: { projectId: project.id, fromProjectId: session.projectId },
       },
     ]);
-    return { session, hints: [] };
+    return { sessionId: session.id, hints: [] };
   }
 }

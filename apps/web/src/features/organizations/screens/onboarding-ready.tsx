@@ -59,7 +59,7 @@ export function OnboardingReadyScreen({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3.5">
-        <SuccessMark />
+        <SuccessMark label={t('onboarding.flow.ready.doneLabel')} />
         <StepHeader title={t('onboarding.flow.ready.title')}>
           {t('onboarding.flow.ready.description', { workspace: workspace?.name ?? '' })}
         </StepHeader>

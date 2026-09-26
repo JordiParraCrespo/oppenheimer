@@ -46,6 +46,7 @@ export class RegisterHostHttpController {
     description: 'This deployment has no runner release configured',
     code: 'HOSTS_004',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async register(
     @Req() request: ScopedRequest,
     @Body() body: RegisterHostRequest,

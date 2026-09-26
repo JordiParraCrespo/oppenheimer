@@ -5,11 +5,13 @@ import {
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
+  type UseQueryResult,
   useMutation,
   useQueries,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import type {
   BranchEntity,
   InstallationEntity,
@@ -174,27 +176,44 @@ export interface RepositoryRef {
  * repositories changes as somebody picks them, and a hook cannot be called in a
  * loop. Each entry is keyed exactly as {@link useRepositoryBranches} keys it, so
  * the two share a cache rather than fetching the same branches twice.
+ *
+ * `combine` is keyed on which repositories are asked for, not on the array that
+ * names them. Callers build that array in render, and an inline `combine` is a
+ * new function each time, which `useQueries` re-runs: `byRepository` came back
+ * a new `Map` on every render — structural sharing cannot keep a `Map` — and
+ * every memo keyed on it, a picker's rows among them, missed. (A plain array
+ * is shared structurally, which is why `useInstallationRepositoriesFor` needs
+ * none of this.)
  */
 export function useRepositoryBranchesFor(repositories: readonly RepositoryRef[]) {
   const app = useConsumerApp();
+  const asked = repositories.map((repository) => repository.githubRepoId).join(',');
+
+  const combine = useCallback(
+    (results: UseQueryResult<BranchEntity[]>[]) => {
+      const ids = asked ? asked.split(',').map(Number) : [];
+      return {
+        /** Branches by `githubRepoId`, holding only the repositories that answered. */
+        byRepository: new Map(
+          results.flatMap((result, index) => {
+            const id = ids[index];
+            return result.data && id !== undefined
+              ? ([[id, result.data]] as [number, BranchEntity[]][])
+              : [];
+          }),
+        ),
+        isPending: results.some((result) => result.isPending),
+      };
+    },
+    [asked],
+  );
 
   return useQueries({
     queries: repositories.map((repository) => ({
       queryKey: installationsKeys.branches(repository.installationId, repository.githubRepoId),
       queryFn: () => app.installations.branches(repository.installationId, repository.githubRepoId),
     })),
-    combine: (results) => ({
-      /** Branches by `githubRepoId`, holding only the repositories that answered. */
-      byRepository: new Map(
-        results.flatMap((result, index) => {
-          const repository = repositories[index];
-          return result.data && repository
-            ? ([[repository.githubRepoId, result.data]] as [number, BranchEntity[]][])
-            : [];
-        }),
-      ),
-      isPending: results.some((result) => result.isPending),
-    }),
+    combine,
   });
 }
 

@@ -48,7 +48,7 @@ export function ConfirmDialog({
   const resolveError = useErrorMessage();
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent closeLabel={t('common.close')}>
         <DialogHero gradient="pinkCoral">
           <DialogHeroPlate>
             <TriangleAlert className="text-destructive" />

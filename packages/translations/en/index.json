@@ -110,6 +110,7 @@
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
       "GRANT_004": "Choose an organization before managing access grants.",
+      "RATE_001": "You're sending requests too quickly. Wait a moment and try again.",
       "GITHUB_001": "We could not find that GitHub installation.",
       "GITHUB_002": "GitHub is not configured on this server.",
       "GITHUB_003": "Another workspace has already connected that GitHub installation.",
@@ -282,7 +283,9 @@
           "alt": "The main gate of the Los Alamos laboratory",
           "caption": "Los Alamos, 1943"
         }
-      }
+      },
+      "dots": "Slides",
+      "slide": "Slide {{position}}"
     },
     "firstNamePlaceholder": "Your first name",
     "hidePassword": "Hide password",
@@ -297,7 +300,8 @@
       "match": "Both passwords match"
     },
     "showPassword": "Show password",
-    "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
+    "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
+    "passwordsDoNotMatch": "Passwords do not match"
   },
   "sessions": {
     "home": {
@@ -431,7 +435,9 @@
         "default": "Default"
       },
       "agent": {
-        "label": "Agent and model"
+        "label": "Agent and model",
+        "search": "Search models…",
+        "empty": "No model matches “{{query}}”."
       },
       "permission": {
         "label": "Permission level",
@@ -454,12 +460,18 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High",
-        "max": "Max"
+        "max": "Max",
+        "faster": "Faster",
+        "smarter": "Smarter",
+        "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
       },
       "composer": {
-        "placeholder": "Describe a task or ask a question"
+        "placeholder": "Describe a task or ask a question",
+        "send": "Send",
+        "stop": "Stop"
       },
-      "queued": "Your first task is queued for this host."
+      "queued": "Your first task is queued for this host.",
+      "failed": "The session could not be created."
     },
     "session": {
       "status": {
@@ -583,7 +595,11 @@
     "featureFlags": "Feature flags",
     "toggleSidebar": "Toggle sidebar",
     "sessions": "Sessions",
-    "newSession": "New session"
+    "newSession": "New session",
+    "commandTitle": "Command palette",
+    "commandDescription": "Search for a page or an action.",
+    "sidebarTitle": "Navigation",
+    "sidebarDescription": "Your sessions and your account."
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -853,7 +869,9 @@
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
     "noRedirect": "The server did not say where to send you next.",
-    "sensitiveScope": "Sensitive"
+    "sensitiveScope": "Sensitive",
+    "unknownClient": "An application",
+    "failed": "That did not go through. Try again."
   },
   "onboarding": {
     "description": "Your account is ready. Name the workspace your sessions will live in.",
@@ -887,7 +905,10 @@
         "claiming": "Saving...",
         "claimFailed": "We could not save that workspace.",
         "checkFailed": "We could not check that address. Try again in a moment.",
-        "permanent": "{{address}} is this workspace’s address."
+        "permanent": "{{address}} is this workspace’s address.",
+        "checkingLabel": "Checking availability",
+        "availableLabel": "Available",
+        "takenLabel": "Taken"
       },
       "github": {
         "title": "Connect GitHub",
@@ -921,7 +942,8 @@
         "go": "Go to the console",
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
-        "noHost": "No host yet"
+        "noHost": "No host yet",
+        "doneLabel": "Done"
       }
     }
   },

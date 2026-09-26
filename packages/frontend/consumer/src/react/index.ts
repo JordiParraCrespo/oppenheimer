@@ -13,7 +13,7 @@ export { useConsumerApp } from './context';
 // "is there a host?" instead of "was this token spent?". They stay exported
 // from their own file for a spec or a later drawer; the barrel offers the flow.
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
-export { hostsKeys, useHosts, useRemoveHost } from './hosts.queries';
+export { hostsKeys, useHosts, useHostsSnapshot, useRemoveHost } from './hosts.queries';
 export {
   type ConnectInstallationVariables,
   installationsKeys,
@@ -54,6 +54,7 @@ export {
   useArchiveProject,
   useCreateProject,
   useProjects,
+  useProjectsSnapshot,
   useUpdateProject,
 } from './projects.queries';
 export {

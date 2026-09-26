@@ -13,14 +13,7 @@ import {
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 
-export interface TerminalGrid {
-  cols: number;
-  rows: number;
-}
-
 export interface SessionTerminalOptions {
-  /** The grid resolved to a new size. */
-  onGrid?: (grid: TerminalGrid) => void;
   /**
    * The pane shows the agent's window (window 0), whose prompt takes
    * Shift+Enter as a newline. A shell window gets the chord as typed.
@@ -141,7 +134,6 @@ export function mountSessionTerminal(
     } catch {
       return;
     }
-    options.onGrid?.({ cols: term.cols, rows: term.rows });
     ptySize.request(term.cols, term.rows);
   };
 

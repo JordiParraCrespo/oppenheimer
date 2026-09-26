@@ -1,16 +1,10 @@
-import {
-  IconButton,
-  SessionItem,
-  SessionList,
-  SidebarEmptyRow,
-  SidebarProjectHeader,
-} from '@oppenheimer/design-system-web';
-import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
+import { SessionItem } from '@oppenheimer/design-system-web';
 import type { ProjectEntity, SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
 import { compactAge } from '@oppenheimer/frontend-web';
-import type { ComponentProps, ReactElement } from 'react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionRowMenu } from './session-row-menu';
+import { SessionRowMenu } from '../components/session-row-menu';
 
 /**
  * How a session's **group** reads as a dot.
@@ -41,10 +35,8 @@ function dotFor(session: SessionEntity) {
   return session.isProvisioning ? 'pending' : DOT[session.state];
 }
 
-/** What a row can ask of the section: the callbacks, per session. */
+/** What a row can ask of the sidebar: the callbacks, per session. */
 export interface SessionRowActions {
-  /** The router's link to a session's pane, made by the section: a component draws no route of its own. */
-  link: (session: SessionEntity) => ReactElement;
   menuFor: string | null;
   onMenuOpenChange: (session: SessionEntity, open: boolean) => void;
   renaming: { id: string; draft: string } | null;
@@ -58,112 +50,32 @@ export interface SessionRowActions {
 }
 
 /**
- * One project's group in the sidebar: the folding header with its count and
- * hover actions, then its rows or the empty row. `project` is null for the
- * sessions whose project the list does not hold, which get a header with no
- * actions.
- *
- * Props in, choice out. The section owns the open set, the menu and rename
- * state and every mutation; this draws one group and reports what was
- * clicked.
- */
-export function ProjectGroup({
-  project,
-  sessions,
-  open,
-  onOpenChange,
-  pathname,
-  narrowed,
-  query,
-  onNewSessionHere,
-  onSettings,
-  rows,
-}: {
-  project: ProjectEntity | null;
-  sessions: SessionEntity[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pathname: string;
-  /** Whether a filter or the search is narrowing the list, which changes what an empty group says. */
-  narrowed: boolean;
-  query: string;
-  onNewSessionHere: (project: ProjectEntity) => void;
-  onSettings: (project: ProjectEntity) => void;
-  rows: SessionRowActions;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="mt-1.5 flex flex-col">
-      <SidebarProjectHeader
-        name={project?.name ?? t('sessions.sidebar.unfiled')}
-        count={sessions.length}
-        open={open}
-        onOpenChange={onOpenChange}
-        current={sessions.some((session) => pathname === `/sessions/${session.id}`)}
-        actions={
-          project ? (
-            <>
-              <IconButton
-                size="xs"
-                variant="quiet"
-                aria-label={t('sessions.sidebar.newSessionHere', { name: project.name })}
-                onClick={() => onNewSessionHere(project)}
-              >
-                <Plus />
-              </IconButton>
-              <IconButton
-                size="xs"
-                variant="quiet"
-                aria-label={t('sessions.sidebar.projectSettings', { name: project.name })}
-                onClick={() => onSettings(project)}
-              >
-                <Settings />
-              </IconButton>
-            </>
-          ) : undefined
-        }
-      />
-      {!open ? null : sessions.length === 0 ? (
-        <SidebarEmptyRow>
-          {narrowed
-            ? t('sessions.sidebar.noMatches', { query })
-            : t('sessions.sidebar.emptyProject')}{' '}
-          {project && !narrowed ? (
-            <button type="button" onClick={() => onNewSessionHere(project)}>
-              {t('sessions.sidebar.startOne')}
-            </button>
-          ) : null}
-        </SidebarEmptyRow>
-      ) : (
-        <SessionList className="px-3">
-          {sessions.map((session) => (
-            <SessionRow key={session.id} session={session} pathname={pathname} rows={rows} />
-          ))}
-        </SessionList>
-      )}
-    </div>
-  );
-}
-
-/**
  * One row. The age is derived on render rather than held: `compactAge` returns
  * the unit and the count, and the words are ours to translate — `null` is
  * "less than a minute", which the artboard leaves blank rather than labelling.
  * The ellipsis is the row's `action`, shown on hover and while its menu is
  * open; the inline rename replaces the name and hides both.
+ *
+ * The row subscribes to whether it is the open session, not the route: the
+ * router hands each row one boolean, so a navigation re-renders the two rows
+ * whose highlight moved and not the sidebar above them. The session is the
+ * list query's, kept by reference across a poll that did not change it, and
+ * `now` is the sidebar's one minute clock.
  */
-function SessionRow({
+export function SessionRow({
   session,
-  pathname,
+  now,
   rows,
 }: {
   session: SessionEntity;
-  pathname: string;
+  now: number;
   rows: SessionRowActions;
 }) {
   const { t } = useTranslation();
-  const age = compactAge(session.createdAt);
+  const active = useRouterState({
+    select: (state) => state.location.pathname === `/sessions/${session.id}`,
+  });
+  const age = compactAge(session.createdAt, now);
   const menuOpen = rows.menuFor === session.id;
   const rename: ComponentProps<typeof SessionItem>['rename'] =
     rows.renaming?.id === session.id
@@ -181,8 +93,8 @@ function SessionRow({
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
-      active={pathname === `/sessions/${session.id}`}
-      render={rows.link(session)}
+      active={active}
+      render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
       menuOpen={menuOpen}
       rename={rename}
       action={

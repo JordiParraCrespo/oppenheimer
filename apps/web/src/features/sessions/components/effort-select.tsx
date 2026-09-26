@@ -32,6 +32,9 @@ export function EffortSelect({
       onValueChange={(next) => onValueChange(next as SessionEffort)}
       disabled={disabled}
       label={t('sessions.new.effort.label')}
+      fasterLabel={t('sessions.new.effort.faster')}
+      smarterLabel={t('sessions.new.effort.smarter')}
+      hint={t('sessions.new.effort.hint')}
       stops={toEffortStops({
         minimal: t('sessions.new.effort.minimal'),
         low: t('sessions.new.effort.low'),
