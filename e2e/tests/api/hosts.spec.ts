@@ -148,7 +148,21 @@ test.describe('Hosts', () => {
       // Never heartbeated, so offline — and nothing has been started on it.
       status: 'offline',
       runningSessionCount: 0,
+      // The inventory starts at registration; presence and network with the link.
+      machine: expect.objectContaining({ channel: null }),
+      vitals: null,
+      network: null,
     });
+
+    // The timeline opens with the pairing, written with the host itself.
+    const opened = await api.get(`/api/v1/hosts/${hostId}/timeline`, { failOnStatusCode: false });
+    expect(opened.status(), await opened.text()).toBe(200);
+    expect((await opened.json()).entries).toEqual([
+      expect.objectContaining({
+        kind: 'paired',
+        payload: expect.objectContaining({ name: 'Pairing flow' }),
+      }),
+    ]);
 
     // What Add host polls while it listens: the token, and the host it paired.
     const polled = await api.get(`/api/v1/hosts/pairing/${minted.id}`, {
@@ -180,6 +194,12 @@ test.describe('Hosts', () => {
       status: string;
     }[];
     expect(withRemoved.find((host) => host.id === hostId)?.status).toBe('unpaired');
+
+    // The machine's own uninstall is on its timeline too, newest first.
+    const closed = (await (await api.get(`/api/v1/hosts/${hostId}/timeline`)).json()) as {
+      entries: { kind: string }[];
+    };
+    expect(closed.entries.map((entry) => entry.kind)).toEqual(['unpaired', 'paired']);
   });
 
   test('a host credential cannot reach a route meant for a person', async () => {

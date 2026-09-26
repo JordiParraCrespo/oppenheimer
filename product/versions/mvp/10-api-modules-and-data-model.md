@@ -967,6 +967,7 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 ```
 GET    /hosts                     read Host          hosts:read    ?include=unpaired (12)
 GET    /hosts/{id}                read Host          hosts:read
+GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (13)
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }

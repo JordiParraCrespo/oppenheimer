@@ -665,6 +665,59 @@ export type RepositoryBranchResponseDto = {
  */
 export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
 
+export type HostMachineResponseDto = {
+    osName?: string | null;
+    kernelVersion?: string | null;
+    cpuModel?: string | null;
+    cpuCount?: number | null;
+    memoryTotalBytes?: number | null;
+    diskTotalBytes?: number | null;
+    /**
+     * `none`, `vm` or `container`, as the runner read it from local files.
+     */
+    virtualization?: string | null;
+    /**
+     * The vendor the firmware names; never the answer of a metadata call.
+     */
+    cloudProvider?: string | null;
+    timezone?: string | null;
+    bootedAt?: string | null;
+    channel?: string | null;
+    serviceManager?: string | null;
+    /**
+     * When the machine last changed, not when it last reported.
+     */
+    changedAt: string;
+};
+
+export type HostVitalsResponseDto = {
+    /**
+     * When the current (or last) link opened.
+     */
+    connectedAt?: string | null;
+    /**
+     * The link’s last ping/pong.
+     */
+    roundTripMillis?: number | null;
+    /**
+     * One-minute load average.
+     */
+    loadAverage?: number | null;
+    memoryAvailableBytes?: number | null;
+    diskFreeBytes?: number | null;
+};
+
+export type HostNetworkResponseDto = {
+    ip: string;
+    countryCode?: string | null;
+    region?: string | null;
+    city?: string | null;
+    asn?: number | null;
+    asnOrg?: string | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+};
+
 export type HostResponseDto = {
     id: string;
     /**
@@ -699,6 +752,18 @@ export type HostResponseDto = {
      */
     runningSessionCount: number;
     lastSeenAt?: string | null;
+    /**
+     * What the machine is. Null until the runner has reported its facts.
+     */
+    machine?: HostMachineResponseDto | null;
+    /**
+     * Its last live numbers. Null until its first link.
+     */
+    vitals?: HostVitalsResponseDto | null;
+    /**
+     * Where its current (or last) link came from. Null until one has.
+     */
+    network?: HostNetworkResponseDto | null;
     /**
      * When the host was unpaired. The row is kept so its history survives.
      */
@@ -834,6 +899,16 @@ export type RegisterHostRequest = {
         diskFreeBytes: number;
         cpus?: number;
         runnerVersion: string;
+        osName?: string;
+        kernelVersion?: string;
+        cpuModel?: string;
+        memoryTotalBytes?: number;
+        diskTotalBytes?: number;
+        virtualization?: string;
+        cloudProvider?: string;
+        timezone?: string;
+        bootedAt?: string;
+        serviceManager?: string;
     };
 };
 
@@ -854,6 +929,29 @@ export type HostRegistrationResponseDto = {
      * Where the runner fetches signed release artifacts from.
      */
     releaseBaseUrl?: string;
+};
+
+export type HostTimelineEntryResponseDto = {
+    /**
+     * Opaque; increases with time.
+     */
+    id: string;
+    kind: 'paired' | 'renamed' | 'unpaired' | 'facts_changed' | 'network_changed' | 'runner_updated' | 'runner_rolled_back';
+    /**
+     * `renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    occurredAt: string;
+};
+
+export type HostTimelinePageResponseDto = {
+    entries: Array<HostTimelineEntryResponseDto>;
+    /**
+     * Pass as `before` for the next, older page; null at the end.
+     */
+    next?: string | null;
 };
 
 export type RenameHostRequest = {
@@ -4147,6 +4245,38 @@ export type RenameResponses = {
 };
 
 export type RenameResponse = RenameResponses[keyof RenameResponses];
+
+export type GetHostTimelineData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/timeline';
+};
+
+export type GetHostTimelineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetHostTimelineError = GetHostTimelineErrors[keyof GetHostTimelineErrors];
+
+export type GetHostTimelineResponses = {
+    200: HostTimelinePageResponseDto;
+};
+
+export type GetHostTimelineResponse = GetHostTimelineResponses[keyof GetHostTimelineResponses];
 
 export type ListUsersData = {
     body?: never;

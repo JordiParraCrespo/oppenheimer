@@ -387,6 +387,7 @@ of its authorization:
 | `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (12) |
 | `POST /hosts/pairing`, `GET /hosts/pairing`, `GET /hosts/pairing/{id}`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
 | `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
+| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (13) |
 | `POST /hosts/register` | the registration token in the body, and nothing else |
 | `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
 

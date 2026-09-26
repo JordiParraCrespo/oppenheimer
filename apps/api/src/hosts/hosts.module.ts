@@ -54,6 +54,7 @@ import {
 } from './hosts.di-tokens';
 import { HostResource } from './hosts.resource';
 import { DbipGeolocationAdapter } from './infrastructure/dbip-geolocation.adapter';
+import { HostRetentionProcessor } from './infrastructure/host-retention.processor';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
@@ -156,6 +157,8 @@ const resolvers: Provider[] = [
     // The owner's address for the new-host notice, and the queue it goes out on.
     UsersModule,
     BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL }),
+    // The daily purge of networks and timeline past their retention.
+    BullModule.registerQueue({ name: QUEUE_NAMES.HOST_RETENTION }),
   ],
   controllers: [...httpControllers],
   providers: [
@@ -170,6 +173,7 @@ const resolvers: Provider[] = [
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
     HostNetworkChangedDomainEventHandler,
+    HostRetentionProcessor,
   ],
   // The two application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,

@@ -128,22 +128,40 @@ where partitioning pays; the header says when it would.
 
 ## Rollout: expand, switch, contract
 
-1. **Expand (this migration).** The four tables are created and the `host`
-   rows backfilled: inventory from `capabilities`, presence from
-   `lastSeenAt`. The old columns stay and are still written.
-2. **Switch (next change).**
-   - `HostPresenceResolver` writes presence on every beat and the inventory
-     upsert on every report.
-   - The relay records the network on connect: the socket's address, behind
-     `TRUST_PROXY`, and the geography from a bundled offline IP database.
-   - `hosts/` appends events on pair, rename, unpair and a facts or network
+1. **Expand (done).** The four tables are created and the `host` rows
+   backfilled: inventory from `capabilities`, presence from `lastSeenAt`.
+2. **Switch (done).**
+   - `HostPresenceResolver` writes presence on every beat. It writes the
+     inventory only when the hash of its static facts changes, or when a
+     channel is newly reported. A change goes on the timeline in the same
+     transaction: `runner_updated` for a new version, `facts_changed` with
+     the diff for the rest. A field that was unknown before (a runner
+     upgrade that starts reporting it, or the first report after the
+     backfill) is learned, not changed.
+   - The heartbeat no longer touches `host`. The old columns are written
+     only when the row itself is saved (a rename, an unpair), from the side
+     tables, so a rollback reads values that are no older than the last
      change.
-   - The host read joins the three tables.
+   - The relay records the network on hello: the address the upgrade came
+     from, by Express's trust-proxy rule and `TRUST_PROXY`, placed with DB-IP
+     Lite. It times its keepalive ping/pong for the round trip.
+   - The timeline is written with the change it describes. `paired` is
+     written in the registration transaction; `renamed` and `unpaired` are
+     written in the row's save, projected from the aggregate's domain
+     events; the facts and network entries are written in their own upserts.
+     Unpairing also clears the host's current network, so retention can
+     reach it. `GET /v1/hosts/{id}/timeline` pages the timeline.
+   - Host reads load the side tables by primary key. Responses carry
+     `machine`, `vitals` and `network`.
    - The runner sends the new facts: OS name, kernel, CPU model, memory and
      disk totals, virtualization and cloud read from local DMI data (no
-     metadata call), time zone, boot time, channel and service manager. Its
-     heartbeat also carries load and available memory. Every new field is
-     optional, as `cpus` was.
+     metadata call), time zone, boot time and service manager. Its heartbeat
+     also carries available memory beside the load it already sent. Every new
+     field is optional, as `cpus` was. The machine reading is cached for an
+     hour, because facts are collected on every heartbeat.
+   - Retention is a BullMQ job scheduler (`host-retention`, 03:17 UTC). It is
+     one entry in Redis, so however many replicas run, the purge runs once a
+     day.
 3. **Contract (a later migration).** Drop `hostname`, `os`, `arch`,
    `runnerVersion`, `capabilities` and `lastSeenAt` from `host` once nothing
    reads them.

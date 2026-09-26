@@ -5482,6 +5482,71 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/{id}/timeline": {
+      "get": {
+        "description": "Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.",
+        "operationId": "getHostTimeline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostTimelinePageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A host’s timeline, newest first",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "listUsers",
@@ -11210,6 +11275,153 @@
         "enum": ["running", "idle", "offline", "unpaired"],
         "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`."
       },
+      "HostMachineResponseDto": {
+        "type": "object",
+        "properties": {
+          "osName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ubuntu 24.04.1 LTS"
+          },
+          "kernelVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": "6.8.0-45-generic"
+          },
+          "cpuModel": {
+            "type": "string",
+            "nullable": true,
+            "example": "AMD EPYC 7B13"
+          },
+          "cpuCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 32
+          },
+          "memoryTotalBytes": {
+            "type": "number",
+            "nullable": true,
+            "example": 68719476736
+          },
+          "diskTotalBytes": {
+            "type": "number",
+            "nullable": true,
+            "example": 1000000000000
+          },
+          "virtualization": {
+            "type": "string",
+            "nullable": true,
+            "example": "vm",
+            "description": "`none`, `vm` or `container`, as the runner read it from local files."
+          },
+          "cloudProvider": {
+            "type": "string",
+            "nullable": true,
+            "example": "hetzner",
+            "description": "The vendor the firmware names; never the answer of a metadata call."
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true,
+            "example": "Europe/Madrid"
+          },
+          "bootedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "example": "stable"
+          },
+          "serviceManager": {
+            "type": "string",
+            "nullable": true,
+            "example": "systemd"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the machine last changed, not when it last reported."
+          }
+        },
+        "required": ["changedAt"]
+      },
+      "HostVitalsResponseDto": {
+        "type": "object",
+        "properties": {
+          "connectedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the current (or last) link opened."
+          },
+          "roundTripMillis": {
+            "type": "number",
+            "nullable": true,
+            "example": 41,
+            "description": "The link’s last ping/pong."
+          },
+          "loadAverage": {
+            "type": "number",
+            "nullable": true,
+            "example": 1.25,
+            "description": "One-minute load average."
+          },
+          "memoryAvailableBytes": {
+            "type": "number",
+            "nullable": true
+          },
+          "diskFreeBytes": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "HostNetworkResponseDto": {
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "example": "203.0.113.7"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "ES"
+          },
+          "region": {
+            "type": "string",
+            "nullable": true,
+            "example": "Catalonia"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Barcelona"
+          },
+          "asn": {
+            "type": "number",
+            "nullable": true,
+            "example": 24940
+          },
+          "asnOrg": {
+            "type": "string",
+            "nullable": true,
+            "example": "Hetzner Online GmbH"
+          },
+          "firstSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["ip", "firstSeenAt", "lastSeenAt"]
+      },
       "HostResponseDto": {
         "type": "object",
         "properties": {
@@ -11277,6 +11489,36 @@
             "format": "date-time",
             "type": "string",
             "nullable": true
+          },
+          "machine": {
+            "nullable": true,
+            "description": "What the machine is. Null until the runner has reported its facts.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostMachineResponseDto"
+              }
+            ]
+          },
+          "vitals": {
+            "nullable": true,
+            "description": "Its last live numbers. Null until its first link.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostVitalsResponseDto"
+              }
+            ]
+          },
+          "network": {
+            "nullable": true,
+            "description": "Where its current (or last) link came from. Null until one has.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostNetworkResponseDto"
+              }
+            ]
           },
           "unpairedAt": {
             "format": "date-time",
@@ -11592,6 +11834,48 @@
               },
               "runnerVersion": {
                 "type": "string"
+              },
+              "osName": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "kernelVersion": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "cpuModel": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "memoryTotalBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "exclusiveMinimum": false
+              },
+              "diskTotalBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "exclusiveMinimum": false
+              },
+              "virtualization": {
+                "type": "string",
+                "maxLength": 24
+              },
+              "cloudProvider": {
+                "type": "string",
+                "maxLength": 24
+              },
+              "timezone": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "bootedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "serviceManager": {
+                "type": "string",
+                "maxLength": 16
               }
             },
             "required": [
@@ -11634,6 +11918,53 @@
           }
         },
         "required": ["hostId", "fingerprint"]
+      },
+      "HostTimelineEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque; increases with time."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "paired",
+              "renamed",
+              "unpaired",
+              "facts_changed",
+              "network_changed",
+              "runner_updated",
+              "runner_rolled_back"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "description": "`renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions."
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "kind", "payload", "occurredAt"]
+      },
+      "HostTimelinePageResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostTimelineEntryResponseDto"
+            }
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `before` for the next, older page; null at the end."
+          }
+        },
+        "required": ["entries"]
       },
       "RenameHostRequest": {
         "type": "object",
