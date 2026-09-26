@@ -167,10 +167,13 @@ earlier note:
   Seven new tables, not eight.
 - `versions/mvp/05-screens.md` described a settings drawer holding
   hosts, and the console kept the starter's Settings and Profile pages
-  underneath it. The version-1 frames draw neither, so the console is
-  now one screen — sidebar plus pane — and both pages were deleted
-  rather than hidden. The drawer is still the answer for hosts; it is a
-  later slice, and it is a drawer, not a destination.
+  underneath it. The version-1 frames of 2026-09-21 drew neither, so the
+  console became one screen — sidebar plus pane — and both pages were
+  deleted rather than hidden, with the drawer as the later answer for
+  hosts. The 2026-09-26 export then drew Settings as a page of its own
+  beside the console — `/settings`, opened from the account menu, with
+  Profile and Hosts as its sections and the console's pairing page behind
+  Add host — and 05 records that page; the drawer is gone (2026-09-26).
 - `versions/mvp/10-api-modules-and-data-model.md` said a model was a
   launch option "recorded in the log, not a column", and made the
   promotion conditional on a reader needing it per row. `restart` is that

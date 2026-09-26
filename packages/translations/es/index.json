@@ -535,7 +535,9 @@
       "connect": {
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
-      }
+      },
+      "crumbHosts": "Hosts",
+      "done": "Listo"
     }
   },
   "projects": {
@@ -602,6 +604,31 @@
       "confirm": "Eliminar proyecto"
     }
   },
+  "settings": {
+    "nav": {
+      "back": "Volver a la consola",
+      "account": "Cuenta",
+      "workspace": "Espacio de trabajo",
+      "profile": "Perfil",
+      "hosts": "Hosts"
+    },
+    "profile": {
+      "title": "Perfil",
+      "email": "Correo",
+      "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
+      "failed": "No se pudo cargar el perfil."
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
+      "add": "Añadir host",
+      "empty": "Todavía no hay hosts",
+      "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
+      "online": "En línea",
+      "offline": "Sin conexión",
+      "failed": "No se pudieron cargar los hosts."
+    }
+  },
   "home": {
     "greeting": "Hola de nuevo, {{name}}",
     "greetingFallback": "Hola de nuevo",
@@ -645,7 +672,8 @@
     "commandTitle": "Paleta de comandos",
     "commandDescription": "Busca una página o una acción.",
     "sidebarTitle": "Navegación",
-    "sidebarDescription": "Tus sesiones y tu cuenta."
+    "sidebarDescription": "Tus sesiones y tu cuenta.",
+    "settings": "Ajustes"
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
