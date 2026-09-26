@@ -26,6 +26,7 @@ export type {
   IssueAttachTicketRequest,
   MintPairingTokenRequest,
   MintedPairingTokenResponseDto,
+  MoveSessionRequest,
   PaginatedFlagChangesResponseDto,
   PaginatedSessionsResponseDto,
   PairingTokenResponseDto,

@@ -141,6 +141,67 @@ export function useCreateSession(
   });
 }
 
+export interface RenameSessionVariables {
+  id: string;
+  name: string;
+}
+
+export function useRenameSession(
+  options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, name }: RenameSessionVariables) => app.sessions.rename(id, name),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export interface MoveSessionVariables {
+  id: string;
+  projectId: string;
+}
+
+export function useMoveSession(
+  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, projectId }: MoveSessionVariables) => app.sessions.move(id, projectId),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+  });
+}
+
+export interface CloseSessionVariables {
+  id: string;
+  acceptUnpushedWork?: boolean;
+}
+
+/** The row stays, resolved; the list drops it, so the whole feature is invalidated. */
+export function useCloseSession(
+  options?: UseMutationOptions<SessionEntity, Error, CloseSessionVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
+      app.sessions.close(id, acceptUnpushedWork),
+    ...withCacheOnSuccess(options, () => {
+      queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
+    }),
+  });
+}
+
 export function useStopSession(options?: UseMutationOptions<SessionEntity, Error, string>) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();

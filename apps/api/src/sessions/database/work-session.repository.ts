@@ -443,6 +443,7 @@ export class WorkSessionRepository
                 "lastObservedState" = $10, "observedSince" = $11,
                 "reportHash" = $12, "ackedReportHash" = $13,
                 "launchModel" = $14, "launchPermission" = $15, "launchEffort" = $16,
+                "projectId" = $17,
                 "updatedAt" = now()
           WHERE "id" = $1`,
         [
@@ -462,6 +463,7 @@ export class WorkSessionRepository
           record.launchModel,
           record.launchPermission,
           record.launchEffort,
+          record.projectId,
         ],
       );
       await this.outbox.stageEvents(manager, session.domainEvents);

@@ -12,7 +12,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * shell: one column of chrome, no second bar, and an account menu that is the
  * only place appearance and language live.
  */
-test('the console is a sidebar and a pane, with no chrome bar over them', async ({ page }) => {
+test('the console is a rail, a sidebar and a pane, with no chrome bar over them', async ({
+  page,
+}) => {
   const owner = await provisionedUser('consoleshell');
   await signInAs(page, owner.user);
 
@@ -21,7 +23,10 @@ test('the console is a sidebar and a pane, with no chrome bar over them', async 
   // The brand row names the product: the workspace is personal in version 1.
   await expect(page.getByText('Oppenheimer', { exact: false }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'New session', exact: true })).toBeVisible();
-  await expect(page.getByText('Sessions', { exact: true })).toBeVisible();
+  // The list is grouped by project now, under a head that counts them; the
+  // rail to the left of it is where the console's lists are switched.
+  await expect(page.getByText('Projects', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sessions', exact: true })).toBeVisible();
 
   // The starter's chrome bar and its search trigger are gone with it.
   await expect(page.getByRole('button', { name: 'Search' })).toHaveCount(0);

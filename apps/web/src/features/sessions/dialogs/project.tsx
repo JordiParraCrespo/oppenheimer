@@ -22,11 +22,13 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import {
+  useArchiveProject,
   useCreateProject,
   useHosts,
   useInstallationRepositoriesFor,
   useInstallations,
   useRepositoryBranchesFor,
+  useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useZodResolver } from '@oppenheimer/frontend-web';
@@ -37,6 +39,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   parseRepositoryKey,
+  repositoryKey,
   toProjectRepositoryInputs,
   toProjectRepositoryRows,
 } from '../lib/session-options';
@@ -45,34 +48,59 @@ import {
 const nameSchema = createProjectSchema.pick({ name: true });
 type NameValues = { name: string };
 
+/** A project's rows as the picker holds them: its repositories, ticked, with their bases. */
+function rowsOf(project: ProjectEntity | undefined): RepositoryRowValue[] {
+  return (project?.repositories ?? []).map((repository) => ({
+    id: repositoryKey({
+      installationId: repository.installationId,
+      githubRepoId: repository.githubRepoId,
+    }),
+    isDefault: repository.isDefault,
+    branch: repository.baseBranch ?? '',
+  }));
+}
+
 /**
- * New project — the dialog behind the project chip's foot row
+ * New project, and Project settings — the dialog behind the project chip's
+ * foot row and the sidebar header's cog
  * (`product/versions/mvp/12-projects-on-the-console.md`).
  *
  * The export's dialog, and the console's second one: a name, the repository
  * rows (tick to include, mark Default to clone into every new session, a
  * base-branch pill per row), the default host as chips, the default agent as
- * chips. It owns its mutation and its three reads, because it is the
+ * chips. It owns its mutations and its three reads, because it is the
  * component that renders each result: the installations' repositories are
  * the rows, the branches of the ticked rows are the pills, the hosts are the
  * chips. The branches are deliberately late, as on the scope chip — a call
  * per row nobody ticked is a rate limit spent on nothing.
  *
- * What leaves is the created project, so the section can select it and let
- * its defaults prefill the other chips.
+ * With a `project` it edits: the fields start on the project's own values,
+ * the primary is Save, and Delete project — the archive — sits on the left,
+ * disabled while the project holds sessions, because the API refuses that
+ * and a button that can only answer with an error is not a button.
+ *
+ * What leaves is the created or saved project, so the section can select it.
  */
 export function ProjectDialog({
+  project,
+  sessionCount = 0,
   onClose,
-  onCreated,
+  onSaved,
 }: {
+  /** Absent creates; present edits this project. */
+  project?: ProjectEntity;
+  /** How many sessions the project holds, which is what blocks deleting it. */
+  sessionCount?: number;
   onClose: () => void;
-  onCreated: (project: ProjectEntity) => void;
+  onSaved: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const [rows, setRows] = useState<RepositoryRowValue[]>([]);
-  const [defaultHostId, setDefaultHostId] = useState<string | null>(null);
-  const [defaultAgent, setDefaultAgent] = useState<CodingAgentId | null>(null);
+  const [rows, setRows] = useState<RepositoryRowValue[]>(() => rowsOf(project));
+  const [defaultHostId, setDefaultHostId] = useState<string | null>(project?.defaultHostId ?? null);
+  const [defaultAgent, setDefaultAgent] = useState<CodingAgentId | null>(
+    project?.defaultAgent ?? null,
+  );
 
   const hosts = useHosts();
   const installations = useInstallations();
@@ -86,8 +114,18 @@ export function ProjectDialog({
   const branches = useRepositoryBranchesFor(ticked);
   const options = toProjectRepositoryRows(repositories.repositories, branches.byRepository);
   const defaultBranches = new Map(options.map((option) => [option.id, option.defaultBranch]));
+  // A row whose branch is empty stands for the repository's own default; the
+  // picker prints a value, so it is filled once the option is known.
+  const shown = rows.map((row) =>
+    row.branch ? row : { ...row, branch: defaultBranches.get(row.id) ?? '' },
+  );
 
-  const create = useCreateProject({ onSuccess: onCreated });
+  const create = useCreateProject({ onSuccess: onSaved });
+  const update = useUpdateProject({ onSuccess: onSaved });
+  const archive = useArchiveProject({ onSuccess: onClose });
+  const editing = project !== undefined;
+  const pending = create.isPending || update.isPending || archive.isPending;
+  const failure = create.error ?? update.error ?? archive.error;
 
   const {
     register,
@@ -95,16 +133,18 @@ export function ProjectDialog({
     formState: { errors },
   } = useForm<NameValues>({
     resolver: useZodResolver(nameSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: project?.name ?? '' },
   });
 
   function submit(values: NameValues) {
-    create.mutate({
+    const input = {
       name: values.name.trim(),
-      repositories: toProjectRepositoryInputs(rows, defaultBranches),
+      repositories: toProjectRepositoryInputs(shown, defaultBranches),
       defaultHostId,
       defaultAgent,
-    });
+    };
+    if (project) update.mutate({ id: project.id, input });
+    else create.mutate(input);
   }
 
   const defaults = rows.filter((row) => row.isDefault).length;
@@ -115,16 +155,29 @@ export function ProjectDialog({
       <DialogContent closeLabel={t('common.close')} className="sm:max-w-135">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{t('sessions.new.projectDialog.title')}</DialogTitle>
+            <DialogTitle>
+              {editing
+                ? t('sessions.new.projectDialog.editTitle')
+                : t('sessions.new.projectDialog.title')}
+            </DialogTitle>
             <DialogDescription>{t('sessions.new.projectDialog.description')}</DialogDescription>
           </DialogHeader>
 
           <DialogBody>
             <div className="flex flex-col gap-4.5">
-              {create.isError ? (
+              {failure ? (
                 <Alert variant="destructive">
                   <AlertDescription>
-                    {resolveError(create.error, t('sessions.new.projectDialog.failed')).message}
+                    {
+                      resolveError(
+                        failure,
+                        t(
+                          editing
+                            ? 'sessions.new.projectDialog.saveFailed'
+                            : 'sessions.new.projectDialog.failed',
+                        ),
+                      ).message
+                    }
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -138,7 +191,7 @@ export function ProjectDialog({
                   id="project-name"
                   placeholder={t('sessions.new.projectDialog.namePlaceholder')}
                   aria-invalid={Boolean(errors.name)}
-                  disabled={create.isPending}
+                  disabled={pending}
                   autoFocus
                 />
                 <FieldError errors={[errors.name]} />
@@ -156,13 +209,15 @@ export function ProjectDialog({
                     })}
                   </span>
                 </div>
-                <FieldDescription>{t('sessions.new.projectDialog.repositoriesHint')}</FieldDescription>
+                <FieldDescription>
+                  {t('sessions.new.projectDialog.repositoriesHint')}
+                </FieldDescription>
                 {loadingRows ? (
                   <Skeleton className="h-30 w-full" />
                 ) : (
                   <RepositoryRowList
                     repositories={options}
-                    value={rows}
+                    value={shown}
                     onValueChange={setRows}
                     searchPlaceholder={t('sessions.new.projectDialog.search')}
                     emptyText={(query) =>
@@ -225,13 +280,31 @@ export function ProjectDialog({
           </DialogBody>
 
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={onClose} disabled={create.isPending}>
+            {project ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="mr-auto"
+                disabled={pending || sessionCount > 0}
+                title={sessionCount > 0 ? t('sessions.new.projectDialog.deleteBlocked') : undefined}
+                onClick={() => archive.mutate(project.id)}
+              >
+                {archive.isPending
+                  ? t('sessions.new.projectDialog.deleting')
+                  : t('sessions.new.projectDialog.deleteProject')}
+              </Button>
+            ) : null}
+            <Button type="button" variant="secondary" onClick={onClose} disabled={pending}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={create.isPending}>
-              {create.isPending
-                ? t('sessions.new.projectDialog.creating')
-                : t('sessions.new.projectDialog.create')}
+            <Button type="submit" disabled={pending}>
+              {editing
+                ? update.isPending
+                  ? t('sessions.new.projectDialog.saving')
+                  : t('sessions.new.projectDialog.save')
+                : create.isPending
+                  ? t('sessions.new.projectDialog.creating')
+                  : t('sessions.new.projectDialog.create')}
             </Button>
           </DialogFooter>
         </form>

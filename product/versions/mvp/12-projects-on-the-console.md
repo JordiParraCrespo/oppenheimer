@@ -122,13 +122,33 @@ slug — and grows what the dialog edits.
   the dialog is opened from the session composer) until a projects
   screen exists, at which point `features/projects/` takes the dialog.
 
+### The grouped sidebar
+
+- `Rail` left of the sidebar (a `rail` slot on the shell), Sessions current
+  with its count; Routines drawn where the export draws it and **disabled**
+  with a tooltip saying it is not here yet, until the routines page lands.
+- The head reads **Projects** with the count, a New project button (the
+  same dialog) and the filter menu, which gains a **Project** facet. Under
+  it `SidebarSearch` narrows rows live in the browser (the list is already
+  whole), then the active-filter chips.
+- One `SidebarProjectHeader` per project, in the order the API lists them,
+  its count and two hover actions: **New session here**
+  (`/sessions/new?project=<id>`, which starts the composer on that project
+  with its defaults) and **Project settings** (the project dialog in edit
+  mode: Save, and Delete project, which is the archive and stays disabled
+  while the project holds sessions). An empty project shows the empty row
+  with a link to start one. A session whose project the list does not hold
+  goes last under "Other sessions".
+- A row's ellipsis menu: **Rename** (inline, `PATCH /sessions/{id}`),
+  **Move to project…** (a pane in the same menu listing the other projects
+  that hold the session's repository, `POST /sessions/{id}/move`, one new
+  `session.moved` event the row folds), **Delete** (a confirm dialog over
+  the close: the session stops, its worktree leaves the host, the row stays
+  resolved so the name is never reissued).
+
 ### Later slices, in order
 
-1. The grouped sidebar: `Rail`, `SidebarProjectHeader` per project with
-   its count and actions, `SidebarSearch`, the project facet in the
-   filter menu, the row menu with rename, move and delete. Needs
-   `PATCH /sessions/{id}` for `projectId` and `name`.
-2. Routines (the second rail item) and Settings, each their own note.
+1. Routines (the second rail item) and Settings, each their own note.
 
 ## Open
 

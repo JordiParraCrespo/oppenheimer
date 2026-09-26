@@ -45,6 +45,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
   return (
     <ShellProvider value={config}>
       <SidebarProvider className="h-svh min-h-0">
+        {config.rail}
         <AppSidebar />
         <SidebarInset className="flex min-h-0 min-w-0 flex-col">
           {chrome ? <TopBar onSearch={() => setCommandOpen(true)} /> : null}

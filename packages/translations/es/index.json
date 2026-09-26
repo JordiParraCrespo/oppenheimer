@@ -167,6 +167,7 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+      "SESSIONS_018": "Ese proyecto no incluye el repositorio de esta sesión. Añádeselo primero.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
@@ -398,7 +399,14 @@
         "agent": "Agente por defecto",
         "create": "Crear proyecto",
         "creating": "Creando…",
-        "failed": "No se pudo crear el proyecto."
+        "failed": "No se pudo crear el proyecto.",
+        "editTitle": "Ajustes del proyecto",
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "saveFailed": "No se pudo guardar el proyecto.",
+        "deleteProject": "Eliminar proyecto",
+        "deleteBlocked": "Cierra sus sesiones primero.",
+        "deleting": "Eliminando…"
       },
       "repository": {
         "label": "Repositorios",
@@ -467,14 +475,45 @@
         "dismiss": "Cerrar"
       }
     },
+    "sidebar": {
+      "projects": "Proyectos",
+      "newProject": "Nuevo proyecto",
+      "search": "Buscar sesiones",
+      "clearSearch": "Borrar búsqueda",
+      "noMatches": "Ninguna sesión coincide con “{{query}}”.",
+      "empty": "Todavía no hay proyectos. El primero que crees aparecerá aquí con sus sesiones.",
+      "emptyProject": "Todavía no hay sesiones.",
+      "startOne": "Empieza una",
+      "newSessionHere": "Nueva sesión en {{name}}",
+      "projectSettings": "Ajustes de {{name}}",
+      "unfiled": "Otras sesiones",
+      "actions": "Acciones de la sesión",
+      "rename": "Renombrar",
+      "renameLabel": "Nombre de la sesión",
+      "move": "Mover a un proyecto…",
+      "moveTitle": "Mover a un proyecto",
+      "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
+      "delete": "Eliminar",
+      "routines": "Rutinas",
+      "routinesSoon": "Las rutinas todavía no están aquí."
+    },
+    "deleteSession": {
+      "title": "¿Eliminar “{{name}}”?",
+      "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
+      "confirm": "Eliminar sesión",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar la sesión."
+    },
     "filters": {
       "label": "Filtrar sesiones",
+      "project": "Proyecto",
       "repository": "Repositorio",
       "agent": "Agente",
       "host": "Equipo",
       "sort": "Ordenar por",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
+      "allProjects": "Todos los proyectos",
       "allRepositories": "Todos los repositorios",
       "allAgents": "Todos los agentes",
       "allHosts": "Todos los equipos",

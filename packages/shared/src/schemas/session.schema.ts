@@ -172,6 +172,16 @@ export const renameSessionSchema = z.object({
 export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
 
 /**
+ * `POST /sessions/{id}/move`. The project the session moves to; it must hold
+ * every repository the session checked out. Nothing on the host changes.
+ */
+export const moveSessionSchema = z.object({
+  projectId: z.string().uuid(),
+});
+
+export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
+
+/**
  * The **stored lifecycle**, `work_session.state` — the fold of the append-only
  * event log, never a second truth.
  *

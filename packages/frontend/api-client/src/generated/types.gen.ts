@@ -1377,6 +1377,10 @@ export type RenameSessionRequest = {
     name: string;
 };
 
+export type MoveSessionRequest = {
+    projectId: string;
+};
+
 export type CapabilitiesResponseDto = {
     /**
      * Sign-in with Google is configured.
@@ -5783,6 +5787,48 @@ export type RenameSessionResponses = {
 };
 
 export type RenameSessionResponse = RenameSessionResponses[keyof RenameSessionResponses];
+
+export type MoveSessionData = {
+    body: MoveSessionRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/{id}/move';
+};
+
+export type MoveSessionErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * PROJECTS_001 — Project not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_018 — That project does not include this session’s repository
+     *
+     * SESSIONS_006 — That project is archived
+     *
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+};
+
+export type MoveSessionError = MoveSessionErrors[keyof MoveSessionErrors];
+
+export type MoveSessionResponses = {
+    200: SessionResponseDto;
+};
+
+export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];
 
 export type CheckData = {
     body?: never;

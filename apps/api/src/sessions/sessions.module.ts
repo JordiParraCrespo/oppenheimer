@@ -27,6 +27,8 @@ import { PasteSessionImageHttpController } from './commands/paste-session-image/
 import { RecordSessionEventsCommandHandler } from './commands/record-session-events/record-session-events.command-handler';
 import { RemoveCheckoutCommandHandler } from './commands/remove-checkout/remove-checkout.command-handler';
 import { RemoveCheckoutHttpController } from './commands/remove-checkout/remove-checkout.http.controller';
+import { MoveSessionCommandHandler } from './commands/move-session/move-session.command-handler';
+import { MoveSessionHttpController } from './commands/move-session/move-session.http.controller';
 import { RenameSessionCommandHandler } from './commands/rename-session/rename-session.command-handler';
 import { RenameSessionHttpController } from './commands/rename-session/rename-session.http.controller';
 import { RestartSessionCommandHandler } from './commands/restart-session/restart-session.command-handler';
@@ -69,12 +71,14 @@ const httpControllers = [
   RemoveCheckoutHttpController,
   FindSessionHttpController,
   RenameSessionHttpController,
+  MoveSessionHttpController,
   CloseSessionHttpController,
 ];
 
 const commandHandlers: Provider[] = [
   CreateSessionCommandHandler,
   RenameSessionCommandHandler,
+  MoveSessionCommandHandler,
   StopSessionCommandHandler,
   RestartSessionCommandHandler,
   CloseSessionCommandHandler,
