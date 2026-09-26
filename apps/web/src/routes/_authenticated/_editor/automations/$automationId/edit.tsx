@@ -4,6 +4,7 @@ import { AutomationEditorScreen } from '@/features/routines/screens/automation-e
 /** Edit automation: the same editor as New automation, on an existing one. */
 export const Route = createFileRoute('/_authenticated/_editor/automations/$automationId/edit')({
   component: EditAutomationRoute,
+  staticData: { list: 'automations' },
 });
 
 function EditAutomationRoute() {

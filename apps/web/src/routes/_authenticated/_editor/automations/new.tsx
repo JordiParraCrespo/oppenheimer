@@ -8,6 +8,8 @@ import { AutomationEditorScreen } from '@/features/routines/screens/automation-e
  */
 export const Route = createFileRoute('/_authenticated/_editor/automations/new')({
   component: NewAutomationRoute,
+  // Under `_editor`, not `/automations`, so the list the sidebar shows is said here.
+  staticData: { list: 'automations' },
   validateSearch: (search: Record<string, unknown>): { project?: string } => ({
     ...search,
     project: typeof search.project === 'string' ? search.project : undefined,

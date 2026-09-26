@@ -11,6 +11,8 @@ import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
 import type { ProjectsService } from '../modules/projects';
 import { ProjectsModule } from '../modules/projects';
+import type { RoutinesService } from '../modules/routines';
+import { RoutinesModule } from '../modules/routines';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
 import { TOKENS } from './tokens';
@@ -22,6 +24,7 @@ import { TOKENS } from './tokens';
 export const consumerModules = [
   SessionsModule,
   ProjectsModule,
+  RoutinesModule,
   HostsModule,
   InstallationsModule,
   ApiTokensModule,
@@ -66,6 +69,11 @@ export class ConsumerApp {
   /** The bodies of work sessions belong to, and what New session is prefilled with. */
   get projects(): ProjectsService {
     return this.kernel.container.get(TOKENS.ProjectsService);
+  }
+
+  /** The automations — sessions the control plane starts on a schedule or a GitHub event. */
+  get routines(): RoutinesService {
+    return this.kernel.container.get(TOKENS.RoutinesService);
   }
 
   get hosts(): HostsService {
