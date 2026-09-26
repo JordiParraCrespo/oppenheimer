@@ -21,7 +21,7 @@ importing it configures i18next; everything else is pure and may be dropped.
 | `analytics` | `createWebAnalyticsClient` (PostHog), `PageViewTracker` | leaf |
 | `forms` | `useZodResolver` | leaf |
 | `hosts` | `HostPairingChrome` — the token clock and the status line that the onboarding step and the console's Add host dialog both show | leaf |
-| `table` | `DataTable` (a shell over a header, a body and a footer, so a keystroke in the search field does not re-render the rows), its column/facet/sort types, `useTableQuery`, `useClampedPage`, `useDebouncedCallback`, `paginateRows`, `downloadCsv` | middle |
+| `table` | `DataTable` (a shell over a header, a body and a footer, so a keystroke in the search field does not re-render the rows), its column/facet/sort types, `useTableQuery`, `useClampedPage`, `paginateRows`, `downloadCsv` | middle |
 | `layout` | `PageHead`, `FieldRow`, `RouteError`/`RouteNotFound`, `ConfirmDialog` | middle |
 | `roles` | `RolePill` | middle |
 | `shell` | `AppShell`, `AppSidebar`, `TopBar`, `UserMenu`, `CommandPalette`, `ShellProvider`/`useShell`, `useAbility`, `useAuthorizedNav`, the nav types | top |
