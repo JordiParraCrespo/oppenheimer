@@ -51,8 +51,6 @@ export class FindHostsHttpController {
     const hosts = await this.queryBus.execute<FindHostsQuery, HostOverview[]>(
       new FindHostsQuery({ scope, includeUnpaired: query.include === 'unpaired' }),
     );
-    return hosts.map(({ host, online, runningSessions }) =>
-      this.mapper.toResponse(host, { online, runningSessions }),
-    );
+    return hosts.map((overview) => this.mapper.toResponse(overview.host, overview));
   }
 }

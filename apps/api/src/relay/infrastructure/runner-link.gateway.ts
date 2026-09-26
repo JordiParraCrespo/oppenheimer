@@ -185,8 +185,11 @@ export class RunnerLinkGateway {
       void this.onControl(link, data as Buffer);
     });
     let alive = true;
+    let pingSentAt = 0;
     ws.on('pong', () => {
       alive = true;
+      // The keepalive's own ping, timed: the "echo 41 ms" a host row shows.
+      if (pingSentAt) link.roundTripMillis = Date.now() - pingSentAt;
     });
     const keepAlive = setInterval(() => {
       if (!alive) {
@@ -195,6 +198,7 @@ export class RunnerLinkGateway {
         return;
       }
       alive = false;
+      pingSentAt = Date.now();
       ws.ping();
     }, LINK_PING_INTERVAL_MS);
     keepAlive.unref();
@@ -227,7 +231,7 @@ export class RunnerLinkGateway {
       }),
     );
     try {
-      await this.events.onHello(link, hello);
+      await this.events.onHello(link, hello, link.connectedAt);
     } catch (error) {
       this.logger.error({ message: 'hello could not be recorded', hostId, error: String(error) });
     }

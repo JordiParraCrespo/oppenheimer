@@ -313,7 +313,11 @@ describe('runner link', () => {
     expect(h.registry.find(HOST)?.runId).toBe('run-1');
     expect(h.presence.observe).toHaveBeenCalledWith(
       HOST,
-      expect.objectContaining({ hostname: 'mbp' }),
+      expect.objectContaining({
+        facts: expect.objectContaining({ hostname: 'mbp' }),
+        // The hello is when the link opened.
+        connectedAt: expect.any(Date),
+      }),
     );
   });
 

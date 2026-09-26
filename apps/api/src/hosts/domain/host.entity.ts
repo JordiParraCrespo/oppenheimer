@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/backend-ddd';
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostRegisteredDomainEvent } from './events/host-registered.domain-event';
+import { HostRenamedDomainEvent } from './events/host-renamed.domain-event';
 import { HostUnpairedDomainEvent } from './events/host-unpaired.domain-event';
 
 /** Whatever the runner last reported about the machine, stored as it arrived. */
@@ -29,7 +30,11 @@ export interface HostProps {
   publicKey: string;
   /** SHA-256 of the raw public key, hex — the form shown beside a host. */
   publicKeyFingerprint: string;
-  /** Last heartbeat. `online` is derived from it, never stored. */
+  /**
+   * Last heartbeat, read from `host_presence`. `online` is derived from it,
+   * never stored, and nothing on this aggregate writes it: a heartbeat is
+   * presence, not a change to the host (`product/versions/mvp/13-host-metadata.md`).
+   */
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */
   unpairedAt: Date | null;
@@ -168,9 +173,19 @@ export class HostEntity extends AggregateRoot<HostProps> {
 
   /** Display-only: nothing on disk is derived from a host's name. */
   rename(name: string): void {
+    const from = this.props.name;
+    if (from === name) return;
     this.props.name = name;
     this.setUpdatedAt(new Date());
     this.validate();
+    this.addEvent(
+      new HostRenamedDomainEvent({
+        aggregateId: this.id,
+        from,
+        to: name,
+        reason: 'A person renamed the host; its timeline records it',
+      }),
+    );
   }
 
   /**
@@ -179,30 +194,6 @@ export class HostEntity extends AggregateRoot<HostProps> {
    * trusts, and the machine itself says so when the runner is uninstalled.
    * The row is kept either way.
    */
-  /**
-   * The runner reported in: on hello and on every heartbeat. `online` is derived
-   * from `lastSeenAt` by the repository's read, so this is the only writer of
-   * the fact the sidebar dot reads.
-   *
-   * The facts are the one shape registration validated (`hostFactsSchema`,
-   * `facts.go`'s twin), and they **replace** what was there: presence is the
-   * machine as of this report, so a tool that went missing since pairing goes
-   * missing here too rather than living on from the last time it was seen. The
-   * four columns worth their own name are read off the same object registration
-   * reads them off (`HostMapper.toRegisterProps`), and the whole inventory is
-   * kept on `capabilities` as it arrived, as at registration.
-   */
-  observe(facts: HostFactsDto, at: Date = new Date()): void {
-    this.props.hostname = facts.hostname;
-    this.props.os = hostPlatformOf(facts);
-    this.props.arch = facts.arch;
-    this.props.runnerVersion = facts.runnerVersion;
-    this.props.capabilities = { ...facts };
-    this.props.lastSeenAt = at;
-    this.setUpdatedAt(at);
-    this.validate();
-  }
-
   unpair(at: Date = new Date()): void {
     if (this.props.unpairedAt) return;
     this.props.unpairedAt = at;

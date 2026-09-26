@@ -1,6 +1,7 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Option } from 'oxide.ts';
 import type { HostEntity } from '../domain/host.entity';
+import type { HostNetwork, HostVitals, StoredHostInventory } from '../domain/host-metadata.types';
 
 /**
  * How long after its last heartbeat a host still counts as attached: twice the
@@ -20,6 +21,12 @@ export const HOST_ONLINE_WINDOW_SECONDS = 30;
 export interface HostPresence {
   host: HostEntity;
   online: boolean;
+  /** What the machine is, from `host_inventory`; null until it has reported. */
+  inventory: StoredHostInventory | null;
+  /** Its last live numbers, from `host_presence`; null until its first link. */
+  vitals: HostVitals | null;
+  /** The network its current (or last) link came from. */
+  network: HostNetwork | null;
 }
 
 /** What the burn hands back about the token it claimed, and nothing more. */

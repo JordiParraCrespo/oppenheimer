@@ -85,3 +85,14 @@ export const listHostsQuerySchema = z.object({
 });
 
 export type ListHostsQueryDto = z.infer<typeof listHostsQuerySchema>;
+
+/**
+ * `GET /hosts/{id}/timeline`: newest first, keyset-paginated. `before` is the
+ * opaque `next` of the previous page.
+ */
+export const hostTimelineQuerySchema = z.object({
+  before: z.string().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+export type HostTimelineQueryDto = z.infer<typeof hostTimelineQuerySchema>;

@@ -33,6 +33,7 @@ import { HostOrmEntity } from './database/host.orm-entity';
 import { HostRepository } from './database/host.repository';
 import { HostEventOrmEntity } from './database/host-event.orm-entity';
 import { HostInventoryOrmEntity } from './database/host-inventory.orm-entity';
+import { HostMetadataRepository } from './database/host-metadata.repository';
 import { HostNetworkOrmEntity } from './database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from './database/host-pairing-token.orm-entity';
 import { HostPairingTokenRepository } from './database/host-pairing-token.repository';
@@ -44,6 +45,7 @@ import {
   HOST_ACCESS,
   HOST_ASSERTION,
   HOST_KEY,
+  HOST_METADATA_REPOSITORY,
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
@@ -52,6 +54,8 @@ import { HostResource } from './hosts.resource';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
+import { FindHostTimelineHttpController } from './queries/find-host-timeline/find-host-timeline.http.controller';
+import { FindHostTimelineQueryHandler } from './queries/find-host-timeline/find-host-timeline.query-handler';
 import { FindHostsHttpController } from './queries/find-hosts/find-hosts.http.controller';
 import { FindHostsQueryHandler } from './queries/find-hosts/find-hosts.query-handler';
 import { FindPairingTokenHttpController } from './queries/find-pairing-token/find-pairing-token.http.controller';
@@ -74,6 +78,7 @@ const httpControllers = [
   UninstallHostHttpController,
   CollectSessionImageHttpController,
   FindHostHttpController,
+  FindHostTimelineHttpController,
   RenameHostHttpController,
   UnpairHostHttpController,
 ];
@@ -93,6 +98,7 @@ const queryHandlers: Provider[] = [
   FindHostQueryHandler,
   FindPairingTokensQueryHandler,
   FindPairingTokenQueryHandler,
+  FindHostTimelineQueryHandler,
 ];
 
 const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
@@ -100,6 +106,10 @@ const mappers: Provider[] = [HostMapper, HostPairingTokenMapper];
 const repositories: Provider[] = [
   { provide: HOST_REPOSITORY, useClass: HostRepository },
   { provide: HOST_PAIRING_TOKEN_REPOSITORY, useClass: HostPairingTokenRepository },
+  // One instance behind both the port and the class: the host repository
+  // writes the timeline inside its own transactions through the class.
+  HostMetadataRepository,
+  { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
 ];
 
 const resolvers: Provider[] = [

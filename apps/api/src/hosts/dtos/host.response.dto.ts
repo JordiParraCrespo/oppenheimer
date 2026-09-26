@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HOST_STATUSES, type HostStatus } from '@oppenheimer/shared';
+import {
+  HostMachineResponseDto,
+  HostNetworkResponseDto,
+  HostVitalsResponseDto,
+} from './host-metadata.response.dto';
 
 export class HostResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -63,6 +68,27 @@ export class HostResponseDto {
 
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostMachineResponseDto,
+    description: 'What the machine is. Null until the runner has reported its facts.',
+  })
+  machine!: HostMachineResponseDto | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostVitalsResponseDto,
+    description: 'Its last live numbers. Null until its first link.',
+  })
+  vitals!: HostVitalsResponseDto | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostNetworkResponseDto,
+    description: 'Where its current (or last) link came from. Null until one has.',
+  })
+  network!: HostNetworkResponseDto | null;
 
   @ApiPropertyOptional({
     nullable: true,

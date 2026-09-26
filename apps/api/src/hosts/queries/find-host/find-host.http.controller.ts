@@ -45,10 +45,9 @@ export class FindHostHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<HostResponseDto> {
-    const { host, online, runningSessions } = await this.queryBus.execute<
-      FindHostQuery,
-      HostOverview
-    >(new FindHostQuery({ scope, hostId: id }));
-    return this.mapper.toResponse(host, { online, runningSessions });
+    const overview = await this.queryBus.execute<FindHostQuery, HostOverview>(
+      new FindHostQuery({ scope, hostId: id }),
+    );
+    return this.mapper.toResponse(overview.host, overview);
   }
 }

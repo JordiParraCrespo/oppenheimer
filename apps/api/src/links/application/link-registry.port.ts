@@ -50,6 +50,12 @@ export interface RunnerLink {
   /** Forget an attachment; the id is free once the runner has been told. */
   closeAttachment(attachmentId: number): void;
   attachment(attachmentId: number): AttachmentSink | undefined;
+  /**
+   * The last ping/pong round trip on this link, in milliseconds; absent until
+   * the first pong. Measured by the process holding the socket, so it is
+   * always the true one (`product/versions/mvp/13-host-metadata.md`).
+   */
+  readonly roundTripMillis?: number | null;
   /** The number of attachments open, for the heartbeat log and the tests. */
   readonly attachmentCount: number;
   /**

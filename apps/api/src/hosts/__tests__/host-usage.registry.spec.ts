@@ -5,7 +5,7 @@ import type { HostPresence } from '../database/host.repository.port';
 import type { HostEntity } from '../domain/host.entity';
 
 function presence(id: string, online = true): HostPresence {
-  return { host: { id } as HostEntity, online };
+  return { host: { id } as HostEntity, online, inventory: null, vitals: null, network: null };
 }
 
 function usage(counts: Record<string, number>): HostUsagePort {

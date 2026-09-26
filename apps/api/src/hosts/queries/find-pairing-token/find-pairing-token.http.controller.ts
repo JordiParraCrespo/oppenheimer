@@ -62,12 +62,7 @@ export class FindPairingTokenHttpController {
     );
     return {
       ...this.tokens.toResponse(token),
-      host: host
-        ? this.hosts.toResponse(host.host, {
-            online: host.online,
-            runningSessions: host.runningSessions,
-          })
-        : null,
+      host: host ? this.hosts.toResponse(host.host, host) : null,
     };
   }
 }

@@ -4,21 +4,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, Repository, type SelectQueryBuilder } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import type { HostEntity } from '../domain/host.entity';
 import { HostMapper } from '../host.mapper';
 import { HostResource } from '../hosts.resource';
 import { HostOrmEntity } from './host.orm-entity';
 import {
-  HOST_ONLINE_WINDOW_SECONDS,
   type HostPresence,
   type HostRepositoryPort,
   type RedeemAndRegisterInput,
   type RedeemedPairingToken,
 } from './host.repository.port';
-
-/** The presence flag, computed by the database beside the row it describes. */
-const ONLINE_EXPRESSION = `host."lastSeenAt" > now() - (:onlineWindowSeconds * interval '1 second')`;
+import { HostMetadataRepository } from './host-metadata.repository';
 
 /**
  * TypeORM adapter for the host aggregate.
@@ -43,6 +40,7 @@ export class HostRepository
     private readonly dataSource: DataSource,
     private readonly mapper: HostMapper,
     private readonly outbox: OutboxService,
+    private readonly metadata: HostMetadataRepository,
   ) {
     super();
   }
@@ -51,26 +49,23 @@ export class HostRepository
     scope: AccessScope,
     options: { includeUnpaired?: boolean } = {},
   ): Promise<HostPresence[]> {
-    const query = this.withPresence(this.scopedQuery(scope)).orderBy('host.createdAt', 'DESC');
+    const query = this.scopedQuery(scope).orderBy('host.createdAt', 'DESC');
     if (!options.includeUnpaired) query.andWhere('host.unpairedAt IS NULL');
-    const { entities, raw } = await query.getRawAndEntities();
-    return entities.map((record, index) => ({
-      host: this.mapper.toDomain(record),
-      online: isOnline(raw[index]),
-    }));
+    return this.withMetadata(await query.getMany());
   }
 
   async findOneByIdWithPresence(scope: AccessScope, id: string): Promise<Option<HostPresence>> {
-    const query = this.withPresence(this.scopedQuery(scope)).andWhere('host.id = :id', { id });
-    const { entities, raw } = await query.getRawAndEntities();
-    const record = entities[0];
+    const record = await this.scopedQuery(scope).andWhere('host.id = :id', { id }).getOne();
     if (!record) return None;
-    return Some({ host: this.mapper.toDomain(record), online: isOnline(raw[0]) });
+    const [presence] = await this.withMetadata([record]);
+    return Some(presence);
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<HostEntity>> {
     const record = await this.scopedQuery(scope).andWhere('host.id = :id', { id }).getOne();
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    if (!record) return None;
+    const [presence] = await this.withMetadata([record]);
+    return Some(presence.host);
   }
 
   async findOneByIdForMachine(id: string): Promise<Option<HostEntity>> {
@@ -82,11 +77,25 @@ export class HostRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  /**
+   * The row, the outbox entries its events owe, and the timeline entries they
+   * stand for, in one transaction. An unpaired host's current network stops
+   * being current in the same breath, so the 90-day retention can reach it.
+   */
   async save(entity: HostEntity): Promise<HostEntity> {
-    const record = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(HostOrmEntity).save(this.mapper.toPersistence(entity)),
-    );
-    return this.mapper.toDomain(record);
+    const entries = this.mapper.toTimelineEntries(entity.domainEvents);
+    const at = new Date();
+    await this.outbox.writeWithEvents([entity], async (manager) => {
+      const saved = await manager
+        .getRepository(HostOrmEntity)
+        .save(this.mapper.toPersistence(entity));
+      await this.metadata.insertTimeline(manager, entity.id, entries, at);
+      if (entries.some((entry) => entry.kind === 'unpaired')) {
+        await this.metadata.clearCurrentNetwork(manager, entity.id);
+      }
+      return saved;
+    });
+    return entity;
   }
 
   /**
@@ -139,6 +148,48 @@ export class HostRepository
       // Cast around TypeORM's `QueryDeepPartialEntity` recursion, which cannot
       // represent the free-form `capabilities` jsonb.
       await hosts.insert(record as Parameters<typeof hosts.insert>[0]);
+      // The machine as it paired, and the first line of its timeline, with it.
+      const inventory = this.mapper.toRegisterInventory(host);
+      if (inventory) {
+        await manager.query(
+          `INSERT INTO "host_inventory" (
+             "hostId", "factsHash", "platform", "osName", "osVersion", "kernelVersion", "arch",
+             "hostname", "cpuModel", "cpuCount", "memoryTotalBytes", "diskTotalBytes",
+             "virtualization", "cloudProvider", "timezone", "bootedAt", "runnerVersion",
+             "serviceManager", "tools", "facts", "changedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+                   $18, $19, $20, $21)`,
+          [
+            host.id,
+            inventory.factsHash,
+            inventory.platform,
+            inventory.osName,
+            inventory.osVersion,
+            inventory.kernelVersion,
+            inventory.arch,
+            inventory.hostname,
+            inventory.cpuModel,
+            inventory.cpuCount,
+            inventory.memoryTotalBytes,
+            inventory.diskTotalBytes,
+            inventory.virtualization,
+            inventory.cloudProvider,
+            inventory.timezone,
+            inventory.bootedAt,
+            inventory.runnerVersion,
+            inventory.serviceManager,
+            JSON.stringify(inventory.tools),
+            JSON.stringify(inventory.facts),
+            input.now,
+          ],
+        );
+      }
+      await this.metadata.insertTimeline(
+        manager,
+        host.id,
+        this.mapper.toTimelineEntries(host.domainEvents),
+        input.now,
+      );
       await this.outbox.stageEvents(manager, host.domainEvents);
       return host;
     });
@@ -150,21 +201,18 @@ export class HostRepository
     return Some(registered);
   }
 
-  /** Adds the presence flag to a query without disturbing its entity mapping. */
-  private withPresence(
-    query: SelectQueryBuilder<HostOrmEntity>,
-  ): SelectQueryBuilder<HostOrmEntity> {
-    return query
-      .addSelect(ONLINE_EXPRESSION, 'online')
-      .setParameter('onlineWindowSeconds', HOST_ONLINE_WINDOW_SECONDS);
+  /** The rows, each with its side tables: three primary-key reads for the whole list. */
+  private async withMetadata(records: HostOrmEntity[]): Promise<HostPresence[]> {
+    const metadata = await this.metadata.findForHosts(records.map((record) => record.id));
+    return records.map((record) => {
+      const found = metadata.get(record.id);
+      return {
+        host: this.mapper.toDomain(record, found),
+        online: found?.online ?? false,
+        inventory: found?.inventory ?? null,
+        vitals: found?.vitals ?? null,
+        network: found?.network ?? null,
+      };
+    });
   }
-}
-
-/**
- * Reads the computed flag out of the raw row. A host that has never sent a
- * heartbeat compares to `null`, which is neither true nor false in SQL, so
- * anything other than an explicit `true` is offline.
- */
-function isOnline(raw: unknown): boolean {
-  return (raw as { online?: unknown } | undefined)?.online === true;
 }

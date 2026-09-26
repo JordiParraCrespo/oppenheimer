@@ -1,14 +1,14 @@
 import {
-  Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
-  Patch,
+  Query,
   UseGuards,
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
@@ -18,12 +18,11 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { HostOverview } from '../../application/host-usage.registry';
-import { HostResponseDto } from '../../dtos/host.response.dto';
+import type { TimelinePage } from '../../database/host-metadata.repository.port';
+import { HostTimelinePageResponseDto } from '../../dtos/host-metadata.response.dto';
 import { HostMapper } from '../../host.mapper';
-import { FindHostQuery } from '../../queries/find-host/find-host.query';
-import { RenameHostCommand } from './rename-host.command';
-import { RenameHostRequest } from './rename-host.request.dto';
+import { FindHostTimelineQuery } from './find-host-timeline.query';
+import { FindHostTimelineRequest } from './find-host-timeline.request.dto';
 
 @ApiTags('Hosts')
 @ApiBearerAuth()
@@ -31,33 +30,40 @@ import { RenameHostRequest } from './rename-host.request.dto';
 @UseGuards(ApiAuthGuard, PoliciesGuard)
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('hosts')
-export class RenameHostHttpController {
+export class FindHostTimelineHttpController {
   constructor(
-    private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly mapper: HostMapper,
   ) {}
 
-  @Patch(':id')
+  @Get(':id/timeline')
   @Version('1')
-  @CheckPolicies({ action: 'update', subject: 'Host' })
-  @RequireScopes('hosts:write')
+  @CheckPolicies({ action: 'read', subject: 'Host' })
+  @RequireScopes('hosts:read')
   @ApiOperation({
-    summary: 'Rename a host',
-    description: 'Display only — nothing on the machine is named after this.',
+    operationId: 'getHostTimeline',
+    summary: 'A host’s timeline, newest first',
+    description:
+      'Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.',
   })
-  @ApiResponse({ status: 200, type: HostResponseDto })
+  @ApiResponse({ status: 200, type: HostTimelinePageResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
-  async rename(
+  async list(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: RenameHostRequest,
-  ): Promise<HostResponseDto> {
-    await this.commandBus.execute(new RenameHostCommand({ scope, hostId: id, name: body.name }));
-
-    const overview = await this.queryBus.execute<FindHostQuery, HostOverview>(
-      new FindHostQuery({ scope, hostId: id }),
+    @Query() query: FindHostTimelineRequest,
+  ): Promise<HostTimelinePageResponseDto> {
+    const page = await this.queryBus.execute<FindHostTimelineQuery, TimelinePage>(
+      new FindHostTimelineQuery({
+        scope,
+        hostId: id,
+        before: this.mapper.decodeTimelineCursor(query.before),
+        limit: query.limit,
+      }),
     );
-    return this.mapper.toResponse(overview.host, overview);
+    return {
+      entries: page.entries.map((entry) => this.mapper.toTimelineResponse(entry)),
+      next: this.mapper.encodeTimelineCursor(page.next),
+    };
   }
 }

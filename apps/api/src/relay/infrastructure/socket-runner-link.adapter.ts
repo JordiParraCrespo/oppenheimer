@@ -48,6 +48,10 @@ const MAX_REMEMBERED_COMMANDS = 256;
 export class SocketRunnerLink implements RunnerLink {
   private readonly attachments = new LinkAttachments();
   private readonly commands = new Map<string, SentSessionCommand>();
+  /** Set by the gateway on every pong; see `RunnerLink.roundTripMillis`. */
+  roundTripMillis: number | null = null;
+  /** When the link opened, for `host_presence.connectedAt`. */
+  readonly connectedAt = new Date();
 
   constructor(
     readonly hostId: string,

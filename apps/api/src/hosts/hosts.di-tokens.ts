@@ -12,3 +12,4 @@ export const HOST_ASSERTION = Symbol('HOST_ASSERTION');
 export const HOST_ACCESS = Symbol('HOST_ACCESS');
 export const HOST_PRESENCE = Symbol('HOST_PRESENCE');
 export const HOST_KEY = Symbol('HOST_KEY');
+export const HOST_METADATA_REPOSITORY = Symbol('HOST_METADATA_REPOSITORY');
