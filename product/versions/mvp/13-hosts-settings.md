@@ -18,7 +18,7 @@ already on the wire for it.
 | Hosts nav item with a count | `GET /hosts` length | built |
 | The host's name, mono | `name` | built |
 | Meta line: platform, CPUs, runner version | `os`, `capabilities.cpus`, `runnerVersion` | **CPUs added** |
-| Meta line: region or "local" | nothing a host knows | open, question 1 |
+| Meta line: region or "local" | `network.city`, `network.countryCode` (14) | **city and country code**, decided 2026-09-26 |
 | Dot and word: Running · N sessions / Idle / Offline | `status`, `runningSessionCount` | **added** |
 | "connected" / "last seen 2 days ago" | `online`, `lastSeenAt` | built |
 | Rename in place | `PATCH /hosts/{id}` | built |
@@ -117,12 +117,12 @@ already on the wire for it.
 
 ## Open questions
 
-1. **Region, and "local".** The meta line reads "eu-west" for a server
-   and "local" for the laptop the browser is on. Neither is a fact a
-   runner has: a region would have to come from the person or a cloud
-   metadata probe, and "local" is a comparison between the browser and
-   the host that nothing makes today. Drop both until VMs, where the
-   region is ours to know?
+1. ~~**Region, and "local".**~~ Settled 2026-09-26: the slot shows the
+   city and country code the API placed the host's connecting address in
+   (DB-IP Lite, 14) — "Madrid, ES", or "ES" when only the country is
+   known, and nothing when the address is private or the database is
+   absent. The frame's "eu-west" and "local" are not facts a runner has;
+   a cloud region can come with VMs, where it is ours to know.
 2. **"echo 41 ms".** The link's liveness is ping/pong (01), so the relay
    could keep the last round trip per host in memory and a host read
    could carry it. It would only be true on the replica holding the

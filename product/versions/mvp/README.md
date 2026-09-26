@@ -440,3 +440,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   console's page with `?from=settings`. The console keeps `/hosts/new`;
   both mount the one screen. Copy host ID is left out of the host menu
   for now (13).
+- 2026-09-26: 13's first open question is settled: the host card's
+  location slot, drawn as "eu-west" / "local", shows the city and country
+  code of the host's connecting address from DB-IP Lite (14).

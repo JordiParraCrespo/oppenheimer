@@ -233,3 +233,7 @@ earlier note:
   Add a host page with `?from=settings`. It now opens the same screen
   inside Settings, at `/settings/hosts/new`, with the settings sidebar
   beside it, and the host menu drops Copy host ID for now (2026-09-26).
+- `versions/mvp/13-hosts-settings.md` left the host card's region or
+  "local" open. It shows the city and country code of the host's
+  connecting address, from DB-IP Lite, instead of a cloud region
+  (2026-09-26).

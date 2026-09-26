@@ -42,7 +42,7 @@ describe('cardStatusOf', () => {
 });
 
 describe('metaPartsOf', () => {
-  it('reads the frame’s order, and nothing the frame does not draw', () => {
+  it('reads the frame’s order: OS, vCPUs, where it connects from, runner', () => {
     expect(
       metaPartsOf(
         host({
@@ -56,7 +56,15 @@ describe('metaPartsOf', () => {
     ).toEqual([
       { kind: 'text', value: 'Ubuntu 24.04.1 LTS' },
       { kind: 'cpus', count: 32 },
+      { kind: 'text', value: 'Madrid, ES' },
       { kind: 'runner', version: '0.14.2' },
+    ]);
+  });
+
+  it('places a host by country alone when the city is unknown', () => {
+    expect(metaPartsOf(host({ countryCode: 'ES' }, null))).toEqual([
+      { kind: 'text', value: 'ubuntu 24.04' },
+      { kind: 'text', value: 'ES' },
     ]);
   });
 
