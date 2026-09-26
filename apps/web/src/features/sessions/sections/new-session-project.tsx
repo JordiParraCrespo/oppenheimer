@@ -1,5 +1,5 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
-import { useHosts, useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -13,8 +13,9 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * picking a project prefills the host, the repository and the agent
  * (`product/versions/mvp/12-projects-on-the-console.md`).
  *
- * It reads the projects because it draws them, and the hosts only to know
- * which project default is still a machine this workspace has. New
+ * It subscribes to the projects because it draws them. The hosts it only
+ * reads at pick time, to know which project default is still a machine this
+ * workspace has, so a refetch of the host list does not re-render it. New
  * project… is this chip's dialog: what it makes is picked here.
  */
 export function NewSessionProject() {
@@ -24,7 +25,7 @@ export function NewSessionProject() {
   const [creating, setCreating] = useState(false);
 
   const projects = useProjects();
-  const hosts = useHosts();
+  const hosts = useHostsSnapshot();
 
   // A remembered project the workspace no longer has, or one not yet loaded,
   // is shown as none rather than as an id: the list is the truth once it
@@ -36,7 +37,7 @@ export function NewSessionProject() {
     field.onChange(next.id);
     const prefill = projectPrefill(
       next,
-      (hosts.data ?? []).map((host) => host.id),
+      (hosts() ?? []).map((host) => host.id),
     );
     if (prefill.hostId !== undefined) setValue('hostId', prefill.hostId);
     if (prefill.scope !== undefined) setValue('scope', prefill.scope);

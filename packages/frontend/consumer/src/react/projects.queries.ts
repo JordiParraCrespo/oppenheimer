@@ -26,17 +26,33 @@ export const projectsKeys = {
  * rows and the sidebar's groups. One read serves both, and it carries each
  * project's repositories and defaults, so picking one prefills the other
  * chips without a second request.
+ *
+ * Pass `select` to subscribe to less than the whole list; a component that
+ * only needs it inside an event handler uses `useProjectsSnapshot` instead.
  */
-export function useProjects(
-  options?: Omit<UseQueryOptions<ProjectEntity[], Error>, 'queryKey' | 'queryFn'>,
+export function useProjects<TData = ProjectEntity[]>(
+  options?: Omit<UseQueryOptions<ProjectEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
-  return useQuery({
+  return useQuery<ProjectEntity[], Error, TData>({
     queryKey: projectsKeys.list(),
     queryFn: () => app.projects.findAll(),
     ...options,
   });
+}
+
+/**
+ * The projects as the cache holds them right now, without subscribing to them.
+ *
+ * For a read that happens in an event handler — the send that checks the
+ * picked project still exists — where `useProjects` would re-render the
+ * component on every refetch for a list it never draws. `undefined` until
+ * something on screen has read the list.
+ */
+export function useProjectsSnapshot(): () => ProjectEntity[] | undefined {
+  const queryClient = useQueryClient();
+  return () => queryClient.getQueryData<ProjectEntity[]>(projectsKeys.list());
 }
 
 export function useCreateProject(

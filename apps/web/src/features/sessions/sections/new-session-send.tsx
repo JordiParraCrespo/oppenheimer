@@ -1,4 +1,4 @@
-import { useCreateSession, useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useCreateSession, useProjectsSnapshot } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
 import { type ReactNode, useRef } from 'react';
 import { useWatch } from 'react-hook-form';
@@ -11,8 +11,8 @@ import { toCheckouts, toLaunchInput } from '../lib/session-options';
  *
  * What this section reads during render is only what it must: whether a host
  * is picked, because the composer cannot send without one, and the request's
- * state. The rest of the draft is read once, when the task is sent — so a pick
- * of effort or branch never reaches it.
+ * state. The rest of the draft, and the projects, are read once, when the task
+ * is sent — so a pick of effort or a refetch of the projects never reaches it.
  *
  * `scope`, `tools` and `engine` are the chips, built by the section above and
  * placed here untouched. They arrive as elements rather than being built here
@@ -31,9 +31,10 @@ export function NewSessionSend({
   const navigate = useNavigate();
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
-  // Read for the send alone: a remembered project the workspace no longer has
-  // is sent as none.
-  const projects = useProjects();
+  // Read at send time, not subscribed to: the list is only needed to send a
+  // remembered project the workspace no longer has as none, and a subscription
+  // would re-render the composer on every refetch of a list it never draws.
+  const projects = useProjectsSnapshot();
 
   /**
    * The key that makes a second press of send safe.
@@ -53,7 +54,7 @@ export function NewSessionSend({
   function start(prompt: string) {
     const draft = getValues();
     if (!draft.hostId) return;
-    const projectId = projects.data?.find((project) => project.id === draft.projectId)?.id ?? null;
+    const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
     create.mutate({
       idempotencyKey: idempotencyKey.current,
       input: {

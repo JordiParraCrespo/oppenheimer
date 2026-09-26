@@ -39,17 +39,37 @@ export const hostsKeys = {
   pairingDetail: (name: string) => [...hostsKeys.pairingDetails(), name] as const,
 };
 
-/** The hosts the caller has paired: New session's host chip and the pairing surfaces. */
-export function useHosts(
-  options?: Omit<UseQueryOptions<HostEntity[], Error>, 'queryKey' | 'queryFn'>,
+/**
+ * The hosts the caller has paired: New session's host chip and the pairing surfaces.
+ *
+ * Pass `select` to subscribe to less than the whole list — one host's name, the
+ * ids — so a refetch that changes nothing the reader shows does not re-render
+ * it. A component that only needs the list inside an event handler should not
+ * subscribe at all: that is `useHostsSnapshot`.
+ */
+export function useHosts<TData = HostEntity[]>(
+  options?: Omit<UseQueryOptions<HostEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
 
-  return useQuery({
+  return useQuery<HostEntity[], Error, TData>({
     queryKey: hostsKeys.list(),
     queryFn: () => app.hosts.findAll(),
     ...options,
   });
+}
+
+/**
+ * The hosts as the cache holds them right now, without subscribing to them.
+ *
+ * For a read that happens in an event handler — a project pick that checks its
+ * default host is still paired — where `useHosts` would re-render the
+ * component on every refetch for a value it never draws. `undefined` until
+ * something on screen has read the list.
+ */
+export function useHostsSnapshot(): () => HostEntity[] | undefined {
+  const queryClient = useQueryClient();
+  return () => queryClient.getQueryData<HostEntity[]>(hostsKeys.list());
 }
 
 /**

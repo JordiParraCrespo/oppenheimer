@@ -47,14 +47,17 @@ const PROVISIONING_POLL_MS = 2000;
  * session from the list renders on the click instead of waiting on a second
  * read of the same row. A detail read after this list was asked for is newer
  * than its row, or as new, and is left alone.
+ *
+ * Pass `select` to subscribe to less than the whole list: a screen that only
+ * asks whether there are any sessions should not re-render on every poll.
  */
-export function useSessions(
-  options?: Omit<UseQueryOptions<SessionEntity[], Error>, 'queryKey' | 'queryFn'>,
+export function useSessions<TData = SessionEntity[]>(
+  options?: Omit<UseQueryOptions<SessionEntity[], Error, TData>, 'queryKey' | 'queryFn'>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 
-  return useQuery({
+  return useQuery<SessionEntity[], Error, TData>({
     queryKey: sessionsKeys.list(),
     queryFn: async () => {
       const askedAt = Date.now();

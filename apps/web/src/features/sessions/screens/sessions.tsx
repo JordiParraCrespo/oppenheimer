@@ -26,10 +26,12 @@ import { useTranslation } from 'react-i18next';
  */
 export function SessionsScreen() {
   const { t } = useTranslation();
-  const { data: sessions, isSuccess } = useSessions();
+  // Whether there are any, not the rows: the 2 s provisioning poll and a focus
+  // refetch re-render this pane only when the answer flips.
+  const { data: empty, isSuccess } = useSessions({ select: (rows) => rows.length === 0 });
 
-  if (isSuccess && sessions.length === 0) return <Navigate to="/sessions/new" replace />;
-  if (!sessions) return null;
+  if (isSuccess && empty) return <Navigate to="/sessions/new" replace />;
+  if (empty === undefined) return null;
 
   return (
     <div className="flex min-h-0 flex-1 overflow-y-auto bg-canvas">

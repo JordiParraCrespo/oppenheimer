@@ -52,7 +52,7 @@ vi.mock('../dialogs/project', () => ({ ProjectDialog: () => null }));
  */
 const reads = vi.hoisted(() => {
   const listeners = new Set<() => void>();
-  let state = { hosts: [] as { id: string }[] };
+  let state = { hosts: [] as { id: string }[], projects: [] as unknown[] };
   return {
     get: () => state,
     set(next: typeof state) {
@@ -67,15 +67,26 @@ const reads = vi.hoisted(() => {
 });
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useProjects: () => ({ data: PROJECTS, isPending: false }),
+  // Each hook subscribes to its own slice, as a query observer subscribes to
+  // its own key: settling the hosts must not look like a change to the projects.
+  useProjects: () => {
+    const projects = useSyncExternalStore(reads.subscribe, () => reads.get().projects);
+    return { data: projects, isPending: false };
+  },
+  useProjectsSnapshot: () => () => reads.get().projects,
   useHosts: () => {
-    const { hosts } = useSyncExternalStore(reads.subscribe, reads.get);
+    const hosts = useSyncExternalStore(reads.subscribe, () => reads.get().hosts);
     return { data: hosts, isPending: false };
   },
+  useHostsSnapshot: () => () => reads.get().hosts,
   useInstallations: () => ({ data: [], isPending: false }),
   useInstallationRepositoriesFor: () => ({ repositories: [], isPending: false }),
   useRepositoryBranchesFor: () => ({ byRepository: new Map(), isPending: false }),
-  useCreateSession: () => ({ mutate: vi.fn(), isPending: false, isError: false }),
+  // Called once per render of NewSessionSend, so it doubles as that section's count.
+  useCreateSession: () => {
+    renders.set('send', (renders.get('send') ?? 0) + 1);
+    return { mutate: vi.fn(), isPending: false, isError: false };
+  },
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
@@ -114,7 +125,7 @@ function rendered(): string[] {
 
 beforeEach(() => {
   window.localStorage.clear();
-  reads.set({ hosts: [] });
+  reads.set({ hosts: [], projects: PROJECTS });
   render(<NewSessionForm />);
   rendered();
 });
@@ -133,9 +144,9 @@ describe('NewSessionForm', () => {
   });
 
   /** The send gate re-renders when a host is picked; the chips beside it must not. */
-  it('renders only the host chip when a host is picked', () => {
+  it('renders only the host chip and the send gate when a host is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'host' }));
-    expect(rendered()).toEqual(['host']);
+    expect(rendered()).toEqual(['host', 'send']);
   });
 
   /** The branch chip reads the same field, and appears for a lone repository. */
@@ -150,10 +161,16 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['agent', 'effort', 'permission']);
   });
 
-  /** The project chip reads the hosts for its prefill; nothing else does. */
-  it('renders only the chips that read the hosts when the host list settles', () => {
-    act(() => reads.set({ hosts: [{ id: 'host-1' }] }));
-    expect(rendered()).toEqual(['host', 'project']);
+  /** The project chip reads the hosts for its prefill at pick time, not by subscribing. */
+  it('renders only the host chip when the host list settles', () => {
+    act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-1' }] }));
+    expect(rendered()).toEqual(['host']);
+  });
+
+  /** The send reads the projects when it sends, so a refetch never reaches the composer. */
+  it('renders only the project chip when the project list settles', () => {
+    act(() => reads.set({ ...reads.get(), projects: [...PROJECTS] }));
+    expect(rendered()).toEqual(['project']);
   });
 
   it('renders no chip while the task is being typed', () => {
