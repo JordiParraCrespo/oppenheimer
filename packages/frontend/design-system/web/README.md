@@ -41,11 +41,19 @@ Wire the styles into the app's CSS entry alongside Tailwind:
     `AgentMark`
   - forms: `Field`, `Input`, `PasswordInput`, `SlugInput`, `Textarea`,
     `SegmentedControl`, `ChipSelect` (and its parts), `RepositorySelect`,
+    `RepositoryRowList`,
     `Composer` with `ComposerToolButton`, `AgentModelSelect`, `EffortSlider`
     and `EffortPicker`, `PermissionMenu`
-  - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
-  - navigation: `Sidebar`, `SessionItem`, `Stepper`
+  - overlays: `Callout`, `Dialog`, `DropdownMenu`, `Tooltip`
+  - navigation: `Rail`, `Sidebar` (with `SidebarSearch`, `SidebarProjectHeader`,
+    `SidebarEmptyRow`), `SessionItem`, `RoutineItem`, `PillTabs`, `PageHeader`,
+    `Stepper`
+  - routines: `RunHistory`, `RoutineTable`, `RunsList`, `TemplateGrid`,
+    `RoutineSteps`, `FieldSelect`, `InlineToken` (with `TriggerCard`,
+    `WeekdayStrip`, `AddRow`), `TimeGrid`
+  - settings: `SettingsNav`, `SettingsGroup`, `HostCard`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`
+    with `TerminalStatusLink`
   - media: `ImageCarousel`
 
   Everything else in that folder is legacy from the starter, kept so `apps/web`

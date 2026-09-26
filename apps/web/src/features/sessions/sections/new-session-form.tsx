@@ -5,6 +5,7 @@ import {
   useInstallations,
   useRepositoryBranchesFor,
 } from '@oppenheimer/frontend-consumer/react';
+import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,11 +41,15 @@ import {
  * action only says "open it", and where the machine it pairs lands — the draft
  * — is here.
  *
- * Three reads, and they are not the same read four times: the hosts, the
- * installations' repositories, and the branches of the repositories somebody
- * has actually picked. The last is deliberately last — the API answers branches
- * live from GitHub, so a call per row of a picker nobody has opened is a rate
- * limit spent on nothing.
+ * Four reads, and they are not the same read four times: the hosts, the
+ * installations' repositories, the branches of the repositories somebody has
+ * actually picked, and the deployment's GitHub App install URL. The branches
+ * are deliberately late — the API answers them live from GitHub, so a call per
+ * row of a picker nobody has opened is a rate limit spent on nothing. The
+ * install URL is the kernel's capabilities read, the one the sign-in and
+ * onboarding screens share: cached and persisted, so it costs no request here.
+ * The repository chip holds a `string | null` of it, and is loading until the
+ * answer is in.
  */
 export function NewSessionForm() {
   const { t } = useTranslation();
@@ -54,6 +59,9 @@ export function NewSessionForm() {
 
   const hosts = useHosts();
   const installations = useInstallations();
+  const installUrl = useDeploymentCapabilities({
+    select: (deployment) => deployment.github_app_install_url,
+  });
   const repositories = useInstallationRepositoriesFor(
     (installations.data ?? []).map((installation) => installation.id),
   );
@@ -123,8 +131,8 @@ export function NewSessionForm() {
             repositories={repositoryOptions}
             value={draft.scope}
             onValueChange={(scope) => update({ scope })}
-            onConnect={() => navigate({ to: '/onboarding/github' })}
-            loading={installations.isPending || repositories.isPending}
+            manageUrl={installUrl.data ?? null}
+            loading={installations.isPending || repositories.isPending || installUrl.isPending}
             branchesLoading={branches.isPending}
           />
           {onlyScope ? (

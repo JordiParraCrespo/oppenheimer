@@ -38,6 +38,15 @@ type linkHandler struct {
 	// bootToken mints the assertion an image pull carries.
 	bootToken func(ctx context.Context) (string, error)
 
+	// life is the daemon's context, not a link's. Session commands run on it
+	// (02-runner §4): a link that drops mid-clone must not take the clone
+	// with it, and a stop queued behind a create must not run on a socket
+	// that is already gone. Outcomes travel through the reporter, which
+	// resends them on the next link.
+	life context.Context
+	// lanes orders each session's commands off the read loop.
+	lanes *lanes
+
 	mu          sync.Mutex
 	attachments map[uint32]*attachment
 	epoch       uint64
@@ -75,7 +84,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	}
 	handler := &linkHandler{
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
-		bootToken: a.Pairing.BootToken,
+		bootToken: a.Pairing.BootToken, life: ctx, lanes: newLanes(),
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -140,6 +149,13 @@ func (h *linkHandler) Heartbeat(ctx context.Context) (link.Heartbeat, error) {
 	}, nil
 }
 
+// currentEpoch is the epoch of the link that is up, or of the last one.
+func (h *linkHandler) currentEpoch() uint64 {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.epoch
+}
+
 func (h *linkHandler) Connected(_ context.Context, epoch uint64) {
 	h.mu.Lock()
 	h.epoch = epoch
@@ -196,37 +212,45 @@ func (h *linkHandler) Message(ctx context.Context, msg link.Message) {
 	case "session.create":
 		var m link.SessionCreate
 		if msg.Decode(&m) == nil {
-			h.create(ctx, m)
+			h.lanes.run(m.SessionID, func() { h.create(h.life, m) })
 		}
 	case "session.attach":
 		var m link.SessionAttach
 		if msg.Decode(&m) == nil {
-			h.attach(ctx, m)
+			// An attachment id belongs to the link that allocated it; one
+			// queued past that link's end is dropped, and the browser
+			// reattaches through the next.
+			epoch := h.currentEpoch()
+			h.lanes.run(m.SessionID, func() {
+				if h.currentEpoch() == epoch {
+					h.attach(h.life, m)
+				}
+			})
 		}
 	case "session.input":
 		var m link.SessionInput
 		if msg.Decode(&m) == nil {
-			h.input(ctx, m)
+			h.lanes.run(m.SessionID, func() { h.input(h.life, m) })
 		}
 	case "session.image":
 		var m link.SessionImage
 		if msg.Decode(&m) == nil {
-			h.image(ctx, m)
+			h.lanes.run(m.SessionID, func() { h.image(h.life, m) })
 		}
 	case "session.resize":
 		var m link.SessionResize
 		if msg.Decode(&m) == nil {
-			h.resize(m)
+			h.lanes.run(m.SessionID, func() { h.resize(m) })
 		}
 	case "session.detach":
 		var m link.SessionDetach
 		if msg.Decode(&m) == nil {
-			h.detach(m.AttachmentID)
+			h.lanes.run(m.SessionID, func() { h.detach(m.AttachmentID) })
 		}
 	case "session.stop", "session.restart", "session.close", "session.window.open", "session.window.close":
 		var m link.SessionCommand
 		if msg.Decode(&m) == nil {
-			h.lifecycle(ctx, m)
+			h.lanes.run(m.SessionID, func() { h.lifecycle(h.life, m) })
 		}
 	case "attachment.credit":
 		var m link.AttachmentCredit

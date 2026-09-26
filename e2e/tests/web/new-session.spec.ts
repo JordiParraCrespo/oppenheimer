@@ -3,6 +3,7 @@ import {
   connectInstallation,
   pairHost,
   STUB_BRANCH,
+  STUB_INSTALL_URL,
   STUB_REPOSITORIES,
 } from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
@@ -133,9 +134,7 @@ test.describe('New session', () => {
     await owner.api.dispose();
   });
 
-  test('offers the way to connect GitHub when there is a host but no repository', async ({
-    page,
-  }) => {
+  test('offers the way to GitHub when there is a host but no repository', async ({ page }) => {
     // Pairing redeems a token at an IP-throttled route; see `pairHost`.
     test.slow();
     const owner = await provisionedUser('norepo');
@@ -147,8 +146,9 @@ test.describe('New session', () => {
     // The empty screens are gone: an account with nothing connected still gets
     // the composer, and the way out is inside the chip that is empty.
     await page.getByRole('button', { name: 'Repositories' }).click();
-    await page.getByRole('button', { name: 'Connect a repository…' }).click();
-    await expect(page).toHaveURL(/\/onboarding\/github/);
+    const manage = page.getByRole('link', { name: 'Manage repository access' });
+    await expect(manage).toHaveAttribute('href', STUB_INSTALL_URL);
+    await expect(manage).toHaveAttribute('target', '_blank');
 
     await owner.api.dispose();
   });

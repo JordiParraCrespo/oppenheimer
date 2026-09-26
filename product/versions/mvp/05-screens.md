@@ -11,8 +11,8 @@
   permanent address under `oppenheimer.dev/`, checked for availability
   as you type with a spinner, a green check or a red cross and a hint
   in the same tone; Continue waits for an available address. (3)
-  Connect GitHub, all or selected repos, skippable but the repo chip
-  stays empty until done. (4) Add a host, with two copyable blocks, the
+  Connect GitHub, all or selected repos, skippable; until it is done the
+  repo chip lists nothing and its foot row is the way out (below). (4) Add a host, with two copyable blocks, the
   install command and the prompt for an AI agent, both carrying the
   same one-hour token, the screen flipping to the registered host when
   the runner registers. Then Ready: a success ring, "You're all set", a
@@ -80,7 +80,14 @@
   (`launchControlsFor`), not one predicate per control. Chips remember last choice. Every chip filters (a search row, an empty
   line). The repository chip holds one repository in the MVP (00);
   picking another replaces it. The selected row carries its branch,
-  which opens a branch pane for that repository. The host chip's
+  which opens a branch pane for that repository. The repository chip's
+  foot row is **Manage repository access** with the GitHub mark: a link,
+  in a new tab, to the App's installation page (`github_app_install_url`
+  from the deployment's capabilities), because which repositories the App
+  sees is decided on GitHub and nowhere in the console. It no longer goes
+  back to the onboarding step (`/onboarding/github`). A deployment with no
+  App has no such page: the chip says so in its empty line and has no
+  foot row. The host chip's
   foot action opens the **Add host dialog**: the same instruction in
   two forms behind a Command / Agent prompt switch, a copyable panel
   (the command form carries the installer's SHA-256 under it when the

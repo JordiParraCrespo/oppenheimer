@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -195,17 +196,16 @@ func TestDirtyAndPush(t *testing.T) {
 
 func TestGitNeverWaitsForAPassword(t *testing.T) {
 	c, _ := client(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	// A remote that would prompt must fail fast instead of hanging a
-	// session create forever.
-	err := c.Ensure(context.Background(), repo, "https://127.0.0.1:1/private.git")
+	// A remote that cannot be reached must fail fast, not hang a session
+	// create. What it is classified as is pinned against a remote that does
+	// answer, in recovery_test.go.
+	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git")
 
-	if err == nil {
-		t.Fatal("want an error, not a prompt")
-	}
-	var prob *problem.Error
-	if !isProblem(err, &prob, "GIT_002") {
-		t.Fatalf("err = %v, want GIT_002", err)
+	if err == nil || ctx.Err() != nil {
+		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())
 	}
 }
 
