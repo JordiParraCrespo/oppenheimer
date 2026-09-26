@@ -1,12 +1,22 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { AppShell, drawsOwnFrame, RouteError } from '@oppenheimer/frontend-web';
+import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { NAV, USER_MENU } from '@/lib/nav';
+
+declare module '@tanstack/react-router' {
+  interface StaticDataRouteOption {
+    /**
+     * `own`: the route brings its own chrome (Settings), so this layout
+     * renders no `AppShell` around it. Absent, the console's shell.
+     */
+    shell?: 'own';
+  }
+}
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: ({ context, location }) => {
@@ -39,19 +49,22 @@ export const Route = createFileRoute('/_authenticated')({
  * — or if it failed, the shell renders as it always did: guessing "nowhere to
  * work" from an unanswered question would bounce every reader out of the app
  * on a network blip, or straight back to the onboarding screen they just left.
+ *
+ * A route that declares `shell: 'own'` (Settings) is rendered bare: it goes
+ * through the same guard and the same redirect, and draws its own chrome.
  */
 function AuthenticatedShell() {
   const { t } = useTranslation();
   const organizations = useOrganizations();
-  const ownFrame = useMatches({ select: drawsOwnFrame });
+  const ownShell = useMatches({
+    select: (matches) => matches.some((match) => match.staticData.shell === 'own'),
+  });
 
   const settledEmpty =
     organizations.isSuccess && !organizations.isFetching && organizations.data.length === 0;
 
   if (settledEmpty) return <Navigate to="/onboarding" replace />;
-  // Settings draws its own left side (its nav, "Back to console"); the
-  // guards above still hold for it.
-  if (ownFrame) return <Outlet />;
+  if (ownShell) return <Outlet />;
 
   return (
     <AppShell

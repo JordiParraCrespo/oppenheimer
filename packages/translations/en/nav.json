@@ -18,8 +18,5 @@
   "commandDescription": "Search for a page or an action.",
   "sidebarTitle": "Navigation",
   "sidebarDescription": "Your sessions and your account.",
-  "settings": "Settings",
-  "backToConsole": "Back to console",
-  "workspace": "Workspace",
-  "hosts": "Hosts"
+  "settings": "Settings"
 }

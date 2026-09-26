@@ -34,11 +34,11 @@ import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
 import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authenticated/_editor/hosts/new'
 import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
 import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
-import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -166,6 +166,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedEditorHostsNewRoute =
   AuthenticatedEditorHostsNewRouteImport.update({
     id: '/hosts/new',
@@ -190,12 +196,6 @@ const AuthenticatedSettingsHostsIndexRoute =
     path: '/hosts/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsHostsNewRoute =
-  AuthenticatedSettingsHostsNewRouteImport.update({
-    id: '/hosts/new',
-    path: '/hosts/new',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -216,13 +216,13 @@ export interface FileRoutesByFullPath {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
-  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -242,13 +242,13 @@ export interface FileRoutesByTo {
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
-  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesById {
@@ -275,13 +275,13 @@ export interface FileRoutesById {
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
+  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
-  '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRouteTypes {
@@ -305,13 +305,13 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/profile'
     | '/onboarding/'
     | '/sessions/'
     | '/settings/'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
-    | '/settings/hosts/new'
     | '/settings/hosts/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -331,13 +331,13 @@ export interface FileRouteTypes {
     | '/onboarding/workspace'
     | '/sessions/$sessionId'
     | '/sessions/new'
+    | '/settings/profile'
     | '/onboarding'
     | '/sessions'
     | '/settings'
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
-    | '/settings/hosts/new'
     | '/settings/hosts'
   id:
     | '__root__'
@@ -363,13 +363,13 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/workspace'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
+    | '/_authenticated/settings/profile'
     | '/_auth/onboarding/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
     | '/_authenticated/_editor/hosts/new'
     | '/_authenticated/_editor/projects/$projectId'
     | '/_authenticated/_editor/projects/new'
-    | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
   fileRoutesById: FileRoutesById
 }
@@ -560,6 +560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/profile': {
+      id: '/_authenticated/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/_editor/hosts/new': {
       id: '/_authenticated/_editor/hosts/new'
       path: '/hosts/new'
@@ -586,13 +593,6 @@ declare module '@tanstack/react-router' {
       path: '/hosts'
       fullPath: '/settings/hosts/'
       preLoaderRoute: typeof AuthenticatedSettingsHostsIndexRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/settings/hosts/new': {
-      id: '/_authenticated/settings/hosts/new'
-      path: '/hosts/new'
-      fullPath: '/settings/hosts/new'
-      preLoaderRoute: typeof AuthenticatedSettingsHostsNewRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
   }
@@ -665,14 +665,14 @@ const AuthenticatedEditorRouteWithChildren =
   AuthenticatedEditorRoute._addFileChildren(AuthenticatedEditorRouteChildren)
 
 interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
-  AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
-  AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
 }
 

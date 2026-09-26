@@ -17,7 +17,7 @@ import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -47,14 +47,23 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * one, unlike onboarding's Continue: a session may be started on a machine
  * whose runner is still coming up — the control plane records it and owes
  * it to that host the moment it connects. Using the host lands on New session
- * with it picked (`?host=`), the way a new project lands there picked.
+ * with it picked (`?host=`), the way a new project lands there picked. Opened
+ * from Settings (`?from=settings`) the same page reads Hosts as its parent
+ * and Done as its primary, back to the list.
  *
  * Both forms of the instruction come from the API with the secret already in
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settings' }) {
+export function AddHostScreen() {
   const { t } = useTranslation();
+  // Where the page was opened from is in the address, and the header reads
+  // everything it says — crumb, Cancel, Back, the primary — off this one
+  // fact: from Settings the parent is Hosts and the primary is Done, because
+  // nothing there is picking a machine for a session.
+  const search = useSearch({ from: '/_authenticated/_editor/hosts/new' });
+  const settings = search.from === 'settings';
+  const back = settings ? { to: '/settings/hosts' as const } : { to: '/sessions/new' as const };
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
   const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
@@ -64,23 +73,16 @@ export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settin
   // component that reads it, and the switch changes nothing else on screen.
   const [format, setFormat] = useState<Format>('command');
   const connected = host !== null;
-  // Opened from Settings → Hosts (`design/version1/Settings.dc.html`) the
-  // same page reads Back, Hosts / Add a host, Cancel and Done, and every one
-  // of them returns to the list; from the console it hands the host on.
-  const inSettings = from === 'settings';
-  const back = inSettings ? <Link to="/settings/hosts" /> : <Link to="/sessions/new" />;
 
   return (
     <>
-      <EditorPageBack render={back}>{t('hosts.add.back')}</EditorPageBack>
+      <EditorPageBack render={<Link {...back} />}>{t('hosts.add.back')}</EditorPageBack>
 
       <PageHeader className="mb-7">
         <PageHeaderCrumbs>
-          {inSettings ? (
-            <Link to="/settings/hosts">{t('hosts.add.crumbHosts')}</Link>
-          ) : (
-            <Link to="/sessions/new">{t('hosts.add.crumbNewSession')}</Link>
-          )}
+          <Link {...back}>
+            {settings ? t('hosts.add.crumbHosts') : t('hosts.add.crumbNewSession')}
+          </Link>
           <span>/</span>
           <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
         </PageHeaderCrumbs>
@@ -89,30 +91,22 @@ export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settin
           title={t('hosts.add.title')}
           actions={
             <>
-              <Button type="button" variant="secondary" size="sm" render={back}>
+              <Button type="button" variant="secondary" size="sm" render={<Link {...back} />}>
                 {t('common.cancel')}
               </Button>
-              {inSettings ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!host}
-                  onClick={() => navigate({ to: '/settings/hosts' })}
-                >
-                  {t('hosts.add.done')}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!host}
-                  onClick={() =>
-                    host && navigate({ to: '/sessions/new', search: { host: host.id } })
-                  }
-                >
-                  {t('hosts.add.use')}
-                </Button>
-              )}
+              <Button
+                type="button"
+                size="sm"
+                disabled={!host}
+                onClick={() =>
+                  host &&
+                  (settings
+                    ? navigate(back)
+                    : navigate({ to: '/sessions/new', search: { host: host.id } }))
+                }
+              >
+                {settings ? t('hosts.add.done') : t('hosts.add.use')}
+              </Button>
             </>
           }
         />

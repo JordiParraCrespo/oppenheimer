@@ -21,14 +21,12 @@ export function HostList() {
   if (hosts.isError) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>{t('hosts.settings.loadFailed')}</AlertDescription>
+        <AlertDescription>{t('settings.hosts.failed')}</AlertDescription>
       </Alert>
     );
   }
   if (hosts.data.length === 0) {
-    return (
-      <HostsEmpty title={t('hosts.settings.emptyTitle')} body={t('hosts.settings.emptyBody')} />
-    );
+    return <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />;
   }
   return (
     <div className="flex flex-col gap-2.5">

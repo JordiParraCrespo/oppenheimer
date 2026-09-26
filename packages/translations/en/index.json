@@ -522,9 +522,7 @@
       "meta": "Nothing on the host is exposed to the internet.",
       "back": "Back",
       "crumbNewSession": "New session",
-      "crumbHosts": "Hosts",
       "use": "Use this host",
-      "done": "Done",
       "defaultName": "New host",
       "install": {
         "title": "Install",
@@ -537,15 +535,11 @@
       "connect": {
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
-      }
+      },
+      "crumbHosts": "Hosts",
+      "done": "Done"
     },
     "settings": {
-      "title": "Hosts",
-      "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
-      "add": "Add host",
-      "loadFailed": "We could not load your hosts.",
-      "emptyTitle": "No hosts yet",
-      "emptyBody": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
       "state": {
         "running_one": "Running · {{count}} session",
         "running_other": "Running · {{count}} sessions",
@@ -638,6 +632,31 @@
       "confirm": "Delete project"
     }
   },
+  "settings": {
+    "nav": {
+      "back": "Back to console",
+      "account": "Account",
+      "workspace": "Workspace",
+      "profile": "Profile",
+      "hosts": "Hosts"
+    },
+    "profile": {
+      "title": "Profile",
+      "email": "Email",
+      "emailHint": "Used to sign in and for run notifications",
+      "failed": "The profile could not be loaded."
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
+      "add": "Add host",
+      "empty": "No hosts yet",
+      "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
+      "online": "Online",
+      "offline": "Offline",
+      "failed": "The hosts could not be loaded."
+    }
+  },
   "home": {
     "greeting": "Welcome back, {{name}}",
     "greetingFallback": "Welcome back",
@@ -682,10 +701,7 @@
     "commandDescription": "Search for a page or an action.",
     "sidebarTitle": "Navigation",
     "sidebarDescription": "Your sessions and your account.",
-    "settings": "Settings",
-    "backToConsole": "Back to console",
-    "workspace": "Workspace",
-    "hosts": "Hosts"
+    "settings": "Settings"
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",

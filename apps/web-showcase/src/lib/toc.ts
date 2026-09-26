@@ -159,6 +159,7 @@ export const TOC: TocGroup[] = [
   {
     group: 'Settings',
     items: [
+      { id: 'settingsshell', label: 'SettingsShell', icon: PanelTopIcon, components: ['settings-shell'] },
       { id: 'settingsnav', label: 'SettingsNav', icon: PanelLeftIcon, components: ['settings-nav'] },
       { id: 'settingsgroup', label: 'SettingsGroup', icon: RowsIcon, components: ['settings-group'] },
       { id: 'hostcard', label: 'HostCard', icon: CpuIcon, components: ['host-card'] },

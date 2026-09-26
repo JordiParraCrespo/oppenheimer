@@ -14,9 +14,7 @@
     "meta": "Nada del host queda expuesto a internet.",
     "back": "Atrás",
     "crumbNewSession": "Nueva sesión",
-    "crumbHosts": "Equipos",
     "use": "Usar este host",
-    "done": "Hecho",
     "defaultName": "Nuevo host",
     "install": {
       "title": "Instalar",
@@ -29,15 +27,11 @@
     "connect": {
       "title": "Conectar",
       "subtitle": "El runner se registra con el nombre de máquina que reporta."
-    }
+    },
+    "crumbHosts": "Hosts",
+    "done": "Listo"
   },
   "settings": {
-    "title": "Equipos",
-    "description": "Los servidores en los que se ejecutan tus sesiones. Nada de un equipo queda expuesto a internet.",
-    "add": "Añadir equipo",
-    "loadFailed": "No hemos podido cargar tus equipos.",
-    "emptyTitle": "Aún no hay equipos",
-    "emptyBody": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
     "state": {
       "running_one": "En marcha · {{count}} sesión",
       "running_other": "En marcha · {{count}} sesiones",

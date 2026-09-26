@@ -224,6 +224,12 @@ export {
   SettingsNavItem,
 } from './components/settings-nav';
 export {
+  SettingsContent,
+  SettingsMain,
+  SettingsShell,
+  SettingsTitle,
+} from './components/settings-shell';
+export {
   Sidebar,
   SidebarContent,
   SidebarEmptyRow,

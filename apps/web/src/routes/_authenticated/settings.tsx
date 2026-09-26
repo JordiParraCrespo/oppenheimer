@@ -1,26 +1,49 @@
+import { SettingsContent, SettingsMain, SettingsShell } from '@oppenheimer/design-system-web';
+import { Cpu, User } from '@oppenheimer/design-system-web/icons';
+import { SettingsSidebar } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { HostsSettingsNav } from '@/features/hosts/sections/settings-nav';
+import { HostCount } from '@/features/hosts/sections/host-count';
 
 /**
- * Settings: its own frame, not the console's (`design/version1/Settings.dc.html`)
- * — the settings nav where the rail and the session list were, and a 760px
- * column that scrolls on its own. `frame: 'own'` tells the `_authenticated`
- * layout to draw nothing around it but its guards.
+ * Settings: its own chrome beside the console
+ * (`design/version1/Settings.dc.html`, `product/versions/mvp/05-screens.md`).
+ * The sidebar is the settings nav — Back to console, then Account and
+ * Workspace — and the main column is the frame each section fills.
+ *
+ * Under `_authenticated`, so the guard and the no-workspace redirect are the
+ * ones every product screen goes through; `shell: 'own'` is how this layout
+ * tells that route to render no `AppShell` around it, since the console's
+ * rail and session list are not part of Settings.
  */
 export const Route = createFileRoute('/_authenticated/settings')({
   component: SettingsLayout,
-  staticData: { frame: 'own' },
+  staticData: { shell: 'own' },
 });
 
 function SettingsLayout() {
   return (
-    <div className="flex h-svh overflow-hidden bg-canvas-recessed text-fg">
-      <HostsSettingsNav />
-      <main className="min-w-0 flex-1 overflow-y-auto bg-canvas-recessed">
-        <div className="mx-auto flex max-w-190 flex-col px-10 pt-16 pb-24">
+    <SettingsShell>
+      <SettingsSidebar
+        back="/sessions"
+        groups={[
+          {
+            labelKey: 'account',
+            items: [{ to: '/settings/profile', icon: User, labelKey: 'profile' }],
+          },
+          {
+            labelKey: 'workspace',
+            items: [{ to: '/settings/hosts', icon: Cpu, labelKey: 'hosts' }],
+          },
+        ]}
+        // The one row with a number: a section of its own, so the list it
+        // reads re-renders the count and not the nav.
+        renderCount={(to) => (to === '/settings/hosts' ? <HostCount /> : undefined)}
+      />
+      <SettingsMain>
+        <SettingsContent>
           <Outlet />
-        </div>
-      </main>
-    </div>
+        </SettingsContent>
+      </SettingsMain>
+    </SettingsShell>
   );
 }

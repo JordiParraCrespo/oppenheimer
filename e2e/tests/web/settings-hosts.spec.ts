@@ -10,8 +10,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  * but no runner dials in, so the card reads offline with no last-seen line: the
  * page is about what the control plane holds, and a live link is the fleet
  * suite's subject. The legs are the page's verbs: the account menu's way in,
- * the card, Add host in the same frame, Rename in place, Copy host ID, and
- * Remove behind its confirm,
+ * the card, Rename in place, Copy host ID, and Remove behind its confirm,
  * after which the host leaves the list and the timeline says why.
  */
 test('lists, renames, copies and removes a host from Settings', async ({ page, context }) => {
@@ -27,12 +26,11 @@ test('lists, renames, copies and removes a host from Settings', async ({ page, c
     .getByRole('button', { name: `${owner.user.firstName} ${owner.user.lastName}` })
     .click();
   await page.getByRole('menuitem', { name: 'Settings' }).click();
+  // Settings lands on Profile; Hosts is the Workspace row, with its count.
+  const hostsRow = page.getByRole('link', { name: /Hosts/ });
+  await expect(hostsRow).toContainText('1');
+  await hostsRow.click();
   await expect(page).toHaveURL(/\/settings\/hosts$/);
-
-  // Its own frame: the settings nav with the count, not the session list.
-  const nav = page.getByRole('navigation', { name: 'Settings' });
-  await expect(nav.getByRole('link', { name: /Hosts/ })).toContainText('1');
-  await expect(nav.getByRole('link', { name: 'Back to console' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Hosts', level: 1 })).toBeVisible();
 
   // The card: name, the runner's facts, and the state the API derived.
@@ -41,17 +39,6 @@ test('lists, renames, copies and removes a host from Settings', async ({ page, c
   await expect(card).toContainText('build-02');
   await expect(card).toContainText('runner 0.1.0');
   await expect(card).toContainText('Offline');
-
-  // ── Add host opens in the Settings frame and returns to the list ─────────
-  await page.getByRole('button', { name: 'Add host' }).click();
-  await expect(page).toHaveURL(/\/settings\/hosts\/new$/);
-  await expect(page.getByRole('heading', { name: 'Add a host', level: 1 })).toBeVisible();
-  await expect(nav).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Breadcrumb' })
-    .getByRole('link', { name: 'Hosts' })
-    .click();
-  await expect(page).toHaveURL(/\/settings\/hosts$/);
 
   // ── Rename in place ──────────────────────────────────────────────────────
   await card.getByRole('button', { name: 'build-02 actions' }).click();

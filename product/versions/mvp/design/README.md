@@ -83,12 +83,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
 - The 2026-09-24 export also carried a `version2/` canvas (a chat view); it
   is not part of the MVP and was left out, as were `screens/` and
   `screenshots/`. The 2026-09-26 export has no `version2/`.
-- Automations (formerly routines) and the Settings page are in the
-  version-1 frames as of the 2026-09-26 exports, but `../00-scope.md` still
-  lists routines as a later
-  slice and `../05-screens.md` still says the MVP has no settings page.
-  The Hosts half of Settings is reconciled: `../13-hosts-settings.md`
-  designs its backend and 05 records the supersession. Routines and the
-  Profile half are not reconciled yet.
+- Automations (formerly routines) are in the version-1 frames as of the
+  2026-09-26 exports, but `../00-scope.md` still lists routines as a
+  later slice; that note has not been reconciled with the frames yet.
+  Settings is: `../05-screens.md` records it as the one destination
+  beside the console, with its routes, the catalog row and the decision
+  log in `../README.md` say the same, and `../../../brief.html` follows.
+  The Hosts section's backend is `../13-hosts-settings.md`.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

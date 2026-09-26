@@ -18,8 +18,5 @@
   "commandDescription": "Busca una página o una acción.",
   "sidebarTitle": "Navegación",
   "sidebarDescription": "Tus sesiones y tu cuenta.",
-  "settings": "Ajustes",
-  "backToConsole": "Volver a la consola",
-  "workspace": "Espacio de trabajo",
-  "hosts": "Equipos"
+  "settings": "Ajustes"
 }

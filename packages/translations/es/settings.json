@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "back": "Volver a la consola",
+    "account": "Cuenta",
+    "workspace": "Espacio de trabajo",
+    "profile": "Perfil",
+    "hosts": "Hosts"
+  },
+  "profile": {
+    "title": "Perfil",
+    "email": "Correo",
+    "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
+    "failed": "No se pudo cargar el perfil."
+  },
+  "hosts": {
+    "title": "Hosts",
+    "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
+    "add": "Añadir host",
+    "empty": "Todavía no hay hosts",
+    "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
+    "online": "En línea",
+    "offline": "Sin conexión",
+    "failed": "No se pudieron cargar los hosts."
+  }
+}

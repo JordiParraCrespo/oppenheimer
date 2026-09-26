@@ -35,7 +35,7 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
   await owner.api.dispose();
 });
 
-test('the account menu holds settings, appearance, language and the way out — and nothing else', async ({
+test('the account menu holds appearance, language and the way out — and nothing else', async ({
   page,
 }) => {
   const owner = await provisionedUser('consolemenu');
@@ -51,8 +51,8 @@ test('the account menu holds settings, appearance, language and the way out — 
   await expect(menu.getByRole('menuitem', { name: 'Appearance' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Language' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Log out' })).toBeVisible();
-  // Settings is a page since the 2026-09-26 frames, reached from here;
-  // Profile arrives inside it with its own slice, not as a menu row.
+  // Settings is the menu's one link since the 2026-09-26 export drew it there;
+  // Profile is not hidden behind a permission — it is not a page.
   await expect(menu.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'View profile' })).toHaveCount(0);
 
@@ -63,8 +63,7 @@ test('a URL the console does not have answers inside the shell', async ({ page }
   const owner = await provisionedUser('console404');
   await signInAs(page, owner.user);
 
-  // Not /settings: that is a page since the 2026-09-26 frames.
-  await page.goto('/no-such-page');
+  await page.goto('/nowhere');
 
   // The 404 keeps the sidebar: the reader is still in the product, with New
   // session one click away, rather than on a bare page.

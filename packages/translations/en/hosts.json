@@ -14,9 +14,7 @@
     "meta": "Nothing on the host is exposed to the internet.",
     "back": "Back",
     "crumbNewSession": "New session",
-    "crumbHosts": "Hosts",
     "use": "Use this host",
-    "done": "Done",
     "defaultName": "New host",
     "install": {
       "title": "Install",
@@ -29,15 +27,11 @@
     "connect": {
       "title": "Connect",
       "subtitle": "The runner registers itself with the hostname it reports."
-    }
+    },
+    "crumbHosts": "Hosts",
+    "done": "Done"
   },
   "settings": {
-    "title": "Hosts",
-    "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
-    "add": "Add host",
-    "loadFailed": "We could not load your hosts.",
-    "emptyTitle": "No hosts yet",
-    "emptyBody": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
     "state": {
       "running_one": "Running · {{count}} session",
       "running_other": "Running · {{count}} sessions",

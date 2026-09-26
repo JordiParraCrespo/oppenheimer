@@ -522,9 +522,7 @@
       "meta": "Nada del host queda expuesto a internet.",
       "back": "Atrás",
       "crumbNewSession": "Nueva sesión",
-      "crumbHosts": "Equipos",
       "use": "Usar este host",
-      "done": "Hecho",
       "defaultName": "Nuevo host",
       "install": {
         "title": "Instalar",
@@ -537,15 +535,11 @@
       "connect": {
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
-      }
+      },
+      "crumbHosts": "Hosts",
+      "done": "Listo"
     },
     "settings": {
-      "title": "Equipos",
-      "description": "Los servidores en los que se ejecutan tus sesiones. Nada de un equipo queda expuesto a internet.",
-      "add": "Añadir equipo",
-      "loadFailed": "No hemos podido cargar tus equipos.",
-      "emptyTitle": "Aún no hay equipos",
-      "emptyBody": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
       "state": {
         "running_one": "En marcha · {{count}} sesión",
         "running_other": "En marcha · {{count}} sesiones",
@@ -638,6 +632,31 @@
       "confirm": "Eliminar proyecto"
     }
   },
+  "settings": {
+    "nav": {
+      "back": "Volver a la consola",
+      "account": "Cuenta",
+      "workspace": "Espacio de trabajo",
+      "profile": "Perfil",
+      "hosts": "Hosts"
+    },
+    "profile": {
+      "title": "Perfil",
+      "email": "Correo",
+      "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
+      "failed": "No se pudo cargar el perfil."
+    },
+    "hosts": {
+      "title": "Hosts",
+      "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
+      "add": "Añadir host",
+      "empty": "Todavía no hay hosts",
+      "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
+      "online": "En línea",
+      "offline": "Sin conexión",
+      "failed": "No se pudieron cargar los hosts."
+    }
+  },
   "home": {
     "greeting": "Hola de nuevo, {{name}}",
     "greetingFallback": "Hola de nuevo",
@@ -682,10 +701,7 @@
     "commandDescription": "Busca una página o una acción.",
     "sidebarTitle": "Navegación",
     "sidebarDescription": "Tus sesiones y tu cuenta.",
-    "settings": "Ajustes",
-    "backToConsole": "Volver a la consola",
-    "workspace": "Espacio de trabajo",
-    "hosts": "Equipos"
+    "settings": "Ajustes"
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
