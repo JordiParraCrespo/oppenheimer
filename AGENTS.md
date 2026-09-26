@@ -22,6 +22,9 @@ decisions that changed along the way.
   (`product/versions/mvp/00-scope.md`). VMs, sleep, accounts, and Codex
   are the slices after. `product/07-mvp.md` is superseded and kept for
   history.
+- What comes after the MVP is `product/next-steps/`, one document per
+  version (0.2 Git/GitHub through 0.7 terminal and chat display, plus
+  multi-account with no version yet); its README holds the order.
 - In-depth MVP design lives in `product/versions/mvp/`, one document per
   area, each with decided points and open questions, and its own decision
   log in `product/versions/mvp/README.md`.
