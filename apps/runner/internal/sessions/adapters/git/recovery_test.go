@@ -9,7 +9,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -84,7 +86,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	c, layout, seen := privateClient(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(ctx, repo, remote, sessionID); err != nil {
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, remote); err != nil {
 		t.Fatalf("clone of a private repository for a session: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
@@ -96,7 +98,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 	}
 
 	// The fetch that follows needs the credential just as much.
-	if err := c.Ensure(ctx, repo, "", sessionID); err != nil {
+	if err := c.Ensure(domain.WithSession(ctx, sessionID), repo, ""); err != nil {
 		t.Fatalf("fetch of a private repository for a session: %v", err)
 	}
 
@@ -106,7 +108,7 @@ func TestEnsureClonesAPrivateRepositoryForTheSessionItIsFor(t *testing.T) {
 		t.Fatal(err)
 	}
 	git(t, worktree, "-c", "user.email=t@example.com", "-c", "user.name=T", "commit", "--allow-empty", "-m", "work")
-	if pushed, err := c.Push(ctx, worktree, "oppenheimer/private", sessionID); err != nil || !pushed {
+	if pushed, err := c.Push(domain.WithSession(ctx, sessionID), worktree, "oppenheimer/private"); err != nil || !pushed {
 		t.Fatalf("push = %v, err = %v", pushed, err)
 	}
 }
@@ -116,7 +118,7 @@ func TestEnsureSaysWhatIsMissingWhenAPrivateCloneHasNoCredential(t *testing.T) {
 	c, layout, _ := privateClient(t)
 
 	for _, session := range []string{"", "a-session-the-control-plane-refuses"} {
-		err := c.Ensure(context.Background(), repo, remote, session)
+		err := c.Ensure(domain.WithSession(context.Background(), session), repo, remote)
 
 		var prob *problem.Error
 		if !isProblem(err, &prob, "GIT_004") {
@@ -147,7 +149,7 @@ func TestEnsureClearsAnEmptyMirrorAnOlderRunnerLeft(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.Ensure(context.Background(), repo, remote, ""); err != nil {
+	if err := c.Ensure(context.Background(), repo, remote); err != nil {
 		t.Fatalf("clone over an empty directory: %v", err)
 	}
 }
@@ -156,7 +158,7 @@ func TestAddAdoptsTheWorktreeItAlreadyMadeForTheSameBranch(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "redelivered")
@@ -174,7 +176,7 @@ func TestAddFinishesAWorktreeWhoseAddWasKilled(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "killed")
@@ -210,7 +212,7 @@ func TestAddReplacesARegistrationWhoseDirectoryIsGone(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "vanished")
@@ -237,7 +239,7 @@ func TestAddReusesABranchAKilledAttemptCreatedWithoutItsWorktree(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	git(t, layout.Mirror(repo), "branch", "oppenheimer/orphan", "origin/main")
@@ -252,7 +254,7 @@ func TestAddKeepsABranchThatHasWorkOfItsOwn(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	mirror := layout.Mirror(repo)
@@ -271,16 +273,34 @@ func TestAddKeepsABranchThatHasWorkOfItsOwn(t *testing.T) {
 	}
 }
 
-func TestACancelledCommandIsNotReportedAsAGitFailure(t *testing.T) {
-	remote := origin(t)
+// The #79 case: git is killed part-way through because the runner stopped
+// waiting, after it had already printed something. That output is not the
+// reason — in #79 it was git announcing its own success — so it is not quoted.
+func TestACommandStoppedPartWayIsAbandonedNotAGitFailure(t *testing.T) {
 	c, _ := client(t)
+	asked := make(chan struct{})
+	var once sync.Once
+	// A remote that accepts the connection, then never answers: git has
+	// started, and printed "Cloning into …", when the context ends.
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		once.Do(func() { close(asked) })
+		<-r.Context().Done()
+	}))
+	defer server.Close()
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	go func() {
+		<-asked
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
 
-	err := c.Ensure(ctx, repo, remote, "")
+	err := c.Ensure(ctx, repo, server.URL+"/slow.git")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_005") {
 		t.Fatalf("err = %v, want GIT_005", err)
+	}
+	if strings.Contains(prob.Detail, "Cloning into") {
+		t.Fatalf("the detail quotes what git printed before it was stopped: %s", prob.Detail)
 	}
 }

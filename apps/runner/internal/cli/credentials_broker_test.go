@@ -33,45 +33,35 @@ func (g *grantingLink) Send(message any) error {
 	return nil
 }
 
-func newTestBroker() (*credentialBroker, *grantingLink) {
+// The clone is the first step of a create. The broker asks the session
+// service, which answers for the session while it is being created, so the
+// clone of a private repository gets the session's token (#77) — and only
+// that session's.
+func TestTheBrokerAnswersForASessionWhileItsCloneRuns(t *testing.T) {
+	h, svc, git, _ := newCreateHarness(t)
 	control := &grantingLink{}
-	noSessions := func(id string) (sessionsdomain.Session, error) {
-		return sessionsdomain.Session{}, sessionsdomain.ErrNotFound.WithDetail("no session %q on this host", id)
-	}
-	broker := newCredentialBroker(control, func(sealed []byte) ([]byte, error) { return sealed, nil }, noSessions)
+	broker := newCredentialBroker(control, func(sealed []byte) ([]byte, error) { return sealed, nil }, svc.Get)
 	control.broker = broker
-	return broker, control
-}
 
-// The clone is the first step of a create, before the session is recorded:
-// a private repository's clone must still get the session's token (#77).
-func TestTheBrokerAnswersForASessionWhoseCreateIsRunning(t *testing.T) {
-	broker, control := newTestBroker()
+	h.Message(context.Background(), createMessage(t, "11111111-1111-4111-8111-111111111111"))
+	waitForState(t, svc, sessionsdomain.StateCreating)
 
-	done := broker.Creating("session-1", "checkout-1", 42)
-	token, err := broker.Get(context.Background(), "session-1")
-	done()
-
-	if err != nil || token != "token-for-checkout-1" {
+	token, err := broker.Get(context.Background(), sessionUnderTest)
+	if err != nil || token != "token-for-c-1" {
 		t.Fatalf("token = %q, err = %v", token, err)
 	}
-	if len(control.asked) != 1 || control.asked[0].CheckoutID != "checkout-1" || control.asked[0].GithubRepoID != 42 {
+	if len(control.asked) != 1 || control.asked[0].CheckoutID != "c-1" || control.asked[0].GithubRepoID != 42 {
 		t.Fatalf("the ask named %+v, want the create's checkout", control.asked)
 	}
-}
 
-func TestTheBrokerHasNothingForASessionNeitherRecordedNorBeingCreated(t *testing.T) {
-	broker, control := newTestBroker()
-
-	done := broker.Creating("session-1", "checkout-1", 42)
-	done()
-
-	for _, id := range []string{"", "session-1", "someone-else"} {
-		if _, err := broker.Get(context.Background(), id); !errors.Is(err, errNoCredential) {
-			t.Fatalf("session %q: err = %v, want errNoCredential", id, err)
+	for _, other := range []string{"", "someone-else"} {
+		if _, err := broker.Get(context.Background(), other); !errors.Is(err, errNoCredential) {
+			t.Fatalf("session %q: err = %v, want errNoCredential", other, err)
 		}
 	}
-	if len(control.asked) != 0 {
-		t.Fatalf("the control plane was asked %d times for sessions this host is not running", len(control.asked))
+	if len(control.asked) != 1 {
+		t.Fatalf("the control plane was asked for a session this host is not running: %+v", control.asked)
 	}
+	close(git.release)
+	waitForState(t, svc, sessionsdomain.StateStarting)
 }

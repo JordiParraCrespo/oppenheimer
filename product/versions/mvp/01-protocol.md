@@ -159,7 +159,18 @@ runner does with it and point back.
   window below is a one-way valve: a noisy pane stalls for good rather
   than briefly.
 - Every command is idempotent by session id and command id, because a
-  reconnect may redeliver.
+  reconnect may redeliver. For `session.create` that means the session id
+  is the key: a redelivered create either finds the session the first
+  one made and reports `session.started` again, or — if the first ended
+  without one — takes over what it left on disk (02 §5), and its own
+  command id gets its own answer. A create is never refused because an
+  earlier attempt for the same session got part of the way.
+- A command the host stopped waiting for — the runner shutting down
+  mid-create, say — fails with `GIT_005` (or its context's catalog code),
+  never with the output of the tool it was running: that output was not
+  the reason, and may be the tool saying it succeeded. `GIT_005` is not a
+  verdict on the host; the next create for the session resumes from what
+  is on disk.
 
 ### What does not ride the link
 

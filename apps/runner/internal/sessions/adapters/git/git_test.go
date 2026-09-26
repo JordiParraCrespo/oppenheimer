@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	gitadapter "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/adapters/git"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -67,7 +68,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 	c, layout := client(t)
 	ctx := context.Background()
 
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatalf("first ensure (clone): %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(layout.Mirror(repo), ".git")); err != nil {
@@ -76,7 +77,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 
 	// The second call fetches, and needs no remote: the host already knows
 	// where the repository came from.
-	if err := c.Ensure(ctx, repo, "", ""); err != nil {
+	if err := c.Ensure(ctx, repo, ""); err != nil {
 		t.Fatalf("second ensure (fetch): %v", err)
 	}
 }
@@ -84,7 +85,7 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 func TestEnsureRefusesARepositoryItHasNeverSeenWithNoRemote(t *testing.T) {
 	c, _ := client(t)
 
-	err := c.Ensure(context.Background(), repo, "", "")
+	err := c.Ensure(context.Background(), repo, "")
 
 	var prob *problem.Error
 	if !isProblem(err, &prob, "GIT_001") {
@@ -96,7 +97,7 @@ func TestEnsureRefusesARepositoryNameThatWouldEscapeTheLayout(t *testing.T) {
 	c, _ := client(t)
 
 	for _, name := range []string{"../../etc", "owner/../../etc", "not-a-repo"} {
-		if err := c.Ensure(context.Background(), name, "https://example.test/x.git", ""); err == nil {
+		if err := c.Ensure(context.Background(), name, "https://example.test/x.git"); err == nil {
 			t.Fatalf("%q must not be accepted as a repository name", name)
 		}
 	}
@@ -106,7 +107,7 @@ func TestAddCutsANewBranchFromTheBaseAndRemoveTakesItAway(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-abc")
@@ -135,7 +136,7 @@ func TestAddRefusesToReuseAPathThatExists(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "taken")
@@ -155,7 +156,7 @@ func TestDirtyAndPush(t *testing.T) {
 	remote := origin(t)
 	c, layout := client(t)
 	ctx := context.Background()
-	if err := c.Ensure(ctx, repo, remote, ""); err != nil {
+	if err := c.Ensure(ctx, repo, remote); err != nil {
 		t.Fatal(err)
 	}
 	worktree := layout.Worktree(repo, "session-push")
@@ -178,7 +179,7 @@ func TestDirtyAndPush(t *testing.T) {
 
 	git(t, worktree, "add", ".")
 	git(t, worktree, "commit", "-m", "session work")
-	pushed, err := c.Push(ctx, worktree, "oppenheimer/push", "")
+	pushed, err := c.Push(ctx, worktree, "oppenheimer/push")
 	if err != nil || !pushed {
 		t.Fatalf("push = %v, err = %v", pushed, err)
 	}
@@ -187,7 +188,7 @@ func TestDirtyAndPush(t *testing.T) {
 	}
 
 	// Pushing again with nothing new is not an error and not a push.
-	pushed, err = c.Push(ctx, worktree, "oppenheimer/push", "")
+	pushed, err = c.Push(ctx, worktree, "oppenheimer/push")
 	if err != nil || pushed {
 		t.Fatalf("second push = %v, err = %v; want nothing to do", pushed, err)
 	}
@@ -195,17 +196,16 @@ func TestDirtyAndPush(t *testing.T) {
 
 func TestGitNeverWaitsForAPassword(t *testing.T) {
 	c, _ := client(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	// A remote that would prompt must fail fast instead of hanging a
-	// session create forever.
-	err := c.Ensure(context.Background(), repo, "https://127.0.0.1:1/private.git", "")
+	// A remote that cannot be reached must fail fast, not hang a session
+	// create. What it is classified as is pinned against a remote that does
+	// answer, in recovery_test.go.
+	err := c.Ensure(ctx, repo, "https://127.0.0.1:1/private.git")
 
-	if err == nil {
-		t.Fatal("want an error, not a prompt")
-	}
-	var prob *problem.Error
-	if !isProblem(err, &prob, "GIT_002") {
-		t.Fatalf("err = %v, want GIT_002", err)
+	if err == nil || ctx.Err() != nil {
+		t.Fatalf("err = %v, ctx = %v; want a prompt failure, not a wait", err, ctx.Err())
 	}
 }
 

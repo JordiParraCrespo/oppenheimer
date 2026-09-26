@@ -61,23 +61,17 @@ type Attachment interface {
 
 // Worktrees is git, at the granularity a session needs.
 type Worktrees interface {
-	// Ensure makes sure `<root>/<repo>/main` exists and is fetched. session
-	// names who the fetch is for, so the credential helper git calls can ask
-	// the control plane for that session's token; empty means nobody (a
-	// session made from the command line), and a private repository fails.
-	Ensure(ctx context.Context, repo, remote, session string) error
-	// Add creates a worktree at path, on branch, cut from base. A worktree
-	// already registered at path on that branch is adopted, not refused:
-	// the path is derived from the session id, so it is this session's own,
-	// left by an attempt that was cut short.
+	// Ensure makes sure `<root>/<repo>/main` exists and is fetched.
+	Ensure(ctx context.Context, repo, remote string) error
+	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
 	// Remove deletes a worktree and prunes the record.
 	Remove(ctx context.Context, repo, path string, force bool) error
 	// Dirty reports uncommitted changes in a worktree.
 	Dirty(ctx context.Context, path string) (bool, error)
 	// Push publishes the branch, and reports whether there was anything to
-	// push at all. session is who the push is for, as in Ensure.
-	Push(ctx context.Context, path, branch, session string) (pushed bool, err error)
+	// push at all.
+	Push(ctx context.Context, path, branch string) (pushed bool, err error)
 }
 
 // Images is where a session's pasted images are kept on this host: under the
