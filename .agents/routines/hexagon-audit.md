@@ -68,6 +68,14 @@ Diff both against the `--since` base (`git diff <base> -- <file>`, or
 finding, because it silences a rule. Name the commit and author that added it. A
 **removed** entry is good news; list it under "Paid down".
 
+Count the ledgers with these exact commands, never by eye, so the number is
+comparable from one day to the next:
+
+```bash
+grep -cE "path: 'apps/api/src/" scripts/check-api-structure.mjs              # structure (18 on 2026-09-26)
+grep -oE "'\^src/[^']*\\\\\.ts\\$'" apps/api/.dependency-cruiser.cjs | wc -l  # dependency (25 on 2026-09-26)
+```
+
 Nothing already on a ledger is a new finding. Do not report ledgered files again
 unless the code under the entry got worse, for example a new route added to a
 controller that is already ledgered as `route-outside-slice`.
