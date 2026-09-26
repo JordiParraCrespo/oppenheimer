@@ -123,6 +123,12 @@ import {
   RoutineRunsEmpty,
 } from '@oppenheimer/design-system-web/routine-item';
 import { EditorPage, EditorPageBack, EditorPageBody } from '@oppenheimer/design-system-web/editor-page';
+import {
+  SettingsContent,
+  SettingsMain,
+  SettingsShell,
+  SettingsTitle,
+} from '@oppenheimer/design-system-web/settings-shell';
 import { RoutineStep, RoutineStepFields, RoutineSteps } from '@oppenheimer/design-system-web/routine-steps';
 import {
   RoutineTable,
@@ -1621,6 +1627,36 @@ export function RoutineItemsDemo() {
 }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
+
+export function SettingsShellDemo() {
+  return (
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+      <SettingsShell className="h-full">
+        <SettingsNav>
+          <SettingsNavBack>Back to console</SettingsNavBack>
+          <SettingsNavGroup label="Account">
+            <SettingsNavItem icon={<UserIcon />}>Profile</SettingsNavItem>
+          </SettingsNavGroup>
+          <SettingsNavGroup label="Workspace">
+            <SettingsNavItem icon={<CpuIcon />} count={3} active>
+              Hosts
+            </SettingsNavItem>
+          </SettingsNavGroup>
+        </SettingsNav>
+        <SettingsMain>
+          <SettingsContent>
+            <SettingsTitle
+              title="Hosts"
+              description="Servers your sessions run on."
+              action={<Button size="sm">Add host</Button>}
+            />
+            <div className="h-24 rounded-2xl border border-border-subtle bg-card" />
+          </SettingsContent>
+        </SettingsMain>
+      </SettingsShell>
+    </div>
+  );
+}
 
 export function SettingsNavDemo() {
   const [page, setPage] = React.useState('profile');

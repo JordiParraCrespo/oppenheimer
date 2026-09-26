@@ -49,7 +49,6 @@ export class CreateSessionCommandHandler
   async execute(command: CreateSessionCommand): Promise<SessionCommandResult> {
     const { scope, input } = command;
     if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
-
     // A retry that already has a session gets that session, without touching
     // GitHub, the project or the host.
     if (command.idempotencyKey) {
@@ -95,7 +94,6 @@ export class CreateSessionCommandHandler
       });
     }
     if (!created.created) return { sessionId: created.session.id, hints: [] };
-
     // The name is asked for *while* the host is told about the session, so the
     // model's round trip overlaps the dispatch rather than following it. It
     // resolves within the namer's deadline and never rejects: a model that is
@@ -105,13 +103,10 @@ export class CreateSessionCommandHandler
       ? this.naming.propose(created.session, input.prompt)
       : Promise.resolve(null);
 
-    const { hints } = await this.dispatch.create(
-      created.session,
-      await this.launches.build(created.session, created.session.projectSlug, {
-        prompt: input.prompt,
-      }),
-    );
-
+    const spec = await this.launches.build(created.session, created.session.projectSlug, {
+      prompt: input.prompt,
+    });
+    const { hints } = await this.dispatch.create(created.session, spec);
     await this.naming.record(
       created.session,
       await naming,
