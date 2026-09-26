@@ -258,9 +258,10 @@ The placement rules, the render rules (state at the lowest reader, effects
 only in `hooks/`, the React Compiler on, no manual memo) and what enforces
 them are `.agents/rules/frontend-architecture.md`. `/frontend-audit` reviews the
 frontend against them, including the re-renders the compiler does not
-prevent; a daily routine runs it and keeps one GitHub issue (label
-`frontend-audit`) current, and `scripts/evals/frontend-audit/` grades the
-prompt. The layer model and the
+prevent; a daily routine runs it, keeps one GitHub issue (label
+`frontend-audit`) current and opens one pull request fixing the findings
+that are safe to fix (`--fix`; the rest stay for a person), and
+`scripts/evals/frontend-audit/` grades the prompt. The layer model and the
 cookbooks are `packages/frontend/ARCHITECTURE.md` and
 `apps/web/ARCHITECTURE.md`; `/scaffold-feature` produces the shape; `pnpm arch`,
 `pnpm check:structure` and Biome hold it.

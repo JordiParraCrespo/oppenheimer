@@ -1,6 +1,6 @@
 ---
 name: frontend-audit
-description: Audit the web console (apps/web) and the frontend packages (packages/frontend/*) against the frontend architecture, UI and render rules, including re-renders the React Compiler does not prevent. Use when asked to audit, review or health-check the frontend, check that the frontend architecture is being followed, look for unnecessary re-renders or render cost, or when the daily frontend-audit routine fires. Runs the mechanical checks, then reviews what they cannot see, and reports findings against a stable rule catalog.
+description: Audit the web console (apps/web) and the frontend packages (packages/frontend/*) against the frontend architecture, UI and render rules, including re-renders the React Compiler does not prevent. Use when asked to audit, review or health-check the frontend, check that the frontend architecture is being followed, look for unnecessary re-renders or render cost, or when the daily frontend-audit routine fires. Runs the mechanical checks, then reviews what they cannot see, reports findings against a stable rule catalog, and with `--fix` (always in the routine) fixes the ones that are safe to fix in a pull request.
 ---
 
 # Frontend audit
@@ -20,6 +20,8 @@ evals in `scripts/evals/frontend-audit/` can grade it.
   (`git diff --name-only <ref>...HEAD -- apps/web packages/frontend`), plus the
   files that render them or that they render when a finding depends on that.
 - `routine`: what the daily routine runs. See **Routine mode** below.
+- `--fix`: after the report, fix what Step 3 allows and open a pull request.
+  Without it the audit only reports. `routine` implies it.
 - `--format json`: end with the JSON block only, no prose report. The evals use this.
 
 With no argument, use `diff --base origin/main` when the branch has changes,
@@ -144,6 +146,57 @@ argument. Report it only if the argument is wrong, and say why.
 Prefer a missed finding to a wrong one. Each finding carries `confidence`
 (`high` or `medium`); drop anything lower.
 
+## Step 3: the fixes (`--fix` and `routine` only)
+
+Fix the findings of this run that meet all of these, and leave the rest
+reported:
+
+- `confidence` is `high` and `severity` is not `info`.
+- The rule is one whose fix is local: `M-biome`, `M-structure` (a misnamed
+  kind directory or a route over the cap), `R2`, `R3`, `R4`, `R5`, `R8`,
+  `R9`, `R10`, `R12`, `R13`, `U1`, `U2`, `U3`, or `R11` when the fix is a
+  new `*-render.spec.tsx` modelled on an existing one. Everything else
+  (`P*`, `R1`, `R6`, `R7`, `U4`, `U5`, `M-arch`, `M-design`, `M-compiler`,
+  `M-render`, `M-bundle`) moves code between packages, splits a component,
+  changes a budget or needs a new e2e spec: a person decides those.
+- The fix stays inside `apps/web`, `packages/frontend/*` and
+  `packages/translations`, changes no URL, no public export of a package, no
+  API call, and no render budget's number. A `U3` fix adds the key to every
+  locale; a locale you cannot translate with confidence keeps the finding
+  open instead.
+- The finding is not in a file an open pull request already changes (a
+  person is working there), and no earlier fix pull request for the same
+  fingerprint was closed without merging (a person said no; say so in the
+  report instead).
+
+How:
+
+1. Fix one finding at a time, the smallest change that removes it, following
+   the rule the finding cites. Do not refactor around it, and do not fix a
+   neighbour the audit did not report.
+2. After the fixes, run every Step 1 check again, plus
+   `pnpm --filter @oppenheimer/web exec tsc -b` (and `typecheck` in each
+   frontend package you touched). A fix that makes any check fail that passed before,
+   or that you cannot get green, is reverted and its finding stays open with
+   the reason. Never loosen a check, a budget or a rule to get green.
+3. Re-run Step 2 on the files you changed. A fix that brings in a new finding
+   is reverted.
+4. When at least one fix survives, commit on a branch
+   `frontend-audit/fix-<YYYY-MM-DD>` from the audited `HEAD`, one conventional
+   commit per rule (`fix(web): <rule> — <what>`, scope the package touched),
+   push it, and open one pull request, ready for review, titled
+   "Frontend audit fixes <YYYY-MM-DD>". Its body lists each fix by
+   fingerprint with the finding's summary, the checks you ran and their
+   results, and the findings you left for a person and why. If an earlier
+   `frontend-audit/fix-*` pull request is still open, push to its branch
+   instead (merging the default branch into it first) and update its body,
+   so there is only ever one.
+5. With nothing left to fix, push nothing and open nothing.
+
+A fixed finding stays in the report and the JSON block with
+`"fixed": "<pull request URL>"`. It is resolved only when a later run no
+longer finds it on the default branch.
+
 ## Rule catalog
 
 IDs are stable. Add new ones at the end and never renumber them, because the
@@ -220,6 +273,10 @@ are stable, but the component itself still re-renders on the clock), or
 finding, at `low`, because the compiler bails out silently and the next edit
 can bring the cost back).
 
+With `--fix`, a finding the run fixed also carries `"fixed": "<pull request
+URL>"`, and one left alone that Step 3 would otherwise have taken carries
+`"not_fixed": "<why>"`.
+
 A finding's fingerprint is `rule:file:symbol`. Keep `symbol` the component or
 function name, not a line number, so the finding survives an edit above it.
 
@@ -239,11 +296,14 @@ the default branch. In this mode:
    is no longer an ancestor of `HEAD`. On other days, `diff --base <last-sha>`.
    When nothing under `apps/web` or `packages/frontend` changed since
    `last-sha`, run only Step 1.
-3. Rewrite the issue body: the check table, the open findings grouped by
+3. Run Step 3 on the findings, open and new, whose file this run's scope
+   covers. The fix pull request is the only thing the routine pushes: never
+   push to the default branch, never merge, never approve.
+4. Rewrite the issue body: the check table, the open findings grouped by
    rule (a finding from an earlier run stays open until a run whose scope
-   covers its file no longer finds it), and the new `last-sha` marker.
-4. Add a comment only when something changed: new findings, resolved ones, or
-   a check that changed state. List them by fingerprint. No comment on a quiet
-   day.
-5. Never push, never open a pull request, never edit code. The routine
-   reports. A person decides what to fix.
+   covers its file no longer finds it on the default branch), each marked
+   with the fix pull request that addresses it or the reason it was left for
+   a person, and the new `last-sha` marker.
+5. Add a comment only when something changed: new findings, resolved ones, a
+   check that changed state, or a fix pull request opened or updated. List
+   them by fingerprint and link the pull request. No comment on a quiet day.
