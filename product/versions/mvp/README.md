@@ -26,6 +26,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
 | 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
 | 13 | [Orchestration (v0.2)](13-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 14 | [Routines and headless runs](14-routines-and-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
 
 ## Decision log
 
@@ -451,3 +452,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-26: orchestration renumbered from 12 to 13, because projects
   on the console took 12 first. Only the number and the references to it
   changed.
+- 2026-09-26: **automation runs through `claude -p`** (14). A routine's
+  run is an ordinary session whose window 0 is Claude Code headless with
+  `--output-format stream-json`, started through `runner headless` so its
+  output lands in a file the runner tails and tmux keeps the process
+  alive across runner restarts. `session.create` gains `drive`
+  (`interactive` or `headless`); the catalog gains a `headless` block per
+  agent. Runs take `auto` or `full`, always `--permission-prompts none`;
+  only repositories in the person's projects run headless; follow-ups
+  are `--resume` turns, serialised; a person takes over with Open in
+  terminal. Triggers and any Linear or Slack integration live in the
+  control plane. Whether routines ship in the MVP, and whether an
+  unattended run may use the host's subscription login, stay open.

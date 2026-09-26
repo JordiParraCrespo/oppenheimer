@@ -30,6 +30,12 @@ earlier note:
 
 - Note 00 proposed the Claude Agent SDK as the core. Note 01 replaced it
   with a raw terminal; the SDK is a later add-on for unattended runs.
+- Note 01 left the Agent SDK as a later add-on for unattended runs.
+  `versions/mvp/14-routines-and-headless-runs.md` runs them through the
+  CLI's headless mode (`claude -p --output-format stream-json`) launched
+  by the Go runner instead, so no host needs a Node or Python runtime;
+  the SDK library stays the upgrade path for approvals mid-turn
+  (2026-09-26).
 - Note 00 proposed a Node runner. Note 03 changed it to a single static
   Go binary.
 - Note 06 first flagged the macOS Keychain as a blocker for multiple
