@@ -8,54 +8,34 @@
 <body>
 <x-dc>
 <helmet><script src="./ds-base.js"></script>
-<style>
-@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
-@keyframes op-effort-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.op-effort__value{display:inline-block;animation:op-effort-in 140ms cubic-bezier(.16,1,.3,1)}
-@media (prefers-reduced-motion:reduce){.op-effort__value{animation-duration:0s}}
-.op-effort{position:relative;height:28px;border-radius:10px;background:var(--hover-surface);cursor:pointer;touch-action:none;user-select:none;overflow:hidden}
-.op-effort:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.op-effort__dots{position:absolute;inset:0;pointer-events:none}
-.op-effort__dot{position:absolute;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:980px;background:var(--fg-subtle);opacity:.55;transition:opacity 140ms cubic-bezier(.4,0,.2,1)}
-.op-effort__dot:nth-child(1){left:15px}
-.op-effort__dot:nth-child(2){left:calc((100% - 30px) * .25 + 15px)}
-.op-effort__dot:nth-child(3){left:calc(50%)}
-.op-effort__dot:nth-child(4){left:calc((100% - 30px) * .75 + 15px)}
-.op-effort__dot:nth-child(5){left:calc(100% - 15px)}
-.op-effort__knob{position:absolute;top:0;left:0;width:30px;height:100%;border-radius:10px;background:var(--fg);pointer-events:none;transition:transform 140ms cubic-bezier(.4,0,.2,1)}
-.op-effort__fill{position:absolute;top:0;bottom:0;left:0;width:100%;border-radius:10px;background:var(--control-hover);pointer-events:none;transition:transform 140ms cubic-bezier(.4,0,.2,1)}
-@media (prefers-reduced-motion:reduce){.op-effort__fill{transition-duration:0s}}
-@media (prefers-reduced-motion:reduce){.op-effort__knob{transition-duration:0s}}
-[data-effort="minimal"] .op-effort__dot:nth-child(1){opacity:0}
-[data-effort="low"] .op-effort__dot:nth-child(2){opacity:0}
-[data-effort="medium"] .op-effort__dot:nth-child(3){opacity:0}
-[data-effort="high"] .op-effort__dot:nth-child(4){opacity:0}
-[data-effort="max"] .op-effort__dot:nth-child(5){opacity:0}
-.op-modelbtn.op-permbtn{color:var(--fg-muted)}
-.op-modelbtn.op-permbtn[data-perm="full"]{color:var(--warning)}
-.op-permrow[data-perm-row="full"]{color:var(--warning)}
-.op-permrow[data-perm-row="full"] .op-modelopt__desc{color:var(--warning)}
-@media (prefers-reduced-motion:reduce){.op-scrim,.op-dialog,[data-anim]{animation-duration:0s!important}}
-</style>
+<link rel="stylesheet" href="./console.css">
 </helmet>
-<div style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
+<div data-bare="{{ bare }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:15px">
 
+<nav class="op-rail" aria-label="Sections">
+<span class="op-rail__mark" aria-hidden="true">O</span>
+<button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
+<button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Routines" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Routines<span class="op-nav__count">{{ routineTotal }}</span></span></button>
+</nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
 <span class="op-wordmark" style="font-size:18px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
 </div>
+<sc-if value="{{ inSessions }}" hint-placeholder-val="{{ true }}">
 <div style="padding:0 12px 10px">
 <button class="op-btn op-btn--sm op-btn--block {{ newBtnVariant }}" type="button" aria-current="{{ isNewPage }}" onClick="{{ openNew }}">New session</button>
 </div>
 <div class="op-listhead">
-<span class="op-listhead__title">Sessions</span>
-<span class="op-listhead__count">{{ sessionCount }}</span>
+<span class="op-listhead__title">Projects</span>
+<span class="op-listhead__count">{{ projectCount }}</span>
+<button class="op-iconbtn-sm" type="button" aria-label="New project" title="New project" onClick="{{ newProject }}" style="margin-left:auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></button>
 <div class="op-filterwrap">
 <button class="op-iconbtn-sm" type="button" aria-label="Filter sessions" data-open="{{ filterOpen }}" data-dirty="{{ filterDirty }}" onClick="{{ toggleFilter }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg></button>
 <sc-if value="{{ filterOpen }}">
 <div class="op-menu op-filtermenu" role="menu" onClick="{{ stop }}">
 
 <sc-if value="{{ menuRoot }}">
+<button class="op-menu__item" type="button" onClick="{{ openProjMenu }}"><span class="op-menu__label-text">Project</span><span class="op-menu__value">{{ projFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openRepoMenu }}"><span class="op-menu__label-text">Repository</span><span class="op-menu__value">{{ repoFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openAgentMenu }}"><span class="op-menu__label-text">Agent</span><span class="op-menu__value">{{ agentFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
 <button class="op-menu__item" type="button" onClick="{{ openHostMenu }}"><span class="op-menu__label-text">Host</span><span class="op-menu__value">{{ hostFilterLabel }}</span><span class="op-menu__shortcut">›</span></button>
@@ -77,6 +57,7 @@
 </sc-if>
 </div>
 </div>
+<div class="op-sbsearch" data-on="{{ sQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search sessions" placeholder="Search sessions" value="{{ sQ }}" onChange="{{ sQSet }}" onKeyDown="{{ sQKey }}"><sc-if value="{{ sQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ sQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <sc-if value="{{ filterDirty }}">
 <div class="op-filterchips">
 <sc-for list="{{ activeFilters }}" as="f" hint-placeholder-count="1">
@@ -85,17 +66,82 @@
 </div>
 </sc-if>
 <div class="op-sidebar__scroll">
+<sc-if value="{{ sQNone }}"><p class="op-emptylist">No sessions match “{{ sQ }}”.</p></sc-if>
+<sc-if value="{{ bareS }}"><p class="op-emptylist">No sessions yet. The first one you start appears here.</p></sc-if>
 <div class="op-sessionlist">
-<sc-for list="{{ sessions }}" as="s" hint-placeholder-count="9">
-<button class="op-session" type="button" data-active="{{ s.active }}" data-state="{{ s.state }}" onClick="{{ openTerminal }}">
-<svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">{{ s.name }}</span><span class="op-session__age">{{ s.age }}</span>
-</button>
+<sc-for list="{{ projectGroups }}" as="g" hint-placeholder-count="3">
+<div class="op-pgroup">
+<div class="op-phead" data-open="{{ g.openS }}" data-current="{{ g.current }}">
+<button class="op-phead__toggle" type="button" aria-expanded="{{ g.openS }}" onClick="{{ g.toggle }}"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></button>
+<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New session in {{ g.name }}" title="New session" onClick="{{ g.newHere }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="{{ g.name }} settings" title="Project settings" onClick="{{ g.settings }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+<sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ g.items }}" as="s" hint-placeholder-count="3">
+<div class="op-srow" data-menu="{{ s.menuS }}">
+<sc-if value="{{ s.editing }}"><div class="op-session" data-active="{{ s.active }}" data-state="{{ s.state }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><input class="op-srename" aria-label="Session name" value="{{ renameDraft }}" onChange="{{ setRenameDraft }}" onKeyDown="{{ renameKey }}" onBlur="{{ commitRename }}" onClick="{{ stop }}" ref="{{ renameRef }}"></div></sc-if>
+<sc-if value="{{ s.notEditing }}"><button class="op-session" type="button" data-active="{{ s.active }}" data-state="{{ s.state }}" onClick="{{ openTerminal }}"><svg class="op-session__glyph" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span class="op-session__name">{{ s.name }}</span><span class="op-session__age">{{ s.age }}</span></button>
+<button class="op-iconbtn op-iconbtn--sm op-srow__more" type="button" aria-label="Session actions" aria-haspopup="menu" onClick="{{ s.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="15" hint-size="15px,15px"></x-import></button></sc-if>
+<sc-if value="{{ s.menuOpen }}"><div class="op-menu" role="menu" onClick="{{ stop }}" style="position:absolute;top:calc(100% + 2px);right:4px;left:auto;bottom:auto;z-index:60;min-width:188px">
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.rename }}"><span class="op-menu__label-text">Rename</span><span class="op-menu__shortcut">R</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ s.move }}"><span class="op-menu__label-text">Move to project…</span><span class="op-menu__shortcut">M</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ s.remove }}"><span class="op-menu__label-text">Delete</span><span class="op-menu__shortcut">D</span></button>
+</div></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ g.empty }}"><p class="op-pempty">No sessions yet. <button type="button" onClick="{{ g.newHere }}">Start one</button></p></sc-if>
+</sc-if>
+</div>
 </sc-for>
 <sc-if value="{{ noMatches }}">
 <p class="op-emptylist">No sessions match these filters.</p>
 </sc-if>
 </div>
 </div>
+</sc-if>
+<sc-if value="{{ inRoutines }}">
+<div style="padding:0 12px 10px">
+<button class="op-btn op-btn--sm op-btn--block op-btn--primary" type="button" onClick="{{ newRoutine }}">New routine</button>
+</div>
+<div class="op-listhead">
+<span class="op-listhead__title">Projects</span>
+<span class="op-listhead__count">{{ rGroupCount }}</span>
+</div>
+<div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search routines" placeholder="Search routines" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
+<div class="op-sidebar__scroll">
+<sc-if value="{{ rQNone }}"><p class="op-emptylist">No routines match “{{ rQ }}”.</p></sc-if>
+<div class="op-sessionlist">
+<button class="op-session" type="button" data-active="{{ rAllActive }}" onClick="{{ backAll }}" style="margin-bottom:6px"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">All routines</span><span class="op-session__age" style="opacity:1">{{ routineTotal }}</span></button>
+<sc-for list="{{ rGroups }}" as="g" hint-placeholder-count="3">
+<div class="op-pgroup">
+<div class="op-phead" data-open="{{ g.openS }}">
+<button class="op-phead__toggle" type="button" aria-expanded="{{ g.openS }}" onClick="{{ g.toggle }}"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></button>
+<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New routine in {{ g.name }}" title="New routine" onClick="{{ g.newHere }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+<sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
+<button class="op-session op-rrow" type="button" data-active="{{ r.active }}" data-state="{{ r.state }}" data-paused="{{ r.paused }}" onClick="{{ r.select }}">
+<span class="op-session__glyph" style="display:flex"><sc-if value="{{ r.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></sc-if><sc-if value="{{ r.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:13px;height:13px;filter:var(--brand-glyph-filter,none);opacity:.8"></sc-if></span>
+<span class="op-session__name">{{ r.name }}</span>
+<span class="op-session__age" style="opacity:1">{{ r.meta }}</span>
+</button>
+<sc-if value="{{ r.expanded }}">
+<div class="op-rruns">
+<sc-for list="{{ r.runs }}" as="u" hint-placeholder-count="3">
+<button class="op-rrun" type="button" key="{{ u.key }}" data-state="{{ u.state }}" data-active="{{ u.active }}" title="{{ u.stateLabel }}" onClick="{{ u.open }}"><span class="op-rrun__dot"></span><span class="op-rrun__title">{{ u.title }}</span><span class="op-rrun__ago">{{ u.ago }}</span></button>
+</sc-for>
+<sc-if value="{{ r.noRuns }}"><p class="op-rrun__none">No runs yet.</p></sc-if>
+</div>
+</sc-if>
+</sc-for>
+<sc-if value="{{ g.empty }}"><p class="op-pempty">No routines yet. <button type="button" onClick="{{ g.newHere }}">Create one</button></p></sc-if>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
 <div class="op-sidebar__foot" style="border-top:0">
 <div class="op-accountwrap">
 <button class="op-navitem" type="button" data-active="{{ accountOpen }}" onClick="{{ toggleAccount }}"><span class="op-avatar op-avatar--sm op-avatar--accent">JP</span><span class="op-navitem__label">Jordi Parra</span><span class="op-navitem__meta" style="display:flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
@@ -105,6 +151,10 @@
 <sc-if value="{{ accountRoot }}">
 <div class="op-accountmenu__id">jordiparra99@gmail.com</div>
 <div class="op-menu__sep"></div>
+<a class="op-menu__item" href="./Settings.dc.html" style="text-decoration:none;color:inherit">
+<span class="op-menu__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="settings" size="15" hint-size="15px,15px"></x-import></span>
+<span class="op-menu__label-text">Settings</span>
+</a>
 <button class="op-menu__item" type="button" onClick="{{ openTheme }}">
 <span class="op-menu__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></span>
 <span class="op-menu__label-text">Appearance</span><span class="op-menu__value">{{ themeLabel }}</span><span class="op-menu__shortcut">›</span>
@@ -144,15 +194,392 @@
 
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--card)">
 
-<sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
-<div class="op-newsession">
-<div class="op-newsession__inner">
-<div>
-<h1 class="op-newsession__title">New session</h1>
-<p class="op-newsession__sub">Set the scope, then describe the work.</p>
+<sc-if value="{{ rDlgOpen }}">
+<div class="op-rpage" onClick="{{ stopR }}">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ rCrumbAll }}">Routines</button><span>/</span><sc-if value="{{ rCrumbName }}"><button type="button" onClick="{{ closeRDlg }}">{{ rCrumbName }}</button><span>/</span></sc-if><span class="op-ph__here">{{ rDlgTitle }}</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span>
+<input class="op-ph__title op-ph__input" type="text" aria-label="Routine name" placeholder="Name this routine" value="{{ rName }}" onChange="{{ setRName }}">
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeRDlg }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ rSaveBlocked }}" onClick="{{ saveR }}">{{ rSaveLabel }}</button>
+</div>
+</div>
+<div class="op-ph__meta"><span class="op-recap" data-ready="{{ rReady }}" key="{{ rRecap }}">{{ rRecap }}</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ rS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Where</span><span class="op-st__sub">The code it works on, and the machine it runs on.</span><span class="op-st__sum" key="{{ rS1Sum }}">{{ rS1Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-st__grid" data-cols="3">
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Project</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rProjSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rProjSel.openS }}" onClick="{{ rProjSel.toggle }}"><span class="op-fsel__val" key="{{ rProjSel.label }}">{{ rProjSel.label }}</span><span class="op-fsel__meta">{{ rProjSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rProjSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rProjSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rProjSel.ph }}" value="{{ rProjSel.q }}" onChange="{{ rProjSel.setQ }}" onKeyDown="{{ rProjSel.onKey }}"></div>
+<sc-if value="{{ rProjSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rProjSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rProjSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rProjSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rProjSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Repositories</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rRepoSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rRepoSel.openS }}" onClick="{{ rRepoSel.toggle }}"><span class="op-fsel__val" key="{{ rRepoSel.label }}">{{ rRepoSel.label }}</span><span class="op-fsel__meta">{{ rRepoSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rRepoSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rRepoSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rRepoSel.ph }}" value="{{ rRepoSel.q }}" onChange="{{ rRepoSel.setQ }}" onKeyDown="{{ rRepoSel.onKey }}"></div>
+<sc-if value="{{ rRepoSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rRepoSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rRepoSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rRepoSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rRepoSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Host</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rHostSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rHostSel.openS }}" onClick="{{ rHostSel.toggle }}"><span class="op-fsel__val" key="{{ rHostSel.label }}">{{ rHostSel.label }}</span><span class="op-fsel__meta">{{ rHostSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rHostSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rHostSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<sc-if value="{{ rHostSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rHostSel.ph }}" value="{{ rHostSel.q }}" onChange="{{ rHostSel.setQ }}" onKeyDown="{{ rHostSel.onKey }}"></div></sc-if>
+<sc-if value="{{ rHostSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rHostSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rHostSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rHostSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rHostSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ rS2Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">When</span><span class="op-st__sub">Any trigger starts a run.</span><span class="op-st__sum" key="{{ rS2Sum }}">{{ rS2Sum }}</span></div>
+<div class="op-st__body">
+<sc-for list="{{ rTriggers }}" as="t" hint-placeholder-count="1">
+<div class="op-rd__trig" key="{{ t.id }}">
+<div class="op-rd__trow">
+<span class="op-rd__ticon"><sc-if value="{{ t.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ t.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></sc-if></span>
+<div class="op-rd__toks">
+<sc-for list="{{ t.parts }}" as="p" hint-placeholder-count="3">
+<sc-if value="{{ p.word }}"><span>{{ p.word }}</span></sc-if>
+<sc-if value="{{ p.tok }}"><span class="op-tok">
+<button class="op-tok__btn" type="button" data-open="{{ p.openS }}" data-mono="{{ p.mono }}" aria-haspopup="listbox" aria-expanded="{{ p.openS }}" onClick="{{ p.toggle }}"><span class="op-tok__val" key="{{ p.label }}">{{ p.label }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
+<sc-if value="{{ p.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ p.multi }}" onClick="{{ stop }}">
+<sc-if value="{{ p.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ p.head }}</div></sc-if>
+<sc-for list="{{ p.options }}" as="o" hint-placeholder-count="4"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for>
+</div></sc-if>
+<sc-if value="{{ p.openGrid }}"><div class="op-listbox op-tpop" onClick="{{ stop }}">
+<sc-for list="{{ p.grids }}" as="gr" hint-placeholder-count="1"><span class="op-tpop__label">{{ gr.label }}</span><sc-if value="{{ gr.heads }}"><div class="op-hgrid" data-cols="7"><sc-for list="{{ gr.heads }}" as="hd" hint-placeholder-count="7"><span class="op-hhead">{{ hd }}</span></sc-for></div></sc-if><div class="op-hgrid" data-cols="{{ gr.cols }}"><sc-for list="{{ gr.cells }}" as="c" hint-placeholder-count="6"><button class="op-hcell" type="button" data-on="{{ c.on }}" data-sans="{{ gr.sans }}" disabled="{{ c.off }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div></sc-for>
+</div></sc-if>
+</span></sc-if>
+</sc-for>
+</div>
+<button class="op-iconbtn-sm" type="button" aria-label="Remove trigger" title="Remove trigger" onClick="{{ t.remove }}" style="flex:none;width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
+</div>
+<sc-if value="{{ t.isSched }}"><div class="op-rd__preview">
+<span class="op-rd__wk"><sc-for list="{{ t.week }}" as="d" hint-placeholder-count="7"><span class="op-rd__wd" key="{{ d.key }}" title="{{ d.title }}" data-fires="{{ d.fires }}" data-next="{{ d.next }}">{{ d.l }}</span></sc-for></span>
+<sc-if value="{{ t.hasNext }}"><span>Next run</span><span class="op-rd__mono">{{ t.nextAbs }}</span><span>· in</span><span class="op-rd__mono">{{ t.nextRel }}</span></sc-if>
+<sc-if value="{{ t.passed }}"><span>That time has passed. Pick a later one.</span></sc-if>
+</div></sc-if>
+<sc-if value="{{ t.isGh }}">
+<div class="op-rd__preview"><span class="op-rd__live"></span><span>{{ t.matchSummary }}</span></div>
+<sc-if value="{{ t.hasMatches }}"><div class="op-rd__matches"><sc-for list="{{ t.matches }}" as="m" hint-placeholder-count="2"><div class="op-rd__match" key="{{ m.key }}"><span>{{ m.ref }}</span><span>{{ m.title }}</span><span>{{ m.meta }}</span></div></sc-for></div></sc-if>
+</sc-if>
+</div>
+</sc-for>
+<div style="position:relative">
+<button class="op-rd__add" type="button" data-open="{{ rAddOpenS }}" onClick="{{ toggleAdd }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import><span>{{ rAddLabel }}</span></button>
+<sc-if value="{{ rAddOpen }}"><div class="op-listbox op-rd__addmenu" role="listbox" onClick="{{ stop }}">
+<sc-for list="{{ addGroups }}" as="g" hint-placeholder-count="2">
+<div class="op-rd__glabel">{{ g.label }}</div>
+<sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4"><button class="op-option" type="button" role="option" onClick="{{ it.pick }}" style="padding:7px 10px;gap:12px;font-size:13.5px;line-height:1.35"><span class="op-rd__oicon"><sc-if value="{{ it.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="14" hint-size="14px,14px"></x-import></sc-if><sc-if value="{{ it.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:14px;height:14px;filter:var(--brand-glyph-filter,none)"></sc-if></span><span class="op-option__stack"><span>{{ it.title }}</span><span class="op-option__desc" style="margin-top:0;font-size:12px;line-height:1.35">{{ it.desc }}</span></span></button></sc-for>
+</sc-for>
+</div></sc-if>
 </div>
 
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ rS3Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">3</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">What</span><span class="op-st__sub">Instructions for every run.</span><span class="op-st__sum" key="{{ rS3Sum }}">{{ rS3Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-rd__compose">
+<textarea class="op-rd__ta" aria-label="Instructions" placeholder="What should the agent do each time it runs?" value="{{ rPrompt }}" onChange="{{ setRPrompt }}"></textarea>
+</div>
+<span class="op-st__note">The pull request, issue or commit that fired the run is passed in as context.</span>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ rS4Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">4</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Agent</span><span class="op-st__sub">Each run is its own session.</span><span class="op-st__sum" key="{{ rS4Sum }}">{{ rS4Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-st__grid">
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Agent</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rAgentSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rAgentSel.openS }}" onClick="{{ rAgentSel.toggle }}"><span class="op-fsel__val" key="{{ rAgentSel.label }}">{{ rAgentSel.label }}</span><span class="op-fsel__meta">{{ rAgentSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rAgentSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rAgentSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<sc-if value="{{ rAgentSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rAgentSel.ph }}" value="{{ rAgentSel.q }}" onChange="{{ rAgentSel.setQ }}" onKeyDown="{{ rAgentSel.onKey }}"></div></sc-if>
+<sc-if value="{{ rAgentSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rAgentSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rAgentSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rAgentSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rAgentSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Model</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rModelSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rModelSel.openS }}" onClick="{{ rModelSel.toggle }}"><span class="op-fsel__val" key="{{ rModelSel.label }}">{{ rModelSel.label }}</span><span class="op-fsel__meta">{{ rModelSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rModelSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rModelSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<sc-if value="{{ rModelSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rModelSel.ph }}" value="{{ rModelSel.q }}" onChange="{{ rModelSel.setQ }}" onKeyDown="{{ rModelSel.onKey }}"></div></sc-if>
+<sc-if value="{{ rModelSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rModelSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rModelSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rModelSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rModelSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+</div>
+<span class="op-st__note">Works on a fresh opp/ branch, so nothing lands on main without a pull request.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRunView }}">
+
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:{{ framePad }};transition:padding 220ms cubic-bezier(.4,0,.2,1)">
+<div style="flex:1;min-height:0;width:100%;max-width:{{ frameMax }};margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
+
+<div class="op-term" style="flex:1;min-height:0">
+<div class="op-term__scroll" ref="{{ runScrollRef }}">
+<sc-for list="{{ runFeed }}" as="f" hint-placeholder-count="4">
+<sc-if value="{{ f.you }}">
+<div class="op-term__you"><span class="op-term__youchev">❯</span><span class="op-term__youtext">{{ f.text }}</span></div>
+</sc-if>
+<sc-if value="{{ f.agent }}">
+<div class="op-term__turn"><div class="op-term__turnbody">
+<sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="2">
+<div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div>
+</sc-for>
+</div></div>
+</sc-if>
+<sc-if value="{{ f.out }}">
+<div class="op-term__out">
+<sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="2">
+<div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ f.pending }}">
+<div class="op-term__turn"><div class="op-term__turnbody"><div class="op-term__line op-term__thinking">Thinking…</div></div></div>
+</sc-if>
+</sc-for>
+</div>
+<div class="op-term__prompt">
+<span class="op-term__chev">❯</span>
+<input class="op-term__input" placeholder="{{ runPh }}" value="{{ runDraft }}" onChange="{{ runSetDraft }}" onKeyDown="{{ runKey }}">
+</div>
+<div class="op-term__status">
+<span class="op-term__statusitem op-link" data-link="{{ linkState }}"><span class="op-link__dot"></span><span class="op-link__label" key="{{ linkState }}">{{ linkLabel }}</span></span>
+<span class="op-term__statusitem">6% used · 4h 2m</span>
+<span class="op-term__statusitem">51% used · 4d 3h</span>
+<span class="op-term__statusitem">763.4 MB</span>
+<span class="op-term__statusitem">bypass permissions on</span>
+<span class="op-term__statusitem">1 host</span>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRoutines }}">
+<div class="op-rp">
+<div class="op-rp__inner">
+<sc-if value="{{ rDetail }}">
+<header class="op-ph">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ backAll }}">Routines</button><span>/</span><span class="op-ph__here">{{ dName }}</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><sc-if value="{{ dIsSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="17" hint-size="17px,17px"></x-import></sc-if><sc-if value="{{ dIsGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:17px;height:17px;filter:var(--brand-glyph-filter,none)"></sc-if></span>
+<h1 class="op-ph__title">{{ dName }}</h1>
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dRunNow }}" style="gap:6px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="play" size="12" hint-size="12px,12px"></x-import>Run now</button>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dEdit }}">Edit</button>
+<div style="position:relative">
+<button class="op-iconbtn-sm" type="button" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{ dMoreOpenS }}" onClick="{{ dToggleMore }}" style="width:30px;height:30px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+<sc-if value="{{ dMoreOpen }}"><div class="op-menu" data-side="bottom-end" role="menu" onClick="{{ stop }}" style="min-width:220px">
+<sc-if value="{{ dAsk }}">
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ dTogglePauseMenu }}"><span class="op-menu__label-text">{{ dPauseLabel }}</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ dDup }}"><span class="op-menu__label-text">Duplicate</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ dAskDelete }}"><span class="op-menu__label-text">Delete routine</span></button>
+</sc-if>
+<sc-if value="{{ dConfirm }}">
+<div style="display:flex;flex-direction:column;gap:10px;padding:8px 10px 6px;max-width:240px">
+<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this routine? Its triggers stop now. Past runs are kept.</span>
+<div style="display:flex;gap:6px;justify-content:flex-end">
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ dCancelDelete }}">Cancel</button>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dDelete }}" style="color:var(--danger)">Delete</button>
+</div>
+</div>
+</sc-if>
+</div></sc-if>
+</div>
+</div>
+</div>
+<div class="op-ph__meta">
+<span class="op-rtable__st" data-st="{{ dSt }}"><span class="op-rtable__dot"></span>{{ dStLabel }}</span>
+<sc-if value="{{ dNextRel }}"><span class="op-ph__sep">·</span><span>Next in</span><span class="op-ph__mono">{{ dNextRel }}</span></sc-if>
+<span class="op-ph__sep">·</span><span>{{ dTrig }}</span>
+<span class="op-ph__sep">·</span><span>{{ dSub }}</span>
+</div>
+<sc-if value="{{ dPaused }}">
+<div class="op-ph__note"><span>Paused. Triggers are ignored until you resume it; Run now still works.</span><button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dTogglePause }}">Resume</button></div>
+</sc-if>
+</header>
+</sc-if>
+<sc-if value="{{ rOverview }}" hint-placeholder-val="{{ true }}">
+<div class="op-rp__top">
+<div class="op-rp__tabs" role="tablist">
+<button class="op-rp__tab" type="button" role="tab" data-on="{{ rTabRoutines }}" aria-selected="{{ rTabRoutines }}" onClick="{{ tabRoutines }}">Routines</button>
+<button class="op-rp__tab" type="button" role="tab" data-on="{{ rTabRuns }}" aria-selected="{{ rTabRuns }}" onClick="{{ tabRuns }}">Runs</button>
+</div>
+<span style="flex:1"></span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newRoutine }}">New routine</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasRuns }}">
+<div class="op-hist">
+<div class="op-hist__head">
+<span class="op-hist__title">Run history</span><span class="op-hist__sub" key="{{ histLabel }}">{{ histLabel }}</span>
+<span style="flex:1"></span>
+<sc-if value="{{ rTabRunsOn }}"><span class="op-hist__leg"><span class="op-hist__ld" data-k="ok"></span><span class="op-hist__ln">{{ histOk }}</span>Succeeded</span><span class="op-hist__leg"><span class="op-hist__ld" data-k="fail"></span><span class="op-hist__ln">{{ histFail }}</span>Failed</span></sc-if>
+<sc-if value="{{ rTabRoutinesOn }}"><button class="op-hist__link" type="button" onClick="{{ tabRuns }}"><span class="op-hist__ln">{{ histTotal }}</span>runs<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="13" hint-size="13px,13px"></x-import></button></sc-if>
+</div>
+<div class="op-hist__bars" data-hover="{{ histHovering }}" onMouseLeave="{{ histLeave }}">
+<sc-for list="{{ hist }}" as="b" hint-placeholder-count="30"><div class="op-hist__col" key="{{ b.key }}" data-on="{{ b.on }}" data-zero="{{ b.zero }}" onMouseEnter="{{ b.enter }}"><span class="op-hist__fail" data-none="{{ b.nofail }}"></span><span class="op-hist__ok" data-none="{{ b.noOk }}" style="height:{{ b.oh }};animation-delay:{{ b.delay }}"></span></div></sc-for>
+</div>
+<div class="op-hist__axis"><span>{{ histFrom }}</span><span>{{ histTo }}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ rTabRoutinesOn }}" hint-placeholder-val="{{ true }}">
+<div class="op-rtable">
+<sc-if value="{{ hasRoutines }}"><div class="op-rtable__head"><span>Routine</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div></sc-if>
+<sc-for list="{{ routineRows }}" as="r" hint-placeholder-count="5">
+<div class="op-rtable__row" role="button" tabindex="0" key="{{ r.key }}" data-menu="{{ r.menuOpenS }}" data-paused="{{ r.paused }}" data-flash="{{ r.flash }}" onClick="{{ r.open }}" style="animation-delay:{{ r.delay }}">
+<span class="op-rtable__name"><span class="op-rtable__icon"><sc-if value="{{ r.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ r.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></sc-if></span><span class="op-rtable__stack"><span class="op-rtable__title">{{ r.name }}</span><span class="op-rtable__sub">{{ r.sub }}</span></span></span>
+<span class="op-rtable__trig" data-col="trig">{{ r.trig }}</span>
+<span class="op-rtable__next" data-col="next"><span>{{ r.next }}</span><sc-if value="{{ r.nextRel }}"><span class="op-rtable__nextrel">in {{ r.nextRel }}</span></sc-if></span>
+<span class="op-rtable__st" data-st="{{ r.st }}"><span class="op-rtable__dot"></span>{{ r.stLabel }}</span>
+<span style="position:relative;display:flex;justify-content:flex-end">
+<button class="op-iconbtn-sm" type="button" aria-label="Routine actions" aria-haspopup="menu" onClick="{{ r.toggleMenu }}" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+<sc-if value="{{ r.menuOpen }}"><div class="op-menu" data-side="bottom-end" role="menu" onClick="{{ stop }}" style="min-width:180px">
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.edit }}"><span class="op-menu__label-text">Edit</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.runNow }}"><span class="op-menu__label-text">Run now</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.togglePause }}"><span class="op-menu__label-text">{{ r.pauseLabel }}</span></button>
+<button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.duplicate }}"><span class="op-menu__label-text">Duplicate</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ r.remove }}"><span class="op-menu__label-text">Delete</span></button>
+</div></sc-if>
+</span>
+</div>
+</sc-for>
+<sc-if value="{{ noRoutineRows }}"><div class="op-rtable__empty"><span class="op-rtable__icon" style="width:36px;height:36px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span><span>No routines yet. A routine starts a session on a schedule or when something happens on GitHub. Start from a template below.</span></div></sc-if>
+</div>
+
+<section class="op-tpl">
+<div class="op-tpl__head"><h2 class="op-tpl__h">Templates</h2>
+<div class="op-rp__tabs"><sc-for list="{{ tplCats }}" as="c" hint-placeholder-count="5"><button class="op-rp__tab" type="button" data-on="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div>
+</div>
+<div class="op-tpl__grid">
+<sc-for list="{{ tpls }}" as="t" hint-placeholder-count="8">
+<div class="op-tpl__item" key="{{ t.key }}" style="animation-delay:{{ t.delay }}">
+<span class="op-tpl__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="{{ t.icon }}" size="17" hint-size="17px,17px"></x-import></span>
+<span class="op-tpl__stack"><span class="op-tpl__name">{{ t.name }}</span><span class="op-tpl__desc">{{ t.desc }}</span><span class="op-tpl__meta"><sc-if value="{{ t.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="12" hint-size="12px,12px"></x-import></sc-if><sc-if value="{{ t.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:12px;height:12px;filter:var(--brand-glyph-filter,none)"></sc-if>{{ t.meta }}</span></span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ t.add }}">Add</button>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ rTabRunsOn }}">
+<div class="op-rtable">
+<div class="op-runs__filters">
+<div class="op-rp__tabs">
+<sc-for list="{{ runStatusOpts }}" as="o" hint-placeholder-count="4"><button class="op-rp__tab" type="button" data-on="{{ o.on }}" onClick="{{ o.pick }}">{{ o.label }}<span class="op-runs__n">{{ o.n }}</span></button></sc-for>
+</div>
+<span style="flex:1"></span>
+<div class="op-runs__toks">
+<sc-for list="{{ runFilterParts }}" as="p" hint-placeholder-count="2">
+<span class="op-tok">
+<button class="op-tok__btn" type="button" data-open="{{ p.openS }}" data-dirty="{{ p.dirty }}" aria-haspopup="listbox" aria-expanded="{{ p.openS }}" onClick="{{ p.toggle }}"><span class="op-tok__val" key="{{ p.label }}">{{ p.label }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
+<sc-if value="{{ p.openList }}"><div class="op-listbox" role="listbox" onClick="{{ stop }}" style="right:0;left:auto">
+<sc-for list="{{ p.options }}" as="o" hint-placeholder-count="4"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for>
+</div></sc-if>
+</span>
+</sc-for>
+<sc-if value="{{ runFiltered }}"><button class="op-hist__link" type="button" onClick="{{ clearRunFilters }}" style="margin-left:4px">Clear</button></sc-if>
+</div>
+</div>
+<div class="op-runs__head"><span>Run</span><span data-col="auto">Routine</span><span>Time</span></div>
+<sc-for list="{{ runRows }}" as="u" hint-placeholder-count="10">
+<button class="op-runrow" type="button" key="{{ u.key }}" data-state="{{ u.state }}" onClick="{{ u.open }}" style="animation-delay:{{ u.delay }}">
+<span class="op-runrow__run"><span class="op-runrow__st" title="{{ u.stateLabel }}"><sc-if value="{{ u.ok }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.bad }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.live }}"><span class="op-runrow__dot"></span></sc-if></span><span class="op-runrow__title">{{ u.title }}</span></span>
+<span class="op-runrow__auto" data-col="auto"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="13" hint-size="13px,13px"></x-import><span>{{ u.rname }}</span></span>
+<span class="op-runrow__time"><span>{{ u.date }}</span><span>{{ u.time }}</span></span>
+</button>
+</sc-for>
+<sc-if value="{{ noRunMatches }}"><p class="op-runs__none">No runs match these filters.</p></sc-if>
+<sc-if value="{{ noRuns }}"><p class="op-runs__none">No runs yet. Each run appears here with the session it started.</p></sc-if>
+<sc-if value="{{ hasRuns }}"><div class="op-runs__foot"><span class="op-mono">{{ runRange }}</span><span style="flex:1"></span>
+<button class="op-iconbtn-sm" type="button" aria-label="Previous page" disabled="{{ runPrevOff }}" onClick="{{ runPrev }}" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import></button>
+<button class="op-iconbtn-sm" type="button" aria-label="Next page" disabled="{{ runNextOff }}" onClick="{{ runNext }}" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-right" size="15" hint-size="15px,15px"></x-import></button>
+</div></sc-if>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
+<div class="op-newsession">
+<div class="op-newsession__inner" data-composer="tabbed">
+<div>
+<h1 class="op-newsession__title">New session</h1>
+<p class="op-newsession__sub">{{ newSub }}</p>
+</div>
+
+<div class="op-cstack">
 <div class="op-chiprow">
+<div class="op-chipselect">
+<button class="op-chipselect__trigger" type="button" data-open="{{ projOpen }}" onClick="{{ toggleProj }}"><span class="op-chipselect__icon" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="folder" size="14" hint-size="14px,14px"></x-import></span><span>{{ projLabel }}</span><span class="op-chipselect__chev">⌄</span></button>
+<sc-if value="{{ projOpen }}">
+<div class="op-listbox" role="listbox" style="width:248px;min-width:0;box-sizing:border-box;max-height:none;padding:4px;overflow-x:hidden">
+<sc-for list="{{ projPick }}" as="p" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" data-selected="{{ p.selected }}" onClick="{{ p.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35">
+<span class="op-option__stack"><span>{{ p.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ p.desc }}</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</sc-for>
+<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
+<button class="op-option" type="button" onClick="{{ newProject }}" style="padding:6px 10px;gap:10px;font-size:13px"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import></span><span class="op-option__stack"><span>New project…</span></span></button>
+</div>
+</div>
+</sc-if>
+</div>
 <div class="op-chipselect">
 <button class="op-chipselect__trigger" type="button" data-open="{{ hostOpen }}" onClick="{{ toggleHost }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg><span>{{ hostLabel }}</span><span class="op-chipselect__chev">⌄</span>
@@ -169,8 +596,8 @@
 <span class="op-option__check">✓</span>
 </button>
 </sc-for>
-<sc-if value="{{ noHostMatch }}"><div class="op-listbox__empty">No host matches.</div></sc-if>
-<div style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
+<sc-if value="{{ noHostMatch }}"><div class="op-listbox__empty">{{ hostEmptyText }}</div></sc-if>
+<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
 <button class="op-option" type="button" role="option" onClick="{{ openAddHost }}" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px">
 <span style="display:flex;flex:none;color:var(--fg-subtle)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
 <span class="op-option__stack"><span>Add host…</span></span>
@@ -206,7 +633,14 @@
 </sc-if>
 </div>
 </sc-for>
-<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">No repository matches.</div></sc-if>
+<sc-if value="{{ noRepoMatch }}"><div class="op-listbox__empty">{{ repoEmptyText }}</div></sc-if>
+<div class="op-lbfoot" style="margin:4px -4px -4px;padding:4px;border-top:1px solid var(--border-subtle)">
+<a class="op-option" role="option" href="https://github.com/apps/oppenheimer-dev/installations/new" target="_blank" rel="noopener" style="text-decoration:none;padding:6px 10px;gap:10px;font-size:13px;color:var(--fg)">
+<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)">
+<span class="op-option__stack"><span>Manage repository access</span></span>
+<span style="display:flex;align-items:center;flex:none;color:var(--fg-subtle)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></span>
+</a>
+</div>
 </sc-if>
 
 <sc-if value="{{ repoBranchPane }}">
@@ -232,7 +666,7 @@
 </div>
 <sc-if value="{{ singleRepo }}" hint-placeholder-val="{{ true }}">
 <div class="op-chipselect">
-<button class="op-chipselect__trigger" type="button" data-open="{{ branchOpen }}" onClick="{{ toggleBranch }}">
+<button class="op-chipselect__trigger" type="button" data-open="{{ branchOpen }}" onClick="{{ toggleBranch }}" disabled="{{ bareB }}" style="opacity:{{ branchOpacity }}">
 <svg class="op-chipselect__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg><span>{{ branchLabel }}</span><span class="op-chipselect__chev">⌄</span>
 </button>
 <sc-if value="{{ branchOpen }}">
@@ -386,6 +820,7 @@
 </button>
 </div>
 </div>
+</div>
 
 </div>
 </div>
@@ -407,7 +842,7 @@
 <div class="op-provision">
 <div class="op-provision__inner">
 <div class="op-provision__eyebrow">{{ provisionHost }}</div>
-<h1 class="op-provision__title">{{ provisionTitle }}</h1>
+<h1 class="op-provision__title">Starting your session</h1>
 <p class="op-provision__sub">{{ provisionSub }}</p>
 <div class="op-steps">
 <sc-for list="{{ bootSteps }}" as="b" hint-placeholder-count="4">
@@ -419,11 +854,12 @@
 </div>
 <div class="op-provision__foot">
 <span class="op-provision__elapsed">{{ bootElapsed }}</span>
-<span>{{ bootStatus }}</span>
+<span>{{ bootPhase }}</span>
 </div>
 </div>
 </div>
 </sc-if>
+
 
 <sc-if value="{{ isTerminal }}">
 
@@ -431,36 +867,36 @@
 <div style="flex:1;min-height:0;width:100%;max-width:{{ frameMax }};margin:0 auto;display:flex;flex-direction:column;overflow:hidden;background:var(--card);transition:max-width 220ms cubic-bezier(.4,0,.2,1)">
 
 <div class="op-term" style="flex:1;min-height:0">
-<div class="op-term__scroll">
-
-<div class="op-term__line op-term__cmd">gh auth login --web</div>
-<div class="op-term__line" data-tone="dim">Opening github.com/login/device …</div>
-<div class="op-term__spacer"></div>
+<div class="op-term__scroll" ref="{{ termScrollRef }}">
+<sc-for list="{{ feed }}" as="f" hint-placeholder-count="4">
+<sc-if value="{{ f.you }}">
+<div class="op-term__you"><span class="op-term__youchev">❯</span><span class="op-term__youtext">{{ f.text }}</span></div>
+</sc-if>
+<sc-if value="{{ f.agent }}">
 <div class="op-term__turn"><div class="op-term__turnbody">
-<div class="op-term__line">The SSH key authenticates git operations, which is why the port and push already worked. Opening a PR goes through the REST API, which needs a token.</div>
-<div class="op-term__spacer"></div>
-<div class="op-term__line">Three ways forward, and the last one needs no token at all:</div>
-<div class="op-term__line" data-tone="dim">  1. gh auth login → web browser flow. One-time setup.</div>
-<div class="op-term__line" data-tone="dim">  2. Manual PAT — more steps, same result.</div>
-<div class="op-term__line" data-tone="dim">  3. Just click the link. The branch is already on the remote.</div>
+<sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="2">
+<div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div>
+</sc-for>
 </div></div>
-<div class="op-term__spacer"></div>
-<div class="op-term__line" data-tone="accent">https://github.com/peersyst/xrp-mobile/pull/new/port/121-api-config-hardening</div>
-<div class="op-term__spacer"></div>
-<div class="op-term__line" data-tone="strong">  code: 5192-177E</div>
-<div class="op-term__line">  expires in ~15 minutes</div>
-<div class="op-term__spacer"></div>
-<div class="op-term__line" data-tone="success">✓ Authorized as jordiparra</div>
-<div class="op-term__line" data-tone="warning">! branch already pushed — only the PR remains</div>
-<div class="op-term__line" data-tone="danger">✗ dbus: failed to launch browser locally (headless host)</div>
-<div class="op-term__spacer"></div>
-<div class="op-term__line" data-tone="dim">Baked for 13s</div>
+</sc-if>
+<sc-if value="{{ f.out }}">
+<div class="op-term__out">
+<sc-for list="{{ f.lines }}" as="l" hint-placeholder-count="2">
+<div class="op-term__line" data-tone="{{ l.tone }}">{{ l.text }}</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ f.pending }}">
+<div class="op-term__turn"><div class="op-term__turnbody"><div class="op-term__line op-term__thinking">Thinking…</div></div></div>
+</sc-if>
+</sc-for>
 </div>
 <div class="op-term__prompt">
 <span class="op-term__chev">❯</span>
-<input class="op-term__input" placeholder="Ask the agent, or run a command">
+<input class="op-term__input" placeholder="{{ termPlaceholder }}" value="{{ termDraft }}" onChange="{{ setTermDraft }}" onKeyDown="{{ termKey }}">
 </div>
 <div class="op-term__status">
+<span class="op-term__statusitem op-link" data-link="{{ linkState }}"><span class="op-link__dot"></span><span class="op-link__label" key="{{ linkState }}">{{ linkLabel }}</span></span>
 <span class="op-term__statusitem">6% used · 4h 2m</span>
 <span class="op-term__statusitem">51% used · 4d 3h</span>
 <span class="op-term__statusitem">763.4 MB</span>
@@ -474,6 +910,114 @@
 
 </div>
 
+<sc-if value="{{ deleting }}">
+<div class="op-scrim" onClick="{{ cancelDelete }}">
+<div class="op-dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" onClick="{{ stop }}" style="max-width:420px">
+<div class="op-dialog__head"><h2 class="op-dialog__title" id="del-title" style="margin:0">Delete “{{ deleting }}”?</h2></div>
+<div class="op-dialog__body"><p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.</p></div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ cancelDelete }}">Cancel</button><button class="op-btn op-btn--danger op-btn--md" type="button" onClick="{{ confirmDelete }}">Delete session</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ movingName }}">
+<div class="op-scrim" onClick="{{ cancelMove }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="move-title" onClick="{{ stop }}" style="max-width:420px">
+<div class="op-dialog__head"><div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 class="op-dialog__title" id="move-title" style="flex:none;margin:0">Move “{{ movingName }}”</h2>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;text-wrap:pretty">Only projects that include <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--fg)">{{ movingRepo }}</span> can hold it. Its branch and worktree stay where they are.</p>
+</div></div>
+<div class="op-dialog__body">
+<div style="display:flex;flex-direction:column;padding:4px;border:1px solid var(--border-subtle);border-radius:14px">
+<sc-for list="{{ moveOptions }}" as="m" hint-placeholder-count="3">
+<button class="op-option" type="button" role="option" data-selected="{{ m.selected }}" aria-disabled="{{ m.blocked }}" onClick="{{ m.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35;opacity:{{ m.opacity }};cursor:{{ m.cursor }}">
+<span class="op-option__stack"><span>{{ m.name }}</span><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ m.desc }}</span></span>
+<span class="op-option__check">✓</span>
+</button>
+</sc-for>
+</div>
+</div>
+<div class="op-dialog__foot"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ cancelMove }}">Cancel</button><button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ moveDisabled }}" onClick="{{ confirmMove }}">Move session</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ projDlgOpen }}">
+<div class="op-scrim" onClick="{{ closeProj }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="proj-title" onClick="{{ stop }}" style="max-width:540px">
+<div class="op-dialog__head">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 class="op-dialog__title" id="proj-title" style="flex:none;margin:0">{{ projDlgTitle }}</h2>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeProj }}" style="flex:none;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
+</div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:20px;max-height:62vh;overflow-y:auto">
+
+<div class="op-field">
+<label class="op-label" for="proj-name">Name</label>
+<div class="op-input op-input--md"><input class="op-input__el" id="proj-name" type="text" placeholder="XRP Mobile" value="{{ projName }}" onChange="{{ setProjName }}"></div>
+</div>
+
+<div class="op-field">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="display:flex;align-items:center;gap:5px">
+<span class="op-label">Default repositories</span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Tooltip" label="Ticked in every new session. Add others per session." side="top" hint-size="15px,15px">
+<button type="button" aria-label="About default repositories" style="display:flex;padding:0;border:0;background:none;color:var(--fg-subtle);cursor:help"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="14" hint-size="14px,14px"></x-import></button>
+</x-import>
+</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ projDefCount }} of {{ projRepoCount }} by default</span>
+</div>
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--border-subtle)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search repositories…" aria-label="Search repositories" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)">
+</div>
+<div style="height:{{ projRepoListH }};overflow-y:auto;overscroll-behavior:contain">
+<sc-for list="{{ projRepoRows }}" as="r" hint-placeholder-count="4">
+<div class="op-prepo" data-on="{{ r.onS }}">
+<label class="op-check" style="flex:1;min-width:0;align-items:center">
+<input type="checkbox" checked="{{ r.on }}" onChange="{{ r.toggle }}">
+<span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+<span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.short }}</span></span>
+</label>
+<button class="op-chip" type="button" data-selected="{{ r.defS }}" aria-pressed="{{ r.defS }}" onClick="{{ r.toggleDef }}" title="Cloned by default in new sessions" style="flex:none;visibility:{{ r.vis }}">Default</button>
+<div class="op-prepo__base">
+<button class="op-bpick" type="button" aria-label="Base branch for {{ r.short }}" aria-haspopup="listbox" aria-expanded="{{ r.bOpenS }}" data-open="{{ r.bOpenS }}" onClick="{{ r.bToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v" key="{{ r.base }}">{{ r.base }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
+<sc-if value="{{ r.bOpen }}"><div class="op-listbox op-bpick__menu" role="listbox" onClick="{{ stop }}" style="top:{{ r.bTop }};bottom:{{ r.bBottom }};left:{{ r.bLeft }}">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search branches" placeholder="Search branches" value="{{ r.bQ }}" onChange="{{ r.bSetQ }}" onKeyDown="{{ r.bKey }}"></div>
+<div class="op-fsel__list"><sc-for list="{{ r.bOpts }}" as="o" hint-placeholder-count="4"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-option__stack"><span style="font-family:var(--font-mono);font-size:12.5px">{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ r.bNone }}"><div class="op-fsel__empty">No branch named “{{ r.bQ }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ projRepoNone }}"><p style="margin:0;padding:12px;font-size:12.5px;color:var(--fg-subtle)">No repository matches “{{ projRepoQuery }}”.</p></sc-if>
+</div>
+</div>
+</div>
+
+<div class="op-field">
+<span class="op-label">Default host</span>
+<div class="op-pchips"><sc-for list="{{ projHostChips }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div>
+</div>
+
+<div class="op-field">
+<span class="op-label">Default agent</span>
+<div class="op-pchips"><sc-for list="{{ projAgentChips }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}" style="gap:7px"><sc-if value="{{ c.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ c.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></span></sc-if>{{ c.label }}</button></sc-for></div>
+</div>
+
+
+</div>
+<div class="op-dialog__foot">
+<sc-if value="{{ projEditing }}"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ deleteProject }}" disabled="{{ projDeleteBlocked }}" title="{{ projDeleteHint }}" style="margin-right:auto;color:var(--danger)">Delete project</button></sc-if>
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeProj }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ projSaveBlocked }}" onClick="{{ saveProject }}">{{ projSaveLabel }}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ addHostOpen }}">
 <div class="op-scrim" onClick="{{ closeAddHost }}">
 <div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="addhost-title" onClick="{{ stopClick }}">
@@ -481,7 +1025,6 @@
 <div class="op-dialog__head">
 <div style="flex:1;display:flex;flex-direction:column;gap:6px">
 <h2 class="op-dialog__title" id="addhost-title" style="flex:none">Add a host</h2>
-<p style="margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5;letter-spacing:-0.008em;text-wrap:pretty">A server you control — a cloud VM, a build box, or your own workstation.</p>
 </div>
 <button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAddHost }}" style="flex:none;border-radius:980px">
 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -491,28 +1034,41 @@
 <div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
 
 <div style="display:flex;flex-direction:column;gap:8px">
-<div style="display:flex;align-items:center;gap:10px">
-<span class="op-label" style="flex:1;margin:0">Run this on it, once</span>
-<div style="display:flex;gap:2px;padding:2px;border-radius:980px;background:var(--hover-surface)">
-<button type="button" onClick="{{ showCmd }}" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }}">Command</button>
-<button type="button" onClick="{{ showPrompt }}" style="padding:3px 9px;border:0;border-radius:980px;font:inherit;font-size:11.5px;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }}">Agent prompt</button>
+<span class="op-label" style="margin:0">Run this once on the host</span>
+<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
+<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
+<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
 </div>
-</div>
-
-<div style="position:relative;border-radius:10px;background:var(--hover-surface)">
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Copy" onClick="{{ copyBlock }}" style="position:absolute;top:6px;right:6px">
-<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg></sc-if>
-<sc-if value="{{ didCopy }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></sc-if>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
+<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
+<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
 </button>
+</div>
+<div style="position:relative">
 <sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
-<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
   | sh -s -- --token opk_7f3a9c</pre>
 </sc-if>
 <sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px 40px 12px 12px;min-height:76px;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">Install the oppenheimer runner here, then run
-oppenheimer-runner status and report the hostname.
-curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c</pre>
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+
+1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
+2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
+3. Install the runner:
+   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
+4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
+5. Verify the service is running:
+   oppenheimer-runner status
+6. Run the preflight and paste its full output:
+   oppenheimer-runner preflight
+7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
+8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
+
+Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
 </sc-if>
+</div>
 </div>
 
 <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
@@ -554,7 +1110,7 @@ Listening for this host…
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script>
+<script type="text/x-dc" data-dc-script data-props="{&quot;emptyAccount&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;},&quot;page&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sessions&quot;,&quot;routines&quot;],&quot;default&quot;:&quot;sessions&quot;,&quot;tsType&quot;:&quot;'sessions' | 'routines'&quot;,&quot;section&quot;:&quot;State&quot;}}">
 const ALL = [
   { name: 'PR #121 porting to peersyst', state: 'running', age: '2m', mins: 2, repo: 'xrp-mobile', agent: 'claude-code', host: 'optimus', active: 'true' },
   { name: 'nightly ingest', state: 'running', age: '9m', mins: 9, repo: 'atlas', agent: 'claude-code', host: 'fable' },
@@ -566,6 +1122,17 @@ const ALL = [
   { name: 'Automatic deployments', state: 'waiting', age: '2w', mins: 20160, repo: 'adri-rodriguez', agent: 'opencode', host: 'fable' },
   { name: 'tool router', state: 'idle', age: '3w', mins: 30240, repo: 'xrp-mobile', agent: 'codex', host: 'mac-studio' },
 ];
+
+// A project is a saved scope: the repos a session may clone, the base each one
+// branches from, and the defaults a new session starts with. A repo can sit in
+// more than one project; a session belongs to exactly one.
+const PROJECT_SEED = [
+  { id: 'mobile', name: 'XRP Mobile', repos: [{ repo: 'xrp-mobile', base: 'main', def: true }], host: 'optimus', agent: 'claude-code',
+    instructions: 'Run pnpm test before every commit. Never touch packages/legacy-wallet.' },
+  { id: 'atlas', name: 'Atlas', repos: [{ repo: 'atlas', base: 'main', def: true }, { repo: 'flama-ai', base: 'main', def: false }], host: 'fable', agent: 'claude-code', instructions: '' },
+  { id: 'web', name: 'Client sites', repos: [{ repo: 'flama-ai', base: 'main', def: true }, { repo: 'adri-rodriguez', base: 'main', def: true }, { repo: 'xrp-mobile', base: 'main', def: false }], host: 'optimus', agent: 'codex', instructions: '' },
+];
+const REPO_PROJECT = { 'xrp-mobile': 'mobile', atlas: 'atlas', 'flama-ai': 'web', 'adri-rodriguez': 'web' };
 
 const PROJECTS = [
   { value: 'all', label: 'All repositories' },
@@ -607,6 +1174,15 @@ const REPOS = [
   { value: 'flama-ai', label: 'JordiParraCrespo/flama-ai', desc: 'updated 3d ago' },
   { value: 'adri-rodriguez', label: 'JordiParraCrespo/adri-rodriguez', desc: 'updated last wk.' },
 ];
+
+const ACCESS_REPOS = REPOS.concat([
+  { value: 'orchestrator', label: 'JordiParraCrespo/orchestrator', desc: 'updated 2d ago' },
+  { value: 'ledger-svc', label: 'JordiParraCrespo/ledger-svc', desc: 'updated 5d ago' },
+  { value: 'warehouse-etl', label: 'JordiParraCrespo/warehouse-etl', desc: 'updated 2w ago' },
+  { value: 'edge-proxy', label: 'JordiParraCrespo/edge-proxy', desc: 'updated 3w ago' },
+  { value: 'design-tokens', label: 'JordiParraCrespo/design-tokens', desc: 'updated last mo.' },
+  { value: 'infra', label: 'JordiParraCrespo/infra', desc: 'updated last mo.' },
+]);
 
 // Branches belong to a repo, so the list is scoped — picking a new project
 // resets the branch to that repo's default rather than leaving a stale one.
@@ -689,18 +1265,22 @@ const LANGUAGES = [
 const BOOT_STEPS = [
   {
     label: () => 'Cloud container',
+    phase: c => 'Allocating a container on ' + c.hostName() + '…',
     doing: 'allocating 8 vCPU…', done: '8 vCPU · 32 GB', ms: 1700,
   },
   {
     label: c => c.cloneLabel(),
+    phase: c => c.cloningLabel() + '…',
     doing: 'fetching objects…', done: 'depth 1 · 42 MB', ms: 1300,
   },
   {
     label: c => c.checkoutLabel(),
+    phase: () => 'Creating the worktree…',
     doing: 'creating worktree…', done: 'clean worktree', ms: 700,
   },
   {
     label: c => 'Start ' + c.agentName(),
+    phase: c => 'Starting ' + c.agentName() + '…',
     doing: 'loading context…', done: 'ready', ms: 1000,
   },
 ];
@@ -737,13 +1317,295 @@ const AGENTS = [
   { value: 'shell', label: 'Blank terminal', desc: 'No agent · just a shell in the worktree' },
 ];
 
+// Routines: a saved prompt plus the triggers that start it. Every run is an
+// ordinary session, so a routine never needs a surface of its own to watch.
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const FREQS = [
+  { value: 'once', label: 'Once', desc: 'On a chosen date and time' },
+  { value: 'hourly', label: 'Hourly', desc: 'Every hour, at a chosen minute' },
+  { value: 'daily', label: 'Daily', desc: 'Every day at a chosen time' },
+  { value: 'weekdays', label: 'Weekdays', desc: 'Monday to Friday at a chosen time' },
+  { value: 'weekly', label: 'Weekly', desc: 'On the days you pick' },
+  { value: 'monthly', label: 'Monthly', desc: 'On one day of the month' },
+];
+const GH_EVENTS = [
+  { value: 'pr_opened', label: 'Pull request opened', desc: 'Opened, or a draft marked ready for review', filter: 'base' },
+  { value: 'pr_draft', label: 'Draft opened', desc: 'Opened as a draft, or converted to one', filter: 'base' },
+  { value: 'pr_sync', label: 'Pull request pushed', desc: 'New commits pushed to an open pull request', filter: 'base' },
+  { value: 'pr_merged', label: 'Pull request merged', desc: 'After the merge lands', filter: 'base' },
+  { value: 'comment', label: 'Comment added', desc: 'On a pull request or issue', filter: null },
+  { value: 'push', label: 'Push to branch', desc: 'One run per push, not per commit', filter: 'branch' },
+  { value: 'issue_labeled', label: 'Label added', desc: 'On a pull request or issue, once per label', filter: 'label' },
+  { value: 'check_failed', label: 'Check failed', desc: 'Any Actions workflow or status check', filter: 'branch' },
+  { value: 'issue_opened', label: 'Issue opened', desc: 'New issues only, not reopened ones', filter: null },
+  { value: 'mention', label: 'Mentioned @oppenheimer', desc: 'In an issue, pull request or review', filter: null },
+  { value: 'release', label: 'Release published', desc: 'Pre-releases excluded', filter: null },
+];
+const TEMPLATES = [
+  { id: 'pr-review', cat: 'Review', icon: 'git-pull-request', name: 'Pull request review', desc: 'Reviews each new pull request against your contributing guide and posts one verdict.', trig: { type: 'github', event: 'pr_opened', filter: 'main' }, prompt: 'Review the diff against CONTRIBUTING.md. Comment inline only on real problems, then post one summary with a verdict.' },
+  { id: 'ci-fix', cat: 'Maintenance', icon: 'alert-triangle', name: 'Fix failing checks', desc: 'Reproduces a red check on the same branch and pushes the smallest fix.', trig: { type: 'github', event: 'check_failed', filter: '*' }, prompt: 'Reproduce the failing check locally. Push the smallest fix to the same branch, or comment with what blocks it.' },
+  { id: 'deps', cat: 'Maintenance', icon: 'boxes', name: 'Dependency audit', desc: 'Scans manifests for advisories and opens one PR with the safe bumps.', trig: { type: 'schedule', freq: 'weekly', hour: 7, minute: 0, days: [1], dom: 1 }, prompt: 'Audit every manifest for known advisories. Open one PR with the safe bumps; list the rest in its body.' },
+  { id: 'notes', cat: 'Reporting', icon: 'file-text', name: 'Release notes drafter', desc: 'Drafts user-facing notes each time a pull request merges to main.', trig: { type: 'github', event: 'pr_merged', filter: 'main' }, prompt: 'Add a user-facing line for this change to the draft release notes. Skip internal-only changes.' },
+  { id: 'standup', cat: 'Reporting', icon: 'activity', name: 'Standup digest', desc: 'Yesterday’s merges, open reviews and red checks, before standup.', trig: { type: 'schedule', freq: 'weekdays', hour: 8, minute: 30, days: [1], dom: 1 }, prompt: 'Summarise yesterday’s merged PRs, open reviews and failing checks in five lines on the pinned Standup issue.' },
+  { id: 'triage', cat: 'Triage', icon: 'filter', name: 'Issue triage', desc: 'Labels new issues, links duplicates and asks for missing repro steps.', trig: { type: 'github', event: 'issue_opened', filter: '*' }, prompt: 'Label the issue by area, link likely duplicates, and ask for the repro steps if they are missing.' },
+  { id: 'flaky', cat: 'Maintenance', icon: 'cpu', name: 'Flaky test tracker', desc: 'Finds tests that pass and fail intermittently across recent CI runs.', trig: { type: 'schedule', freq: 'daily', hour: 6, minute: 0, days: [1], dom: 1 }, prompt: 'Compare the last 50 CI runs. List tests that both passed and failed on the same commit and open one issue per new offender.' },
+  { id: 'mentions', cat: 'Review', icon: 'bot', name: 'Answer mentions', desc: 'Picks up “@oppenheimer …” requests in PRs and issues and does the work.', trig: { type: 'github', event: 'mention', filter: '*' }, prompt: 'Do what the mention asks on the same branch, then reply with what changed.' },
+];
+// Titles each routine's runs get once the agent names its session.
+const RUN_TITLES = {
+  r1: ['Review #124 · Harden API config loading', 'Review #123 · Bump react-native to 0.76.3', 'Review #122 · Hash auth keys with argon2id', 'Review #120 · Offline queue for transfers', 'Review #119 · Fix QR scanner focus on Android 15', 'Review #118 · Split wallet store by account', 'Review #116 · Trustline warnings copy', 'Review #115 · Retry ledger fetch with backoff', 'Review #114 · Remove unused Redux slices', 'Review #113 · Biometric unlock timeout', 'Review #112 · Pin Hermes to 0.13', 'Review #111 · Currency formatting for es-ES'],
+  r2: ['Dependency audit · 3 safe bumps', 'Dependency audit · no advisories', 'Dependency audit · 1 needs review', 'Dependency audit · 2 safe bumps'],
+  r3: ['Changelog · week of 21 Sep', 'Changelog · week of 14 Sep', 'Changelog · week of 7 Sep', 'Changelog · week of 31 Aug'],
+  r4: ['Standup digest', 'Standup digest', 'Standup digest'],
+  r5: ['Triage #203 · Invoice parser drops the VAT line', 'Triage #199 · Retriever returns stale chunks', 'Triage #196 · Upload stalls at 99%', 'Triage #194 · Wrong timezone on exports'],
+};
+function buildLog(now) {
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const out = []; const idx = { r1: 0, r2: 0, r3: 0, r4: 0, r5: 0 };
+  const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+  const push = (rid, t) => {
+    if (t > now) return;
+    const list = RUN_TITLES[rid]; const n = idx[rid]++;
+    const d = new Date(t);
+    const title = rid === 'r4' ? 'Standup digest · ' + DOW[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] : list[n % list.length];
+    out.push({ key: rid + '-' + t, rid, t, title, state: rnd() < 0.035 ? 'failed' : 'completed' });
+  };
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(day0); d.setDate(d.getDate() - i);
+    const w = d.getDay();
+    const at = (hh, mm) => { const x = new Date(d); x.setHours(hh, mm, 0, 0); return x.getTime(); };
+    if (i < 17 && w >= 1 && w <= 5) push('r4', at(8, 30));
+    if (i < 19) push('r2', at(2, 0));
+    if (i < 22 && w === 1) push('r3', at(9, 0));
+    if (i < 15) { const n = Math.floor(rnd() * 3) + (i < 6 ? 2 : 0); for (let k = 0; k < n; k++) push('r1', at(9 + Math.floor(rnd() * 13), Math.floor(rnd() * 60))); }
+    if (i > 2 && i < 13 && rnd() > 0.6) push('r5', at(10 + Math.floor(rnd() * 8), Math.floor(rnd() * 60)));
+  }
+  return out.sort((a, b) => b.t - a.t);
+}
+const GH_LABELS = ['bug', 'needs-triage', 'security', 'good first issue'];
+// What the webhook actually saw — the trigger card replays it against the
+// current filter, so you see what would have fired before you save.
+const GH_FEED = [
+  { repo: 'xrp-mobile', kind: 'pr_opened', on: 'main', ref: '#124', title: 'Harden API config loading', who: 'jordiparra', h: 2 },
+  { repo: 'xrp-mobile', kind: 'pr_opened', on: 'main', ref: '#123', title: 'Bump react-native to 0.76.3', who: 'dependabot', h: 9 },
+  { repo: 'xrp-mobile', kind: 'pr_opened', on: 'feat/auth', ref: '#122', title: 'Hash auth keys with argon2id', who: 'jordiparra', h: 28 },
+  { repo: 'xrp-mobile', kind: 'pr_opened', on: 'main', ref: '#119', title: 'Fix QR scanner focus on Android 15', who: 'adri-rdz', h: 74 },
+  { repo: 'xrp-mobile', kind: 'pr_opened', on: 'main', ref: '#118', title: 'Split wallet store by account', who: 'jordiparra', h: 130 },
+  { repo: 'xrp-mobile', kind: 'pr_merged', on: 'main', ref: '#121', title: 'Port API config to peersyst', who: 'jordiparra', h: 5 },
+  { repo: 'xrp-mobile', kind: 'pr_merged', on: 'main', ref: '#117', title: 'Drop legacy fee estimator', who: 'adri-rdz', h: 50 },
+  { repo: 'xrp-mobile', kind: 'pr_sync', on: 'main', ref: '#124', title: 'Harden API config loading · 2 commits', who: 'jordiparra', h: 1 },
+  { repo: 'xrp-mobile', kind: 'comment', on: '*', ref: '#124', title: 'Can we keep the old env var as a fallback?', who: 'adri-rdz', h: 1.5 },
+  { repo: 'xrp-mobile', kind: 'pr_draft', on: 'main', ref: '#125', title: 'WIP: Ledger sync v2', who: 'jordiparra', h: 3 },
+  { repo: 'xrp-mobile', kind: 'push', on: 'main', ref: 'a41f9c2', title: 'Merge pull request #121', who: 'jordiparra', h: 5 },
+  { repo: 'xrp-mobile', kind: 'push', on: 'port/121', ref: '9be07d1', title: 'Tighten config schema', who: 'jordiparra', h: 6 },
+  { repo: 'xrp-mobile', kind: 'check_failed', on: 'port/121', ref: 'e2e-ios', title: 'Login flow timed out on the iPhone 16 simulator', who: 'actions', h: 3 },
+  { repo: 'xrp-mobile', kind: 'issue_opened', on: '*', ref: '#88', title: 'Crash on cold start, Android 15', who: 'mcalvo', h: 20 },
+  { repo: 'xrp-mobile', kind: 'issue_labeled', on: 'bug', ref: '#88', title: 'Crash on cold start, Android 15', who: 'jordiparra', h: 19 },
+  { repo: 'xrp-mobile', kind: 'mention', on: '*', ref: '#121', title: '@oppenheimer rebase this on main', who: 'adri-rdz', h: 5 },
+  { repo: 'xrp-mobile', kind: 'release', on: '*', ref: 'v1.4.0', title: 'Release 1.4.0', who: 'jordiparra', h: 140 },
+  { repo: 'atlas', kind: 'pr_opened', on: 'main', ref: '#57', title: 'Rerank v3 eval harness', who: 'jordiparra', h: 4 },
+  { repo: 'atlas', kind: 'push', on: 'main', ref: 'c03e8aa', title: 'Pin tokenizer version', who: 'jordiparra', h: 26 },
+  { repo: 'atlas', kind: 'check_failed', on: 'main', ref: 'ingest', title: 'Nightly ingest exceeded 30 min', who: 'actions', h: 7 },
+  { repo: 'atlas', kind: 'issue_opened', on: '*', ref: '#203', title: 'Invoice parser drops the VAT line', who: 'lnavarro', h: 6 },
+  { repo: 'atlas', kind: 'issue_labeled', on: 'bug', ref: '#203', title: 'Invoice parser drops the VAT line', who: 'jordiparra', h: 6 },
+  { repo: 'atlas', kind: 'issue_labeled', on: 'bug', ref: '#199', title: 'Retriever returns stale chunks after reindex', who: 'jordiparra', h: 52 },
+  { repo: 'atlas', kind: 'issue_labeled', on: 'security', ref: '#201', title: 'Signed URLs outlive their session', who: 'lnavarro', h: 40 },
+  { repo: 'atlas', kind: 'mention', on: '*', ref: '#57', title: '@oppenheimer run the eval on the full set', who: 'jordiparra', h: 4 },
+  { repo: 'flama-ai', kind: 'pr_opened', on: 'main', ref: '#12', title: 'Design system tokens', who: 'jordiparra', h: 70 },
+  { repo: 'flama-ai', kind: 'release', on: '*', ref: 'v2.3.0', title: 'Release 2.3.0', who: 'jordiparra', h: 160 },
+  { repo: 'adri-rodriguez', kind: 'push', on: 'feat/leads', ref: '5d2a771', title: 'Add spam column to leads', who: 'adri-rdz', h: 0.5 },
+];
+const ROUTINE_SEED = [
+  { id: 'r1', name: 'Review new pull requests', active: true, project: 'mobile', agent: 'claude-code', model: 'sonnet', host: 'optimus',
+    prompt: 'Review the diff against CONTRIBUTING.md. Leave inline comments only for real problems, then post one summary comment with a verdict: approve, or the changes you need.',
+    triggers: [{ id: 'rt1', type: 'github', repo: 'xrp-mobile', event: 'pr_opened', filter: 'main' }],
+    runs: [
+      { key: 'a1', state: 'completed', cause: 'PR #124 opened by jordiparra', when: '2h ago', dur: '4m 12s' },
+      { key: 'a2', state: 'completed', cause: 'PR #123 opened by dependabot', when: '9h ago', dur: '2m 48s' },
+      { key: 'a3', state: 'failed', cause: 'PR #119 opened by adri-rdz', when: '3d ago', dur: '0m 41s' },
+    ] },
+  { id: 'r2', name: 'Nightly dependency audit', active: true, project: 'atlas', agent: 'codex', model: 'gpt-codex', host: 'fable',
+    prompt: 'Audit every package manifest for known advisories. Open one PR that bumps what is safe to bump, and list anything that needs a human in the PR body.',
+    triggers: [{ id: 'rt2', type: 'schedule', freq: 'daily', hour: 2, minute: 0, days: [1], dom: 1 }],
+    runs: [
+      { key: 'b1', state: 'completed', cause: 'Schedule', when: 'Today, 02:00', dur: '11m 32s' },
+      { key: 'b2', state: 'completed', cause: 'Schedule', when: 'Yesterday, 02:00', dur: '9m 05s' },
+      { key: 'b3', state: 'failed', cause: 'Schedule', when: 'Wed 23 Sep, 02:00', dur: '1m 12s' },
+    ] },
+  { id: 'r3', name: 'Weekly changelog', active: true, project: 'web', agent: 'claude-code', model: 'opus', host: 'optimus',
+    prompt: 'Summarise everything merged since the last changelog entry into CHANGELOG.md, grouped by Added, Changed and Fixed. Open a PR; do not merge it.',
+    triggers: [{ id: 'rt3', type: 'schedule', freq: 'weekly', hour: 9, minute: 0, days: [1], dom: 1 }, { id: 'rt4', type: 'github', repo: 'flama-ai', event: 'release', filter: '*' }],
+    runs: [
+      { key: 'c1', state: 'completed', cause: 'Schedule', when: 'Mon 21 Sep, 09:00', dur: '6m 20s' },
+      { key: 'c2', state: 'completed', cause: 'Release v2.3.0 published', when: 'Fri 18 Sep, 16:42', dur: '5m 02s' },
+    ] },
+  { id: 'r4', name: 'Standup digest', active: true, project: 'mobile', agent: 'claude-code', model: 'haiku', host: 'mac-studio',
+    prompt: 'Read yesterday’s merged PRs, open PRs and failing checks. Post a five-line digest as a comment on the pinned Standup issue.',
+    triggers: [{ id: 'rt5', type: 'schedule', freq: 'weekdays', hour: 8, minute: 30, days: [1], dom: 1 }],
+    runs: [
+      { key: 'd1', state: 'completed', cause: 'Schedule', when: 'Today, 08:30', dur: '1m 54s' },
+      { key: 'd2', state: 'completed', cause: 'Schedule', when: 'Thu 24 Sep, 08:30', dur: '2m 03s' },
+    ] },
+  { id: 'r5', name: 'Triage bug reports', active: false, project: 'atlas', agent: 'claude-code', model: 'sonnet', host: 'fable',
+    prompt: 'Reproduce the issue on main. Comment with the failing step and the smallest repro, then add the area label. If it does not reproduce, ask for the missing detail.',
+    triggers: [{ id: 'rt6', type: 'github', repo: 'atlas', event: 'issue_labeled', filter: 'bug' }],
+    runs: [
+      { key: 'e1', state: 'completed', cause: 'Issue #199 labeled bug', when: '2d ago', dur: '7m 40s' },
+    ] },
+];
+const pad2 = n => String(n).padStart(2, '0');
+const ordinal = n => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+function schedFires(t, d) {
+  const w = d.getDay();
+  if (t.freq === 'weekdays') return w >= 1 && w <= 5;
+  if (t.freq === 'weekly') return (t.days || []).indexOf(w) !== -1;
+  if (t.freq === 'monthly') return d.getDate() === t.dom;
+  return true;
+}
+function occurrences(t, from, days) {
+  const out = [];
+  if (t.freq === 'once') { const x = new Date(t.date); x.setHours(t.hour, t.minute, 0, 0); return x > from && x - from < days * 86400000 ? [x] : []; }
+  for (let i = 0; i < days; i++) {
+    const b = new Date(from); b.setHours(0, 0, 0, 0); b.setDate(b.getDate() + i);
+    if (!schedFires(t, b)) continue;
+    const hrs = t.freq === 'hourly' ? Array.from({ length: 24 }, (_, x) => x) : [t.hour];
+    hrs.forEach(hh => { const x = new Date(b); x.setHours(hh, t.minute, 0, 0); if (x > from) out.push(x); });
+  }
+  return out;
+}
+const nextOf = (t, from) => occurrences(t, from, t.freq === 'once' ? 400 : t.freq === 'monthly' ? 63 : 9)[0] || null;
+function rel(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400), hh = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  if (d) return d + 'd ' + hh + 'h ' + pad2(m) + 'm';
+  if (hh) return hh + 'h ' + pad2(m) + 'm ' + pad2(x) + 's';
+  return m + 'm ' + pad2(x) + 's';
+}
+function relShort(ms) {
+  const m = Math.max(1, Math.round(ms / 60000));
+  if (m < 60) return 'in ' + m + 'm';
+  const hh = Math.round(m / 60);
+  return hh < 48 ? 'in ' + hh + 'h' : 'in ' + Math.round(hh / 24) + 'd';
+}
+function absDate(x, now) {
+  const a = new Date(now); a.setHours(0, 0, 0, 0);
+  const b = new Date(x); b.setHours(0, 0, 0, 0);
+  const diff = Math.round((b - a) / 86400000);
+  const day = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : DOW[x.getDay()] + ' ' + x.getDate() + ' ' + MON[x.getMonth()];
+  return day + ', ' + pad2(x.getHours()) + ':' + pad2(x.getMinutes());
+}
+const agoH = hh => hh < 1 ? Math.round(hh * 60) + 'm ago' : hh < 24 ? Math.round(hh) + 'h ago' : Math.round(hh / 24) + 'd ago';
+// Reads the way people say schedules out loud. Anything it can't place
+// returns null and the tokens stay as they were.
+function parseNL(raw) {
+  if (!raw || !raw.trim()) return null;
+  const s = ' ' + raw.toLowerCase() + ' ';
+  const out = {};
+  const idx = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+  const days = []; const re = /\b(sun|mon|tue|wed|thu|fri|sat)(?!th)[a-z]*/g; let m;
+  while ((m = re.exec(s))) { const d = idx[m[1]]; if (days.indexOf(d) === -1) days.push(d); }
+  const ord = s.match(/\b(\d{1,2})(st|nd|rd|th)\b/);
+  const rest = s.replace(/\b\d{1,2}(st|nd|rd|th)\b/g, ' ');
+  const tm = rest.match(/(\d{1,2})(?:[:.h](\d{2}))?\s*(am|pm)?/);
+  if (/hour/.test(s)) out.freq = 'hourly';
+  else if (/weekday|workday|business day/.test(s)) out.freq = 'weekdays';
+  else if (/weekend/.test(s)) { out.freq = 'weekly'; out.days = [6, 0]; }
+  else if (days.length) { out.freq = 'weekly'; out.days = days; }
+  else if (/month/.test(s) || ord) { out.freq = 'monthly'; out.dom = ord ? Math.min(28, Math.max(1, +ord[1])) : 1; }
+  else if (/week/.test(s)) { out.freq = 'weekly'; out.days = [1]; }
+  else if (/day|daily|night|morning|evening|noon|midnight/.test(s)) out.freq = 'daily';
+  if (out.freq === 'hourly') {
+    const mm = s.match(/:(\d{2})/) || s.match(/(\d{1,2})\s*(?:past|min)/);
+    if (mm && +mm[1] < 60) out.minute = +mm[1];
+    return out;
+  }
+  if (/midnight/.test(s)) { out.hour = 0; out.minute = 0; }
+  else if (/noon|midday/.test(s)) { out.hour = 12; out.minute = 0; }
+  else if (tm) {
+    let hh = +tm[1]; const mi = tm[2] ? +tm[2] : 0;
+    if (tm[3] === 'pm' && hh < 12) hh += 12;
+    if (tm[3] === 'am' && hh === 12) hh = 0;
+    if (hh > 23 || mi > 59) return null;
+    out.hour = hh; out.minute = mi;
+    if (!out.freq) out.freq = 'daily';
+  }
+  else if (/morning/.test(s)) { out.hour = 9; out.minute = 0; }
+  else if (/evening/.test(s)) { out.hour = 18; out.minute = 0; }
+  else if (/night/.test(s)) { out.hour = 22; out.minute = 0; }
+  return out.freq ? out : null;
+}
+const schedSig = t => [t.freq, t.hour, t.minute, t.dom, (t.days || []).join('')].join('-');
+
+// Deterministic transcript for a routine run, so every run opens to a real conversation.
+function runTranscript(u, x) {
+  const ref = (u.title.match(/#\d+/) || [''])[0];
+  const subj = u.title.indexOf(' · ') !== -1 ? u.title.split(' · ').slice(1).join(' · ') : u.title;
+  const failed = u.state === 'failed', running = u.state === 'running';
+  const base = { r1: 'pr', r2: 'audit', r3: 'changelog', r4: 'digest', r5: 'triage' }[u.rid] || 'manual';
+  const ev = base === 'pr' ? { gh: true, kind: 'Pull request opened', text: subj + ' · jordiparra → main', ref: 'xrp-mobile' + ref }
+    : base === 'triage' ? { gh: true, kind: 'Label added · bug', text: subj, ref: 'atlas' + ref }
+    : base === 'manual' || /manual run/.test(u.title) ? { manual: true, kind: 'Manual run', text: 'Started from the routine page', ref: '' }
+    : { sched: true, kind: 'Schedule', text: (x.triggers[0] && x.triggers[0].freq ? x.triggers[0].freq.charAt(0).toUpperCase() + x.triggers[0].freq.slice(1) : 'Scheduled') + ' run', ref: '' };
+  const S = {
+    pr: [['read', 'CONTRIBUTING.md', '212 lines'], ['git diff', 'main...' + (ref ? 'pr' + ref.slice(1) : 'head'), '6 files · +142 −38'], ['npm test', 'unit + integration', '212 passed'], ['gh pr review', ref, '2 inline comments']],
+    audit: [['npm audit', '4 manifests', '3 advisories'], ['pnpm up', 'axios, undici, semver', 'lockfile updated'], ['npm test', 'full suite', '1,084 passed'], ['gh pr create', 'deps/2026-09-26', '']],
+    changelog: [['git log', 'since v2.3.0', '14 merged PRs'], ['edit', 'CHANGELOG.md', '+31 lines'], ['gh pr create', 'docs/changelog', '']],
+    digest: [['gh pr list', 'merged yesterday', '3'], ['gh pr list', 'open reviews', '5'], ['gh run list', 'failed checks', '1'], ['gh issue comment', '#1 Standup', '']],
+    triage: [['git checkout', 'main', ''], ['pytest', 'tests/invoices', 'reproduced'], ['gh issue edit', ref, 'area:parser']],
+    manual: [['read', 'routine instructions', ''], ['git status', 'clean', ''], ['run', 'task', 'done']],
+  }[base];
+  const final = {
+    pr: 'Approved with two small notes. The config loader now fails closed when API_URL is missing, and the new tests cover both paths. I left inline comments on the retry constant and a stale doc comment.',
+    audit: 'Bumped three packages with published advisories; all tests pass. One transitive dependency (tar 6.1) needs a major upgrade, which I listed in the PR body for a human decision.',
+    changelog: 'Drafted this week’s entry: 5 added, 6 changed, 3 fixed. Internal-only changes were left out. The PR is open for review; nothing was merged.',
+    digest: 'Posted the digest: 3 PRs merged, 5 waiting on review (oldest is #118, 4 days), and e2e-ios is red on port/121.',
+    triage: 'Reproduced on main: the VAT line is dropped when the invoice has more than one tax rate. I posted the minimal repro and labeled it area:parser.',
+    manual: 'Done. Nothing needed changing this time.',
+  }[base];
+  const link = { pr: 'xrp-mobile' + ref, audit: 'atlas#211', changelog: 'flama-ai#14', digest: 'xrp-mobile#1', triage: 'atlas' + ref, manual: '' }[base];
+  const steps = S.map((s, i) => ({ text: s[0] + ' ' + s[1], detail: s[2], st: running && i === S.length - 1 ? 'running' : failed && i === S.length - 1 ? 'failed' : 'completed' }));
+  if (failed) steps[steps.length - 1].detail = 'exited with code 1';
+  return { ev, prompt: x.prompt || '', steps,
+    text: running ? '' : failed ? 'The run stopped at ' + S[S.length - 1][0] + '. It exited with code 1 after ' + (S.length - 1) + ' steps; nothing was pushed. Reply here to retry, or tell me what to change.' : final,
+    link: running || failed ? '' : link, linkMeta: base === 'pr' || base === 'triage' ? 'comment posted' : link ? 'pull request opened' : '' };
+}
+
 class Component extends DCLogic {
   state = {
-    view: 'terminal', project: 'all', fAgent: 'all', fHost: 'all', sort: 'recent',
+    view: 'terminal', project: 'all', fProj: 'all', fAgent: 'all', fHost: 'all', sort: 'recent',
     filterOpen: false, menu: null,
     open: null, host: 'optimus', repos: ['xrp-mobile'], branchOf: { 'xrp-mobile': 'main' },
     repoPane: null, agentId: 'claude-code', query: '',
-    effort: 'medium', effortShown: 'medium', model: 'sonnet', modelQuery: '', modelOpen: false, modelMenu: null,
+    effort: 'medium', effortShown: 'medium', model: 'sonnet', modelQuery: '',
+    termDraft: '',
+    feed: [
+      { you: 'true', text: 'Open the PR for the port branch.' },
+      { out: 'true', lines: [
+        { text: '$ gh auth login --web' },
+        { text: 'Opening github.com/login/device …', tone: 'dim' },
+      ] },
+      { agent: 'true', lines: [
+        { text: 'The SSH key authenticates git operations, which is why the port and push already worked. Opening a PR goes through the REST API, which needs a token.' },
+        { text: ' ' },
+        { text: 'Three ways forward, and the last one needs no token at all:' },
+        { text: '  1. gh auth login → web browser flow. One-time setup.', tone: 'dim' },
+        { text: '  2. Manual PAT — more steps, same result.', tone: 'dim' },
+        { text: '  3. Just click the link. The branch is already on the remote.', tone: 'dim' },
+      ] },
+      { out: 'true', lines: [
+        { text: 'https://github.com/peersyst/xrp-mobile/pull/new/port/121-api-config-hardening', tone: 'accent' },
+        { text: '  code: 5192-177E', tone: 'strong' },
+        { text: '  expires in ~15 minutes' },
+      ] },
+      { you: 'true', text: 'Use the browser flow.' },
+      { out: 'true', lines: [
+        { text: '✓ Authorized as jordiparra', tone: 'success' },
+        { text: '! branch already pushed — only the PR remains', tone: 'warning' },
+        { text: '✗ dbus: failed to launch browser locally (headless host)', tone: 'danger' },
+        { text: 'Baked for 13s', tone: 'dim' },
+      ] },
+    ], modelOpen: false, modelMenu: null,
     perm: 'auto', permOpen: false, effortOpen: false, sub: null,
     recording: false, seconds: 0, files: [], zoom: false,
     addHost: false, hostAdded: false, hostSecs: 3581, hostCopied: null,
@@ -756,11 +1618,50 @@ class Component extends DCLogic {
     // immediately so a session provisioning in the background is visible
     // somewhere other than the pane you just left.
     mine: [],
+    renames: {}, deleted: [], sessionMenu: null, editing: null, renameDraft: '', deleting: null,
+    section: 'sessions', routines: ROUTINE_SEED, rDraft: null, rMenu: null, rTab: 'routines', tplCat: 'All', runPage: 0, histHover: null, selR: null, rCollapsed: {}, flash: null, runLog: buildLog(Date.now()), now: Date.now(),
+    projects: PROJECT_SEED, collapsed: {}, curProject: 'mobile', moves: {}, moving: null, moveTo: null, projDlg: null, draft: null,
+  };
+  _renameRef = React.createRef();
+  startRename(key) {
+    const cur = this.state.renames[key] || key;
+    this.setState({ sessionMenu: null, editing: key, renameDraft: cur }, () => {
+      const el = this._renameRef.current; if (el) { el.focus(); el.select(); }
+    });
+  }
+  commitRename = () => {
+    const key = this.state.editing; if (!key) return;
+    const v = this.state.renameDraft.trim();
+    this.setState(st => ({ editing: null, renames: v && v !== key ? { ...st.renames, [key]: v } : (() => { const r = { ...st.renames }; delete r[key]; return r; })() }));
   };
 
+  proj(id) { const ps = this.state.projects; return ps.find(p => p.id === (id || this.state.curProject)) || ps[0]; }
+  projRepoIds() { const p = this.proj(); return p ? p.repos.map(r => r.repo) : []; }
+  // Picking a project re-seeds the whole scope from it: every repo it holds is
+  // ticked (untick to clone fewer), each on its base, with its host and agent.
+  applyProjectObj(p) {
+    if (!p) return {};
+    const branchOf = {}; p.repos.forEach(r => { branchOf[r.repo] = r.base; });
+    const h = HARNESS_MODELS[p.agent] || { primary: [] };
+    const defs = p.repos.filter(r => r.def !== false).map(r => r.repo);
+    return { curProject: p.id, repos: defs.length ? defs : [p.repos[0].repo], branchOf, host: p.host, agentId: p.agent, model: h.primary.length ? h.primary[0].value : '', repoPane: null };
+  }
+  applyProject(id) { return this.applyProjectObj(this.state.projects.find(x => x.id === id)); }
+  openProjDlg(id) {
+    const p = id ? this.state.projects.find(x => x.id === id) : null;
+    const draft = p
+      ? { name: p.name, repos: p.repos.map(r => ({ ...r })), host: p.host, agent: p.agent, instructions: p.instructions || '' }
+      : { name: '', repos: [], host: 'optimus', agent: 'claude-code', instructions: '' };
+    this.setState({ projDlg: id || 'new', draft, open: null, sessionMenu: null, projRepoQuery: '' });
+  }
+  patchDraft(patch) { this.setState(st => ({ draft: { ...st.draft, ...patch } })); }
+
   componentDidMount() {
+    if (this.props.page === 'routines') this.setState({ section: 'routines', view: 'routine' });
+    else if (this.props.emptyAccount) this.setState({ view: 'new', session: null });
     this._away = () => {
       const { open, filterOpen, modelOpen, accountOpen, permOpen, effortOpen } = this.state;
+      if (this.state.sessionMenu) this.setState({ sessionMenu: null });
       if (open || filterOpen || modelOpen || accountOpen || permOpen || effortOpen) {
         this.setState({
           open: null, filterOpen: false, menu: null, repoPane: null,
@@ -770,6 +1671,19 @@ class Component extends DCLogic {
       }
     };
     document.addEventListener('click', this._away);
+    this._rAway = () => { if (this.state.rMenu) this.setState({ rMenu: null }); if (this.state.baseOpen) this.setState({ baseOpen: null }); };
+    document.addEventListener('click', this._rAway);
+    // The countdown is the one live number on the page; tick only while it is visible.
+    this._rTick = setInterval(() => { if (this.state.view === 'routine') this.setState({ now: Date.now() }); }, 1000);
+    this._rRuns = [];
+    this._rowKeys = e => {
+      const k = this.state.sessionMenu;
+      if (!k || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'r' || e.key === 'R') { e.preventDefault(); this.startRename(k); }
+      else if (e.key === 'd' || e.key === 'D') { e.preventDefault(); this.setState({ sessionMenu: null, deleting: k }); }
+      else if (e.key === 'Escape') this.setState({ sessionMenu: null });
+    };
+    document.addEventListener('keydown', this._rowKeys);
     this._esc = (e) => {
       if (e.key !== 'Escape') return;
       if (this.state.addHost) this.closeAddHost();
@@ -777,6 +1691,7 @@ class Component extends DCLogic {
     };
     document.addEventListener('keydown', this._esc);
     this._onResize = () => this.syncEffort();
+    this.pinTerm();
     window.addEventListener('resize', this._onResize);
     this._mq = window.matchMedia('(prefers-color-scheme: dark)');
     this._onScheme = () => { if (this.state.theme === 'system') this.applyTheme('system'); };
@@ -807,10 +1722,23 @@ class Component extends DCLogic {
       pick: e => { e.stopPropagation(); this.setState({ [key]: o.value, menu: null }); },
     }));
   }
+  runAttach() {
+    clearTimeout(this._at4);
+    this._at4 = setTimeout(() => this.setState({ linking: false }), 1400);
+  }
+
   componentWillUnmount() {
+    clearTimeout(this._at4);
     document.removeEventListener('click', this._away);
+    document.removeEventListener('click', this._rAway);
+    if (this._bScroll) { document.removeEventListener('scroll', this._bScroll, true); window.removeEventListener('resize', this._bScroll); }
+    clearInterval(this._rTick);
+    (this._rRuns || []).forEach(clearTimeout);
+    document.removeEventListener('keydown', this._rowKeys);
     document.removeEventListener('keydown', this._esc);
     window.removeEventListener('resize', this._onResize);
+    clearTimeout(this._reply);
+    if (this._termRO) this._termRO.disconnect();
     this._effortEndNative();
     clearInterval(this._hostTick);
     clearTimeout(this._hostReg);
@@ -871,7 +1799,56 @@ class Component extends DCLogic {
     k.style.transform = 'translateX(' + x + 'px)';
     f.style.transform = 'translateX(' + (x + kw - w) + 'px)';
   };
-  componentDidUpdate() { this.syncEffort(); }
+  _termScroll = React.createRef();
+  // Pin the scrollback to the newest line whenever the feed grows or the pane
+  // first appears — tracked on the instance, not via prevState.
+  pinTerm() {
+    const el = this._termScroll.current || document.querySelector('.op-term__scroll');
+    if (!el) { this._termEl = null; return; }
+    const n = this.state.feed.length;
+    if (el !== this._termEl) {
+      // New pane: follow the bottom while content settles (fonts, reflow),
+      // until the reader scrolls up on their own.
+      if (this._termRO) this._termRO.disconnect();
+      this._termEl = el; this._follow = true;
+      el.addEventListener('scroll', () => {
+        this._follow = el.scrollHeight - el.clientHeight - el.scrollTop < 24;
+      }, { passive: true });
+      const pin = () => { if (this._follow) el.scrollTop = el.scrollHeight; };
+      if (window.ResizeObserver) {
+        this._termRO = new ResizeObserver(pin);
+        [...el.children].forEach(c => this._termRO.observe(c));
+        this._termRO.observe(el);
+      }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(pin);
+      pin(); requestAnimationFrame(pin);
+    }
+    if (n !== this._feedLen) {
+      this._feedLen = n; this._follow = true;
+      el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    }
+  }
+  componentDidUpdate(prev) {
+    if (this.props.page !== 'routines' && this.props.emptyAccount && !(prev && prev.emptyAccount) && this.state.view !== 'new') this.setState({ view: 'new', session: null });
+    this.syncEffort();
+    this.pinTerm();
+  }
+  sendTerm = () => {
+    const text = this.state.termDraft.trim();
+    if (!text || this.state.feed.some(f => f.pending)) return;
+    this.setState(st => ({ termDraft: '', feed: st.feed.concat([{ you: 'true', text }, { pending: 'true' }]) }));
+    clearTimeout(this._reply);
+    if (this._termRO) this._termRO.disconnect();
+    this._reply = setTimeout(() => {
+      this.setState(st => ({ feed: st.feed.filter(f => !f.pending).concat([{ agent: 'true', lines: [
+        { text: 'On it. I will open the PR from the pushed branch and report the URL here.' },
+      ] }, { out: 'true', lines: [
+        { text: 'gh pr create --fill --head port/121-api-config-hardening', tone: 'dim' },
+        { text: '✓ Opened #122 · peersyst/xrp-mobile', tone: 'success' },
+      ] }]) }));
+    }, 1100);
+  };
   effortIndex() { return Math.max(0, EFFORTS.findIndex(o => o.value === this.state.effort)); }
   effortFromX(clientX) {
     const el = this._effortTrack.current;
@@ -918,6 +1895,11 @@ class Component extends DCLogic {
     const n = this.state.repos.length;
     return n > 1 ? 'Clone ' + n + ' repositories' : 'Clone ' + (this.repoName() || 'repository');
   }
+  // Same fact, present participle: the wait line reads as something happening.
+  cloningLabel() {
+    const n = this.state.repos.length;
+    return n > 1 ? 'Cloning ' + n + ' repositories' : 'Cloning ' + (this.repoName() || 'the repository');
+  }
   checkoutLabel() {
     return this.state.repos.length > 1 ? 'Check out branches' : 'Check out ' + (this.branchName() || 'branch');
   }
@@ -939,6 +1921,7 @@ class Component extends DCLogic {
     return ids.map(id => id + '@' + this.branchFor(id)).join(', ');
   }
   agentName() { const a = AGENTS.find(o => o.value === this.state.agentId); return a ? a.label : 'agent'; }
+  hostName() { const h = HOST_FILTER.find(o => o.value === this.state.host); return h ? h.label : 'the host'; }
 
   applyTheme(theme) {
     const dark = theme === 'dark' || (theme === 'system' && this._mq && this._mq.matches);
@@ -1062,6 +2045,479 @@ class Component extends DCLogic {
     }));
   }
 
+  patchR(fn) { this.setState(s => ({ rDraft: s.rDraft ? fn(s.rDraft) : s.rDraft })); }
+  patchT(id, patch) { this.patchR(r => ({ ...r, triggers: r.triggers.map(t => (t.id === id ? { ...t, ...patch } : t)) })); }
+  openRDlg(src) {
+    const st = this.state;
+    const p = st.projects.find(x => x.id === st.curProject) || st.projects[0];
+    const d = src ? { ...src, triggers: src.triggers.map(t => ({ ...t })) }
+      : { id: null, name: '', active: true, project: p ? p.id : 'mobile', agent: 'claude-code', model: 'sonnet', host: 'optimus', prompt: '', triggers: [], runs: [] };
+    this.setState({ view: 'routine', section: 'routines', rDraft: d, rMenu: null, open: null, filterOpen: false, accountOpen: false });
+  }
+  addTrigger(kind, val) {
+    const r = this.state.rDraft; if (!r) return;
+    const p = this.state.projects.find(x => x.id === r.project);
+    const repo = p && p.repos[0] ? p.repos[0].repo : 'xrp-mobile';
+    const id = 't' + Date.now();
+    const now = new Date(); const tom = new Date(now); tom.setHours(0, 0, 0, 0);
+    let t;
+    if (kind === 'schedule') {
+      const once = val === 'once';
+      if (once && now.getHours() >= 23) tom.setDate(tom.getDate() + 1);
+      t = { id, type: 'schedule', freq: val, hour: once ? (now.getHours() + 1) % 24 : 9, minute: 0, days: [1], dom: 1, date: tom.getTime() };
+    } else {
+      const ev = GH_EVENTS.find(e => e.value === val);
+      t = { id, type: 'github', repo, event: val, filter: ev.filter === 'label' ? 'bug' : ev.filter === 'base' ? 'main' : '*' };
+    }
+    this.patchR(x => ({ ...x, triggers: x.triggers.concat([t]) }));
+    this.setState({ rMenu: null });
+  }
+  runRoutine(x) {
+    const key = 'm' + Date.now(), t0 = Date.now();
+    const p = this.state.projects.find(q => q.id === x.project);
+    const repo = p && p.repos[0] ? p.repos[0].repo : 'xrp-mobile';
+    this.setState(s => ({ now: t0,
+      runLog: [{ key, rid: x.id, t: t0, title: x.name + ' · manual run', state: 'running' }].concat(s.runLog),
+      mine: [{ key, name: x.name, state: 'running', age: 'now', mins: 0, repo, agent: x.agent, host: x.host, project: x.project }].concat(s.mine) }));
+    this._rRuns.push(setTimeout(() => this.setState(s => ({
+      runLog: s.runLog.map(u => (u.key === key ? { ...u, state: 'completed' } : u)),
+      mine: s.mine.map(m => (m.key === key ? { ...m, state: 'idle' } : m)),
+    })), 7000));
+  }
+  routineVals() {
+    const st = this.state, now = st.now, nowD = new Date(now);
+    const bare = !!this.props.emptyAccount;
+    const list = st.routines.filter(x => !bare || x.mine);
+    const ids = list.map(x => x.id);
+    const inR = st.view === 'routine';
+    const menu = st.rMenu;
+    const findL = (arr, v) => ((arr.find(o => o.value === v) || {}).label || '');
+    const tog = key => e => { e.stopPropagation(); this.setState(s => ({ rMenu: s.rMenu === key ? null : key, open: null, filterOpen: false, accountOpen: false })); };
+    const close = () => this.setState({ rMenu: null });
+    const word = w => ({ word: w });
+    const base = (key, label, extra) => ({ tok: 'true', key, label, openS: menu === key ? 'true' : 'false', toggle: tog(key), mono: 'false', ...extra });
+    const listTok = (key, label, options, onPick, extra) => base(key, label, {
+      openList: menu === key ? 'true' : undefined,
+      options: options.map(o => ({ label: o.label, desc: o.desc || '', selected: o.selected ? 'true' : undefined,
+        pick: e => { e.stopPropagation(); onPick(o.value); close(); } })),
+      ...extra });
+    const gridTok = (key, label, grids, extra) => base(key, label, { openGrid: menu === key ? 'true' : undefined, grids, ...extra });
+    const cell = (label, on, fn, off) => ({ label, on: on ? 'true' : 'false', off: !!off, pick: e => { e.stopPropagation(); fn(); } });
+    const agentLabel = x => findL(AGENTS, x.agent) + ' · ' + ((((HARNESS_MODELS[x.agent] || { primary: [] }).primary).find(m => m.value === x.model) || {}).label || '');
+    const tl = t => pad2(t.hour) + ':' + pad2(t.minute);
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const daysL = t => { const ds = order.filter(d => (t.days || []).indexOf(d) !== -1); return ds.join() === '1,2,3,4,5' ? 'Mon–Fri' : ds.join() === '6,0' ? 'Sat, Sun' : ds.map(d => DOW[d]).join(', '); };
+    const onceD = t => { const d = new Date(t.date); return DOW[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]; };
+    const evOf = t => GH_EVENTS.find(e => e.value === t.event) || GH_EVENTS[0];
+    const summary = t => {
+      if (t.type === 'github') return 'On ' + evOf(t).label.charAt(0).toLowerCase() + evOf(t).label.slice(1);
+      return t.freq === 'once' ? 'Once, ' + onceD(t) + ' at ' + tl(t)
+        : t.freq === 'hourly' ? 'Hourly at :' + pad2(t.minute)
+        : t.freq === 'daily' ? 'Daily at ' + tl(t)
+        : t.freq === 'weekdays' ? 'Weekdays at ' + tl(t)
+        : t.freq === 'weekly' ? 'Every ' + daysL(t) + ' at ' + tl(t)
+        : 'Monthly on the ' + ordinal(t.dom) + ' at ' + tl(t);
+    };
+    const nextFor = x => { const ns = x.triggers.filter(t => t.type === 'schedule').map(t => nextOf(t, nowD)).filter(Boolean).sort((a, b) => a - b); return ns[0] || null; };
+    const openRun = key => e => { if (e) e.stopPropagation(); this.setState({ selRun: key, view: 'routine', section: 'routines', rMenu: null, runOpenSteps: {} }); };
+    const openSession = e => {
+      if (e) e.stopPropagation();
+      this.setState(s => ({ section: 'sessions', view: 'terminal', linking: true, rMenu: null,
+        session: s.session || { label: 'PR #121 porting to peersyst', state: 'running', meta: 'Claude Code · Sonnet 4.6 · xrp-mobile/port-121' } }));
+      this.runAttach();
+    };
+    const allLog = st.runLog.filter(u => ids.indexOf(u.rid) !== -1);
+    const selR = list.find(x => x.id === st.selR) || null;
+    const scoped = selR ? allLog.filter(u => u.rid === selR.id) : allLog;
+    const fR = !selR && st.fRunR, fP = !selR && st.fRunP, fS = st.fRunS || 'all', fD = st.fRunD || 30;
+    const pre = scoped.filter(u => (!fR || u.rid === fR) && (!fP || (list.find(x => x.id === u.rid) || {}).project === fP) && now - u.t < fD * 86400000);
+    const log = pre.filter(u => fS === 'all' || u.state === fS);
+    const ago = t => { const m = (now - t) / 60000; return m < 1 ? 'now' : m < 60 ? Math.round(m) + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
+
+    const rows = list.map((x, i) => {
+      const running = allLog.some(u => u.rid === x.id && u.state === 'running');
+      const n = x.active ? nextFor(x) : null;
+      const hasS = x.triggers.some(t => t.type === 'schedule');
+      const gh = x.triggers.some(t => t.type === 'github');
+      const proj = st.projects.find(p => p.id === x.project);
+      const key = 'row:' + x.id;
+      const act = fn => e => { e.stopPropagation(); this.setState({ rMenu: null }); fn(); };
+      return { key: x.id, name: x.name, sub: agentLabel(x) + (proj ? ' · ' + proj.name : ''),
+        isSched: hasS || !gh ? 'true' : undefined, isGh: !hasS && gh ? 'true' : undefined,
+        trig: !x.triggers.length ? 'Manual only' : summary(x.triggers[0]) + (x.triggers.length > 1 ? ' +' + (x.triggers.length - 1) : ''),
+        next: !x.active ? '—' : n ? absDate(n, now) : gh ? 'On next event' : '—',
+        nextRel: x.active && n ? rel(n - now) : '',
+        st: running ? 'running' : x.active ? 'active' : 'paused', stLabel: running ? 'Running' : x.active ? 'Active' : 'Paused',
+        paused: x.active ? 'false' : 'true', flash: st.flash === x.id ? 'true' : 'false', delay: i * 30 + 'ms',
+        open: e => { e.stopPropagation(); this.setState({ selR: x.id, runPage: 0, histHover: null }); },
+        menuOpen: menu === key ? 'true' : undefined, menuOpenS: menu === key ? 'true' : 'false', toggleMenu: tog(key),
+        edit: act(() => this.openRDlg(x)),
+        runNow: act(() => this.runRoutine(x)),
+        pauseLabel: x.active ? 'Pause' : 'Resume',
+        togglePause: act(() => this.setState(s => ({ routines: s.routines.map(y => (y.id === x.id ? { ...y, active: !y.active } : y)) }))),
+        duplicate: act(() => this.setState(s => {
+          const id = 'u' + Date.now();
+          const copy = { ...x, id, mine: true, name: x.name + ' copy', triggers: x.triggers.map((t, j) => ({ ...t, id: id + 't' + j })) };
+          const arr = s.routines.slice(); arr.splice(s.routines.findIndex(y => y.id === x.id) + 1, 0, copy);
+          return { routines: arr, flash: id };
+        })),
+        remove: act(() => this.setState(s => ({ routines: s.routines.filter(y => y.id !== x.id) }))),
+      };
+    });
+
+    const day0 = new Date(now); day0.setHours(0, 0, 0, 0);
+    const buckets = Array.from({ length: 30 }, () => ({ ok: 0, fail: 0 }));
+    pre.forEach(u => { const d = new Date(u.t); d.setHours(0, 0, 0, 0); const i = 29 - Math.round((day0 - d) / 86400000); if (i >= 0 && i < 30) buckets[i][u.state === 'failed' ? 'fail' : 'ok']++; });
+    const maxB = Math.max(1, ...buckets.map(b => b.ok));
+    const dayOf = i => { const d = new Date(day0); d.setDate(d.getDate() - (29 - i)); return d; };
+    const md = d => MON[d.getMonth()] + ' ' + d.getDate();
+    const hv = st.histHover;
+    const hist = buckets.map((b, i) => ({ key: 'h' + i, on: hv === i ? 'true' : 'false', zero: b.ok + b.fail ? 'false' : 'true', noOk: b.ok ? 'false' : 'true', nofail: b.fail ? 'false' : 'true',
+      oh: Math.max(6, Math.round(b.ok / maxB * 92)) + 'px', delay: i * 12 + 'ms', enter: () => this.setState({ histHover: i }) }));
+    const hb = hv != null ? buckets[hv] : null;
+    const histLabel = hb ? DOW[dayOf(hv).getDay()] + ' ' + dayOf(hv).getDate() + ' ' + MON[dayOf(hv).getMonth()] + ' · ' + (hb.ok + hb.fail) + ((hb.ok + hb.fail) === 1 ? ' run' : ' runs') + (hb.fail ? ', ' + hb.fail + ' failed' : '') : 'Last 30 days';
+
+    const PAGE = 10, pages = Math.max(1, Math.ceil(log.length / PAGE)), pg = Math.min(st.runPage, pages - 1);
+    const stateL = { running: 'Running', completed: 'Completed', failed: 'Failed' };
+    const runRows = log.slice(pg * PAGE, pg * PAGE + PAGE).map((u, i) => {
+      const d = new Date(u.t); const x = list.find(y => y.id === u.rid) || {};
+      return { key: u.key, state: u.state, stateLabel: stateL[u.state], ok: u.state === 'completed' ? 'true' : undefined, bad: u.state === 'failed' ? 'true' : undefined, live: u.state === 'running' ? 'true' : undefined,
+        title: u.title, rname: x.name || 'Deleted routine', date: md(d), time: pad2(d.getHours()) + ':' + pad2(d.getMinutes()), delay: i * 20 + 'ms', open: openRun(u.key) };
+    });
+
+    const cat = st.tplCat;
+    const tpls = TEMPLATES.filter(t => cat === 'All' || t.cat === cat).map((t, i) => ({ key: cat + t.id, icon: t.icon, name: t.name, desc: t.desc, delay: i * 25 + 'ms',
+      meta: summary(t.trig), isGh: t.trig.type === 'github' ? 'true' : undefined, isSched: t.trig.type === 'schedule' ? 'true' : undefined,
+      add: e => {
+        e.stopPropagation();
+        const p = st.projects.find(x => x.id === st.curProject) || st.projects[0];
+        const repo = p && p.repos[0] ? p.repos[0].repo : 'xrp-mobile';
+        this.openRDlg({ id: null, name: t.name, active: true, project: p ? p.id : 'mobile', agent: 'claude-code', model: 'sonnet', host: 'optimus', prompt: t.prompt,
+          triggers: [{ id: 't' + Date.now(), ...(t.trig.type === 'github' ? { repo } : {}), ...t.trig }], runs: [] });
+      } }));
+
+    const stL = { running: 'Running', completed: 'Completed', failed: 'Failed' };
+    const rq = (st.rQ || '').trim().toLowerCase();
+    const rGroups = st.projects.map(p => {
+      const items = rows.filter(rw => (list.find(x => x.id === rw.key) || {}).project === p.id && (!rq || rw.name.toLowerCase().indexOf(rq) !== -1 || p.name.toLowerCase().indexOf(rq) !== -1)).map(rw => {
+        const x = list.find(y => y.id === rw.key);
+        const runs = allLog.filter(u => u.rid === x.id);
+        return { key: x.id, name: x.name, isSched: rw.isSched, isGh: rw.isGh, state: rw.st === 'running' ? 'running' : 'idle', paused: rw.paused,
+          active: selR && selR.id === x.id ? 'true' : 'false',
+          meta: rw.st === 'running' ? 'Running' : rw.st === 'paused' ? 'Paused' : rw.nextRel ? relShort(nextFor(x) - now) : runs.length ? String(runs.length) : '',
+          select: e => { e.stopPropagation(); this.setState(s => ({ selRun: null, view: 'routine', section: 'routines', selR: s.selR === x.id && s.view === 'routine' ? null : x.id, runPage: 0, histHover: null, rMenu: null })); },
+          expanded: selR && selR.id === x.id ? 'true' : undefined,
+          runs: runs.slice(0, 6).map(u => ({ key: u.key, state: u.state, stateLabel: stL[u.state], title: u.title, ago: ago(u.t), active: st.selRun === u.key ? 'true' : 'false', open: openRun(u.key) })),
+          noRuns: runs.length ? undefined : 'true' };
+      });
+      const open = !!rq || !st.rCollapsed[p.id];
+      return { key: p.id, name: p.name, count: items.length, items, open: open ? 'true' : undefined, openS: open ? 'true' : 'false',
+        empty: items.length ? undefined : 'true',
+        toggle: e => { e.stopPropagation(); this.setState(s => ({ rCollapsed: { ...s.rCollapsed, [p.id]: !s.rCollapsed[p.id] } })); },
+        newHere: e => { e.stopPropagation(); this.openRDlg(null); this.patchR(d => ({ ...d, project: p.id })); } };
+    }).filter(g => !rq || g.count > 0);
+    const selRow = selR ? rows.find(rw => rw.key === selR.id) : null;
+    const runSel = inR && !st.rDraft && st.selRun ? allLog.find(u => u.key === st.selRun) : null;
+    let runVals = { isRunView: undefined };
+    if (runSel) {
+      const x = st.routines.find(y => y.id === runSel.rid) || { name: 'Deleted routine', prompt: '', triggers: [], agent: 'claude-code', model: 'sonnet', host: 'optimus' };
+      const tr = runTranscript(runSel, x);
+      const d = new Date(runSel.t);
+      const durMin = 2 + ((runSel.t / 60000) % 9 | 0), durSec = (runSel.t / 1000) % 60 | 0;
+      const openSteps = st.runOpenSteps || {};
+      const extra = (st.runChat || {})[runSel.key] || [];
+      const agentMsg = (key, steps, text, link, linkMeta, thinking) => {
+        const open = openSteps[key] !== undefined ? openSteps[key] : runSel.state !== 'completed';
+        const nOk = steps.filter(s => s.st === 'completed').length;
+        return { key, role: 'agent', isAgent: 'true', hasSteps: steps.length ? 'true' : undefined,
+          stepSummary: steps.some(s => s.st === 'running') ? 'Working · step ' + steps.length : steps.some(s => s.st === 'failed') ? nOk + ' steps · 1 failed' : steps.length + ' steps',
+          open: open ? 'true' : undefined, openS: open ? 'true' : 'false',
+          toggle: () => this.setState(s => ({ runOpenSteps: { ...(s.runOpenSteps || {}), [key]: !open } })),
+          steps: steps.map(s => ({ ...s, ok: s.st === 'completed' ? 'true' : undefined, bad: s.st === 'failed' ? 'true' : undefined, live: s.st === 'running' ? 'true' : undefined })),
+          text, link, linkMeta, thinking: thinking ? 'true' : undefined };
+      };
+      const msgs = [{ key: 'p', role: 'user', isUser: 'true', label: 'Routine instructions', text: tr.prompt || 'Run the routine.' },
+        agentMsg('a0', tr.steps, tr.text, tr.link, tr.linkMeta, runSel.state === 'running')]
+        .concat(extra.map((m, i) => m.role === 'user' ? { key: 'x' + i, role: 'user', isUser: 'true', text: m.text } : agentMsg('x' + i, m.steps || [], m.text, '', '', m.thinking)));
+      const draft = (st.runDrafts || {})[runSel.key] || '';
+      const send = () => {
+        const txt = draft.trim(); if (!txt) return;
+        const k = runSel.key;
+        this.setState(s => ({ runDrafts: { ...(s.runDrafts || {}), [k]: '' },
+          runChat: { ...(s.runChat || {}), [k]: ((s.runChat || {})[k] || []).concat([{ role: 'user', text: txt }, { role: 'agent', thinking: true, steps: [{ text: 'read thread', detail: '', st: 'running' }] }]) } }));
+        this._rRuns.push(setTimeout(() => this.setState(s => {
+          const arr = ((s.runChat || {})[k] || []).slice();
+          arr[arr.length - 1] = { role: 'agent', steps: [{ text: 'read thread', detail: 'context loaded', st: 'completed' }, { text: 'git push', detail: 'same branch', st: 'completed' }], text: 'Done. I applied that on the same branch and pushed one commit. The pull request is updated.' };
+          return { runChat: { ...(s.runChat || {}), [k]: arr } };
+        }), 2600));
+      };
+      runVals = {
+        isRunView: 'true',
+        runBack: e => { if (e) e.stopPropagation(); this.setState({ selRun: null, selR: runSel.rid }); },
+        runRName: x.name, runTitle: runSel.title,
+        runStKey: runSel.state === 'running' ? 'running' : runSel.state === 'failed' ? 'paused' : 'active',
+        runStLabel: stateL[runSel.state],
+        runWhen: absDate(d, now).replace('Tomorrow', 'Tomorrow'),
+        runDur: runSel.state === 'running' ? rel(now - runSel.t) : durMin + 'm ' + pad2(durSec) + 's',
+        runAgent: agentLabel(x), runHost: findL(HOSTS, x.host),
+        runEvGh: tr.ev.gh ? 'true' : undefined, runEvSched: tr.ev.sched ? 'true' : undefined, runEvManual: tr.ev.manual ? 'true' : undefined,
+        runEvKind: tr.ev.kind, runEvText: tr.ev.text, runEvRef: tr.ev.ref,
+        runFeed: (() => {
+          const T = (text, tone) => ({ text, tone: tone || '' });
+          const block = (steps, text, thinking) => {
+            const out = [];
+            steps.forEach(s2 => {
+              const [cmd, ...rest] = s2.text.split(' ');
+              out.push({ agent: 'true', lines: [T(cmd + '(' + rest.join(' ') + ')', 'strong')] });
+              out.push({ out: 'true', lines: [s2.st === 'running' ? T('  ⎿  running…', 'dim') : s2.st === 'failed' ? T('  ⎿  ' + (s2.detail || 'failed'), 'danger') : T('  ⎿  ' + (s2.detail || 'done'), 'dim')] });
+            });
+            if (text) out.push({ agent: 'true', lines: text.split('\n').map(t => T(t)) });
+            if (thinking) out.push({ pending: 'true' });
+            return out;
+          };
+          const head = [{ out: 'true', lines: [T('opp routine run · ' + x.name, 'dim'), T('trigger: ' + tr.ev.kind + (tr.ev.ref ? ' · ' + tr.ev.ref : ''), 'dim'), T('branch: opp/' + runSel.key.slice(-6), 'dim')] },
+            { you: 'true', text: tr.prompt || 'Run the routine.' }];
+          let feed = head.concat(block(tr.steps, tr.text, runSel.state === 'running'));
+          if (tr.link) feed.push({ out: 'true', lines: [T('  ⎿  ' + tr.link + ' · ' + tr.linkMeta, 'success')] });
+          extra.forEach(m => { feed = m.role === 'user' ? feed.concat([{ you: 'true', text: m.text }]) : feed.concat(block(m.steps || [], m.text, m.thinking)); });
+          return feed.map((f, i) => ({ ...f, key: 'f' + i }));
+        })(),
+        runStatusBranch: 'opp/' + runSel.key.slice(-6), runStatusTrigger: tr.ev.kind,
+        runPh: runSel.state === 'failed' ? 'Tell the agent what to change, or ask it to retry' : 'Continue this run',
+        runDraft: draft, runSendOff: !draft.trim(),
+        runSetDraft: e => { const v = e.target.value; const k = runSel.key; this.setState(s => ({ runDrafts: { ...(s.runDrafts || {}), [k]: v } })); },
+        runKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } },
+        runSend: send,
+      };
+    }
+    const vals = {
+      inSessions: inR ? undefined : 'true', inRoutines: inR ? 'true' : undefined,
+      rGroups, rGroupCount: st.projects.length,
+      rQ: st.rQ || '', rQOn: rq ? 'true' : undefined, rQNone: rq && !rGroups.length ? 'true' : undefined,
+      rQSet: e => { const v = e.target.value; this.setState({ rQ: v }); }, rQClear: () => this.setState({ rQ: '' }),
+      rQKey: e => { if (e.key === 'Escape') { this.setState({ rQ: '' }); e.target.blur(); } }, rAllActive: inR && !selR ? 'true' : 'false',
+      backAll: e => { if (e) e.stopPropagation(); this.setState({ selRun: null, view: 'routine', section: 'routines', selR: null, runPage: 0, histHover: null }); },
+      rDetail: selR ? 'true' : undefined, rOverview: selR ? undefined : 'true',
+      dName: selR ? selR.name : '', dSt: selRow ? selRow.st : '', dStLabel: selRow ? selRow.stLabel : '', dTrig: selRow ? selRow.trig : '', dSub: selRow ? selRow.sub : '',
+      dNextRel: selRow ? selRow.nextRel : '', dIsSched: selRow ? selRow.isSched : undefined, dIsGh: selRow ? selRow.isGh : undefined,
+      dRunNow: e => { e.stopPropagation(); if (selR) this.runRoutine(selR); },
+      dEdit: e => { e.stopPropagation(); if (selR) this.openRDlg(selR); },
+      dActive: !!(selR && selR.active), dPaused: selR && !selR.active ? 'true' : undefined, dPauseLabel: selR && selR.active ? 'Pause routine' : 'Resume routine',
+      dTogglePauseMenu: e => { e.stopPropagation(); if (selR) this.setState(s => ({ rMenu: null, routines: s.routines.map(y => (y.id === selR.id ? { ...y, active: !y.active } : y)) })); },
+      dTogglePause: () => { if (selR) this.setState(s => ({ routines: s.routines.map(y => (y.id === selR.id ? { ...y, active: !y.active } : y)) })); },
+      dMoreOpen: menu === 'd:more' || menu === 'd:confirm' ? 'true' : undefined, dMoreOpenS: menu === 'd:more' || menu === 'd:confirm' ? 'true' : 'false',
+      dAsk: menu === 'd:more' ? 'true' : undefined, dConfirm: menu === 'd:confirm' ? 'true' : undefined,
+      dToggleMore: e => { e.stopPropagation(); this.setState(s => ({ rMenu: s.rMenu === 'd:more' || s.rMenu === 'd:confirm' ? null : 'd:more' })); },
+      dAskDelete: e => { e.stopPropagation(); this.setState({ rMenu: 'd:confirm' }); },
+      dCancelDelete: e => { e.stopPropagation(); this.setState({ rMenu: null }); },
+      dDelete: e => { e.stopPropagation(); if (selR) this.setState(s => ({ routines: s.routines.filter(y => y.id !== selR.id), selR: null, rMenu: null, runPage: 0 })); },
+      dDup: e => { e.stopPropagation(); if (selR) this.setState(s => {
+        const id = 'u' + Date.now();
+        const copy = { ...selR, id, mine: true, name: selR.name + ' copy', triggers: selR.triggers.map((t, j) => ({ ...t, id: id + 't' + j })) };
+        const arr = s.routines.slice(); arr.splice(s.routines.findIndex(y => y.id === selR.id) + 1, 0, copy);
+        return { routines: arr, selR: id, rMenu: null, flash: id };
+      }); },
+      navSessions: inR ? 'false' : 'true', navRoutines: inR ? 'true' : 'false',
+      navSessionsCur: inR ? undefined : 'page', navRoutinesCur: inR ? 'page' : undefined,
+      sessionTotal: (bare ? st.mine : st.mine.concat(ALL)).filter(s => st.deleted.indexOf(s.key || s.name) === -1).length,
+      routineTotal: list.length,
+      goSessions: e => { if (e) e.stopPropagation(); if (this.props.page === 'routines') { window.location.href = 'SessionsConsole.dc.html'; return; } this.setState(s => ({ section: 'sessions', view: s.view === 'routine' ? 'terminal' : s.view, rMenu: null })); },
+      goRoutines: e => { if (e) e.stopPropagation(); if (this.props.page !== 'routines') { window.location.href = 'Routines.dc.html'; return; } this.setState({ section: 'routines', view: 'routine', selR: null, rMenu: null, open: null }); },
+      newRoutine: e => { if (e) e.stopPropagation(); this.openRDlg(null); },
+      isRoutines: inR && !st.rDraft && !runSel ? 'true' : undefined,
+      ...runVals,
+      rTabRoutines: st.rTab === 'routines' ? 'true' : 'false', rTabRuns: st.rTab === 'runs' ? 'true' : 'false',
+      rTabRoutinesOn: !selR && st.rTab === 'routines' ? 'true' : undefined, rTabRunsOn: selR || st.rTab === 'runs' ? 'true' : undefined,
+      tabRoutines: () => this.setState({ rTab: 'routines' }), tabRuns: () => this.setState({ rTab: 'runs' }),
+      hasRuns: scoped.length ? 'true' : undefined, noRuns: scoped.length ? undefined : 'true',
+      noRunMatches: scoped.length && !log.length ? 'true' : undefined,
+      runStatusOpts: [['all', 'All'], ['completed', 'Completed'], ['failed', 'Failed'], ['running', 'Running']].map(([v, l]) => ({ label: l, n: v === 'all' ? pre.length : pre.filter(u => u.state === v).length,
+        on: fS === v ? 'true' : 'false', pick: () => this.setState({ fRunS: v, runPage: 0 }) })),
+      runFilterParts: (() => {
+        const mk = (key, label, dirty, opts, onPick) => ({ key, label, dirty: dirty ? 'true' : 'false', openS: menu === key ? 'true' : 'false', toggle: tog(key),
+          openList: menu === key ? 'true' : undefined,
+          options: opts.map(o => ({ label: o.label, desc: o.desc || '', selected: o.selected ? 'true' : undefined, pick: e => { e.stopPropagation(); onPick(o.value); this.setState({ rMenu: null, runPage: 0 }); } })) });
+        const parts = [];
+        if (!selR) {
+          parts.push(mk('rf:r', fR ? (list.find(x => x.id === fR) || {}).name || 'Routine' : 'All routines', !!fR,
+            [{ value: null, label: 'All routines', selected: !fR }].concat(list.map(x => ({ value: x.id, label: x.name, desc: summary(x.triggers[0] || { type: 'schedule', freq: 'daily', hour: 0, minute: 0 }), selected: fR === x.id }))),
+            v => this.setState({ fRunR: v })));
+          parts.push(mk('rf:p', fP ? (st.projects.find(p => p.id === fP) || {}).name || 'Project' : 'All projects', !!fP,
+            [{ value: null, label: 'All projects', selected: !fP }].concat(st.projects.map(p => ({ value: p.id, label: p.name, selected: fP === p.id }))),
+            v => this.setState({ fRunP: v })));
+        }
+        parts.push(mk('rf:d', fD === 1 ? 'Last 24 hours' : 'Last ' + fD + ' days', fD !== 30,
+          [[1, 'Last 24 hours'], [7, 'Last 7 days'], [30, 'Last 30 days']].map(([v, l]) => ({ value: v, label: l, selected: fD === v })),
+          v => this.setState({ fRunD: v })));
+        return parts;
+      })(),
+      runFiltered: fR || fP || fS !== 'all' || fD !== 30 ? 'true' : undefined,
+      clearRunFilters: () => this.setState({ fRunR: null, fRunP: null, fRunS: 'all', fRunD: 30, runPage: 0 }),
+      hist, histLabel, histHovering: hv != null ? 'true' : 'false', histLeave: () => this.setState({ histHover: null }),
+      histOk: pre.filter(u => u.state !== 'failed').length, histFail: pre.filter(u => u.state === 'failed').length, histTotal: pre.length,
+      histFrom: md(dayOf(0)), histTo: md(dayOf(29)),
+      hasRoutines: list.length ? 'true' : undefined, routineRows: rows, noRoutineRows: list.length ? undefined : 'true',
+      tpls, tplCats: ['All', 'Review', 'Maintenance', 'Reporting', 'Triage'].map(c => ({ label: c, on: c === cat ? 'true' : 'false', pick: () => this.setState({ tplCat: c }) })),
+      runRows, runRange: log.length ? (pg * PAGE + 1) + '–' + Math.min(log.length, pg * PAGE + PAGE) + ' of ' + log.length : '',
+      runPrevOff: pg === 0, runNextOff: pg >= pages - 1,
+      runPrev: () => this.setState({ runPage: Math.max(0, pg - 1) }), runNext: () => this.setState({ runPage: Math.min(pages - 1, pg + 1) }),
+    };
+    const r = st.rDraft;
+    if (!r) return vals;
+
+    const sched = t => {
+      const k = t.id, P = p => this.patchT(k, p);
+      const mins = [0, 15, 30, 45]; if (mins.indexOf(t.minute) === -1) { mins.push(t.minute); mins.sort((a, b) => a - b); }
+      const parts = [listTok(k + ':freq', findL(FREQS, t.freq), FREQS.map(o => ({ ...o, selected: o.value === t.freq })),
+        v => P({ freq: v, days: v === 'weekly' && !(t.days || []).length ? [1] : t.days }))];
+      if (t.freq === 'once') {
+        const start = new Date(day0); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        const cells = Array.from({ length: 35 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+        const sel = new Date(t.date);
+        parts.push(word('on'), gridTok(k + ':date', onceD(t), [{ label: MON[cells[0].getMonth()] + (cells[34].getMonth() !== cells[0].getMonth() ? ' – ' + MON[cells[34].getMonth()] : '') + ' ' + cells[34].getFullYear(), cols: '7', sans: 'false',
+          heads: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+          cells: cells.map(d => cell(String(d.getDate()), d.toDateString() === sel.toDateString(), () => { P({ date: d.getTime() }); close(); }, d < day0)) }]));
+      }
+      if (t.freq === 'weekly') parts.push(word('on'), gridTok(k + ':days', daysL(t), [{ label: 'Days', cols: '7', sans: 'true',
+        cells: order.map(d => cell(DOW[d], (t.days || []).indexOf(d) !== -1, () => {
+          const has = (t.days || []).indexOf(d) !== -1;
+          const next = has ? t.days.filter(x => x !== d) : (t.days || []).concat([d]);
+          if (next.length) P({ days: next });
+        })) }]));
+      if (t.freq === 'monthly') parts.push(word('on the'), gridTok(k + ':dom', ordinal(t.dom), [{ label: 'Day of the month', cols: '7', sans: 'false',
+        cells: Array.from({ length: 28 }, (_, i) => i + 1).map(n => cell(String(n), n === t.dom, () => { P({ dom: n }); close(); })) }]));
+      if (t.freq === 'hourly') parts.push(word('at'), gridTok(k + ':min', ':' + pad2(t.minute), [{ label: 'Minutes past the hour', cols: '6', sans: 'false',
+        cells: Array.from({ length: 12 }, (_, i) => i * 5).map(n => cell(':' + pad2(n), n === t.minute, () => { P({ minute: n }); close(); })) }], { mono: 'true' }));
+      else parts.push(word('at'), gridTok(k + ':time', tl(t), [
+        { label: 'Hour', cols: '6', sans: 'false', cells: Array.from({ length: 24 }, (_, i) => i).map(n => cell(pad2(n), n === t.hour, () => P({ hour: n }))) },
+        { label: 'Minute', cols: String(mins.length), sans: 'false', cells: mins.map(n => cell(':' + pad2(n), n === t.minute, () => { P({ minute: n }); close(); })) },
+      ], { mono: 'true' }));
+      parts.push(word('CEST'));
+      const occ = occurrences(t, nowD, 7);
+      const nx = nextOf(t, nowD);
+      const sig = schedSig(t) + (t.date || '');
+      const week = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(day0); d.setDate(d.getDate() + i);
+        const n = occ.filter(x => x.toDateString() === d.toDateString()).length;
+        return { key: sig + ':' + i, l: DOW[d.getDay()].charAt(0), title: (i === 0 ? 'Today' : DOW[d.getDay()] + ' ' + d.getDate()) + (n ? ' · ' + (n > 1 ? n + ' runs' : tl(t)) : ''),
+          fires: n ? 'true' : 'false', next: nx && nx.toDateString() === d.toDateString() ? 'true' : 'false' };
+      });
+      return { id: k, isSched: 'true', parts, week, hasNext: nx ? 'true' : undefined, passed: nx ? undefined : 'true',
+        nextAbs: nx ? absDate(nx, now) : '', nextRel: nx ? rel(nx - now) : '',
+        remove: e => { e.stopPropagation(); this.patchR(x => ({ ...x, triggers: x.triggers.filter(y => y.id !== k) })); } };
+    };
+    const gh = t => {
+      const k = t.id, P = p => this.patchT(k, p);
+      const ev = evOf(t);
+      const tReposRaw = (t.repos && t.repos.length ? t.repos : [t.repo]).filter(v => rRepos.indexOf(v) !== -1);
+      const tRepos = tReposRaw.length ? tReposRaw : rRepos.slice();
+      const repoL = tRepos.length === 1 ? tRepos[0] : tRepos.length + ' repositories';
+      const parts = [listTok(k + ':ev', ev.label, GH_EVENTS.map(e => ({ label: e.label, desc: e.desc, value: e.value, selected: e.value === t.event })), v => {
+          const e2 = GH_EVENTS.find(x => x.value === v);
+          P({ event: v, filter: e2.filter === 'label' ? 'bug' : e2.filter === 'base' ? 'main' : '*' });
+        }),
+        word('in'),
+        base(k + ':repo', tRepos.length === 1 ? tRepos[0] : tRepos.length === rRepos.length ? 'any of ' + tRepos.length + ' repositories' : tRepos.length + ' repositories', {
+          mono: tRepos.length === 1 ? 'true' : 'false', openList: menu === k + ':repo' ? 'true' : undefined,
+          multi: 'true', head: 'Repositories · pick one or more',
+          options: projRepoOpts.filter(o => rRepos.indexOf(o.value) !== -1).map(o => {
+            const on = tRepos.indexOf(o.value) !== -1;
+            return { label: o.label.split('/').pop(), desc: on && tRepos.length === 1 ? 'At least one is required' : o.desc || '', selected: on ? 'true' : undefined, aria: on ? 'true' : 'false', box: on ? 'true' : 'false',
+              pick: e => { e.stopPropagation(); if (on && tRepos.length === 1) return; const next = on ? tRepos.filter(v => v !== o.value) : tRepos.concat([o.value]); P({ repos: next, repo: next[0] }); } };
+          }) })];
+      if (ev.filter) {
+        const isLabel = ev.filter === 'label';
+        const opts = isLabel
+          ? [{ value: '*', label: 'any label' }].concat(GH_LABELS.map(l => ({ value: l, label: l })))
+          : [{ value: '*', label: 'any branch' }].concat((tRepos.length === 1 ? BRANCHES[tRepos[0]] || [{ value: 'main' }] : [{ value: 'main' }, { value: 'develop' }]).slice(0, 6).map(b => ({ value: b.value, label: b.value })));
+        parts.push(word(ev.filter === 'base' ? 'targeting' : ev.filter === 'branch' ? 'on' : 'labeled'),
+          listTok(k + ':f', t.filter === '*' ? (isLabel ? 'any label' : 'any branch') : t.filter, opts.map(o => ({ ...o, selected: o.value === t.filter })), v => P({ filter: v }), { mono: isLabel ? 'false' : 'true' }));
+      }
+      const hits = GH_FEED.filter(m => tRepos.indexOf(m.repo) !== -1 && m.kind === t.event && (!ev.filter || t.filter === '*' || m.on === t.filter) && m.h < 168);
+      return { id: k, isGh: 'true', parts,
+        matchSummary: hits.length ? 'Listening on ' + repoL + ' · would have run ' + hits.length + (hits.length === 1 ? ' time' : ' times') + ' in the last 7 days' : 'Listening on ' + repoL + ' · nothing matched in the last 7 days',
+        hasMatches: hits.length ? 'true' : undefined,
+        matches: hits.slice(0, 2).map(m => ({ key: k + t.event + tRepos.join() + t.filter + m.ref, ref: tRepos.length > 1 ? m.repo + m.ref : m.ref, title: m.title, meta: m.who + ' · ' + agoH(m.h) })),
+        remove: e => { e.stopPropagation(); this.patchR(x => ({ ...x, triggers: x.triggers.filter(y => y.id !== k) })); } };
+    };
+    const proj = st.projects.find(p => p.id === r.project);
+    const agentOpts = ['claude-code', 'codex', 'opencode'].flatMap(a => HARNESS_MODELS[a].primary.map(m => ({
+      value: a + '|' + m.value, label: findL(AGENTS, a) + ' · ' + m.label, desc: m.desc, selected: r.agent === a && r.model === m.value })));
+    const projRepos = proj && proj.repos.length ? proj.repos.map(q => q.repo) : ['xrp-mobile'];
+    const allRepos = projRepos.concat(REPOS.map(o => o.value).filter(v => projRepos.indexOf(v) === -1));
+    const projRepoOpts = allRepos.map(v => REPOS.find(o => o.value === v) || { value: v, label: v, desc: '' });
+    const rReposRaw = (r.repos || []).filter(v => allRepos.indexOf(v) !== -1);
+    const rRepos = rReposRaw.length ? rReposRaw : projRepos;
+    const valid = r.name.trim() && r.triggers.length && r.prompt.trim();
+    const withQ = (key, ph, tok) => {
+      const q = (st.selQ && st.selQ[key]) || '';
+      const ql = q.trim().toLowerCase();
+      const opts = ql ? tok.options.filter(o => (o.label + ' ' + (o.desc || '')).toLowerCase().indexOf(ql) !== -1) : tok.options;
+      const toggle = e => { e.stopPropagation(); this.setState(s => ({ rMenu: s.rMenu === key ? null : key, selQ: { ...(s.selQ || {}), [key]: '' } })); };
+      return { ...tok, toggle, options: opts, q, ph, empty: ql && !opts.length ? 'true' : undefined,
+        setQ: e => { const v = e.target.value; this.setState(s => ({ selQ: { ...(s.selQ || {}), [key]: v } })); },
+        onKey: e => {
+          if (e.key === 'Escape') { e.stopPropagation(); this.setState({ rMenu: null }); }
+          if (e.key === 'Enter' && opts[0]) { e.preventDefault(); opts[0].pick(e); }
+        } };
+    };
+    const repoL = rRepos.length === 1 ? rRepos[0] : rRepos.length + ' repositories';
+    const trigL = r.triggers.length ? summary(r.triggers[0]) : '';
+    return {
+      ...vals,
+      rDlgOpen: 'true',
+      rCrumbName: r.id ? ((st.routines.find(y => y.id === r.id) || {}).name || '') : '',
+      rCrumbAll: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null, selR: null, selRun: null }); }, rDlgTitle: r.id ? 'Edit' : 'New routine',
+      rEditing: r.id ? 'true' : undefined, rCreating: r.id ? undefined : 'true',
+      stopR: e => { e.stopPropagation(); if (this.state.rMenu) this.setState({ rMenu: null }); },
+      closeRDlg: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null }); },
+      rName: r.name, setRName: e => { const v = e.target.value; this.patchR(x => ({ ...x, name: v })); },
+      rTriggers: r.triggers.map(t => (t.type === 'schedule' ? sched(t) : gh(t))),
+      rAddOpen: menu === 'add' ? 'true' : undefined, rAddOpenS: menu === 'add' ? 'true' : 'false', toggleAdd: tog('add'),
+      rAddLabel: r.triggers.length ? 'Add another trigger' : 'Add trigger',
+      addGroups: [
+        { label: 'Schedule', items: FREQS.map(f => ({ title: f.label, desc: f.desc, isSched: 'true', pick: e => { e.stopPropagation(); this.addTrigger('schedule', f.value); } })) },
+        { label: 'GitHub', items: GH_EVENTS.map(ev => ({ title: ev.label, desc: ev.desc, isGh: 'true', pick: e => { e.stopPropagation(); this.addTrigger('github', ev.value); } })) },
+      ],
+      rPrompt: r.prompt, setRPrompt: e => { const v = e.target.value; this.patchR(x => ({ ...x, prompt: v })); },
+      rProjSel: withQ('sel:proj', 'Search projects', listTok('sel:proj', proj ? proj.name : 'Choose a project', st.projects.map(p => ({ value: p.id, label: p.name, desc: p.repos.map(q => q.repo).join(', ') || 'No repositories', selected: p.id === r.project })),
+        v => this.patchR(x => {
+          const np = st.projects.find(p => p.id === v); const pr = np ? np.repos.map(q => q.repo) : [];
+          return { ...x, project: v, repos: pr, triggers: x.triggers.map(t => (t.type === 'github' ? { ...t, repos: pr.slice(), repo: pr[0] || t.repo } : t)) };
+        }), { meta: proj ? proj.repos.length + (proj.repos.length === 1 ? ' repo' : ' repos') : '' })),
+      rRepoSel: withQ('sel:repos', 'Search repositories', base('sel:repos', rRepos.length === 1 ? rRepos[0] : rRepos.join(', '), {
+        meta: rRepos.length > 1 ? String(rRepos.length) : '', multi: 'true', head: 'Pick one or more',
+        openList: menu === 'sel:repos' ? 'true' : undefined,
+        options: projRepoOpts.map(o => {
+          const v = o.value, on = rRepos.indexOf(v) !== -1, locked = on && rRepos.length === 1;
+          const inProj = projRepos.indexOf(v) !== -1;
+          return { label: v, desc: locked ? 'At least one is required' : inProj ? 'In ' + (proj ? proj.name : 'this project') : o.desc || '', selected: on ? 'true' : undefined, aria: on ? 'true' : 'false', box: on ? 'true' : 'false',
+            pick: e => { e.stopPropagation(); if (locked) return; const next = on ? rRepos.filter(x => x !== v) : allRepos.filter(x => x === v || rRepos.indexOf(x) !== -1);
+              this.patchR(x => ({ ...x, repos: next, triggers: x.triggers.map(t => (t.type === 'github' ? { ...t, repos: (t.repos || [t.repo]).filter(q => next.indexOf(q) !== -1).concat(on ? [] : [v]) } : t)) })); } };
+        }) })),
+      rS1Done: 'true', rS2Done: r.triggers.length ? 'true' : 'false', rS3Done: r.prompt.trim() ? 'true' : 'false', rS4Done: 'true',
+      rS1Sum: '', rS2Sum: '', rS3Sum: '', rS4Sum: '',
+      rAgentSel: withQ('sel:agent', 'Search agents', listTok('sel:agent', findL(AGENTS, r.agent), ['claude-code', 'codex', 'opencode'].map(a => ({ value: a, label: findL(AGENTS, a), desc: HARNESS_MODELS[a].primary.length + ' models', selected: a === r.agent })),
+        v => this.patchR(x => ({ ...x, agent: v, model: x.agent === v ? x.model : HARNESS_MODELS[v].primary[0].value })))),
+      rModelSel: withQ('sel:model', 'Search models', listTok('sel:model', ((HARNESS_MODELS[r.agent] || { primary: [] }).primary.find(m => m.value === r.model) || {}).label || 'Choose a model',
+        (HARNESS_MODELS[r.agent] || { primary: [] }).primary.map(m => ({ value: m.value, label: m.label, desc: m.desc, selected: m.value === r.model })),
+        v => this.patchR(x => ({ ...x, model: v })))),
+      rHostSel: withQ('sel:host', 'Search hosts', listTok('sel:host', findL(HOSTS, r.host), HOSTS.map(o => ({ ...o, selected: o.value === r.host })), v => this.patchR(x => ({ ...x, host: v })))),
+      rReady: valid ? 'true' : 'false',
+      rRecap: !r.name.trim() ? 'Name the routine to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.'
+        : findL(AGENTS, r.agent) + ' runs in ' + repoL + ', ' + trigL.charAt(0).toLowerCase() + trigL.slice(1) + (r.triggers.length > 1 ? ' and ' + (r.triggers.length - 1) + ' more' : '') + '.',
+      rMissing: !r.name.trim() ? 'Name the routine to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.' : 'It starts listening as soon as you save.',
+      rSaveBlocked: !valid, rSaveLabel: r.id ? 'Save' : 'Create routine',
+      saveR: () => this.setState(s => {
+        const d = s.rDraft;
+        if (d.id) return { routines: s.routines.map(x => (x.id === d.id ? { ...d, name: d.name.trim() } : x)), rDraft: null, rMenu: null, flash: d.id };
+        const id = 'u' + Date.now();
+        return { routines: [{ ...d, id, mine: true, name: d.name.trim() }].concat(s.routines), rDraft: null, rMenu: null, rTab: 'routines', flash: id };
+      }),
+      deleteDraft: () => this.setState(s => ({ routines: s.routines.filter(x => x.id !== s.rDraft.id), rDraft: null, rMenu: null, selR: s.selR === s.rDraft.id ? null : s.selR })),
+    };
+  }
+
   renderVals() {
     const { view, project, fAgent, fHost, sort, filterOpen, menu,
             open, host, repos, agentId, session } = this.state;
@@ -1071,16 +2527,25 @@ class Component extends DCLogic {
     const branches = BRANCHES[paneRepo || repo] || [];
     const harness = HARNESS_MODELS[agentId] || { primary: [] };
     const models = harness.primary;
-    const sessions = this.state.mine.concat(ALL)
-      .filter(s => (project === 'all' || s.repo === project)
+    const bare = !!this.props.emptyAccount;
+    const allRows = (bare ? this.state.mine : this.state.mine.concat(ALL))
+      .filter(s => this.state.deleted.indexOf(s.key || s.name) === -1)
+      .map(s => ({ ...s, key: s.key || s.name, name: this.state.renames[s.key || s.name] || s.name,
+        project: this.state.moves[s.key || s.name] || s.project || REPO_PROJECT[s.repo] }));
+    const fProj = this.state.fProj;
+    const PROJ_FILTER = [{ value: 'all', label: 'All projects' }].concat(this.state.projects.map(p => ({ value: p.id, label: p.name })));
+    const sessions = allRows
+      .filter(s => (fProj === 'all' || s.project === fProj)
+        && (project === 'all' || s.repo === project)
         && (fAgent === 'all' || s.agent === fAgent)
         && (fHost === 'all' || s.host === fHost))
       .slice()
       .sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name)
         : sort === 'oldest' ? b.mins - a.mins : a.mins - b.mins);
     const find = (list, v) => ((list.find(o => o.value === v) || list[0] || {}).label || '');
-    const dirty = project !== 'all' || fAgent !== 'all' || fHost !== 'all';
+    const dirty = fProj !== 'all' || project !== 'all' || fAgent !== 'all' || fHost !== 'all';
     const activeFilters = [
+      fProj !== 'all' && { key: 'fProj', label: find(PROJ_FILTER, fProj) },
       project !== 'all' && { key: 'project', label: find(PROJECTS, project) },
       fAgent !== 'all' && { key: 'fAgent', label: find(AGENT_FILTER, fAgent) },
       fHost !== 'all' && { key: 'fHost', label: find(HOST_FILTER, fHost) },
@@ -1098,7 +2563,7 @@ class Component extends DCLogic {
       const row = {
         name: this.scopeShort(),
         state: 'waiting', age: 'now', mins: 0,
-        repo, agent: agentId, host,
+        repo, agent: agentId, host, project: this.state.curProject,
       };
       this.setState(s => ({ mine: [row].concat(s.mine) }));
       this.setState({
@@ -1111,14 +2576,172 @@ class Component extends DCLogic {
       });
       this.runBoot();
     };
+    const itemOf = x => ({
+
+        ...x,
+
+        editing: this.state.editing === x.key ? 'true' : undefined,
+
+        notEditing: this.state.editing === x.key ? undefined : 'true',
+
+        menuOpen: this.state.sessionMenu === x.key ? 'true' : undefined,
+
+        menuS: this.state.sessionMenu === x.key ? 'true' : 'false',
+
+        toggleMenu: e => { e.stopPropagation(); this.setState(st => ({ sessionMenu: st.sessionMenu === x.key ? null : x.key })); },
+
+        rename: e => { e.stopPropagation(); this.startRename(x.key); },
+
+        move: e => { e.stopPropagation(); this.setState({ sessionMenu: null, moving: x.key, moveTo: x.project }); },
+
+        remove: e => { e.stopPropagation(); this.setState({ sessionMenu: null, deleting: x.key }); },
+
+    });
+    const cur = this.proj();
+    const sq = (this.state.sQ || '').trim().toLowerCase();
+    const groups = this.state.projects.map(p => {
+      const list = sessions.filter(x => x.project === p.id && (!sq || (x.name || '').toLowerCase().indexOf(sq) !== -1 || (x.repo || '').toLowerCase().indexOf(sq) !== -1 || p.name.toLowerCase().indexOf(sq) !== -1));
+      const isOpen = !!sq || !this.state.collapsed[p.id];
+      return {
+        id: p.id, name: p.name, count: list.length,
+        open: isOpen ? 'true' : undefined, openS: isOpen ? 'true' : 'false',
+        current: view === 'new' && cur && cur.id === p.id ? 'true' : 'false',
+        empty: list.length === 0 && !dirty ? 'true' : undefined,
+        items: list.map(itemOf),
+        toggle: e => { e.stopPropagation(); this.setState(st => ({ collapsed: { ...st.collapsed, [p.id]: !st.collapsed[p.id] } })); },
+        newHere: e => { if (e) e.stopPropagation(); this.setState({ ...this.applyProject(p.id), view: 'new', open: null, filterOpen: false, accountOpen: false }); },
+        settings: e => { e.stopPropagation(); this.openProjDlg(p.id); },
+      };
+    }).filter(g => !bare && (!(dirty || sq) || g.count > 0));
+    const mv = this.state.moving ? allRows.find(x => x.key === this.state.moving) : null;
+    const d = this.state.draft;
+    const projSessions = allRows.filter(x => x.project === this.state.projDlg).length;
+    const baseOf = r => ((BRANCHES[r] || [])[0] || { value: 'main' }).value;
     return {
+      ...this.routineVals(),
+      sQ: this.state.sQ || '', sQOn: sq ? 'true' : undefined, sQNone: sq && !groups.length ? 'true' : undefined,
+      sQSet: e => { const v = e.target.value; this.setState({ sQ: v }); }, sQClear: () => this.setState({ sQ: '' }),
+      sQKey: e => { if (e.key === 'Escape') { this.setState({ sQ: '' }); e.target.blur(); } },
       isNew: view === 'new',
+      projectGroups: groups,
+      bare: bare ? 'true' : 'false',
+      bareS: bare && !this.state.mine.length ? 'true' : undefined,
+      projectCount: this.state.projects.length,
+      newProject: e => { if (e) e.stopPropagation(); this.openProjDlg(null); },
+      projLabel: bare ? 'No project' : cur ? cur.name : 'Project',
+      projOpen: open === 'proj',
+      toggleProj: e => this.toggle('proj', e),
+      projPick: (bare ? [] : this.state.projects).map(p => ({
+        name: p.name,
+        desc: p.repos.length + (p.repos.length === 1 ? ' repository' : ' repositories') + ' · ' + find(HOSTS, p.host),
+        selected: cur && cur.id === p.id ? 'true' : undefined,
+        pick: e => { e.stopPropagation(); this.setState({ ...this.applyProject(p.id), open: null }); },
+      })),
+      newSub: bare ? 'Describe the work. We’ll ask for a host and a repository when you send it.' : cur
+        ? 'In ' + cur.name + ' · cloning ' + repos.length + ' of ' + cur.repos.length + (cur.repos.length === 1 ? ' repository' : ' repositories') + ', each on its own opp/ branch.'
+        : 'Set the scope, then describe the work.',
+
+      movingName: mv ? mv.name : undefined,
+      movingRepo: mv ? mv.repo : '',
+      moveOptions: mv ? this.state.projects.map(p => {
+        const ok = p.repos.some(r => r.repo === mv.repo);
+        return {
+          name: p.name,
+          desc: p.id === mv.project ? 'Current project' : ok ? 'Includes ' + mv.repo : 'Doesn’t include ' + mv.repo,
+          selected: this.state.moveTo === p.id ? 'true' : undefined,
+          blocked: ok ? 'false' : 'true', opacity: ok ? 1 : 0.45, cursor: ok ? 'pointer' : 'not-allowed',
+          pick: e => { e.stopPropagation(); if (ok) this.setState({ moveTo: p.id }); },
+        };
+      }) : [],
+      moveDisabled: !mv || this.state.moveTo === mv.project,
+      cancelMove: () => this.setState({ moving: null }),
+      confirmMove: () => this.setState(st => ({ moves: { ...st.moves, [st.moving]: st.moveTo }, collapsed: { ...st.collapsed, [st.moveTo]: false }, moving: null })),
+
+      projDlgOpen: d ? 'true' : undefined,
+      projEditing: this.state.projDlg && this.state.projDlg !== 'new' ? 'true' : undefined,
+      projDlgTitle: this.state.projDlg === 'new' ? 'New project' : 'Project settings',
+      projName: d ? d.name : '',
+      setProjName: e => this.patchDraft({ name: e.target.value }),
+      projRepoCount: d ? d.repos.length : 0,
+      projDefCount: d ? d.repos.filter(x => x.def !== false).length : 0,
+      projRepoQuery: this.state.projRepoQuery || '',
+      setProjRepoQuery: e => this.setState({ projRepoQuery: e.target.value }),
+      // Fixed to the unfiltered height so typing never resizes the dialog.
+      projRepoListH: 4 * 41 - 1 + 'px',
+      projRepoNone: ACCESS_REPOS.filter(r => r.label.toLowerCase().includes((this.state.projRepoQuery || '').trim().toLowerCase())).length === 0 ? 'true' : undefined,
+      projRepoRows: ACCESS_REPOS.filter(r => r.label.toLowerCase().includes((this.state.projRepoQuery || '').trim().toLowerCase())).map(r => {
+        const on = d ? d.repos.find(x => x.repo === r.value) : null;
+        return {
+          short: r.label.split('/').pop(), desc: r.desc,
+          on: !!on, onS: on ? 'true' : 'false', base: on ? on.base : baseOf(r.value),
+          defS: on && on.def !== false ? 'true' : 'false', vis: on ? 'visible' : 'hidden',
+          toggleDef: () => this.setState(st => ({ draft: { ...st.draft, repos: st.draft.repos.map(x => x.repo === r.value ? { ...x, def: x.def === false } : x) } })),
+          toggle: () => this.setState(st => {
+            const has = st.draft.repos.some(x => x.repo === r.value);
+            return { draft: { ...st.draft, repos: has ? st.draft.repos.filter(x => x.repo !== r.value) : st.draft.repos.concat([{ repo: r.value, base: baseOf(r.value), def: st.draft.repos.length === 0 }]) } };
+          }),
+          ...(() => {
+            const cur = on ? on.base : baseOf(r.value);
+            const bOpen = this.state.baseOpen === r.value;
+            const q = bOpen ? (this.state.baseQ || '') : '';
+            const ql = q.trim().toLowerCase();
+            const all = (BRANCHES[r.value] || [{ value: 'main' }]);
+            const opts = all.filter(b => !ql || b.value.toLowerCase().indexOf(ql) !== -1);
+            const set = v => this.setState(st => ({ baseOpen: null, baseQ: '', draft: { ...st.draft, repos: st.draft.repos.map(x => x.repo === r.value ? { ...x, base: v } : x) } }));
+            return {
+              bOpen: bOpen ? 'true' : undefined, bOpenS: bOpen ? 'true' : 'false', bQ: q,
+              bTop: (this.state.baseRect || {}).top || 'auto', bBottom: (this.state.baseRect || {}).bottom || 'auto', bLeft: (this.state.baseRect || {}).left || '0px', bNone: ql && !opts.length ? 'true' : undefined,
+              bToggle: e => {
+                e.stopPropagation();
+                const b = e.currentTarget.getBoundingClientRect(), H = window.innerHeight, W = window.innerWidth;
+                const up = H - b.bottom < 320 && b.top > H - b.bottom;
+                const rect = { top: up ? 'auto' : (b.bottom + 6) + 'px', bottom: up ? (H - b.top + 6) + 'px' : 'auto', left: Math.max(8, Math.min(W - 268, b.right - 260)) + 'px' };
+                if (!this._bScroll) {
+                  this._bScroll = ev => { if (this.state.baseOpen && !(ev.target.closest && ev.target.closest('.op-bpick__menu'))) this.setState({ baseOpen: null }); };
+                  document.addEventListener('scroll', this._bScroll, true);
+                  window.addEventListener('resize', this._bScroll);
+                }
+                this.setState(st => ({ baseOpen: st.baseOpen === r.value ? null : r.value, baseQ: '', baseRect: rect }));
+              },
+              bSetQ: e => { const v = e.target.value; this.setState({ baseQ: v }); },
+              bKey: e => { if (e.key === 'Escape') { e.stopPropagation(); this.setState({ baseOpen: null }); } if (e.key === 'Enter' && opts[0]) { e.preventDefault(); set(opts[0].value); } },
+              bOpts: opts.map((b, i) => ({ label: b.value, desc: b.desc || (b.value === all[0].value ? 'Default branch' : ''), selected: b.value === cur ? 'true' : undefined, pick: e => { e.stopPropagation(); set(b.value); } })),
+            };
+          })(),
+        };
+      }),
+      projHostChips: HOSTS.map(h => ({ label: h.label, on: d && d.host === h.value ? 'true' : 'false', pick: () => this.patchDraft({ host: h.value }) })),
+      projAgentChips: AGENTS.map(a => ({ label: a.label, on: d && d.agent === a.value ? 'true' : 'false', pick: () => this.patchDraft({ agent: a.value }),
+        isClaude: a.value === 'claude-code' ? 'true' : undefined, isCodex: a.value === 'codex' ? 'true' : undefined,
+        isOpenCode: a.value === 'opencode' ? 'true' : undefined, isShell: a.value === 'shell' ? 'true' : undefined })),
+      projInstr: d ? d.instructions : '',
+      setProjInstr: e => this.patchDraft({ instructions: e.target.value }),
+      projInstrCount: d ? d.instructions.length.toLocaleString('en-US') : '0',
+      projSaveLabel: this.state.projDlg === 'new' ? 'Create project' : 'Save changes',
+      projSaveBlocked: !d || !d.name.trim() || d.repos.length === 0 || !d.repos.some(x => x.def !== false) || d.repos.some(x => !x.base.trim()),
+      projDeleteBlocked: projSessions > 0,
+      projDeleteHint: projSessions > 0 ? 'Move or delete its ' + projSessions + (projSessions === 1 ? ' session' : ' sessions') + ' first' : 'Delete this project',
+      closeProj: () => this.setState({ projDlg: null, draft: null }),
+      saveProject: () => this.setState(st => {
+        const dr = st.draft;
+        const clean = { name: dr.name.trim(), repos: dr.repos.map(x => ({ repo: x.repo, base: x.base.trim(), def: x.def !== false })), host: dr.host, agent: dr.agent, instructions: dr.instructions };
+        if (st.projDlg === 'new') {
+          const p = { id: 'p' + Date.now(), ...clean };
+          return { projects: st.projects.concat([p]), projDlg: null, draft: null, ...this.applyProjectObj(p), view: 'new' };
+        }
+        return { projects: st.projects.map(p => (p.id === st.projDlg ? { ...p, ...clean } : p)), projDlg: null, draft: null };
+      }),
+      deleteProject: () => this.setState(st => {
+        const rest = st.projects.filter(p => p.id !== st.projDlg);
+        return { projects: rest, projDlg: null, draft: null, curProject: st.curProject === st.projDlg && rest[0] ? rest[0].id : st.curProject };
+      }),
+
       // The blue is rationed to one action per view, so the sidebar button
       // steps back wherever the pane already owns the primary: the composer's
       // send on the new-session page, and the CTA on the empty state — which
       // is the same word and the same action, so two blues would be a
       // duplicate, not a choice.
-      newBtnVariant: (view === 'new' || !hasSession) ? 'op-btn--secondary' : 'op-btn--primary',
+      newBtnVariant: (view === 'new' || view === 'routine' || !hasSession) ? 'op-btn--secondary' : 'op-btn--primary',
       isNewPage: view === 'new' ? 'page' : undefined,
       isProvisioning: view === 'booting',
       isTerminal: view === 'terminal' && hasSession,
@@ -1126,10 +2749,13 @@ class Component extends DCLogic {
       hasSession,
       startSession: start,
 
-      provisionHost: find(HOST_FILTER, host),
-      provisionTitle: 'Starting your session',
-      provisionSub: this.scopeLine(),
-      bootStatus: BOOT_STEPS[this.state.bootStep] ? 'Working…' : 'Ready',
+      // The label names the phase the boot is actually in, so a slow step
+      // still says which one is slow — without drawing a chart about it.
+      bootPhase: BOOT_STEPS[this.state.bootStep]
+        ? BOOT_STEPS[this.state.bootStep].phase(this)
+        : 'Ready',
+      provisionHost: this.hostName(),
+      provisionSub: this.scopeShort(),
       bootElapsed: (this.state.bootMs / 1000).toFixed(1) + 's',
       bootSteps: BOOT_STEPS.map((b, i) => ({
         label: b.label(this),
@@ -1138,7 +2764,24 @@ class Component extends DCLogic {
         mark: i < this.state.bootStep ? '✓' : '',
       })),
       openNew: e => { if (e) e.stopPropagation(); this.setState({ view: 'new', open: null, filterOpen: false, accountOpen: false }); },
-      openTerminal: e => { if (e) e.stopPropagation(); this.setState(s => ({ view: 'terminal', open: null, session: s.session || { label: 'PR #121 porting to peersyst', state: 'running', meta: 'Claude Code · Sonnet 4.6 · xrp-mobile/port-121' } })); },
+      openTerminal: e => {
+        if (e) e.stopPropagation();
+        this.setState(st => ({
+          view: 'terminal',
+          linking: true,
+          open: null,
+          session: st.session || { label: 'PR #121 porting to peersyst', state: 'running', meta: 'Claude Code · Sonnet 4.6 · xrp-mobile/port-121' },
+        }));
+        this.runAttach();
+      },
+
+      // Cached scrollback renders at once; this names the gap until the live
+      // stream has caught up, then settles into a quiet "Live".
+      linkState: this.state.linking ? 'reconnecting' : 'live',
+      linkLabel: this.state.linking ? 'Reconnecting to ' + find(HOST_FILTER, host) + '…' : 'Live',
+      termPlaceholder: this.state.linking ? 'Reconnecting — input sends once live' : 'Ask the agent, or run a command',
+      attachName: this.state.session ? this.state.session.label : '',
+      attachHost: find(HOST_FILTER, host),
 
       // Both titlebar controls are view operations — neither stops the run.
       // Close detaches the pane; the session keeps executing and stays in the
@@ -1154,9 +2797,24 @@ class Component extends DCLogic {
       toggleZoom: e => { if (e) e.stopPropagation(); this.setState(s => ({ zoom: !s.zoom })); },
       closePane: e => { if (e) e.stopPropagation(); this.setState({ session: null, zoom: false }); },
 
-      sessions,
+
+      renameRef: this._renameRef,
+
+      renameDraft: this.state.renameDraft,
+
+      setRenameDraft: e => this.setState({ renameDraft: e.target.value }),
+
+      commitRename: this.commitRename,
+
+      renameKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.commitRename(); } else if (e.key === 'Escape') { e.preventDefault(); this.setState({ editing: null }); } },
+
+      deleting: this.state.deleting ? (this.state.renames[this.state.deleting] || this.state.deleting) : undefined,
+
+      cancelDelete: () => this.setState({ deleting: null }),
+
+      confirmDelete: () => this.setState(st => ({ deleted: st.deleted.concat([st.deleting]), deleting: null })),
       sessionCount: sessions.length,
-      noMatches: sessions.length === 0,
+      noMatches: !bare && dirty && sessions.length === 0,
 
       filterOpen: filterOpen ? 'true' : undefined,
       filterDirty: dirty ? 'true' : undefined,
@@ -1169,23 +2827,25 @@ class Component extends DCLogic {
 
       menuRoot: !menu ? 'true' : undefined,
       menuDetail: menu ? 'true' : undefined,
-      menuTitle: menu ? ({ project: 'Repository', fAgent: 'Agent', fHost: 'Host', sort: 'Sort by' })[menu] : '',
-      menuOptions: menu ? this.facet(menu, ({ project: PROJECTS, fAgent: AGENT_FILTER, fHost: HOST_FILTER, sort: SORTS })[menu]) : [],
+      menuTitle: menu ? ({ fProj: 'Project', project: 'Repository', fAgent: 'Agent', fHost: 'Host', sort: 'Sort by' })[menu] : '',
+      menuOptions: menu ? this.facet(menu, ({ fProj: PROJ_FILTER, project: PROJECTS, fAgent: AGENT_FILTER, fHost: HOST_FILTER, sort: SORTS })[menu]) : [],
       backToRoot: e => { e.stopPropagation(); this.setState({ menu: null }); },
+      openProjMenu: e => { e.stopPropagation(); this.setState({ menu: 'fProj' }); },
       openRepoMenu: e => { e.stopPropagation(); this.setState({ menu: 'project' }); },
       openAgentMenu: e => { e.stopPropagation(); this.setState({ menu: 'fAgent' }); },
       openHostMenu: e => { e.stopPropagation(); this.setState({ menu: 'fHost' }); },
       openSortMenu: e => { e.stopPropagation(); this.setState({ menu: 'sort' }); },
-      clearFilters: e => { e.stopPropagation(); this.setState({ project: 'all', fAgent: 'all', fHost: 'all' }); },
+      clearFilters: e => { e.stopPropagation(); this.setState({ fProj: 'all', project: 'all', fAgent: 'all', fHost: 'all' }); },
 
+      projFilterLabel: find(PROJ_FILTER, fProj),
       repoFilterLabel: find(PROJECTS, project),
       agentFilterLabel: find(AGENT_FILTER, fAgent),
       hostFilterLabel: find(HOST_FILTER, fHost),
       sortLabel: find(SORTS, sort),
       activeFilters,
 
-      hostLabel: find(HOSTS, host),
-      hostOptions: this.options(HOSTS, 'host'),
+      hostLabel: bare ? 'Add a host' : find(HOSTS, host),
+      hostOptions: bare ? [] : this.options(HOSTS, 'host'),
       hostOpen: open === 'host',
       toggleHost: e => this.toggle('host', e),
 
@@ -1223,14 +2883,22 @@ class Component extends DCLogic {
 
       query: this.state.query,
       setQuery: e => this.setState({ query: e.target.value }),
-      noHostMatch: this.match(HOSTS).length ? undefined : 'true',
-      noRepoMatch: this.match(REPOS).length ? undefined : 'true',
+      noHostMatch: !bare && this.match(HOSTS).length ? undefined : 'true',
+      noRepoMatch: !bare && this.match(REPOS).length ? undefined : 'true',
       noBranchMatch: this.match(branches).length ? undefined : 'true',
       // The chip has no room for the owner, and the owner is the same for all
       // of them — the repo name is the part that distinguishes.
-      repoShort: find(REPOS, repo).split('/').pop() + (repos.length > 1 ? '  +' + (repos.length - 1) : ''),
-      repoOptions: this.match(REPOS).map(o => ({
+      repoShort: bare ? 'Add a repository' : find(REPOS, repo).split('/').pop() + (repos.length > 1 ? '  +' + (repos.length - 1) : ''),
+      repoOptions: this.match((bare ? [] : REPOS).slice().sort((x, y) => {
+        const ids = this.projRepoIds();
+        return (ids.indexOf(x.value) === -1) - (ids.indexOf(y.value) === -1);
+      })).map(o => ({
         ...o,
+        desc: (() => {
+          const pr = ((this.proj() || { repos: [] }).repos.find(r => r.repo === o.value));
+          if (!pr) return 'not in project · ' + o.desc;
+          return (pr.def === false ? 'optional · ' : 'default · ') + o.desc;
+        })(),
         selected: repos.indexOf(o.value) !== -1 ? 'true' : undefined,
         name: o.label.split('/').pop(),
         branch: this.branchFor(o.value),
@@ -1254,8 +2922,12 @@ class Component extends DCLogic {
       // A branch belongs to a repo, so a sibling branch chip only tells the
       // truth while there is exactly one. Past that it lives in the repo rows.
       singleRepo: single ? 'true' : undefined,
-      branchLabel: this.branchFor(repo),
-      branchOptions: this.match(BRANCHES[repo] || []).map(o => ({
+      branchLabel: bare ? 'Branch' : this.branchFor(repo),
+      bareB: bare,
+      branchOpacity: bare ? 0.45 : 1,
+      hostEmptyText: bare ? 'No hosts added yet.' : 'No host matches.',
+      repoEmptyText: bare ? 'No repositories connected yet.' : 'No repository matches.',
+      branchOptions: this.match(bare ? [] : (BRANCHES[repo] || [])).map(o => ({
         ...o,
         selected: this.branchFor(repo) === o.value ? 'true' : undefined,
         pick: e => this.chooseBranchFor(repo, o.value, e),
@@ -1396,6 +3068,11 @@ class Component extends DCLogic {
       effortKey: this.state.effort,
       effortIndex: this.effortIndex() + 1,
       effortRef: this._effortTrack,
+      termScrollRef: this._termScroll,
+      feed: this.state.feed,
+      termDraft: this.state.termDraft,
+      setTermDraft: e => this.setState({ termDraft: e.target.value }),
+      termKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.sendTerm(); } },
       effortKnobRef: this._effortKnob,
       effortFillRef: this._effortFill,
       effortDown: this.effortDown,

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+html,body{margin:0;height:100%;background:var(--canvas,#f5f5f7)}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+@keyframes op-pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+</style>
+</helmet>
+<div onClick="{{ closeMenus }}" style="display:flex;height:100vh;overflow:hidden;background:var(--background);font-family:var(--font-sans);color:var(--fg);font-size:14px">
+
+<nav class="op-sidebar" style="width:264px;min-width:264px;display:flex;flex-direction:column">
+<div style="padding:18px 12px 8px">
+<a href="./SessionsConsole.dc.html" class="op-navitem" style="text-decoration:none;color:var(--fg-muted)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Back to console</span></a>
+</div>
+<div style="padding:4px 12px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Account</span>
+<button class="op-navitem" type="button" data-active="{{ isProfile }}" onClick="{{ goProfile }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="user" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Profile</span></button>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="padding:6px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Workspace</span>
+<button class="op-navitem" type="button" data-active="{{ isHosts }}" onClick="{{ goHosts }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="15" hint-size="15px,15px"></x-import><span class="op-navitem__label">Hosts</span><span class="op-navitem__meta" style="font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)">{{ hostCount }}</span></button>
+</div>
+</div>
+</nav>
+
+<main style="flex:1;min-width:0;overflow-y:auto;background:var(--canvas)">
+<div style="max-width:760px;margin:0 auto;padding:64px 40px 96px;display:flex;flex-direction:column;gap:40px">
+
+<sc-if value="{{ isProfile }}" hint-placeholder-val="{{ true }}">
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em">Profile</h1>
+
+<div style="display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Profile picture</span><span style="font-size:13px;color:var(--fg-muted)">Shown beside your sessions and routines</span></div>
+<span class="op-avatar op-avatar--lg op-avatar--accent">{{ initials }}</span>
+<div style="display:flex;gap:6px"><button class="op-btn op-btn--secondary op-btn--sm" type="button">Upload</button></div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Email</span><span style="font-size:13px;color:var(--fg-muted)">Used to sign in and for run notifications</span></div>
+<span style="color:var(--fg-muted)">jordiparra99@gmail.com</span>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button">Change</button>
+</div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Full name</span></div>
+<div class="op-input op-input--md" style="width:280px;flex:none"><input class="op-input__el" type="text" aria-label="Full name" value="{{ name }}" onChange="{{ setName }}"></div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid var(--border-subtle)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Username</span><span style="font-size:13px;color:var(--fg-muted)">Appears in session logs and commit trailers</span></div>
+<div class="op-input op-input--md" style="width:280px;flex:none"><span class="op-input__icon" style="font-family:var(--font-mono);font-size:13px">@</span><input class="op-input__el" type="text" aria-label="Username" value="{{ username }}" onChange="{{ setUsername }}" style="font-family:var(--font-mono);font-size:13px"></div>
+</div>
+<sc-if value="{{ profileDirty }}">
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border-subtle)">
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ discardProfile }}">Discard</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ saveProfile }}">Save changes</button>
+</div>
+</sc-if>
+<sc-if value="{{ profileSaved }}">
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border-subtle);font-size:13px;color:var(--fg-muted)">Saved</div>
+</sc-if>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;padding:0 4px;font-size:17px;font-weight:600;letter-spacing:-0.012em">Account</h2>
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Delete account</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Stops every session and removes your routines and host registrations. This cannot be undone.</span></div>
+<button class="op-btn op-btn--danger op-btn--sm" type="button">Delete account</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHosts }}">
+<div style="display:flex;align-items:flex-end;gap:16px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<h1 style="margin:0;font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-0.02em">Hosts</h1>
+<p style="margin:0;font-size:14px;color:var(--fg-muted);text-wrap:pretty">Servers your sessions run on. Nothing on a host is exposed to the internet.</p>
+</div>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ openAdd }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="15" hint-size="15px,15px"></x-import>Add host</button>
+</div>
+
+<sc-if value="{{ noHosts }}">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:28px 24px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="font-weight:500">No hosts yet</span>
+<span style="font-size:13px;color:var(--fg-muted)">Hosts you connect appear here with their live session count. Sessions cannot start until one is online.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasHosts }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ hosts }}" as="h" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:14px;padding:18px 16px 18px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:{{ h.dot }};box-shadow:{{ h.ring }}"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+<sc-if value="{{ h.renaming }}">
+<div style="display:flex;gap:6px;align-items:center" onClick="{{ stop }}">
+<div class="op-input op-input--sm" style="width:220px"><input class="op-input__el" type="text" aria-label="Host name" value="{{ renameVal }}" onChange="{{ setRenameVal }}" onKeyDown="{{ renameKey }}" autoFocus="{{ true }}" style="font-family:var(--font-mono);font-size:13px"></div>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ commitRename }}">Save</button>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ cancelRename }}">Cancel</button>
+</div>
+</sc-if>
+<sc-if value="{{ h.showName }}" hint-placeholder-val="{{ true }}"><span style="font-family:var(--font-mono);font-size:14px">{{ h.name }}</span></sc-if>
+<span style="font-size:12.5px;color:var(--fg-muted)">{{ h.meta }}</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:120px">
+<span style="font-size:13px">{{ h.state }}</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ h.seen }}</span>
+</div>
+<div style="position:relative">
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="{{ h.name }} actions" onClick="{{ h.toggleMenu }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+<sc-if value="{{ h.menuOpen }}">
+<div class="op-menu" data-side="bottom-end" role="menu" onClick="{{ stop }}">
+<button class="op-menu__item" type="button" onClick="{{ h.rename }}"><span class="op-menu__label-text">Rename</span></button>
+<button class="op-menu__item" type="button" onClick="{{ h.copyId }}"><span class="op-menu__label-text">Copy host ID</span><span class="op-menu__shortcut" style="font-family:var(--font-mono)">{{ h.id }}</span></button>
+<div class="op-menu__sep"></div>
+<button class="op-menu__item" type="button" data-variant="danger" onClick="{{ h.remove }}"><span class="op-menu__label-text">Remove host</span></button>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+</div>
+</main>
+
+<sc-if value="{{ removeOpen }}">
+<div class="op-scrim" onClick="{{ closeRemove }}">
+<div class="op-dialog" role="dialog" aria-modal="true" onClick="{{ stop }}">
+<div class="op-dialog__head"><div class="op-dialog__title">Remove {{ removeName }}?</div></div>
+<div class="op-dialog__desc" style="text-wrap:pretty">{{ removeCost }}</div>
+<div class="op-dialog__foot" style="display:flex;justify-content:flex-end;gap:8px;padding:24px 28px 28px">
+<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ closeRemove }}">Cancel</button>
+<button class="op-btn op-btn--danger op-btn--md" type="button" onClick="{{ confirmRemove }}">Remove host</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ addOpen }}">
+<div class="op-scrim" onClick="{{ closeAdd }}">
+<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="addhost-title" onClick="{{ stop }}">
+<div class="op-dialog__head">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 class="op-dialog__title" id="addhost-title" style="flex:none">Add a host</h2>
+</div>
+<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAdd }}" style="flex:none;border-radius:980px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</button>
+</div>
+<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<span class="op-label" style="margin:0">Run this once on the host</span>
+<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
+<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
+<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
+</div>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
+<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
+<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
+</button>
+</div>
+<div style="position:relative">
+<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+  | sh -s -- --token opk_7f3a9c</pre>
+</sc-if>
+<sc-if value="{{ showingPrompt }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+
+1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
+2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
+3. Install the runner:
+   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
+4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
+5. Verify the service is running:
+   oppenheimer-runner status
+6. Run the preflight and paste its full output:
+   oppenheimer-runner preflight
+7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
+8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
+
+Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
+</sc-if>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ countdown }} · single use</span>
+<a href="#" onClick="{{ regenerate }}" style="font-size:11.5px;white-space:nowrap">New token</a>
+</div>
+</div>
+
+<div style="height:1px;background:var(--border-subtle)"></div>
+
+<div style="min-height:52px;display:flex;flex-direction:column;justify-content:center">
+<sc-if value="{{ addWaiting }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+Listening for this host…
+</div>
+</sc-if>
+<sc-if value="{{ addDone }}">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">build-02</span>
+<span style="font-size:12px;color:var(--fg-muted)">Ubuntu 24.04 · echo 41 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</sc-if>
+</div>
+
+</div>
+
+<div class="op-dialog__foot">
+<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeAdd }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ closeAdd }}" disabled="{{ addWaiting }}">Done</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;section&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;profile&quot;,&quot;hosts&quot;],&quot;default&quot;:&quot;profile&quot;,&quot;tsType&quot;:&quot;'profile' | 'hosts'&quot;,&quot;section&quot;:&quot;State&quot;},&quot;hostsEmpty&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;State&quot;}}">
+const SEED_HOSTS = [
+  { id: 'h_7f3a', name: 'jordis-mac-studio', meta: 'macOS 15 · local · runner 0.14.2', status: 'running', sessions: 2, seen: 'now' },
+  { id: 'h_2c91', name: 'optimus', meta: 'Ubuntu 24.04 · 32 vCPU · eu-west · runner 0.14.2', status: 'idle', sessions: 0, seen: 'now' },
+  { id: 'h_b40e', name: 'fable', meta: 'Debian 12 · 16 vCPU · us-east · runner 0.13.8', status: 'offline', sessions: 0, seen: '2 days ago' },
+];
+const PROFILE = { name: 'Jordi Parra Crespo', username: 'jordiparra99' };
+
+class Component extends DCLogic {
+  state = {
+    section: null, profile: { ...PROFILE }, draft: { ...PROFILE }, saved: false,
+    hosts: SEED_HOSTS, menu: null, renameId: null, renameVal: '',
+    removeId: null, addOpen: false, addDone: false, secs: 3581, copied: null, hostTab: 'cmd',
+  };
+
+  componentDidMount() {
+    this._tick = setInterval(() => { if (this.state.addOpen) this.setState(s => ({ secs: Math.max(0, s.secs - 1) })); }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._reg); clearTimeout(this._copy); clearTimeout(this._saved); }
+
+  copy(which) {
+    const cmd = 'curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
+    const pre = document.querySelector('[aria-labelledby="addhost-title"] pre');
+    const text = which === 'cmd' ? cmd : (pre ? pre.textContent : cmd);
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    this.setState({ copied: which });
+    clearTimeout(this._copy);
+    this._copy = setTimeout(() => this.setState({ copied: null }), 1600);
+  }
+
+  commitRename() {
+    const v = this.state.renameVal.trim();
+    this.setState(s => ({ renameId: null, hosts: v ? s.hosts.map(h => h.id === s.renameId ? { ...h, name: v } : h) : s.hosts }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const section = s.section || this.props.section || 'profile';
+    const hosts = this.props.hostsEmpty ? [] : s.hosts;
+    const dirty = s.draft.name !== s.profile.name || s.draft.username !== s.profile.username;
+    const rm = s.hosts.find(h => h.id === s.removeId);
+    const m = Math.floor(s.secs / 60), sec = s.secs % 60;
+    const stop = e => e.stopPropagation();
+    const initials = (s.profile.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase();
+    return {
+      stop,
+      closeMenus: () => { if (s.menu) this.setState({ menu: null }); },
+      isProfile: section === 'profile' ? 'true' : undefined,
+      isHosts: section === 'hosts' ? 'true' : undefined,
+      goProfile: () => this.setState({ section: 'profile' }),
+      goHosts: () => this.setState({ section: 'hosts' }),
+      hostCount: hosts.length,
+      initials,
+      name: s.draft.name,
+      username: s.draft.username,
+      setName: e => this.setState({ draft: { ...s.draft, name: e.target.value }, saved: false }),
+      setUsername: e => this.setState({ draft: { ...s.draft, username: e.target.value.replace(/\s+/g, '').toLowerCase() }, saved: false }),
+      profileDirty: dirty ? 'true' : undefined,
+      profileSaved: !dirty && s.saved ? 'true' : undefined,
+      discardProfile: () => this.setState({ draft: { ...s.profile } }),
+      saveProfile: () => {
+        this.setState({ profile: { ...s.draft }, saved: true });
+        clearTimeout(this._saved);
+        this._saved = setTimeout(() => this.setState({ saved: false }), 2000);
+      },
+      noHosts: hosts.length ? undefined : 'true',
+      hasHosts: hosts.length ? 'true' : undefined,
+      hosts: hosts.map((h, i) => ({
+        ...h,
+        divider: i ? '1px solid var(--border-subtle)' : '0',
+        dot: h.status === 'running' ? 'var(--success)' : h.status === 'idle' ? 'var(--fg-subtle)' : 'transparent',
+        ring: h.status === 'offline' ? 'inset 0 0 0 1.5px var(--fg-subtle)' : 'none',
+        state: h.status === 'running' ? `Running · ${h.sessions} session${h.sessions === 1 ? '' : 's'}` : h.status === 'idle' ? 'Idle' : 'Offline',
+        seen: h.status === 'offline' ? 'last seen ' + h.seen : 'connected',
+        renaming: s.renameId === h.id ? 'true' : undefined,
+        showName: s.renameId === h.id ? undefined : 'true',
+        menuOpen: s.menu === h.id ? 'true' : undefined,
+        toggleMenu: e => { e.stopPropagation(); this.setState({ menu: s.menu === h.id ? null : h.id }); },
+        rename: () => this.setState({ menu: null, renameId: h.id, renameVal: h.name }),
+        copyId: () => { if (navigator.clipboard) navigator.clipboard.writeText(h.id).catch(() => {}); this.setState({ menu: null }); },
+        remove: () => this.setState({ menu: null, removeId: h.id }),
+      })),
+      renameVal: s.renameVal,
+      setRenameVal: e => this.setState({ renameVal: e.target.value.replace(/\s+/g, '-') }),
+      renameKey: e => { if (e.key === 'Enter') this.commitRename(); if (e.key === 'Escape') this.setState({ renameId: null }); },
+      commitRename: () => this.commitRename(),
+      cancelRename: () => this.setState({ renameId: null }),
+      removeOpen: rm ? 'true' : undefined,
+      removeName: rm ? rm.name : '',
+      removeCost: !rm ? '' : rm.sessions
+        ? `${rm.sessions} session${rm.sessions === 1 ? ' is' : 's are'} running on ${rm.name}. They are stopped and their terminals closed; logs are kept. The runner's token is revoked.`
+        : `No sessions are running on ${rm.name}. The runner's token is revoked and routines targeting it are paused.`,
+      closeRemove: () => this.setState({ removeId: null }),
+      confirmRemove: () => this.setState(st => ({ hosts: st.hosts.filter(h => h.id !== st.removeId), removeId: null })),
+      addOpen: s.addOpen ? 'true' : undefined,
+      addWaiting: s.addDone ? undefined : 'true',
+      addDone: s.addDone ? 'true' : undefined,
+      openAdd: () => {
+        this.setState({ addOpen: true, addDone: false, secs: 3600 });
+        clearTimeout(this._reg);
+        this._reg = setTimeout(() => this.setState(st => st.addOpen ? {
+          addDone: true,
+          hosts: st.hosts.some(h => h.id === 'h_e5d2') ? st.hosts : [...st.hosts, { id: 'h_e5d2', name: 'build-02', meta: 'Ubuntu 24.04 · 8 vCPU · eu-west · runner 0.14.2', status: 'idle', sessions: 0, seen: 'now' }],
+        } : null), 5000);
+      },
+      closeAdd: () => { clearTimeout(this._reg); this.setState({ addOpen: false }); },
+      countdown: m + ':' + String(sec).padStart(2, '0'),
+      regenerate: e => { e.preventDefault(); this.setState({ secs: 3600 }); },
+      showingCmd: s.hostTab === 'cmd' ? 'true' : undefined,
+      showingPrompt: s.hostTab === 'prompt' ? 'true' : undefined,
+      cmdTabBg: s.hostTab === 'cmd' ? 'var(--card)' : 'transparent',
+      cmdTabFg: s.hostTab === 'cmd' ? 'var(--fg)' : 'var(--fg-muted)',
+      promptTabBg: s.hostTab === 'prompt' ? 'var(--card)' : 'transparent',
+      promptTabFg: s.hostTab === 'prompt' ? 'var(--fg)' : 'var(--fg-muted)',
+      showCmd: () => this.setState({ hostTab: 'cmd' }),
+      showPrompt: () => this.setState({ hostTab: 'prompt' }),
+      didCopy: s.copied ? 'true' : undefined,
+      notCopied: s.copied ? undefined : 'true',
+      copyBlock: () => this.copy(s.hostTab),
+    };
+  }
+}
+</script>
+</body>
+</html>
