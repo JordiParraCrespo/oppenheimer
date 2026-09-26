@@ -29,6 +29,9 @@ An app becomes the consumer product by loading `consumerModules` into
   `CreateProjectInput`, `UpdateProjectInput`, `ProjectRepositoryInput`,
   `shortName`, `ProjectsService`, `ProjectsRepository`, `ProjectsModule`,
   `ProjectsErrors`.
+- **modules/routines** — `RoutineEntity`, `RoutineTrigger`, `RoutineState`:
+  the automation the console's pages are built against; its repository and
+  service arrive with the API (`product/versions/mvp/13-automations.md`).
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
   `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
   `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's

@@ -149,6 +149,7 @@ export const TOC: TocGroup[] = [
   {
     group: 'Routines',
     items: [
+      { id: 'overviewpage', label: 'OverviewPage', icon: PanelTopIcon, components: ['overview-page'] },
       { id: 'runhistory', label: 'RunHistory', icon: BarChart3Icon, components: ['run-history'] },
       { id: 'routinetable', label: 'RoutineTable', icon: TableIcon, components: ['routine-table'] },
       { id: 'runslist', label: 'RunsList', icon: ListIcon, components: ['runs-list'] },

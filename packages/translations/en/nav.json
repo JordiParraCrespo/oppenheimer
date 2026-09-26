@@ -18,5 +18,6 @@
   "commandDescription": "Search for a page or an action.",
   "sidebarTitle": "Navigation",
   "sidebarDescription": "Your sessions and your account.",
-  "settings": "Settings"
+  "settings": "Settings",
+  "automations": "Automations"
 }

@@ -164,7 +164,6 @@
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
     "routines": "Routines",
-    "routinesSoon": "Automations are not here yet.",
     "writeFailed": "That change did not land. Try again."
   },
   "deleteSession": {

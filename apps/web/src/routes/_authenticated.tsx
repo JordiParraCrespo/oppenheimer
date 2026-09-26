@@ -4,6 +4,7 @@ import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
+import { AutomationsSidebar } from '@/features/routines/sections/automations-sidebar';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { NAV, USER_MENU } from '@/lib/nav';
@@ -15,6 +16,11 @@ declare module '@tanstack/react-router' {
      * renders no `AppShell` around it. Absent, the console's shell.
      */
     shell?: 'own';
+    /**
+     * Which of the console's lists fills the sidebar beside the rail. Absent,
+     * the sessions; `automations` under `/automations`.
+     */
+    list?: 'automations';
   }
 }
 
@@ -59,6 +65,9 @@ function AuthenticatedShell() {
   const ownShell = useMatches({
     select: (matches) => matches.some((match) => match.staticData.shell === 'own'),
   });
+  const list = useMatches({
+    select: (matches) => matches.find((match) => match.staticData.list)?.staticData.list,
+  });
 
   const settledEmpty =
     organizations.isSuccess && !organizations.isFetching && organizations.data.length === 0;
@@ -71,7 +80,7 @@ function AuthenticatedShell() {
       nav={NAV}
       userMenuLinks={USER_MENU}
       rail={<ConsoleRail />}
-      sidebar={<SessionsSidebar />}
+      sidebar={list === 'automations' ? <AutomationsSidebar /> : <SessionsSidebar />}
       // The brand row names the product, not the workspace — version 1 has one
       // workspace per account. `chrome={false}` is the bar, the palette and
       // the foot's hairline; `AppShell` and `use-shell.ts` say why.

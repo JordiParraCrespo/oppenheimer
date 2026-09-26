@@ -71,6 +71,7 @@ import {
   EditorPageDemo,
   SettingsShellDemo,
   PageHeaderDemo,
+  OverviewPageDemo,
   RunHistoryDemo,
   RoutineTableDemo,
   RunsListDemo,
@@ -1017,6 +1018,16 @@ export default function Page() {
 
       {/* ── Routines ─────────────────────────────────────────────────────── */}
       <GroupHead>Routines</GroupHead>
+
+      <Spec
+        id="overviewpage"
+        title="OverviewPage"
+        meta="overview-page.tsx"
+        desc="The automations pages' frame and nothing in it. OverviewPage is the canvas column that scrolls on its own, OverviewPageBody the measured body — wider than the editor's, for a table — with its blocks spaced, OverviewPageTop the first row: the view tabs on the left, the page's one action on the right. The console mounts the frame from the automations routes and each view fills the body."
+        code={`<OverviewPage><OverviewPageBody><OverviewPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></OverviewPageTop>…</OverviewPageBody></OverviewPage>`}
+      >
+        <OverviewPageDemo />
+      </Spec>
 
       <Spec
         id="runhistory"

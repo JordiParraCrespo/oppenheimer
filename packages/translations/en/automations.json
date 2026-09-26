@@ -1,0 +1,58 @@
+{
+  "sidebar": {
+    "new": "New automation",
+    "projects": "Projects",
+    "search": "Search automations",
+    "clearSearch": "Clear search",
+    "all": "All automations",
+    "noMatches": "No automations match “{{query}}”.",
+    "emptyProject": "No automations yet.",
+    "createOne": "Create one",
+    "newHere": "New automation in {{name}}",
+    "unfiled": "Other automations"
+  },
+  "page": {
+    "tabs": {
+      "automations": "Automations",
+      "runs": "Runs"
+    },
+    "new": "New automation",
+    "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub. Start from a template below.",
+    "runsEmpty": "No runs yet. Each run appears here with the session it started.",
+    "templates": "Templates",
+    "templatesEmpty": "Templates arrive with the first automations."
+  },
+  "detail": {
+    "crumb": "Automations",
+    "missing": "There is no automation at this address."
+  },
+  "editor": {
+    "newTitle": "New automation",
+    "editTitle": "Edit automation",
+    "name": "Automation name",
+    "namePlaceholder": "Name this automation",
+    "back": "Back",
+    "crumb": "Automations",
+    "create": "Create automation",
+    "save": "Save changes",
+    "recap": "Name the automation, then say where it runs.",
+    "steps": {
+      "where": {
+        "title": "Where",
+        "subtitle": "The code it works on, and the machine it runs on."
+      },
+      "when": {
+        "title": "When",
+        "subtitle": "Any trigger starts a run."
+      },
+      "what": {
+        "title": "What",
+        "subtitle": "The task the session starts with."
+      },
+      "agent": {
+        "title": "Agent",
+        "subtitle": "Who does the work, and how freely."
+      }
+    }
+  }
+}

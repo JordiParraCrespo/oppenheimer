@@ -25,6 +25,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
 | 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
+| 13 | [Automations](13-automations.md) | The console's second list: the sidebar, the overview, one automation, the editor and their routes; the API behind them is the next slice |
 
 ## Decision log
 
@@ -414,3 +415,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
+- 2026-09-26: **Automations get their routes before their API.** The rail's
+  second item is a link; `/automations`, `/automations/runs`,
+  `/automations/{id}`, `/automations/new` and `/automations/{id}/edit`
+  mount the export's frames — the sidebar list over the projects, the
+  overview's tabs, the editor's four steps by name — and everything that
+  needs an automation to exist waits for the API (13).

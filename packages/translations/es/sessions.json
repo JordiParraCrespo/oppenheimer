@@ -164,7 +164,6 @@
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
     "routines": "Rutinas",
-    "routinesSoon": "Las automatizaciones todavía no están aquí.",
     "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
   },
   "deleteSession": {

@@ -147,6 +147,7 @@ export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export { Kbd } from './components/kbd';
 export { Link } from './components/link';
+export { OverviewPage, OverviewPageBody, OverviewPageTop } from './components/overview-page';
 export {
   PageHeader,
   PageHeaderCrumbs,

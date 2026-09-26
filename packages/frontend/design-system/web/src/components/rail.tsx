@@ -1,5 +1,6 @@
 'use client';
 
+import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -52,32 +53,36 @@ function RailItem({
   active,
   className,
   children,
+  render,
   ...props
-}: React.ComponentProps<'button'> & {
+}: useRender.ComponentProps<'button'> & {
   /** The tooltip and the accessible name ("Sessions"). */
   label: string;
   /** Rides in the tooltip, mono ("Routines 5"). */
   count?: React.ReactNode;
   active?: boolean;
 }) {
+  // A list is a route, so the button is the router's link when the app hands
+  // one through `render`; on its own it is a button.
+  const item = useRender({
+    defaultTagName: 'button',
+    render,
+    props: {
+      type: render ? undefined : 'button',
+      'data-slot': 'rail-item',
+      'data-active': active || undefined,
+      'aria-label': label,
+      'aria-current': active ? 'page' : undefined,
+      className: cn(
+        'relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-fast ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        className,
+      ),
+      ...props,
+    },
+  });
   return (
     <Tooltip>
-      <TooltipTrigger
-        render={
-          <button
-            type="button"
-            data-slot="rail-item"
-            data-active={active || undefined}
-            aria-label={label}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'relative flex size-10 items-center justify-center rounded-pill text-fg-muted outline-none transition-[background-color,color,transform] duration-fast ease-standard hover:bg-hover-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
-              className,
-            )}
-            {...props}
-          />
-        }
-      >
+      <TooltipTrigger render={item}>
         {children}
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={10} className="flex items-center gap-2">

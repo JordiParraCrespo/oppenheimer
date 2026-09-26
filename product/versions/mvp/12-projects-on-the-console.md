@@ -141,7 +141,9 @@ This note stays the projects-on-New-session note.
 
 ### Later slices, in order
 
-1. Routines (the second rail item) and Settings, each their own note.
+1. ~~Routines (the second rail item) and Settings, each their own note.~~
+   Automations are 13 (routes and frames built, the API next); Settings
+   is 05's Settings bullet.
 
 ## Decided since
 

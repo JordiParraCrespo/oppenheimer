@@ -4,4 +4,5 @@ export * from './installations';
 export * from './organizations';
 export * from './profile';
 export * from './projects';
+export * from './routines';
 export * from './sessions';

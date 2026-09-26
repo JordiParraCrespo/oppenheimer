@@ -1,0 +1,134 @@
+import {
+  Button,
+  EmptyState,
+  IconButton,
+  RoutineItem,
+  SidebarEmptyRow,
+  SidebarProjectHeader,
+  SidebarSearch,
+  Skeleton,
+} from '@oppenheimer/design-system-web';
+import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
+import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { Link, useMatchRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+/**
+ * The console's sidebar body on its automations list
+ * (`product/versions/mvp/13-automations.md`): New automation on top, the
+ * Projects line with its count, the live search, then All automations and a
+ * folding header per project — each with New automation in it — over the
+ * project's automations.
+ *
+ * The frame of the list, built ahead of its rows: the projects are read
+ * because the groups are theirs, and every group is empty until the API
+ * behind automations lands, which is what the empty row says. The rows, the
+ * expanded runs under the selected one and the search's matches arrive with
+ * that slice.
+ */
+export function AutomationsSidebar() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const matchRoute = useMatchRoute();
+  const projects = useProjects();
+  const [query, setQuery] = useState('');
+  const [closed, setClosed] = useState<string[]>([]);
+  const all =
+    Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="px-3 pb-2.5">
+        <Button size="sm" block render={<Link to="/automations/new" />}>
+          {t('automations.sidebar.new')}
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
+        <span className="eyebrow min-w-0 flex-1">{t('automations.sidebar.projects')}</span>
+        {projects.data ? (
+          <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
+        ) : null}
+      </div>
+
+      <SidebarSearch
+        value={query}
+        onValueChange={setQuery}
+        placeholder={t('automations.sidebar.search')}
+        aria-label={t('automations.sidebar.search')}
+        clearLabel={t('automations.sidebar.clearSearch')}
+      />
+
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
+        <div className="px-3 pt-2">
+          <RoutineItem
+            name={t('automations.sidebar.all')}
+            icon={<Zap />}
+            active={all}
+            className="mb-1.5"
+            render={<Link to="/automations" />}
+          />
+        </div>
+
+        {projects.isPending ? (
+          <div className="flex flex-col gap-2 px-3 pt-2">
+            <Skeleton className="h-7.5 w-full" />
+            <Skeleton className="h-7.5 w-full" />
+          </div>
+        ) : projects.data?.length ? (
+          projects.data.map((project) => {
+            const open = !closed.includes(project.id);
+            return (
+              <div key={project.id} className="mt-1.5 flex flex-col">
+                <SidebarProjectHeader
+                  name={project.name}
+                  count={0}
+                  open={open}
+                  onOpenChange={(next) =>
+                    setClosed((current) =>
+                      next ? current.filter((id) => id !== project.id) : [...current, project.id],
+                    )
+                  }
+                  actions={
+                    <IconButton
+                      size="xs"
+                      variant="quiet"
+                      aria-label={t('automations.sidebar.newHere', { name: project.name })}
+                      onClick={() =>
+                        navigate({ to: '/automations/new', search: { project: project.id } })
+                      }
+                    >
+                      <Plus />
+                    </IconButton>
+                  }
+                />
+                {open ? (
+                  <SidebarEmptyRow>
+                    {t('automations.sidebar.emptyProject')}{' '}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate({ to: '/automations/new', search: { project: project.id } })
+                      }
+                    >
+                      {t('automations.sidebar.createOne')}
+                    </button>
+                  </SidebarEmptyRow>
+                ) : null}
+              </div>
+            );
+          })
+        ) : (
+          <div className="px-3 pt-2">
+            <EmptyState compact>
+              <EmptyState.Header>
+                <EmptyState.Description>{t('sessions.sidebar.empty')}</EmptyState.Description>
+              </EmptyState.Header>
+            </EmptyState>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
