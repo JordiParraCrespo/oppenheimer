@@ -230,3 +230,12 @@ earlier note:
   runner's writer orders frames, and that liveness is ping/pong.
 - `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
+- `versions/mvp/05-screens.md`: the repository chip's foot row was
+  "Connect a repository…", back to the onboarding step. It is now
+  "Manage repository access", a new-tab link to the GitHub App's
+  installation page (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
+  a project chip. The 2026-09-26 export puts one first on New session, with
+  a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
+  works out the data model, the API and the console for it (2026-09-26).
+

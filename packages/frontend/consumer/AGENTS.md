@@ -3,7 +3,8 @@
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) first.
 
 The console's domain on top of `@oppenheimer/frontend-core`: `sessions` (a
-worktree with a terminal on a host) and `hosts` (the machines the user owns)
+worktree with a terminal on a host), `projects` (what sessions belong to) and
+`hosts` (the machines the user owns)
 are the product; `organizations`, `profile` and `api-tokens` are the account
 chrome it keeps. `organizations` is the *personal workspace* only — read it,
 rename it, create one for an account that has none. Workspaces have no roster

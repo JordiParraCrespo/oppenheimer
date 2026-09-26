@@ -139,6 +139,19 @@ What belongs here is what the runner does with it:
   runaway build stalls its own pane.
 - It survives the link being down indefinitely. Sessions keep running;
   tmux does not care.
+- **Session commands run on the process's lifetime, not the link's.** The
+  read loop hands each one to a lane per session and goes back to
+  reading, so a slow create never holds up the pongs that keep the link
+  up, or the `credentials.grant` its own clone is waiting on. A lane runs
+  its session's commands one at a time, in arrival order: an attach,
+  input or stop sent right after a create waits for the session, and a
+  redelivered create runs once the first has ended. The context those
+  commands run on is the daemon's, so a link that drops mid-clone does
+  not take the clone with it; their outcomes reach the control plane
+  through the event log, which is resent on the next link. The one
+  exception is an attach: its id belongs to the link that allocated it,
+  so one still queued when that link ends is dropped and the browser
+  reattaches.
 - **Except when the control plane says the host was unpaired**: an HTTP
   `410` at the handshake or a `4410` close (01). That is not a drop but a
   verdict, so the link stops redialling, the revocation is written to
@@ -185,11 +198,20 @@ started last is the one that failed:
    taken by a different id, and reports the name back to the control
    plane, which records it on the checkout as a fact. A GitHub rename
    therefore moves nothing on disk.
+   A first clone lands beside its final name and is renamed into place
+   whole, so one cut short leaves nothing that looks like a store.
 3. `git worktree add sessions/<slug>/<dir>` from the store, on the
    branch `oppenheimer/<project>/<slug>` created from the chosen base.
    When a worktree is not possible, clone instead and **report which
    mode was used**, because cleanup differs. A session may have zero
    checkouts.
+   The path is derived from the session id, so what an interrupted
+   attempt left there is this session's own and the next create takes it
+   over rather than refusing it: a worktree registered on the session's
+   branch is adopted (one git left locked `initializing` has its checkout
+   finished), a registration whose directory is gone is pruned, and a
+   branch the attempt cut is reused only while it holds nothing the base
+   does not. Anything else at the path is `SESS_004`.
 4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
@@ -356,6 +378,16 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   one-hour installation token for that session's repository. The session
   id comes from the environment tmux set at creation, so a helper
   invoked from another shell gets nothing. Nothing on disk (F10).
+- The runner's own git for a session — the clone and fetch of create,
+  the push of close — names the session the same way, so a private
+  repository clones before the session has a shell at all. The session
+  is known to the host from the moment its create begins (`creating`,
+  held in memory only, never reported or saved), which is what the
+  helper's ask resolves against; the control plane already treats a
+  `starting` session as one it may mint for. A clone that git gives up
+  on for want of a credential fails with `GIT_004`, saying which
+  repository and session had no token — never git's "could not read
+  Username", which points at a prompt nobody was shown.
 - The runner **pulls** a fresh token from the control plane before
   expiry — it is the side that knows when the token is about to be used
   — and the control plane may push `credentials.revoke` to drop it early
@@ -561,7 +593,7 @@ internal/
   for that session after the push and uploads them through the proxy
   before the VM is killed; on a create or restart that carries
   `snapshotDownloadUrl`, it unpacks them before relaunching the agent
-  with its resume flag. Capped at 50 MB, newest end kept (12 §5).
+  with its resume flag. Capped at 50 MB, newest end kept (13 §5).
 - **Firecracker snapshots** (memory restore) are not in v0.2: the boot
   on the kept disk is the resume, as it is for Claude Code on the web.
 

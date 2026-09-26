@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { AddSessionRolePermissions1789100100000 } from '../src/migrations/1789100100000-AddSessionRolePermissions';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
+import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
 import { ProjectMapper } from '../src/projects/project.mapper';
 import { SessionCheckoutOrmEntity } from '../src/sessions/database/session-checkout.orm-entity';
 import { WorkSessionOrmEntity } from '../src/sessions/database/work-session.orm-entity';
@@ -129,6 +130,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
         SessionCheckoutOrmEntity,
         WorkSessionEventOrmEntity,
         ProjectOrmEntity,
+        ProjectRepositoryOrmEntity,
       ],
       synchronize: false,
     });

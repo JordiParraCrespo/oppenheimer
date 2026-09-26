@@ -82,6 +82,7 @@
     "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
     "PROJECTS_004": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
     "PROJECTS_005": "Ese proyecto todavía tiene sesiones sin cerrar.",
+    "PROJECTS_006": "Ese nombre ya es el directorio de otro proyecto. Añade un repositorio o elige otro nombre.",
     "SESSIONS_001": "No hemos encontrado esa sesión.",
     "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
     "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",

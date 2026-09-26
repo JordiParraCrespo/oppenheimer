@@ -23,7 +23,8 @@ export const ProjectResource = defineResource({
 
   actions: [
     { name: 'read', label: 'View projects' },
-    { name: 'update', label: 'Rename projects' },
+    { name: 'create', label: 'Create projects' },
+    { name: 'update', label: 'Edit and archive projects' },
   ],
 
   /** The columns each scope dimension filters on. */

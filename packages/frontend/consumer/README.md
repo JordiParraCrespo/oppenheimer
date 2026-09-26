@@ -1,8 +1,9 @@
 # @oppenheimer/frontend-consumer
 
 The consumer product's domain, on top of the kernel. `sessions` (a worktree
-with a terminal on a host) and `hosts` (the machines the user owns) are the
-product; `organizations` (the personal workspace only — no roster, no
+with a terminal on a host), `projects` (the bodies of work sessions belong
+to, with the defaults New session is prefilled with) and `hosts` (the
+machines the user owns) are the product; `organizations` (the personal workspace only — no roster, no
 members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
 and `api-tokens` are the account chrome it keeps. Each module is an entity, an
 error catalog, a repository over `@oppenheimer/api-client`, a service and an
@@ -18,12 +19,16 @@ An app becomes the consumer product by loading `consumerModules` into
 `@oppenheimer/frontend-consumer` (`src/index.ts`):
 
 - **di** — `ConsumerApp`, `consumerModules`, `TOKENS` (the kernel's `TOKENS`
-  spread, plus `HostsRepository`, `HostsService`, `SessionsRepository`,
-  `SessionsService`, `OrganizationsRepository`, `OrganizationsService`,
+  spread, plus `HostsRepository`, `HostsService`, `ProjectsRepository`,
+  `ProjectsService`, `SessionsRepository`, `SessionsService`, `OrganizationsRepository`, `OrganizationsService`,
   `ProfileRepository`, `ProfileService`, `ApiTokensRepository`,
   `ApiTokensService`).
 - **modules/hosts** — `HostEntity`, `HostPairing`, `HostState`,
   `HostsService`, `HostsRepository`, `HostsModule`, `HostsErrors`.
+- **modules/projects** — `ProjectEntity`, `ProjectRepository`,
+  `CreateProjectInput`, `UpdateProjectInput`, `ProjectRepositoryInput`,
+  `shortName`, `ProjectsService`, `ProjectsRepository`, `ProjectsModule`,
+  `ProjectsErrors`.
 - **modules/sessions** — `SessionEntity`, `CreateSessionInput`,
   `SessionAgent`, `SessionState`, `SessionsService`, `SessionsRepository`,
   `SessionsModule`, `SessionsErrors`, `isSessionNotFound`. The terminal's
@@ -44,6 +49,8 @@ An app becomes the consumer product by loading `consumerModules` into
 
 - `useConsumerApp` — the product's services off the kernel container.
 - Hosts: `useHosts`, `usePairHost`, `useRemoveHost`, `hostsKeys`.
+- Projects: `useProjects`, `useCreateProject`, `useUpdateProject`,
+  `useArchiveProject`, `projectsKeys`.
 - Sessions: `useSessions`, `useSession`, `useCreateSession`,
   `useStopSession`, `sessionsKeys`, `useSessionStream` (a stable factory
   over `openStream`, for the effect that mounts a terminal).

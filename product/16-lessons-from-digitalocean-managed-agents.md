@@ -186,12 +186,12 @@ here.
    minutes" instead of terminal silence, and a long unattended run can
    never be called idle. A `stopReason` (`manual | idle | host_stopped
    | host_lost | reboot`) folded from `session.stopped`, passed through
-   when unknown. Changes `12` §6 and §7, `15` §3, `03` §Cloud hosts,
+   when unknown. Changes `13` §6 and §7, `15` §3, `03` §Cloud hosts,
    `10`.
 5. **Wake on use.** Input to a stopped session (the composer with no
    pane open, the CLI, a later port forward) resumes it first and waits
    for `session.started` before typing, and a failed send gives the
-   text back. Changes `03` and `12`.
+   text back. Changes `03` and `13`.
 6. **For the Codex slice: a tee, not a facade.** The runner supervises
    `codex app-server` on loopback and window 0 runs `codex --remote`
    through a runner relay that forwards every frame untouched and
@@ -215,7 +215,7 @@ here.
    fork is a new session on a reflinked copy with its own branch, the
    agent relaunched with its resume and fork flags (to verify). A
    rollback swaps the disk and keeps the id. Changes `15` §3, `02` §14,
-   `03`, `10` (`parentSessionId`, a checkpoint table), `12` §5 and §8.
+   `03`, `10` (`parentSessionId`, a checkpoint table), `13` §5 and §8.
 9. **Later, in their own slices.** An exec verb for the CLI and MCP
    (`session.exec`, a `sessions:exec` scope, never retried). File drop
    into a worktree with a SHA-256 at both ends, mainly for a phone

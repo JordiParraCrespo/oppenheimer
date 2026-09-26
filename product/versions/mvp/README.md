@@ -24,7 +24,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Orchestration (v0.2)](12-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
+| 13 | [Orchestration (v0.2)](13-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
 
 ## Decision log
 
@@ -325,8 +326,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   catalog and the cloud-config that pairs a fresh machine. `hosts/` is
   its only consumer and still owns the rows and the policy (03 §Cloud
   hosts, 10).
-- 2026-09-22: **orchestration is 12.** One runner per host and many
-  hosts per person; the control plane assigns a session to a host at
+- 2026-09-22: **orchestration is 12** (13 since 2026-09-26). One
+  runner per host and many hosts per person; the control plane assigns a session to a host at
   create by a ladder (running host with room, stopped host, new host
   within the account's cap) and never lets hosts claim; a session
   waiting for a host is a `starting` row with no `hostId`, not a jobs
@@ -438,3 +439,15 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with a screen manifest that is provisional until a soak. A session for an
   agent the host's runner never probed is refused at create rather than
   failed at launch, so a new row needs no protocol bump (01).
+- 2026-09-26: **the project is on the console** (12, reversing 10's "the MVP
+  never shows a project chip"). New session is the export's tabbed
+  composer with a project chip first, whose foot row makes a project in a
+  dialog: a name, default repositories with a base branch each, a default
+  host and a default agent, which prefill the other chips. The API grows
+  `POST /projects`, the two defaults and a `project_repository` table; a
+  project made in the dialog has no origin, so the auto-created path for
+  callers that send only checkouts is unchanged. The grouped sidebar and
+  the row menu are the next slice.
+- 2026-09-26: orchestration renumbered from 12 to 13, because projects
+  on the console took 12 first. Only the number and the references to it
+  changed.

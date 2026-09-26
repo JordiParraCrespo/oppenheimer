@@ -755,7 +755,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
   `oci` | `alibaba`, a check constraint), `region`, `label`,
   `credential` (ciphertext under `MACHINES_ENCRYPTION_KEY`), `network`
   jsonb (the per-region VPC or VCN ids created on connect), `maxHosts`
-  (default 2, 12 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
+  (default 2, 13 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
   `host`: no `organizationId`, `keys: { owner, id }`.
 - `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
   paired, `providerRef` (the instance id), `spec` jsonb (the host's
@@ -827,7 +827,9 @@ there.
   the driver exchanges a bigint; the wire's number becomes a string at
   the boundary. The MVP never shows a project chip —
   `00-scope.md` decided four chips, and a fifth is real friction on the
-  most-used screen for a concept with one instance. `POST /sessions`
+  most-used screen for a concept with one instance. (Superseded
+  2026-09-26 by 12: the export puts a project chip first, and a project
+  gains default repositories, a default host and a default agent.) `POST /sessions`
   takes an optional `projectId`; absent, the project is the one whose
   origin is the first checkout's repository.
 
@@ -873,7 +875,7 @@ there.
 
 - `work_session` — `id` (UUID v4, unguessable per F25, and also the tmux
   session name), `organizationId`, `projectId`, `createdByUserId`,
-  `hostId` (null while the session waits for a host, 12 §2), `machineId`
+  `hostId` (null while the session waits for a host, 13 §2), `machineId`
   null, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
   a check constraint), `cwdCheckoutId` null,
   `idempotencyKey` null, then the fold: `state`, `stateSeq`,

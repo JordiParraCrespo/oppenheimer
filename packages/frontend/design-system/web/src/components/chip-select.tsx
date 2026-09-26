@@ -4,6 +4,7 @@ import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, SearchIc
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { Link } from './link';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 /**
@@ -52,12 +53,12 @@ type ChipSelectOption = {
   disabled?: boolean;
 };
 
+/** The foot row either leaves the page (`href`, a new-tab link) or fires a callback. */
 type ChipSelectAction = {
   label: string;
   /** Defaults to a plus. */
   icon?: React.ReactNode;
-  onSelect: () => void;
-};
+} & ({ href: string } | { onSelect: () => void });
 
 /**
  * The two shapes these parts are drawn in.
@@ -95,11 +96,22 @@ function matches(option: ChipSelectOption, term: string) {
 const TRIGGER_CLASSES =
   'group/chip-select inline-flex h-(--control-h-md) shrink-0 items-center gap-[7px] rounded-md border border-border-subtle bg-control px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard hover:border-border hover:bg-control-hover data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
 
+/**
+ * The chip in the composer's scope band: 30px, borderless, muted, no chevron,
+ * the hover wash on hover and while open. Four of them read as one sentence
+ * on the grey band, which is why none of them is drawn as a control.
+ */
+const TAB_TRIGGER_CLASSES =
+  'group/chip-select inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-[13px] whitespace-nowrap text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg data-popup-open:bg-hover-surface data-popup-open:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
+
+type ChipSelectTriggerVariant = 'chip' | 'tab';
+
 /** The chip. Pass `open` so the ring follows the popup. */
 function ChipSelectTrigger({
   icon,
   open,
   placeholder,
+  variant = 'chip',
   children,
   className,
   ...props
@@ -107,20 +119,31 @@ function ChipSelectTrigger({
   icon?: React.ReactNode;
   open?: boolean;
   placeholder?: React.ReactNode;
+  /** `tab` is the borderless form inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
 }) {
   const empty = children === null || children === undefined || children === '';
+  const tab = variant === 'tab';
   return (
     <button
       type="button"
       data-slot="chip-select-trigger"
+      data-variant={variant}
       data-popup-open={open ? '' : undefined}
       aria-haspopup="listbox"
       aria-expanded={open}
-      className={cn(TRIGGER_CLASSES, className)}
+      className={cn(tab ? TAB_TRIGGER_CLASSES : TRIGGER_CLASSES, className)}
       {...props}
     >
       {icon ? (
-        <span className="flex text-fg-subtle [&_svg:not([class*=size-])]:size-3.5">{icon}</span>
+        <span
+          className={cn(
+            'flex [&_svg:not([class*=size-])]:size-3.5',
+            tab ? 'text-inherit' : 'text-fg-subtle',
+          )}
+        >
+          {icon}
+        </span>
       ) : null}
       <span
         data-slot="chip-select-value"
@@ -128,12 +151,14 @@ function ChipSelectTrigger({
       >
         {empty ? placeholder : children}
       </span>
-      <ChevronDownIcon
-        className={cn(
-          'size-3 text-fg-subtle transition-transform duration-fast',
-          open && 'rotate-180',
-        )}
-      />
+      {tab ? null : (
+        <ChevronDownIcon
+          className={cn(
+            'size-3 text-fg-subtle transition-transform duration-fast',
+            open && 'rotate-180',
+          )}
+        />
+      )}
     </button>
   );
 }
@@ -403,30 +428,64 @@ function ChipSelectList({
   );
 }
 
-/** The pinned band at the foot for "Add host…": a plus, the label, a chevron. */
+/**
+ * The pinned band at the foot for "Add host…": a plus, the label, a chevron.
+ *
+ * It takes the whole action and dispatches it: `onClose` runs first either
+ * way, then an `onSelect` action fires; an `href` action is a `Link` in a new
+ * tab, drawn as a row rather than in the link blue.
+ */
 function ChipSelectActionRow({
-  icon,
+  action,
+  onClose,
   className,
-  children,
-  ...props
-}: React.ComponentProps<'button'> & { icon?: React.ReactNode }) {
+}: {
+  action: ChipSelectAction;
+  onClose: () => void;
+  className?: string;
+}) {
+  const classes = cn(ITEM_CLASSES, 'gap-2.5', className);
+  const content = (
+    <>
+      <span
+        aria-hidden
+        className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]"
+      >
+        {action.icon ?? <PlusGlyph />}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{action.label}</span>
+      <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
+    </>
+  );
   return (
     <div
       data-slot="chip-select-footer"
       className="-mx-1 -mb-1 mt-1 border-t border-border-subtle p-1"
     >
-      <button
-        type="button"
-        data-slot="chip-select-action"
-        className={cn(ITEM_CLASSES, className)}
-        {...props}
-      >
-        <span className="flex shrink-0 text-fg-subtle [&_svg:not([class*=size-])]:size-[15px]">
-          {icon ?? <PlusGlyph />}
-        </span>
-        <span className="min-w-0 flex-1 truncate">{children}</span>
-        <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
-      </button>
+      {'href' in action ? (
+        <Link
+          href={action.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-slot="chip-select-action"
+          className={cn(classes, 'text-fg hover:no-underline')}
+          onClick={onClose}
+        >
+          {content}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          data-slot="chip-select-action"
+          className={classes}
+          onClick={() => {
+            onClose();
+            action.onSelect();
+          }}
+        >
+          {content}
+        </button>
+      )}
     </div>
   );
 }
@@ -465,6 +524,7 @@ function ChipSelect({
   action,
   width,
   maxHeight,
+  variant,
   disabled,
   className,
   'aria-label': ariaLabel,
@@ -482,6 +542,8 @@ function ChipSelect({
   action?: ChipSelectAction;
   width?: number;
   maxHeight?: number;
+  /** `tab` inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -527,6 +589,7 @@ function ChipSelect({
             icon={icon}
             open={open}
             placeholder={placeholder}
+            variant={variant}
             aria-label={ariaLabel}
             disabled={disabled}
             className={className}
@@ -571,15 +634,7 @@ function ChipSelect({
           ))}
         </ChipSelectList>
         {action ? (
-          <ChipSelectActionRow
-            icon={action.icon}
-            onClick={() => {
-              setOpen(false);
-              action.onSelect();
-            }}
-          >
-            {action.label}
-          </ChipSelectActionRow>
+          <ChipSelectActionRow action={action} onClose={() => setOpen(false)} />
         ) : null}
       </ChipSelectPopup>
     </Popover>
@@ -597,4 +652,4 @@ export {
   ChipSelectSearch,
   ChipSelectTrigger,
 };
-export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption };
+export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption, ChipSelectTriggerVariant };

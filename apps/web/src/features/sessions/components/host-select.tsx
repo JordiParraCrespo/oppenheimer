@@ -1,4 +1,8 @@
-import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web';
+import {
+  ChipSelect,
+  type ChipSelectOption,
+  type ChipSelectTriggerVariant,
+} from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -26,6 +30,7 @@ export function HostSelect({
   onAddHost,
   loading,
   disabled,
+  variant,
 }: {
   hosts: ChipSelectOption[];
   value: string | null;
@@ -33,6 +38,8 @@ export function HostSelect({
   onAddHost: () => void;
   loading?: boolean;
   disabled?: boolean;
+  /** `tab` inside the composer's scope band; `chip` on its own. */
+  variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();
 
@@ -45,6 +52,7 @@ export function HostSelect({
       loading={loading}
       loadingText={t('sessions.new.host.loading')}
       disabled={disabled}
+      variant={variant}
       aria-label={t('sessions.new.host.label')}
       placeholder={t('sessions.new.host.placeholder')}
       searchPlaceholder={t('sessions.new.host.search')}

@@ -28,7 +28,8 @@ multi-line, so a grep for `export` misses most of them.
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |
 | A dialog taller than the viewport | `DialogBody` around its middle | `overflow-y-auto` on `DialogContent` |
-| Two ways to read the same panel (Command / Agent prompt) | `SegmentedControl` | `Tabs`, two `Button`s |
+| A command with two ways to read it (Command / Agent prompt) | `CodeBlock layout="panel"` with `tabs` | two `CodeBlock`s, a `SegmentedControl` beside a label |
+| Two views of one pane | `SegmentedControl` | `Tabs`, two `Button`s |
 | An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
@@ -37,6 +38,19 @@ multi-line, so a grep for `export` misses most of them.
 | Which agent and model drive a session | `AgentModelSelect` | two `Select`s |
 | How hard the agent thinks | `EffortPicker` | a `Select` of five words |
 | What the agent may touch unattended | `PermissionMenu` | a `Switch` |
+| Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
+| Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
+| A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
+| A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
+| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | `Tabs`, `SegmentedControl` |
+| How a routine page opens | `PageHeader` parts | a hand-built title row |
+| A labelled picker in the routine editor | `FieldSelect` | `Combobox`, `Select` |
+| A trigger's variable parts | `InlineToken` in a `TokenSentence` | a form of `Select`s |
+| A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
+| Runs per day | `RunHistory` | a chart library |
+| The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | `Table` primitives, cards |
+| A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
+| A host on Settings | `HostCard` | `AgentCard`, a table row |
 
 Why: an error callout was hand-rolled in nineteen places while `Alert` sat
 exported, empty and loading states in five while `EmptyState` was used by one,
@@ -57,7 +71,7 @@ the table (`GroupHeading`), never inside the bar.
 | A workspace list, one value, in a labelled field | `Combobox` |
 | Thousands, several values, fetched per keystroke | `AsyncMultiSelect` |
 | A toolbar filter rather than a field | `SelectMenu` (one) / `FilterMenu` (many) |
-| A scope chip on the console (host, branch) | `ChipSelect`, always searchable |
+| A scope chip on the console (project, host, branch) | `ChipSelect`, always searchable; `variant="tab"` inside the composer's scope band |
 | Several repositories, each on its own branch | `RepositorySelect` |
 
 The threshold: if the option list is fetched from an endpoint, it is an

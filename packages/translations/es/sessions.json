@@ -70,6 +70,36 @@
       "use": "Usar este host",
       "defaultName": "Nuevo host"
     },
+    "project": {
+      "label": "Proyecto",
+      "placeholder": "Proyecto",
+      "search": "Buscar proyectos…",
+      "empty": "Ningún proyecto coincide.",
+      "loading": "Cargando proyectos…",
+      "add": "Nuevo proyecto…",
+      "noRepositories": "Sin repositorios"
+    },
+    "projectDialog": {
+      "title": "Nuevo proyecto",
+      "description": "Un cuerpo de trabajo: los repositorios que contiene y con qué empieza una sesión nueva en él.",
+      "name": "Nombre",
+      "namePlaceholder": "XRP Mobile",
+      "repositories": "Repositorios por defecto",
+      "repositoriesHint": "Marcados en cada sesión nueva. Añade otros por sesión.",
+      "defaultCount": "{{defaults}} de {{count}} por defecto",
+      "search": "Buscar repositorios…",
+      "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+      "noRepositories": "Todavía no hay ningún repositorio conectado.",
+      "default": "Por defecto",
+      "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
+      "host": "Host por defecto",
+      "noHost": "Todavía no hay ningún host emparejado.",
+      "agent": "Agente por defecto",
+      "create": "Crear proyecto",
+      "creating": "Creando…",
+      "failed": "No se pudo crear el proyecto."
+    },
     "repository": {
       "label": "Repositorios",
       "placeholder": "Repositorio",
@@ -80,7 +110,8 @@
       "branchEmpty": "Ninguna rama coincide.",
       "branchPane": "Rama de {{name}}",
       "changeBranch": "Cambiar de rama",
-      "connect": "Conectar un repositorio…",
+      "manage": "Gestionar el acceso a repositorios",
+      "noApp": "Este despliegue no tiene la GitHub App, así que no hay repositorios que elegir.",
       "archived": "Archivado"
     },
     "branch": {

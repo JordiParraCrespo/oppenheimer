@@ -3,14 +3,19 @@ import type {
   ChipSelectOption,
   EffortStop,
   RepositoryOption,
+  RepositoryRowOption,
+  RepositoryRowValue,
   RepositoryScope,
 } from '@oppenheimer/design-system-web';
-import type {
-  BranchEntity,
-  CreateSessionCheckout,
-  CreateSessionInput,
-  HostEntity,
-  RepositoryEntity,
+import {
+  type BranchEntity,
+  type CreateSessionCheckout,
+  type CreateSessionInput,
+  type HostEntity,
+  type ProjectEntity,
+  type ProjectRepositoryInput,
+  type RepositoryEntity,
+  shortName,
 } from '@oppenheimer/frontend-consumer';
 import {
   CODING_AGENT_IDS,
@@ -200,4 +205,107 @@ export function capRepositories(
   if (next.length <= MAX_SESSION_CHECKOUTS) return next;
   const added = next.filter((scope) => !previous.some((kept) => kept.id === scope.id));
   return (added.length ? added : next).slice(-MAX_SESSION_CHECKOUTS);
+}
+
+/**
+ * The projects, as the project chip's rows: the name, and under it the
+ * repositories every new session clones — or the word for a project that
+ * holds none.
+ */
+export function toProjectOptions(
+  projects: readonly ProjectEntity[],
+  labels: { noRepositories: string },
+): ChipSelectOption[] {
+  return projects.map((project) => {
+    const defaults = project.defaultRepositories.map((repository) =>
+      shortName(repository.fullName),
+    );
+    return {
+      value: project.id,
+      label: project.name,
+      description: defaults.length ? defaults.join(' · ') : labels.noRepositories,
+      keywords: project.repositories.map((repository) => repository.fullName).join(' '),
+    };
+  });
+}
+
+/**
+ * What picking a project sets on the draft
+ * (`product/versions/mvp/12-projects-on-the-console.md`): the host from its
+ * default when that host is still in the list, the first default repository
+ * with its base branch, and the agent with that agent's default model. A
+ * default the workspace no longer has is skipped rather than written, so the
+ * chip never names a machine that is gone.
+ */
+export function projectPrefill(
+  project: ProjectEntity,
+  hostIds: readonly string[],
+): Partial<Pick<NewSessionDraftShape, 'hostId' | 'scope' | 'agent' | 'model'>> {
+  const patch: Partial<Pick<NewSessionDraftShape, 'hostId' | 'scope' | 'agent' | 'model'>> = {};
+  if (project.defaultHostId && hostIds.includes(project.defaultHostId)) {
+    patch.hostId = project.defaultHostId;
+  }
+  const [first] = project.defaultRepositories;
+  if (first) {
+    patch.scope = [
+      {
+        id: repositoryKey({
+          installationId: first.installationId,
+          githubRepoId: first.githubRepoId,
+        }),
+        branch: first.baseBranch ?? '',
+      },
+    ];
+  }
+  if (project.defaultAgent) {
+    patch.agent = project.defaultAgent;
+    patch.model = defaultModelFor(project.defaultAgent);
+  }
+  return patch;
+}
+
+/** The slice of the draft a project prefills; the hook owns the whole shape. */
+export interface NewSessionDraftShape {
+  hostId: string | null;
+  scope: RepositoryScope[];
+  agent: CodingAgentId;
+  model: string | null;
+}
+
+/**
+ * The installations' repositories as the project dialog's rows, with the
+ * branches of the ones already ticked. Keyed like the scope chip, so a row
+ * ticked here is the same repository the chip will hold.
+ */
+export function toProjectRepositoryRows(
+  repositories: readonly { repository: RepositoryEntity; installationId: string }[],
+  branches: ReadonlyMap<number, readonly BranchEntity[]>,
+): RepositoryRowOption[] {
+  return repositories.map(({ repository, installationId }) => ({
+    id: repositoryKey({ installationId, githubRepoId: repository.githubRepoId }),
+    name: repository.fullName,
+    defaultBranch: repository.defaultBranch,
+    branches: (branches.get(repository.githubRepoId) ?? []).map((branch) => ({
+      value: branch.name,
+    })),
+  }));
+}
+
+/**
+ * The dialog's rows as `POST /projects` takes them. A row whose id no longer
+ * parses is dropped rather than sent, for the same reason a checkout is.
+ */
+export function toProjectRepositoryInputs(
+  rows: readonly RepositoryRowValue[],
+  defaultBranches: ReadonlyMap<string, string>,
+): ProjectRepositoryInput[] {
+  return rows.flatMap((row) => {
+    const ref = parseRepositoryKey(row.id);
+    if (!ref) return [];
+    // The repository's own default branch is not a choice, so it is not sent:
+    // absent reads live, and a renamed default branch follows.
+    const baseBranch =
+      row.branch && row.branch !== defaultBranches.get(row.id) ? row.branch : undefined;
+    return [{ ...ref, isDefault: row.isDefault, ...(baseBranch ? { baseBranch } : {}) }];
+  });
 }

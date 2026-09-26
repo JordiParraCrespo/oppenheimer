@@ -69,6 +69,8 @@ export {
 } from './components/bubble';
 export type { ButtonProps } from './components/button';
 export { Button, buttonVariants } from './components/button';
+export type { CalloutTone } from './components/callout';
+export { Callout } from './components/callout';
 export {
   Card,
   CardAction,
@@ -96,6 +98,7 @@ export type {
   ChipSelectAction,
   ChipSelectDensity,
   ChipSelectOption,
+  ChipSelectTriggerVariant,
 } from './components/chip-select';
 export {
   ChipSelect,
@@ -108,6 +111,7 @@ export {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './components/chip-select';
+export type { CodeBlockTab } from './components/code-block';
 export { CodeBlock } from './components/code-block';
 export {
   Collapsible,
@@ -160,12 +164,14 @@ export {
 } from './components/drawer';
 export {
   DropdownMenu,
+  DropdownMenuBack,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuHeader,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPaneItem,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -203,12 +209,25 @@ export {
   FieldSet,
   FieldTitle,
 } from './components/field';
+export type { FieldSelectOption } from './components/field-select';
+export { FieldSelect } from './components/field-select';
 export type { FilterMenuOption } from './components/filter-menu';
 export { FilterMenu } from './components/filter-menu';
+export type { HostCardStatus } from './components/host-card';
+export { HostCard } from './components/host-card';
 export type { IconButtonProps } from './components/icon-button';
 export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
+export {
+  AddRow,
+  InlineToken,
+  TokenLiveDot,
+  TokenMono,
+  TokenSentence,
+  TriggerCard,
+  WeekdayStrip,
+} from './components/inline-token';
 export type { InputProps } from './components/input';
 export { Input, inputVariants } from './components/input';
 export {
@@ -270,6 +289,16 @@ export {
   useMessageScrollerVisibility,
 } from './components/message-scroller';
 export {
+  PageHeader,
+  PageHeaderCrumbs,
+  PageHeaderHere,
+  PageHeaderMeta,
+  PageHeaderNote,
+  PageHeaderRow,
+  PageHeaderSep,
+  PageHeaderTitleInput,
+} from './components/page-header';
+export {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -281,6 +310,8 @@ export {
 export { PasswordInput } from './components/password-input';
 export type { PermissionLevel, PermissionOption } from './components/permission-menu';
 export { PermissionMenu } from './components/permission-menu';
+export type { PillTabsSize } from './components/pill-tabs';
+export { PillTab, PillTabs } from './components/pill-tabs';
 export {
   Popover,
   PopoverContent,
@@ -315,14 +346,45 @@ export {
   QuestionnaireTitle,
 } from './components/questionnaire';
 export { RadioGroup, RadioGroupItem } from './components/radio-group';
+export { Rail, RailItem, RailMark } from './components/rail';
 export { RecentItem } from './components/recent-item';
 export { ReplyBox } from './components/reply-box';
+export type {
+  RepositoryRowBranch,
+  RepositoryRowOption,
+  RepositoryRowValue,
+} from './components/repository-row-list';
+export { RepositoryRowList } from './components/repository-row-list';
 export type {
   RepositoryBranch,
   RepositoryOption,
   RepositoryScope,
 } from './components/repository-select';
 export { RepositorySelect } from './components/repository-select';
+export {
+  RoutineItem,
+  RoutineRun,
+  RoutineRunList,
+  RoutineRunsEmpty,
+} from './components/routine-item';
+export { RoutineStep, RoutineStepFields, RoutineSteps } from './components/routine-steps';
+export {
+  RoutineTable,
+  RoutineTableEmpty,
+  RoutineTableHead,
+  RoutineTableRow,
+} from './components/routine-table';
+export type { RunHistoryDay } from './components/run-history';
+export { RunHistory } from './components/run-history';
+export type { RunState } from './components/runs-list';
+export {
+  RunRow,
+  RunsList,
+  RunsListEmpty,
+  RunsListFilters,
+  RunsListFoot,
+  RunsListHead,
+} from './components/runs-list';
 export { SearchInput, searchInputVariants } from './components/search-input';
 export { SegmentedControl, SegmentedControlItem } from './components/segmented-control';
 export {
@@ -340,7 +402,20 @@ export {
 } from './components/select';
 export { SelectMenu } from './components/select-menu';
 export { Separator } from './components/separator';
+export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList } from './components/session-item';
+export {
+  SettingsGroup,
+  SettingsHeading,
+  SettingsRow,
+  SettingsSaveRow,
+} from './components/settings-group';
+export {
+  SettingsNav,
+  SettingsNavBack,
+  SettingsNavGroup,
+  SettingsNavItem,
+} from './components/settings-nav';
 export {
   Sheet,
   SheetClose,
@@ -354,6 +429,7 @@ export {
 export {
   Sidebar,
   SidebarContent,
+  SidebarEmptyRow,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupAction,
@@ -372,8 +448,10 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarProjectHeader,
   SidebarProvider,
   SidebarRail,
+  SidebarSearch,
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
@@ -416,7 +494,8 @@ export {
   tabsListVariants,
 } from './components/tabs';
 export { Tag, tagVariants } from './components/tag';
-export type { TerminalTone } from './components/terminal';
+export { TemplateGrid, TemplateItem } from './components/template-grid';
+export type { TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
   TerminalLine,
@@ -425,9 +504,12 @@ export {
   TerminalSpacer,
   TerminalStatusBar,
   TerminalStatusItem,
+  TerminalStatusLink,
   TerminalTurn,
 } from './components/terminal';
 export { Textarea } from './components/textarea';
+export type { TimeGridCell, TimeGridGroup } from './components/time-grid';
+export { TimeGrid } from './components/time-grid';
 export { Toggle, toggleVariants } from './components/toggle';
 export { ToggleGroup, ToggleGroupItem } from './components/toggle-group';
 export type { ToolCallStatus } from './components/tool-call';
