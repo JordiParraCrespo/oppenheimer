@@ -56,6 +56,7 @@ export class CreateApiTokenHttpController {
     description: 'Active token limit reached',
     code: 'TOKEN_009',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async create(
     @Req() request: ScopedRequest,
     @CurrentUser() user: { id: string; role?: string },
