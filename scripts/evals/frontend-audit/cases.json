@@ -1,0 +1,138 @@
+{
+  "prompt": "/frontend-audit diff --base {base} --format json",
+  "tolerate": ["R11", "U5"],
+  "cases": [
+    {
+      "id": "live-search-to-list",
+      "commit": "feat(web): hosts directory with a name search",
+      "expect": [
+        {
+          "rule": "R3",
+          "accept": ["R4", "R6"],
+          "file": "apps/web/src/features/hosts/sections/host-directory.tsx"
+        }
+      ],
+      "why": "The controlled SearchInput value reaches HostRows on every keystroke; the kit's useSearchDraft exists for this. The compiler cannot help: the prop really changes."
+    },
+    {
+      "id": "query-held-for-one-child",
+      "commit": "feat(web): hosts screen lists each host's sessions",
+      "expect": [
+        {
+          "rule": "R1",
+          "accept": ["R2"],
+          "file": "apps/web/src/features/hosts/screens/hosts.tsx"
+        }
+      ],
+      "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it."
+    },
+    {
+      "id": "context-mixed-rates",
+      "commit": "feat(web): host board highlights the hovered card",
+      "expect": [
+        {
+          "rule": "R7",
+          "accept": ["R4"],
+          "file": "apps/web/src/features/hosts/sections/host-board.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/hooks/use-host-view.ts"]
+        }
+      ],
+      "why": "The context value carries the hover id beside the density, so every pointer move re-renders every card."
+    },
+    {
+      "id": "form-watch-at-top",
+      "commit": "feat(web): rename host form with name suggestions",
+      "expect": [
+        {
+          "rule": "R5",
+          "accept": ["R10"],
+          "file": "apps/web/src/features/hosts/forms/rename-host-form.tsx"
+        }
+      ],
+      "why": "watch('name') at the top of the form re-renders the field, the counter, every suggestion and the submit button on each keystroke; the counter and the button should read it through useWatch in leaves."
+    },
+    {
+      "id": "ref-mutated-in-render",
+      "commit": "feat(web): host tabs keep a host lit after a heartbeat blip",
+      "expect": [
+        {
+          "rule": "R10",
+          "accept": ["M-compiler"],
+          "file": "apps/web/src/features/hosts/components/host-tab-strip.tsx"
+        }
+      ],
+      "mechanical": ["M-compiler"],
+      "why": "Writing ref.current during render makes the compiler skip the strip, which the terminal pane re-renders on every status change."
+    },
+    {
+      "id": "effect-resets-on-prop",
+      "commit": "feat(web): host rename draft",
+      "expect": [
+        {
+          "rule": "R9",
+          "file": "apps/web/src/features/hosts/hooks/use-host-draft.ts"
+        }
+      ],
+      "why": "An effect that resets state on a prop change, inside hooks/ where Biome allows effects. It renders the stale draft once, then again."
+    },
+    {
+      "id": "raw-callout-untranslated",
+      "commit": "feat(web): notice when a session's host goes offline",
+      "expect": [
+        {
+          "rule": "U1",
+          "file": "apps/web/src/features/hosts/components/host-offline-notice.tsx"
+        },
+        {
+          "rule": "U3",
+          "file": "apps/web/src/features/hosts/components/host-offline-notice.tsx"
+        }
+      ],
+      "why": "A hand-built callout where Alert exists, and two English sentences outside t(). Every class is a token, so lint:design is silent."
+    },
+    {
+      "id": "map-to-every-row",
+      "commit": "feat(web): fleet view labels each session with its host",
+      "expect": [
+        {
+          "rule": "R8",
+          "accept": ["R12"],
+          "file": "apps/web/src/features/hosts/sections/fleet-sessions.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/components/fleet-session-row.tsx"]
+        }
+      ],
+      "why": "A Map rebuilt from the host list goes to every row, so any settle of the host query re-renders every session row, even those whose host did not change."
+    },
+    {
+      "id": "cross-feature-import",
+      "commit": "feat(web): hosts sidebar shows the active filter",
+      "expect": [
+        {
+          "rule": "M-arch",
+          "accept": ["P3"],
+          "file": "apps/web/src/features/hosts/sections/host-sidebar.tsx"
+        }
+      ],
+      "mechanical": ["M-arch"],
+      "why": "Imports another feature's component. pnpm arch fails; the audit has to run it and report it, not re-derive it."
+    },
+    {
+      "id": "clean-leaf-ticker",
+      "commit": "feat(web): host list shows when each host last answered",
+      "expect": [],
+      "why": "Decoy for R4/R6: the one-second tick lives in the leaf that shows it, and the effect names its system."
+    },
+    {
+      "id": "clean-debounced-search",
+      "commit": "feat(web): hosts directory with a name search",
+      "expect": [],
+      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask."
+    },
+    {
+      "id": "clean-effect-with-comment",
+      "commit": "feat(web): track whether the hosts tab is visible",
+      "expect": [],
+      "why": "Decoy for R9: an effect in hooks/ that subscribes to a DOM event and says so."
+    }
+  ]
+}
