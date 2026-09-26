@@ -648,6 +648,8 @@
   --ease-standard: var(--ease-standard);
   --animate-success-in: op-success-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-effort-in: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-dot: op-pulse-dot 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-label-in: op-label-in 200ms cubic-bezier(0, 0, 0.2, 1) both;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   --duration-instant: var(--dur-instant);
@@ -875,6 +877,29 @@
 /* Menus and dialogs enter with a 4px rise plus fade; nothing slides in from
    an edge. */
 /* The effort value swapping in as the knob moves. */
+/* The terminal's link dot while reconnecting: a breath, not a blink. */
+@keyframes op-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+
+/* A label that changed in place: fades in so the switch reads as an event. */
+@keyframes op-label-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes op-effort-in {
   from {
     opacity: 0;

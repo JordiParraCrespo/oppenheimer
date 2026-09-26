@@ -28,7 +28,8 @@ multi-line, so a grep for `export` misses most of them.
 | Lifecycle state | `Badge` with `active` / `paused` / `ended` / `draft` | `secondary`, `outline`, `destructive` |
 | Quiet metadata chip                   | `Badge variant="neutral"`     | `secondary`                                           |
 | A dialog taller than the viewport | `DialogBody` around its middle | `overflow-y-auto` on `DialogContent` |
-| Two ways to read the same panel (Command / Agent prompt) | `SegmentedControl` | `Tabs`, two `Button`s |
+| A command with two ways to read it (Command / Agent prompt) | `CodeBlock layout="panel"` with `tabs` | two `CodeBlock`s, a `SegmentedControl` beside a label |
+| Two views of one pane | `SegmentedControl` | `Tabs`, two `Button`s |
 | An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |

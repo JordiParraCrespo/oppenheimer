@@ -69,6 +69,7 @@ import {
   TerminalSpacer,
   TerminalStatusBar,
   TerminalStatusItem,
+  TerminalStatusLink,
   TerminalTurn,
 } from '@oppenheimer/design-system-web/terminal';
 import {
@@ -109,20 +110,20 @@ export function AddHostDialogDemo() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add a host</DialogTitle>
-          <DialogDescription>
-            A server you control — a cloud VM, a build box, or your own workstation.
-          </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-[18px]">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2.5">
-              <span className="flex-1 text-sm font-medium text-fg">Run this on it, once</span>
-              <SegmentedControl value={tab} onValueChange={setTab} aria-label="Format">
-                <SegmentedControlItem value="cmd">Command</SegmentedControlItem>
-                <SegmentedControlItem value="prompt">Agent prompt</SegmentedControlItem>
-              </SegmentedControl>
-            </div>
-            <CodeBlock layout="panel" code={tab === 'cmd' ? INSTALL : PROMPT} />
+            <span className="text-sm font-medium text-fg">Run this once on the host</span>
+            <CodeBlock
+              layout="panel"
+              code={tab === 'cmd' ? INSTALL : PROMPT}
+              tabs={[
+                { value: 'cmd', label: 'Command' },
+                { value: 'prompt', label: 'Agent prompt' },
+              ]}
+              tab={tab}
+              onTabChange={setTab}
+            />
             <div className="flex items-baseline justify-between gap-3">
               <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
                 Token expires in 59:41 · single use
@@ -434,17 +435,18 @@ export const REPOS: RepositoryOption[] = [
  * multi-selects with a branch pane per repo, and the branch chip only shows
  * while exactly one repository is selected.
  */
-export function ScopeChips() {
+export function ScopeChips({ variant }: { variant?: 'chip' | 'tab' }) {
   const [host, setHost] = React.useState<string | null>('optimus');
   const [scope, setScope] = React.useState<RepositoryScope[]>([{ id: 'xrp-mobile', branch: 'main' }]);
   const single = scope.length === 1 ? scope[0] : undefined;
   const singleRepo = single ? REPOS.find((r) => r.id === single.id) : undefined;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={variant === 'tab' ? 'contents' : 'flex flex-wrap items-center gap-2'}>
       <ChipSelect
         value={host}
         onValueChange={setHost}
         options={HOSTS}
+        variant={variant}
         icon={<CpuIcon />}
         aria-label="Host"
         searchPlaceholder="Search hosts…"
@@ -455,6 +457,7 @@ export function ScopeChips() {
         repositories={REPOS}
         value={scope}
         onValueChange={setScope}
+        variant={variant}
         action={{
           label: 'Manage repository access',
           icon: <BrandGlyph name="github" size={15} />,
@@ -466,6 +469,7 @@ export function ScopeChips() {
           value={single.branch}
           onValueChange={(branch) => setScope([{ id: single.id, branch }])}
           options={singleRepo.branches.map((b) => ({ value: b.value, label: b.value, mono: true }))}
+          variant={variant}
           icon={<GitBranchIcon />}
           aria-label="Branch"
           searchPlaceholder="Search branches…"
@@ -568,6 +572,7 @@ export function ComposerDemo({ full }: { full?: boolean }) {
             </>
           ) : undefined
         }
+        scope={full ? <ScopeChips variant="tab" /> : undefined}
       />
     </div>
   );
@@ -647,10 +652,10 @@ export function SidebarDemo({ empty }: { empty?: boolean }) {
 /* ── Stepper ─────────────────────────────────────────────────────────────── */
 
 const BOOT = [
-  ['host', 'Reaching mac-studio'],
-  ['clone', 'Cloning xrp-mobile'],
-  ['branch', 'Checking out main'],
-  ['agent', 'Starting Claude Code'],
+  ['host', 'Reaching mac-studio', 'echo 38 ms'],
+  ['clone', 'Cloning xrp-mobile', 'cloning 41 MB…'],
+  ['branch', 'Checking out main', 'opp/680000'],
+  ['agent', 'Starting Claude Code', 'tmux attach…'],
 ] as const;
 
 export function StepperDemo() {
@@ -663,29 +668,41 @@ export function StepperDemo() {
     }, 900);
     return () => clearInterval(id);
   }, []);
-  const mm = String(Math.floor(t / 60)).padStart(2, '0');
-  const ss = String(t % 60).padStart(2, '0');
   return (
     <div className="w-full max-w-[420px]">
-      <div className="eyebrow figures">Starting your session</div>
-      <h3 className="mt-2 text-h2 font-semibold">PR #121 porting to peersyst</h3>
-      <p className="mt-1.5 text-operate text-fg-muted">A worktree is being prepared on mac-studio.</p>
+      <div className="eyebrow figures">mac-studio</div>
+      <h3 className="mt-2 text-h2 font-semibold">Starting your session</h3>
+      <p className="mt-1.5 text-operate text-fg-muted">JordiParraCrespo/xrp-mobile · main</p>
       <Stepper
         className="mt-6"
-        steps={BOOT.map(([id, label], i) => ({
+        steps={BOOT.map(([id, label, meta], i) => ({
           id,
           label,
-          meta: i < step ? `${(0.6 + i * 0.7).toFixed(1)}s` : i === step ? 'running' : undefined,
+          meta: i < step ? `${(0.6 + i * 0.7).toFixed(1)}s` : i === step ? meta : undefined,
           state: i < step ? 'done' : i === step ? 'running' : 'pending',
         }))}
-        elapsed={`${mm}:${ss}`}
-        status={step >= BOOT.length ? 'Handing off to the terminal' : 'Provisioning'}
+        elapsed={`${(t * 0.9).toFixed(1)}s`}
+        status={step >= BOOT.length ? 'Handing off to the terminal' : 'Working…'}
       />
     </div>
   );
 }
 
 /* ── Terminal ────────────────────────────────────────────────────────────── */
+
+/** The link item flips every few seconds so both states are on the page. */
+function LinkDemo() {
+  const [live, setLive] = React.useState(true);
+  React.useEffect(() => {
+    const id = setInterval(() => setLive((v) => !v), 4000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <TerminalStatusLink state={live ? 'live' : 'reconnecting'}>
+      {live ? 'Live' : 'Reconnecting…'}
+    </TerminalStatusLink>
+  );
+}
 
 export function TerminalDemo() {
   return (
@@ -721,6 +738,7 @@ export function TerminalDemo() {
         </TerminalScrollback>
         <TerminalPrompt />
         <TerminalStatusBar>
+          <LinkDemo />
           <TerminalStatusItem>6% used · 4h 2m</TerminalStatusItem>
           <TerminalStatusItem>51% used · 4d 3h</TerminalStatusItem>
           <TerminalStatusItem>763.4 MB</TerminalStatusItem>

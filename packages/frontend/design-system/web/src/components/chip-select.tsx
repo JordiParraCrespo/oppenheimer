@@ -102,11 +102,22 @@ function matches(option: ChipSelectOption, term: string) {
 const TRIGGER_CLASSES =
   'group/chip-select inline-flex h-(--control-h-md) shrink-0 items-center gap-[7px] rounded-md border border-border-subtle bg-control px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard hover:border-border hover:bg-control-hover data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
 
+/**
+ * The chip in the composer's scope band: 30px, borderless, muted, no chevron,
+ * the hover wash on hover and while open. Four of them read as one sentence
+ * on the grey band, which is why none of them is drawn as a control.
+ */
+const TAB_TRIGGER_CLASSES =
+  'group/chip-select inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-[13px] whitespace-nowrap text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg data-popup-open:bg-hover-surface data-popup-open:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
+
+type ChipSelectTriggerVariant = 'chip' | 'tab';
+
 /** The chip. Pass `open` so the ring follows the popup. */
 function ChipSelectTrigger({
   icon,
   open,
   placeholder,
+  variant = 'chip',
   children,
   className,
   ...props
@@ -114,20 +125,31 @@ function ChipSelectTrigger({
   icon?: React.ReactNode;
   open?: boolean;
   placeholder?: React.ReactNode;
+  /** `tab` is the borderless form inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
 }) {
   const empty = children === null || children === undefined || children === '';
+  const tab = variant === 'tab';
   return (
     <button
       type="button"
       data-slot="chip-select-trigger"
+      data-variant={variant}
       data-popup-open={open ? '' : undefined}
       aria-haspopup="listbox"
       aria-expanded={open}
-      className={cn(TRIGGER_CLASSES, className)}
+      className={cn(tab ? TAB_TRIGGER_CLASSES : TRIGGER_CLASSES, className)}
       {...props}
     >
       {icon ? (
-        <span className="flex text-fg-subtle [&_svg:not([class*=size-])]:size-3.5">{icon}</span>
+        <span
+          className={cn(
+            'flex [&_svg:not([class*=size-])]:size-3.5',
+            tab ? 'text-inherit' : 'text-fg-subtle',
+          )}
+        >
+          {icon}
+        </span>
       ) : null}
       <span
         data-slot="chip-select-value"
@@ -135,12 +157,14 @@ function ChipSelectTrigger({
       >
         {empty ? placeholder : children}
       </span>
-      <ChevronDownIcon
-        className={cn(
-          'size-3 text-fg-subtle transition-transform duration-fast',
-          open && 'rotate-180',
-        )}
-      />
+      {tab ? null : (
+        <ChevronDownIcon
+          className={cn(
+            'size-3 text-fg-subtle transition-transform duration-fast',
+            open && 'rotate-180',
+          )}
+        />
+      )}
     </button>
   );
 }
@@ -498,6 +522,7 @@ function ChipSelect({
   action,
   width,
   maxHeight,
+  variant,
   disabled,
   className,
   'aria-label': ariaLabel,
@@ -515,6 +540,8 @@ function ChipSelect({
   action?: ChipSelectAction;
   width?: number;
   maxHeight?: number;
+  /** `tab` inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -560,6 +587,7 @@ function ChipSelect({
             icon={icon}
             open={open}
             placeholder={placeholder}
+            variant={variant}
             aria-label={ariaLabel}
             disabled={disabled}
             className={className}
@@ -631,4 +659,4 @@ export {
   ChipSelectSearch,
   ChipSelectTrigger,
 };
-export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption };
+export type { ChipSelectAction, ChipSelectDensity, ChipSelectOption, ChipSelectTriggerVariant };

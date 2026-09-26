@@ -723,8 +723,9 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop."
+        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
+  scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
   engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker value={effort} onValueChange={setEffort} /></>} />`}
       >
@@ -780,7 +781,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add host is the only dialog in v1: one instruction, two ways to read it, and a status line that resolves in place so nothing below it moves. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add a host opens from the composer's host chip and from Settings: one instruction block whose header band carries the Command / Agent prompt tabs and a single Copy, the code at a fixed height so the token line under it never moves, and a status line that resolves in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -841,8 +842,8 @@ export default function Page() {
         id="stepper"
         title="Stepper"
         meta="stepper.tsx"
-        desc="The provisioning pane. Steps are named so a slow one is diagnosable: a spinning ring while running, a green check when done, the rail turning green behind it, mono elapsed time in the footer."
-        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="00:12" status="Provisioning" />`}
+        desc="The provisioning pane: the host as the eyebrow, Starting your session as the title, owner/repo · branch under it. Steps are named so a slow one is diagnosable: an empty ring while pending, a spinning ring while running, a green check when done, the rail turning green behind it, the running step's mono detail under its label, and the footer reading the elapsed seconds and a status word."
+        code={`<Stepper steps={[{ id, label, meta, state: 'running' }]} elapsed="1.4s" status="Working…" />`}
       >
         <StepperDemo />
       </Spec>
@@ -854,7 +855,7 @@ export default function Page() {
         id="terminal"
         title="Terminal"
         meta="terminal.tsx"
-        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom."
+        desc="The product's primary surface: 13px SF Mono at 1.55 on its own ramp, paper in light mode. In the product the scrollback is xterm.js; TerminalLine carries the same vocabulary for replays and the showcase. The prompt row is pinned and the status band runs along the bottom, starting with the link to the host: TerminalStatusLink is green and Live while connected, amber and pulsing while the console reconnects."
         bare
       >
         <ThemePair className="md:grid-cols-1 lg:grid-cols-2 [&>div]:p-0 [&>div]:border-0 [&>div]:bg-transparent">

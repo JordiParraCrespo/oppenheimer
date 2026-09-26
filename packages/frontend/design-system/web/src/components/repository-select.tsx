@@ -13,7 +13,7 @@ import {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './chip-select';
-import type { ChipSelectAction } from './chip-select';
+import type { ChipSelectAction, ChipSelectTriggerVariant } from './chip-select';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
@@ -79,6 +79,7 @@ function RepositorySelect({
   branchPaneTitle = (name) => `Branch for ${name}`,
   changeBranchLabel = 'Change branch',
   action,
+  variant,
   disabled,
   className,
   'aria-label': ariaLabel = 'Repositories',
@@ -105,6 +106,8 @@ function RepositorySelect({
   branchPaneTitle?: (repoName: string) => React.ReactNode;
   changeBranchLabel?: string;
   action?: ChipSelectAction;
+  /** `tab` inside the composer's scope band. */
+  variant?: ChipSelectTriggerVariant;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
@@ -168,6 +171,7 @@ function RepositorySelect({
           <ChipSelectTrigger
             icon={icon ?? <FolderIcon />}
             open={open}
+            variant={variant}
             placeholder={placeholder}
             aria-label={ariaLabel}
             disabled={disabled}

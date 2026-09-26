@@ -46,6 +46,7 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   - overlays: `Dialog`, `DropdownMenu`, `Tooltip`
   - navigation: `Sidebar`, `SessionItem`, `Stepper`
   - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`
+    with `TerminalStatusLink`
   - media: `ImageCarousel`
 
   Everything else in that folder is legacy from the starter, kept so `apps/web`

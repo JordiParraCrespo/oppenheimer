@@ -56,7 +56,15 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   attach and the `PermissionMenu`. Right: `AgentModelSelect` (harness first,
   then its models, so the pair is always valid), `EffortPicker`, mic, send.
   All of them hang from `ComposerToolButton`. Full access is the one setting
-  allowed the warning tone, because it can change a machine unattended.
+  allowed the warning tone, because it can change a machine unattended. On
+  New session the composer is tabbed: the scope chips go in its `scope`
+  slot, a grey band fused to the top of the field, each chip a
+  `ChipSelectTrigger` in its `tab` variant (borderless, muted, no chevron),
+  so where the work happens reads as one sentence over the box.
+- **One instruction block, one Copy.** Add a host shows the install command
+  and the agent prompt as tabs on the header band of one
+  `CodeBlock layout="panel"`, at a fixed height so the token line under it
+  never moves. Never two blocks with two copy buttons.
 
 ## Conventions
 

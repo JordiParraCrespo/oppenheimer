@@ -96,6 +96,7 @@ export type {
   ChipSelectAction,
   ChipSelectDensity,
   ChipSelectOption,
+  ChipSelectTriggerVariant,
 } from './components/chip-select';
 export {
   ChipSelect,
@@ -108,6 +109,7 @@ export {
   ChipSelectSearch,
   ChipSelectTrigger,
 } from './components/chip-select';
+export type { CodeBlockTab } from './components/code-block';
 export { CodeBlock } from './components/code-block';
 export {
   Collapsible,
@@ -416,7 +418,7 @@ export {
   tabsListVariants,
 } from './components/tabs';
 export { Tag, tagVariants } from './components/tag';
-export type { TerminalTone } from './components/terminal';
+export type { TerminalLinkState, TerminalTone } from './components/terminal';
 export {
   Terminal,
   TerminalLine,
@@ -425,6 +427,7 @@ export {
   TerminalSpacer,
   TerminalStatusBar,
   TerminalStatusItem,
+  TerminalStatusLink,
   TerminalTurn,
 } from './components/terminal';
 export { Textarea } from './components/textarea';
