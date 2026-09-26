@@ -78,6 +78,7 @@ export class CreateSessionHttpController {
     description: "The host's runner is older than the agent picked",
     code: 'SESSIONS_011',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,

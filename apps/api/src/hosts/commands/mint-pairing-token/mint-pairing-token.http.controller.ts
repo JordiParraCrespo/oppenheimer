@@ -55,8 +55,9 @@ export class MintPairingTokenHttpController {
   })
   @ApiProblemResponse({
     status: 429,
-    description: 'The caller already holds as many unspent pairing tokens as one person may',
-    code: 'HOSTS_006',
+    description:
+      'The caller already holds as many unspent pairing tokens as one person may, or hit the rate limit',
+    code: ['HOSTS_006', 'RATE_001'],
   })
   async mint(
     @CurrentUser('id') userId: string,

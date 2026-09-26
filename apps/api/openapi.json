@@ -448,6 +448,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1297,6 +1307,16 @@
           },
           "409": {
             "description": "TOKEN_009 — Active token limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5000,7 +5020,7 @@
             }
           },
           "429": {
-            "description": "HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may",
+            "description": "HOSTS_006 / RATE_001 — The caller already holds as many unspent pairing tokens as one person may, or hit the rate limit",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5115,6 +5135,16 @@
           },
           "401": {
             "description": "HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8002,6 +8032,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8171,6 +8211,16 @@
               }
             }
           },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "SESSIONS_008 — A terminal ticket could not be issued",
             "content": {
@@ -8293,6 +8343,16 @@
           },
           "415": {
             "description": "SESSIONS_013 — Not an image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {

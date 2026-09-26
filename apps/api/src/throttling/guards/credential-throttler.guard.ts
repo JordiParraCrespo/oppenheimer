@@ -1,8 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { type ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import { ThrottlerGuard, type ThrottlerLimitDetail } from '@nestjs/throttler';
+import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../../auth/application/credential-scope.port';
 import { CREDENTIAL_SCOPE } from '../../auth/auth.di-tokens';
 import type { ScopedRequest } from '../../auth/domain/scope-context.types';
+import { ThrottlingErrors } from '../domain/throttling.errors';
 
 /**
  * The application's `ThrottlerGuard`, keyed on **who is calling** rather than
@@ -47,6 +49,22 @@ export class CredentialThrottlerGuard extends ThrottlerGuard {
     if (typeof userId === 'string' && userId) return `user:${userId}`;
 
     return `ip:${request.ip ?? 'unknown'}`;
+  }
+
+  /**
+   * Answer a blocked request with the catalog error instead of Nest's codeless
+   * `ThrottlerException`. The base guard has already set `Retry-After` by the
+   * time it calls this; the same number goes in `retryAfter` for clients that
+   * read the body rather than the headers.
+   */
+  protected async throwThrottlingException(
+    _context: ExecutionContext,
+    limit: ThrottlerLimitDetail,
+  ): Promise<void> {
+    throw new AppError(ThrottlingErrors.TOO_MANY_REQUESTS, {
+      detail: `Rate limit reached; retry in ${limit.timeToBlockExpire}s`,
+      extensions: { retryAfter: limit.timeToBlockExpire },
+    });
   }
 
   /**
