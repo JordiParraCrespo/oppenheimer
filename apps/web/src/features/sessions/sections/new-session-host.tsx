@@ -24,7 +24,9 @@ export function NewSessionHost() {
     <>
       <HostSelect
         hosts={toHostOptions(hosts.data ?? [], { offline: t('sessions.new.host.offline') })}
-        value={field.value}
+        // A remembered host the workspace no longer has is shown as none once
+        // the list answers, the way the project chip treats a project.
+        value={hosts.data?.some((host) => host.id === field.value) ? field.value : null}
         onValueChange={field.onChange}
         onAddHost={() => setAdding(true)}
         loading={hosts.isPending}

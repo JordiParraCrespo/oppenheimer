@@ -74,9 +74,13 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     return { data: projects, isPending: false };
   },
   useProjectsSnapshot: () => () => reads.get().projects,
-  useHosts: () => {
-    const hosts = useSyncExternalStore(reads.subscribe, () => reads.get().hosts);
-    return { data: hosts, isPending: false };
+  // Applies `select` inside the subscription, as a query observer does, so a
+  // reader that selects a boolean re-renders only when the boolean flips.
+  useHosts: (options?: { select?: (hosts: { id: string }[]) => unknown }) => {
+    const data = useSyncExternalStore(reads.subscribe, () =>
+      options?.select ? options.select(reads.get().hosts) : reads.get().hosts,
+    );
+    return { data, isPending: false };
   },
   useHostsSnapshot: () => () => reads.get().hosts,
   useInstallations: () => ({ data: [], isPending: false }),
@@ -91,6 +95,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
   useDeploymentCapabilities: () => ({ data: null, isPending: false }),
+  useErrorMessage: () => (_error: unknown, fallback: string) => ({ message: fallback }),
 }));
 
 const PROJECTS = [
