@@ -22,49 +22,92 @@ The Add host screen offers, in this order:
 - **One command.** Copy, paste into a terminal on the host, done.
 
   ```sh
-  curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- \
-    --token <registration token> --url https://app.oppenheimer.dev
+  curl --proto '=https' --tlsv1.2 -fsSL https://get.oppenheimer.dev/install.sh |
+    OPPENHEIMER_REGISTRATION_TOKEN=<registration token> sh -s -- \
+    --url https://app.oppenheimer.dev
   ```
 
-  The screen shows the installer's own SHA-256 next to it, so the
-  careful path — download, read, run — is a click away and not a
-  different set of instructions.
+  The token rides in the installer's **environment**, not as `--token`:
+  an argument sits in the process list, readable by every account on the
+  machine for as long as the install runs, and the installer hands it to
+  `runner register` the same way. `--proto '=https' --tlsv1.2` is rustup's
+  pin: no redirect can downgrade the download to plain HTTP.
+
+  The screen shows the installer's own SHA-256 under the command
+  (`RUNNER_INSTALL_SHA256`, printed by `scripts/runner/release.sh`), so
+  the careful path — download, read, check, run — is a click away and not
+  a different set of instructions.
 - **An agent prompt.** The same steps spelled out for a Claude Code or
-  Codex already running on that machine, instead of hidden inside
-  `curl | sh`: what the runner is, download and checksum, place in
-  `~/.local/bin`, register with the token, install the service, confirm
-  online, report the preflight. It carries an explicit do-not list: not
-  as root, no ports, do not copy the token elsewhere, stop if the
-  checksum differs. The only secret in it is the registration token,
-  which can do exactly one thing — add one host to your account, usable
-  from any of your workspaces — and expires in an hour. The prompt is
-  versioned and served by the control plane, so a runner release can
-  change steps and checksums without a web deploy.
+  Codex, instead of hidden inside `curl | sh`. Its first job is to
+  establish that the agent is on the machine the person means — the agent
+  may be on a laptop while the host is a VPS, or in a container that will
+  be gone in an hour — because the token is single-use and spending it on
+  the wrong box leaves a host nobody wanted and no token. So it opens with
+  a step 0 that runs nothing: name the machine and ask, refuse a
+  temporary one, ask where session code should live, and check `git` and
+  `tmux`, asking before installing either. Then the command (or an SSH
+  form that sends the token on stdin), then `runner status` read line by
+  line — never by its exit code, which is 0 for an unpaired host — and a
+  branch per error code the runner reports. It carries an explicit
+  do-not list: not as root, no ports, never write or repeat the token.
+  The only secret in it is the registration token, which can do exactly
+  one thing — add one host to your account — and expires in an hour. The
+  prompt is templated by the control plane
+  (`apps/api/src/hosts/infrastructure/runner-release.config.ts`), so a
+  runner release can change steps without a web deploy.
 - **The manual path**, for an air-gapped or suspicious host: the
   tarball, its `SHA256SUMS` and the detached signature from the release
   page, verified by hand, then `runner register` and `runner install`.
 
 All three end in the same place: a binary under `~/.oppenheimer/bin`, a
 `config.json`, a user service, and a host that shows online. The
-installer is idempotent — re-running it repairs a half-finished install
-rather than producing a second one.
+installer is idempotent — re-running the same command repairs a
+half-finished install rather than producing a second one: it registers
+with `--keep-existing`, so a host already paired to this control plane
+keeps its pairing and the token is not spent again.
 
 ### 2. What the installer does, in order
 
+The whole script is one `main` called on its last line, so a download cut
+short defines functions and runs none of them — the partial-execution
+failure every `curl | sh` has unless it is written this way.
+
 1. **Refuse to be root.** If `id -u` is 0 it stops and says to run it as
    the user who will own the sessions.
-2. **Detect** os and arch (darwin and linux × arm64 and amd64) and stop
+2. **Refuse plain HTTP.** The control plane URL, the release base and
+   every artifact URL must be `https://`; plain HTTP is allowed only to
+   `localhost` for development. Artifacts must come from the release host
+   the command named, the same rule the updater applies (§5).
+3. **Detect** os and arch (darwin and linux × arm64 and amd64) and stop
    on anything else with the list of what is supported.
-3. **Fetch the signed release manifest** for the host's channel and take
-   the version, URL and digest for this target from it. The script checks
-   the **digest**, because `shasum` is on every macOS and `sha256sum` on
-   every Debian; the **signature** is checked by the binary, which has the
-   public key compiled in — a signature tool is not something an installer
-   can assume, and shipping one would be a second thing to trust.
-4. **Download and verify**: SHA-256 against the manifest, then the
-   artifact's detached signature. A mismatch aborts and deletes the
-   download — there is no "continue anyway" flag.
-5. **Place** it at `~/.oppenheimer/bin/runner-<version>`, point the
+4. **Ask everything up front**, before anything is downloaded, so the
+   rest runs unattended and a "no" costs nothing. Questions go to
+   `/dev/tty` — under `curl | sh` stdin is the script itself, so a
+   question read from stdin can never be answered — and are only asked
+   when a terminal can be opened:
+   - **where session code lives** (`--workspaces`, default
+     `~/oppenheimer-ai/workspaces`), refused inside `~/.oppenheimer` and
+     warned about inside a synced folder;
+   - **`git` and `tmux`**, the two tools sessions cannot start without.
+     When one is missing, the installer shows the exact command it would
+     run — `brew install …` or `sudo apt-get …` — and asks `[y/N]`: only a
+     typed yes installs, and Enter means no. With no terminal (an agent,
+     CI) it installs nothing. Either way, a tool that is still missing
+     stops the install **before the token is spent**, so the same command
+     works once the tool is there. `claude` missing is a hint, not a
+     failure (02 §10).
+5. **Fetch the signed release manifest** for the host's channel and, where
+   OpenSSL 3 is available, **check its Ed25519 signature** against the
+   release keys `scripts/runner/release.sh` stamps into the copy of the
+   script it publishes — the same keys the binary has compiled in. macOS
+   ships LibreSSL, which cannot, and there the script says so and relies
+   on HTTPS for the first download; every later update is verified by the
+   binary itself. A signature that does not verify aborts.
+6. **Download and verify**: SHA-256 against the manifest. A mismatch
+   aborts and deletes the download — there is no "continue anyway" flag.
+   The manifest's artifact entry is read whatever order its fields come
+   in.
+7. **Place** it at `~/.oppenheimer/bin/runner-<version>`, point the
    `current` symlink at it, and drop a shim at
    `~/.local/bin/oppenheimer-runner`.
 
@@ -77,16 +120,11 @@ rather than producing a second one.
    attribute (`xattr -d com.apple.quarantine`) until the binary is
    signed; a plain binary and a launchd user agent need no notarization,
    only a `.app` would.
-6. **Preflight** `git`, `tmux`, `claude`, free disk. `tmux` is required,
-   so when it is missing the installer offers to install it with `brew`
-   or `apt` and says exactly which command it will run, with sudo, and
-   what happens if you decline (sessions will not start until you
-   install it yourself). `claude` missing is a hint, not a failure
-   (02 §10).
-7. **Register** (§3) and **install the service** (§4).
-8. **Confirm**: wait for the link to come up, then print the host id,
-   the version, and the preflight table. The same table is what the
-   console shows on the host's row.
+8. **Register** (§3) with `--keep-existing`, the token in the runner's
+   environment, and **install the service** (§4).
+9. **Confirm**: print `runner status` — the host id, the key fingerprint,
+   the version, the preflight table, and where sessions will live. The
+   same table is what the console shows on the host's row.
 
 **From cloud-init (v0.2).** A cloud machine (03 §Cloud hosts) runs
 this same installer, with two things cloud-init has to get right.
@@ -113,19 +151,51 @@ The GitHub Actions runner pattern, which solves exactly this problem:
 get a machine behind a NAT talking to a control plane without ever
 putting the user's credentials on it.
 
-- Settings mints a **one-hour, single-use registration token**, shown
-  inside the install command. It is revocable, and the console shows the
+- Add host — the dialog, or onboarding's host step — mints a **one-hour,
+  single-use registration token**, shown inside the install command.
+  The command carries it as an environment assignment
+  (`OPPENHEIMER_REGISTRATION_TOKEN=… sh`), so it is an argument of nothing
+  the installer or the runner runs; it is still on the line the person
+  pastes, and in that shell's history until it expires. It is revocable, and the console shows the
   source IP that redeemed it (F5).
 - `runner register` generates an **ed25519 keypair**, writes the private
   key 0600 (F8), and sends the public key with the host facts and a name.
+  It takes the token from `--token-file` (or `-` for stdin) or
+  `OPPENHEIMER_REGISTRATION_TOKEN`, so it never has to be an argument;
+  `--token` still works.
+- It **refuses a machine that looks temporary** — `/.dockerenv`,
+  `/run/.containerenv`, a container cgroup, or `CI`, `GITHUB_ACTIONS`,
+  `CODESPACES`, `REMOTE_CONTAINERS`, `DEVCONTAINER`, `GITPOD_WORKSPACE_ID`
+  or `KUBERNETES_SERVICE_HOST` set — with `HOST_006`, before the token is
+  sent. `--allow-container` is the deliberate answer for a container that
+  is meant to last; the e2e fleet passes it.
 - The control plane burns the token, stores the public key, and answers
   with the **host id** and **its own key fingerprint**, which the runner
   pins in `config.json` and checks on every dial thereafter (F6).
 - Every later boot signs a short-lived JWT with the host key. The
   registration token is never stored and never reusable.
-- Rotation is `runner register --rotate-key` against an authenticated
-  link: new keypair, new public key, old key retired after the next
-  successful dial.
+- **Key rotation waits for the link to carry it** (decided 2026-09-19,
+  MVP decision log): the register route redeems registration tokens and
+  cannot rotate a key. Until then the answer to a stolen host key is to
+  unpair the host and pair the machine again. The verifier already takes a
+  list of keys, so the retired key joins it when rotation lands.
+- **A host that is unpaired stops dialling.** The link refuses an
+  unpaired host at the handshake and closes a live one (01), and the
+  runner treats both as terminal: it records the revocation in
+  `config.json`, stops redialling, and says so in `runner status` —
+  rather than walking its reconnect ladder against a control plane that
+  will never take it back. Pairing it again needs no `--force`.
+- **The owner is told.** Every registration queues a security email to
+  the host's owner — the machine, and the first sixteen characters of its
+  key fingerprint, which `runner status` prints in full — the way GitHub
+  mails you when an SSH key is added. It is the cheapest way to notice a
+  stolen token.
+- **One person holds at most five unspent tokens** (`HOSTS_006`), each a
+  live way to add a machine for its hour. The count and the insert are one
+  write, so two tabs minting at once cannot both find room. Add host's
+  "New token" mints a replacement that retires the token on screen in the
+  same write, so a command pasted into the wrong window stops working at
+  once, and a refused mint leaves the old one as it was.
 - A pairing-code flow — install first, type a code in the browser — is
   not needed while pasting a command works.
 
@@ -145,10 +215,26 @@ putting the user's credentials on it.
 - Both point at the `current` symlink, never at a versioned path, which
   is what makes an update a symlink swap plus a restart (§5).
 - **`runner uninstall`** stops and removes the unit, revokes the host
-  key at the control plane, and deletes `~/.oppenheimer`. It refuses
-  while sessions are live unless `--force`, and it **never touches
-  `~/oppenheimer-ai`** — that directory is the user's code and their
-  worktrees. It prints what it left behind.
+  key at the control plane, and erases the identity (`config.json` and
+  `host.key`). It **refuses while any of the runner's tmux sessions is
+  running** unless `--force`, which ends them: the unit deliberately
+  leaves tmux up when the runner stops, so without the check an agent
+  would keep working after the uninstall with no control plane and no
+  console. `--force` ends the sessions and keeps their checkouts; a
+  session it cannot end stops the uninstall before the identity is
+  erased, so the host stays paired and a second run can finish. It says
+  when the control plane could not be reached — the host is then still
+  listed and its key still trusted until it is unpaired there
+  (`DELETE /v1/hosts/{id}`; the console has no unpair control yet) — and
+  it **never touches the workspaces directory**, which is the user's
+  code. Binaries and logs under `~/.oppenheimer` are left for the user to
+  delete, and it prints both paths.
+- **Where sessions live** is chosen at install (`--workspaces`) and saved
+  in `config.json`, so the service, `runner status` and `runner sessions`
+  agree on it without an environment variable; `RUNNER_WORKSPACES` still
+  wins, for development. `runner workspaces --set <dir>` moves where new
+  sessions go, refused while any session's worktree is still on disk
+  under the old directory, and moves nothing.
 
 ### 5. Updates
 
@@ -175,7 +261,8 @@ putting the user's credentials on it.
   in [03](03-control-plane.md) §"Runner-facing surfaces". A compromised
   control plane can withhold updates; it cannot deliver code.
 - **Channels and pinning.** `stable` by default, `beta` opt-in per host
-  in Settings, and `runner update --pin <version>` freezes a host
+  at install (`--channel beta`) and, with the settings drawer, from the
+  console; and `runner update --pin <version>` freezes a host
   entirely; the console shows pinned hosts as pinned, because a host
   that silently stopped updating is the failure nobody notices.
 - **When it runs.** On boot, every six hours, and immediately when a
@@ -263,8 +350,9 @@ putting the user's credentials on it.
 - The control plane supports runners two minor versions back. Wire
   changes are additive within a major version, so a new control plane
   and an old runner is a supported pair for weeks, not hours.
-- Version, channel, pin and last update outcome are on the host's row in
-  Settings. A fleet of one is still a fleet; the screen answers "is this
+- Version, channel, pin and last update outcome will be on the host's row
+  in the settings drawer (05, a later slice); until then `runner status`
+  on the host shows them. A fleet of one is still a fleet; the screen answers "is this
   host current" without an SSH session.
 
 ### 7. What this deliberately prevents
@@ -273,9 +361,15 @@ putting the user's credentials on it.
 |---|---|
 | Control plane compromised, pushes a malicious runner | It cannot sign the manifest; the offline key is not in CI, let alone in the control plane |
 | Release host compromised, serves a different binary **to an installed runner** | Digest and signature are checked after download, against a key compiled into the running binary |
-| Release host compromised **during a first install** | Not prevented. `install.sh` is fetched over HTTPS and trusted on first use; a host that serves both the script and the manifest can replace both. The mitigations are the digest shown on the Add host screen, the token's single hour, and keeping the script host, the artifact host and the control plane separate (03). F26 begins at the first self-update — see F26a in 07 |
-| Registration token stolen | One hour, one use, one host added to that account; the source IP is shown and it can be revoked |
-| Host key stolen | It only authenticates a dial; rotation is a subcommand, revocation is a click, and the console shows the last dial |
+| Release host compromised **during a first install** | Not fully prevented. `install.sh` is fetched over HTTPS and trusted on first use. The manifest signature is now checked by the script where OpenSSL 3 exists, but against keys the script itself carries, so a host that serves both the script and the manifest can replace both. The anchor is the installer digest the control plane shows on the Add host screen, which lives on a different host; then the token's single hour, and keeping the script host, the artifact host and the control plane separate (03). F26 begins at the first self-update — see F26a in 07 |
+| A download of `install.sh` cut short | Everything runs from `main` on the last line, so a partial script defines functions and runs none |
+| A redirect or proxy downgrades a download to HTTP | Every URL must be `https://` (loopback excepted), `curl --proto '=https' --tlsv1.2` refuses a downgrade, and artifacts must come from the release host |
+| Registration token stolen | One hour, one use, one host added to that account, never on a command line; the source IP is shown and it can be revoked. The owner is emailed the moment a machine pairs, one person holds at most five unspent tokens, and "New token" revokes the one it replaces |
+| Token spent on a container or CI job that disappears | `runner register` refuses a machine that looks temporary (`HOST_006`) before sending the token; the agent prompt asks first |
+| Host key stolen | It only authenticates a dial, and an unpaired host cannot hold a link or be granted credentials. Rotation waits for the link (§3); until then the answer is to unpair and pair again |
+| A host the user unpaired keeps dialling, or keeps its link | Refused at the handshake and closed within a heartbeat — at once on the instance holding the link — and the runner stops dialling for good |
+| Uninstall leaves agents running unattended | `runner uninstall` refuses while the runner's sessions run, unless `--force`, which ends them |
+| An old, validly signed manifest is served again to freeze a host on a vulnerable version | **Accepted for now.** The manifest carries no expiry, so a compromised release host can withhold updates. The control plane's `update_required` and `update_available` hints are a second channel that does not go through the release host; a signed expiry (TUF's freeze defence) is the thing to add if that proves insufficient |
 | Someone tricks the user into `sudo`-ing the installer | It refuses to run as root before it does anything else |
 | A bad release bricks a fleet | Percentage rollout, selfcheck before the swap, a health gate and automatic rollback after it |
 

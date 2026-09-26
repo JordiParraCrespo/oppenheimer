@@ -52,7 +52,9 @@ if [ ! -f "$HOME/.oppenheimer/config.json" ]; then
     (exec 3<>/dev/tcp/127.0.0.1/3001) 2>/dev/null && break
     sleep 0.2
   done
-  runner register --token "$REGISTRATION_TOKEN" --url http://localhost:3001 --name "$HOST_NAME"
+  # A fleet host is a container on purpose, and meant to last for the run:
+  # --allow-container is the deliberate answer to the guard that refuses one.
+  runner register --token "$REGISTRATION_TOKEN" --url http://localhost:3001 --name "$HOST_NAME" --allow-container
 fi
 
 while true; do

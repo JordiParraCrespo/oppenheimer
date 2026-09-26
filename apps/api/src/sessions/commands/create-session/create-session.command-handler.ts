@@ -3,6 +3,7 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { HostAccessPort } from '../../../hosts/application/host-access.port';
 import { HOST_ACCESS } from '../../../hosts/hosts.di-tokens';
+import { requireLaunchableHost } from '../../application/require-launchable-host.policy';
 import type { SessionDispatchPort } from '../../application/session-dispatch.port';
 import { SessionLaunchSpecFactory } from '../../application/session-launch.factory';
 import { SessionNamingResolver } from '../../application/session-naming.resolver';
@@ -56,7 +57,7 @@ export class CreateSessionCommandHandler
       if (existing.isSome()) return { session: existing.unwrap(), hints: [] };
     }
 
-    await this.hosts.assertUsable(scope, input.hostId);
+    await requireLaunchableHost(this.hosts, scope, input.hostId, input.agent);
     const project = await this.plan.resolveProject(scope, input);
 
     const session = WorkSessionEntity.request({

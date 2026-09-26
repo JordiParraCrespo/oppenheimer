@@ -36,7 +36,8 @@
   is one screen: a sidebar beside the pane a session opens in. The
   settings drawer above is a later slice, and a drawer is not a route;
   until it arrives the machines a workspace owns are *listed* nowhere —
-  a new one is paired from the Add host dialog below, or in onboarding.
+  a new one is paired from the Add host dialog below, or in onboarding,
+  and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
 - New session: chips for host, repository, branch; a composer for the
@@ -57,6 +58,17 @@
   | Claude Code | Fable 5.1, **Opus 5.5**, Sonnet 5, Haiku 4.5 (`claude-opus-5-5` and siblings) | yes | yes |
   | Codex | GPT-6 Astra, **GPT-5.6 Sol**, Terra, Luna | yes | yes |
   | OpenCode | Claude's four under `anthropic/` (**`anthropic/claude-opus-5-5`**), `openai/gpt-5.6-sol` | yes | no: OpenCode has no effort flag |
+  | Grok | Grok 4.7, **Grok 4.6** (the CLI's own default) | yes | yes |
+
+  **The effort stops are the product's, and each agent's catalog entry
+  says what they mean.** Where a CLI has a level of each name, a stop is
+  the level of that name: Grok's `--reasoning-effort` has all five, so
+  Minimal is `minimal` and Max is `max`, and the Grok models' own
+  default, `high`, sits one stop above the slider's middle — a Grok
+  session left on Medium thinks less than Grok would unasked. Where a
+  CLI has fewer, the stops shift so the middle is its default: Claude
+  Code has no `minimal`, so its Minimal is `low` and its Medium is
+  `high`.
   | Blank terminal | none, picked outright | no | no |
 
   A control the agent does not take is **hidden, and not sent**: the
@@ -70,8 +82,11 @@
   picking another replaces it. The selected row carries its branch,
   which opens a branch pane for that repository. The host chip's
   foot action opens the **Add host dialog**: the same instruction in
-  two forms behind a Command / Agent prompt switch, a copyable panel,
-  the token line, and a status line that resolves in place from
+  two forms behind a Command / Agent prompt switch, a copyable panel
+  (the command form carries the installer's SHA-256 under it when the
+  deployment published one), the token line — whose New token replaces
+  the token on screen, retiring it in the same write, so a command pasted
+  into the wrong window stops working at once — and a status line that resolves in place from
   "Listening for this host…" to the registered host, with Use this host
   enabled then. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,
@@ -136,6 +151,11 @@
   copies when text is selected and interrupts otherwise, and
   **Ctrl+Shift+V** pastes. Selecting text needs Shift-drag (Option-drag
   on macOS), because tmux owns plain drags.
+- The session cursor is a **steady block**. It is the default, not a
+  fence: a program that asks for a blinking cursor (DECSET 12, DECSCUSR)
+  gets one, and tmux sets it back to steady each time it shows the cursor
+  (`cnorm`). Either way a program's hide, draw, show is painted as one
+  frame (02 §6), so a working agent's status line does not flicker it.
 - **MicroVM sessions and cloud hosts (v0.2).** The host chip lists the
   person's own hosts first, then each connected cloud account as
   `<provider> <region>` with the host's per-hour price; the chip's foot

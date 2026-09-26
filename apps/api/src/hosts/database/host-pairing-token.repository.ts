@@ -8,7 +8,13 @@ import type { HostPairingTokenEntity } from '../domain/host-pairing-token.entity
 import { HostPairingTokenMapper } from '../host-pairing-token.mapper';
 import { HostResource } from '../hosts.resource';
 import { HostPairingTokenOrmEntity } from './host-pairing-token.orm-entity';
-import type { HostPairingTokenRepositoryPort } from './host-pairing-token.repository.port';
+import type {
+  HostPairingTokenRepositoryPort,
+  MintFence,
+} from './host-pairing-token.repository.port';
+
+/** Rolls the mint back, the replaced token's revoke with it. */
+class CapReached extends Error {}
 
 /**
  * TypeORM adapter for the pairing-token aggregate.
@@ -37,13 +43,6 @@ export class HostPairingTokenRepository
     super();
   }
 
-  async insert(entity: HostPairingTokenEntity): Promise<void> {
-    const record = this.mapper.toPersistence(entity);
-    await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(HostPairingTokenOrmEntity).insert(record),
-    );
-  }
-
   async save(entity: HostPairingTokenEntity): Promise<HostPairingTokenEntity> {
     const record = await this.outbox.writeWithEvents([entity], (manager) =>
       manager.getRepository(HostPairingTokenOrmEntity).save(this.mapper.toPersistence(entity)),
@@ -59,6 +58,33 @@ export class HostPairingTokenRepository
   async findOneById(scope: AccessScope, id: string): Promise<Option<HostPairingTokenEntity>> {
     const record = await this.scopedQuery(scope).andWhere('token.id = :id', { id }).getOne();
     return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
+  async insertWithinCap(entity: HostPairingTokenEntity, fence: MintFence): Promise<boolean> {
+    try {
+      await this.repository.manager.transaction(async (manager) => {
+        // Held to the end of the transaction: the owner's next mint waits here,
+        // so it counts after this one's insert rather than beside it.
+        await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+          `host_pairing_token:${entity.ownerUserId}`,
+        ]);
+        const tokens = manager.getRepository(HostPairingTokenOrmEntity);
+        if (fence.replacing) await tokens.save(this.mapper.toPersistence(fence.replacing));
+        const spendable = await tokens
+          .createQueryBuilder('token')
+          .where('token.ownerUserId = :ownerUserId', { ownerUserId: entity.ownerUserId })
+          .andWhere('token.redeemedAt IS NULL')
+          .andWhere('token.revokedAt IS NULL')
+          .andWhere('token.expiresAt > :now', { now: fence.now })
+          .getCount();
+        if (spendable >= fence.cap) throw new CapReached();
+        await tokens.insert(this.mapper.toPersistence(entity));
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof CapReached) return false;
+      throw error;
+    }
   }
 
   async findOneByHash(tokenHash: string): Promise<Option<HostPairingTokenEntity>> {

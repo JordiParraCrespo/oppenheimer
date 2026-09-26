@@ -5,7 +5,11 @@ import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { HttpAdapterHost } from '@nestjs/core';
 import type { CacheService } from '@oppenheimer/backend-cache';
-import { ATTACH_CLOSE_CODES, PROTOCOL_VERSION } from '@oppenheimer/shared/protocol';
+import {
+  ATTACH_CLOSE_CODES,
+  PROTOCOL_VERSION,
+  RUNNER_LINK_CLOSE_CODES,
+} from '@oppenheimer/shared/protocol';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import type { RepositoryAccessPort } from '../../github/application/repository-access.port';
@@ -89,11 +93,15 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     recognises: (bearer) => bearer.startsWith('valid.'),
     verify: async (bearer) => {
       if (bearer === 'valid.host')
-        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000) };
+        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: false };
+      if (bearer === 'valid.unpaired')
+        return { hostId: HOST, expiresAt: new Date(Date.now() + 60_000), unpaired: true };
       throw new Error('rejected');
     },
   };
-  const presence: HostPresencePort = { observe: vi.fn().mockResolvedValue(undefined) };
+  const presence: HostPresencePort = {
+    observe: vi.fn().mockResolvedValue(true),
+  };
   const events: RecordSessionEventsPort = {
     record: vi.fn(async (batch: RunnerEventBatch) => ({
       batchId: batch.batchId,
@@ -261,6 +269,42 @@ describe('runner link', () => {
     sockets.push(runner);
     runner.on('error', () => {});
     await expect(refused(runner)).resolves.toBe(401);
+  });
+
+  it('refuses an unpaired host with 410 before the upgrade, so it stops dialling', async () => {
+    const runner = ws(h.origin, '/api/v1/relay/runner', {
+      headers: { authorization: 'Bearer valid.unpaired' },
+    });
+    sockets.push(runner);
+    runner.on('error', () => {});
+    const response = new Promise<{ status?: number; refusal?: string | string[] }>((resolve) => {
+      runner.once('unexpected-response', (_request, res) =>
+        resolve({ status: res.statusCode, refusal: res.headers['x-oppenheimer-refusal'] }),
+      );
+    });
+    // The header is what tells the runner this is the control plane's verdict,
+    // not a proxy's 410, and so a reason to stop dialling for good.
+    await expect(response).resolves.toEqual({ status: 410, refusal: 'host-unpaired' });
+    expect(h.registry.find(HOST)).toBeUndefined();
+    expect(h.reconciliation.reconcile).not.toHaveBeenCalled();
+  });
+
+  it('closes the link with 4410 when a heartbeat finds the host unpaired', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    vi.mocked(h.presence.observe).mockResolvedValueOnce(false);
+    const gone = closed(runner);
+    runner.send(
+      JSON.stringify({
+        type: 'heartbeat',
+        sentAt: new Date().toISOString(),
+        channel: 'stable',
+        host: hostFacts,
+        load: { loadAverage1m: 0 },
+        sessions: [],
+      }),
+    );
+    await expect(gone).resolves.toMatchObject({ code: RUNNER_LINK_CLOSE_CODES.UNPAIRED });
   });
 
   it('welcomes a runner after hello, records its presence, and registers the link', async () => {

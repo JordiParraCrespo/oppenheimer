@@ -59,19 +59,21 @@ export class HostsRepository {
    * runner dials in.
    *
    * The machine is named before it exists, because the token carries the name
-   * the runner will adopt. It can be renamed afterwards from Settings.
+   * the runner will adopt. `replaces` is Add host's "New token": the API revokes
+   * that token in the same write, so a refused mint leaves it spendable.
    */
   @MapApiError(HostsErrors.PAIR_FAILED)
-  async pair(name: string): Promise<HostPairing> {
+  async pair(name: string, replaces?: string): Promise<HostPairing> {
     const { data, error } = await heyApiClient.post<{ 201: MintedPairingTokenDto }>({
       url: `${HOSTS_URL}/pairing`,
-      body: { name },
+      body: replaces ? { name, replaces } : { name },
     });
     if (error || !data) throw new AppError(HostsErrors.PAIR_FAILED);
     return {
       id: data.id,
       installCommand: data.installCommand,
       agentPrompt: data.agentPrompt,
+      installScriptSha256: data.installScriptSha256 ?? null,
       expiresAt: new Date(data.expiresAt),
       redeemedHostId: data.redeemedHostId ?? null,
     };

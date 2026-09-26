@@ -51,6 +51,23 @@ var launchCatalog = map[string]launchMap{
 		},
 		prompt: []string{"--prompt", "<prompt>"},
 	},
+	"grok": {
+		command: "grok",
+		model:   []string{"--model", "<model>"},
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--permission-mode", "default"}},
+			"auto": {argv: []string{"--permission-mode", "acceptEdits"}},
+			"full": {argv: []string{"--permission-mode", "bypassPermissions"}},
+		},
+		effort: map[string][]string{
+			"minimal": {"--reasoning-effort", "minimal"},
+			"low":     {"--reasoning-effort", "low"},
+			"medium":  {"--reasoning-effort", "medium"},
+			"high":    {"--reasoning-effort", "high"},
+			"max":     {"--reasoning-effort", "max"},
+		},
+		prompt: []string{"<prompt>"},
+	},
 	"shell": {
 		command: "",
 	},
@@ -63,4 +80,5 @@ var loginTargets = map[string][]LoginTarget{
 	"claude-code": {{Host: "claude.ai"}, {Host: "console.anthropic.com"}},
 	"codex":       {{Host: "auth.openai.com"}, {Host: "platform.openai.com"}, {Host: "chatgpt.com"}},
 	"opencode":    {{Host: "opencode.ai"}, {Host: "claude.ai"}, {Host: "console.anthropic.com"}, {Host: "auth.openai.com"}, {Host: "chatgpt.com"}, {Host: "github.com", Path: "/login/device"}},
+	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 }

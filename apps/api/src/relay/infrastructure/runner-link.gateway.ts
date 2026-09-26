@@ -7,6 +7,7 @@ import {
   PROTOCOL_VERSION,
   type ProtocolMessage,
   protocolMessageSchema,
+  RUNNER_LINK_CLOSE_CODES,
   welcomeSchema,
 } from '@oppenheimer/shared/protocol';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -52,6 +53,13 @@ export const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  * exactly once per dial because verifying burns the `jti`. A socket that
  * presents none is refused before the upgrade, so it never costs a frame.
  *
+ * The assertion says *which* host is dialling, and whether that host has been
+ * unpaired — an unpaired host still authenticates, because its own uninstall
+ * has to. The handshake refuses one with `410`, the runner's cue to stop
+ * dialling rather than walk its ladder forever. One unpaired while connected
+ * is closed with `4410`, the same answer after the upgrade
+ * (`RUNNER_LINK_CLOSE_CODES`).
+ *
  * After the upgrade the first frame must be `hello`; anything else, or nothing
  * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL`
  * is refused **with** `update_required` rather than dropped (01).
@@ -88,33 +96,46 @@ export class RunnerLinkGateway {
       return;
     }
     let hostId: string;
+    let unpaired: boolean;
     try {
-      ({ hostId } = await this.assertions.verify(bearer));
+      ({ hostId, unpaired } = await this.assertions.verify(bearer));
     } catch {
       refuseUpgrade(socket, 401, 'boot assertion rejected');
+      return;
+    }
+    if (unpaired) {
+      refuseUpgrade(
+        socket,
+        410,
+        'this host was unpaired; pair it again from Add host',
+        'host-unpaired',
+      );
       return;
     }
     this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, hostId));
   }
 
   private accept(ws: WebSocket, hostId: string): void {
-    const timer = setTimeout(() => ws.close(4408, 'hello expected'), HELLO_TIMEOUT_MS);
+    const timer = setTimeout(
+      () => ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_TIMEOUT, 'hello expected'),
+      HELLO_TIMEOUT_MS,
+    );
     ws.once('message', (data, isBinary) => {
       clearTimeout(timer);
       if (isBinary) {
-        ws.close(4400, 'hello expected');
+        ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello expected');
         return;
       }
       const hello = helloSchema.safeParse(parseJson(data as Buffer));
       if (!hello.success) {
         this.logger.warn({ message: 'hello rejected', hostId, issues: hello.error.issues.length });
-        ws.close(4400, 'hello expected');
+        ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello expected');
         return;
       }
       const range = `this control plane speaks protocol ${MIN_SUPPORTED_PROTOCOL}..${PROTOCOL_VERSION}`;
       if (hello.data.protocol.max < MIN_SUPPORTED_PROTOCOL) {
         ws.send(JSON.stringify({ type: 'hint', kind: 'update_required', detail: range }));
-        ws.close(4426, 'update required');
+        ws.close(RUNNER_LINK_CLOSE_CODES.PROTOCOL_MISMATCH, 'update required');
         return;
       }
       if (hello.data.protocol.min > PROTOCOL_VERSION) {
@@ -123,7 +144,7 @@ export class RunnerLinkGateway {
         ws.send(
           JSON.stringify({ type: 'hint', kind: 'blocked', retryAfterSeconds: 300, detail: range }),
         );
-        ws.close(4426, 'protocol too new');
+        ws.close(RUNNER_LINK_CLOSE_CODES.PROTOCOL_MISMATCH, 'protocol too new');
         return;
       }
       void this.open(ws, hostId, hello.data);
@@ -147,7 +168,7 @@ export class RunnerLinkGateway {
     if (replaced instanceof SocketRunnerLink) {
       // The same host again, faster than its old socket noticed: the newer link
       // wins, and the older one's browsers reconnect through the new epoch.
-      replaced.close(4409, 'replaced by a newer link');
+      replaced.close(RUNNER_LINK_CLOSE_CODES.REPLACED, 'replaced by a newer link');
     }
 
     ws.on('message', (data, isBinary) => {
@@ -277,7 +298,7 @@ export class RunnerLinkGateway {
         return this.credentials.onToken(link, message);
       case 'hello':
         // A second hello on an open link is a runner bug, not a reconnect.
-        link.close(4400, 'hello already received');
+        link.close(RUNNER_LINK_CLOSE_CODES.HELLO_EXPECTED, 'hello already received');
         return;
       default:
         // Every other type is control plane → runner; a runner sending one is

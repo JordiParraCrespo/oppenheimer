@@ -724,6 +724,7 @@ export type PairingTokenResponseDto = {
 
 export type MintPairingTokenRequest = {
     name: string;
+    replaces?: string;
 };
 
 export type MintedPairingTokenResponseDto = {
@@ -756,6 +757,10 @@ export type MintedPairingTokenResponseDto = {
      * The one-line command that installs and registers the runner on the machine.
      */
     installCommand: string;
+    /**
+     * SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one.
+     */
+    installScriptSha256?: string | null;
     /**
      * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
      */
@@ -1230,7 +1235,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
     checkouts: Array<{
@@ -3825,6 +3830,14 @@ export type MintErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_002 — The token named in `replaces` is not one of the caller’s
+     */
+    404: ProblemDetailsDto;
+    /**
+     * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
+     */
+    429: ProblemDetailsDto;
+    /**
      * HOSTS_004 — This deployment has no runner release configured
      */
     503: ProblemDetailsDto;
@@ -5231,6 +5244,8 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_011 — The host's runner is older than the agent picked
+     *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;

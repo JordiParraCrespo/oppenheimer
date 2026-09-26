@@ -66,7 +66,7 @@ describe('CreateSessionCommandHandler', () => {
         projectArchived: false,
       })),
     } as unknown as WorkSessionRepositoryPort;
-    hosts = { assertUsable: vi.fn().mockResolvedValue(undefined) };
+    hosts = { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) };
     dispatch = {
       create: vi.fn().mockResolvedValue({ delivered: false, hints: [] }),
     } as unknown as SessionDispatchPort;
@@ -199,6 +199,19 @@ describe('CreateSessionCommandHandler', () => {
     expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
   });
 
+  it('refuses an agent the host runner was built without, before writing anything', async () => {
+    // A runner from before Grok probes no `grok`, and would fail the launch as an
+    // unknown agent after the session was recorded.
+    hosts.assertUsable.mockResolvedValue({
+      probedTools: ['git', 'tmux', 'claude', 'codex', 'opencode'],
+    });
+    const grok = command({ input: { ...INPUT, agent: 'grok' } });
+
+    await expect(handler.execute(grok)).rejects.toMatchObject({ code: 'SESSIONS_011' });
+    expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
+    expect(dispatch.create).not.toHaveBeenCalled();
+  });
+
   it('refuses when the project the repository belongs to is archived', async () => {
     vi.mocked(plan.resolveProject).mockRejectedValue(
       new AppError({ code: 'PROJECTS_004', message: 'That project is archived', httpStatus: 409 }),
@@ -247,7 +260,9 @@ describe('CreateSessionCommandHandler: the launch and the first task', () => {
     };
     handler = new CreateSessionCommandHandler(
       sessions,
-      { assertUsable: vi.fn().mockResolvedValue(undefined) } as unknown as HostAccessPort,
+      {
+        assertUsable: vi.fn().mockResolvedValue({ probedTools: null }),
+      } as unknown as HostAccessPort,
       dispatch,
       {
         resolveProject: vi.fn().mockResolvedValue(project()),

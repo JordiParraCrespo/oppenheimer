@@ -412,3 +412,26 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `codex` and `opencode` (02 §5, §9, §10); the composer table and the
   hide-and-do-not-send rule are 05's. The model seed follows Synara's
   model table and Orca's pricing table.
+- 2026-09-24: **connecting a host is hardened** (01, 02, 03, 05, 09).
+  - An unpaired host is **terminal**: it gets no link, loses the one it
+    has, and its runner stops dialling rather than retrying forever.
+  - Uninstall is **refused while the runner's sessions run**, as 09 §4
+    promised; ending them is an explicit `--force`.
+  - The registration token is **not an argument** of anything the runner
+    or the installer runs.
+  - The installer **asks before installing anything**, on the terminal,
+    and stops before the token is spent when a tool is missing; this
+    replaces 09 §2.6's "decline and carry on".
+  - A machine that **looks temporary is refused** unless the person says
+    otherwise.
+  - A person holds **a small number of unspent tokens**, and the owner is
+    **told when a machine pairs**.
+  - First install stays **trust-on-first-use**: the digest on screen is
+    the check, and signature checks begin at the first self-update (F26a).
+  - Key rotation stays with the link, as 2026-09-19 decided; the release
+    manifest's lack of an expiry is an accepted risk (09 §7).
+- 2026-09-25: **Grok joins the catalog** (00, 01, 02, 05): one more row in
+  `CODING_AGENTS`, defaulting to Grok 4.6 because that is its CLI's default,
+  with a screen manifest that is provisional until a soak. A session for an
+  agent the host's runner never probed is refused at create rather than
+  failed at launch, so a new row needs no protocol bump (01).

@@ -12,6 +12,7 @@ RUN apt-get update \
 RUN useradd --create-home --shell /bin/bash dev
 COPY --from=runner runner /usr/local/bin/runner
 COPY claude /usr/local/bin/claude
+COPY grok /usr/local/bin/grok
 COPY entrypoint.sh /usr/local/bin/fleet-host
 COPY git-server.sh /usr/local/bin/fleet-git-server
 USER dev

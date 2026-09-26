@@ -16,5 +16,15 @@ export interface HostAccessPort {
    * caller can reach and that is still paired. Reports an unreachable host and a
    * missing one identically, so ids stay unprobeable.
    */
-  assertUsable(scope: AccessScope, hostId: string): Promise<void>;
+  assertUsable(scope: AccessScope, hostId: string): Promise<UsableHost>;
+}
+
+/** What a caller that may use a host learns about it. */
+export interface UsableHost {
+  /**
+   * The tool names the runner's last inventory probed, found or not; null until
+   * it has reported one. A runner probes the command of every agent it can
+   * launch, so this is also what that runner can start.
+   */
+  probedTools: readonly string[] | null;
 }

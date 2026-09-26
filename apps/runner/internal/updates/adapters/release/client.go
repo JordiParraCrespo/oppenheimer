@@ -72,7 +72,7 @@ func (c *Client) Fetch(ctx context.Context, channel string) (domain.Release, err
 	if len(keys) == 0 {
 		return domain.Release{}, domain.ErrNoSigningKey.WithDetail(
 			"this build was made without a release key, so it will not install any update; " +
-				"upgrade it with the install command from Settings → Add host")
+				"upgrade it with the install command from Add host")
 	}
 	if c.baseURL == "" {
 		return domain.Release{}, domain.ErrManifest.WithDetail("this host has no release URL in its config")

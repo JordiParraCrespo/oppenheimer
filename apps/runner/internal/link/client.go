@@ -37,6 +37,12 @@ const (
 	PingTimeout  = 2 * PingInterval
 )
 
+// ErrUnpaired is what Run stops on: the control plane refused this host with
+// HTTP 410 at the handshake or closed its link with CloseUnpaired. It is the
+// one refusal that is not retried — a host the user unpaired will never be
+// taken back, and redialling it forever would be noise in two logs.
+var ErrUnpaired = errors.New("this host was unpaired by the control plane")
+
 // Handler is what the composition root supplies: what each control-plane
 // message does, and what happens when the link comes and goes.
 type Handler interface {
@@ -75,6 +81,9 @@ type Options struct {
 	Heartbeat time.Duration
 	// Ping overrides the ping interval, for tests; the timeout is twice it.
 	Ping time.Duration
+	// OnUnpaired runs once, just before Run returns ErrUnpaired, so the
+	// composition root can record it where `runner status` will read it.
+	OnUnpaired func()
 }
 
 // Client keeps one link open to the control plane for the life of a context.
@@ -146,14 +155,23 @@ func (c *Client) Live() bool { return c.live.Load() }
 
 // Run dials and keeps dialling until ctx ends. Every dial mints a fresh boot
 // token; a refusal with `update_required` is surfaced to the handler as a
-// hint message and then treated like any other drop.
-func (c *Client) Run(ctx context.Context) {
+// hint message and then treated like any other drop. The exception is
+// ErrUnpaired, which ends Run: nothing a redial could do would change it.
+func (c *Client) Run(ctx context.Context) error {
 	attempt := 0
 	for {
 		start := time.Now()
 		err := c.dialOnce(ctx)
 		if ctx.Err() != nil {
-			return
+			return ctx.Err()
+		}
+		if errors.Is(err, ErrUnpaired) {
+			c.logger.Error("the control plane unpaired this host; the link will not redial",
+				slog.Any("error", err))
+			if c.opts.OnUnpaired != nil {
+				c.opts.OnUnpaired()
+			}
+			return err
 		}
 		// A link that held for a while resets the ladder: the next drop is a
 		// fresh incident, not the same one.
@@ -166,7 +184,7 @@ func (c *Client) Run(ctx context.Context) {
 			slog.Any("error", err), slog.Duration("in", delay))
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		case <-time.After(delay):
 		}
 	}
@@ -183,7 +201,17 @@ func (c *Client) backoff(attempt int) time.Duration {
 	return base + jitter
 }
 
+// dialOnce runs one link from dial to drop. Whatever ended it, a close with
+// CloseUnpaired — at hello or mid-link — comes back as ErrUnpaired.
 func (c *Client) dialOnce(ctx context.Context) error {
+	err := c.dialAndServe(ctx)
+	if err != nil && websocket.CloseStatus(err) == CloseUnpaired {
+		return fmt.Errorf("%w: %w", ErrUnpaired, err)
+	}
+	return err
+}
+
+func (c *Client) dialAndServe(ctx context.Context) error {
 	token, err := c.opts.Token(ctx)
 	if err != nil {
 		return fmt.Errorf("mint boot token: %w", err)
@@ -205,6 +233,10 @@ func (c *Client) dialOnce(ctx context.Context) error {
 		_ = resp.Body.Close()
 	}
 	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusGone &&
+			resp.Header.Get(RefusalHeader) == RefusalUnpaired {
+			return fmt.Errorf("%w: dial refused with HTTP 410", ErrUnpaired)
+		}
 		if resp != nil {
 			return fmt.Errorf("dial refused: HTTP %d", resp.StatusCode)
 		}

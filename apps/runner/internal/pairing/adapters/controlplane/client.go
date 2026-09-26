@@ -148,11 +148,16 @@ func statusProblem(status int, payload []byte) error {
 	switch {
 	case status == http.StatusUnauthorized, status == http.StatusForbidden, status == http.StatusGone:
 		if detail == "" {
-			detail = "the token is expired, already used, or revoked; mint a new one in Settings → Add host"
+			detail = "the token is expired, already used, or revoked; mint a new one in Add host"
 		}
 		return domain.ErrTokenRejected.WithDetail("%s", detail)
 	case status == http.StatusConflict:
 		return domain.ErrAlreadyRegisted.WithDetail("%s", orDefault(detail, "the control plane already knows this host"))
+	case status == http.StatusTooManyRequests:
+		// Not a verdict on the token: the throttle answered before the token was
+		// looked at, so it is still unspent and the same command works shortly.
+		return domain.ErrRateLimited.WithDetail(
+			"wait a minute and run the same command again; the token was not spent")
 	case status/100 == 5:
 		return domain.ErrUnreachable.WithDetail("the control plane answered %d: %s", status, orDefault(detail, "no detail"))
 	default:

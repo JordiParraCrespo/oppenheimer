@@ -1,3 +1,9 @@
+# A project name of its own. Both compose files live in docker/, so without it
+# they share the default name "docker" — and with it the same containers and
+# the same postgres_data volume: `pnpm docker:prod` on a machine running this
+# file would take over the development database.
+name: oppenheimer-dev
+
 services:
   postgres:
     image: postgres:16-alpine

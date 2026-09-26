@@ -52,6 +52,14 @@ runner does with it and point back.
   sessions. Where that verifier lives and what it checks is 03.
 - Job payloads carrying secrets are encrypted to the runner's public
   key (F7). Attach tickets are single-use and seconds-lived (F1).
+- **Identity is not permission.** The boot assertion says *which* host is
+  dialling, and an unpaired host still produces a valid one, because its
+  own uninstall must be able to sign. An unpaired host does not get a link:
+  the handshake refuses it, and a link that is open when its host is
+  unpaired is closed rather than hinted. Unpaired is terminal — the runner
+  stops dialling — so the handshake's refusal must be distinguishable from
+  the same status coming from a proxy. The codes and the header are
+  `RUNNER_LINK_CLOSE_CODES`.
 
 ### What rides the link
 
@@ -77,14 +85,23 @@ runner does with it and point back.
   ended on its own.
 - **`session.create` carries the launch**, because how a session is
   started is part of what the runner is being asked to start. Beyond the
-  checkouts: `agent`, one of the catalog's ids (`claude-code`, `codex`,
-  `opencode`, or `shell` for the blank terminal); `launch`
+  checkouts: `agent`, one of the catalog's ids (`CODING_AGENT_IDS`,
+  `shell` among them for the blank terminal); `launch`
   (`{ model?, permission?, effort? }`); `prompt` (the person's first task,
   optional); and the slugs and checkouts the directory layout needs.
   `permission` is present exactly when the agent has approvals: the
   control plane fills an absent level in as `ask` for every such agent
   and records none for one without, so the blank terminal is sent no
   level rather than whatever the composer last held.
+
+  **A new catalog agent does not move the protocol version.** A runner
+  probes the command of every agent it can launch (02 §10), so its last
+  inventory says which `agent` values it knows. The control plane sends
+  `session.create` only for one of those: a runner built before an agent
+  would refuse it as unknown, so the request is refused at create
+  (`SESSIONS_011`, update the runner) rather than recorded and then
+  failed by the host. Before a host's first inventory nothing is known,
+  and the session goes through.
 
   `launch` is **structured, not argv**. The control plane sends what the
   person chose in the composer's foot row and the host maps it to its own

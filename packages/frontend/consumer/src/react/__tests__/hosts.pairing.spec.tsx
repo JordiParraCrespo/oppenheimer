@@ -22,6 +22,7 @@ const PAIRING: HostPairing = {
   id: 'token-1',
   installCommand: 'curl -fsSL https://example.test/install.sh | sh -s -- --token opk_secret',
   agentPrompt: 'Install the runner here with --token opk_secret',
+  installScriptSha256: null,
   expiresAt: new Date(Date.now() + 60 * 60 * 1000),
   redeemedHostId: null,
 };
@@ -151,5 +152,41 @@ describe('useHostPairing', () => {
 
     await waitFor(() => expect(result.current.pairing?.id).toBe('token-2'));
     expect(result.current.host).toBeNull();
+  });
+
+  it('asks the mint to replace the unspent token on screen', async () => {
+    // A token pasted into the wrong window must stop working when its reader
+    // asks for another, not an hour later — and in the same write as the mint.
+    const { wrapper, service } = setup([unredeemed], [OWNED]);
+    const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
+    await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
+
+    result.current.regenerate();
+
+    await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
+    expect(service.pair).toHaveBeenLastCalledWith('New host', 'token-1');
+  });
+
+  it('replaces nothing when the token already paired a machine', async () => {
+    const { wrapper, service } = setup([redeemed], [OWNED, PAIRED]);
+    const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
+    await waitFor(() => expect(result.current.host?.id).toBe('host-2'));
+
+    result.current.regenerate();
+
+    await waitFor(() => expect(service.pair).toHaveBeenCalledTimes(2));
+    expect(service.pair).toHaveBeenLastCalledWith('New host', undefined);
+  });
+
+  it('keeps the token on screen when the replacement is refused', async () => {
+    const { wrapper, service } = setup([unredeemed], [OWNED]);
+    const { result } = renderHook(() => useHostPairing('New host'), { wrapper });
+    await waitFor(() => expect(result.current.pairing).toEqual(PAIRING));
+
+    service.pair.mockRejectedValueOnce(new Error('HOSTS_006'));
+    result.current.regenerate();
+
+    await waitFor(() => expect(result.current.error?.message).toBe('HOSTS_006'));
+    expect(result.current.pairing).toEqual(PAIRING);
   });
 });

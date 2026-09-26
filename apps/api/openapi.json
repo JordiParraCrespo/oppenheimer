@@ -4945,7 +4945,7 @@
         "tags": ["Hosts"]
       },
       "post": {
-        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.",
+        "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.",
         "operationId": "mint",
         "parameters": [],
         "requestBody": {
@@ -4981,6 +4981,26 @@
           },
           "403": {
             "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — The token named in `replaces` is not one of the caller’s",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7926,7 +7946,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_006 — That project is archived",
+            "description": "SESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11074,6 +11094,10 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 80
+          },
+          "replaces": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": ["name"]
@@ -11132,7 +11156,12 @@
           "installCommand": {
             "type": "string",
             "description": "The one-line command that installs and registers the runner on the machine.",
-            "example": "curl -fsSL https://get.oppenheimer.dev/install.sh | sh -s -- --token opr_reg_…"
+            "example": "curl --proto '=https' --tlsv1.2 -fsSL https://get.oppenheimer.dev/install.sh | OPPENHEIMER_REGISTRATION_TOKEN=opr_reg_… sh -s -- --url https://app.oppenheimer.dev"
+          },
+          "installScriptSha256": {
+            "type": "string",
+            "nullable": true,
+            "description": "SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one."
           },
           "agentPrompt": {
             "type": "string",
@@ -12490,7 +12519,7 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "shell"]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
           },
           "projectId": {
             "type": "string",

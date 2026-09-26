@@ -69,3 +69,16 @@ size() { wc -c <"$OUT/$1" | tr -d ' '; }
 
 echo "==> wrote $OUT/$CHANNEL.json"
 echo "    sign it offline:  scripts/runner/sign-release.sh $OUT/$CHANNEL.json /path/to/release.key"
+
+# The installer, with the same release keys stamped in, so a first install
+# checks the manifest signature against the keys the binaries will trust.
+# Its digest is what the console shows beside the install command
+# (RUNNER_INSTALL_SHA256), for anyone who reads the script before running it.
+sed "s|^RELEASE_PUBLIC_KEYS=\"\"\$|RELEASE_PUBLIC_KEYS=\"$PUBLIC_KEYS\"|" "$ROOT/scripts/runner/install.sh" >"$OUT/install.sh"
+if ! grep -q "^RELEASE_PUBLIC_KEYS=\"$PUBLIC_KEYS\"\$" "$OUT/install.sh"; then
+	echo "error: could not stamp the release keys into install.sh" >&2
+	exit 1
+fi
+install_digest="$(cd "$OUT" && if command -v sha256sum >/dev/null; then sha256sum install.sh; else shasum -a 256 install.sh; fi | cut -d' ' -f1)"
+echo "==> wrote $OUT/install.sh"
+echo "    RUNNER_INSTALL_SHA256=$install_digest"

@@ -56,8 +56,9 @@ user-facing diagnostics are the same artifact and the same version.
 |---|---|
 | `run` | the daemon: link, sessions, tmux, worktrees, credential socket. What the service unit starts |
 | `serve` | the control-plane-facing HTTP service on a TCP port, which is what the container image runs. The host agent is `run`, which opens no port |
-| `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json` |
-| `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key |
+| `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json`. The token comes from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`; `--workspaces` chooses where sessions live; `--keep-existing` keeps a pairing to the same control plane instead of spending the token again; a machine that looks temporary is refused unless `--allow-container` (09 §3) |
+| `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key, and refuses while the runner's sessions run unless `--force`, which ends them (09 §4) |
+| `workspaces` | where sessions' checkouts live and why (`config`, `env` or `default`); `--set` moves it for new sessions, refused while any session has a checkout in the old one |
 | `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
 | `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
 | `update` | check, apply, pin or roll back a version (09 §5) |
@@ -138,6 +139,13 @@ What belongs here is what the runner does with it:
   runaway build stalls its own pane.
 - It survives the link being down indefinitely. Sessions keep running;
   tmux does not care.
+- **Except when the control plane says the host was unpaired**: an HTTP
+  `410` at the handshake or a `4410` close (01). That is not a drop but a
+  verdict, so the link stops redialling, the revocation is written to
+  `config.json`, and later boots do not dial either — the daemon stays up,
+  quiet, so the service manager does not restart it into the same refusal
+  every few seconds. `runner status` says what happened; a fresh
+  registration replaces the revoked identity without `--force`.
 - **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
   port with one transport adapter, as §3 says; the composition root maps
   each message onto the session service. The launch argv comes from
@@ -186,8 +194,8 @@ started last is the one that failed:
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
    session's environment set once (§6).
-5. Window 0 runs the agent — `claude`, `codex` or `opencode` from the
-   host's own installation and login — or, for the blank terminal,
+5. Window 0 runs the agent — `claude`, `codex`, `opencode` or `grok`
+   from the host's own installation and login — or, for the blank terminal,
    nothing: tmux starts the user's login shell and the session is a
    worktree and a terminal. The login URL an agent prints is detected by
    the classifier and sent to the browser as a button, linkified only
@@ -209,7 +217,10 @@ started last is the one that failed:
    nothing and is never read as Claude Code.
 
    **A permission level is one object: argv and environment.** Claude
-   Code and Codex take their level as flags, so their `env` is empty.
+   Code, Codex and Grok take their level as flags, so their `env` is
+   empty; Grok's `--permission-mode` is Claude Code's vocabulary, and
+   Ask is its `default` rather than its own `auto`, which approves on its
+   own.
    OpenCode's TUI has one approval flag, `--auto`, which is Full access;
    Ask and Approve for me are an `OPENCODE_PERMISSION` block, whose rules
    land after its build agent's default `"*": "allow"` and so win
@@ -226,7 +237,9 @@ started last is the one that failed:
    running process.** Every CLI here takes it on its command line and
    says so in its own help — `claude [options] [command] [prompt]`
    ("Your prompt"), `codex [OPTIONS] [PROMPT]` ("Optional user prompt to
-   start the session"), and `opencode [project] --prompt <text>` — so
+   start the session"), `grok [OPTIONS] [PROMPT]` ("Initial prompt for
+   the interactive session"; its `-p` is single-turn and exits), and
+   `opencode [project] --prompt <text>` — so
    the task is in the process's arguments before it starts. Writing into
    window 0 once the TUI is up was the alternative and is rejected: it is
    not how any of these CLIs takes a first task, and "the TUI is ready"
@@ -239,7 +252,8 @@ started last is the one that failed:
 7. **When the launch carried no task**, the first user message is read
    from the agent's own transcript (Claude Code keeps one under
    `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`;
-   OpenCode in one database under `~/.local/share/opencode/`),
+   Grok under `~/.grok/sessions/`, keyed by cwd; OpenCode in one
+   database under `~/.local/share/opencode/`),
    never scraped from the PTY, and sent once as `prompt.first`, at most
    2 KB. The control plane names the session from it (10); the transcript
    itself never leaves the host.
@@ -307,6 +321,13 @@ key. State dots come from `capture-pane` on window 0 every few seconds,
 which is also how the login URL is detected. The tmux server outlives
 the runner, so a runner restart or upgrade loses nothing.
 
+tmux consumes a pane's synchronized-output markers (DEC 2026) and does
+not pass them on, so a TUI's hide, draw, show can reach the browser
+split across animation frames and paint frames with no cursor. The
+console puts the frame back: it opens synchronized output in front of
+the hide and closes it behind the show, or after 100 ms when no show
+follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
+
 ### 7. Terminal streaming
 
 - One PTY per attached browser connection, one goroutine reading it,
@@ -345,8 +366,14 @@ the runner, so a runner restart or upgrade loses nothing.
   on real hosts; Codex's is provisional; OpenCode's is one title rule
   (`OC |` with a spinner glyph in front while a turn runs) and reports
   unknown for everything else until a soak on a live session produces
-  patterns of its own, rather than borrowing Claude's screen rules; the
-  blank terminal's says idle at a prompt and unknown otherwise.
+  patterns of its own, rather than borrowing Claude's screen rules;
+  Grok's is provisional too — its sign-in screen reads blocked, watched
+  on a live session of grok 1.0.41, and so does its tool-approval
+  dialog, read off the binary and not yet watched — and it reports
+  unknown for everything else until a soak, its braille logo being why
+  no spinner rule is borrowed; the blank terminal's says idle at a
+  prompt and unknown otherwise. Each agent's login allowlist is its
+  catalog `loginTargets`, Grok's being `accounts.x.ai` and `auth.x.ai`.
 - **A manifest is one agent's rules, as data.** One JSON file per
   agent, carrying a schema, an agent id, its own version and the engine
   version it needs; each rule names the region it reads, the patterns
@@ -384,13 +411,16 @@ the runner, so a runner restart or upgrade loses nothing.
 ### 10. Host facts and health
 
 Collected at register, on `host.preflight`, and summarised in every
-heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex` and `opencode`
-presence and version (one list, `ProbedTools`), free disk on the
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode` and
+`grok` presence and version (one list, `ProbedTools`), free disk on the
 workspaces filesystem, load, runner version and channel. Only `git` and
 `tmux` are required. A missing agent is a hint on the engine button, not
 a refusal — a session still opens and the shell's own "command not
 found" appears in the terminal — and the blank terminal needs no tool of
-its own. Missing
+its own. The list is also what the runner knows: every agent it can
+launch is probed, found or not (a test in `internal/cli` holds that),
+and a catalog agent with no entry is one this build would refuse, which
+the control plane refuses to create a session for (01). Missing
 `tmux` is fatal for sessions and the installer offers to fix it (09
 §2). **Disk pressure** is a status event before a session fails to
 write, not an error after (note 12).
@@ -401,8 +431,9 @@ One tree, named here and pointed at from 09:
 
 ```
 ~/.oppenheimer/
-  config.json          0600  control plane URL, host id, key fingerprint, channel, pin
-  host.key             0600  the ed25519 private key (F8; rotation supported)
+  config.json          0600  control plane URL, host id, key fingerprint, channel, pin,
+                             where sessions live, and when the host was unpaired
+  host.key             0600  the ed25519 private key (F8; rotation arrives with the link, 09 §3)
   state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
   state/update.json    0600  what the last update did, and how often it has booted
   manifests/                 agent manifests newer than the bundled ones (§9)
@@ -444,7 +475,13 @@ offline. Logs never contain PTY bytes or tokens.
 
 The daemon reads `~/.oppenheimer/config.json` (written by `register`) for
 everything that identifies the host, and the repo's root `.env` only in
-development, through `internal/config` as today. New variables get a note
+development, through `internal/config` as today. Where sessions live is the
+one path a user chooses: `config.json` holds it, so every process — the
+service, `status`, `sessions` — resolves the same directory, and
+`RUNNER_WORKSPACES` still overrides it for development. The service unit
+carries the installer's `PATH` with empty and relative entries dropped,
+because the unit's working directory is the user's home and a `.` in
+`PATH` would let a file there shadow `git` or `tmux`. New variables get a note
 in the root `.env.example` under "Runner (apps/runner)" when the code
 lands; a paired host needs no environment at all, which is what lets the
 service unit be three lines.

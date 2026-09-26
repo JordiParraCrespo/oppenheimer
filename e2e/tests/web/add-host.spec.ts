@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { connectInstallation, redeemPairingToken, tokenFrom } from '../../support/sessions';
+import {
+  connectInstallation,
+  redeemPairingToken,
+  redemptionStatus,
+  tokenFrom,
+} from '../../support/sessions';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -51,7 +56,7 @@ test('pairs a machine from the console and selects it for the next session', asy
   // One instruction, two ways to read it: both carry the same secret, because
   // both are composed by the server around the one token this visit minted.
   const panel = dialog.locator('[data-slot="code-block"] code');
-  await expect(panel).toContainText('--token', { timeout: 30_000 });
+  await expect(panel).toContainText('OPPENHEIMER_REGISTRATION_TOKEN=', { timeout: 30_000 });
   const firstCommand = (await panel.innerText()).trim();
 
   await dialog.getByRole('button', { name: 'Agent prompt' }).click();
@@ -65,9 +70,10 @@ test('pairs a machine from the console and selects it for the next session', asy
   await expect(panel).not.toHaveText(firstCommand, { timeout: 30_000 });
   const secondCommand = (await panel.innerText()).trim();
 
-  // The thrown-away token still pairs a machine, and this account now owns
-  // one. The dialog is watching the token it is showing, so it says so.
-  await redeemPairingToken(tokenFrom(firstCommand), 'discarded');
+  // The thrown-away token no longer pairs anything: asking for a new one revoked
+  // it, so a command pasted into the wrong window stops working at once rather
+  // than for the rest of its hour. The dialog keeps listening for the new one.
+  expect(await redemptionStatus(tokenFrom(firstCommand), 'discarded')).toBe(401);
   await expect(status).toContainText('Listening for this host…');
   await expect(dialog.getByRole('button', { name: 'Use this host' })).toBeDisabled();
 
