@@ -1,6 +1,5 @@
-import type { SlugStatus } from '@oppenheimer/design-system-web';
+import { type SlugStatus, useDebouncedValue } from '@oppenheimer/design-system-web';
 import { useCheckSlug } from '@oppenheimer/frontend-consumer/react';
-import { useEffect, useState } from 'react';
 
 /** How long the field stays quiet after a keystroke before it asks the API. */
 const DEBOUNCE_MS = 400;
@@ -21,13 +20,7 @@ const DEBOUNCE_MS = 400;
  * failure and keeps Continue disabled, because it still does not know.
  */
 export function useAddressCheck(address: string): { status: SlugStatus; error: Error | null } {
-  const [debounced, setDebounced] = useState(address);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(address), DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [address]);
-
+  const debounced = useDebouncedValue(address, DEBOUNCE_MS);
   const settled = debounced === address;
   // Nothing to ask until the reader stops typing, and nothing to ask about an
   // empty address: the query holds `undefined` and does not fetch.

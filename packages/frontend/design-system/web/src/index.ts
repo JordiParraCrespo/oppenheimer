@@ -530,5 +530,8 @@ export {
   TooltipTrigger,
 } from './components/tooltip';
 export { Wordmark } from './components/wordmark';
+export { useControlled } from './hooks/use-controlled';
+export { useDebouncedCallback } from './hooks/use-debounced-callback';
+export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useIsMobile } from './hooks/use-mobile';
 export { cn } from './lib/utils';

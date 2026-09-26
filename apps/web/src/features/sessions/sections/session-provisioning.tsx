@@ -27,10 +27,12 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
     failed,
   });
   // The list is the one place a host's name lives; its presence is the row's.
-  const { data: hosts } = useHosts();
-  const host =
-    hosts?.find((row) => row.id === session.hostId)?.name ??
-    t('sessions.provisioning.steps.host.fallback');
+  // Only that one name is subscribed to, so a refetch of the host list
+  // re-renders this pane when the name changes and not otherwise.
+  const { data: hostName } = useHosts({
+    select: (hosts) => hosts.find((row) => row.id === session.hostId)?.name,
+  });
+  const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
   const steps = provisioningSteps(

@@ -5,6 +5,7 @@ import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChevronDownIcon, PanelLeftIcon, SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
+import { useControlled } from '../hooks/use-controlled';
 import { useIsMobile } from '../hooks/use-mobile';
 import { cn } from '../lib/utils';
 import { Button } from './button';
@@ -59,24 +60,20 @@ function SidebarProvider({
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = React.useState(false);
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
-  const open = openProp ?? _open;
-  const setOpen = React.useCallback(
-    (value: boolean | ((value: boolean) => boolean)) => {
-      const openState = typeof value === 'function' ? value(open) : value;
-      if (setOpenProp) {
-        setOpenProp(openState);
-      } else {
-        _setOpen(openState);
-      }
-
-      // This sets the cookie to keep the sidebar state.
+  // The sidebar's own state until the caller passes `open`, and the cookie
+  // that keeps it between visits either way.
+  const onOpenChange = React.useCallback(
+    (openState: boolean) => {
+      setOpenProp?.(openState);
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
-    [setOpenProp, open],
+    [setOpenProp],
   );
+  const [open, setOpen] = useControlled({
+    value: openProp,
+    defaultValue: defaultOpen,
+    onChange: onOpenChange,
+  });
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {

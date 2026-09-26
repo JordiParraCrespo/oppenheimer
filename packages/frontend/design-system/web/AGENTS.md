@@ -11,7 +11,7 @@ Consumed by `apps/web`, `apps/web-showcase` and `packages/frontend/web`.
 ```
 src/
 ├── components/   # shadcn-based components
-├── hooks/        # UI hooks
+├── hooks/        # generic React hooks (useControlled, useDebouncedValue, …), exported from index.ts
 ├── lib/          # utils (cn, variants, etc.)
 ├── styles/       # shared styles
 └── index.ts      # public exports
