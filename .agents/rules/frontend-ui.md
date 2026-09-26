@@ -71,7 +71,7 @@ the table (`GroupHeading`), never inside the bar.
 | A workspace list, one value, in a labelled field | `Combobox` |
 | Thousands, several values, fetched per keystroke | `AsyncMultiSelect` |
 | A toolbar filter rather than a field | `SelectMenu` (one) / `FilterMenu` (many) |
-| A scope chip on the console (host, branch) | `ChipSelect`, always searchable |
+| A scope chip on the console (project, host, branch) | `ChipSelect`, always searchable; `variant="tab"` inside the composer's scope band |
 | Several repositories, each on its own branch | `RepositorySelect` |
 
 The threshold: if the option list is fetched from an endpoint, it is an
