@@ -9,8 +9,10 @@ import { ProfileSettingsScreen } from '@/features/profile/screens/profile-settin
  */
 export const Route = createFileRoute('/_authenticated/settings/profile')({
   component: ProfileSettingsScreen,
+  // The link carries `1`; the router validates its own output again, when
+  // the value is already `true` — refusing that stripped it on arrival.
   validateSearch: (search: Record<string, unknown>): { emailChanged?: true } => ({
     ...search,
-    emailChanged: search.emailChanged === 1 || search.emailChanged === '1' ? true : undefined,
+    emailChanged: [1, '1', true, 'true'].includes(search.emailChanged as never) ? true : undefined,
   }),
 });

@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { newUser } from '../../support/auth';
 import { findUserByEmail } from '../../support/db';
+import { waitForEmailUrl } from '../../support/mail';
 import { provisionedUser, signInAs } from '../../support/web';
 
 /**
@@ -66,15 +68,41 @@ test('change email sends a link and says so', async ({ page }) => {
   await expect(page.getByText(owner.user.email)).toBeVisible();
   await page.getByRole('button', { name: 'Change' }).first().click();
   const dialog = page.getByRole('dialog');
-  await dialog
-    .getByLabel('New email')
-    .fill(`moved-${Date.now().toString(36)}@e2e.oppenheimer.test`);
+  const newEmail = newUser('moved').email;
+  await dialog.getByLabel('New email').fill(newEmail);
   await dialog.getByRole('button', { name: 'Send link' }).click();
   await expect(dialog.getByRole('heading', { name: 'Check your inbox' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Done' }).click();
 
   // The account keeps its address until the link is followed.
   await expect(page.getByText(owner.user.email)).toBeVisible();
+
+  // Following it lands back here, saying so, with the new address on the card.
+  await page.goto(await waitForEmailUrl('EMAIL VERIFICATION', newEmail));
+  await expect(page.getByText('Your email address is updated')).toBeVisible();
+  await expect(page.getByText(newEmail)).toBeVisible();
+  await owner.api.dispose();
+});
+
+test('changing the password keeps this device signed in', async ({ page }) => {
+  const owner = await provisionedUser('profilepassword');
+  await signInAs(page, owner.user);
+  await page.goto('/settings/profile');
+  await expect(page.getByText(owner.user.email)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Change' }).nth(1).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Current password').fill(owner.user.password);
+  await dialog.getByLabel('New password', { exact: true }).fill('An0ther!Secret');
+  await dialog.getByLabel('Confirm new password').fill('An0ther!Secret');
+  await dialog.getByRole('button', { name: 'Change password' }).click();
+  await expect(page.getByText('Password changed. Other devices are signed out.')).toBeVisible();
+
+  // The other session (the API context) is gone; this one was reissued.
+  await page.reload();
+  await expect(page).toHaveURL(/\/settings\/profile/);
+  await expect(page.getByText('This device')).toBeVisible();
+  expect((await owner.api.get('/api/v1/profile', { failOnStatusCode: false })).status()).toBe(401);
   await owner.api.dispose();
 });
 

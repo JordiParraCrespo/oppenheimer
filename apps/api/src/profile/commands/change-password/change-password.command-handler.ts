@@ -13,14 +13,17 @@ import { ChangePasswordCommand } from './change-password.command';
  * and documented like every other write, not to add logic of its own.
  */
 @CommandHandler(ChangePasswordCommand)
-export class ChangePasswordCommandHandler implements ICommandHandler<ChangePasswordCommand, void> {
+export class ChangePasswordCommandHandler
+  implements ICommandHandler<ChangePasswordCommand, string[]>
+{
   constructor(
     @Inject(PROFILE_AUTH)
     private readonly profileAuth: ProfileAuthPort,
   ) {}
 
-  async execute(command: ChangePasswordCommand): Promise<void> {
-    await this.profileAuth.changePassword(command.headers, {
+  /** Resolves to the reissued session's `Set-Cookie` values (see the port). */
+  async execute(command: ChangePasswordCommand): Promise<string[]> {
+    return this.profileAuth.changePassword(command.headers, {
       userId: command.userId,
       currentPassword: command.currentPassword,
       newPassword: command.newPassword,

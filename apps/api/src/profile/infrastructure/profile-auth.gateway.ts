@@ -30,8 +30,15 @@ export class ProfileAuthGateway implements ProfileAuthPort {
     private readonly delegatedSessions: DelegatedSessionPort,
   ) {}
 
-  async changePassword(headers: IncomingHttpHeaders, input: ChangePasswordInput): Promise<void> {
-    await invokeProfileApi(() =>
+  async changePassword(
+    headers: IncomingHttpHeaders,
+    input: ChangePasswordInput,
+  ): Promise<string[]> {
+    // `returnHeaders`: revoking the other sessions deletes this one too and
+    // issues a replacement, and the replacement only exists as a `Set-Cookie`
+    // on Better Auth's response. Dropping it signed the browser out of the
+    // device it had just changed the password on.
+    const { headers: outHeaders } = await invokeProfileApi(() =>
       auth.api.changePassword({
         body: {
           currentPassword: input.currentPassword,
@@ -39,6 +46,7 @@ export class ProfileAuthGateway implements ProfileAuthPort {
           revokeOtherSessions: input.revokeOtherSessions,
         },
         headers: betterAuthHeaders(headers),
+        returnHeaders: true,
       }),
     );
 
@@ -47,6 +55,7 @@ export class ProfileAuthGateway implements ProfileAuthPort {
     if (input.revokeOtherSessions) {
       await this.delegatedSessions.invalidateForUser(input.userId);
     }
+    return outHeaders.getSetCookie();
   }
 
   /**

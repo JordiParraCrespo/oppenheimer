@@ -25,6 +25,10 @@ describe('ProfileAuthGateway', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    changePassword.mockResolvedValue({
+      headers: new Headers([['set-cookie', 'session_token=new; Path=/; HttpOnly']]),
+      response: { status: true },
+    });
     delegatedSessions = {
       invalidateForUser: vi.fn().mockResolvedValue(undefined),
     };
@@ -32,6 +36,18 @@ describe('ProfileAuthGateway', () => {
   });
 
   describe('changePassword', () => {
+    it('hands back the reissued session cookie', async () => {
+      // Revoking the others replaces this session too; without the cookie the
+      // browser that changed the password is signed out.
+      const cookies = await facade.changePassword(
+        {},
+        { userId: 'user-1', currentPassword: 'old', newPassword: 'new', revokeOtherSessions: true },
+      );
+
+      expect(changePassword).toHaveBeenCalledWith(expect.objectContaining({ returnHeaders: true }));
+      expect(cookies).toEqual(['session_token=new; Path=/; HttpOnly']);
+    });
+
     it('evicts the caller’s delegated sessions when it revoked the others', async () => {
       // Better Auth deletes the delegated session rows along with the rest; a
       // credential still holding the cached token would fail every façade call

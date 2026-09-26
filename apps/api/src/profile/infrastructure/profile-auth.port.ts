@@ -17,8 +17,15 @@ export interface ChangePasswordInput {
  * revocation, are both facts about the adapter — a handler names neither.
  */
 export interface ProfileAuthPort {
-  /** Change the caller's password, verifying the current one first. */
-  changePassword(headers: IncomingHttpHeaders, input: ChangePasswordInput): Promise<void>;
+  /**
+   * Change the caller's password, verifying the current one first.
+   *
+   * Resolves to the `Set-Cookie` values the caller's client must store. When
+   * the other sessions are revoked the one making the request is replaced as
+   * well, and a client left holding the old cookie is signed out on its next
+   * request — so these have to reach it.
+   */
+  changePassword(headers: IncomingHttpHeaders, input: ChangePasswordInput): Promise<string[]>;
 
   /**
    * Revoke one session by its token. The token is never accepted from a
