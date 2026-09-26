@@ -199,3 +199,7 @@ earlier note:
   repositories and a session's defaults, with sessions movable between
   projects. `versions/mvp/12-projects.md` is the design; 10's project
   sections point to it (2026-09-26).
+- `versions/mvp/00-scope.md` and the 2026-09-23 decision made a session one
+  repository in the MVP. A session now takes several, usually one, chosen
+  freely rather than from its project's defaults; the one-repository cap in
+  the code is the runner's and goes with 11's R3 (2026-09-26, 12).

@@ -29,7 +29,8 @@ In the export's `SessionsConsole` artboard (the seed `PROJECT_SEED`, the
    **instructions** ("Run pnpm test before every commit…").
 4. **Picking a project re-seeds the composer**: the default repositories
    ticked, each on its base, the project's host and agent, the agent's first
-   model.
+   model. How sessions are created and organized is **deferred** (below);
+   the backend only stores the defaults.
 5. **The sidebar groups sessions by project**, with filters by project,
    repository, agent and host and a sort (last activity, oldest, name).
 6. **A session can be moved to another project**, but "only projects that
@@ -166,6 +167,41 @@ project  (existing)  + createdByUserId  uuid null     audit; never on delete cas
   a restart relaunches with what the session was launched with, which is the
   same reason the launch options are folded onto the row (2026-09-21).
 
+### A session takes several repositories, and the project does not choose them
+
+Decided with the owner on 2026-09-26: **a session checks out one or more
+repositories; usually one.** This reverses 2026-09-23's "a session is one
+repository in the MVP" as a product rule. The one-repository cap in the code
+today (`MAX_SESSION_CHECKOUTS = 1`, `SESSIONS_010`) is a limit of the
+runner, which makes one worktree per session, and it is lifted when the
+runner makes several (11's R3), not by anything in this note.
+
+The repositories a session takes are **the caller's choice**, not the
+project's:
+
+- they need not be the project's defaults, and need not be in the project
+  at all — the frame lists such a repository as "not in project" and lets it
+  be picked;
+- `POST /sessions` never fills checkouts in from the project. A body with no
+  checkouts is a session with none, as today, not "the project's defaults".
+  The defaults are something a client may offer, and the API stores them for
+  that; it does not apply them.
+
+So nothing in `project_repository` constrains a session's checkouts, and
+`POST /sessions/{id}/checkouts` is unaffected by the project as well.
+
+### How sessions are created and organized comes later
+
+The frames draw one answer (pick a project, the composer re-seeds from it,
+the sidebar groups by project), and the owner has said the creation and
+organization of sessions will be thought through separately. This note
+therefore designs **only what the backend must hold whatever that answer
+is**: the project, its repositories and defaults, and a session's link to
+it that can change without moving files. The console flow, what gets
+pre-filled, how sessions are grouped, sorted or filtered, and who may move
+what where are that later design's; the pieces below that touch them (the
+move rule, the list filters) are marked provisional.
+
 ### The slug is still a directory, derived once, from the name
 
 A project a person creates has no repository to take its slug from, so the
@@ -214,7 +250,7 @@ work_session  + homeProjectId  uuid not null   immutable: the directory the tree
   layout can still be adopted later, because `homeProjectId` is exactly the
   fact a migration of old trees would need to find them.
 
-### Moving a session is a command with its own rules
+### Moving a session is a command with its own rules (the rule is provisional)
 
 `POST /sessions/{id}/move` `{ projectId }` → `MoveSessionCommand`, in
 `sessions/`, because the session is the aggregate that changes.
@@ -225,10 +261,12 @@ It refuses when:
 - the target is missing or in another workspace (`PROJECTS_001`) or archived
   (`SESSIONS_006`), through the existing `requireActiveProject`;
 - the target does not include **every live checkout's repository**
-  (`SESSIONS_018`, new). This is the frame's rule, and it is what makes a
-  project's repository list mean something: a project's routines and filters
-  can trust that every session in it works on one of its repositories. A
-  session with no checkouts can move anywhere.
+  (`SESSIONS_018`, new). This is the frame's rule. With several repositories
+  per session it is strict (a session on two repositories can only move to a
+  project holding both), so it is **provisional**: it is the first thing the
+  later design of how sessions are organized may relax. The mechanism below
+  (`homeProjectId`, the command, the event) does not depend on it. A session
+  with no checkouts can move anywhere.
 
 `ProjectLookupPort` gains `includesRepositories(scope, projectId,
 githubRepoIds): Promise<boolean>`, so `sessions/` asks rather than reading
@@ -240,12 +278,10 @@ one writer of the row, and the history of where a session was listed
 survives a replay. Moving to the current project is a no-op that writes
 nothing.
 
-**Creating a session does not require its repository to be in the
-project.** The frame lists such a repository in the chip as "not in
-project" and lets it be picked. So a session can be created somewhere the
-move rule would not let it be moved to; that asymmetry is the frame's, and
-it is harmless, because the rule is about *moving* work under a scope that
-did not choose it.
+Creating a session does not require its repositories to be in the project
+([above](#a-session-takes-several-repositories-and-the-project-does-not-choose-them)),
+so a session can be created somewhere the move rule would not let it be
+moved to. That asymmetry is one more reason the move rule is provisional.
 
 ### Deleting a project is archiving it, and only when it is empty
 
@@ -314,7 +350,10 @@ updateProjectSchema = createProjectSchema.partial();   // name-only callers keep
   a count from the API would need `projects/` to ask `sessions/` per row.
 - **`GET /sessions`** gains `githubRepoId` (a join to live checkouts),
   `agent` and `sort` (`recent` = `lastEventAt desc`, `oldest` = `createdAt
-  asc`, `name`). The group itself stays computed on read, as today.
+  asc`, `name`), the frame's sidebar filters. **Provisional** with the rest
+  of how sessions are organized, and cheap to change: they are query
+  parameters over indexes that exist. The group itself stays computed on
+  read, as today.
 - The response DTO adds `homeProjectId` to the session and `repositories`,
   `defaultHost`, `defaultAgent`, `instructions` to the project; then
   `pnpm generate:api-client`.
@@ -397,18 +436,18 @@ Each step lands alone and keeps the console working.
    `MoveSessionCommand` and `session.moved` in the fold, the instructions
    snapshot on create, the new list filters.
 5. **Runner**: deliver `instructions` per catalog entry.
-6. **Console**: the project dialog, the project chip and its re-seeding, the
-   sidebar grouped by project, Move. (05 gains the project chip; 00's
-   "four chips" becomes five.)
+6. **Several repositories per session**: the runner makes one worktree per
+   checkout (11's R3), then `MAX_SESSION_CHECKOUTS` rises and the
+   add-checkout handler drops `SESSIONS_010`. Independent of steps 1–5.
+7. **Console**: the project dialog and Move. The composer and the sidebar
+   wait for the design of how sessions are created and organized.
 
 ## Open questions
 
-1. **Several repositories per session.** The frame ticks every default
-   repository of a project; 2026-09-23 made a session one repository until
-   the runner makes several worktrees (11's R3). Until then the console
-   ticks the project's **first** default repository and `POST /sessions`
-   keeps `SESSIONS_010`. The project model above already holds several, so
-   nothing here changes when R3 lands.
+1. **How sessions are created and organized.** Deferred by the owner: the
+   composer flow, what a project pre-fills, grouping, sorting, filtering,
+   and the move rule. This note's backend holds for any answer; the parts
+   marked provisional are the ones that answer may change.
 2. **Project order in the sidebar.** The frame shows seed order. This note
    orders by `createdAt`; a `position` on `project` is one column if people
    want to drag them.

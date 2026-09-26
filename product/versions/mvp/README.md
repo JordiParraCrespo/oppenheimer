@@ -403,3 +403,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   **label** and its directory a **home**: `homeProjectId` is immutable and
   names the tree, `projectId` moves, so moving a session never touches disk
   and the wire gains only an optional `instructions` field.
+- 2026-09-26: **a session takes several repositories, usually one, chosen
+  freely** (12). This reverses 2026-09-23's one repository per session as a
+  product rule; the cap in the code is the runner's single worktree and is
+  lifted with 11's R3. A project's default repositories are only offered,
+  never applied, and a session may check out repositories its project does
+  not hold. **How sessions are created and organized is deferred** to its
+  own design; 12 keeps only what the backend must hold for any answer and
+  marks the move rule and the list filters provisional.
