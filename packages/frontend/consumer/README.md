@@ -52,7 +52,7 @@ An app becomes the consumer product by loading `consumerModules` into
 - Projects: `useProjects`, `useCreateProject`, `useUpdateProject`,
   `useArchiveProject`, `projectsKeys`.
 - Sessions: `useSessions`, `useSession`, `useCreateSession`,
-  `useStopSession`, `sessionsKeys`, `useSessionStream` (a stable factory
+  `useRenameSession`, `useMoveSession`, `useCloseSession`, `useStopSession`, `sessionsKeys`, `useSessionStream` (a stable factory
   over `openStream`, for the effect that mounts a terminal).
 - Organizations (personal workspace only): `useOrganizations`,
   `useCreateOrganization`, `useUpdateOrganization`, `organizationsKeys`.

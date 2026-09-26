@@ -141,6 +141,7 @@ POST   /api/v1/sessions                                 create Session  sessions
 PATCH  /api/v1/sessions/{id}                            update Session  sessions:write
 POST   /api/v1/sessions/{id}/stop                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/restart                    update Session  sessions:write
+POST   /api/v1/sessions/{id}/move                       update Session  sessions:write
 POST   /api/v1/sessions/{id}/attach-ticket              update Session  sessions:write
 POST   /api/v1/sessions/{id}/checkouts                  update Session  sessions:write
 DELETE /api/v1/sessions/{id}/checkouts/{checkoutId}     update Session  sessions:write
@@ -258,6 +259,18 @@ overwrites a name a person typed, and that rule is in the fold; it is also
 what stops a second naming, since the *first* prompt is the one it names from
 and there is only one of those. The one line that leaves the host is the
 person's own prompt.
+
+**A session moves between projects as one event, and its paths do not.**
+`POST /sessions/{id}/move` appends `session.moved` (`{ projectId,
+fromProjectId }`), which the fold projects onto `projectId`; only a project
+that holds every repository the session checked out can take it
+(`SESSIONS_018`), an archived one cannot (`SESSIONS_006`), and a move to the
+project the session is already in is a no-op. Nothing on the host changes:
+the worktree and the branch carry the slug of the project that created the
+session, so `work_session.projectSlug` snapshots that slug at request and a
+restart, a checkout added later and a re-dispatch after a hello all read it
+from the row, never from the project the session is in now. A path is never
+an identity. Like a rename, a move tells no host anything.
 
 ## The relay, as built
 

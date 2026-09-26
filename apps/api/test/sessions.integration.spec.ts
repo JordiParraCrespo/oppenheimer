@@ -63,6 +63,7 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
     return WorkSessionEntity.request({
       organizationId,
       projectId,
+      projectSlug: 'xrp-mobile',
       createdByUserId: userId,
       hostId,
       slug: overrides.slug ?? `bold-otter-${randomUUID().slice(0, 6)}`,

@@ -63,6 +63,7 @@ export class CreateSessionCommandHandler
     const session = WorkSessionEntity.request({
       organizationId: scope.organizationId,
       projectId: project.id,
+      projectSlug: project.slug,
       createdByUserId: command.userId,
       hostId: input.hostId,
       slug: mintSessionSlug(),
@@ -72,7 +73,7 @@ export class CreateSessionCommandHandler
     });
 
     for (const checkout of input.checkouts) {
-      await this.plan.attachCheckout(scope, session, project, checkout);
+      await this.plan.attachCheckout(scope, session, checkout);
     }
 
     const created = await this.sessions.createIfUnclaimed(
@@ -106,7 +107,9 @@ export class CreateSessionCommandHandler
 
     const { hints } = await this.dispatch.create(
       created.session,
-      await this.launches.build(created.session, project.slug, { prompt: input.prompt }),
+      await this.launches.build(created.session, created.session.projectSlug, {
+        prompt: input.prompt,
+      }),
     );
 
     await this.naming.record(

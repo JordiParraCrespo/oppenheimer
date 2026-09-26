@@ -26,9 +26,7 @@ function toEntity(data: ProjectResponseDto): ProjectEntity {
     data.repositories.map((repository) => ({
       id: repository.id,
       installationId: repository.installationId,
-      // The API sends a bigint as a string; the console compares it with the
-      // ids the installation listing serves, which are numbers.
-      githubRepoId: Number(repository.githubRepoId),
+      githubRepoId: repository.githubRepoId,
       fullName: repository.fullName,
       isDefault: repository.isDefault,
       baseBranch: repository.baseBranch ?? null,

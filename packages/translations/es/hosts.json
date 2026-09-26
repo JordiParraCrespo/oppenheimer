@@ -8,5 +8,25 @@
     "online": "Runner conectado",
     "mintFailed": "No hemos podido crear un token de registro.",
     "installerDigest": "SHA-256 del instalador: {{digest}}"
+  },
+  "add": {
+    "title": "Añadir un host",
+    "meta": "Nada del host queda expuesto a internet.",
+    "back": "Atrás",
+    "crumbNewSession": "Nueva sesión",
+    "use": "Usar este host",
+    "defaultName": "Nuevo host",
+    "install": {
+      "title": "Instalar",
+      "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
+      "done": "Instalado",
+      "format": "Formato de instalación",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente"
+    },
+    "connect": {
+      "title": "Conectar",
+      "subtitle": "El runner se registra con el nombre de máquina que reporta."
+    }
   }
 }

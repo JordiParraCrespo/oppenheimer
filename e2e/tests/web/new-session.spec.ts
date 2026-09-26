@@ -13,7 +13,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  *
  * What this covers that nothing else can: the screen's five pickers are bound
  * to four live reads and two writes, and a session created here is a row the
- * API actually holds — in the project the dialog made, with the launch
+ * API actually holds — in the project the page made, with the launch
  * options the foot row was set to, the first task in its log, and a name
  * derived from that task.
  *
@@ -56,18 +56,22 @@ test.describe('New session', () => {
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
-    // ── The project chip, and the dialog behind its foot row ─────────────────
-    // A fresh workspace holds no project; the way to one is inside the chip.
+    // ── The project chip, and the page behind its foot row ───────────────────
+    // A fresh workspace holds no project; the way to one is inside the chip,
+    // and it is a page over the main column (the 2026-09-26 evening export).
     await page.getByRole('button', { name: 'Project' }).click();
     await page.getByRole('option', { name: 'New project…' }).click();
-    const dialog = page.getByRole('dialog', { name: 'New project' });
-    await dialog.getByLabel('Name').fill('XRP');
+    await expect(page).toHaveURL(/\/projects\/new$/);
+    // Save is off until the project is whole, and the recap says what is missing.
+    await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
+    await page.getByLabel('Project name').fill('XRP');
     // Ticking a repository makes it a default and names the project's directory.
-    await dialog.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
-    await dialog.getByRole('button', { name: 'E2E box' }).click();
-    await dialog.getByRole('button', { name: 'Create project' }).click();
-    await expect(dialog).toBeHidden();
-    // Picking the project prefilled the host and the repository from its defaults.
+    await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
+    await page.getByRole('button', { name: 'E2E box' }).click();
+    await page.getByRole('button', { name: 'Create project' }).click();
+    // Creating lands back on New session with the project in the address…
+    await expect(page).toHaveURL(/\/sessions\/new\?project=/);
+    // …and picking it prefilled the host and the repository from its defaults.
     await expect(page.getByRole('button', { name: 'Project' })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
@@ -128,7 +132,7 @@ test.describe('New session', () => {
     expect(session.hostId).toBe(hostId);
     expect(session.agent).toBe('claude-code');
 
-    // The session is in the project the dialog made, whose directory is named
+    // The session is in the project the page made, whose directory is named
     // after the repository ticked there — not after the one the session checked out.
     const projects = await owner.api.get('/api/v1/projects');
     const [project] = (await projects.json()) as { id: string; name: string; slug: string }[];

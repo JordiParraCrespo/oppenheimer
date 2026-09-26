@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ProjectEntity, shortName } from '../project.entity';
 
-const repo = (githubRepoId: number, fullName: string, isDefault = false) => ({
+const repo = (githubRepoId: string, fullName: string, isDefault = false) => ({
   id: `row-${githubRepoId}`,
   installationId: 'inst-1',
   githubRepoId,
@@ -10,7 +10,7 @@ const repo = (githubRepoId: number, fullName: string, isDefault = false) => ({
   baseBranch: null,
 });
 
-const project = (repositories = [repo(1, 'acme/atlas'), repo(2, 'acme/xrp-mobile', true)]) =>
+const project = (repositories = [repo('1', 'acme/atlas'), repo('2', 'acme/xrp-mobile', true)]) =>
   new ProjectEntity(
     'p-1',
     'XRP Mobile',
@@ -30,8 +30,8 @@ describe('ProjectEntity', () => {
   });
 
   it('says whether it holds a repository, by GitHub’s id', () => {
-    expect(project().includesRepository(1)).toBe(true);
-    expect(project().includesRepository(3)).toBe(false);
+    expect(project().includesRepository('1')).toBe(true);
+    expect(project().includesRepository('3')).toBe(false);
   });
 
   it('prints repositories by their own name', () => {

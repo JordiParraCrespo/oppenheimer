@@ -1,4 +1,4 @@
-# 12 — Projects on the console: New session, the project dialog, the grouped sidebar
+# 12 — Projects on the console: New session, the project page, the grouped sidebar
 
 The 2026-09-26 design export (`design/version1/SessionsConsole.dc.html`)
 puts the project on the console. This note works out everything the
@@ -19,10 +19,16 @@ below can be built in order. The design system's side landed first
   makes and names, with **default repositories, a default host and a
   default agent**, and picking one prefills the other chips. The chip's
   foot row is **New project…**.
-- **The project dialog.** Name; the repository rows (tick to include,
-  mark Default to clone into every new session, a base-branch pill per
-  row); the default host as chips; the default agent as chips. Cancel,
-  Create project (or Save, with Delete project on the left when editing).
+- **The project page.** A dialog in the morning export; the evening
+  export of the same day made it a page over the main column, built like
+  the automation editor: a page header whose title is the name, Cancel and
+  Create project (or Save changes) on its right, a recap line under it;
+  then three numbered steps — the repository rows (tick to include, mark
+  Default to clone into every new session, a base-branch pill per row),
+  the default host as chips, the default agent as chips — each ticking
+  itself done with a summary. Editing adds a Delete project row at the
+  foot, behind a confirm. Save is off until the project has a name, at
+  least one repository and at least one default.
 - **The sidebar groups sessions under projects**, each header with a
   mono count and hover actions (New session here, Edit project), and a
   rail on the left switches between the sessions and routines lists.
@@ -79,8 +85,8 @@ slug — and grows what the dialog edits.
 - `POST /sessions` is unchanged: `projectId` plus at most one checkout.
   The console always sends the project it shows, so the implicit "the
   project is the first checkout's" path is for API callers only.
-- Moving a session (`PATCH /sessions/{id}` with `projectId`) and the
-  row's rename are the sidebar slice's, not this one's.
+- Moving a session and the row's rename are the sidebar's: the route,
+  the event and what it leaves alone are 03's; the chrome is 05's.
 
 ### Console
 
@@ -101,15 +107,18 @@ slug — and grows what the dialog edits.
   the effort (`localStorage`), and validated against the list once it
   answers. A workspace with one project starts on it. The scope
   (repositories) is still never remembered.
-- **New project…** opens the project dialog from the chip's foot row.
-  It is `sessions/dialogs/project.tsx`, one dialog owning its mutation:
-  the name field over `displayNameSchema`, `RepositoryRowList` over the
-  installations' repositories (branches read per ticked row, as the
-  picker does), the host chips over the host list, the agent chips over
-  the catalog. On success the new project is selected and its defaults
-  prefill the chips. The same dialog edits a project later, from the
-  sidebar header's action; Delete project is the archive command, and
-  the API's "still has open sessions" refusal is what disables it.
+- **New project…** opens the project page from the chip's foot row
+  (`/projects/new`). It is `features/projects/screens/project.tsx`, one
+  screen owning its mutations: the name as the page header's title input
+  over `displayNameSchema`, `RepositoryRowList` over the installations'
+  repositories (branches read per ticked row, as the picker does), the
+  host chips over the host list, the agent chips over the catalog. On
+  success it lands on New session with the project in the address
+  (`?project=`), so the chip selects it and its defaults prefill the
+  rest. The same page edits a project later (`/projects/{id}`), from the
+  sidebar header's action; Delete project is the archive command behind
+  a confirm dialog, and the API's "still has open sessions" refusal is
+  what disables it.
 - **A session is created with `projectId`** and the repository chip's
   checkout. `SESSIONS_009` cannot happen from the console any more,
   because the project chip has no empty state once the workspace holds a
@@ -117,25 +126,33 @@ slug — and grows what the dialog edits.
   the way to make one.
 - **Where the code goes** (`.agents/rules/frontend-architecture.md`): the
   product package gains `modules/projects` (entity, repository, service)
-  and `react/projects.queries.ts`; the console's feature stays
-  `sessions/` (a project is the body of work a session belongs to, and
-  the dialog is opened from the session composer) until a projects
-  screen exists, at which point `features/projects/` takes the dialog.
+  and `react/projects.queries.ts`; the console gains `features/projects/`
+  for the page and its delete confirm, since the page is a screen a route
+  mounts. The chips and their prefill stay in `sessions/`, which is what
+  they belong to.
+
+### The grouped sidebar
+
+Built after New session, and specified where the rest of the console is:
+the rail, the grouped list, the head, the search, the header actions, the
+row menu and `?project=` are 05's sidebar bullet; the move route,
+`session.moved`, `SESSIONS_018` and the slug the host's paths keep are 03's.
+This note stays the projects-on-New-session note.
 
 ### Later slices, in order
 
-1. The grouped sidebar: `Rail`, `SidebarProjectHeader` per project with
-   its count and actions, `SidebarSearch`, the project facet in the
-   filter menu, the row menu with rename, move and delete. Needs
-   `PATCH /sessions/{id}` for `projectId` and `name`.
-2. Routines (the second rail item) and Settings, each their own note.
+1. Routines (the second rail item) and Settings, each their own note.
+
+## Decided since
+
+- A project with **no repository** cannot be made from the console: the
+  2026-09-26 evening export's page keeps Save off until at least one
+  repository is ticked and one is default. The API still admits an empty
+  set (slug from the name), for callers that model a project of notes,
+  documents and bots as 10 describes (2026-09-26).
 
 ## Open
 
-- Whether a project with **no repository** is worth allowing from the
-  dialog. 10 says "a project with `repos = []` models a project of notes,
-  documents and bots"; the API admits it (slug from the name) and the
-  dialog does not stop it. The runner still needs a host to put it on.
-- The **default agent's model**: the dialog picks an agent, not a model,
+- The **default agent's model**: the page picks an agent, not a model,
   so New session uses that agent's default model. A model per project is
   a later addition if it is wanted.

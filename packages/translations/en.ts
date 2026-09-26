@@ -10,6 +10,7 @@ import language from './en/language.json';
 import nav from './en/nav.json';
 import onboarding from './en/onboarding.json';
 import pages from './en/pages.json';
+import projects from './en/projects.json';
 import publicCopy from './en/public.json';
 import sessions from './en/sessions.json';
 import theme from './en/theme.json';
@@ -32,6 +33,7 @@ const en = {
   public: publicCopy,
   sessions,
   hosts,
+  projects,
   theme,
   toasts,
   emails,

@@ -1,8 +1,10 @@
 # 14 — Routines and headless runs: automation through `claude -p`
 
 The 2026-09-26 export (`design/version1/Routines.dc.html`, drawn inside
-`SessionsConsole.dc.html`) gives the console a routines page: a routine
-is a saved prompt with a project, an agent, a model and a host, plus the
+`SessionsConsole.dc.html`) gives the console a routines page, which the
+evening export's copy calls **Automations**; the rename is in the copy
+only, and this note keeps `routine` for the model as the frames and
+`design/README.md` do. A routine is a saved prompt with a project, an agent, a model and a host, plus the
 triggers that start it; each start is a **run** with a state, a cause
 and a duration. This note decides how a run executes on a host, which is
 the part the design cannot show, and names what the rest of the stack

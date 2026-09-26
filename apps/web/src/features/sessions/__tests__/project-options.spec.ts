@@ -1,19 +1,14 @@
 import { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import {
-  projectPrefill,
-  repositoryKey,
-  toProjectOptions,
-  toProjectRepositoryInputs,
-} from '../lib/session-options';
+import { projectPrefill, repositoryKey, toProjectOptions } from '../lib/session-options';
 
 /**
- * What picking a project sets on the other chips, and what the dialog sends
+ * What picking a project sets on the other chips
  * (`product/versions/mvp/12-projects-on-the-console.md`). The rule that
  * matters: a default the workspace no longer has is skipped, never written.
  */
 const repo = (
-  githubRepoId: number,
+  githubRepoId: string,
   fullName: string,
   isDefault: boolean,
   baseBranch: string | null,
@@ -41,8 +36,8 @@ function project(
     'defaultHostId' in overrides ? (overrides.defaultHostId ?? null) : 'host-1',
     'defaultAgent' in overrides ? (overrides.defaultAgent ?? null) : 'codex',
     overrides.repositories ?? [
-      repo(1, 'acme/atlas', false, null),
-      repo(2, 'acme/xrp-mobile', true, 'develop'),
+      repo('1', 'acme/atlas', false, null),
+      repo('2', 'acme/xrp-mobile', true, 'develop'),
     ],
     new Date(),
     new Date(),
@@ -78,7 +73,7 @@ describe('projectPrefill', () => {
   });
 
   it('leaves the branch empty for a default repository on its own default branch', () => {
-    const own = project({ repositories: [repo(2, 'acme/xrp-mobile', true, null)] });
+    const own = project({ repositories: [repo('2', 'acme/xrp-mobile', true, null)] });
     expect(projectPrefill(own, []).scope?.[0]?.branch).toBe('');
   });
 });
@@ -100,27 +95,5 @@ describe('toProjectOptions', () => {
       new Date(),
     );
     expect(toProjectOptions([bare], { noRepositories: 'none' })[0]?.description).toBe('none');
-  });
-});
-
-describe('toProjectRepositoryInputs', () => {
-  const id = repositoryKey({ installationId: 'inst-1', githubRepoId: 2 });
-
-  it('sends a base branch only when it is not the repository’s own default', () => {
-    const defaults = new Map([[id, 'main']]);
-    expect(toProjectRepositoryInputs([{ id, isDefault: true, branch: 'main' }], defaults)).toEqual([
-      { installationId: 'inst-1', githubRepoId: 2, isDefault: true },
-    ]);
-    expect(
-      toProjectRepositoryInputs([{ id, isDefault: false, branch: 'develop' }], defaults),
-    ).toEqual([
-      { installationId: 'inst-1', githubRepoId: 2, isDefault: false, baseBranch: 'develop' },
-    ]);
-  });
-
-  it('drops a row whose id names nothing this screen knows', () => {
-    expect(
-      toProjectRepositoryInputs([{ id: 'garbage', isDefault: true, branch: '' }], new Map()),
-    ).toEqual([]);
   });
 });

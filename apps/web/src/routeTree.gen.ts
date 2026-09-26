@@ -18,6 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
+import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/_editor'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as AuthPublicForgotPasswordRouteImport } from './routes/_auth/_public/forgot-password'
 import { Route as AuthPublicLoginRouteImport } from './routes/_auth/_public/login'
@@ -31,6 +32,9 @@ import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onbo
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
+import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authenticated/_editor/hosts/new'
+import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
+import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -72,6 +76,10 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
 const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
+  id: '/_editor',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -143,6 +151,24 @@ const AuthenticatedSessionsNewRoute =
     path: '/sessions/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedEditorHostsNewRoute =
+  AuthenticatedEditorHostsNewRouteImport.update({
+    id: '/hosts/new',
+    path: '/hosts/new',
+    getParentRoute: () => AuthenticatedEditorRoute,
+  } as any)
+const AuthenticatedEditorProjectsProjectIdRoute =
+  AuthenticatedEditorProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => AuthenticatedEditorRoute,
+  } as any)
+const AuthenticatedEditorProjectsNewRoute =
+  AuthenticatedEditorProjectsNewRouteImport.update({
+    id: '/projects/new',
+    path: '/projects/new',
+    getParentRoute: () => AuthenticatedEditorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -164,6 +190,9 @@ export interface FileRoutesByFullPath {
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
+  '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
+  '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
+  '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -184,6 +213,9 @@ export interface FileRoutesByTo {
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
+  '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
+  '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
+  '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -196,6 +228,7 @@ export interface FileRoutesById {
   '/_auth/_public': typeof AuthPublicRouteWithChildren
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
+  '/_authenticated/_editor': typeof AuthenticatedEditorRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
   '/_auth/_public/forgot-password': typeof AuthPublicForgotPasswordRoute
   '/_auth/_public/login': typeof AuthPublicLoginRoute
@@ -209,6 +242,9 @@ export interface FileRoutesById {
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
+  '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
+  '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
+  '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -232,6 +268,9 @@ export interface FileRouteTypes {
     | '/sessions/new'
     | '/onboarding/'
     | '/sessions/'
+    | '/hosts/new'
+    | '/projects/$projectId'
+    | '/projects/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -252,6 +291,9 @@ export interface FileRouteTypes {
     | '/sessions/new'
     | '/onboarding'
     | '/sessions'
+    | '/hosts/new'
+    | '/projects/$projectId'
+    | '/projects/new'
   id:
     | '__root__'
     | '/'
@@ -263,6 +305,7 @@ export interface FileRouteTypes {
     | '/_auth/_public'
     | '/_auth/onboarding'
     | '/_authenticated/$'
+    | '/_authenticated/_editor'
     | '/oauth/consent'
     | '/_auth/_public/forgot-password'
     | '/_auth/_public/login'
@@ -276,6 +319,9 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/new'
     | '/_auth/onboarding/'
     | '/_authenticated/sessions/'
+    | '/_authenticated/_editor/hosts/new'
+    | '/_authenticated/_editor/projects/$projectId'
+    | '/_authenticated/_editor/projects/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -351,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof AuthenticatedSplatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/_editor': {
+      id: '/_authenticated/_editor'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedEditorRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/oauth/consent': {
@@ -444,6 +497,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionsNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/_editor/hosts/new': {
+      id: '/_authenticated/_editor/hosts/new'
+      path: '/hosts/new'
+      fullPath: '/hosts/new'
+      preLoaderRoute: typeof AuthenticatedEditorHostsNewRouteImport
+      parentRoute: typeof AuthenticatedEditorRoute
+    }
+    '/_authenticated/_editor/projects/$projectId': {
+      id: '/_authenticated/_editor/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedEditorProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedEditorRoute
+    }
+    '/_authenticated/_editor/projects/new': {
+      id: '/_authenticated/_editor/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof AuthenticatedEditorProjectsNewRouteImport
+      parentRoute: typeof AuthenticatedEditorRoute
+    }
   }
 }
 
@@ -497,8 +571,25 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface AuthenticatedEditorRouteChildren {
+  AuthenticatedEditorHostsNewRoute: typeof AuthenticatedEditorHostsNewRoute
+  AuthenticatedEditorProjectsProjectIdRoute: typeof AuthenticatedEditorProjectsProjectIdRoute
+  AuthenticatedEditorProjectsNewRoute: typeof AuthenticatedEditorProjectsNewRoute
+}
+
+const AuthenticatedEditorRouteChildren: AuthenticatedEditorRouteChildren = {
+  AuthenticatedEditorHostsNewRoute: AuthenticatedEditorHostsNewRoute,
+  AuthenticatedEditorProjectsProjectIdRoute:
+    AuthenticatedEditorProjectsProjectIdRoute,
+  AuthenticatedEditorProjectsNewRoute: AuthenticatedEditorProjectsNewRoute,
+}
+
+const AuthenticatedEditorRouteWithChildren =
+  AuthenticatedEditorRoute._addFileChildren(AuthenticatedEditorRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
+  AuthenticatedEditorRoute: typeof AuthenticatedEditorRouteWithChildren
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -506,6 +597,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
+  AuthenticatedEditorRoute: AuthenticatedEditorRouteWithChildren,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,
