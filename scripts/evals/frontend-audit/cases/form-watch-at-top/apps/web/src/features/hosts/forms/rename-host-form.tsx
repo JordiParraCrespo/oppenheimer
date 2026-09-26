@@ -36,7 +36,12 @@ export function RenameHostForm({
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
         <AuthField label={t('common.edit')} htmlFor="name" error={errors.name}>
-          <Input {...register('name')} id="name" disabled={isPending} />
+          <Input
+            {...register('name')}
+            id="name"
+            aria-invalid={Boolean(errors.name)}
+            disabled={isPending}
+          />
         </AuthField>
         <Field>
           <FieldDescription>{name.length}/64</FieldDescription>

@@ -9,17 +9,14 @@ export function HostCard({ host }: { host: HostEntity }) {
 
   return (
     <Card
-      size={density === 'compact' ? 'sm' : 'default'}
+      padded={density === 'comfortable'}
       data-dimmed={dimmed || undefined}
       onPointerEnter={() => setHoveredId(host.id)}
       onPointerLeave={() => setHoveredId(null)}
     >
-      <div className="flex items-center gap-2">
-        <StatusDot state={host.online ? 'running' : 'idle'} className="min-w-0 flex-1">
-          {host.name}
-        </StatusDot>
-      </div>
-      <span className="text-fg-muted">{host.summary}</span>
+      <StatusDot state={host.online ? 'running' : 'idle'} meta={host.summary}>
+        {host.name}
+      </StatusDot>
     </Card>
   );
 }
