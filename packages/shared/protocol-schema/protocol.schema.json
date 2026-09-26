@@ -48,6 +48,17 @@
           "items": {
             "$ref": "#/$defs/sessionSnapshot"
           }
+        },
+        "capabilities": {
+          "default": [],
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "session.image"
+            ]
+          }
         }
       },
       "required": [
@@ -528,6 +539,40 @@
         "sessionId",
         "window",
         "data"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.image"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "window": {
+          "$ref": "#/$defs/windowIndex"
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "window",
+        "mediaType"
       ]
     },
     {

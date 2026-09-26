@@ -176,6 +176,7 @@ would confirm the id.
 | `HOSTS_004` <a id="hosts_004" /> | Hosts are not configured on this server      | 503  |
 | `HOSTS_005` <a id="hosts_005" /> | The host assertion was rejected              | 401  |
 | `HOSTS_006` <a id="hosts_006" /> | Too many pairing tokens are open             | 429  |
+| `HOSTS_007` <a id="hosts_007" /> | No image is waiting for that command         | 404  |
 
 Two of these are deliberately opaque, and both would otherwise be an oracle for
 guessing a credential:
@@ -378,6 +379,12 @@ are never reissued.
 | `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
+| `SESSIONS_012` <a id="sessions_012" /> | That image is too large to give the session     | 413  |
+| `SESSIONS_013` <a id="sessions_013" /> | That is not an image the session can take       | 415  |
+| `SESSIONS_014` <a id="sessions_014" /> | That session is stopped                         | 409  |
+| `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
+| `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
+| `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -397,6 +404,15 @@ the command of every agent it can launch, installed or not, so a host whose last
 inventory has no entry for that command runs a build that would refuse the
 launch; updating the runner is the fix. Whether the agent is *installed* is never
 checked here — that is a hint on the engine button, and the terminal says so.
+
+`SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
+(`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not
+an image, whatever the browser labelled them, and `015` a request with no file at all;
+`014` is a stopped session, which has no window to paste into. `016` and `017` are the
+host: no link right now, or a runner too old to take the command. An image is never
+queued for a host that comes back. A runner that refuses the image anyway answers with
+`SESS_005` in the session's log, and `HOSTS_007` is the runner's own pull finding
+nothing waiting.
 
 `SESSIONS_007` is the end of a deliberately short list. A checkout's directory is
 named `<repo>`, then `<owner>--<repo>`, then `<owner>--<repo>-<githubRepoId>`, and a
@@ -463,6 +479,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `SESS_002` <a id="sess_002" />         | The session cannot be created with those values | 400 |
 | `SESS_003` <a id="sess_003" />         | The session is not running                   | 409  |
 | `SESS_004` <a id="sess_004" />         | A session already exists for that worktree   | 409  |
+| `SESS_005` <a id="sess_005" />         | The image cannot be given to the session     | 415  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

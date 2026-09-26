@@ -156,6 +156,10 @@
   gets one, and tmux sets it back to steady each time it shows the cursor
   (`cnorm`). Either way a program's hide, draw, show is painted as one
   frame (02 §6), so a working agent's status line does not flicker it.
+- **An image pasted or dropped onto the terminal becomes a path in the
+  prompt**, as a drag-and-drop does in a local terminal (01
+  `session.image`). The status bar says while it travels; a refusal
+  stays on screen until dismissed.
 - Settings drawer: hosts with the install command, the agent prompt,
   an online dot, and the preflight result (git, tmux, claude). Not in
   version 1 — the frames draw no way to open it, so it is designed here

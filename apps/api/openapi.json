@@ -5167,6 +5167,54 @@
         "tags": ["Hosts"]
       }
     },
+    "/api/v1/hosts/self/images/{commandId}": {
+      "get": {
+        "description": "Called by the runner when a `session.image` arrives on its link. Answers the image once; a second pull, an expired image and another host’s image are all 404.",
+        "operationId": "collectSessionImage",
+        "parameters": [
+          {
+            "name": "commandId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image’s bytes"
+          },
+          "401": {
+            "description": "HOSTS_005 — No valid host assertion was presented",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_007 — No image is waiting",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Collect an image parked for the calling host",
+        "tags": ["Hosts"]
+      }
+    },
     "/api/v1/hosts/{id}": {
       "get": {
         "operationId": "get",
@@ -8140,6 +8188,136 @@
           }
         ],
         "summary": "Mint a ticket for a terminal on this session",
+        "tags": ["Sessions"]
+      }
+    },
+    "/api/v1/sessions/{id}/images": {
+      "post": {
+        "description": "The agent reads its host’s clipboard, not the browser’s, so a pasted screenshot comes here; the host’s runner pulls it and pastes its path into the window.",
+        "operationId": "pasteSessionImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "window": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The tmux window; 0 when absent."
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The host has been told to pull the image"
+          },
+          "400": {
+            "description": "SESSIONS_015 — No image attached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_017 — The host’s runner cannot take images\n\nSESSIONS_014 — That session is stopped\n\nSESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "SESSIONS_012 — Image too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "SESSIONS_013 — Not an image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SESSIONS_016 — The host is offline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Paste an image into a session’s prompt",
         "tags": ["Sessions"]
       }
     },

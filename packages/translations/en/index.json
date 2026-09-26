@@ -159,7 +159,14 @@
       "FLAG_004": "That segment could not be found.",
       "FLAG_005": "A segment with that key already exists.",
       "FLAG_006": "That segment is still used by a flag. Remove it from the flag's rules first.",
-      "FLAG_007": "Those segment conditions are not valid."
+      "FLAG_007": "Those segment conditions are not valid.",
+      "SESSIONS_012": "That image is over 5 MB. Crop it or save it smaller, then paste it again.",
+      "SESSIONS_013": "Only PNG, JPEG, GIF and WebP images can be pasted into a session.",
+      "SESSIONS_014": "This session is stopped. Restart it to paste an image into its prompt.",
+      "SESSIONS_015": "No image was attached. Paste or drop the image again.",
+      "SESSIONS_016": "This session's host is offline, so the image was not sent.",
+      "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
+      "HOSTS_007": "No image is waiting for that command."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -420,6 +427,12 @@
         "live": "Live",
         "offline": "Host offline",
         "closed": "Disconnected"
+      },
+      "image": {
+        "sending": "Sending image",
+        "hostOffline": "The image was not sent: the host is offline.",
+        "failedTitle": "The image did not reach the session",
+        "dismiss": "Dismiss"
       }
     },
     "filters": {

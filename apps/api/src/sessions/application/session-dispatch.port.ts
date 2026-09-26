@@ -1,3 +1,4 @@
+import type { SessionImageMediaType } from '@oppenheimer/shared/protocol';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
 
@@ -67,6 +68,14 @@ export interface SessionCloseSpec {
   acceptUnpushedWork: boolean;
 }
 
+/** A picture for a window's prompt; the runner saves it and pastes its path. */
+export interface SessionImageSpec {
+  window: number;
+  /** What the bytes are by their magic bytes, never the browser's label. */
+  mediaType: SessionImageMediaType;
+  data: Buffer;
+}
+
 export interface SessionDispatchPort {
   /** Make the directories, the checkouts and window 0, then launch the agent. */
   create(session: WorkSessionEntity, spec: SessionLaunchSpec): Promise<SessionDispatchOutcome>;
@@ -82,6 +91,8 @@ export interface SessionDispatchPort {
     checkout: SessionCheckoutEntity,
     spec: SessionLaunchSpec,
   ): Promise<SessionDispatchOutcome>;
+  /** Give a window's program an image: saved on the host, its path pasted in. */
+  pasteImage(session: WorkSessionEntity, image: SessionImageSpec): Promise<SessionDispatchOutcome>;
   /** Remove one checkout's worktree, with the same refuse-on-unpushed-work posture. */
   removeCheckout(
     session: WorkSessionEntity,

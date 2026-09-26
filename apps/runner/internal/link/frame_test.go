@@ -20,3 +20,16 @@ func TestFrameIsBigEndianIdThenBytes(t *testing.T) {
 		t.Fatal("a short frame must be dropped")
 	}
 }
+
+func TestIsCommandIDAcceptsOnlyAUUID(t *testing.T) {
+	for id, want := range map[string]bool{
+		"0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61":    true,
+		"../../.ssh/authorized_keys":              false,
+		"0b6f3f7e-5a3c-4c8e-9a4f-2f1d8c9b7a61/..": false,
+		"": false,
+	} {
+		if got := link.IsCommandID(id); got != want {
+			t.Fatalf("IsCommandID(%q) = %v, want %v", id, got, want)
+		}
+	}
+}

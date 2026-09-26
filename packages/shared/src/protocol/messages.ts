@@ -15,6 +15,7 @@ import {
   sessionSnapshotSchema,
   windowIndexSchema,
 } from './primitives';
+import { SESSION_IMAGE_MEDIA_TYPES } from './session-image';
 
 /**
  * The runner link's message vocabulary, as Zod — one source of truth, with JSON
@@ -36,6 +37,10 @@ import {
  * runner below `min_supported` with an `update_required` hint rather than
  * dropping it.
  */
+/** What a runner can name in `hello.capabilities`. */
+export const RUNNER_CAPABILITIES = ['session.image'] as const;
+export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
+
 export const helloSchema = z.object({
   type: z.literal('hello'),
   runnerVersion: z.string().min(1).max(64),
@@ -49,6 +54,14 @@ export const helloSchema = z.object({
   host: hostFactsSchema,
   /** Every session this host holds, however the control plane thinks they stand. */
   sessions: z.array(sessionSnapshotSchema),
+  /**
+   * Commands this runner takes beyond what every runner of its protocol
+   * version does. The control plane sends one of these only to a runner that
+   * named it, so an older runner is refused up front instead of logging a
+   * frame it does not know while the console waits for a paste that never
+   * comes. Absent is none.
+   */
+  capabilities: z.array(z.enum(RUNNER_CAPABILITIES)).max(32).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;
@@ -281,6 +294,26 @@ export const sessionInputSchema = z.object({
 });
 
 export type SessionInputMessage = z.infer<typeof sessionInputSchema>;
+
+/**
+ * An image for a window's prompt. The bytes are **not** here: control frames
+ * stay small, and one paste must not queue ahead of every pane on the host.
+ * The control plane parks the upload under this command id, and the runner
+ * pulls it once over HTTPS with its own assertion
+ * (`GET /hosts/self/images/{commandId}`), writes it outside the worktree, and
+ * pastes its path into the window as a bracketed paste (02 §7).
+ *
+ * Sent only to a runner whose `hello` said it can take one.
+ */
+export const sessionImageSchema = z.object({
+  type: z.literal('session.image'),
+  commandId: commandIdSchema,
+  sessionId: sessionIdSchema,
+  window: windowIndexSchema,
+  mediaType: z.enum(SESSION_IMAGE_MEDIA_TYPES),
+});
+
+export type SessionImageMessage = z.infer<typeof sessionImageSchema>;
 
 /**
  * Replenish one attachment's flow-control window.
@@ -544,6 +577,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sessionCreateSchema,
   sessionAttachSchema,
   sessionInputSchema,
+  sessionImageSchema,
   attachmentCreditSchema,
   sessionResizeSchema,
   sessionWindowOpenSchema,

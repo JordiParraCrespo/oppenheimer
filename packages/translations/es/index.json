@@ -159,7 +159,14 @@
       "FLAG_004": "No se ha encontrado ese segmento.",
       "FLAG_005": "Ya existe un segmento con esa clave.",
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
-      "FLAG_007": "Las condiciones de ese segmento no son válidas."
+      "FLAG_007": "Las condiciones de ese segmento no son válidas.",
+      "SESSIONS_012": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a pegarla.",
+      "SESSIONS_013": "Solo se pueden pegar imágenes PNG, JPEG, GIF y WebP en una sesión.",
+      "SESSIONS_014": "Esta sesión está detenida. Reiníciala para pegar una imagen en su prompt.",
+      "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
+      "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
+      "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+      "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -420,6 +427,12 @@
         "live": "En vivo",
         "offline": "Host desconectado",
         "closed": "Desconectado"
+      },
+      "image": {
+        "sending": "Enviando imagen",
+        "hostOffline": "La imagen no se envió: el equipo está desconectado.",
+        "failedTitle": "La imagen no llegó a la sesión",
+        "dismiss": "Cerrar"
       }
     },
     "filters": {

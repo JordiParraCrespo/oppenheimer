@@ -14,6 +14,7 @@ import { FindRolesHttpController } from '../../roles/queries/find-roles/find-rol
 import { AddCheckoutHttpController } from '../../sessions/commands/add-checkout/add-checkout.http.controller';
 import { CloseSessionHttpController } from '../../sessions/commands/close-session/close-session.http.controller';
 import { IssueAttachTicketHttpController } from '../../sessions/commands/issue-attach-ticket/issue-attach-ticket.http.controller';
+import { PasteSessionImageHttpController } from '../../sessions/commands/paste-session-image/paste-session-image.http.controller';
 import { RemoveCheckoutHttpController } from '../../sessions/commands/remove-checkout/remove-checkout.http.controller';
 import { RestartSessionHttpController } from '../../sessions/commands/restart-session/restart-session.http.controller';
 import { StopSessionHttpController } from '../../sessions/commands/stop-session/stop-session.http.controller';
@@ -65,6 +66,10 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
   'POST /sessions/:id/attach-ticket': {
     controller: IssueAttachTicketHttpController,
     handler: 'issue',
+  },
+  'POST /sessions/:id/images': {
+    controller: PasteSessionImageHttpController,
+    handler: 'paste',
   },
 };
 

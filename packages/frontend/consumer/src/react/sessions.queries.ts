@@ -152,3 +152,20 @@ export function useStopSession(options?: UseMutationOptions<SessionEntity, Error
     }),
   });
 }
+
+/**
+ * Paste an image into one window's prompt. Nothing is cached and no key is
+ * kept: success is the path appearing in the terminal, which the terminal
+ * itself shows.
+ */
+export function usePasteSessionImage(
+  sessionId: string,
+  window = 0,
+  options?: UseMutationOptions<void, Error, Blob>,
+) {
+  const app = useConsumerApp();
+  return useMutation({
+    mutationFn: (image: Blob) => app.sessions.pasteImage(sessionId, image, window),
+    ...options,
+  });
+}

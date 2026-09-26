@@ -35,6 +35,11 @@ type Terminals interface {
 	Windows(ctx context.Context, name string) ([]domain.Window, error)
 	// SendKeys types into a window.
 	SendKeys(ctx context.Context, target, keys string) error
+	// Paste pastes text into a window as a bracketed paste when the program
+	// there asked for one, which is how a dropped file's path reaches an
+	// agent in a local terminal. The id names the paste, so two at once
+	// never share anything.
+	Paste(ctx context.Context, target, id, text string) error
 	// Attach runs `tmux attach` on a PTY and returns it. Closing the
 	// returned Attachment detaches without touching the session.
 	Attach(ctx context.Context, target string, size Size) (Attachment, error)
@@ -67,6 +72,18 @@ type Worktrees interface {
 	// Push publishes the branch, and reports whether there was anything to
 	// push at all.
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)
+}
+
+// Images is where a session's pasted images are kept on this host: under the
+// runner's own home, never in the worktree, so an agent cannot commit one by
+// accident and closing the session can drop them all.
+type Images interface {
+	// Save writes one image for a session and returns its absolute path.
+	Save(sessionID, name string, data []byte) (string, error)
+	// Delete removes one image, when the paste it was written for failed.
+	Delete(sessionID, name string) error
+	// Discard removes every image a session was given.
+	Discard(sessionID string) error
 }
 
 // Screen is one capture of a window.

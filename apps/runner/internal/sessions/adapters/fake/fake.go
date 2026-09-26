@@ -40,6 +40,51 @@ type Terminals struct {
 	// Attached counts live attachments, so a test can prove that detaching
 	// does not end a session.
 	Attached int
+	// Pastes is every text pasted, in order.
+	Pastes []string
+	// FailPaste makes the next paste fail, standing in for a window that
+	// went away between the save and the paste.
+	FailPaste bool
+}
+
+// Images is app.Images in memory.
+type Images struct {
+	mu sync.Mutex
+	// Saved is each session's images by name.
+	Saved map[string]map[string][]byte
+	// Discarded names the sessions whose images were dropped.
+	Discarded []string
+}
+
+// NewImages returns an empty image store.
+func NewImages() *Images { return &Images{Saved: map[string]map[string][]byte{}} }
+
+// Save implements app.Images; the path is a fixed fake root.
+func (i *Images) Save(sessionID, name string, data []byte) (string, error) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if i.Saved[sessionID] == nil {
+		i.Saved[sessionID] = map[string][]byte{}
+	}
+	i.Saved[sessionID][name] = append([]byte(nil), data...)
+	return "/home/jordi/.oppenheimer/images/" + sessionID + "/" + name, nil
+}
+
+// Delete implements app.Images.
+func (i *Images) Delete(sessionID, name string) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	delete(i.Saved[sessionID], name)
+	return nil
+}
+
+// Discard implements app.Images.
+func (i *Images) Discard(sessionID string) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	delete(i.Saved, sessionID)
+	i.Discarded = append(i.Discarded, sessionID)
+	return nil
 }
 
 type fakeSession struct {
@@ -169,6 +214,20 @@ func (t *Terminals) SendKeys(_ context.Context, target, keys string) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Screens[target] += keys
+	return nil
+}
+
+// Paste implements app.Terminals by appending to the screen and recording
+// the paste, so a test can tell it from typed keys.
+func (t *Terminals) Paste(_ context.Context, target, _ string, text string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.FailPaste {
+		t.FailPaste = false
+		return domain.ErrTmuxCommand.WithDetail("no window %q", target)
+	}
+	t.Screens[target] += text
+	t.Pastes = append(t.Pastes, text)
 	return nil
 }
 

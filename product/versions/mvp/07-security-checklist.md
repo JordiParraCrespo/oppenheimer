@@ -15,7 +15,7 @@ feature lands.
       can neither hold a link nor be granted credentials (01)
 - [ ] F10 direct-mode hosts are labelled "full access", never "sandbox"; the runner never runs as root; secrets and tokens are env or socket-scoped to the session's shell, nothing written to disk by the runner
 - [ ] F11 a worktree is never presented as a boundary
-- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed
+- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed. The one file the runner does write from a reader's screen is a pasted image, named in 02 §11
 - [ ] F20 App private key in the secret store, never the database
 - [ ] F21 installation tokens narrowed to one repo, one hour
 - [ ] F23 no vendor credential ever stored by the platform

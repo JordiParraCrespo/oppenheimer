@@ -112,4 +112,49 @@ export const SessionErrors = {
     message: "This host's runner cannot start that agent",
     httpStatus: 409,
   },
+  /** An upload over `SESSION_IMAGE_MAX_BYTES`, refused by multer before it is buffered. */
+  IMAGE_TOO_LARGE: {
+    code: 'SESSIONS_012',
+    message: 'That image is too large to give the session',
+    httpStatus: 413,
+  },
+  /** Bytes that are none of the image types a session takes, whatever their label. */
+  UNSUPPORTED_IMAGE: {
+    code: 'SESSIONS_013',
+    message: 'That is not an image the session can take',
+    httpStatus: 415,
+  },
+  /**
+   * Input for a session whose tmux session is gone. Whatever it was would be
+   * sent to a window that is not there, so it is refused before it is sent.
+   */
+  NOT_RUNNING: {
+    code: 'SESSIONS_014',
+    message: 'That session is stopped',
+    httpStatus: 409,
+  },
+  /** A multipart request with no file part: nothing to judge as an image. */
+  IMAGE_MISSING: {
+    code: 'SESSIONS_015',
+    message: 'No image was attached',
+    httpStatus: 400,
+  },
+  /**
+   * The session's host holds no link right now. Input is not queued for a
+   * host that comes back: the prompt it was meant for will have moved on.
+   */
+  HOST_OFFLINE: {
+    code: 'SESSIONS_016',
+    message: 'The session’s host is offline',
+    httpStatus: 503,
+  },
+  /**
+   * The host is linked but its runner did not say it takes this command: it
+   * predates it, and updating the runner is what fixes it.
+   */
+  HOST_CANNOT_TAKE_IMAGES: {
+    code: 'SESSIONS_017',
+    message: 'The session’s host cannot take images until its runner is updated',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

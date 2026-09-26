@@ -52,4 +52,14 @@ export const HostErrors = {
     message: 'Too many pairing tokens are open',
     httpStatus: 429,
   },
+  /**
+   * No image is parked for that command for this host: it was already
+   * pulled, it expired, or it was parked for another host — the three are one
+   * answer, so the route cannot be used to probe which.
+   */
+  IMAGE_NOT_PARKED: {
+    code: 'HOSTS_007',
+    message: 'No image is waiting for that command',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

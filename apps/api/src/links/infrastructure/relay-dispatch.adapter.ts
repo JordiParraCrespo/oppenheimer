@@ -4,6 +4,7 @@ import type {
   ProtocolMessage,
   SessionCloseMessage,
   SessionCreateMessage,
+  SessionImageMessage,
   SessionRestartMessage,
   SessionStopMessage,
 } from '@oppenheimer/shared/protocol';
@@ -11,12 +12,14 @@ import type {
   SessionCloseSpec,
   SessionDispatchOutcome,
   SessionDispatchPort,
+  SessionImageSpec,
   SessionLaunchSpec,
 } from '../../sessions/application/session-dispatch.port';
 import type { SessionCheckoutEntity } from '../../sessions/domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../../sessions/domain/work-session.entity';
 import type { LinkRegistryPort, RunnerLink } from '../application/link-registry.port';
-import { LINK_REGISTRY } from '../links.di-tokens';
+import type { ParkedImagePort } from '../application/parked-image.port';
+import { LINK_REGISTRY, PARKED_IMAGES } from '../links.di-tokens';
 
 const OFFLINE: SessionDispatchOutcome = { delivered: false, hints: ['host_offline'] };
 const DELIVERED: SessionDispatchOutcome = { delivered: true, hints: [] };
@@ -43,6 +46,8 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
   constructor(
     @Inject(LINK_REGISTRY)
     private readonly links: LinkRegistryPort,
+    @Inject(PARKED_IMAGES)
+    private readonly images: ParkedImagePort,
   ) {}
 
   async create(
@@ -87,6 +92,34 @@ export class RelayDispatchAdapter implements SessionDispatchPort {
       commandId: randomUUID(),
       sessionId: session.id,
       acceptUnpushedWork: spec.acceptUnpushedWork,
+    };
+    return this.deliver(link, message);
+  }
+
+  async pasteImage(
+    session: WorkSessionEntity,
+    image: SessionImageSpec,
+  ): Promise<SessionDispatchOutcome> {
+    const link = this.links.find(session.hostId);
+    if (!link) return OFFLINE;
+    // A runner that did not say it takes images would log the frame as
+    // unknown and paste nothing, while this answered "delivered".
+    if (!link.capabilities.includes('session.image')) return NOT_SUPPORTED;
+    const commandId = randomUUID();
+    // The bytes wait here and the runner pulls them over HTTPS; the link
+    // carries only the command (`ParkedImagePort`).
+    await this.images.park(commandId, {
+      hostId: session.hostId,
+      sessionId: session.id,
+      mediaType: image.mediaType,
+      data: image.data,
+    });
+    const message: SessionImageMessage = {
+      type: 'session.image',
+      commandId,
+      sessionId: session.id,
+      window: image.window,
+      mediaType: image.mediaType,
     };
     return this.deliver(link, message);
   }
