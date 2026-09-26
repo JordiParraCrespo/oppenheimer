@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { HOST_STATUSES, type HostStatus } from '@oppenheimer/shared';
 
 export class HostResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -44,6 +45,21 @@ export class HostResponseDto {
       'Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.',
   })
   online!: boolean;
+
+  @ApiProperty({
+    enum: HOST_STATUSES,
+    enumName: 'HostStatus',
+    description:
+      'One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.',
+  })
+  status!: HostStatus;
+
+  @ApiProperty({
+    minimum: 0,
+    description:
+      'Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.',
+  })
+  runningSessionCount!: number;
 
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;

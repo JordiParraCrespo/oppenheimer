@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { HostResponseDto } from './host.response.dto';
 
 export class PairingTokenResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -82,4 +83,18 @@ export class MintedPairingTokenResponseDto extends PairingTokenResponseDto {
       'The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.',
   })
   agentPrompt!: string;
+}
+
+/**
+ * `GET /v1/hosts/pairing/{id}`: the token, and the host it paired once a runner
+ * has spent it. Add host polls this while it listens for the machine.
+ */
+export class PairingTokenStatusResponseDto extends PairingTokenResponseDto {
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostResponseDto,
+    description:
+      'The host this token paired, as the hosts list shows it. Null until a runner spends the token.',
+  })
+  host!: HostResponseDto | null;
 }

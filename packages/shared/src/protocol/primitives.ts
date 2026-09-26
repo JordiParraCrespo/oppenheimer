@@ -159,6 +159,7 @@ export const hostFactsSchema = z.object({
     .transform((tools) => tools ?? []),
   workspacePath: z.string(),
   diskFreeBytes: z.number().int().min(0),
+  cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
 });
 

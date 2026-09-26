@@ -44,6 +44,7 @@ const runnerFactsJson = `{
   ],
   "workspacePath": "/Users/jordi/oppenheimer-ai",
   "diskFreeBytes": 120000000000,
+  "cpus": 12,
   "runnerVersion": "0.4.1"
 }`;
 
@@ -60,6 +61,8 @@ const invalidFacts: [string, unknown][] = [
   ['a negative diskFreeBytes', { ...validFacts, diskFreeBytes: -1 }],
   ['a fractional diskFreeBytes', { ...validFacts, diskFreeBytes: 1.5 }],
   ['diskFreeBytes as a string', { ...validFacts, diskFreeBytes: '120' }],
+  ['a CPU count of zero, which Go omits rather than sends', { ...validFacts, cpus: 0 }],
+  ['a fractional CPU count', { ...validFacts, cpus: 1.5 }],
   ['a tool with no name', { ...validFacts, tools: [{ path: '/usr/bin/git', required: true }] }],
   ['a tool with no required flag', { ...validFacts, tools: [{ name: 'git' }] }],
   ['tools as the old version map', { ...validFacts, tools: { git: '2.45.0' } }],
@@ -78,7 +81,14 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
   });
 
   it('both accept the empty strings Go emits for non-omitempty fields', () => {
-    const sparse = { ...validFacts, workspacePath: '', hostname: '', osVersion: undefined };
+    const sparse = {
+      ...validFacts,
+      workspacePath: '',
+      hostname: '',
+      osVersion: undefined,
+      // A runner from before the CPU count, or one that could not read it.
+      cpus: undefined,
+    };
     expect(dtoHostFactsSchema.safeParse(sparse).success).toBe(true);
     expect(wireHostFactsSchema.safeParse(sparse).success).toBe(true);
   });
@@ -118,6 +128,7 @@ describe('hostFactsSchema agrees across the two Zod entry points', () => {
   it('describes exactly the fields `facts.go` declares, and no others', () => {
     expect(Object.keys(dtoHostFactsSchema.shape).sort()).toEqual([
       'arch',
+      'cpus',
       'diskFreeBytes',
       'home',
       'hostname',

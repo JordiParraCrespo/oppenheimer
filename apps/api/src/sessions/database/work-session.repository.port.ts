@@ -78,6 +78,21 @@ export interface WorkSessionRepositoryPort {
   findUnresolvedForHostForMachine(hostId: string): Promise<HostSessionRow[]>;
 
   /**
+   * The sessions on a host whose agent is up — neither resolved nor stopped —
+   * unscoped, because the caller is the host's own lifecycle rather than a
+   * person: removing a machine stops whatever runs on it, whichever workspace
+   * started it.
+   */
+  findRunningOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]>;
+
+  /**
+   * How many sessions are running on each of these hosts, by the same rule.
+   * The hosts were read under the caller's scope before they got here, and the
+   * answer is a count, never a row. A host with none is absent from the map.
+   */
+  countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>>;
+
+  /**
    * Insert the session, its checkouts and the first entries of its log in one
    * transaction, unless the caller's `Idempotency-Key` already created it — or the
    * project was archived out from under it.

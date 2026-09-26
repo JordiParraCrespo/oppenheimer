@@ -192,3 +192,17 @@ earlier note:
   runner's writer orders frames, and that liveness is ping/pong.
 - `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
+- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  that hosts would be listed later in a drawer. The 2026-09-26 frames
+  draw a Settings page with a Hosts section, and
+  `versions/mvp/12-hosts-settings.md` designs its backend. Two host
+  behaviours changed with it: removing a host now stops the sessions
+  running on it (it used to close the link and leave them `open`), and
+  `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
+  (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+  metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
+  a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
+  heartbeat. `versions/mvp/13-host-metadata.md` splits it by rate of
+  change into `host_inventory`, `host_presence`, `host_network` and
+  `host_event`; the old columns go in a later contract step (2026-09-26).

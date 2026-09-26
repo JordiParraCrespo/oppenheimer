@@ -18,7 +18,7 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import type { HostPresence } from '../../database/host.repository.port';
+import type { HostOverview } from '../../application/host-usage.registry';
 import { HostResponseDto } from '../../dtos/host.response.dto';
 import { HostMapper } from '../../host.mapper';
 import { FindHostQuery } from '../../queries/find-host/find-host.query';
@@ -55,9 +55,10 @@ export class RenameHostHttpController {
   ): Promise<HostResponseDto> {
     await this.commandBus.execute(new RenameHostCommand({ scope, hostId: id, name: body.name }));
 
-    const { host, online } = await this.queryBus.execute<FindHostQuery, HostPresence>(
-      new FindHostQuery({ scope, hostId: id }),
-    );
-    return this.mapper.toResponse(host, online);
+    const { host, online, runningSessions } = await this.queryBus.execute<
+      FindHostQuery,
+      HostOverview
+    >(new FindHostQuery({ scope, hostId: id }));
+    return this.mapper.toResponse(host, { online, runningSessions });
   }
 }

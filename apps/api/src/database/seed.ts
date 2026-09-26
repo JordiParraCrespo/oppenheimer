@@ -16,7 +16,11 @@ import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-e
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
 import { GithubInstallationOrmEntity } from '../github/database/github-installation.orm-entity';
 import { HostOrmEntity } from '../hosts/database/host.orm-entity';
+import { HostEventOrmEntity } from '../hosts/database/host-event.orm-entity';
+import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-entity';
+import { HostNetworkOrmEntity } from '../hosts/database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
+import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -58,6 +62,10 @@ const dataSource = new DataSource({
     AccessGrantOrmEntity,
     HostOrmEntity,
     HostPairingTokenOrmEntity,
+    HostInventoryOrmEntity,
+    HostPresenceOrmEntity,
+    HostNetworkOrmEntity,
+    HostEventOrmEntity,
     UserRoleOrmEntity,
     GithubInstallationOrmEntity,
     OrganizationOrmEntity,

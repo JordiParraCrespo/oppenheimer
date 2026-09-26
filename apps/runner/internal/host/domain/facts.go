@@ -120,7 +120,11 @@ type Facts struct {
 	Tools         []Tool   `json:"tools"`
 	WorkspacePath string   `json:"workspacePath"`
 	DiskFreeBytes uint64   `json:"diskFreeBytes"`
-	RunnerVersion string   `json:"runnerVersion"`
+	// CPUs is the logical CPU count this process can use, for the "32 vCPU"
+	// on a host row. Omitted at zero, so a control plane older than it never
+	// sees the key and one newer than it reads a missing count as unknown.
+	CPUs          int    `json:"cpus,omitempty"`
+	RunnerVersion string `json:"runnerVersion"`
 }
 
 // Sentinel conditions. The use case maps these onto the problem catalog; the

@@ -49,6 +49,7 @@ func (s *Service) Collect(ctx context.Context) (domain.Facts, error) {
 		Home:          home,
 		Root:          root,
 		WorkspacePath: s.workspace,
+		CPUs:          cpus(),
 		RunnerVersion: s.version,
 	}
 	for _, name := range domain.ProbedTools {

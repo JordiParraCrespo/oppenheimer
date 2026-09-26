@@ -54,3 +54,34 @@ export const renameHostSchema = z.object({
 });
 
 export type RenameHostDto = z.infer<typeof renameHostSchema>;
+
+/**
+ * What a host row says about itself, in one word — the Settings hosts list's
+ * right-hand column. Derived on read from three facts, never stored:
+ *
+ * - `unpaired` — removed, from either end. Only a read that asked for
+ *   unpaired hosts ever sees it;
+ * - `offline` — no heartbeat inside the online window;
+ * - `running` — online, with at least one session whose agent is up;
+ * - `idle` — online, with nothing running on it.
+ *
+ * The order is the precedence: an unpaired host is never also offline, and an
+ * offline host is never "running" on the strength of sessions it cannot hear.
+ */
+export const HOST_STATUSES = ['running', 'idle', 'offline', 'unpaired'] as const;
+
+export type HostStatus = (typeof HOST_STATUSES)[number];
+
+export const hostStatusSchema = z.enum(HOST_STATUSES);
+
+/**
+ * `GET /hosts`. Unpaired hosts are left out unless asked for: Settings lists
+ * the machines a session can still start on, and a removed host there reads
+ * as one that came back. The sidebar asks for them, because a session that ran
+ * on a host removed since still needs that host's name.
+ */
+export const listHostsQuerySchema = z.object({
+  include: z.literal('unpaired').optional(),
+});
+
+export type ListHostsQueryDto = z.infer<typeof listHostsQuerySchema>;

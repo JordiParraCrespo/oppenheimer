@@ -295,6 +295,31 @@ export class WorkSessionRepository
     });
   }
 
+  async findRunningOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]> {
+    const records = await this.running(
+      'a removed host stops whatever runs on it, and there is no person on a domain event to scope by',
+    )
+      .andWhere('session.hostId = :hostId', { hostId })
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    if (records.length === 0) return [];
+    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
+  async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {
+    if (hostIds.length === 0) return new Map();
+    const rows: { hostId: string; count: string }[] = await this.running(
+      'the hosts were read under the caller’s scope already, and this returns a count per host rather than a row',
+    )
+      .andWhere('session.hostId IN (:...hostIds)', { hostIds: [...hostIds] })
+      .select('session.hostId', 'hostId')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('session.hostId')
+      .getRawMany();
+    return new Map(rows.map((row) => [row.hostId, Number(row.count)]));
+  }
+
   async findEvents(
     session: WorkSessionEntity,
     afterSeq: number | undefined,
@@ -513,6 +538,17 @@ export class WorkSessionRepository
   }
 
   /** Checkouts for a page of sessions, in one query rather than one per row. */
+  /**
+   * "Running" as the host list and host removal mean it: the agent is up, so
+   * the lifecycle is `starting` or `open` and nobody has stopped it. Served by
+   * `IDX_work_session_host_state`.
+   */
+  private running(reason: string) {
+    return this.unscopedQuery(reason)
+      .where('session.state IN (:...runningStates)', { runningStates: ['starting', 'open'] })
+      .andWhere('session.stoppedAt IS NULL');
+  }
+
   private async checkoutsFor(
     sessionIds: string[],
   ): Promise<Map<string, SessionCheckoutOrmEntity[]>> {

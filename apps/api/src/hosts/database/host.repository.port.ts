@@ -66,8 +66,14 @@ export interface RedeemAndRegisterInput {
  * secret rather than by an identity.
  */
 export interface HostRepositoryPort {
-  /** Hosts the caller can reach, newest first, each with its presence. */
-  findAllWithPresence(scope: AccessScope): Promise<HostPresence[]>;
+  /**
+   * Hosts the caller can reach, newest first, each with its presence. Unpaired
+   * hosts are left out unless `includeUnpaired` asks for them.
+   */
+  findAllWithPresence(
+    scope: AccessScope,
+    options?: { includeUnpaired?: boolean },
+  ): Promise<HostPresence[]>;
   /** `None` both for a missing host and for one outside the caller's scope. */
   findOneByIdWithPresence(scope: AccessScope, id: string): Promise<Option<HostPresence>>;
   /** The same scoped read, for the write paths that do not care about presence. */

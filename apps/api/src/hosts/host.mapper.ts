@@ -3,6 +3,7 @@ import type { Mapper } from '@oppenheimer/backend-ddd';
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostOrmEntity } from './database/host.orm-entity';
 import { HostEntity, hostPlatformOf, type RegisterHostProps } from './domain/host.entity';
+import { hostStatusOf } from './domain/host-status.policy';
 import { HostResponseDto } from './dtos/host.response.dto';
 
 /** What a runner sends when it registers, before anything has been read out of it. */
@@ -21,6 +22,12 @@ export interface HostRegistration {
    */
   facts: HostFactsDto | undefined;
   pairingTokenId: string;
+}
+
+/** What a read knows about a host beyond its row. Absent reads as offline with nothing running. */
+export interface HostResponseView {
+  online?: boolean;
+  runningSessions?: number;
 }
 
 /** Maps the host aggregate between its domain, persistence and response shapes. */
@@ -97,13 +104,16 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
    *
    * `online` is not a column and is never derived here: it is
    * `lastSeenAt > now() − 2 × heartbeat`, computed by the read query in the
-   * database so the list cannot disagree with itself between rows. It arrives as
-   * an argument for that reason.
+   * database so the list cannot disagree with itself between rows. The running
+   * session count belongs to the module that owns sessions. Both arrive as the
+   * `view` for that reason, and `status` is read off the three.
    *
    * The public key itself stays on the server. What identifies a machine to a
    * person is its fingerprint, and that is what the console shows.
    */
-  toResponse(entity: HostEntity, online = false): HostResponseDto {
+  toResponse(entity: HostEntity, view: HostResponseView = {}): HostResponseDto {
+    const online = view.online ?? false;
+    const runningSessions = view.runningSessions ?? 0;
     const dto = new HostResponseDto();
     dto.id = entity.id;
     dto.ownerUserId = entity.ownerUserId;
@@ -115,6 +125,8 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     dto.capabilities = entity.capabilities;
     dto.publicKeyFingerprint = entity.publicKeyFingerprint;
     dto.online = online;
+    dto.status = hostStatusOf({ unpaired: entity.isUnpaired, online, runningSessions });
+    dto.runningSessionCount = runningSessions;
     dto.lastSeenAt = entity.lastSeenAt;
     dto.unpairedAt = entity.unpairedAt;
     dto.createdAt = entity.createdAt;
