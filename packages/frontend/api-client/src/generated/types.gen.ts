@@ -724,6 +724,7 @@ export type PairingTokenResponseDto = {
 
 export type MintPairingTokenRequest = {
     name: string;
+    replaces?: string;
 };
 
 export type MintedPairingTokenResponseDto = {
@@ -756,6 +757,10 @@ export type MintedPairingTokenResponseDto = {
      * The one-line command that installs and registers the runner on the machine.
      */
     installCommand: string;
+    /**
+     * SHA-256 of the installer the command downloads, hex, for anyone who reads the script before running it. Null when the deployment did not publish one.
+     */
+    installScriptSha256?: string | null;
     /**
      * The same instruction phrased for a coding agent already running on the machine, for someone who would rather paste it there.
      */
@@ -1230,7 +1235,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
     checkouts: Array<{
@@ -3825,6 +3830,14 @@ export type MintErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * HOSTS_002 — The token named in `replaces` is not one of the caller’s
+     */
+    404: ProblemDetailsDto;
+    /**
+     * HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may
+     */
+    429: ProblemDetailsDto;
+    /**
      * HOSTS_004 — This deployment has no runner release configured
      */
     503: ProblemDetailsDto;
@@ -3939,7 +3952,7 @@ export type CollectSessionImageErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * HOSTS_006 — No image is waiting
+     * HOSTS_007 — No image is waiting
      */
     404: ProblemDetailsDto;
 };
@@ -5260,6 +5273,8 @@ export type CreateSessionErrors = {
      */
     404: ProblemDetailsDto;
     /**
+     * SESSIONS_011 — The host's runner is older than the agent picked
+     *
      * SESSIONS_006 — That project is archived
      */
     409: ProblemDetailsDto;
@@ -5371,7 +5386,7 @@ export type PasteSessionImageData = {
 
 export type PasteSessionImageErrors = {
     /**
-     * SESSIONS_014 — No image attached
+     * SESSIONS_015 — No image attached
      */
     400: ProblemDetailsDto;
     /**
@@ -5387,23 +5402,23 @@ export type PasteSessionImageErrors = {
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_016 — The host’s runner cannot take images
+     * SESSIONS_017 — The host’s runner cannot take images
      *
-     * SESSIONS_013 — That session is stopped
+     * SESSIONS_014 — That session is stopped
      *
      * SESSIONS_005 — That session is closed
      */
     409: ProblemDetailsDto;
     /**
-     * SESSIONS_011 — Image too large
+     * SESSIONS_012 — Image too large
      */
     413: ProblemDetailsDto;
     /**
-     * SESSIONS_012 — Not an image
+     * SESSIONS_013 — Not an image
      */
     415: ProblemDetailsDto;
     /**
-     * SESSIONS_015 — The host is offline
+     * SESSIONS_016 — The host is offline
      */
     503: ProblemDetailsDto;
 };

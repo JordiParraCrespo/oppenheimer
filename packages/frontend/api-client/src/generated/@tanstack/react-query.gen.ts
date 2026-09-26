@@ -1376,7 +1376,7 @@ export const list7Options = (options?: Options<List7Data>) => queryOptions<List7
 /**
  * Mint a pairing token for a new host
  *
- * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored.
+ * Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.
  */
 export const mintMutation = (options?: Partial<Options<MintData>>): UseMutationOptions<MintResponse, MintError, Options<MintData>> => {
     const mutationOptions: UseMutationOptions<MintResponse, MintError, Options<MintData>> = {

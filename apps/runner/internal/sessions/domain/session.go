@@ -58,12 +58,13 @@ func (s State) Live() bool {
 // Agent is the program window 0 runs.
 type Agent string
 
-// Agents. Claude Code is the MVP's first entry; Codex and OpenCode are the
-// others, and the shell is the blank terminal with no agent in it.
+// Agents. Claude Code is the MVP's first entry; Codex, OpenCode and Grok are
+// the others, and the shell is the blank terminal with no agent in it.
 const (
 	AgentClaude   Agent = "claude"
 	AgentCodex    Agent = "codex"
 	AgentOpenCode Agent = "opencode"
+	AgentGrok     Agent = "grok"
 	AgentShell    Agent = "shell"
 )
 
@@ -76,7 +77,17 @@ var agentCatalogIDs = map[Agent]string{
 	AgentClaude:   "claude-code",
 	AgentCodex:    "codex",
 	AgentOpenCode: "opencode",
+	AgentGrok:     "grok",
 	AgentShell:    "shell",
+}
+
+// Agents is every agent the runner knows how to start, in no promised order.
+func Agents() []Agent {
+	agents := make([]Agent, 0, len(agentCatalogIDs))
+	for agent := range agentCatalogIDs {
+		agents = append(agents, agent)
+	}
+	return agents
 }
 
 // Valid reports an agent the runner knows how to start.

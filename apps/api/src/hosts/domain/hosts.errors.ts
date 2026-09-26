@@ -44,12 +44,21 @@ export const HostErrors = {
     httpStatus: 401,
   },
   /**
+   * Every unspent token is a live way to add a machine to the account for an
+   * hour, so one person may hold only a few at once.
+   */
+  TOO_MANY_PAIRING_TOKENS: {
+    code: 'HOSTS_006',
+    message: 'Too many pairing tokens are open',
+    httpStatus: 429,
+  },
+  /**
    * No image is parked for that command for this host: it was already
    * pulled, it expired, or it was parked for another host — the three are one
    * answer, so the route cannot be used to probe which.
    */
   IMAGE_NOT_PARKED: {
-    code: 'HOSTS_006',
+    code: 'HOSTS_007',
     message: 'No image is waiting for that command',
     httpStatus: 404,
   },

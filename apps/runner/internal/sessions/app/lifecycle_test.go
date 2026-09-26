@@ -451,3 +451,69 @@ func TestCloseDropsTheSessionsImages(t *testing.T) {
 		t.Fatalf("discarded = %v, want the session's images dropped on close", h.images.Discarded)
 	}
 }
+
+func TestRunningNamesOnlyTheRunnersLiveTmuxSessionsAndChangesNothing(t *testing.T) {
+	h := newFakeHarness(t)
+	live := h.open(t)
+	gone := h.open(t)
+	ctx := context.Background()
+	if err := h.terminals.Kill(ctx, gone.TmuxName()); err != nil {
+		t.Fatal(err)
+	}
+	// The user's own tmux session is not ours to count, or to end.
+	if err := h.terminals.Create(ctx, "work", "/home/jordi", "", nil); err != nil {
+		t.Fatal(err)
+	}
+	saves := h.store.saves
+
+	running, err := h.svc.Running(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(running) != 1 || running[0] != live.TmuxName() {
+		t.Fatalf("running = %v, want only %s", running, live.TmuxName())
+	}
+	if h.store.saves != saves {
+		t.Fatal("Running must not write the session map: uninstall asks it while the daemon may be writing")
+	}
+}
+
+func TestEndAllKillsOurSessionsKeepsTheirCheckoutsAndLeavesTheUsersAlone(t *testing.T) {
+	h := newFakeHarness(t)
+	session := h.open(t)
+	ctx := context.Background()
+	if err := h.terminals.Create(ctx, "work", "/home/jordi", "", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	ended, err := h.svc.EndAll(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ended) != 1 || ended[0] != session.TmuxName() {
+		t.Fatalf("ended = %v", ended)
+	}
+	if has, _ := h.terminals.Has(ctx, "work"); !has {
+		t.Fatal("a tmux session without the runner's prefix must survive")
+	}
+	stopped, _ := h.svc.Get(session.ID)
+	if stopped.State != domain.StateStopped {
+		t.Fatalf("state = %q, want stopped", stopped.State)
+	}
+	if _, ok := h.worktrees.Paths[stopped.Worktree]; !ok {
+		t.Fatal("ending a session must leave its checkout on disk")
+	}
+	if running, _ := h.svc.Running(ctx); len(running) != 0 {
+		t.Fatalf("still running after EndAll: %v", running)
+	}
+}
+
+func TestRunningOnAHostWithoutTmuxIsEmpty(t *testing.T) {
+	h := newFakeHarness(t)
+	h.terminals.Missing = true
+
+	running, err := h.svc.Running(context.Background())
+	if err != nil || len(running) != 0 {
+		t.Fatalf("running = %v, err = %v", running, err)
+	}
+}

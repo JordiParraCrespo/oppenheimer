@@ -3,6 +3,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
+import { CursorFrames } from './cursor-frames';
 import { bindImageGestures } from './terminal-images';
 import { classifyKey } from './terminal-keys';
 import {
@@ -62,7 +63,7 @@ export function mountSessionTerminal(
   const term = new Terminal({
     ...TERMINAL_FONT,
     theme: readTerminalTheme(),
-    cursorBlink: true,
+    cursorBlink: false,
     cursorStyle: 'block',
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
@@ -193,7 +194,11 @@ export function mountSessionTerminal(
 
   // xterm's write callback fires once the parser has drained the chunk:
   // that is the moment the bytes are consumed, and the credit goes with it.
-  const offData = stream.onData((chunk, consumed) => term.write(chunk, consumed));
+  // A TUI's hide, draw, show painted as one frame (02 §6).
+  const cursorFrames = new CursorFrames((data) => term.write(data));
+  const offData = stream.onData((chunk, consumed) =>
+    term.write(cursorFrames.frame(chunk), consumed),
+  );
   // The replay a fresh attachment opens with is written into the buffer the
   // same way live output is, and xterm follows output only when the viewport
   // is already at the end — at that moment it sits on line zero. Pinning to
@@ -232,6 +237,7 @@ export function mountSessionTerminal(
     offData();
     offStatus();
     input.dispose();
+    cursorFrames.dispose();
     document.fonts?.removeEventListener('loadingdone', onFontsLoaded);
     themeObserver.disconnect();
     resizeObserver.disconnect();

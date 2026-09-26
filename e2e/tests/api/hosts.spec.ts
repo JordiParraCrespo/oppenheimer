@@ -72,7 +72,9 @@ async function mintPairingToken(api: APIRequestContext, name = 'e2e box') {
     /** The problem code when minting was refused, so a caller can tell why. */
     code: (body as { code?: string }).code,
     id: (body as { id?: string }).id,
-    secret: /--token (\S+)/.exec((body as { installCommand?: string }).installCommand ?? '')?.[1],
+    secret: /OPPENHEIMER_REGISTRATION_TOKEN=(\S+)/.exec(
+      (body as { installCommand?: string }).installCommand ?? '',
+    )?.[1],
     body,
   };
 }

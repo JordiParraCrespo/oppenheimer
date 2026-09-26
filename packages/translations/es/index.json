@@ -135,14 +135,13 @@
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
       "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
       "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
-      "SESSIONS_011": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a pegarla.",
-      "SESSIONS_012": "Solo se pueden pegar imágenes PNG, JPEG, GIF y WebP en una sesión.",
-      "SESSIONS_013": "Esta sesión está detenida. Reiníciala para pegar una imagen en su prompt.",
+      "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
       "HOSTS_002": "No se ha encontrado ese token de vinculación.",
       "HOSTS_003": "Se ha rechazado ese token de registro. Genera uno nuevo e inténtalo de nuevo.",
       "HOSTS_004": "Este servidor todavía no tiene configurados los equipos.",
       "HOSTS_005": "Ese equipo no ha podido demostrar su identidad.",
+      "HOSTS_006": "Ya tienes varios tokens de emparejamiento sin usar. Empareja una máquina con uno o espera a que caduquen; cada uno dura una hora.",
       "ADMIN_009": "Esa sesión ya no existe para este usuario.",
       "PROFILE_001": "No hemos encontrado tu perfil.",
       "PROFILE_002": "La contraseña actual no es correcta.",
@@ -154,17 +153,20 @@
       "PROFILE_008": "No hemos podido contactar con el servicio de cuentas. Inténtalo de nuevo.",
       "PROFILE_CLIENT_010": "Ese tipo de archivo no se puede usar como foto de perfil.",
       "PROFILE_CLIENT_011": "Esa imagen es demasiado grande. Elige una de menos de 2 MB.",
-      "SESSIONS_014": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
-      "SESSIONS_015": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
-      "SESSIONS_016": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "HOSTS_006": "No hay ninguna imagen esperando para esa orden.",
       "FLAG_001": "Ese feature flag no existe.",
       "FLAG_002": "Esas reglas de segmentación no son válidas para este flag.",
       "FLAG_003": "Esta funcionalidad no está disponible en este momento.",
       "FLAG_004": "No se ha encontrado ese segmento.",
       "FLAG_005": "Ya existe un segmento con esa clave.",
       "FLAG_006": "Ese segmento todavía lo usa un flag. Quítalo primero de sus reglas.",
-      "FLAG_007": "Las condiciones de ese segmento no son válidas."
+      "FLAG_007": "Las condiciones de ese segmento no son válidas.",
+      "SESSIONS_012": "La imagen pesa más de 5 MB. Recórtala o guárdala más pequeña y vuelve a pegarla.",
+      "SESSIONS_013": "Solo se pueden pegar imágenes PNG, JPEG, GIF y WebP en una sesión.",
+      "SESSIONS_014": "Esta sesión está detenida. Reiníciala para pegar una imagen en su prompt.",
+      "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
+      "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
+      "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
+      "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -464,7 +466,8 @@
       "waiting": "Escuchando a este host…",
       "registered": "Registrado: esperando a su runner",
       "online": "Runner conectado",
-      "mintFailed": "No hemos podido crear un token de registro."
+      "mintFailed": "No hemos podido crear un token de registro.",
+      "installerDigest": "SHA-256 del instalador: {{digest}}"
     }
   },
   "home": {
@@ -1216,6 +1219,17 @@
       "action": "Aceptar invitación",
       "helper": "Esta invitación caduca en 2 días.",
       "ignore": "¿No esperabas esta invitación? Puedes ignorar este correo."
+    },
+    "hostPaired": {
+      "subject": "Se ha emparejado un equipo nuevo con tu cuenta",
+      "preview": "{{hostName}} ya puede ejecutar sesiones para ti. Si no has sido tú, actúa ya.",
+      "heading": "Se ha emparejado un equipo nuevo",
+      "body": "{{hostName}} ({{machine}}) se ha emparejado con tu cuenta y ya puede ejecutar sesiones de programación para ti. La huella de su clave empieza por {{fingerprint}}.",
+      "action": "Abrir Oppenheimer",
+      "helper": "Si lo has emparejado tú, no tienes que hacer nada. En ese equipo, el comando status del runner muestra la misma huella, para que compruebes que es el que querías.",
+      "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento. La consola aún no puede desemparejar un equipo. Si tienes acceso a ese equipo, ejecuta en él el comando uninstall del runner; si no, desemparéjalo a través de la API con DELETE /v1/hosts/{{hostId}}. Tus tokens sin usar caducan en menos de una hora.",
+      "unknownMachine": "sin nombre de equipo",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
     }
   }
 }

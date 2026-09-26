@@ -17,6 +17,23 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("codex argv = %q, want %q", got, want)
 	}
+	got = Launch{Model: "grok-4.7", Permission: "ask", Effort: "minimal", Prompt: "fix the picker"}.Args(AgentGrok)
+	want = []string{"--model", "grok-4.7", "--permission-mode", "default", "--reasoning-effort", "minimal", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("grok argv = %q, want %q", got, want)
+	}
+}
+
+func TestGrokStartsInteractiveWithTheTaskAsItsPositional(t *testing.T) {
+	// `grok -p` is single-turn and exits; the task is the trailing positional
+	// so the person gets the TUI with the task already in it.
+	line := Launch{Model: "grok-4.6", Permission: "full", Prompt: "go"}.CommandLine(AgentGrok)
+	if want := "grok --model grok-4.6 --permission-mode bypassPermissions go"; line != want {
+		t.Fatalf("command line = %s, want %s", line, want)
+	}
+	if env := (Launch{Permission: "ask"}).Env(AgentGrok); env != nil {
+		t.Fatalf("grok's approvals are a flag, want no environment, got %v", env)
+	}
 }
 
 func TestLaunchDropsWhatTheCatalogHasNoEntryFor(t *testing.T) {

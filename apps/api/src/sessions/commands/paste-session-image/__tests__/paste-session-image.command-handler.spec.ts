@@ -63,13 +63,13 @@ describe('PasteSessionImageCommandHandler', () => {
     });
   });
 
-  it('refuses bytes that are not an image with SESSIONS_012, whatever the browser called them', async () => {
+  it('refuses bytes that are not an image with SESSIONS_013, whatever the browser called them', async () => {
     const session = openSession();
     const { handler, dispatch } = harness(session);
 
     await expect(
       handler.execute(paste(session.id, Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))),
-    ).rejects.toMatchObject({ code: 'SESSIONS_012' });
+    ).rejects.toMatchObject({ code: 'SESSIONS_013' });
     expect(dispatch.pasteImage).not.toHaveBeenCalled();
   });
 
@@ -92,24 +92,24 @@ describe('PasteSessionImageCommandHandler', () => {
     } as unknown as WorkSessionEntity;
     const { handler, dispatch } = harness(stopped);
     await expect(handler.execute(paste(stopped.id, PNG))).rejects.toMatchObject({
-      code: 'SESSIONS_013',
+      code: 'SESSIONS_014',
     });
     expect(dispatch.pasteImage).not.toHaveBeenCalled();
   });
 
-  it('answers SESSIONS_015 for a host with no link, rather than a paste that never lands', async () => {
+  it('answers SESSIONS_016 for a host with no link, rather than a paste that never lands', async () => {
     const session = openSession();
     const { handler } = harness(session, { delivered: false, hints: ['host_offline'] });
     await expect(handler.execute(paste(session.id, PNG))).rejects.toMatchObject({
-      code: 'SESSIONS_015',
+      code: 'SESSIONS_016',
     });
   });
 
-  it('answers SESSIONS_016 for a runner that predates images', async () => {
+  it('answers SESSIONS_017 for a runner that predates images', async () => {
     const session = openSession();
     const { handler } = harness(session, { delivered: false, hints: ['not_supported'] });
     await expect(handler.execute(paste(session.id, PNG))).rejects.toMatchObject({
-      code: 'SESSIONS_016',
+      code: 'SESSIONS_017',
     });
   });
 });

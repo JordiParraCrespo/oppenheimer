@@ -164,7 +164,9 @@ async function boot(): Promise<World> {
       };
     },
   };
-  const presence: HostPresencePort = { observe: vi.fn().mockResolvedValue(undefined) };
+  const presence: HostPresencePort = {
+    observe: vi.fn().mockResolvedValue(true),
+  };
   const reconciliation: SessionReconciliationPort = {
     reconcile: vi.fn().mockResolvedValue({ redispatched: [], stopped: [] }),
   };

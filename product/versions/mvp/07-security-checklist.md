@@ -10,7 +10,9 @@ feature lands.
 - [ ] F5 registration token: one hour, single use, revocable, source IP shown
 - [ ] F6 runner pins the control plane's key fingerprint
 - [ ] F7 job payloads encrypted to the runner key
-- [ ] F8 runner private key 0600, rotation supported
+- [ ] F8 runner private key 0600; rotation arrives with the link (09 §3) —
+      until then a stolen key is answered by unpairing, and an unpaired host
+      can neither hold a link nor be granted credentials (01)
 - [ ] F10 direct-mode hosts are labelled "full access", never "sandbox"; the runner never runs as root; secrets and tokens are env or socket-scoped to the session's shell, nothing written to disk by the runner
 - [ ] F11 a worktree is never presented as a boundary
 - [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed. The one file the runner does write from a reader's screen is a pasted image, named in 02 §11
@@ -26,11 +28,12 @@ feature lands.
       deferred with the VM slice, and this row is the runner half of the
       same finding
 - [ ] F26a first install is trust-on-first-use — a script fetched over
-      HTTPS, checked against the digest shown on the Add host screen. No
-      compiled-in key exists yet at that point, so F26 begins at the
-      first self-update, not at install. The mitigation is the digest on
-      screen, the token's one-hour single use, and keeping the script
-      host separate from the control plane (03)
+      HTTPS only, checked against the digest the Add host screen shows.
+      Where it can, the script checks the release signature, but against
+      keys it carries itself, so F26 still begins at the first self-update,
+      not at install. The mitigation is the digest on screen, the token's
+      one-hour single use, and keeping the script host separate from the
+      control plane (03)
 
 Deferred to later slices, with the VMs: F13 account volumes, F14 host
 egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay

@@ -39,7 +39,7 @@ export const SessionsErrors = {
    * sees the same words either way.
    */
   IMAGE_TOO_LARGE: {
-    code: 'SESSIONS_011',
+    code: 'SESSIONS_012',
     message: 'That image is too large to give the session',
   },
 } as const satisfies Record<string, ErrorDefinition>;

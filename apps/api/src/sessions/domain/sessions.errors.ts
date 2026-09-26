@@ -100,15 +100,27 @@ export const SessionErrors = {
     message: 'A session checks out one repository',
     httpStatus: 409,
   },
+  /**
+   * An agent the host's runner was built without. A runner probes the command of
+   * every agent it can launch (`ProbedTools`), found or not, so an inventory with
+   * no entry for this agent's command is a runner older than the agent, and it
+   * would refuse `session.create`. Refused here, before a row is written, rather
+   * than recorded and then failed by the host.
+   */
+  AGENT_UNSUPPORTED_BY_RUNNER: {
+    code: 'SESSIONS_011',
+    message: "This host's runner cannot start that agent",
+    httpStatus: 409,
+  },
   /** An upload over `SESSION_IMAGE_MAX_BYTES`, refused by multer before it is buffered. */
   IMAGE_TOO_LARGE: {
-    code: 'SESSIONS_011',
+    code: 'SESSIONS_012',
     message: 'That image is too large to give the session',
     httpStatus: 413,
   },
   /** Bytes that are none of the image types a session takes, whatever their label. */
   UNSUPPORTED_IMAGE: {
-    code: 'SESSIONS_012',
+    code: 'SESSIONS_013',
     message: 'That is not an image the session can take',
     httpStatus: 415,
   },
@@ -117,13 +129,13 @@ export const SessionErrors = {
    * sent to a window that is not there, so it is refused before it is sent.
    */
   NOT_RUNNING: {
-    code: 'SESSIONS_013',
+    code: 'SESSIONS_014',
     message: 'That session is stopped',
     httpStatus: 409,
   },
   /** A multipart request with no file part: nothing to judge as an image. */
   IMAGE_MISSING: {
-    code: 'SESSIONS_014',
+    code: 'SESSIONS_015',
     message: 'No image was attached',
     httpStatus: 400,
   },
@@ -132,7 +144,7 @@ export const SessionErrors = {
    * host that comes back: the prompt it was meant for will have moved on.
    */
   HOST_OFFLINE: {
-    code: 'SESSIONS_015',
+    code: 'SESSIONS_016',
     message: 'The session’s host is offline',
     httpStatus: 503,
   },
@@ -141,7 +153,7 @@ export const SessionErrors = {
    * predates it, and updating the runner is what fixes it.
    */
   HOST_CANNOT_TAKE_IMAGES: {
-    code: 'SESSIONS_016',
+    code: 'SESSIONS_017',
     message: 'The session’s host cannot take images until its runner is updated',
     httpStatus: 409,
   },

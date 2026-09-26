@@ -88,7 +88,7 @@ export class HostAssertionResolver implements HostAssertionPort {
 
     await this.burn(hostId, jti, expiresAt, now);
 
-    return { hostId, expiresAt };
+    return { hostId, expiresAt, unpaired: host.isUnpaired };
   }
 
   /**

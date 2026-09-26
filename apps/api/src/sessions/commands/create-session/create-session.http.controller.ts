@@ -73,6 +73,11 @@ export class CreateSessionHttpController {
     description: 'That project is archived',
     code: 'SESSIONS_006',
   })
+  @ApiProblemResponse({
+    status: 409,
+    description: "The host's runner is older than the agent picked",
+    code: 'SESSIONS_011',
+  })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,

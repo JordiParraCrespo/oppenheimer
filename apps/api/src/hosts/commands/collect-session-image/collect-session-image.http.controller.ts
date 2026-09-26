@@ -50,7 +50,7 @@ export class CollectSessionImageHttpController {
     description: 'No valid host assertion was presented',
     code: 'HOSTS_005',
   })
-  @ApiProblemResponse({ status: 404, description: 'No image is waiting', code: 'HOSTS_006' })
+  @ApiProblemResponse({ status: 404, description: 'No image is waiting', code: 'HOSTS_007' })
   async collect(
     @CurrentHost() hostId: string,
     @Param('commandId', ParseUUIDPipe) commandId: string,

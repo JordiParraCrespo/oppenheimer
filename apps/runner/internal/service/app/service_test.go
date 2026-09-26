@@ -84,7 +84,12 @@ func TestSystemdInstallWritesTheUnitEnablesLingeringAndStarts(t *testing.T) {
 	if !cmds.ran("loginctl enable-linger jordi") {
 		t.Fatalf("calls = %v", cmds.calls)
 	}
-	if !cmds.ran("systemctl --user daemon-reload") || !cmds.ran("systemctl --user enable --now "+domain.SystemdUnit) {
+	if !cmds.ran("systemctl --user daemon-reload") || !cmds.ran("systemctl --user enable "+domain.SystemdUnit) {
+		t.Fatalf("calls = %v", cmds.calls)
+	}
+	// A re-run on a host whose unit is already active must run the release it
+	// just linked: `enable --now` would leave the old process in place.
+	if !cmds.ran("systemctl --user restart "+domain.SystemdUnit) || cmds.ran("systemctl --user enable --now") {
 		t.Fatalf("calls = %v", cmds.calls)
 	}
 }

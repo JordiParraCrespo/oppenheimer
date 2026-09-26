@@ -33,6 +33,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # Every setting the API reads comes from the repo's one `.env`, which the
+    # root `.env.example` documents variable by variable. The image does not
+    # ship it, and this used to be a hand-kept list of the variables to forward
+    # — which drifted until host pairing, the GitHub App, email delivery and
+    # TRUST_PROXY could not be configured at all. Run with `--env-file .env`
+    # from the repo root (`pnpm docker:prod`) so the `${…}` values below are
+    # read from the same file.
+    env_file:
+      - path: ../.env
+        required: false
+    # Only what this file knows better than `.env`, which it overrides: the
+    # service names on the compose network, and the database credentials the
+    # `postgres` service above was created with — interpolated from the same
+    # source as its own, so the two can never disagree. Nothing here may be a
+    # `${VAR}` that is also in `.env` for the API's own sake: an interpolation
+    # that resolves blank overrides the real value from `env_file`.
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -43,26 +59,16 @@ services:
       DB_DATABASE: ${DB_DATABASE:-oppenheimer}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      FRONTEND_URL: ${FRONTEND_URL}
-      # OAuth providers. The image does not ship the root `.env`, so anything
-      # the API must read has to be forwarded here. Empty is the "not
-      # configured" value — the provider simply stays off (see
-      # GET /api/v1/health/capabilities).
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      # The LLM provider that titles sessions (see the root .env.example).
-      # Empty is "none": sessions are then named from their prompt's words.
-      LLM_PROVIDER: ${LLM_PROVIDER:-}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_BASE_URL: ${LLM_BASE_URL:-}
-      LLM_MODEL: ${LLM_MODEL:-}
-      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-}
-      SESSION_NAMER_MODEL: ${SESSION_NAMER_MODEL:-}
-      SESSION_NAMER_TIMEOUT_MS: ${SESSION_NAMER_TIMEOUT_MS:-}
+      # The `redis` service above runs without a password.
+      REDIS_PASSWORD: ""
+    healthcheck:
+      # Liveness, not readiness: `/ready` also fails on disk and heap
+      # thresholds, and a container restarted for a full disk does not free it.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     ports:
       - "3001:3001"
 
@@ -70,8 +76,10 @@ services:
   web:
     image: ${WEB_IMAGE:-ghcr.io/your-org/oppenheimer-web:latest}
     restart: always
+    # nginx resolves the `api` upstream when it starts, and proxies /api to it.
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     # No runtime environment: the web image is a static Vite build served by
     # nginx — VITE_* values are baked in at image build time. The one runtime
     # knob is CSP_EXTRA_ORIGINS, the origins nginx's Content-Security-Policy

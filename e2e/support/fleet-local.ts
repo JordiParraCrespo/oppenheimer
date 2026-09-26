@@ -86,6 +86,31 @@ function runAs(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): stri
   return execFileSync(command, args, { encoding: 'utf8' }).trim();
 }
 
+/**
+ * `runner register`, waiting out the registration throttle (5 a minute per
+ * address, F5) rather than failing on it. Every local host registers from this
+ * machine's one address, so a suite with more than five pairings in a minute
+ * reaches the limit here, where container hosts each have an address of their
+ * own. The throttle is the product's rule; this only waits for it to allow the
+ * next one. The same token is good again: a 429 never reaches its redemption.
+ */
+function register(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): void {
+  const [command, args] = asHost(record, argv);
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+      return;
+    } catch (error) {
+      const stderr = String((error as { stderr?: string }).stderr ?? '');
+      if (!stderr.includes('429') || attempt === 4) {
+        process.stderr.write(stderr);
+        throw error;
+      }
+      execFileSync('sleep', ['20']);
+    }
+  }
+}
+
 function detached(command: string, args: string[], log: string): number {
   const child = spawn('sh', ['-c', 'exec "$@" >>"$0" 2>&1', log, command, ...args], {
     detached: true,
@@ -103,7 +128,10 @@ function accountComment(user: string): string | undefined {
   }
 }
 
-/** The runner and the shim in `ROOT/bin`, and the git server on loopback. */
+/** The agent shims every host carries (`e2e/fleet/`): each prints its argv. */
+const SHIMS = ['claude', 'grok'];
+
+/** The runner and the shims in `ROOT/bin`, and the git server on loopback. */
 export function buildLocalFleet(repoRoot: string): void {
   teardownLocalFleet();
   mkdirSync(join(ROOT, 'bin'), { recursive: true });
@@ -112,8 +140,14 @@ export function buildLocalFleet(repoRoot: string): void {
     env: { ...process.env, CGO_ENABLED: '0' },
     stdio: 'inherit',
   });
-  copyFileSync(join(repoRoot, 'e2e', 'fleet', 'claude'), join(ROOT, 'bin', 'claude'));
-  execFileSync('chmod', ['0755', join(ROOT, 'bin', 'claude'), join(ROOT, 'bin', 'runner')]);
+  for (const shim of SHIMS) {
+    copyFileSync(join(repoRoot, 'e2e', 'fleet', shim), join(ROOT, 'bin', shim));
+  }
+  execFileSync('chmod', [
+    '0755',
+    ...SHIMS.map((shim) => join(ROOT, 'bin', shim)),
+    join(ROOT, 'bin', 'runner'),
+  ]);
   const pid = detached(
     'env',
     [
@@ -169,7 +203,7 @@ export function startLocalHost(name: string, token: string): FleetHost {
   const bin = join(record.home, 'bin');
   mkdirSync(bin, { recursive: true });
   mkdirSync(join(record.home, '.tmux'), { recursive: true, mode: 0o700 });
-  for (const file of ['runner', 'claude']) copyFileSync(join(ROOT, 'bin', file), join(bin, file));
+  for (const file of ['runner', ...SHIMS]) copyFileSync(join(ROOT, 'bin', file), join(bin, file));
   if (isRoot) execFileSync('chown', ['-R', `${record.user}:${record.user}`, record.home]);
   // The runner clones `https://github.com/<owner>/<repo>.git`: here, the local
   // git server, as `git-server` is for a container host.
@@ -182,7 +216,19 @@ export function startLocalHost(name: string, token: string): FleetHost {
   ]);
   runAs(record, ['git', 'config', '--global', 'user.name', 'Fleet host']);
   runAs(record, ['git', 'config', '--global', 'user.email', 'fleet@oppenheimer.test']);
-  runAs(record, ['runner', 'register', '--token', token, '--url', API_URL, '--name', name]);
+  // CI sets CI and GITHUB_ACTIONS, which the runner reads as a temporary
+  // machine; a fleet host is one on purpose, for the length of the run.
+  register(record, [
+    'runner',
+    'register',
+    '--token',
+    token,
+    '--url',
+    API_URL,
+    '--name',
+    name,
+    '--allow-container',
+  ]);
 
   // Kept alive the way the container's entrypoint keeps it, standing in for
   // launchd KeepAlive or systemd Restart=always.

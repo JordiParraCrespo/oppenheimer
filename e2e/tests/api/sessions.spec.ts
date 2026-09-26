@@ -41,6 +41,20 @@ test.describe('Sessions', () => {
     expect(created.status(), await created.text()).toBe(201);
     const session = await created.json();
 
+    // This host's runner predates Grok — its inventory has no `grok` entry — so
+    // a Grok session is refused before anything is recorded, instead of being
+    // written and then failed by a runner that cannot start it.
+    const tooNew = await api.post('/api/v1/sessions', {
+      headers: { 'Idempotency-Key': `e2e-grok-${Date.now()}` },
+      data: {
+        hostId,
+        agent: 'grok',
+        checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
+      },
+      failOnStatusCode: false,
+    });
+    await expectProblemDocument(tooNew, { status: 409, code: 'SESSIONS_011' });
+
     // The slug is minted before anything is typed, because the directory and the
     // branch have to exist first; the name starts equal to it.
     expect(session.slug).toMatch(/^[a-z]+-[a-z]+-[0-9a-z]{6}$/);
@@ -259,7 +273,7 @@ test.describe('Sessions', () => {
         multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
         failOnStatusCode: false,
       }),
-      { status: 503, code: 'SESSIONS_015' },
+      { status: 503, code: 'SESSIONS_016' },
     );
 
     // The label is the browser's; the bytes are what count.
@@ -270,11 +284,11 @@ test.describe('Sessions', () => {
         },
         failOnStatusCode: false,
       }),
-      { status: 415, code: 'SESSIONS_012' },
+      { status: 415, code: 'SESSIONS_013' },
     );
     await expectProblemDocument(
       await api.post(images, { multipart: { window: '0' }, failOnStatusCode: false }),
-      { status: 400, code: 'SESSIONS_014' },
+      { status: 400, code: 'SESSIONS_015' },
     );
 
     await api.post(`/api/v1/sessions/${session.id}/stop`);
@@ -283,7 +297,7 @@ test.describe('Sessions', () => {
         multipart: { file: { name: 'shot.png', mimeType: 'image/png', buffer: png } },
         failOnStatusCode: false,
       }),
-      { status: 409, code: 'SESSIONS_013' },
+      { status: 409, code: 'SESSIONS_014' },
     );
   });
 });

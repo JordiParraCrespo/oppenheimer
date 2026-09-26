@@ -135,11 +135,10 @@ export const hostToolSchema = z.object({
  * `hostFactsSchema` in `../schemas/primitives`, which registration uses.
  *
  *
- * Agents installed on a host are read from `tools` — the entries named `claude`,
- * `codex` and `opencode`, which the runner probes on every host beside `git`
- * and `tmux` (`ProbedTools` in `facts.go`) — and there is no separate agents
- * key; that is what the console consumes for the agent chip. The blank
- * terminal needs no tool of its own.
+ * Agents installed on a host are read from `tools` — the names `ProbedTools` in
+ * `facts.go` reports, an agent's being its catalog `command` — and there is no
+ * separate agents key; that is what the console consumes for the agent chip.
+ * The blank terminal needs no tool of its own.
  *
  * Both mirror `Facts` in `apps/runner/internal/host/domain/facts.go` verbatim,
  * because the runner marshals that struct whole into both `POST /hosts/register`

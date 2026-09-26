@@ -3,6 +3,7 @@ import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostEntity } from '../../domain/host.entity';
+import { HostMapper } from '../../host.mapper';
 import { HostAccessResolver } from '../host-access.resolver';
 
 /**
@@ -27,7 +28,10 @@ function scope(overrides: Partial<AccessScope> = {}): AccessScope {
   };
 }
 
-function host(unpairedAt: Date | null = null): HostEntity {
+function host(
+  unpairedAt: Date | null = null,
+  capabilities: Record<string, unknown> | null = null,
+): HostEntity {
   return HostEntity.create({
     id: 'host-1',
     props: {
@@ -37,7 +41,7 @@ function host(unpairedAt: Date | null = null): HostEntity {
       os: null,
       arch: null,
       runnerVersion: null,
-      capabilities: null,
+      capabilities,
       publicKey: 'a'.repeat(44),
       publicKeyFingerprint: FINGERPRINT,
       lastSeenAt: null,
@@ -52,11 +56,28 @@ describe('HostAccessResolver', () => {
 
   beforeEach(() => {
     hosts = { findOneById: vi.fn().mockResolvedValue(Some(host())) };
-    resolver = new HostAccessResolver(hosts as HostRepositoryPort);
+    resolver = new HostAccessResolver(hosts as HostRepositoryPort, new HostMapper());
+  });
+
+  it('reports the tool names the runner probed, which say what it can start', async () => {
+    vi.mocked(hosts.findOneById).mockResolvedValue(
+      Some(
+        host(null, {
+          tools: [
+            { name: 'git', path: '/usr/bin/git', required: true },
+            { name: 'grok', required: false },
+          ],
+        }),
+      ),
+    );
+
+    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({
+      probedTools: ['git', 'grok'],
+    });
   });
 
   it('admits a host the caller can reach', async () => {
-    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toBeUndefined();
+    await expect(resolver.assertUsable(scope(), 'host-1')).resolves.toEqual({ probedTools: null });
     // Reached through the *scoped* read, so it is the same predicate the listing
     // uses: a host a caller cannot see is one they cannot name either.
     expect(hosts.findOneById).toHaveBeenCalledWith(

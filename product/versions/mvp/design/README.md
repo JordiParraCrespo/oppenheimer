@@ -16,7 +16,7 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 |----------|--------|
 | [`Flow`](version1/Flow.dc.html) | Index of the first-run flow; every frame live, in order |
 | [`SignIn`](version1/SignIn.dc.html) | Sign in — GitHub, Google, email and password |
-| [`CreateAccount`](version1/CreateAccount.dc.html) | Create your account |
+| [`CreateAccount`](version1/CreateAccount.dc.html) | Create your account — first and last name, and a note when a provider sign-in found no account |
 | [`ForgotPassword`](version1/ForgotPassword.dc.html) | Reset your password |
 | [`CheckEmail`](version1/CheckEmail.dc.html) | Check your email |
 | [`SetPassword`](version1/SetPassword.dc.html) | Set a new password |
@@ -24,13 +24,24 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
 | [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
-| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: sidebar, terminal, composer |
+| [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and routines, the sidebar grouped by project, terminal, composer |
+| [`Routines`](version1/Routines.dc.html) | The console on its routines page — routines grouped by project, their triggers, steps and run history |
+| [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (add, rename, remove, install command, agent prompt) |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
 States inside the onboarding screens are live: the workspace address checks
 availability as you type, GitHub flips to connected, the host registers after a
 few seconds, the pairing token counts down. Onboarding steps carry a Back link
-beside the step counter.
+beside the step counter. In the console the sidebar groups sessions under
+projects (each with default repositories, host and agent), a session row
+renames, moves to another project or deletes, a new session shows a
+"Starting your session" wait, and the terminal header marks the link as
+live or reconnecting. `Components` adds the Callout (neutral, info, success,
+warning, error), and the parts the routines and settings pages are built
+from: rail, routine rows and table, run history, templates, settings nav and
+group, host card, page header, segmented tabs. The console's styles moved
+into `version1/console.css`, shared by `SessionsConsole` and `Components`;
+`Routines` is `SessionsConsole` opened on its routines page.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -63,5 +74,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   design record; the showcase is the rendered one. The agent marks in the
   package are inline SVGs from the vendors' brand assets, not the PNG copies
   in `version1/assets/agents/`.
+- The 2026-09-24 export also carried a `version2/` canvas (a chat view); it
+  is not part of the MVP and was left out, as were `screens/` and
+  `screenshots/`. The 2026-09-26 export has no `version2/`.
+- Routines and the Settings page are in the version-1 frames as of the
+  2026-09-26 export, but `../00-scope.md` still lists routines as a later
+  slice and `../05-screens.md` still says the MVP has no settings page.
+  The notes have not been reconciled with these frames yet.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

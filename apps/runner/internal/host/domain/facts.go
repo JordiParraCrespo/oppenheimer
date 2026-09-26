@@ -79,19 +79,25 @@ type Tool struct {
 func (t Tool) Found() bool { return t.Path != "" }
 
 // Tool names the runner probes. `git` and `tmux` are how a session exists at
-// all; `claude`, `codex` and `opencode` are the agents, and a host without
-// them still pairs and still opens a terminal — the install hint belongs in
-// the UI, not in a refusal.
+// all; the rest are the agents, one per catalog `command` this runner can
+// launch, and a host without them still pairs and still opens a terminal —
+// the install hint belongs in the UI, not in a refusal.
+//
+// Every agent the runner can start is probed, found or not, because the
+// control plane reads the inventory's names as what this runner knows: a
+// catalog agent with no entry is one this build would refuse, and a session
+// for it is refused before it is recorded (`SESSIONS_011`).
 const (
 	ToolGit      = "git"
 	ToolTmux     = "tmux"
 	ToolClaude   = "claude"
 	ToolCodex    = "codex"
 	ToolOpenCode = "opencode"
+	ToolGrok     = "grok"
 )
 
 // ProbedTools are the tools every inventory reports, required or not.
-var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode}
+var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode, ToolGrok}
 
 // RequiredTools are the ones whose absence stops sessions.
 var RequiredTools = []string{ToolGit, ToolTmux}

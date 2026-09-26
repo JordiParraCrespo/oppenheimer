@@ -108,7 +108,7 @@ describe('recordEvent is the only mutator of the fold', () => {
 
     const stopped = session();
     stopped.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.STOPPED)]);
-    expect(stopped.inputRefusal?.code).toBe('SESSIONS_013');
+    expect(stopped.inputRefusal?.code).toBe('SESSIONS_014');
 
     const closed = session();
     closed.recordEvents([entry(SESSION_EVENT_KINDS.STARTED), entry(SESSION_EVENT_KINDS.CLOSED)]);

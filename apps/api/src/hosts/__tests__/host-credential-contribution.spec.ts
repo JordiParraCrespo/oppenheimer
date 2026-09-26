@@ -23,7 +23,7 @@ const assertions: HostAssertionPort = {
   recognises: (bearer) => bearer.split('.').length === 3,
   verify: async (assertion) => {
     if (assertion !== ASSERTION) throw new Error('the double refuses anything else');
-    return { hostId: 'host-1', expiresAt: EXPIRES_AT };
+    return { hostId: 'host-1', expiresAt: EXPIRES_AT, unpaired: false };
   },
 };
 

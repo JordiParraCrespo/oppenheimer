@@ -57,6 +57,12 @@ export interface RunnerLink {
    * read: what a `command.failed` no attachment claims was a refusal of.
    */
   takeSessionCommand(commandId: string): SentSessionCommand | undefined;
+  /**
+   * Close the link with a code from `RUNNER_LINK_CLOSE_CODES`. What reaches for
+   * this is a decision about the host — it was unpaired — not a transport
+   * failure, which the socket reports on its own.
+   */
+  close(code: number, reason: string): void;
 }
 
 export interface LinkRegistryPort {

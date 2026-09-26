@@ -78,15 +78,15 @@ export class PasteSessionImageHttpController {
   @ApiResponse({ status: 202, description: 'The host has been told to pull the image' })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
-  @ApiProblemResponse({ status: 409, description: 'That session is stopped', code: 'SESSIONS_013' })
-  @ApiProblemResponse({ status: 413, description: 'Image too large', code: 'SESSIONS_011' })
-  @ApiProblemResponse({ status: 415, description: 'Not an image', code: 'SESSIONS_012' })
-  @ApiProblemResponse({ status: 400, description: 'No image attached', code: 'SESSIONS_014' })
-  @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_015' })
+  @ApiProblemResponse({ status: 409, description: 'That session is stopped', code: 'SESSIONS_014' })
+  @ApiProblemResponse({ status: 413, description: 'Image too large', code: 'SESSIONS_012' })
+  @ApiProblemResponse({ status: 415, description: 'Not an image', code: 'SESSIONS_013' })
+  @ApiProblemResponse({ status: 400, description: 'No image attached', code: 'SESSIONS_015' })
+  @ApiProblemResponse({ status: 503, description: 'The host is offline', code: 'SESSIONS_016' })
   @ApiProblemResponse({
     status: 409,
     description: 'The host’s runner cannot take images',
-    code: 'SESSIONS_016',
+    code: 'SESSIONS_017',
   })
   async paste(
     @CurrentAccessScope() scope: AccessScope,

@@ -1,9 +1,13 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { AuthModule } from '../auth/auth.module';
 import { LinksModule } from '../links/links.module';
+import { UsersModule } from '../users/user.module';
+import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
@@ -117,6 +121,9 @@ const resolvers: Provider[] = [
     LinksModule,
     TypeOrmModule.forFeature([HostOrmEntity, HostPairingTokenOrmEntity]),
     AuthzKernelModule.forFeature([HostResource]),
+    // The owner's address for the new-host notice, and the queue it goes out on.
+    UsersModule,
+    BullModule.registerQueue({ name: QUEUE_NAMES.EMAIL }),
   ],
   controllers: [...httpControllers],
   providers: [
@@ -128,6 +135,7 @@ const resolvers: Provider[] = [
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
     RunnerReleaseConfig,
     HostPrincipalGuard,
+    HostRegisteredDomainEventHandler,
   ],
   // The two application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,

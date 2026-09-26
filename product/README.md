@@ -190,3 +190,5 @@ earlier note:
   epoch's floor is now the control plane's clock in milliseconds. The
   same note now also says that PTY bytes are never dropped, how the
   runner's writer orders frames, and that liveness is ping/pong.
+- `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
+  fifth (2026-09-25).

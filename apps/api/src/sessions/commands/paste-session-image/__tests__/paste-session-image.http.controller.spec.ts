@@ -96,22 +96,22 @@ describe('POST /v1/sessions/:id/images', () => {
     expect(execute.mock.calls[0]?.[0]).toMatchObject({ window: 0 });
   });
 
-  it('refuses an image over the ceiling with SESSIONS_011, before the bus sees it', async () => {
+  it('refuses an image over the ceiling with SESSIONS_012, before the bus sees it', async () => {
     const response = await post({ file: new Blob([new Uint8Array(SESSION_IMAGE_MAX_BYTES + 1)]) });
 
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toMatchObject({
-      code: 'SESSIONS_011',
+      code: 'SESSIONS_012',
       maxBytes: SESSION_IMAGE_MAX_BYTES,
     });
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it('refuses a request with no file with SESSIONS_014', async () => {
+  it('refuses a request with no file with SESSIONS_015', async () => {
     const response = await post({ window: '0' });
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({ code: 'SESSIONS_014' });
+    await expect(response.json()).resolves.toMatchObject({ code: 'SESSIONS_015' });
     expect(execute).not.toHaveBeenCalled();
   });
 

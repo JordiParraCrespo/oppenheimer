@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/backend-ddd';
 import type { HostFactsDto } from '@oppenheimer/shared';
 import { HostRegisteredDomainEvent } from './events/host-registered.domain-event';
+import { HostUnpairedDomainEvent } from './events/host-unpaired.domain-event';
 
 /** Whatever the runner last reported about the machine, stored as it arrived. */
 export type HostCapabilities = Record<string, unknown>;
@@ -102,6 +103,9 @@ export class HostEntity extends AggregateRoot<HostProps> {
         ownerUserId: host.ownerUserId,
         publicKeyFingerprint: host.publicKeyFingerprint,
         pairingTokenId: props.pairingTokenId,
+        name: host.name,
+        hostname: host.hostname,
+        os: host.os,
         reason: 'A machine finished pairing and can now be given work',
       }),
     );
@@ -204,6 +208,13 @@ export class HostEntity extends AggregateRoot<HostProps> {
     this.props.unpairedAt = at;
     this.setUpdatedAt(at);
     this.validate();
+    this.addEvent(
+      new HostUnpairedDomainEvent({
+        aggregateId: this.id,
+        ownerUserId: this.ownerUserId,
+        reason: 'The machine is no longer a host; a link it holds must close',
+      }),
+    );
   }
 
   public validate(): void {

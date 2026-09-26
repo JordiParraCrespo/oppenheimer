@@ -17,6 +17,14 @@ import { MintPairingTokenCommand } from './mint-pairing-token.command';
 const LIFETIME_MS = 60 * 60 * 1000;
 
 /**
+ * How many unspent tokens one person may hold at once. Each is a live way to
+ * add a machine to the account for its hour, and the console only ever shows
+ * one — its "New token" replaces the one on screen — so a handful covers two
+ * tabs and a retry without leaving a drawer of them in chat logs.
+ */
+export const MAX_SPENDABLE_TOKENS = 5;
+
+/**
  * What the caller gets back.
  *
  * Commands normally return only the aggregate id and the controller re-reads
@@ -29,6 +37,7 @@ const LIFETIME_MS = 60 * 60 * 1000;
 export interface MintPairingTokenResult {
   token: HostPairingTokenEntity;
   installCommand: string;
+  installScriptSha256: string | null;
   agentPrompt: string;
 }
 
@@ -59,6 +68,10 @@ export class MintPairingTokenCommandHandler
       });
     }
 
+    const now = new Date();
+    const replacing = await this.replacedToken(command);
+    replacing?.revoke(now);
+
     const secret = generatePairingTokenSecret();
     const token = HostPairingTokenEntity.mint({
       ownerUserId: command.userId,
@@ -66,15 +79,39 @@ export class MintPairingTokenCommandHandler
       prefix: secret.prefix,
       tokenHash: secret.hash,
       createdFromIp: command.createdFromIp,
-      expiresAt: new Date(Date.now() + LIFETIME_MS),
+      expiresAt: new Date(now.getTime() + LIFETIME_MS),
     });
 
-    await this.tokens.insert(token);
+    const minted = await this.tokens.insertWithinCap(token, {
+      cap: MAX_SPENDABLE_TOKENS,
+      now,
+      replacing,
+    });
+    if (!minted) {
+      throw new AppError(HostErrors.TOO_MANY_PAIRING_TOKENS, {
+        detail: `You already hold ${MAX_SPENDABLE_TOKENS} unspent pairing tokens. Pair a machine with one, or wait for them to expire; each lasts an hour.`,
+      });
+    }
 
     return {
       token,
       installCommand: this.release.installCommandFor(secret.secret),
+      installScriptSha256: this.release.installScriptSha256,
       agentPrompt: this.release.agentPromptFor(secret.secret),
     };
+  }
+
+  /** The caller's own token this mint replaces; missing is an error, not a plain mint. */
+  private async replacedToken(
+    command: MintPairingTokenCommand,
+  ): Promise<HostPairingTokenEntity | undefined> {
+    if (!command.replaces) return undefined;
+    const found = await this.tokens.findOneById(command.scope, command.replaces);
+    if (found.isNone()) {
+      throw new AppError(HostErrors.PAIRING_TOKEN_NOT_FOUND, {
+        detail: `No pairing token with id ${command.replaces}`,
+      });
+    }
+    return found.unwrap();
   }
 }

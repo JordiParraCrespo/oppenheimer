@@ -60,6 +60,11 @@ export interface HostPairing {
   installCommand: string;
   /** The same instruction, addressed to an agent. */
   agentPrompt: string;
+  /**
+   * SHA-256 of the installer the command downloads, for anyone who reads the
+   * script before running it. `null` when the deployment published none.
+   */
+  installScriptSha256: string | null;
   /** When the token stops registering a host. */
   expiresAt: Date;
   /** The host this token created, once a runner has redeemed it. */

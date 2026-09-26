@@ -2,7 +2,7 @@
 // grew from. One binary, one version, one code path per job:
 //
 //	runner run          the host agent: local socket, self-update, sessions
-//	runner register     redeem a registration token from Settings → Add host
+//	runner register     redeem a registration token from Add host
 //	runner install      write and start the launchd agent or systemd user unit
 //	runner uninstall    stop the service, revoke the host, erase the identity
 //	runner status       what a person needs to answer "is this host working"
@@ -20,9 +20,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -75,6 +77,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		})
 	case "sessions", "session":
 		return sessions(ctx, args)
+	case "workspaces":
+		return workspaces(ctx, args)
 	case "update":
 		return update(ctx, args)
 	case "credential-helper":
@@ -133,23 +137,72 @@ func runAgent(ctx context.Context, app *cli.App) error {
 	})
 }
 
+// EnvRegistrationToken is where `register` finds the token when neither
+// --token nor --token-file names one. The installer passes it this way so the
+// token is never on a command line, where any account on the machine could
+// read it in the process list for as long as registration takes.
+const EnvRegistrationToken = "OPPENHEIMER_REGISTRATION_TOKEN"
+
 func register(ctx context.Context, args []string) (int, error) {
 	fs := flag.NewFlagSet("register", flag.ContinueOnError)
 	opts := cli.RegisterOptions{}
-	fs.StringVar(&opts.Token, "token", "", "registration token from Settings → Add host (required)")
+	var tokenFile string
+	fs.StringVar(&opts.Token, "token", "", "registration token from Add host (prefer --token-file or "+EnvRegistrationToken+")")
+	fs.StringVar(&tokenFile, "token-file", "", "read the registration token from this file, or from stdin with -")
 	fs.StringVar(&opts.URL, "url", "", "control plane URL (required)")
 	fs.StringVar(&opts.Name, "name", "", "name for this host (default: its hostname)")
 	fs.StringVar(&opts.Channel, "channel", "", "release channel: stable or beta")
+	fs.StringVar(&opts.Workspaces, "workspaces", "", "directory sessions' checkouts live in (default: ~/oppenheimer-ai/workspaces)")
 	fs.BoolVar(&opts.Force, "force", false, "re-pair a host that already has an identity")
+	fs.BoolVar(&opts.KeepExisting, "keep-existing", false, "if already paired to this control plane, keep that and do not spend the token")
+	fs.BoolVar(&opts.AllowContainer, "allow-container", false, "pair a machine that looks like a container or CI job anyway")
 	if err := fs.Parse(args); err != nil {
 		return cli.ExitUsage, err
 	}
+	token, err := registrationToken(opts.Token, tokenFile)
+	if err != nil {
+		return cli.ExitUsage, err
+	}
+	opts.Token = token
 	if opts.Token == "" || opts.URL == "" {
 		fs.Usage()
-		return cli.ExitUsage, errors.New("--token and --url are required")
+		return cli.ExitUsage, errors.New("a token (--token-file, " + EnvRegistrationToken + " or --token) and --url are required")
 	}
 	return withApp(ctx, func(ctx context.Context, app *cli.App) error {
 		return app.Register(ctx, os.Stdout, opts)
+	})
+}
+
+// registrationToken picks the token from the flag, the file, then the
+// environment, in that order. A file is read whole and trimmed; `-` is stdin.
+func registrationToken(flagValue, file string) (string, error) {
+	if token := strings.TrimSpace(flagValue); token != "" {
+		return token, nil
+	}
+	if file != "" {
+		var raw []byte
+		var err error
+		if file == "-" {
+			raw, err = io.ReadAll(io.LimitReader(os.Stdin, 4096))
+		} else {
+			raw, err = os.ReadFile(file) //nolint:gosec // the user names the file on purpose
+		}
+		if err != nil {
+			return "", fmt.Errorf("read the token: %w", err)
+		}
+		return strings.TrimSpace(string(raw)), nil
+	}
+	return strings.TrimSpace(os.Getenv(EnvRegistrationToken)), nil
+}
+
+func workspaces(ctx context.Context, args []string) (int, error) {
+	fs := flag.NewFlagSet("workspaces", flag.ContinueOnError)
+	set := fs.String("set", "", "move where new sessions live (refused while any session still has a checkout)")
+	if err := fs.Parse(args); err != nil {
+		return cli.ExitUsage, err
+	}
+	return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+		return app.Workspaces(ctx, os.Stdout, *set)
 	})
 }
 
@@ -166,12 +219,14 @@ func install(ctx context.Context, args []string) (int, error) {
 
 func uninstall(ctx context.Context, args []string) (int, error) {
 	fs := flag.NewFlagSet("uninstall", flag.ContinueOnError)
-	keep := fs.Bool("keep-identity", false, "remove the service but keep this host paired")
+	opts := cli.UninstallOptions{}
+	fs.BoolVar(&opts.KeepIdentity, "keep-identity", false, "remove the service but keep this host paired")
+	fs.BoolVar(&opts.Force, "force", false, "end the runner's running sessions instead of refusing (checkouts stay on disk)")
 	if err := fs.Parse(args); err != nil {
 		return cli.ExitUsage, err
 	}
 	return withApp(ctx, func(ctx context.Context, app *cli.App) error {
-		return app.Uninstall(ctx, os.Stdout, *keep)
+		return app.Uninstall(ctx, os.Stdout, opts)
 	})
 }
 
@@ -211,7 +266,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok or shell")
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
@@ -326,11 +381,14 @@ func usage(w *os.File) {
 	_, _ = fmt.Fprint(w, `oppenheimer-runner — the host agent
 
   runner run                      the host agent (what the service unit starts)
-  runner register --token … --url …
-                                  pair this machine with your workspace
+  runner register --url … [--token-file F|-] [--workspaces DIR] [--keep-existing] [--allow-container]
+                                  pair this machine with your account; the token can
+                                  also come from OPPENHEIMER_REGISTRATION_TOKEN
   runner install [--print]        install the launchd agent or systemd user unit
-  runner uninstall [--keep-identity]
-                                  stop the service and unpair this machine
+  runner uninstall [--keep-identity] [--force]
+                                  stop the service and unpair this machine; refuses while
+                                  sessions run unless --force, which ends them
+  runner workspaces [--set DIR]   where sessions' checkouts live, or move it
   runner sessions ls              what this host is running
   runner sessions create --repo owner/name [--remote URL] [--base main] [--agent claude]
   runner sessions attach <id> [--window N]

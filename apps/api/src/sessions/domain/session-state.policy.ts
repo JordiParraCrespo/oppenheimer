@@ -205,6 +205,23 @@ export function launchPermissionFor(
     : 'ask';
 }
 
+/**
+ * Whether a host's runner can start `agent`, from the tool names its last
+ * inventory probed.
+ *
+ * A runner probes the command of every agent it can launch, installed or not,
+ * so a missing entry is a runner built before the agent was, and it would
+ * refuse `session.create` as an unknown agent. Nothing is known before the
+ * first inventory (`null`), and the blank terminal launches no command, so
+ * both are allowed. Whether the agent is *installed* is not asked: that stays
+ * a hint, and the terminal says so.
+ */
+export function runnerCanStart(agent: string, probedTools: readonly string[] | null): boolean {
+  if (probedTools === null || !isCodingAgentId(agent)) return true;
+  const { command } = CODING_AGENTS[agent];
+  return command === '' || probedTools.includes(command);
+}
+
 /** Reads a string field off a payload of unknown shape, without casting at call sites. */
 function stringField(payload: unknown, field: string): string | null {
   if (typeof payload !== 'object' || payload === null) return null;

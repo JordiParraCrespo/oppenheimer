@@ -65,6 +65,19 @@ const schema = z
     releaseBaseUrl: z.string().url().optional(),
     releaseChannel: z.enum(['stable', 'beta']).default('stable'),
     installUrl: z.string().url().optional(),
+    /**
+     * SHA-256 of the installer at `installUrl`, hex, as `scripts/runner/release.sh`
+     * prints it. Shown beside the install command so the careful path —
+     * download, read, check, run — needs no second source of truth (09 §1).
+     * Anything that is not a 64-character hex digest counts as unset.
+     */
+    installSha256: z
+      .string()
+      .optional()
+      .transform((value) => {
+        const digest = value?.trim().toLowerCase();
+        return digest && /^[0-9a-f]{64}$/.test(digest) ? digest : undefined;
+      }),
   })
   .transform(({ apiPublicUrl, controlPlaneUrl, signingKey, ...rest }) => ({
     // Trailing slashes are stripped on both sides of the audience comparison,
@@ -83,6 +96,7 @@ export const hostsConfig = registerAs('hosts', () =>
     releaseBaseUrl: 'RUNNER_RELEASE_BASE_URL',
     releaseChannel: 'RUNNER_RELEASE_CHANNEL',
     installUrl: 'RUNNER_INSTALL_URL',
+    installSha256: 'RUNNER_INSTALL_SHA256',
   }),
 );
 

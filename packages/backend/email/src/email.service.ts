@@ -22,6 +22,11 @@ export interface ActionEmailParams extends EmailFrameParams {
 
 export type PasswordResetEmailParams = ActionEmailParams;
 export type EmailVerificationEmailParams = ActionEmailParams;
+/**
+ * A machine was paired with the account. A security notice, not a welcome:
+ * its one action is the host list, where a pairing nobody recognises is undone.
+ */
+export type HostPairedEmailParams = ActionEmailParams;
 
 export interface WelcomeEmailParams extends EmailFrameParams {
   eyebrow: string;
@@ -54,4 +59,5 @@ export abstract class EmailService {
   abstract sendEmailVerification(to: string, params: EmailVerificationEmailParams): Promise<void>;
   abstract sendWelcome(to: string, params: WelcomeEmailParams): Promise<void>;
   abstract sendInvitation(to: string, params: InvitationEmailParams): Promise<void>;
+  abstract sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void>;
 }

@@ -75,10 +75,20 @@ func New(version string) (*App, error) {
 		return nil, err
 	}
 
+	store := pairfile.New(paths.Home)
+	// The directory the user chose at install lives in config.json; the
+	// environment still wins, which is how a second runner is developed on a
+	// machine that already hosts one. Read before anything that is built on
+	// the workspace root, so the daemon, `status` and `sessions` agree on it.
+	if paths.WorkspacesSource != "env" {
+		if identity, _, err := store.Load(); err == nil && identity.WorkspacesPath != "" {
+			paths.Workspaces, paths.WorkspacesSource = identity.WorkspacesPath, "config"
+		}
+	}
+
 	hostSvc := hostapp.New(hostapp.Options{
 		Prober: system.New(), WorkspaceRoot: paths.Workspaces, Version: version,
 	})
-	store := pairfile.New(paths.Home)
 	pairingSvc := pairapp.New(pairapp.Options{
 		Store:        store,
 		ControlPlane: controlplane.New(controlplane.Options{UserAgent: "oppenheimer-runner/" + version}),
@@ -205,7 +215,7 @@ func unit(paths Paths) svcdomain.Unit {
 	// which inherits the caller's shell, reports all of them present. Taking
 	// the PATH from the install is what makes those two agree: the tools the
 	// installer verified are the tools the service can reach.
-	if path := os.Getenv("PATH"); path != "" {
+	if path := ServicePATH(os.Getenv("PATH")); path != "" {
 		env["PATH"] = path
 	}
 	// A UTF-8 locale, for the same reason and from the same gap: launchd and
@@ -222,6 +232,25 @@ func unit(paths Paths) svcdomain.Unit {
 		Env:        env,
 		User:       accountName(),
 	}
+}
+
+// ServicePATH is the installer's PATH as the service should carry it: only
+// absolute entries, each once. An empty entry or a relative one (`.`, `bin`)
+// means "the current directory" to a shell, and the service's current
+// directory is the user's home — so a PATH with one would let a file dropped
+// there shadow git or tmux for every session. It is dropped rather than
+// resolved, because what it meant at install is not what it would mean later.
+func ServicePATH(path string) string {
+	seen := map[string]bool{}
+	var kept []string
+	for _, entry := range filepath.SplitList(path) {
+		if entry == "" || !filepath.IsAbs(entry) || seen[entry] {
+			continue
+		}
+		seen[entry] = true
+		kept = append(kept, entry)
+	}
+	return strings.Join(kept, string(os.PathListSeparator))
 }
 
 // utf8Locale keeps a locale that already names UTF-8 and otherwise answers one

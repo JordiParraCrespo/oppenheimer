@@ -24,7 +24,7 @@ describe('CollectSessionImageCommandHandler', () => {
     expect(images.collect).toHaveBeenCalledWith('cmd-1', 'host-a');
   });
 
-  it('answers HOSTS_006 when nothing is waiting, whatever the reason', async () => {
+  it('answers HOSTS_007 when nothing is waiting, whatever the reason', async () => {
     const images = {
       park: vi.fn(),
       collect: vi.fn().mockResolvedValue(undefined),
@@ -34,6 +34,6 @@ describe('CollectSessionImageCommandHandler', () => {
       new CollectSessionImageCommandHandler(images).execute(
         new CollectSessionImageCommand({ hostId: 'host-a', commandId: 'cmd-1' }),
       ),
-    ).rejects.toMatchObject({ code: 'HOSTS_006' });
+    ).rejects.toMatchObject({ code: 'HOSTS_007' });
   });
 });

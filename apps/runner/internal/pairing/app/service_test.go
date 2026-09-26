@@ -119,6 +119,39 @@ func TestRegisterMovesAHostWithForce(t *testing.T) {
 	}
 }
 
+func TestMarkRevokedKeepsTheFirstTimeAndLetsTheHostPairAgainWithoutForce(t *testing.T) {
+	svc, _, cp := newService(t)
+	register(t, svc)
+
+	first, err := svc.MarkRevoked()
+	if err != nil {
+		t.Fatalf("mark revoked: %v", err)
+	}
+	if !first.Revoked() {
+		t.Fatal("identity is not revoked")
+	}
+	again, err := svc.MarkRevoked()
+	if err != nil {
+		t.Fatalf("mark revoked again: %v", err)
+	}
+	if !again.RevokedAt.Equal(*first.RevokedAt) {
+		t.Fatalf("revokedAt moved from %v to %v", first.RevokedAt, again.RevokedAt)
+	}
+
+	// An unpaired machine is paired again the ordinary way: no --force, and
+	// the fresh identity is not revoked.
+	cp.Response.HostID = "host_02AB"
+	identity, err := svc.Register(context.Background(), app.RegisterInput{
+		Token: validToken, ControlPlaneURL: "https://app.oppenheimer.dev",
+	})
+	if err != nil {
+		t.Fatalf("register after revocation: %v", err)
+	}
+	if identity.HostID != "host_02AB" || identity.Revoked() {
+		t.Fatalf("identity = %+v", identity)
+	}
+}
+
 func TestRegisterRejectsSomethingThatIsNotARegistrationToken(t *testing.T) {
 	svc, _, _ := newService(t)
 
@@ -247,8 +280,8 @@ func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T)
 		t.Fatal(err)
 	}
 
-	if err := svc.Unregister(context.Background()); err != nil {
-		t.Fatalf("unregister: %v", err)
+	if revoked, err := svc.Unregister(context.Background()); err != nil || !revoked {
+		t.Fatalf("unregister: revoked=%v err=%v", revoked, err)
 	}
 	if len(cp.Revoked) != 1 {
 		t.Fatalf("revoked = %v, want exactly one call", cp.Revoked)
@@ -271,6 +304,25 @@ func TestUnregisterRevokesWithTheHostAssertionAndErasesTheIdentity(t *testing.T)
 	}
 }
 
+func TestUnregisterSaysSoWhenTheControlPlaneDidNotHear(t *testing.T) {
+	svc, store, cp := newService(t)
+	register(t, svc)
+	cp.RevokeErr = errors.New("connection refused")
+
+	revoked, err := svc.Unregister(context.Background())
+	if err != nil {
+		t.Fatalf("unregister: %v", err)
+	}
+	// The local half still happens — the user asked for it — but the caller
+	// is told the control plane still trusts this key.
+	if revoked {
+		t.Fatal("revoked = true for a control plane that was never reached")
+	}
+	if _, err := os.Stat(store.KeyPath()); !os.IsNotExist(err) {
+		t.Fatal("the host key must be gone after unregister")
+	}
+}
+
 func TestSaveIsAtomicEnoughToLeaveNoStrayFiles(t *testing.T) {
 	svc, store, _ := newService(t)
 	register(t, svc)
@@ -283,5 +335,24 @@ func TestSaveIsAtomicEnoughToLeaveNoStrayFiles(t *testing.T) {
 		if strings.HasPrefix(e.Name(), ".") {
 			t.Fatalf("temp file %q survived the write", e.Name())
 		}
+	}
+}
+
+func TestAChosenWorkspacesDirectorySurvivesARepair(t *testing.T) {
+	svc, _, _ := newService(t)
+	register(t, svc)
+	if _, err := svc.SetWorkspaces("/srv/code"); err != nil {
+		t.Fatal(err)
+	}
+
+	identity, err := svc.Register(context.Background(), app.RegisterInput{
+		Token: validToken, ControlPlaneURL: "https://app.oppenheimer.dev", Force: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Where this machine keeps code is the machine's setting, not the pairing's.
+	if identity.WorkspacesPath != "/srv/code" {
+		t.Fatalf("workspacesPath = %q after re-pairing", identity.WorkspacesPath)
 	}
 }
