@@ -221,17 +221,35 @@ test.describe('Sessions', () => {
     await expectProblemDocument(detail, { status: 404, code: 'SESSIONS_001' });
   });
 
-  test('a session must name its project', async () => {
-    const { api } = await signedUpContext('sessionnoproject');
+  test('a new workspace has an Unassigned project, which keeps its name and its place', async () => {
+    const { api } = await signedUpContext('sessionunassigned');
 
-    const created = await api.post('/api/v1/sessions', {
-      data: { hostId: crypto.randomUUID(), agent: 'claude-code', checkouts: [] },
+    // Provisioned with the workspace, from the outbox: a session that names no
+    // project is listed here, so it exists before the first one does.
+    let unassigned: { id: string; name: string; isUnassigned: boolean } | undefined;
+    await expect
+      .poll(async () => {
+        const listed = await api.get('/api/v1/projects', { failOnStatusCode: false });
+        const projects = (await listed.json()) as {
+          id: string;
+          name: string;
+          isUnassigned: boolean;
+        }[];
+        unassigned = projects.find((project) => project.isUnassigned);
+        return unassigned?.name;
+      })
+      .toBe('Unassigned');
+
+    const renamed = await api.patch(`/api/v1/projects/${unassigned?.id}`, {
+      data: { name: 'Personal' },
       failOnStatusCode: false,
     });
+    await expectProblemDocument(renamed, { status: 409, code: 'PROJECTS_008' });
 
-    // Every session is listed under a project, and none is derived from a
-    // repository: a body without one is refused before anything is looked up.
-    expect(created.status()).toBe(400);
+    const archived = await api.delete(`/api/v1/projects/${unassigned?.id}`, {
+      failOnStatusCode: false,
+    });
+    await expectProblemDocument(archived, { status: 409, code: 'PROJECTS_008' });
   });
 
   test('a body the schema refuses never reaches a handler', async () => {

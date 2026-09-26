@@ -46,7 +46,7 @@ export function OnboardingHostScreen({
 }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
-  const { pairing, secondsLeft, expired, host, isPending, error, regenerate } = useHostPairing(
+  const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
     t('onboarding.flow.host.defaultName'),
   );
 
@@ -110,7 +110,7 @@ export function OnboardingHostScreen({
 
       <HostPairingChrome
         layout="step"
-        secondsLeft={secondsLeft}
+        expiresAt={expiresAt}
         expired={expired}
         onRegenerate={regenerate}
         busy={isPending}

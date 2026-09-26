@@ -12,8 +12,10 @@ import {
  *
  * A project is a **saved scope a person creates**: the repositories its sessions
  * usually work on, the base each one branches from, which of them are offered by
- * default, and the host, agent and instructions a new session starts with
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). The defaults are offered, never
+ * default, and the host and agent a new session starts with
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). Every workspace also
+ * has one Unassigned project, where a session that names none is listed; it
+ * cannot be renamed or archived. The defaults are offered, never
  * applied: a session chooses its own repositories, and they need not be in its
  * project at all.
  *
@@ -26,9 +28,6 @@ import {
 
 /** How many repositories one project may hold. The dialog shows them all at once. */
 export const MAX_PROJECT_REPOSITORIES = 20;
-
-/** How long a project's instructions may be, in characters. */
-export const MAX_PROJECT_INSTRUCTIONS = 8000;
 
 /**
  * One repository a project holds.
@@ -69,8 +68,6 @@ const projectFields = {
   defaultHostId: z.string().uuid().nullable(),
   /** An agent from the catalog. Null clears it. */
   defaultAgent: codingAgentSchema.nullable(),
-  /** Handed to every new session's agent. Empty is none. */
-  instructions: z.string().max(MAX_PROJECT_INSTRUCTIONS),
 };
 
 /** `POST /projects`. Name and repositories are required; the defaults are not. */
@@ -79,7 +76,6 @@ export const createProjectSchema = z.object({
   repositories: projectFields.repositories,
   defaultHostId: projectFields.defaultHostId.optional(),
   defaultAgent: projectFields.defaultAgent.optional(),
-  instructions: projectFields.instructions.optional(),
 });
 
 export type CreateProjectDto = z.infer<typeof createProjectSchema>;
@@ -93,7 +89,6 @@ export const updateProjectSchema = z.object({
   repositories: projectFields.repositories.optional(),
   defaultHostId: projectFields.defaultHostId.optional(),
   defaultAgent: projectFields.defaultAgent.optional(),
-  instructions: projectFields.instructions.optional(),
 });
 
 export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;

@@ -5,13 +5,16 @@ import type {
   RepositoryOption,
   RepositoryScope,
 } from '@oppenheimer/design-system-web';
-import type {
-  BranchEntity,
-  CreateSessionCheckout,
-  CreateSessionInput,
-  HostEntity,
-  ProjectEntity,
-  RepositoryEntity,
+import {
+  type BranchEntity,
+  type CreateSessionCheckout,
+  type CreateSessionInput,
+  type HostEntity,
+  type ProjectEntity,
+  parseRepositoryKey,
+  type RepositoryEntity,
+  repositoryKey,
+  shortName,
 } from '@oppenheimer/frontend-consumer';
 import {
   CODING_AGENT_IDS,
@@ -34,25 +37,11 @@ import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
  * what is parsed back out when a session is created.
  */
 
-/** A repository as this screen holds it: our installation row plus GitHub's id. */
-export interface RepositoryRef {
-  installationId: string;
-  githubRepoId: number;
-}
-
-/** The picker's row id: `<installationId>:<githubRepoId>`. */
-export function repositoryKey(ref: RepositoryRef): string {
-  return `${ref.installationId}:${ref.githubRepoId}`;
-}
-
-/** The pair a row id names, or null when it names nothing this screen knows. */
-export function parseRepositoryKey(key: string): RepositoryRef | null {
-  const separator = key.lastIndexOf(':');
-  if (separator < 1) return null;
-  const githubRepoId = Number(key.slice(separator + 1));
-  if (!Number.isInteger(githubRepoId) || githubRepoId <= 0) return null;
-  return { installationId: key.slice(0, separator), githubRepoId };
-}
+export {
+  parseRepositoryKey,
+  type RepositoryRef,
+  repositoryKey,
+} from '@oppenheimer/frontend-consumer';
 
 /**
  * The hosts, as the host chip's rows.
@@ -204,49 +193,71 @@ export function capRepositories(
 }
 
 /**
- * The workspace's projects, as the project chip's rows: the name, and the
- * repositories it holds underneath so two projects of one name read apart.
+ * The projects, as the project chip's rows: the name, and under it the
+ * repositories a new session is offered — or the word for a project that
+ * holds none. Unassigned comes first, under its translated name: it is where
+ * work that names no project goes, and the API's spelling is English.
  */
-export function toProjectOptions(projects: readonly ProjectEntity[]): ChipSelectOption[] {
-  return projects.map((project) => ({
-    value: project.id,
-    label: project.name,
-    description:
-      project.repositories.map((repository) => repository.repositoryFullName).join(', ') ||
-      undefined,
-  }));
+export function toProjectOptions(
+  projects: readonly ProjectEntity[],
+  labels: { noRepositories: string; unassigned: string },
+): ChipSelectOption[] {
+  const ordered = [
+    ...projects.filter((project) => project.isUnassigned),
+    ...projects.filter((project) => !project.isUnassigned),
+  ];
+  return ordered.map((project) => {
+    const defaults = project.defaultRepositories.map((repository) =>
+      shortName(repository.fullName),
+    );
+    return {
+      value: project.id,
+      label: project.isUnassigned ? labels.unassigned : project.name,
+      description: defaults.length ? defaults.join(' · ') : labels.noRepositories,
+      keywords: project.repositories.map((repository) => repository.fullName).join(' '),
+    };
+  });
 }
 
 /**
- * What picking a project offers the composer: its default host and agent, and
- * its first default repository on that repository's base. Offered, never
- * required — the chips stay the person's to change, and a repository outside
- * the project is as good as one inside it.
+ * What picking a project sets on the draft
+ * (`product/versions/mvp/05-screens.md`): the host from its
+ * default when that host is still in the list, the first default repository
+ * with its base branch, and the agent with that agent's default model. A
+ * default the workspace no longer has is skipped rather than written, so the
+ * chip never names a machine that is gone.
  */
-export function projectDefaults(project: ProjectEntity): {
-  hostId?: string;
-  agent?: CodingAgentId;
-  scope?: RepositoryScope[];
-} {
-  const first = project.defaultRepositories[0];
-  const agent = project.defaultAgent;
-  return {
-    ...(project.defaultHostId ? { hostId: project.defaultHostId } : {}),
-    ...(agent && (CODING_AGENT_IDS as readonly string[]).includes(agent)
-      ? { agent: agent as CodingAgentId }
-      : {}),
-    ...(first
-      ? {
-          scope: [
-            {
-              id: repositoryKey({
-                installationId: first.installationId,
-                githubRepoId: first.githubRepoId,
-              }),
-              branch: first.baseBranch,
-            },
-          ],
-        }
-      : {}),
-  };
+export function projectPrefill(
+  project: ProjectEntity,
+  hostIds: readonly string[],
+): Partial<Pick<NewSessionDraftShape, 'hostId' | 'scope' | 'agent' | 'model'>> {
+  const patch: Partial<Pick<NewSessionDraftShape, 'hostId' | 'scope' | 'agent' | 'model'>> = {};
+  if (project.defaultHostId && hostIds.includes(project.defaultHostId)) {
+    patch.hostId = project.defaultHostId;
+  }
+  const [first] = project.defaultRepositories;
+  if (first) {
+    patch.scope = [
+      {
+        id: repositoryKey({
+          installationId: first.installationId,
+          githubRepoId: first.githubRepoId,
+        }),
+        branch: first.baseBranch,
+      },
+    ];
+  }
+  if (project.defaultAgent) {
+    patch.agent = project.defaultAgent;
+    patch.model = defaultModelFor(project.defaultAgent);
+  }
+  return patch;
+}
+
+/** The slice of the draft a project prefills; the hook owns the whole shape. */
+export interface NewSessionDraftShape {
+  hostId: string | null;
+  scope: RepositoryScope[];
+  agent: CodingAgentId;
+  model: string | null;
 }

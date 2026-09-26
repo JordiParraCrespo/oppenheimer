@@ -110,6 +110,7 @@
       "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
       "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
       "GRANT_004": "Elige una organización antes de gestionar las concesiones de acceso.",
+      "RATE_001": "Estás enviando solicitudes demasiado rápido. Espera un momento y vuelve a intentarlo.",
       "GITHUB_001": "No hemos encontrado esa instalación de GitHub.",
       "GITHUB_002": "GitHub no está configurado en este servidor.",
       "GITHUB_003": "Otro espacio de trabajo ya ha conectado esa instalación de GitHub.",
@@ -127,6 +128,7 @@
       "PROJECTS_005": "Ese proyecto todavía tiene sesiones sin cerrar.",
       "PROJECTS_006": "Un proyecto necesita al menos un repositorio, y al menos uno de ellos ofrecido por defecto.",
       "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
+      "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
       "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
       "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",
@@ -282,7 +284,9 @@
           "alt": "La puerta principal del laboratorio de Los Álamos",
           "caption": "Los Álamos, 1943"
         }
-      }
+      },
+      "dots": "Diapositivas",
+      "slide": "Diapositiva {{position}}"
     },
     "firstNamePlaceholder": "Tu nombre",
     "hidePassword": "Ocultar contraseña",
@@ -297,7 +301,51 @@
       "match": "Las dos contraseñas coinciden"
     },
     "showPassword": "Mostrar contraseña",
-    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>."
+    "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden"
+  },
+  "projects": {
+    "unassigned": "Sin asignar",
+    "new": {
+      "title": "Nuevo proyecto",
+      "back": "Atrás",
+      "nameLabel": "Nombre del proyecto",
+      "namePlaceholder": "Ponle nombre al proyecto",
+      "create": "Crear proyecto",
+      "creating": "Creando…",
+      "failed": "No se pudo crear el proyecto.",
+      "recap": {
+        "name": "Ponle nombre al proyecto y elige sus repositorios.",
+        "repository": "Elige al menos un repositorio.",
+        "default": "Marca al menos un repositorio como predeterminado."
+      },
+      "repositories": {
+        "title": "Repositorios",
+        "subtitle": "El código que pueden clonar las sesiones de este proyecto.",
+        "summary_one": "{{count}} repositorio · {{defaults}} predeterminado",
+        "summary_other": "{{count}} repositorios · {{defaults}} predeterminados",
+        "defaults": "Repositorios predeterminados",
+        "defaultsHint": "Marcados en cada sesión nueva. Añade otros en cada sesión.",
+        "defaultCount": "{{defaults}} de {{total}} por defecto",
+        "search": "Buscar repositorios…",
+        "noMatch": "Ningún repositorio coincide con «{{query}}».",
+        "none": "Todavía no hay ningún repositorio conectado.",
+        "default": "Predeterminado",
+        "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+        "branchSearch": "Buscar ramas",
+        "branchEmpty": "No hay ninguna rama llamada «{{query}}»",
+        "branchLabel": "Rama base de {{name}}"
+      },
+      "host": {
+        "title": "Host predeterminado",
+        "subtitle": "Dónde se ejecutan las sesiones nuevas si no eliges otro.",
+        "none": "Todavía no hay ningún host emparejado."
+      },
+      "agent": {
+        "title": "Agente predeterminado",
+        "subtitle": "Se inicia en cada sesión nueva. Cámbialo en cada sesión."
+      }
+    }
   },
   "sessions": {
     "home": {
@@ -371,6 +419,15 @@
         "use": "Usar este host",
         "defaultName": "Nuevo host"
       },
+      "project": {
+        "label": "Proyecto",
+        "placeholder": "Proyecto",
+        "search": "Buscar proyectos…",
+        "empty": "Ningún proyecto coincide.",
+        "loading": "Cargando proyectos…",
+        "add": "Nuevo proyecto…",
+        "noRepositories": "Sin repositorios"
+      },
       "repository": {
         "label": "Repositorios",
         "placeholder": "Repositorio",
@@ -394,7 +451,9 @@
         "default": "Por defecto"
       },
       "agent": {
-        "label": "Agente y modelo"
+        "label": "Agente y modelo",
+        "search": "Buscar modelos…",
+        "empty": "Ningún modelo coincide con «{{query}}»."
       },
       "permission": {
         "label": "Nivel de permisos",
@@ -417,20 +476,18 @@
         "low": "Bajo",
         "medium": "Medio",
         "high": "Alto",
-        "max": "Máximo"
+        "max": "Máximo",
+        "faster": "Más rápido",
+        "smarter": "Más inteligente",
+        "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
       },
       "composer": {
-        "placeholder": "Describe una tarea o haz una pregunta"
+        "placeholder": "Describe una tarea o haz una pregunta",
+        "send": "Enviar",
+        "stop": "Detener"
       },
       "queued": "Tu primera tarea está en cola para este host.",
-      "project": {
-        "label": "Proyecto",
-        "placeholder": "Proyecto",
-        "search": "Buscar proyectos…",
-        "empty": "Ningún proyecto coincide.",
-        "loading": "Cargando proyectos…",
-        "add": "Nuevo proyecto…"
-      }
+      "failed": "No se pudo crear la sesión."
     },
     "session": {
       "status": {
@@ -467,23 +524,6 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
-    },
-    "project": {
-      "newTitle": "Nuevo proyecto",
-      "newDescription": "Los repositorios en los que suelen trabajar sus sesiones y con qué empieza una sesión nueva.",
-      "name": "Nombre",
-      "namePlaceholder": "XRP Mobile",
-      "repositories": "Repositorios",
-      "repositoriesRequired": "Elige al menos un repositorio y marca uno como predeterminado.",
-      "default": "Predeterminado",
-      "defaultTitle": "Se ofrece a cada sesión nueva del proyecto",
-      "defaultHost": "Equipo predeterminado",
-      "defaultAgent": "Agente predeterminado",
-      "none": "Ninguno",
-      "instructions": "Instrucciones",
-      "instructionsPlaceholder": "Ejecuta pnpm test antes de cada commit.",
-      "create": "Crear proyecto",
-      "createFailed": "No se ha podido crear el proyecto."
     },
     "row": {
       "actions": "Acciones de la sesión",
@@ -542,7 +582,11 @@
     "featureFlags": "Feature flags",
     "toggleSidebar": "Mostrar u ocultar el menú",
     "sessions": "Sesiones",
-    "newSession": "Nueva sesión"
+    "newSession": "Nueva sesión",
+    "commandTitle": "Paleta de comandos",
+    "commandDescription": "Busca una página o una acción.",
+    "sidebarTitle": "Navegación",
+    "sidebarDescription": "Tus sesiones y tu cuenta."
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -812,7 +856,9 @@
     "invalidDescription": "Vuelve a iniciar la conexión desde la aplicación que te ha traído aquí.",
     "backToSessions": "Volver a las sesiones",
     "noRedirect": "El servidor no ha indicado a dónde continuar.",
-    "sensitiveScope": "Sensible"
+    "sensitiveScope": "Sensible",
+    "unknownClient": "Una aplicación",
+    "failed": "No se ha podido completar. Inténtalo de nuevo."
   },
   "onboarding": {
     "description": "Tu cuenta está lista. Ponle nombre al espacio de trabajo donde vivirán tus sesiones.",
@@ -846,7 +892,10 @@
         "claiming": "Guardando...",
         "claimFailed": "No hemos podido guardar ese espacio de trabajo.",
         "checkFailed": "No hemos podido comprobar esa dirección. Inténtalo de nuevo en un momento.",
-        "permanent": "{{address}} es la dirección de este espacio de trabajo."
+        "permanent": "{{address}} es la dirección de este espacio de trabajo.",
+        "checkingLabel": "Comprobando disponibilidad",
+        "availableLabel": "Disponible",
+        "takenLabel": "Ocupada"
       },
       "github": {
         "title": "Conecta GitHub",
@@ -880,7 +929,8 @@
         "go": "Ir a la consola",
         "noWorkspace": "Aún sin espacio de trabajo",
         "noGithub": "Sin conectar",
-        "noHost": "Aún sin host"
+        "noHost": "Aún sin host",
+        "doneLabel": "Listo"
       }
     }
   },
@@ -1169,19 +1219,6 @@
       },
       "title": "Términos del servicio"
     }
-  },
-  "table": {
-    "clearFilter": "Quitar el filtro",
-    "clearSelection": "Quitar la selección",
-    "nextPage": "Página siguiente",
-    "page": "Página {{page}} de {{totalPages}}",
-    "previousPage": "Página anterior",
-    "range": "{{first}}–{{last}} de {{total}}",
-    "rowActions": "Acciones de la fila",
-    "selectPage": "Seleccionar todas las filas de esta página",
-    "selectRow": "Seleccionar fila",
-    "selected_one": "{{count}} seleccionado",
-    "selected_other": "{{count}} seleccionados"
   },
   "theme": {
     "toggle": "Cambiar tema",

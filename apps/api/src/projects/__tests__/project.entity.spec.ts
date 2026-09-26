@@ -83,12 +83,12 @@ describe('a project’s repositories and defaults', () => {
     isDefault,
   });
 
-  it('starts with no defaults and empty instructions', () => {
+  it('starts with no defaults, and is not the Unassigned project', () => {
     const project = ProjectEntity.createNew(VALID);
 
     expect(project.defaultHostId).toBeNull();
     expect(project.defaultAgent).toBeNull();
-    expect(project.instructions).toBe('');
+    expect(project.isUnassigned).toBe(false);
     expect(project.createdByUserId).toBeNull();
   });
 
@@ -114,12 +114,12 @@ describe('a project’s repositories and defaults', () => {
   });
 
   it('replaces the repositories as a set, and leaves the rest alone', () => {
-    const project = ProjectEntity.createNew({ ...VALID, instructions: 'Run the tests.' });
+    const project = ProjectEntity.createNew({ ...VALID, defaultAgent: 'codex' });
 
     project.configure({ repositories: [repo('7'), repo('8', true)] });
 
     expect(project.repositories.map((repository) => repository.githubRepoId)).toEqual(['7', '8']);
-    expect(project.instructions).toBe('Run the tests.');
+    expect(project.defaultAgent).toBe('codex');
     expect(project.slug).toBe('xrp-mobile');
   });
 
@@ -145,12 +145,43 @@ describe('a project’s repositories and defaults', () => {
     expect(project.defaultAgent).toBe('codex');
   });
 
-  it('refuses instructions past the limit', () => {
-    const project = ProjectEntity.createNew(VALID);
+  describe('the Unassigned project', () => {
+    const unassigned = () =>
+      ProjectEntity.create({
+        id: 'project-unassigned',
+        props: {
+          organizationId: 'org-1',
+          name: 'Unassigned',
+          slug: 'unassigned',
+          archivedAt: null,
+          createdByUserId: null,
+          repositories: [],
+          defaultHostId: null,
+          defaultAgent: null,
+          isUnassigned: true,
+        },
+      });
 
-    expect(() => project.configure({ instructions: 'x'.repeat(8001) })).toThrow(
-      ArgumentInvalidException,
-    );
+    it('holds no repository, and takes defaults like any project', () => {
+      const project = unassigned();
+
+      project.configure({ defaultAgent: 'codex', repositories: [repo('7', true)] });
+
+      expect(project.defaultAgent).toBe('codex');
+      expect(project.repositories.map((repository) => repository.githubRepoId)).toEqual(['7']);
+    });
+
+    it('keeps its name', () => {
+      const project = unassigned();
+
+      expect(() => project.rename('Personal')).toThrow(ArgumentInvalidException);
+      expect(() => project.configure({ name: 'Personal' })).toThrow(ArgumentInvalidException);
+      expect(() => project.configure({ name: 'Unassigned' })).not.toThrow();
+    });
+
+    it('cannot be archived', () => {
+      expect(() => unassigned().archive(new Date())).toThrow(ArgumentInvalidException);
+    });
   });
 
   it('hands out copies, so the list changes only through configure', () => {

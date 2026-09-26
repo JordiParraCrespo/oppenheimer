@@ -238,15 +238,19 @@ creates on a fresh repository.
 **Changed 2026-09-26** (10, "`projects/`"): a project is a saved scope a
 person creates, and auto-creation is gone. The slice now also holds
 `commands/create-project/` (`POST /projects`, the slug from the name),
-a widened `update-project` (name, repositories as a set, defaults,
-instructions), `domain/project-repositories.policy.ts`,
+a widened `update-project` (name, repositories as a set, defaults),
+`domain/project-repositories.policy.ts`,
 `database/project-repository.orm-entity.ts` and
 `application/project-settings.resolver.ts` (repositories resolved live
 through GitHub, the default host checked against the caller). The lookup
-port only reads: `findOneById`. Migration `AddProjectScopes` adds
-`project_repository` and the defaults, backfills each auto-created
-project's origin as its one default repository, drops
-`originGithubRepoId`, and moves the session slug's uniqueness to
+port reads `findOneById` and `unassigned`, which provisions the
+workspace's Unassigned project if it has none; a handler on the personal
+workspace's provisioning event provisions it too. Migration
+`AddProjectDefaultsAndRepositories` adds `project_repository` and the
+defaults; `NameProjectsAndFlattenSessions` keys that table to the
+workspace, backfills each auto-created project's origin as its one
+default repository, drops `originGithubRepoId`, gives every workspace its
+Unassigned project, and moves the session slug's uniqueness to
 `(organizationId, slug)`. The sessions slice gains
 `commands/move-session/` (`POST /sessions/{id}/move`) and the list
 filters.

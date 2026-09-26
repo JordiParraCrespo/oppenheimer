@@ -162,7 +162,6 @@ describe('projects: the saved scope (integration)', () => {
       slug: 'client-sites',
       repositories: [held('31'), held('32', false)],
       defaultAgent: 'codex',
-      instructions: 'Run the tests.',
     });
 
     expect(await repository.insert(project)).toBe('inserted');
@@ -171,7 +170,7 @@ describe('projects: the saved scope (integration)', () => {
     expect(stored.repositories.map((held) => held.githubRepoId)).toEqual(['31', '32']);
     expect(stored.repositories.map((held) => held.isDefault)).toEqual([true, false]);
     expect(stored.defaultAgent).toBe('codex');
-    expect(stored.instructions).toBe('Run the tests.');
+    expect(stored.isUnassigned).toBe(false);
   });
 
   it('reports a taken directory name, and leaves no repository rows behind', async () => {
@@ -226,11 +225,11 @@ describe('projects: the saved scope (integration)', () => {
     });
     await repository.insert(project);
 
-    project.configure({ repositories: [held('63')], defaultHostId: null, instructions: 'x' });
+    project.configure({ repositories: [held('63')], defaultHostId: null, defaultAgent: 'codex' });
     const saved = (await repository.saveSettingsIfActive(caller, project)).unwrap();
 
     expect(saved.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
-    expect(saved.instructions).toBe('x');
+    expect(saved.defaultAgent).toBe('codex');
 
     const archived = await repository.archiveIfUnused(caller, project.id, async () => false);
     expect(archived.result).toBe('archived');
@@ -301,5 +300,54 @@ describe('projects: the saved scope (integration)', () => {
     await runner.release();
     expect(await ownerRules()).toContainEqual(rule);
     expect(await roleVersion()).toBe(before + 1);
+  });
+
+  describe('the Unassigned project', () => {
+    it('is provisioned once per workspace, however often it is asked for', async () => {
+      await Promise.all([
+        repository.provisionUnassigned(organizationId),
+        repository.provisionUnassigned(organizationId),
+      ]);
+      await repository.provisionUnassigned(organizationId);
+
+      const rows = await dataSource.query(
+        `SELECT "name", "slug" FROM "project" WHERE "organizationId" = $1 AND "isUnassigned"`,
+        [organizationId],
+      );
+      expect(rows).toEqual([{ name: 'Unassigned', slug: 'unassigned' }]);
+
+      const found = (await repository.findUnassigned(scope())).unwrap();
+      expect(found.isUnassigned).toBe(true);
+      expect(found.repositories).toEqual([]);
+    });
+
+    it('takes another slug when a project already holds `unassigned`', async () => {
+      await repository.insert(
+        ProjectEntity.createNew({
+          organizationId,
+          name: 'Unassigned work',
+          slug: 'unassigned',
+          repositories: [held('81')],
+        }),
+      );
+
+      await repository.provisionUnassigned(organizationId);
+
+      const found = (await repository.findUnassigned(scope())).unwrap();
+      expect(found.slug).toMatch(/^unassigned-[0-9a-f]{8}$/);
+    });
+
+    it('cannot be archived', async () => {
+      await repository.provisionUnassigned(organizationId);
+      const unassigned = (await repository.findUnassigned(scope())).unwrap();
+
+      const outcome = await repository.archiveIfUnused(scope(), unassigned.id, async () => false);
+
+      expect(outcome.result).toBe('unassigned');
+      const [row] = await dataSource.query(`SELECT "archivedAt" FROM "project" WHERE "id" = $1`, [
+        unassigned.id,
+      ]);
+      expect(row.archivedAt).toBeNull();
+    });
   });
 });

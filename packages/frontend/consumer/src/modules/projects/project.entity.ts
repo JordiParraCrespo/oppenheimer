@@ -1,46 +1,77 @@
+import type { CodingAgentId } from '@oppenheimer/shared/agents';
+
 /**
- * One repository a project holds: which one, the base its sessions branch from,
- * and whether a new session is offered it by default.
+ * One repository a project holds: whether a new session is offered it by
+ * default, and what those sessions branch from.
  */
 export interface ProjectRepository {
+  /** `<installationId>:<githubRepoId>`, the key the repository chip uses too. */
+  id: string;
   installationId: string;
-  /** GitHub's repository id. The API sends it as a string; it is a number here, as the picker uses. */
   githubRepoId: number;
-  /** `owner/repo` as GitHub spelled it when the project was saved. */
-  repositoryFullName: string;
-  baseBranch: string;
+  fullName: string;
   isDefault: boolean;
+  baseBranch: string;
 }
 
 /**
- * A project: a saved scope a person creates — the repositories its sessions
- * usually work on and the defaults a new session is offered
- * (`product/versions/mvp/10-api-modules-and-data-model.md`). It is metadata only:
- * a session can be listed under any project and nothing on a host moves.
+ * A project: the body of work a session is listed under, and what New session
+ * is prefilled with when it is picked
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ *
+ * It is metadata: a session's directory and branch never name it, so a
+ * session moves between projects freely. `slug` is a stable handle that never
+ * changes; `name` is free, except the Unassigned project's — the one every
+ * workspace has for sessions that name none.
  */
 export class ProjectEntity {
   constructor(
     public readonly id: string,
     public readonly name: string,
     public readonly slug: string,
-    public readonly repositories: readonly ProjectRepository[],
+    public readonly isUnassigned: boolean,
     public readonly defaultHostId: string | null,
-    public readonly defaultAgent: string | null,
-    public readonly instructions: string,
+    public readonly defaultAgent: CodingAgentId | null,
+    public readonly repositories: ProjectRepository[],
     public readonly createdAt: Date,
+    public readonly updatedAt: Date,
   ) {}
 
-  /** The repositories a new session is offered, in the project's order. */
-  get defaultRepositories(): readonly ProjectRepository[] {
+  /** The repositories every new session of the project clones, in the order listed. */
+  get defaultRepositories(): ProjectRepository[] {
     return this.repositories.filter((repository) => repository.isDefault);
+  }
+
+  /** The repository's own name — the `xrp-mobile` of `acme/xrp-mobile`. */
+  get shortName(): string {
+    return this.repositories.map((repository) => shortName(repository.fullName)).join(', ');
   }
 }
 
-/** What the project dialog saves. The repositories are replaced as a whole set. */
-export interface ProjectInput {
+/** The `xrp-mobile` of `acme/xrp-mobile`. */
+export function shortName(fullName: string): string {
+  return fullName.split('/').pop() ?? fullName;
+}
+
+/** What the project page sends: one row per repository it ticked. */
+export interface ProjectRepositoryInput {
+  installationId: string;
+  githubRepoId: number;
+  isDefault: boolean;
+  baseBranch: string;
+}
+
+export interface CreateProjectInput {
   name: string;
-  repositories: ProjectRepository[];
-  defaultHostId: string | null;
-  defaultAgent: string | null;
-  instructions: string;
+  repositories: ProjectRepositoryInput[];
+  defaultHostId?: string | null;
+  defaultAgent?: CodingAgentId | null;
+}
+
+/** Every field optional: only the given ones change, `null` clears a default. */
+export interface UpdateProjectInput {
+  name?: string;
+  repositories?: ProjectRepositoryInput[];
+  defaultHostId?: string | null;
+  defaultAgent?: CodingAgentId | null;
 }

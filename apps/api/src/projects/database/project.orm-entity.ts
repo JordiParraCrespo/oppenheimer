@@ -12,7 +12,8 @@ import {
 /**
  * A project: a saved scope a person creates — the repositories its sessions
  * usually work on and the defaults a new session is offered
- * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). Each workspace also
+ * has one Unassigned project, where a session that names none is listed.
  *
  * `UQ_project_organization_slug` keeps a project's slug unique in its workspace
  * for ever: a slug is the project's stable handle and is never reissued, so an
@@ -21,6 +22,11 @@ import {
  */
 @Entity('project')
 @Index(['organizationId'])
+@Index('IDX_project_default_host', ['defaultHostId'])
+@Index('UQ_project_organization_unassigned', ['organizationId'], {
+  unique: true,
+  where: '"isUnassigned"',
+})
 @Unique('UQ_project_organization_slug', ['organizationId', 'slug'])
 export class ProjectOrmEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -59,9 +65,12 @@ export class ProjectOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   defaultAgent!: string | null;
 
-  /** Handed to every new session's agent. Empty is none. */
-  @Column({ type: 'text', default: '' })
-  instructions!: string;
+  /**
+   * The workspace's Unassigned project: where a session lands when it names
+   * none. One per workspace; it cannot be renamed or archived.
+   */
+  @Column({ type: 'boolean', default: false })
+  isUnassigned!: boolean;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

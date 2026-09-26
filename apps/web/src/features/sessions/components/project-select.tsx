@@ -1,13 +1,20 @@
-import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web';
-import { Folder } from '@oppenheimer/design-system-web/icons';
+import {
+  ChipSelect,
+  type ChipSelectOption,
+  type ChipSelectTriggerVariant,
+} from '@oppenheimer/design-system-web';
+import { FolderKanban } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The project chip of New session: which project the session is listed under.
+ * The project chip of New session: the body of work the session belongs to,
+ * first in the composer's scope band because picking it prefills the rest
+ * (`product/versions/mvp/05-screens.md`).
  *
- * Every session names one, so the chip leads the row and send waits for it.
- * Its foot action opens New project — a workspace with none yet starts there.
- * Props in, choice out; the section above fetches.
+ * Props in, choice out — the list is read by the section above. What this
+ * file owns is the chip's copy and its foot row, **New project…**, which
+ * opens the project page: the chip only says "open it", and where the reader
+ * goes is the section's.
  */
 export function ProjectSelect({
   projects,
@@ -15,12 +22,16 @@ export function ProjectSelect({
   onValueChange,
   onNewProject,
   loading,
+  disabled,
+  variant,
 }: {
   projects: ChipSelectOption[];
   value: string | null;
   onValueChange: (value: string) => void;
   onNewProject: () => void;
   loading?: boolean;
+  disabled?: boolean;
+  variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();
 
@@ -29,9 +40,11 @@ export function ProjectSelect({
       value={value ?? ''}
       onValueChange={onValueChange}
       options={projects}
-      icon={<Folder />}
+      icon={<FolderKanban />}
       loading={loading}
       loadingText={t('sessions.new.project.loading')}
+      disabled={disabled}
+      variant={variant}
       aria-label={t('sessions.new.project.label')}
       placeholder={t('sessions.new.project.placeholder')}
       searchPlaceholder={t('sessions.new.project.search')}

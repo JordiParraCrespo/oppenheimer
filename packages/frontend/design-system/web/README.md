@@ -34,43 +34,28 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   system stacks (SF Pro and SF Mono on Apple platforms, the platform's UI face
   elsewhere)
 - `src/assets/imagery/` — the auth carousel photographs.
-- `src/components/` — the MVP inventory:
-  - core: `Wordmark`, `BrandGlyph`, `Button`, `IconButton`, `Link`, `Chip`,
-    `FilterChip`, `StatusDot`, `Avatar`, `Separator`, `Kbd`, `Card`,
-    `CodeBlock`, `EmptyState`, `SummaryCard`, `SuccessMark`, `StepHeader`,
-    `AgentMark`
-  - forms: `Field`, `Input`, `PasswordInput`, `SlugInput`, `Textarea`,
-    `SegmentedControl`, `ChipSelect` (and its parts), `RepositorySelect`,
-    `RepositoryRowList`,
-    `Composer` with `ComposerToolButton`, `AgentModelSelect`, `EffortSlider`
-    and `EffortPicker`, `PermissionMenu`
-  - overlays: `Callout`, `Dialog`, `DropdownMenu`, `Tooltip`
-  - navigation: `Rail`, `Sidebar` (with `SidebarSearch`, `SidebarProjectHeader`,
-    `SidebarEmptyRow`), `SessionItem`, `RoutineItem`, `PillTabs`, `PageHeader`,
-    `Stepper`
-  - routines: `RunHistory`, `RoutineTable`, `RunsList`, `TemplateGrid`,
-    `RoutineSteps`, `FieldSelect`, `InlineToken` (with `TriggerCard`,
-    `WeekdayStrip`, `AddRow`), `TimeGrid`
-  - settings: `SettingsNav`, `SettingsGroup`, `HostCard`
-  - terminal: `Terminal`, `TerminalLine`, `TerminalPrompt`, `TerminalStatusBar`
-    with `TerminalStatusLink`
-  - media: `ImageCarousel`
-
-  Everything else in that folder is legacy from the starter, kept so `apps/web`
-  keeps building until its screens are rebuilt.
+- `src/hooks/` — the generic React hooks every UI layer shares, exported from
+  the root: `useControlled` (a controlled/uncontrolled `value`, written once),
+  `useDebouncedValue`, `useDebouncedCallback` and `useIsMobile`. Nothing here
+  knows about the product or fetches.
+- `src/components/` — the public components, one file each. The grouped
+  inventory is the showcase's `apps/web-showcase/src/lib/toc.ts`, which names
+  every file under the section that draws it.
+- `src/internal/` — the building blocks only those components import
+  (`Checkbox`, `Label`, `Empty`, `Sheet`); not exported.
 - `src/lib/utils` — `cn()`.
 
 The rules are in [`../AGENTS.md`](../AGENTS.md); the rendered reference is the
 showcase, `pnpm --filter @oppenheimer/web-showcase dev` on port 3002.
 
-`react`, `react-dom` and `recharts` are peer dependencies supplied by the app.
+`react` and `react-dom` are peer dependencies supplied by the app.
 
 ## Scripts
 
 ```bash
 pnpm build   # tsup -> dist
 pnpm dev     # tsup --watch
-pnpm test    # every component export is reachable from the barrel
+pnpm test    # the folder, the barrel and the showcase's toc.ts agree
 ```
 
 ## Design-system lint

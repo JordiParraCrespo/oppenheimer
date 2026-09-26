@@ -4,20 +4,15 @@ import {
   SessionItem,
   SessionList,
   Skeleton,
+  useNow,
 } from '@oppenheimer/design-system-web';
 import type { SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
-import {
-  useHosts,
-  useMoveSession,
-  useProjects,
-  useSessions,
-} from '@oppenheimer/frontend-consumer/react';
+import { useHosts, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { compactAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionFilterChips } from '../components/session-filter-chips';
-import { SessionRowMenu } from '../components/session-row-menu';
 import { SessionsFilterMenu } from '../components/sessions-filter-menu';
 import {
   ALL,
@@ -30,6 +25,7 @@ import {
   repositoryOptions,
   type SessionFilters,
 } from '../lib/session-filters';
+import { SessionRowActions } from './session-row-actions';
 
 /**
  * How a session's **group** reads as a dot.
@@ -85,15 +81,16 @@ export function SessionsSidebar() {
   const { t } = useTranslation();
   const { data: sessions, isPending } = useSessions();
   // Named by the host list, because a session carries only the host's id and
-  // an id is not a filter anyone can read.
-  const { data: hosts } = useHosts();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // an id is not a filter anyone can read. Selected down to plain pairs, which
+  // the query keeps by reference across a refetch that changes no name.
+  const { data: hosts } = useHosts({
+    select: (rows) => rows.map((host) => ({ id: host.id, name: host.name })),
+  });
   const [filters, setFilters] = useState<SessionFilters>(DEFAULT_FILTERS);
-  // The projects a row can be moved to. The row menu is the one reader, but a
-  // list read once here is one request rather than one per row.
-  const { data: projects } = useProjects();
-  const move = useMoveSession();
-  const [menu, setMenu] = useState<string | null>(null);
+  // One clock for every row's age, ticking once a minute. Every row redraws on
+  // the tick, because every age may have moved; that is one render a minute,
+  // where a clock read inside each row stopped the ages moving at all.
+  const now = useNow(60_000);
 
   const all = sessions ?? [];
   const options = {
@@ -158,18 +155,7 @@ export function SessionsSidebar() {
           // that one says so here, in `.op-emptylist`.
           <SessionList>
             {visible.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                pathname={pathname}
-                menuOpen={menu === session.id}
-                onMenuOpenChange={(open) => setMenu(open ? session.id : null)}
-                projects={(projects ?? []).filter((project) => project.id !== session.projectId)}
-                onMove={(projectId) => {
-                  setMenu(null);
-                  move.mutate({ sessionId: session.id, projectId });
-                }}
-              />
+              <SessionRow key={session.id} session={session} now={now} />
             ))}
             {dirty && visible.length === 0 ? (
               <EmptyState compact>
@@ -187,41 +173,33 @@ export function SessionsSidebar() {
  * One row. The age is derived on render rather than held: `compactAge` returns
  * the unit and the count, and the words are ours to translate — `null` is
  * "less than a minute", which the artboard leaves blank rather than labelling.
+ *
+ * The row subscribes to whether it is the open session, not the list: the
+ * router hands each row one boolean, so a navigation re-renders the two rows
+ * whose highlight moved and not the sidebar above them. The session is the
+ * list query's, kept by reference across a poll that did not change it, and
+ * `now` is the sidebar's one minute clock.
+ *
+ * Whether its menu is open is the row's own state: the item stays lit while it
+ * is, and opening one row's menu redraws that row alone.
  */
-function SessionRow({
-  session,
-  pathname,
-  menuOpen,
-  onMenuOpenChange,
-  projects,
-  onMove,
-}: {
-  session: SessionEntity;
-  pathname: string;
-  menuOpen: boolean;
-  onMenuOpenChange: (open: boolean) => void;
-  projects: { id: string; name: string }[];
-  onMove: (projectId: string) => void;
-}) {
+function SessionRow({ session, now }: { session: SessionEntity; now: number }) {
   const { t } = useTranslation();
-  const age = compactAge(session.createdAt);
+  const active = useRouterState({
+    select: (state) => state.location.pathname === `/sessions/${session.id}`,
+  });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const age = compactAge(session.createdAt, now);
 
   return (
     <SessionItem
       name={session.name}
       age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
       state={dotFor(session)}
-      active={pathname === `/sessions/${session.id}`}
+      active={active}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
       menuOpen={menuOpen}
-      action={
-        <SessionRowMenu
-          open={menuOpen}
-          onOpenChange={onMenuOpenChange}
-          projects={projects}
-          onMove={onMove}
-        />
-      }
+      action={<SessionRowActions session={session} open={menuOpen} onOpenChange={setMenuOpen} />}
     />
   );
 }

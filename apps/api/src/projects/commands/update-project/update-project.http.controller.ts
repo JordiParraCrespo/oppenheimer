@@ -44,7 +44,7 @@ export class UpdateProjectHttpController {
     operationId: 'updateProject',
     summary: 'Change a project',
     description:
-      'The name, the repositories (replaced as a whole set), the default host and agent, and the instructions. Absent fields are left as they are and `null` clears a default. The slug is the project’s directory name on every host that holds it and cannot be changed. Running sessions are unaffected.',
+      'The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.',
   })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
   @ApiProblemResponse({
@@ -53,6 +53,11 @@ export class UpdateProjectHttpController {
     code: 'PROJECTS_006',
   })
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The Unassigned project cannot be renamed or archived',
+    code: 'PROJECTS_008',
+  })
   async update(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

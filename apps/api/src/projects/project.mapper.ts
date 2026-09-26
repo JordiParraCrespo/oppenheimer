@@ -18,7 +18,7 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     record.createdByUserId = entity.createdByUserId;
     record.defaultHostId = entity.defaultHostId;
     record.defaultAgent = entity.defaultAgent;
-    record.instructions = entity.instructions;
+    record.isUnassigned = entity.isUnassigned;
     return record;
   }
 
@@ -59,7 +59,7 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
         createdByUserId: record.createdByUserId ?? null,
         defaultHostId: record.defaultHostId ?? null,
         defaultAgent: record.defaultAgent ?? null,
-        instructions: record.instructions ?? '',
+        isUnassigned: record.isUnassigned ?? false,
         repositories: [...repositories]
           .sort((a, b) => a.position - b.position)
           .map((repository) => ({
@@ -90,7 +90,7 @@ export class ProjectMapper implements Mapper<ProjectEntity, ProjectOrmEntity, Pr
     });
     dto.defaultHostId = entity.defaultHostId;
     dto.defaultAgent = entity.defaultAgent;
-    dto.instructions = entity.instructions;
+    dto.isUnassigned = entity.isUnassigned;
     dto.createdAt = entity.createdAt;
     dto.updatedAt = entity.updatedAt;
     return dto;

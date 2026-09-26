@@ -46,8 +46,8 @@ export const ENDPOINT_POLICIES = {
   'GET /feature-flags/admin': [{ action: 'read', subject: 'FeatureFlag' }],
 
   // The control plane's projects. Archiving is `update Project`, not `delete`,
-  // because nothing is deleted: the row outlives the project so its slug — a
-  // directory name on every host that held it — is never reissued.
+  // because nothing is deleted: the row outlives the project so its slug is
+  // never reissued.
   'GET /projects': [{ action: 'read', subject: 'Project' }],
   'GET /projects/:id': [{ action: 'read', subject: 'Project' }],
   'POST /projects': [{ action: 'create', subject: 'Project' }],

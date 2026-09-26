@@ -1,0 +1,43 @@
+{
+  "unassigned": "Sin asignar",
+  "new": {
+    "title": "Nuevo proyecto",
+    "back": "Atrás",
+    "nameLabel": "Nombre del proyecto",
+    "namePlaceholder": "Ponle nombre al proyecto",
+    "create": "Crear proyecto",
+    "creating": "Creando…",
+    "failed": "No se pudo crear el proyecto.",
+    "recap": {
+      "name": "Ponle nombre al proyecto y elige sus repositorios.",
+      "repository": "Elige al menos un repositorio.",
+      "default": "Marca al menos un repositorio como predeterminado."
+    },
+    "repositories": {
+      "title": "Repositorios",
+      "subtitle": "El código que pueden clonar las sesiones de este proyecto.",
+      "summary_one": "{{count}} repositorio · {{defaults}} predeterminado",
+      "summary_other": "{{count}} repositorios · {{defaults}} predeterminados",
+      "defaults": "Repositorios predeterminados",
+      "defaultsHint": "Marcados en cada sesión nueva. Añade otros en cada sesión.",
+      "defaultCount": "{{defaults}} de {{total}} por defecto",
+      "search": "Buscar repositorios…",
+      "noMatch": "Ningún repositorio coincide con «{{query}}».",
+      "none": "Todavía no hay ningún repositorio conectado.",
+      "default": "Predeterminado",
+      "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+      "branchSearch": "Buscar ramas",
+      "branchEmpty": "No hay ninguna rama llamada «{{query}}»",
+      "branchLabel": "Rama base de {{name}}"
+    },
+    "host": {
+      "title": "Host predeterminado",
+      "subtitle": "Dónde se ejecutan las sesiones nuevas si no eliges otro.",
+      "none": "Todavía no hay ningún host emparejado."
+    },
+    "agent": {
+      "title": "Agente predeterminado",
+      "subtitle": "Se inicia en cada sesión nueva. Cámbialo en cada sesión."
+    }
+  }
+}

@@ -79,16 +79,6 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A session that names no project. Every session is listed under one, and a
-   * project is created on purpose, never derived from a repository — so there is
-   * nothing to fall back to. The request schema refuses the same body first.
-   */
-  PROJECT_REQUIRED: {
-    code: 'SESSIONS_009',
-    message: 'A session must name its project',
-    httpStatus: 400,
-  },
-  /**
    * A second repository on a session that has one. A runner makes one worktree
    * per session in the MVP, so a session is one repository (00); the create
    * body is capped by its schema, and this is the same rule for adding one

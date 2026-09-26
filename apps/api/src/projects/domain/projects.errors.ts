@@ -60,4 +60,14 @@ export const ProjectErrors = {
     message: 'No slug is free for that project',
     httpStatus: 409,
   },
+  /**
+   * The Unassigned project is where a session that names no project is listed,
+   * one per workspace. Renaming or archiving it would leave that work nowhere to
+   * go, so both are refused; its repositories and defaults can still be edited.
+   */
+  UNASSIGNED_FIXED: {
+    code: 'PROJECTS_008',
+    message: 'The Unassigned project cannot be renamed or archived',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

@@ -119,4 +119,15 @@ describe('ArchiveProjectCommandHandler', () => {
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
   });
+
+  it('refuses the Unassigned project', async () => {
+    // Sessions that name no project are listed there; retiring it would leave
+    // that work nowhere to go.
+    vi.mocked(projects.archiveIfUnused).mockResolvedValue({
+      result: 'unassigned',
+      project: project(),
+    });
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_008' });
+  });
 });

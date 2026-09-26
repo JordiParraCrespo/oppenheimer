@@ -10,12 +10,12 @@ import { UpdateProjectCommand } from './update-project.command';
 
 /**
  * Changes what a person may change about a project: its name, its repositories as
- * a whole set, its defaults and its instructions. Never the slug — it is the
- * project's stable handle, and the aggregate offers no way to change it.
+ * a whole set and its defaults. Never the slug — it is the project's stable
+ * handle, and the aggregate offers no way to change it — and never the
+ * Unassigned project's name (`PROJECTS_008`).
  *
  * Editing a project never reaches into a session: what a session checked out is
- * on its own checkout rows, and a session keeps the instructions it was launched
- * with.
+ * on its own checkout rows.
  *
  * Returns the saved aggregate rather than its id: the handler has the stored row
  * in hand, and making the controller ask the bus for it again would be a second
@@ -37,6 +37,13 @@ export class UpdateProjectCommandHandler
       throw new AppError(ProjectErrors.NOT_FOUND, { detail: `No project with id ${projectId}` });
     }
 
+    const project = found.unwrap();
+    if (project.isUnassigned && changes.name !== undefined && changes.name !== project.name) {
+      throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+        detail: 'The Unassigned project keeps its name',
+      });
+    }
+
     await this.settings.assertUsableHost(scope, changes.defaultHostId);
     const repositories = changes.repositories
       ? await this.settings.repositories(scope, changes.repositories)
@@ -45,13 +52,11 @@ export class UpdateProjectCommandHandler
     // Through the aggregate, so every field is validated by the same invariants a
     // creation goes through, then written as a targeted update: the row is the
     // authority on whether the project is still active.
-    const project = found.unwrap();
     project.configure({
       name: changes.name,
       repositories,
       defaultHostId: changes.defaultHostId,
       defaultAgent: changes.defaultAgent,
-      instructions: changes.instructions,
     });
 
     const saved = await this.projects.saveSettingsIfActive(scope, project);

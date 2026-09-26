@@ -9,7 +9,9 @@
         "apps/web",
         "e2e/tests/web",
         ".agents/skills/shadcn/evals/evals.json",
-        "scripts/evals/query-keys"
+        "scripts/evals/query-keys",
+        "scripts/evals/frontend-audit",
+        ".agents/skills/frontend-audit"
       ],
       "scripts": ["dev:mvp"]
     },
@@ -112,6 +114,11 @@
       "identifiers": ["check-frontend-structure", "check:structure"],
       "neededBy": ["web"],
       "scripts": ["check:structure"]
+    },
+    "scripts/check-react-compiler.mjs": {
+      "identifiers": ["check-react-compiler", "check:compiler"],
+      "neededBy": ["web"],
+      "scripts": ["check:compiler"]
     },
     "scripts/scaffold-feature.mjs": {
       "identifiers": ["scaffold-feature.mjs"],

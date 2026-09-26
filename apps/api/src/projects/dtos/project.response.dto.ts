@@ -68,8 +68,11 @@ export class ProjectResponseDto {
   })
   defaultAgent!: string | null;
 
-  @ApiProperty({ description: 'Handed to every new session’s agent. Empty is none.' })
-  instructions!: string;
+  @ApiProperty({
+    description:
+      'The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.',
+  })
+  isUnassigned!: boolean;
 
   @ApiProperty()
   createdAt!: Date;

@@ -7,7 +7,7 @@ import {
   UseInterceptors,
   Version,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { AccessScope } from '@oppenheimer/backend-authz';
@@ -20,7 +20,9 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import type { SessionCommandResult } from '../../domain/session-command.types';
+import type { WorkSessionEntity } from '../../domain/work-session.entity';
 import { SessionResponseDto } from '../../dtos/session.response.dto';
+import { FindSessionQuery } from '../../queries/find-session/find-session.query';
 import { WorkSessionMapper } from '../../work-session.mapper';
 import { CreateSessionCommand } from './create-session.command';
 import { CreateSessionRequest } from './create-session.request.dto';
@@ -34,6 +36,7 @@ import { CreateSessionRequest } from './create-session.request.dto';
 export class CreateSessionHttpController {
   constructor(
     private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
     private readonly mapper: WorkSessionMapper,
   ) {}
 
@@ -57,11 +60,6 @@ export class CreateSessionHttpController {
       'Send one. A retry after a lost response returns the session already created instead of minting a second directory and a second branch.',
   })
   @ApiResponse({ status: 201, type: SessionResponseDto })
-  @ApiProblemResponse({
-    status: 400,
-    description: 'No project to put the session in',
-    code: 'SESSIONS_009',
-  })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
     status: 404,
@@ -78,13 +76,14 @@ export class CreateSessionHttpController {
     description: "The host's runner is older than the agent picked",
     code: 'SESSIONS_011',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @CurrentUser('id') userId: string,
     @Body() body: CreateSessionRequest,
     @Headers('idempotency-key') idempotencyKey?: string,
   ): Promise<SessionResponseDto> {
-    const { session, hints } = await this.commandBus.execute<
+    const { sessionId, hints } = await this.commandBus.execute<
       CreateSessionCommand,
       SessionCommandResult
     >(
@@ -94,6 +93,9 @@ export class CreateSessionHttpController {
         input: body,
         idempotencyKey: idempotencyKey?.trim() || null,
       }),
+    );
+    const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
+      new FindSessionQuery({ scope, sessionId }),
     );
     return this.mapper.toResponse(session, { hints });
   }

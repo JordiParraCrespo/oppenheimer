@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
   connectInstallation,
-  createProject,
   pairHost,
   STUB_BRANCH,
   STUB_INSTALL_URL,
@@ -12,10 +11,11 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * New session, in a browser, against the real control plane.
  *
- * What this covers that nothing else can: the screen's four pickers are bound
- * to three live reads and one write, and a session created here is a row the
- * API actually holds — with the launch options the foot row was set to, the
- * first task in its log, and a name derived from that task.
+ * What this covers that nothing else can: the screen's five pickers are bound
+ * to four live reads and two writes, and a session created here is a row the
+ * API actually holds — in the project the New project page made, with the launch
+ * options the foot row was set to, the first task in its log, and a name
+ * derived from that task.
  *
  * The only thing faked in the run is **GitHub**, which answers repositories and
  * branches live through an App this deployment does not have
@@ -35,10 +35,7 @@ test.describe('New session', () => {
     test.slow();
     const owner = await provisionedUser('newsession');
     const hostId = await pairHost(owner.api, 'E2E box');
-    const installationId = await connectInstallation(owner.api);
-    // Every session names its project; the chip's own New project dialog is
-    // covered by the API route, so the project is made the quick way here.
-    await createProject(owner.api, installationId, 'E2E project');
+    await connectInstallation(owner.api);
 
     await signInAs(page, owner.user);
     await page.goto('/sessions/new');
@@ -54,20 +51,46 @@ test.describe('New session', () => {
     // `.op-composer__input`. Asserted here rather than in a spec of its own
     // because the composer only renders once a host exists, and pairing a
     // second one would trip the per-IP throttle this file already works around.
+    // 128px since the composer became tabbed (the scope band over the field
+    // grows the field to `min-h-32`, `[data-composer="tabbed"]` in console.css).
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
-    expect((await composer.boundingBox())?.height, 'the empty composer is 112px tall').toBe(112);
+    expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
-    // ── The project chip ─────────────────────────────────────────────────────
+    // ── The project chip, and the page behind its foot row ───────────────────
+    // A fresh workspace has only its Unassigned project, and the chip starts
+    // there: it is where a session that names none is listed.
+    await expect(page.getByRole('button', { name: 'Project' })).toContainText('Unassigned');
     await page.getByRole('button', { name: 'Project' }).click();
-    await page.getByRole('option', { name: /E2E project/ }).click();
-    await expect(page.getByRole('button', { name: 'Project' })).toContainText('E2E project');
+    await page.getByRole('option', { name: 'New project…' }).click();
+    await expect(page).toHaveURL(/\/projects\/new$/);
+
+    // The name is the title; Create waits for it and for a default repository.
+    const create = page.getByRole('button', { name: 'Create project' });
+    await expect(create).toBeDisabled();
+    await page.getByRole('textbox', { name: 'Project name' }).fill('XRP');
+    // Ticking a repository makes it a default.
+    await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
+    await page.getByRole('button', { name: 'E2E box' }).click();
+    await create.click();
+
+    // Back on New session, on the project just made, its defaults applied.
+    await expect(page).toHaveURL(/\/sessions\/new\?project=[0-9a-f-]{36}$/);
+    await expect(page.getByRole('button', { name: 'Project' })).toContainText('XRP');
+    await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
+    await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
+      STUB_REPOSITORIES.web.name,
+    );
 
     // ── The host chip ────────────────────────────────────────────────────────
+    // Prefilled above; picking it again by hand is what a reader with two
+    // machines does, and the chip must still take the choice.
     await page.getByRole('button', { name: 'Host' }).click();
     await page.getByRole('option', { name: /E2E box/ }).click();
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
 
     // ── The repository chip, and the branch pane inside it ───────────────────
+    // One repository per session in the MVP: picking another replaces the
+    // project's default: a project's repositories are offered, never imposed.
     await page.getByRole('button', { name: 'Repositories' }).click();
     await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
     // A selected row grows the cell that opens its own branch pane. Picking a
@@ -101,6 +124,7 @@ test.describe('New session', () => {
     const session = (await read.json()) as {
       slug: string;
       name: string;
+      projectId: string;
       agent: string;
       lifecycle: string;
       launch: { model: string | null; permission: string; effort: string | null };
@@ -110,6 +134,15 @@ test.describe('New session', () => {
 
     expect(session.hostId).toBe(hostId);
     expect(session.agent).toBe('claude-code');
+
+    // The session is in the project the page made, which took its slug from
+    // its name; a project names nothing on disk.
+    const projects = await owner.api.get('/api/v1/projects');
+    const project = ((await projects.json()) as { id: string; name: string; slug: string }[]).find(
+      (candidate) => candidate.name === 'XRP',
+    );
+    expect(project?.slug).toBe('xrp');
+    expect(session.projectId).toBe(project?.id);
     expect(session.launch.permission, 'the foot row is what was sent').toBe('auto');
     expect(session.launch.model, 'the engine button carries a model').toBeTruthy();
     expect(session.lifecycle, 'nothing has built a worktree yet').toBe('starting');
@@ -118,7 +151,7 @@ test.describe('New session', () => {
     const [checkout] = session.checkouts;
     expect(checkout?.repositoryFullName).toContain(STUB_REPOSITORIES.mobile.name);
     expect(checkout?.baseBranch).toBe(STUB_BRANCH);
-    expect(checkout?.branch).toBe(`oppenheimer/${STUB_REPOSITORIES.mobile.name}/${session.slug}`);
+    expect(checkout?.branch).toBe(`oppenheimer/${session.slug}`);
 
     // ── The first task is in the log, and it named the session ───────────────
     const log = await owner.api.get(`/api/v1/sessions/${sessionId}/events`, {

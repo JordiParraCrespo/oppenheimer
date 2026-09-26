@@ -11,8 +11,11 @@ import {
 } from './project-repositories.policy';
 import { PROJECT_SLUG_MAX_LENGTH, PROJECT_SLUG_PATTERN } from './project-slug.policy';
 
-/** How long a project's instructions may be, in characters. Kept equal to the shared schema's. */
-export const MAX_PROJECT_INSTRUCTIONS = 8000;
+/** The name every workspace's Unassigned project carries. It cannot be changed. */
+export const UNASSIGNED_PROJECT_NAME = 'Unassigned';
+
+/** The slug the Unassigned project takes when no project of the workspace holds it. */
+export const UNASSIGNED_PROJECT_SLUG = 'unassigned';
 
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
@@ -39,8 +42,12 @@ export interface ProjectProps {
   defaultHostId: string | null;
   /** The agent a new session is offered, from the closed catalog. */
   defaultAgent: string | null;
-  /** Handed to every new session's agent. Empty is none. */
-  instructions: string;
+  /**
+   * The workspace's Unassigned project: where a session that names no project
+   * is listed. One per workspace; never renamed, never archived, and it may hold
+   * no repository.
+   */
+  isUnassigned: boolean;
 }
 
 export interface CreateProjectProps {
@@ -54,7 +61,6 @@ export interface CreateProjectProps {
   createdByUserId?: string | null;
   defaultHostId?: string | null;
   defaultAgent?: string | null;
-  instructions?: string;
 }
 
 /** What a person may change about a project; absent leaves a field as it is. */
@@ -63,13 +69,11 @@ export interface ProjectSettings {
   repositories?: ProjectRepositoryProps[];
   defaultHostId?: string | null;
   defaultAgent?: string | null;
-  instructions?: string;
 }
 
 /**
  * Project aggregate root — a saved scope a person creates: the repositories its
- * sessions usually work on, and the host, agent and instructions a new session
- * is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * sessions usually work on, and the host and agent a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  * A project is **metadata only**. Nothing on a host is named after it, so a
  * session can be listed under any project without anything moving, and renaming
@@ -96,7 +100,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         repositories: props.repositories.map((repository) => ({ ...repository })),
         defaultHostId: props.defaultHostId ?? null,
         defaultAgent: props.defaultAgent ?? null,
-        instructions: props.instructions ?? '',
+        isUnassigned: false,
       },
     });
   }
@@ -138,18 +142,21 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return this.props.defaultAgent;
   }
 
-  get instructions(): string {
-    return this.props.instructions;
+  get isUnassigned(): boolean {
+    return this.props.isUnassigned;
   }
 
   /**
-   * Change what a person may change: the name, the repositories as a whole set,
-   * the defaults and the instructions. Never the slug.
+   * Change what a person may change: the name, the repositories as a whole set
+   * and the defaults. Never the slug, and never the Unassigned project's name.
    *
    * The repositories are replaced, not merged, so the list's invariants hold after
    * every call rather than after the last of several.
    */
   configure(settings: ProjectSettings): void {
+    if (settings.name !== undefined && settings.name !== this.props.name) {
+      this.assertNotUnassigned('renamed');
+    }
     if (settings.repositories !== undefined) {
       assertHoldable(settings.repositories);
       this.props.repositories = settings.repositories.map((repository) => ({ ...repository }));
@@ -157,7 +164,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (settings.name !== undefined) this.props.name = settings.name;
     if (settings.defaultHostId !== undefined) this.props.defaultHostId = settings.defaultHostId;
     if (settings.defaultAgent !== undefined) this.props.defaultAgent = settings.defaultAgent;
-    if (settings.instructions !== undefined) this.props.instructions = settings.instructions;
     this.setUpdatedAt(new Date());
     this.validate();
   }
@@ -169,12 +175,14 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
    * reissued, so a link to a retired project can never land on a new one.
    */
   archive(at: Date): void {
+    this.assertNotUnassigned('archived');
     this.props.archivedAt = this.props.archivedAt ?? at;
     this.setUpdatedAt(new Date());
   }
 
   /** Rename the project. Display only: the slug stays as it is. */
   rename(name: string): void {
+    if (name !== this.props.name) this.assertNotUnassigned('renamed');
     this.props.name = name;
     this.setUpdatedAt(new Date());
     this.validate();
@@ -198,14 +206,21 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
-    if (this.props.instructions.length > MAX_PROJECT_INSTRUCTIONS) {
-      throw new ArgumentInvalidException(
-        `Project instructions must be at most ${MAX_PROJECT_INSTRUCTIONS} characters`,
-      );
-    }
-    // An empty list is a legacy row the backfill could not fill, and it is read,
-    // not written; anything non-empty must be a list a project can hold.
+    // An empty list is the Unassigned project's, or a legacy row the backfill could
+    // not fill, and it is read, not written; anything non-empty must be a list a
+    // project can hold.
     if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
+  }
+
+  /**
+   * The Unassigned project is where unfiled work goes; it keeps its name and its
+   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
+   * aggregate holding the invariant whatever the caller.
+   */
+  private assertNotUnassigned(change: 'renamed' | 'archived'): void {
+    if (this.props.isUnassigned) {
+      throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);
+    }
   }
 }
 

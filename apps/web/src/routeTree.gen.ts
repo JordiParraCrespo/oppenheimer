@@ -28,6 +28,7 @@ import { Route as AuthOnboardingGithubRouteImport } from './routes/_auth/onboard
 import { Route as AuthOnboardingHostRouteImport } from './routes/_auth/onboarding/host'
 import { Route as AuthOnboardingReadyRouteImport } from './routes/_auth/onboarding/ready'
 import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onboarding/workspace'
+import { Route as AuthenticatedProjectsNewRouteImport } from './routes/_authenticated/projects/new'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
@@ -125,6 +126,12 @@ const AuthOnboardingWorkspaceRoute = AuthOnboardingWorkspaceRouteImport.update({
   path: '/workspace',
   getParentRoute: () => AuthOnboardingRoute,
 } as any)
+const AuthenticatedProjectsNewRoute =
+  AuthenticatedProjectsNewRouteImport.update({
+    id: '/projects/new',
+    path: '/projects/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSessionsIndexRoute =
   AuthenticatedSessionsIndexRouteImport.update({
     id: '/sessions/',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_auth/onboarding/host': typeof AuthOnboardingHostRoute
   '/_auth/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/_authenticated/projects/new': typeof AuthenticatedProjectsNewRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/projects/new'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/onboarding/'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/projects/new'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/onboarding'
@@ -272,6 +284,7 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/host'
     | '/_auth/onboarding/ready'
     | '/_auth/onboarding/workspace'
+    | '/_authenticated/projects/new'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_auth/onboarding/'
@@ -423,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingWorkspaceRouteImport
       parentRoute: typeof AuthOnboardingRoute
     }
+    '/_authenticated/projects/new': {
+      id: '/_authenticated/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof AuthenticatedProjectsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/sessions/': {
       id: '/_authenticated/sessions/'
       path: '/sessions'
@@ -499,6 +519,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
+  AuthenticatedProjectsNewRoute: typeof AuthenticatedProjectsNewRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -506,6 +527,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
+  AuthenticatedProjectsNewRoute: AuthenticatedProjectsNewRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,

@@ -37,15 +37,16 @@ This is the shape the whole design turns on, so it comes first.
 
 - A **project** is a saved scope a person creates — "XRP Mobile": a
   name, the repositories its sessions usually work on (each with a base
-  branch, and whether a new session is offered it), a default host and
-  agent, and instructions. It is the unit a person thinks in, and it
+  branch, and whether a new session is offered it), and a default host
+  and agent. It is the unit a person thinks in, and it
   outlives any session in it. It is **metadata only**: nothing on a host
   is named after it, so a session can be listed under any project and
   moved between projects without anything moving
   ([the layout](#the-layout-on-a-host)).
 - A **session** is one piece of work, listed under exactly one project:
-  a terminal, an agent, and a set of checkouts. Every session names its
-  project; none is derived from a repository.
+  a terminal, an agent, and a set of checkouts. A session names its
+  project, or is listed under the workspace's **Unassigned** project when
+  it names none; no project is derived from a repository.
 - A project's repositories are **offered, never required**. A session
   checks out whatever repositories it chooses — usually one, sometimes
   several, in its project or not — and may be moved to any project in
@@ -794,15 +795,15 @@ there.
 **`projects/`**
 
 - `project` — `id`, `organizationId`, `name`, `slug`, `defaultHostId`
-  null, `defaultAgent` null, `instructions` text (≤ 8 000 characters),
-  `createdByUserId` null (audit, `ON DELETE SET NULL`), `archivedAt`,
-  timestamps. Unique `(organizationId, slug)` and `(organizationId, id)`,
-  the second added by the sessions migration for the composite keys that
-  reference it.
+  null, `defaultAgent` null, `isUnassigned`, `createdByUserId` null
+  (audit, `ON DELETE SET NULL`), `archivedAt`, timestamps. Unique
+  `(organizationId, slug)` and `(organizationId, id)`, the second added
+  by the sessions migration for the composite keys that reference it,
+  and a partial unique `(organizationId) WHERE "isUnassigned"`.
 
   **A project is created on purpose and is metadata only.**
-  `POST /projects` is the one way a project comes to exist; every
-  session names its project, and nothing is derived from a repository.
+  `POST /projects` is the one way a named project comes to exist, and
+  nothing is derived from a repository.
   (An earlier cut auto-created a project per repository on its first
   session, keyed by an `originGithubRepoId`; it was removed on
   2026-09-26, and the migration that did so backfilled each such
@@ -812,7 +813,22 @@ there.
   case, derived once from the first name (`<name>`, then
   `<name>-<first 8 hex of the id>`, the id minted before the insert so the
   fallback cannot collide in practice), never changed and never
-  reissued. `name` is free.
+  reissued — which is what lets it name a `projects/<slug>/` directory
+  later, for what a project owns on disk (agents, docs), beside the
+  sessions rather than around them. `name` is free.
+
+  **Every workspace has one Unassigned project** (`isUnassigned`,
+  named "Unassigned", slug `unassigned` unless a project already holds
+  it). A session that names no project is listed there, so "every
+  session is in a project" holds without making a person choose before
+  their first task. It is provisioned with the workspace — by the
+  migration for workspaces that already existed, by a handler on the
+  personal workspace's provisioning event, and on the way by a session
+  that names none, for a workspace made on `/onboarding` — in one
+  `INSERT … ON CONFLICT DO NOTHING`, so a race writes one row. It holds no
+  repository unless a person gives it some, and it cannot be renamed or
+  archived (`PROJECTS_008`): work that names no project has nowhere else
+  to go.
 
   **A default is a suggestion, never a grant.** `defaultHostId` is a
   foreign key to `host`, `ON DELETE SET NULL`, and a host the caller
@@ -821,10 +837,8 @@ there.
   reports the id as stored — in a personal workspace a per-reader filter
   is a join for nothing, and it moves to the teams slice. `defaultAgent`
   is a catalog id, checked by the same enum `POST /sessions` uses.
-  `instructions` are stored on the project and **not yet delivered** to
-  a session: 01 carries no such field, and when it does it will be
-  capability-gated the way `session.image` is, never an optional field
-  an older runner drops.
+  Instructions for the agent were proposed with the defaults and left
+  out (2026-09-26): nothing would deliver them yet.
 
 - `project_repository` — `id`, `organizationId`, `projectId`,
   `installationId`, `githubRepoId` bigint, `repositoryFullName` (display
@@ -1000,7 +1014,7 @@ GET    /installations/{id}/repositories/{githubRepoId}/branches  read Installati
 
 GET    /projects                  read Project       projects:read    with their repositories and defaults
 GET    /projects/{id}             read Project       projects:read
-POST   /projects                  create Project     projects:write   name, repositories, defaults, instructions
+POST   /projects                  create Project     projects:write   name, repositories, defaults
 PATCH  /projects/{id}             update Project     projects:write   any of those; repositories replaced as a set
 DELETE /projects/{id}             update Project     projects:write   archive; refuses while sessions are listed in it
 
@@ -1048,9 +1062,9 @@ repositories named by GitHub's own ids — at most one in the MVP (00,
 live listing and a row may not exist yet, each with its base branch,
 the agent launched in the first unless `cwdGithubRepoId` says
 otherwise, and no branch name, because the branch is always the
-session's. `projectId` is required: every session is listed under a
-project, and none is derived (`SESSIONS_009`). The repositories need not
-be the project's. `name` is optional and usually absent; the first
+session's. `projectId` is optional: a session that names none is listed
+under the workspace's Unassigned project, and no project is derived from
+a repository. The repositories need not be the project's. `name` is optional and usually absent; the first
 prompt names the session.
 
 `POST /sessions/{id}/move` lists a session under another active project

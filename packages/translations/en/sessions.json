@@ -70,6 +70,15 @@
       "use": "Use this host",
       "defaultName": "New host"
     },
+    "project": {
+      "label": "Project",
+      "placeholder": "Project",
+      "search": "Search projects…",
+      "empty": "No project matches.",
+      "loading": "Loading projects…",
+      "add": "New project…",
+      "noRepositories": "No repositories"
+    },
     "repository": {
       "label": "Repositories",
       "placeholder": "Repository",
@@ -93,7 +102,9 @@
       "default": "Default"
     },
     "agent": {
-      "label": "Agent and model"
+      "label": "Agent and model",
+      "search": "Search models…",
+      "empty": "No model matches “{{query}}”."
     },
     "permission": {
       "label": "Permission level",
@@ -116,20 +127,18 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High",
-      "max": "Max"
+      "max": "Max",
+      "faster": "Faster",
+      "smarter": "Smarter",
+      "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
     },
     "composer": {
-      "placeholder": "Describe a task or ask a question"
+      "placeholder": "Describe a task or ask a question",
+      "send": "Send",
+      "stop": "Stop"
     },
     "queued": "Your first task is queued for this host.",
-    "project": {
-      "label": "Project",
-      "placeholder": "Project",
-      "search": "Search projects…",
-      "empty": "No project matches.",
-      "loading": "Loading projects…",
-      "add": "New project…"
-    }
+    "failed": "The session could not be created."
   },
   "session": {
     "status": {
@@ -166,23 +175,6 @@
   "agents": {
     "claude-code": "Claude Code",
     "codex": "Codex"
-  },
-  "project": {
-    "newTitle": "New project",
-    "newDescription": "The repositories its sessions usually work on, and what a new session starts with.",
-    "name": "Name",
-    "namePlaceholder": "XRP Mobile",
-    "repositories": "Repositories",
-    "repositoriesRequired": "Pick at least one repository, and make one of them a default.",
-    "default": "Default",
-    "defaultTitle": "Offered to every new session of the project",
-    "defaultHost": "Default host",
-    "defaultAgent": "Default agent",
-    "none": "None",
-    "instructions": "Instructions",
-    "instructionsPlaceholder": "Run pnpm test before every commit.",
-    "create": "Create project",
-    "createFailed": "The project could not be created."
   },
   "row": {
     "actions": "Session actions",

@@ -13,5 +13,9 @@
   "featureFlags": "Feature flags",
   "toggleSidebar": "Toggle sidebar",
   "sessions": "Sessions",
-  "newSession": "New session"
+  "newSession": "New session",
+  "commandTitle": "Command palette",
+  "commandDescription": "Search for a page or an action.",
+  "sidebarTitle": "Navigation",
+  "sidebarDescription": "Your sessions and your account."
 }

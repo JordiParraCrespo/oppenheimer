@@ -96,6 +96,6 @@ export class AddCheckoutCommandHandler
       checkout,
       await this.launches.build(session),
     );
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

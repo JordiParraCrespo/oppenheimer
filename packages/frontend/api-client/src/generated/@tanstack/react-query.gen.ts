@@ -2058,7 +2058,7 @@ export const listProjectsOptions = (options?: Options<ListProjectsData>) => quer
 /**
  * Create a project
  *
- * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host, agent and instructions a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
+ * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
  */
 export const createProjectMutation = (options?: Partial<Options<CreateProjectData>>): UseMutationOptions<CreateProjectResponse, CreateProjectError, Options<CreateProjectData>> => {
     const mutationOptions: UseMutationOptions<CreateProjectResponse, CreateProjectError, Options<CreateProjectData>> = {
@@ -2114,7 +2114,7 @@ export const getProjectOptions = (options: Options<GetProjectData>) => queryOpti
 /**
  * Change a project
  *
- * The name, the repositories (replaced as a whole set), the default host and agent, and the instructions. Absent fields are left as they are and `null` clears a default. The slug is the project’s directory name on every host that holds it and cannot be changed. Running sessions are unaffected.
+ * The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.
  */
 export const updateProjectMutation = (options?: Partial<Options<UpdateProjectData>>): UseMutationOptions<UpdateProjectResponse, UpdateProjectError, Options<UpdateProjectData>> => {
     const mutationOptions: UseMutationOptions<UpdateProjectResponse, UpdateProjectError, Options<UpdateProjectData>> = {

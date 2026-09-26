@@ -391,11 +391,24 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with a screen manifest that is provisional until a soak. A session for an
   agent the host's runner never probed is refused at create rather than
   failed at launch, so a new row needs no protocol bump (01).
+- 2026-09-26: **the project is on the console** (12, reversing 10's "the MVP
+  never shows a project chip"). New session is the export's tabbed
+  composer with a project chip first, whose foot row makes a project in a
+  dialog: a name, default repositories with a base branch each, a default
+  host and a default agent, which prefill the other chips. The API grows
+  `POST /projects`, the two defaults and a `project_repository` table; a
+  project made in the dialog has no origin, so the auto-created path for
+  callers that send only checkouts is unchanged. The grouped sidebar and
+  the row menu are the next slice. (12 was folded into 05 and 10 and
+  deleted the same day; the next entry changed most of it.)
 - 2026-09-26: **a project is a saved scope a person creates, and metadata
   only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
-  offered by default or not), a default host and agent, and instructions;
-  every session names one, none is auto-created, and nothing on a host is
-  named after a project — the layout is `workspaces/<org>/{repos,sessions}`
-  and the branch `oppenheimer/<session>` — so moving a session is a label
-  change. A session checks out any repositories, usually one; how sessions
-  are organized is owed its own design.
+  offered by default or not) and a default host and agent; none is
+  auto-created, and a session that names no project is listed in the
+  workspace's **Unassigned** project, which cannot be renamed or archived.
+  Nothing on a host is named after a project — the layout is
+  `workspaces/<org>/{repos,sessions}` and the branch `oppenheimer/<session>`
+  — so moving a session to any project is a label change. New project is a
+  page, as the evening export draws it, not a dialog. A session checks out
+  any repositories, usually one; how sessions are organized is owed its own
+  design.

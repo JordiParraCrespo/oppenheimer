@@ -37,9 +37,10 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   deferred, not dropped.
 - **Projects:** a session is listed under a project, a saved scope a
   person creates (name, repositories with their base branches and
-  defaults, a default host and agent, instructions). A project is
-  metadata: a session can be moved between projects and nothing on a
-  host moves (10, 2026-09-26).
+  defaults, a default host and agent), or under the workspace's
+  **Unassigned** project when it names none. A project is metadata: a
+  session can be moved between any two projects and nothing on a host
+  moves (10, 2026-09-26).
 - **Fixed layout on every host:**
   `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
   edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`

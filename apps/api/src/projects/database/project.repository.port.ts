@@ -14,7 +14,7 @@ export type ProjectInsertOutcome = 'inserted' | 'slug-taken';
  * missing and one in another workspace alike.
  */
 export type ArchiveOutcome =
-  | { result: 'archived' | 'in-use'; project: ProjectEntity }
+  | { result: 'archived' | 'in-use' | 'unassigned'; project: ProjectEntity }
   | { result: 'not-found' };
 
 /**
@@ -36,8 +36,7 @@ export interface ProjectRepositoryPort {
    */
   insert(entity: ProjectEntity): Promise<ProjectInsertOutcome>;
   /**
-   * Write what a person may change — the name, the defaults, the instructions and
-   * the repositories as a whole set — to a project that is still active, returning
+   * Write what a person may change — the name, the defaults and the repositories as a whole set — to a project that is still active, returning
    * the stored project.
    *
    * `None` when nothing was updated: the project is gone or archived. A targeted
@@ -71,4 +70,13 @@ export interface ProjectRepositoryPort {
   findAll(scope: AccessScope, options?: { includeArchived?: boolean }): Promise<ProjectEntity[]>;
   /** `None` both for a missing project and for one outside the caller's scope. */
   findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>>;
+  /** The workspace's Unassigned project, when it has been provisioned. */
+  findUnassigned(scope: AccessScope): Promise<Option<ProjectEntity>>;
+  /**
+   * Give a workspace its Unassigned project if it has none. Idempotent and safe
+   * to race: the partial unique index on `isUnassigned` decides, and a loser
+   * writes nothing. Keyed by the organization rather than a scope, because the
+   * workspace's own provisioning calls it before anyone has a scope in it.
+   */
+  provisionUnassigned(organizationId: string): Promise<void>;
 }

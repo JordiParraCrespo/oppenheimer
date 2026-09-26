@@ -91,7 +91,7 @@ function toRequest(input: CreateSessionInput): CreateSessionRequest {
     ...(launch && Object.keys(launch).length ? { launch } : {}),
     ...(input.prompt ? { prompt: input.prompt } : {}),
     ...(input.name ? { name: input.name } : {}),
-    projectId: input.projectId,
+    ...(input.projectId ? { projectId: input.projectId } : {}),
   };
 }
 

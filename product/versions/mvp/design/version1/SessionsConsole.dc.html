@@ -15,7 +15,7 @@
 <nav class="op-rail" aria-label="Sections">
 <span class="op-rail__mark" aria-hidden="true">O</span>
 <button class="op-rail__btn" type="button" data-active="{{ navSessions }}" aria-current="{{ navSessionsCur }}" aria-label="Sessions" onClick="{{ goSessions }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Sessions<span class="op-nav__count">{{ sessionTotal }}</span></span></button>
-<button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Routines" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Routines<span class="op-nav__count">{{ routineTotal }}</span></span></button>
+<button class="op-rail__btn" type="button" data-active="{{ navRoutines }}" aria-current="{{ navRoutinesCur }}" aria-label="Automations" onClick="{{ goRoutines }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="18" hint-size="18px,18px"></x-import><span class="op-rail__tip">Automations<span class="op-nav__count">{{ routineTotal }}</span></span></button>
 </nav>
 <nav class="op-sidebar" style="width:{{ sidebarWidth }};min-width:{{ sidebarWidth }};overflow:hidden;transition:width 220ms cubic-bezier(.4,0,.2,1),min-width 220ms cubic-bezier(.4,0,.2,1)">
 <div class="op-sidebar__head">
@@ -102,22 +102,22 @@
 </sc-if>
 <sc-if value="{{ inRoutines }}">
 <div style="padding:0 12px 10px">
-<button class="op-btn op-btn--sm op-btn--block op-btn--primary" type="button" onClick="{{ newRoutine }}">New routine</button>
+<button class="op-btn op-btn--sm op-btn--block op-btn--primary" type="button" onClick="{{ newRoutine }}">New automation</button>
 </div>
 <div class="op-listhead">
 <span class="op-listhead__title">Projects</span>
 <span class="op-listhead__count">{{ rGroupCount }}</span>
 </div>
-<div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search routines" placeholder="Search routines" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
+<div class="op-sbsearch" data-on="{{ rQOn }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" aria-label="Search automations" placeholder="Search automations" value="{{ rQ }}" onChange="{{ rQSet }}" onKeyDown="{{ rQKey }}"><sc-if value="{{ rQOn }}"><button class="op-sbsearch__x" type="button" aria-label="Clear search" onClick="{{ rQClear }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="13" hint-size="13px,13px"></x-import></button></sc-if></div>
 <div class="op-sidebar__scroll">
-<sc-if value="{{ rQNone }}"><p class="op-emptylist">No routines match “{{ rQ }}”.</p></sc-if>
+<sc-if value="{{ rQNone }}"><p class="op-emptylist">No automations match “{{ rQ }}”.</p></sc-if>
 <div class="op-sessionlist">
-<button class="op-session" type="button" data-active="{{ rAllActive }}" onClick="{{ backAll }}" style="margin-bottom:6px"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">All routines</span><span class="op-session__age" style="opacity:1">{{ routineTotal }}</span></button>
+<button class="op-session" type="button" data-active="{{ rAllActive }}" onClick="{{ backAll }}" style="margin-bottom:6px"><span class="op-session__glyph" style="display:flex"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="14" hint-size="14px,14px"></x-import></span><span class="op-session__name">All automations</span><span class="op-session__age" style="opacity:1">{{ routineTotal }}</span></button>
 <sc-for list="{{ rGroups }}" as="g" hint-placeholder-count="3">
 <div class="op-pgroup">
 <div class="op-phead" data-open="{{ g.openS }}">
 <button class="op-phead__toggle" type="button" aria-expanded="{{ g.openS }}" onClick="{{ g.toggle }}"><span class="op-phead__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="13" hint-size="13px,13px"></x-import></span><span class="op-phead__name">{{ g.name }}</span><span class="op-phead__count">{{ g.count }}</span></button>
-<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New routine in {{ g.name }}" title="New routine" onClick="{{ g.newHere }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
+<button class="op-iconbtn op-iconbtn--sm op-phead__act" type="button" aria-label="New automation in {{ g.name }}" title="New automation" onClick="{{ g.newHere }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="plus" size="14" hint-size="14px,14px"></x-import></button>
 </div>
 <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ g.items }}" as="r" hint-placeholder-count="2">
@@ -135,7 +135,7 @@
 </div>
 </sc-if>
 </sc-for>
-<sc-if value="{{ g.empty }}"><p class="op-pempty">No routines yet. <button type="button" onClick="{{ g.newHere }}">Create one</button></p></sc-if>
+<sc-if value="{{ g.empty }}"><p class="op-pempty">No automations yet. <button type="button" onClick="{{ g.newHere }}">Create one</button></p></sc-if>
 </sc-if>
 </div>
 </sc-for>
@@ -194,15 +194,209 @@
 
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--card)">
 
+<sc-if value="{{ projPageOpen }}">
+<div class="op-rpage">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeProj }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ closeProj }}">{{ pageBackLabel }}</button><span>/</span><span class="op-ph__here">{{ projDlgTitle }}</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="boxes" size="16" hint-size="16px,16px"></x-import></span>
+<input class="op-ph__title op-ph__input" type="text" aria-label="Project name" placeholder="Name this project" value="{{ projName }}" onChange="{{ setProjName }}">
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeProj }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ projSaveBlocked }}" onClick="{{ saveProject }}">{{ projSaveLabel }}</button>
+</div>
+</div>
+<div class="op-ph__meta"><span class="op-recap" data-ready="{{ projReady }}" key="{{ projRecap }}">{{ projRecap }}</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ projS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Repositories</span><span class="op-st__sub">The code sessions in this project can clone.</span><span class="op-st__sum" key="{{ projS1Sum }}">{{ projS1Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-field">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="display:flex;align-items:center;gap:5px">
+<span class="op-label">Default repositories</span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Tooltip" label="Ticked in every new session. Add others per session." side="top" hint-size="15px,15px">
+<button type="button" aria-label="About default repositories" style="display:flex;padding:0;border:0;background:none;color:var(--fg-subtle);cursor:help"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="14" hint-size="14px,14px"></x-import></button>
+</x-import>
+</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ projDefCount }} of {{ projRepoCount }} by default</span>
+</div>
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--border-subtle)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search repositories…" aria-label="Search repositories" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)">
+</div>
+<div style="height:{{ projRepoListH }};overflow-y:auto;overscroll-behavior:contain">
+<sc-for list="{{ projRepoRows }}" as="r" hint-placeholder-count="4">
+<div class="op-prepo" data-on="{{ r.onS }}">
+<label class="op-check" style="flex:1;min-width:0;align-items:center">
+<input type="checkbox" checked="{{ r.on }}" onChange="{{ r.toggle }}">
+<span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+<span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.short }}</span></span>
+</label>
+<button class="op-chip" type="button" data-selected="{{ r.defS }}" aria-pressed="{{ r.defS }}" onClick="{{ r.toggleDef }}" title="Cloned by default in new sessions" style="flex:none;visibility:{{ r.vis }}">Default</button>
+<div class="op-prepo__base">
+<button class="op-bpick" type="button" aria-label="Base branch for {{ r.short }}" aria-haspopup="listbox" aria-expanded="{{ r.bOpenS }}" data-open="{{ r.bOpenS }}" onClick="{{ r.bToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v" key="{{ r.base }}">{{ r.base }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
+<sc-if value="{{ r.bOpen }}"><div class="op-listbox op-bpick__menu" role="listbox" onClick="{{ stop }}" style="top:{{ r.bTop }};bottom:{{ r.bBottom }};left:{{ r.bLeft }}">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search branches" placeholder="Search branches" value="{{ r.bQ }}" onChange="{{ r.bSetQ }}" onKeyDown="{{ r.bKey }}"></div>
+<div class="op-fsel__list"><sc-for list="{{ r.bOpts }}" as="o" hint-placeholder-count="4"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-option__stack"><span style="font-family:var(--font-mono);font-size:12.5px">{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ r.bNone }}"><div class="op-fsel__empty">No branch named “{{ r.bQ }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ projRepoNone }}"><p style="margin:0;padding:12px;font-size:12.5px;color:var(--fg-subtle)">No repository matches “{{ projRepoQuery }}”.</p></sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ projS2Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Default host</span><span class="op-st__sub">Where new sessions run unless you pick another.</span><span class="op-st__sum" key="{{ projS2Sum }}">{{ projS2Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-pchips"><sc-for list="{{ projHostChips }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ projS3Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">3</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Default agent</span><span class="op-st__sub">Started in every new session. Change it per session.</span><span class="op-st__sum" key="{{ projS3Sum }}">{{ projS3Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-pchips"><sc-for list="{{ projAgentChips }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}" style="gap:7px"><sc-if value="{{ c.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ c.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></span></sc-if>{{ c.label }}</button></sc-for></div>
+</div>
+</div>
+</div>
+</div>
+<sc-if value="{{ projEditing }}">
+<div style="display:flex;align-items:center;gap:16px;margin-top:32px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Delete project</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">{{ projDeleteHint }}. Automations targeting it are paused.</span></div>
+<button class="op-btn op-btn--danger op-btn--sm" type="button" onClick="{{ deleteProject }}" disabled="{{ projDeleteBlocked }}">Delete project</button>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hostPageOpen }}">
+<div class="op-rpage">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeAddHost }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ closeAddHost }}">{{ pageBackLabel }}</button><span>/</span><span class="op-ph__here">Add a host</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
+<h1 class="op-ph__title">Add a host</h1>
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeAddHost }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ useNewHost }}" disabled="{{ hostWaiting }}">Use this host</button>
+</div>
+</div>
+<div class="op-ph__meta"><span>Nothing on the host is exposed to the internet.</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ hostS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Install</span><span class="op-st__sub">Run this once on the machine, or hand it to an agent already there.</span><span class="op-st__sum" key="{{ hostS1Sum }}">{{ hostS1Sum }}</span></div>
+<div class="op-st__body">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
+<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
+<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
+<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
+</div>
+<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
+<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
+<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
+</button>
+</div>
+<div style="position:relative">
+<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
+  | sh -s -- --token opk_7f3a9c</pre>
+</sc-if>
+<sc-if value="{{ showingPrompt }}">
+<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
+
+1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
+2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
+3. Install the runner:
+   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
+4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
+5. Verify the service is running:
+   oppenheimer-runner status
+6. Run the preflight and paste its full output:
+   oppenheimer-runner preflight
+7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
+8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
+
+Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
+</sc-if>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span>
+<a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ hostS2Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Connect</span><span class="op-st__sub">The runner registers itself with the hostname it reports.</span><span class="op-st__sum" key="{{ hostS2Sum }}">{{ hostS2Sum }}</span></div>
+<div class="op-st__body">
+<div style="min-height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;background:var(--card);border:1px solid var(--border-subtle);border-radius:14px">
+<sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
+Listening for this host…
+</div>
+</sc-if>
+<sc-if value="{{ hostRegistered }}">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
+<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
+<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ rDlgOpen }}">
 <div class="op-rpage" onClick="{{ stopR }}">
 <div class="op-rpage__scroll">
 <div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeRDlg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
 <header class="op-ph" style="margin-bottom:28px">
-<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ rCrumbAll }}">Routines</button><span>/</span><sc-if value="{{ rCrumbName }}"><button type="button" onClick="{{ closeRDlg }}">{{ rCrumbName }}</button><span>/</span></sc-if><span class="op-ph__here">{{ rDlgTitle }}</span></nav>
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ rCrumbAll }}">Automations</button><span>/</span><sc-if value="{{ rCrumbName }}"><button type="button" onClick="{{ closeRDlg }}">{{ rCrumbName }}</button><span>/</span></sc-if><span class="op-ph__here">{{ rDlgTitle }}</span></nav>
 <div class="op-ph__row">
 <span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span>
-<input class="op-ph__title op-ph__input" type="text" aria-label="Routine name" placeholder="Name this routine" value="{{ rName }}" onChange="{{ setRName }}">
+<input class="op-ph__title op-ph__input" type="text" aria-label="Automation name" placeholder="Name this automation" value="{{ rName }}" onChange="{{ setRName }}">
 <div class="op-ph__actions">
 <button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeRDlg }}">Cancel</button>
 <button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ rSaveBlocked }}" onClick="{{ saveR }}">{{ rSaveLabel }}</button>
@@ -406,8 +600,9 @@
 <div class="op-rp">
 <div class="op-rp__inner">
 <sc-if value="{{ rDetail }}">
+<button class="op-rpage__back" type="button" onClick="{{ backAll }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
 <header class="op-ph">
-<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ backAll }}">Routines</button><span>/</span><span class="op-ph__here">{{ dName }}</span></nav>
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ backAll }}">Automations</button><span>/</span><span class="op-ph__here">{{ dName }}</span></nav>
 <div class="op-ph__row">
 <span class="op-ph__icon"><sc-if value="{{ dIsSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="17" hint-size="17px,17px"></x-import></sc-if><sc-if value="{{ dIsGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:17px;height:17px;filter:var(--brand-glyph-filter,none)"></sc-if></span>
 <h1 class="op-ph__title">{{ dName }}</h1>
@@ -421,11 +616,11 @@
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ dTogglePauseMenu }}"><span class="op-menu__label-text">{{ dPauseLabel }}</span></button>
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ dDup }}"><span class="op-menu__label-text">Duplicate</span></button>
 <div class="op-menu__sep"></div>
-<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ dAskDelete }}"><span class="op-menu__label-text">Delete routine</span></button>
+<button class="op-menu__item" type="button" role="menuitem" data-variant="danger" onClick="{{ dAskDelete }}"><span class="op-menu__label-text">Delete automation</span></button>
 </sc-if>
 <sc-if value="{{ dConfirm }}">
 <div style="display:flex;flex-direction:column;gap:10px;padding:8px 10px 6px;max-width:240px">
-<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this routine? Its triggers stop now. Past runs are kept.</span>
+<span style="font-size:13px;line-height:1.45;color:var(--fg-muted);text-wrap:pretty">Delete this automation? Its triggers stop now. Past runs are kept.</span>
 <div style="display:flex;gap:6px;justify-content:flex-end">
 <button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ dCancelDelete }}">Cancel</button>
 <button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ dDelete }}" style="color:var(--danger)">Delete</button>
@@ -450,11 +645,11 @@
 <sc-if value="{{ rOverview }}" hint-placeholder-val="{{ true }}">
 <div class="op-rp__top">
 <div class="op-rp__tabs" role="tablist">
-<button class="op-rp__tab" type="button" role="tab" data-on="{{ rTabRoutines }}" aria-selected="{{ rTabRoutines }}" onClick="{{ tabRoutines }}">Routines</button>
+<button class="op-rp__tab" type="button" role="tab" data-on="{{ rTabRoutines }}" aria-selected="{{ rTabRoutines }}" onClick="{{ tabRoutines }}">Automations</button>
 <button class="op-rp__tab" type="button" role="tab" data-on="{{ rTabRuns }}" aria-selected="{{ rTabRuns }}" onClick="{{ tabRuns }}">Runs</button>
 </div>
 <span style="flex:1"></span>
-<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newRoutine }}">New routine</button>
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ newRoutine }}">New automation</button>
 </div>
 </sc-if>
 
@@ -475,7 +670,7 @@
 
 <sc-if value="{{ rTabRoutinesOn }}" hint-placeholder-val="{{ true }}">
 <div class="op-rtable">
-<sc-if value="{{ hasRoutines }}"><div class="op-rtable__head"><span>Routine</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div></sc-if>
+<sc-if value="{{ hasRoutines }}"><div class="op-rtable__head"><span>Automation</span><span data-col="trig">Trigger</span><span data-col="next">Next run</span><span>Status</span><span></span></div></sc-if>
 <sc-for list="{{ routineRows }}" as="r" hint-placeholder-count="5">
 <div class="op-rtable__row" role="button" tabindex="0" key="{{ r.key }}" data-menu="{{ r.menuOpenS }}" data-paused="{{ r.paused }}" data-flash="{{ r.flash }}" onClick="{{ r.open }}" style="animation-delay:{{ r.delay }}">
 <span class="op-rtable__name"><span class="op-rtable__icon"><sc-if value="{{ r.isSched }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="clock" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ r.isGh }}"><img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;filter:var(--brand-glyph-filter,none)"></sc-if></span><span class="op-rtable__stack"><span class="op-rtable__title">{{ r.name }}</span><span class="op-rtable__sub">{{ r.sub }}</span></span></span>
@@ -483,7 +678,7 @@
 <span class="op-rtable__next" data-col="next"><span>{{ r.next }}</span><sc-if value="{{ r.nextRel }}"><span class="op-rtable__nextrel">in {{ r.nextRel }}</span></sc-if></span>
 <span class="op-rtable__st" data-st="{{ r.st }}"><span class="op-rtable__dot"></span>{{ r.stLabel }}</span>
 <span style="position:relative;display:flex;justify-content:flex-end">
-<button class="op-iconbtn-sm" type="button" aria-label="Routine actions" aria-haspopup="menu" onClick="{{ r.toggleMenu }}" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
+<button class="op-iconbtn-sm" type="button" aria-label="Automation actions" aria-haspopup="menu" onClick="{{ r.toggleMenu }}" style="width:28px;height:28px;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="ellipsis" size="16" hint-size="16px,16px"></x-import></button>
 <sc-if value="{{ r.menuOpen }}"><div class="op-menu" data-side="bottom-end" role="menu" onClick="{{ stop }}" style="min-width:180px">
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.edit }}"><span class="op-menu__label-text">Edit</span></button>
 <button class="op-menu__item" type="button" role="menuitem" onClick="{{ r.runNow }}"><span class="op-menu__label-text">Run now</span></button>
@@ -495,7 +690,7 @@
 </span>
 </div>
 </sc-for>
-<sc-if value="{{ noRoutineRows }}"><div class="op-rtable__empty"><span class="op-rtable__icon" style="width:36px;height:36px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span><span>No routines yet. A routine starts a session on a schedule or when something happens on GitHub. Start from a template below.</span></div></sc-if>
+<sc-if value="{{ noRoutineRows }}"><div class="op-rtable__empty"><span class="op-rtable__icon" style="width:36px;height:36px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span><span>No automations yet. A automation starts a session on a schedule or when something happens on GitHub. Start from a template below.</span></div></sc-if>
 </div>
 
 <section class="op-tpl">
@@ -533,7 +728,7 @@
 <sc-if value="{{ runFiltered }}"><button class="op-hist__link" type="button" onClick="{{ clearRunFilters }}" style="margin-left:4px">Clear</button></sc-if>
 </div>
 </div>
-<div class="op-runs__head"><span>Run</span><span data-col="auto">Routine</span><span>Time</span></div>
+<div class="op-runs__head"><span>Run</span><span data-col="auto">Automation</span><span>Time</span></div>
 <sc-for list="{{ runRows }}" as="u" hint-placeholder-count="10">
 <button class="op-runrow" type="button" key="{{ u.key }}" data-state="{{ u.state }}" onClick="{{ u.open }}" style="animation-delay:{{ u.delay }}">
 <span class="op-runrow__run"><span class="op-runrow__st" title="{{ u.stateLabel }}"><sc-if value="{{ u.ok }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.bad }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="alert-circle" size="15" hint-size="15px,15px"></x-import></sc-if><sc-if value="{{ u.live }}"><span class="op-runrow__dot"></span></sc-if></span><span class="op-runrow__title">{{ u.title }}</span></span>
@@ -942,171 +1137,7 @@
 </div>
 </sc-if>
 
-<sc-if value="{{ projDlgOpen }}">
-<div class="op-scrim" onClick="{{ closeProj }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="proj-title" onClick="{{ stop }}" style="max-width:540px">
-<div class="op-dialog__head">
-<div style="flex:1;display:flex;flex-direction:column;gap:6px">
-<h2 class="op-dialog__title" id="proj-title" style="flex:none;margin:0">{{ projDlgTitle }}</h2>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeProj }}" style="flex:none;border-radius:980px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="15" hint-size="15px,15px"></x-import></button>
-</div>
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:20px;max-height:62vh;overflow-y:auto">
 
-<div class="op-field">
-<label class="op-label" for="proj-name">Name</label>
-<div class="op-input op-input--md"><input class="op-input__el" id="proj-name" type="text" placeholder="XRP Mobile" value="{{ projName }}" onChange="{{ setProjName }}"></div>
-</div>
-
-<div class="op-field">
-<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
-<span style="display:flex;align-items:center;gap:5px">
-<span class="op-label">Default repositories</span>
-<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Tooltip" label="Ticked in every new session. Add others per session." side="top" hint-size="15px,15px">
-<button type="button" aria-label="About default repositories" style="display:flex;padding:0;border:0;background:none;color:var(--fg-subtle);cursor:help"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="14" hint-size="14px,14px"></x-import></button>
-</x-import>
-</span>
-<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ projDefCount }} of {{ projRepoCount }} by default</span>
-</div>
-<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
-<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--border-subtle)">
-<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-<input type="text" placeholder="Search repositories…" aria-label="Search repositories" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)">
-</div>
-<div style="height:{{ projRepoListH }};overflow-y:auto;overscroll-behavior:contain">
-<sc-for list="{{ projRepoRows }}" as="r" hint-placeholder-count="4">
-<div class="op-prepo" data-on="{{ r.onS }}">
-<label class="op-check" style="flex:1;min-width:0;align-items:center">
-<input type="checkbox" checked="{{ r.on }}" onChange="{{ r.toggle }}">
-<span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
-<span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.short }}</span></span>
-</label>
-<button class="op-chip" type="button" data-selected="{{ r.defS }}" aria-pressed="{{ r.defS }}" onClick="{{ r.toggleDef }}" title="Cloned by default in new sessions" style="flex:none;visibility:{{ r.vis }}">Default</button>
-<div class="op-prepo__base">
-<button class="op-bpick" type="button" aria-label="Base branch for {{ r.short }}" aria-haspopup="listbox" aria-expanded="{{ r.bOpenS }}" data-open="{{ r.bOpenS }}" onClick="{{ r.bToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v" key="{{ r.base }}">{{ r.base }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
-<sc-if value="{{ r.bOpen }}"><div class="op-listbox op-bpick__menu" role="listbox" onClick="{{ stop }}" style="top:{{ r.bTop }};bottom:{{ r.bBottom }};left:{{ r.bLeft }}">
-<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search branches" placeholder="Search branches" value="{{ r.bQ }}" onChange="{{ r.bSetQ }}" onKeyDown="{{ r.bKey }}"></div>
-<div class="op-fsel__list"><sc-for list="{{ r.bOpts }}" as="o" hint-placeholder-count="4"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><span class="op-option__stack"><span style="font-family:var(--font-mono);font-size:12.5px">{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
-<sc-if value="{{ r.bNone }}"><div class="op-fsel__empty">No branch named “{{ r.bQ }}”</div></sc-if>
-</div></sc-if>
-</div>
-</div>
-</sc-for>
-<sc-if value="{{ projRepoNone }}"><p style="margin:0;padding:12px;font-size:12.5px;color:var(--fg-subtle)">No repository matches “{{ projRepoQuery }}”.</p></sc-if>
-</div>
-</div>
-</div>
-
-<div class="op-field">
-<span class="op-label">Default host</span>
-<div class="op-pchips"><sc-for list="{{ projHostChips }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div>
-</div>
-
-<div class="op-field">
-<span class="op-label">Default agent</span>
-<div class="op-pchips"><sc-for list="{{ projAgentChips }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}" style="gap:7px"><sc-if value="{{ c.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ c.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></span></sc-if>{{ c.label }}</button></sc-for></div>
-</div>
-
-
-</div>
-<div class="op-dialog__foot">
-<sc-if value="{{ projEditing }}"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ deleteProject }}" disabled="{{ projDeleteBlocked }}" title="{{ projDeleteHint }}" style="margin-right:auto;color:var(--danger)">Delete project</button></sc-if>
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeProj }}">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ projSaveBlocked }}" onClick="{{ saveProject }}">{{ projSaveLabel }}</button>
-</div>
-</div>
-</div>
-</sc-if>
-
-<sc-if value="{{ addHostOpen }}">
-<div class="op-scrim" onClick="{{ closeAddHost }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="addhost-title" onClick="{{ stopClick }}">
-
-<div class="op-dialog__head">
-<div style="flex:1;display:flex;flex-direction:column;gap:6px">
-<h2 class="op-dialog__title" id="addhost-title" style="flex:none">Add a host</h2>
-</div>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAddHost }}" style="flex:none;border-radius:980px">
-<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-</button>
-</div>
-
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
-
-<div style="display:flex;flex-direction:column;gap:8px">
-<span class="op-label" style="margin:0">Run this once on the host</span>
-<div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
-<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
-<div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
-<button type="button" onClick="{{ showCmd }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ cmdTabBg }};color:{{ cmdTabFg }};transition:background 80ms,color 80ms">Command</button>
-<button type="button" onClick="{{ showPrompt }}" style="padding:4px 10px;border:0;border-radius:980px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;background:{{ promptTabBg }};color:{{ promptTabFg }};transition:background 80ms,color 80ms">Agent prompt</button>
-</div>
-<button class="op-btn op-btn--ghost op-btn--sm" type="button" onClick="{{ copyBlock }}" style="gap:6px;width:86px;justify-content:center;flex:none">
-<sc-if value="{{ notCopied }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h10"/></svg>Copy</sc-if>
-<sc-if value="{{ didCopy }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</sc-if>
-</button>
-</div>
-<div style="position:relative">
-<sc-if value="{{ showingCmd }}" hint-placeholder-val="{{ true }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere">curl -fsSL https://app.oppenheimer.dev/install.sh \
-  | sh -s -- --token opk_7f3a9c</pre>
-</sc-if>
-<sc-if value="{{ showingPrompt }}">
-<pre style="margin:0;padding:12px;height:152px;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;font-family:var(--font-mono);font-size:11.5px;line-height:1.7;color:var(--fg);white-space:pre-wrap;word-break:break-word">You are setting up this machine as an Oppenheimer host.
-
-1. Check the OS and architecture with uname -sm. Supported: Linux x86_64/arm64, macOS arm64.
-2. Confirm git (2.40+) and tmux (3.2+) are installed. If either is missing, install it with the system package manager and report what you installed.
-3. Install the runner:
-   curl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c
-4. The token is single use and expires in one hour. Do not print it anywhere else, and do not store it in shell history.
-5. Verify the service is running:
-   oppenheimer-runner status
-6. Run the preflight and paste its full output:
-   oppenheimer-runner preflight
-7. If preflight reports claude, codex or opencode missing, stop and ask before installing any of them.
-8. Report back: hostname, OS version, CPU count, free disk, and the preflight result.
-
-Do not open inbound ports, change firewall rules, or edit files outside ~/.oppenheimer.</pre>
-</sc-if>
-</div>
-</div>
-
-<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
-<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span>
-<a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a>
-</div>
-</div>
-
-<div style="height:1px;background:var(--border-subtle)"></div>
-
-<div style="min-height:52px;display:flex;flex-direction:column;justify-content:center">
-<sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}">
-<div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
-Listening for this host…
-</div>
-</sc-if>
-<sc-if value="{{ hostRegistered }}">
-<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-<span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
-<span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
-<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
-<span style="flex:1"></span>
-<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
-</div>
-</sc-if>
-</div>
-
-</div>
-
-<div class="op-dialog__foot">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeAddHost }}">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ useNewHost }}" disabled="{{ hostWaiting }}">Use this host</button>
-</div>
-
-</div>
-</div>
-</sc-if>
 
 </div>
 </x-dc>
@@ -1318,7 +1349,7 @@ const AGENTS = [
 ];
 
 // Routines: a saved prompt plus the triggers that start it. Every run is an
-// ordinary session, so a routine never needs a surface of its own to watch.
+// ordinary session, so a automation never needs a surface of its own to watch.
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const FREQS = [
@@ -1352,7 +1383,7 @@ const TEMPLATES = [
   { id: 'flaky', cat: 'Maintenance', icon: 'cpu', name: 'Flaky test tracker', desc: 'Finds tests that pass and fail intermittently across recent CI runs.', trig: { type: 'schedule', freq: 'daily', hour: 6, minute: 0, days: [1], dom: 1 }, prompt: 'Compare the last 50 CI runs. List tests that both passed and failed on the same commit and open one issue per new offender.' },
   { id: 'mentions', cat: 'Review', icon: 'bot', name: 'Answer mentions', desc: 'Picks up “@oppenheimer …” requests in PRs and issues and does the work.', trig: { type: 'github', event: 'mention', filter: '*' }, prompt: 'Do what the mention asks on the same branch, then reply with what changed.' },
 ];
-// Titles each routine's runs get once the agent names its session.
+// Titles each automation's runs get once the agent names its session.
 const RUN_TITLES = {
   r1: ['Review #124 · Harden API config loading', 'Review #123 · Bump react-native to 0.76.3', 'Review #122 · Hash auth keys with argon2id', 'Review #120 · Offline queue for transfers', 'Review #119 · Fix QR scanner focus on Android 15', 'Review #118 · Split wallet store by account', 'Review #116 · Trustline warnings copy', 'Review #115 · Retry ledger fetch with backoff', 'Review #114 · Remove unused Redux slices', 'Review #113 · Biometric unlock timeout', 'Review #112 · Pin Hermes to 0.13', 'Review #111 · Currency formatting for es-ES'],
   r2: ['Dependency audit · 3 safe bumps', 'Dependency audit · no advisories', 'Dependency audit · 1 needs review', 'Dependency audit · 2 safe bumps'],
@@ -1537,7 +1568,7 @@ function parseNL(raw) {
 }
 const schedSig = t => [t.freq, t.hour, t.minute, t.dom, (t.days || []).join('')].join('-');
 
-// Deterministic transcript for a routine run, so every run opens to a real conversation.
+// Deterministic transcript for a automation run, so every run opens to a real conversation.
 function runTranscript(u, x) {
   const ref = (u.title.match(/#\d+/) || [''])[0];
   const subj = u.title.indexOf(' · ') !== -1 ? u.title.split(' · ').slice(1).join(' · ') : u.title;
@@ -1545,7 +1576,7 @@ function runTranscript(u, x) {
   const base = { r1: 'pr', r2: 'audit', r3: 'changelog', r4: 'digest', r5: 'triage' }[u.rid] || 'manual';
   const ev = base === 'pr' ? { gh: true, kind: 'Pull request opened', text: subj + ' · jordiparra → main', ref: 'xrp-mobile' + ref }
     : base === 'triage' ? { gh: true, kind: 'Label added · bug', text: subj, ref: 'atlas' + ref }
-    : base === 'manual' || /manual run/.test(u.title) ? { manual: true, kind: 'Manual run', text: 'Started from the routine page', ref: '' }
+    : base === 'manual' || /manual run/.test(u.title) ? { manual: true, kind: 'Manual run', text: 'Started from the automation page', ref: '' }
     : { sched: true, kind: 'Schedule', text: (x.triggers[0] && x.triggers[0].freq ? x.triggers[0].freq.charAt(0).toUpperCase() + x.triggers[0].freq.slice(1) : 'Scheduled') + ' run', ref: '' };
   const S = {
     pr: [['read', 'CONTRIBUTING.md', '212 lines'], ['git diff', 'main...' + (ref ? 'pr' + ref.slice(1) : 'head'), '6 files · +142 −38'], ['npm test', 'unit + integration', '212 passed'], ['gh pr review', ref, '2 inline comments']],
@@ -1553,7 +1584,7 @@ function runTranscript(u, x) {
     changelog: [['git log', 'since v2.3.0', '14 merged PRs'], ['edit', 'CHANGELOG.md', '+31 lines'], ['gh pr create', 'docs/changelog', '']],
     digest: [['gh pr list', 'merged yesterday', '3'], ['gh pr list', 'open reviews', '5'], ['gh run list', 'failed checks', '1'], ['gh issue comment', '#1 Standup', '']],
     triage: [['git checkout', 'main', ''], ['pytest', 'tests/invoices', 'reproduced'], ['gh issue edit', ref, 'area:parser']],
-    manual: [['read', 'routine instructions', ''], ['git status', 'clean', ''], ['run', 'task', 'done']],
+    manual: [['read', 'automation instructions', ''], ['git status', 'clean', ''], ['run', 'task', 'done']],
   }[base];
   const final = {
     pr: 'Approved with two small notes. The config loader now fails closed when API_URL is missing, and the new tests cover both paths. I left inline comments on the retry constant and a stale doc comment.',
@@ -2182,7 +2213,7 @@ class Component extends DCLogic {
     const runRows = log.slice(pg * PAGE, pg * PAGE + PAGE).map((u, i) => {
       const d = new Date(u.t); const x = list.find(y => y.id === u.rid) || {};
       return { key: u.key, state: u.state, stateLabel: stateL[u.state], ok: u.state === 'completed' ? 'true' : undefined, bad: u.state === 'failed' ? 'true' : undefined, live: u.state === 'running' ? 'true' : undefined,
-        title: u.title, rname: x.name || 'Deleted routine', date: md(d), time: pad2(d.getHours()) + ':' + pad2(d.getMinutes()), delay: i * 20 + 'ms', open: openRun(u.key) };
+        title: u.title, rname: x.name || 'Deleted automation', date: md(d), time: pad2(d.getHours()) + ':' + pad2(d.getMinutes()), delay: i * 20 + 'ms', open: openRun(u.key) };
     });
 
     const cat = st.tplCat;
@@ -2220,7 +2251,7 @@ class Component extends DCLogic {
     const runSel = inR && !st.rDraft && st.selRun ? allLog.find(u => u.key === st.selRun) : null;
     let runVals = { isRunView: undefined };
     if (runSel) {
-      const x = st.routines.find(y => y.id === runSel.rid) || { name: 'Deleted routine', prompt: '', triggers: [], agent: 'claude-code', model: 'sonnet', host: 'optimus' };
+      const x = st.routines.find(y => y.id === runSel.rid) || { name: 'Deleted automation', prompt: '', triggers: [], agent: 'claude-code', model: 'sonnet', host: 'optimus' };
       const tr = runTranscript(runSel, x);
       const d = new Date(runSel.t);
       const durMin = 2 + ((runSel.t / 60000) % 9 | 0), durSec = (runSel.t / 1000) % 60 | 0;
@@ -2236,7 +2267,7 @@ class Component extends DCLogic {
           steps: steps.map(s => ({ ...s, ok: s.st === 'completed' ? 'true' : undefined, bad: s.st === 'failed' ? 'true' : undefined, live: s.st === 'running' ? 'true' : undefined })),
           text, link, linkMeta, thinking: thinking ? 'true' : undefined };
       };
-      const msgs = [{ key: 'p', role: 'user', isUser: 'true', label: 'Routine instructions', text: tr.prompt || 'Run the routine.' },
+      const msgs = [{ key: 'p', role: 'user', isUser: 'true', label: 'Automation instructions', text: tr.prompt || 'Run the automation.' },
         agentMsg('a0', tr.steps, tr.text, tr.link, tr.linkMeta, runSel.state === 'running')]
         .concat(extra.map((m, i) => m.role === 'user' ? { key: 'x' + i, role: 'user', isUser: 'true', text: m.text } : agentMsg('x' + i, m.steps || [], m.text, '', '', m.thinking)));
       const draft = (st.runDrafts || {})[runSel.key] || '';
@@ -2275,8 +2306,8 @@ class Component extends DCLogic {
             if (thinking) out.push({ pending: 'true' });
             return out;
           };
-          const head = [{ out: 'true', lines: [T('opp routine run · ' + x.name, 'dim'), T('trigger: ' + tr.ev.kind + (tr.ev.ref ? ' · ' + tr.ev.ref : ''), 'dim'), T('branch: opp/' + runSel.key.slice(-6), 'dim')] },
-            { you: 'true', text: tr.prompt || 'Run the routine.' }];
+          const head = [{ out: 'true', lines: [T('opp automation run · ' + x.name, 'dim'), T('trigger: ' + tr.ev.kind + (tr.ev.ref ? ' · ' + tr.ev.ref : ''), 'dim'), T('branch: opp/' + runSel.key.slice(-6), 'dim')] },
+            { you: 'true', text: tr.prompt || 'Run the automation.' }];
           let feed = head.concat(block(tr.steps, tr.text, runSel.state === 'running'));
           if (tr.link) feed.push({ out: 'true', lines: [T('  ⎿  ' + tr.link + ' · ' + tr.linkMeta, 'success')] });
           extra.forEach(m => { feed = m.role === 'user' ? feed.concat([{ you: 'true', text: m.text }]) : feed.concat(block(m.steps || [], m.text, m.thinking)); });
@@ -2302,7 +2333,7 @@ class Component extends DCLogic {
       dNextRel: selRow ? selRow.nextRel : '', dIsSched: selRow ? selRow.isSched : undefined, dIsGh: selRow ? selRow.isGh : undefined,
       dRunNow: e => { e.stopPropagation(); if (selR) this.runRoutine(selR); },
       dEdit: e => { e.stopPropagation(); if (selR) this.openRDlg(selR); },
-      dActive: !!(selR && selR.active), dPaused: selR && !selR.active ? 'true' : undefined, dPauseLabel: selR && selR.active ? 'Pause routine' : 'Resume routine',
+      dActive: !!(selR && selR.active), dPaused: selR && !selR.active ? 'true' : undefined, dPauseLabel: selR && selR.active ? 'Pause automation' : 'Resume automation',
       dTogglePauseMenu: e => { e.stopPropagation(); if (selR) this.setState(s => ({ rMenu: null, routines: s.routines.map(y => (y.id === selR.id ? { ...y, active: !y.active } : y)) })); },
       dTogglePause: () => { if (selR) this.setState(s => ({ routines: s.routines.map(y => (y.id === selR.id ? { ...y, active: !y.active } : y)) })); },
       dMoreOpen: menu === 'd:more' || menu === 'd:confirm' ? 'true' : undefined, dMoreOpenS: menu === 'd:more' || menu === 'd:confirm' ? 'true' : 'false',
@@ -2339,8 +2370,8 @@ class Component extends DCLogic {
           options: opts.map(o => ({ label: o.label, desc: o.desc || '', selected: o.selected ? 'true' : undefined, pick: e => { e.stopPropagation(); onPick(o.value); this.setState({ rMenu: null, runPage: 0 }); } })) });
         const parts = [];
         if (!selR) {
-          parts.push(mk('rf:r', fR ? (list.find(x => x.id === fR) || {}).name || 'Routine' : 'All routines', !!fR,
-            [{ value: null, label: 'All routines', selected: !fR }].concat(list.map(x => ({ value: x.id, label: x.name, desc: summary(x.triggers[0] || { type: 'schedule', freq: 'daily', hour: 0, minute: 0 }), selected: fR === x.id }))),
+          parts.push(mk('rf:r', fR ? (list.find(x => x.id === fR) || {}).name || 'Automation' : 'All automations', !!fR,
+            [{ value: null, label: 'All automations', selected: !fR }].concat(list.map(x => ({ value: x.id, label: x.name, desc: summary(x.triggers[0] || { type: 'schedule', freq: 'daily', hour: 0, minute: 0 }), selected: fR === x.id }))),
             v => this.setState({ fRunR: v })));
           parts.push(mk('rf:p', fP ? (st.projects.find(p => p.id === fP) || {}).name || 'Project' : 'All projects', !!fP,
             [{ value: null, label: 'All projects', selected: !fP }].concat(st.projects.map(p => ({ value: p.id, label: p.name, selected: fP === p.id }))),
@@ -2467,7 +2498,7 @@ class Component extends DCLogic {
       ...vals,
       rDlgOpen: 'true',
       rCrumbName: r.id ? ((st.routines.find(y => y.id === r.id) || {}).name || '') : '',
-      rCrumbAll: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null, selR: null, selRun: null }); }, rDlgTitle: r.id ? 'Edit' : 'New routine',
+      rCrumbAll: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null, selR: null, selRun: null }); }, rDlgTitle: r.id ? 'Edit' : 'New automation',
       rEditing: r.id ? 'true' : undefined, rCreating: r.id ? undefined : 'true',
       stopR: e => { e.stopPropagation(); if (this.state.rMenu) this.setState({ rMenu: null }); },
       closeRDlg: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null }); },
@@ -2504,10 +2535,10 @@ class Component extends DCLogic {
         v => this.patchR(x => ({ ...x, model: v })))),
       rHostSel: withQ('sel:host', 'Search hosts', listTok('sel:host', findL(HOSTS, r.host), HOSTS.map(o => ({ ...o, selected: o.value === r.host })), v => this.patchR(x => ({ ...x, host: v })))),
       rReady: valid ? 'true' : 'false',
-      rRecap: !r.name.trim() ? 'Name the routine to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.'
+      rRecap: !r.name.trim() ? 'Name the automation to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.'
         : findL(AGENTS, r.agent) + ' runs in ' + repoL + ', ' + trigL.charAt(0).toLowerCase() + trigL.slice(1) + (r.triggers.length > 1 ? ' and ' + (r.triggers.length - 1) + ' more' : '') + '.',
-      rMissing: !r.name.trim() ? 'Name the routine to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.' : 'It starts listening as soon as you save.',
-      rSaveBlocked: !valid, rSaveLabel: r.id ? 'Save' : 'Create routine',
+      rMissing: !r.name.trim() ? 'Name the automation to continue.' : !r.triggers.length ? 'Add a trigger to continue.' : !r.prompt.trim() ? 'Write what the agent should do.' : 'It starts listening as soon as you save.',
+      rSaveBlocked: !valid, rSaveLabel: r.id ? 'Save' : 'Create automation',
       saveR: () => this.setState(s => {
         const d = s.rDraft;
         if (d.id) return { routines: s.routines.map(x => (x.id === d.id ? { ...d, name: d.name.trim() } : x)), rDraft: null, rMenu: null, flash: d.id };
@@ -2519,6 +2550,36 @@ class Component extends DCLogic {
   }
 
   renderVals() {
+    const v = this._renderVals();
+    const st = this.state, d = st.draft;
+    const hostOn = !!st.addHost, projOn = !!st.projDlg && !hostOn;
+    const back = st.section === 'routines' ? 'Automations' : st.view === 'new' ? 'New session' : 'Sessions';
+    const out = { ...v, projPageOpen: projOn ? 'true' : undefined, hostPageOpen: hostOn ? 'true' : undefined, pageBackLabel: back };
+    if (!hostOn && !projOn) return out;
+    Object.assign(out, { isNew: false, isProvisioning: false, isTerminal: false, isEmpty: false, isRoutines: undefined, isRunView: undefined, rDlgOpen: undefined });
+    if (projOn && d) {
+      const lab = (list, val) => ((list.find(x => x.value === val) || {}).label || val);
+      const nDef = d.repos.filter(x => x.def !== false).length;
+      const s1 = d.repos.length ? d.repos.length + (d.repos.length === 1 ? ' repository' : ' repositories') + ' · ' + nDef + ' default' : '';
+      Object.assign(out, {
+        projRepoListH: 5 * 41 - 1 + 'px',
+        projS1Done: d.repos.length && nDef ? 'true' : 'false', projS1Sum: s1,
+        projS2Done: d.host ? 'true' : 'false', projS2Sum: lab(HOSTS, d.host),
+        projS3Done: d.agent ? 'true' : 'false', projS3Sum: lab(AGENTS, d.agent),
+        projReady: v.projSaveBlocked ? 'false' : 'true',
+        projRecap: v.projSaveBlocked
+          ? (!d.name.trim() ? 'Name the project, then pick its repositories.' : !d.repos.length ? 'Pick at least one repository.' : 'Mark at least one repository as default.')
+          : s1 + ' · ' + lab(HOSTS, d.host) + ' · ' + lab(AGENTS, d.agent),
+      });
+    }
+    if (hostOn) Object.assign(out, {
+      hostS1Done: st.hostAdded ? 'true' : 'false', hostS1Sum: st.hostAdded ? 'Installed' : '',
+      hostS2Done: st.hostAdded ? 'true' : 'false', hostS2Sum: st.hostAdded ? 'mac-studio · macOS 15' : '',
+    });
+    return out;
+  }
+
+  _renderVals() {
     const { view, project, fAgent, fHost, sort, filterOpen, menu,
             open, host, repos, agentId, session } = this.state;
     const repo = this.primaryRepo();
@@ -2852,8 +2913,8 @@ class Component extends DCLogic {
       repoLabel: find(REPOS, repo),
       stopClick: e => e.stopPropagation(),
 
-      // Adding a host is a modal, not a page: the operator is mid-composition
-      // and should land back on the same session with the new host picked.
+      // Adding a host is a page over the main column; the composer state is
+      // kept, so the operator lands back on the same draft with the host picked.
       addHostOpen: this.state.addHost ? 'true' : undefined,
       hostWaiting: this.state.addHost && !this.state.hostAdded ? 'true' : undefined,
       hostRegistered: this.state.hostAdded ? 'true' : undefined,

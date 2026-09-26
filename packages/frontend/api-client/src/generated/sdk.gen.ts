@@ -1152,7 +1152,7 @@ export const listProjects = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Create a project
  *
- * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host, agent and instructions a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
+ * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
  */
 export const createProject = <ThrowOnError extends boolean = false>(options: Options<CreateProjectData, ThrowOnError>): RequestResult<CreateProjectResponses, CreateProjectErrors, ThrowOnError> => (options.client ?? client).post<CreateProjectResponses, CreateProjectErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1187,7 +1187,7 @@ export const getProject = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Change a project
  *
- * The name, the repositories (replaced as a whole set), the default host and agent, and the instructions. Absent fields are left as they are and `null` clears a default. The slug is the project’s directory name on every host that holds it and cannot be changed. Running sessions are unaffected.
+ * The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.
  */
 export const updateProject = <ThrowOnError extends boolean = false>(options: Options<UpdateProjectData, ThrowOnError>): RequestResult<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError> => (options.client ?? client).patch<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

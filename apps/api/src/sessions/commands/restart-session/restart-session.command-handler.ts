@@ -71,6 +71,6 @@ export class RestartSessionCommandHandler
       },
     ]);
     const { hints } = await this.dispatch.restart(session, await this.launches.build(session));
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

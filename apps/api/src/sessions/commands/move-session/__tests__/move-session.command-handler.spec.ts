@@ -29,7 +29,7 @@ function project(id: string, githubRepoIds: string[]): ProjectEntity {
       createdByUserId: 'user-1',
       defaultHostId: null,
       defaultAgent: null,
-      instructions: '',
+      isUnassigned: false,
       repositories: githubRepoIds.map((githubRepoId, index) => ({
         installationId: 'installation-1',
         githubRepoId,
@@ -100,10 +100,11 @@ describe('MoveSessionCommandHandler', () => {
     handler.execute(new MoveSessionCommand({ scope: SCOPE, sessionId: work.id, projectId }));
 
   it('lists the session under the target', async () => {
-    const { session: moved, hints } = await move('wide');
+    const { sessionId, hints } = await move('wide');
 
-    expect(moved.projectId).toBe('wide');
+    expect(sessionId).toBe(work.id);
     expect(hints).toEqual([]);
+    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('wide');
     expect(vi.mocked(sessions.appendMove).mock.calls[0][2]).toEqual([
       expect.objectContaining({
         kind: SESSION_EVENT_KINDS.MOVED,
@@ -116,8 +117,9 @@ describe('MoveSessionCommandHandler', () => {
   it('moves a session to a project that does not hold its repository', async () => {
     // No membership rule: a project's repositories are suggestions, and a
     // session may work on any repository in any project.
-    expect((await move('narrow')).session.projectId).toBe('narrow');
+    await move('narrow');
     expect(sessions.appendMove).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('narrow');
   });
 
   it('writes nothing when the session is already there', async () => {

@@ -110,6 +110,7 @@
       "GRANT_002": "You cannot grant more access than you have yourself.",
       "GRANT_003": "That person or team is not part of this organization.",
       "GRANT_004": "Choose an organization before managing access grants.",
+      "RATE_001": "You're sending requests too quickly. Wait a moment and try again.",
       "GITHUB_001": "We could not find that GitHub installation.",
       "GITHUB_002": "GitHub is not configured on this server.",
       "GITHUB_003": "Another workspace has already connected that GitHub installation.",
@@ -127,6 +128,7 @@
       "PROJECTS_005": "That project still has sessions nobody has closed.",
       "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
       "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
+      "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
       "SESSIONS_001": "We could not find that session.",
       "SESSIONS_002": "Choose a workspace before working with sessions.",
       "SESSIONS_003": "We could not find that checkout on this session.",
@@ -282,7 +284,9 @@
           "alt": "The main gate of the Los Alamos laboratory",
           "caption": "Los Alamos, 1943"
         }
-      }
+      },
+      "dots": "Slides",
+      "slide": "Slide {{position}}"
     },
     "firstNamePlaceholder": "Your first name",
     "hidePassword": "Hide password",
@@ -297,7 +301,51 @@
       "match": "Both passwords match"
     },
     "showPassword": "Show password",
-    "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
+    "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
+    "passwordsDoNotMatch": "Passwords do not match"
+  },
+  "projects": {
+    "unassigned": "Unassigned",
+    "new": {
+      "title": "New project",
+      "back": "Back",
+      "nameLabel": "Project name",
+      "namePlaceholder": "Name this project",
+      "create": "Create project",
+      "creating": "Creating…",
+      "failed": "The project could not be created.",
+      "recap": {
+        "name": "Name the project, then pick its repositories.",
+        "repository": "Pick at least one repository.",
+        "default": "Mark at least one repository as default."
+      },
+      "repositories": {
+        "title": "Repositories",
+        "subtitle": "The code sessions in this project can clone.",
+        "summary_one": "{{count}} repository · {{defaults}} default",
+        "summary_other": "{{count}} repositories · {{defaults}} default",
+        "defaults": "Default repositories",
+        "defaultsHint": "Ticked in every new session. Add others per session.",
+        "defaultCount": "{{defaults}} of {{total}} by default",
+        "search": "Search repositories…",
+        "noMatch": "No repository matches “{{query}}”.",
+        "none": "No repository is connected yet.",
+        "default": "Default",
+        "defaultTitle": "Cloned by default in new sessions",
+        "branchSearch": "Search branches",
+        "branchEmpty": "No branch named “{{query}}”",
+        "branchLabel": "Base branch for {{name}}"
+      },
+      "host": {
+        "title": "Default host",
+        "subtitle": "Where new sessions run unless you pick another.",
+        "none": "No host is paired yet."
+      },
+      "agent": {
+        "title": "Default agent",
+        "subtitle": "Started in every new session. Change it per session."
+      }
+    }
   },
   "sessions": {
     "home": {
@@ -371,6 +419,15 @@
         "use": "Use this host",
         "defaultName": "New host"
       },
+      "project": {
+        "label": "Project",
+        "placeholder": "Project",
+        "search": "Search projects…",
+        "empty": "No project matches.",
+        "loading": "Loading projects…",
+        "add": "New project…",
+        "noRepositories": "No repositories"
+      },
       "repository": {
         "label": "Repositories",
         "placeholder": "Repository",
@@ -394,7 +451,9 @@
         "default": "Default"
       },
       "agent": {
-        "label": "Agent and model"
+        "label": "Agent and model",
+        "search": "Search models…",
+        "empty": "No model matches “{{query}}”."
       },
       "permission": {
         "label": "Permission level",
@@ -417,20 +476,18 @@
         "low": "Low",
         "medium": "Medium",
         "high": "High",
-        "max": "Max"
+        "max": "Max",
+        "faster": "Faster",
+        "smarter": "Smarter",
+        "hint": "How long the agent may think before it answers. Higher effort costs more and takes longer."
       },
       "composer": {
-        "placeholder": "Describe a task or ask a question"
+        "placeholder": "Describe a task or ask a question",
+        "send": "Send",
+        "stop": "Stop"
       },
       "queued": "Your first task is queued for this host.",
-      "project": {
-        "label": "Project",
-        "placeholder": "Project",
-        "search": "Search projects…",
-        "empty": "No project matches.",
-        "loading": "Loading projects…",
-        "add": "New project…"
-      }
+      "failed": "The session could not be created."
     },
     "session": {
       "status": {
@@ -467,23 +524,6 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
-    },
-    "project": {
-      "newTitle": "New project",
-      "newDescription": "The repositories its sessions usually work on, and what a new session starts with.",
-      "name": "Name",
-      "namePlaceholder": "XRP Mobile",
-      "repositories": "Repositories",
-      "repositoriesRequired": "Pick at least one repository, and make one of them a default.",
-      "default": "Default",
-      "defaultTitle": "Offered to every new session of the project",
-      "defaultHost": "Default host",
-      "defaultAgent": "Default agent",
-      "none": "None",
-      "instructions": "Instructions",
-      "instructionsPlaceholder": "Run pnpm test before every commit.",
-      "create": "Create project",
-      "createFailed": "The project could not be created."
     },
     "row": {
       "actions": "Session actions",
@@ -542,7 +582,11 @@
     "featureFlags": "Feature flags",
     "toggleSidebar": "Toggle sidebar",
     "sessions": "Sessions",
-    "newSession": "New session"
+    "newSession": "New session",
+    "commandTitle": "Command palette",
+    "commandDescription": "Search for a page or an action.",
+    "sidebarTitle": "Navigation",
+    "sidebarDescription": "Your sessions and your account."
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",
@@ -812,7 +856,9 @@
     "invalidDescription": "Start the connection again from the application that sent you here.",
     "backToSessions": "Back to sessions",
     "noRedirect": "The server did not say where to send you next.",
-    "sensitiveScope": "Sensitive"
+    "sensitiveScope": "Sensitive",
+    "unknownClient": "An application",
+    "failed": "That did not go through. Try again."
   },
   "onboarding": {
     "description": "Your account is ready. Name the workspace your sessions will live in.",
@@ -846,7 +892,10 @@
         "claiming": "Saving...",
         "claimFailed": "We could not save that workspace.",
         "checkFailed": "We could not check that address. Try again in a moment.",
-        "permanent": "{{address}} is this workspace’s address."
+        "permanent": "{{address}} is this workspace’s address.",
+        "checkingLabel": "Checking availability",
+        "availableLabel": "Available",
+        "takenLabel": "Taken"
       },
       "github": {
         "title": "Connect GitHub",
@@ -880,7 +929,8 @@
         "go": "Go to the console",
         "noWorkspace": "No workspace yet",
         "noGithub": "Not connected",
-        "noHost": "No host yet"
+        "noHost": "No host yet",
+        "doneLabel": "Done"
       }
     }
   },
@@ -1169,19 +1219,6 @@
       },
       "title": "Terms of service"
     }
-  },
-  "table": {
-    "clearFilter": "Clear filter",
-    "clearSelection": "Clear selection",
-    "nextPage": "Next page",
-    "page": "Page {{page}} of {{totalPages}}",
-    "previousPage": "Previous page",
-    "range": "{{first}}–{{last}} of {{total}}",
-    "rowActions": "Row actions",
-    "selectPage": "Select every row on this page",
-    "selectRow": "Select row",
-    "selected_one": "{{count}} selected",
-    "selected_other": "{{count}} selected"
   },
   "theme": {
     "toggle": "Toggle theme",

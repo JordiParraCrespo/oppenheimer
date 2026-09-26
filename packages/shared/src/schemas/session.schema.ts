@@ -100,8 +100,11 @@ export const MAX_SESSION_CHECKOUTS = 1;
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
   agent: codingAgentSchema,
-  /** Every session is listed under a project, and names it: none is derived. */
-  projectId: z.string().uuid(),
+  /**
+   * The project the session is listed under. Absent lists it in the workspace's
+   * Unassigned project; a project is never derived from a repository.
+   */
+  projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
    * At most one in the MVP: a runner makes one worktree per session, so a

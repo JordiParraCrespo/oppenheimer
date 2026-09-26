@@ -70,6 +70,15 @@
       "use": "Usar este host",
       "defaultName": "Nuevo host"
     },
+    "project": {
+      "label": "Proyecto",
+      "placeholder": "Proyecto",
+      "search": "Buscar proyectos…",
+      "empty": "Ningún proyecto coincide.",
+      "loading": "Cargando proyectos…",
+      "add": "Nuevo proyecto…",
+      "noRepositories": "Sin repositorios"
+    },
     "repository": {
       "label": "Repositorios",
       "placeholder": "Repositorio",
@@ -93,7 +102,9 @@
       "default": "Por defecto"
     },
     "agent": {
-      "label": "Agente y modelo"
+      "label": "Agente y modelo",
+      "search": "Buscar modelos…",
+      "empty": "Ningún modelo coincide con «{{query}}»."
     },
     "permission": {
       "label": "Nivel de permisos",
@@ -116,20 +127,18 @@
       "low": "Bajo",
       "medium": "Medio",
       "high": "Alto",
-      "max": "Máximo"
+      "max": "Máximo",
+      "faster": "Más rápido",
+      "smarter": "Más inteligente",
+      "hint": "Cuánto puede pensar el agente antes de responder. Más esfuerzo cuesta más y tarda más."
     },
     "composer": {
-      "placeholder": "Describe una tarea o haz una pregunta"
+      "placeholder": "Describe una tarea o haz una pregunta",
+      "send": "Enviar",
+      "stop": "Detener"
     },
     "queued": "Tu primera tarea está en cola para este host.",
-    "project": {
-      "label": "Proyecto",
-      "placeholder": "Proyecto",
-      "search": "Buscar proyectos…",
-      "empty": "Ningún proyecto coincide.",
-      "loading": "Cargando proyectos…",
-      "add": "Nuevo proyecto…"
-    }
+    "failed": "No se pudo crear la sesión."
   },
   "session": {
     "status": {
@@ -166,23 +175,6 @@
   "agents": {
     "claude-code": "Claude Code",
     "codex": "Codex"
-  },
-  "project": {
-    "newTitle": "Nuevo proyecto",
-    "newDescription": "Los repositorios en los que suelen trabajar sus sesiones y con qué empieza una sesión nueva.",
-    "name": "Nombre",
-    "namePlaceholder": "XRP Mobile",
-    "repositories": "Repositorios",
-    "repositoriesRequired": "Elige al menos un repositorio y marca uno como predeterminado.",
-    "default": "Predeterminado",
-    "defaultTitle": "Se ofrece a cada sesión nueva del proyecto",
-    "defaultHost": "Equipo predeterminado",
-    "defaultAgent": "Agente predeterminado",
-    "none": "Ninguno",
-    "instructions": "Instrucciones",
-    "instructionsPlaceholder": "Ejecuta pnpm test antes de cada commit.",
-    "create": "Crear proyecto",
-    "createFailed": "No se ha podido crear el proyecto."
   },
   "row": {
     "actions": "Acciones de la sesión",

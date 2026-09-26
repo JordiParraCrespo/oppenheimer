@@ -110,10 +110,11 @@ runner does with it and point back.
   its checkouts already recorded), so a session moved to another project
   sends the same frame. `projectSlug` was dropped from the message; the
   runner never read it, and a JSON field a runner does not know is
-  ignored, so no version bump. A project's **instructions** are not on
-  the wire: when they are, they arrive as a field a runner advertises it
-  takes, the way `session.image` is capability-gated, never as an
-  optional field an older runner silently drops.
+  ignored, so no version bump. A project puts nothing on the wire. If it
+  ever does (instructions for the agent were proposed and left out on
+  2026-09-26), that arrives as a field a runner advertises it takes, the
+  way `session.image` is capability-gated, never as an optional field an
+  older runner silently drops.
 
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last

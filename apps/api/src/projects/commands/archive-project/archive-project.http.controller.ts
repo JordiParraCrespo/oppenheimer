@@ -50,6 +50,11 @@ export class ArchiveProjectHttpController {
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
   @ApiProblemResponse({
     status: 409,
+    description: 'The Unassigned project cannot be renamed or archived',
+    code: 'PROJECTS_008',
+  })
+  @ApiProblemResponse({
+    status: 409,
     description: 'The project still has open sessions',
     code: 'PROJECTS_005',
   })

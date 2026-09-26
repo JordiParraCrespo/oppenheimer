@@ -21,12 +21,12 @@ import { TOKENS } from './tokens';
  */
 export const consumerModules = [
   SessionsModule,
+  ProjectsModule,
   HostsModule,
   InstallationsModule,
   ApiTokensModule,
   OrganizationsModule,
   ProfileModule,
-  ProjectsModule,
 ];
 
 /**
@@ -63,6 +63,11 @@ export class ConsumerApp {
     return this.kernel.container.get(TOKENS.SessionsService);
   }
 
+  /** The bodies of work sessions belong to, and what New session is prefilled with. */
+  get projects(): ProjectsService {
+    return this.kernel.container.get(TOKENS.ProjectsService);
+  }
+
   get hosts(): HostsService {
     return this.kernel.container.get(TOKENS.HostsService);
   }
@@ -82,10 +87,5 @@ export class ConsumerApp {
 
   get profile(): ProfileService {
     return this.kernel.container.get(TOKENS.ProfileService);
-  }
-
-  /** The saved scopes sessions are listed under. */
-  get projects(): ProjectsService {
-    return this.kernel.container.get(TOKENS.ProjectsService);
   }
 }

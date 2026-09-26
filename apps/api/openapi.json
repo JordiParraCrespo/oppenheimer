@@ -448,6 +448,16 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1297,6 +1307,16 @@
           },
           "409": {
             "description": "TOKEN_009 — Active token limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5000,7 +5020,7 @@
             }
           },
           "429": {
-            "description": "HOSTS_006 — The caller already holds as many unspent pairing tokens as one person may",
+            "description": "HOSTS_006 / RATE_001 — The caller already holds as many unspent pairing tokens as one person may, or hit the rate limit",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5115,6 +5135,16 @@
           },
           "401": {
             "description": "HOSTS_003 — The registration token was rejected — used, expired, revoked or unknown",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7598,7 +7628,7 @@
         "tags": ["Projects"]
       },
       "post": {
-        "description": "A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host, agent and instructions a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.",
+        "description": "A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.",
         "operationId": "createProject",
         "parameters": [],
         "requestBody": {
@@ -7736,7 +7766,7 @@
         "tags": ["Projects"]
       },
       "patch": {
-        "description": "The name, the repositories (replaced as a whole set), the default host and agent, and the instructions. Absent fields are left as they are and `null` clears a default. The slug is the project’s directory name on every host that holds it and cannot be changed. Running sessions are unaffected.",
+        "description": "The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.",
         "operationId": "updateProject",
         "parameters": [
           {
@@ -7801,6 +7831,16 @@
           },
           "404": {
             "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7873,7 +7913,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_005 — The project still has open sessions",
+            "description": "PROJECTS_005 — The project still has open sessions\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8065,16 +8105,6 @@
               }
             }
           },
-          "400": {
-            "description": "SESSIONS_009 — No project to put the session in",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
@@ -8107,6 +8137,16 @@
           },
           "409": {
             "description": "SESSIONS_011 — The host's runner is older than the agent picked\n\nSESSIONS_006 — That project is archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8283,6 +8323,16 @@
               }
             }
           },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "503": {
             "description": "SESSIONS_008 — A terminal ticket could not be issued",
             "content": {
@@ -8405,6 +8455,16 @@
           },
           "415": {
             "description": "SESSIONS_013 — Not an image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12673,9 +12733,9 @@
             "description": "The agent a new session is offered, from the coding-agent catalog.",
             "example": "claude-code"
           },
-          "instructions": {
-            "type": "string",
-            "description": "Handed to every new session’s agent. Empty is none."
+          "isUnassigned": {
+            "type": "boolean",
+            "description": "The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository."
           },
           "createdAt": {
             "format": "date-time",
@@ -12692,7 +12752,7 @@
           "name",
           "slug",
           "repositories",
-          "instructions",
+          "isUnassigned",
           "createdAt",
           "updatedAt"
         ]
@@ -12742,10 +12802,6 @@
             "type": "string",
             "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
             "nullable": true
-          },
-          "instructions": {
-            "type": "string",
-            "maxLength": 8000
           }
         },
         "required": ["name", "repositories"]
@@ -12795,10 +12851,6 @@
             "type": "string",
             "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
             "nullable": true
-          },
-          "instructions": {
-            "type": "string",
-            "maxLength": 8000
           }
         }
       },
@@ -13114,7 +13166,7 @@
             "maxLength": 2048
           }
         },
-        "required": ["hostId", "agent", "projectId", "checkouts"]
+        "required": ["hostId", "agent", "checkouts"]
       },
       "SessionEventResponseDto": {
         "type": "object",

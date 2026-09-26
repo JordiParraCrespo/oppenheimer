@@ -79,12 +79,12 @@ describe('UpdateProjectCommandHandler', () => {
   });
 
   it('leaves absent fields as they are and clears a default given null', async () => {
-    project.configure({ defaultAgent: 'codex', instructions: 'Run the tests.' });
+    project.configure({ defaultAgent: 'codex', defaultHostId: 'host-1' });
 
     const saved = await handler.execute(command({ defaultAgent: null }));
 
     expect(saved.defaultAgent).toBeNull();
-    expect(saved.instructions).toBe('Run the tests.');
+    expect(saved.defaultHostId).toBe('host-1');
     expect(saved.repositories).toEqual([XRP]);
     expect(settings.repositories).not.toHaveBeenCalled();
   });

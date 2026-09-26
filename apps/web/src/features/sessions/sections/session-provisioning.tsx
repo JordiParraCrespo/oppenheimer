@@ -4,7 +4,7 @@ import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consume
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
-import { useElapsed } from '../hooks/use-elapsed';
+import { ElapsedClock } from '../components/elapsed-clock';
 import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisioning-steps';
 
 /**
@@ -21,16 +21,17 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t } = useTranslation();
   const resolveError = useErrorMessage();
   const failed = session.lifecycle === 'failed';
-  const elapsed = useElapsed(session.createdAt, !failed);
   const progress = useSessionStartProgress(session.id, {
     starting: session.isProvisioning,
     failed,
   });
   // The list is the one place a host's name lives; its presence is the row's.
-  const { data: hosts } = useHosts();
-  const host =
-    hosts?.find((row) => row.id === session.hostId)?.name ??
-    t('sessions.provisioning.steps.host.fallback');
+  // Only that one name is subscribed to, so a refetch of the host list
+  // re-renders this pane when the name changes and not otherwise.
+  const { data: hostName } = useHosts({
+    select: (hosts) => hosts.find((row) => row.id === session.hostId)?.name,
+  });
+  const host = hostName ?? t('sessions.provisioning.steps.host.fallback');
   const checkout = session.cwdCheckout;
 
   const steps = provisioningSteps(
@@ -70,7 +71,9 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
         <Stepper
           className="mt-6.5"
           steps={steps}
-          elapsed={elapsed}
+          // An element, not a string: the one-second tick re-renders the clock,
+          // not this pane.
+          elapsed={<ElapsedClock since={session.createdAt} ticking={!failed} />}
           status={t(failed ? 'sessions.provisioning.failed' : 'sessions.provisioning.working')}
         />
       </div>

@@ -45,18 +45,28 @@
   and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
-- New session: chips for **project**, host, repository, branch; a
-  composer for the
+- New session: chips for project, host, repository, branch, in the grey
+  band fused to the top of the composer (the tabbed composer of the
+  2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
-  the right. The project chip leads the row, because every session names
-  a project and send waits for one; its foot action is **New project…**,
-  a dialog with a name, the repositories (`RepositoryRowList`: a row per
+  the right. The project chip leads the row, because picking a project
+  offers the rest; it starts on the workspace's **Unassigned** project,
+  which is where a session that names none is listed, so the chip and
+  the session never disagree. Its foot action is **New project…**, a
+  page in the main pane (the evening export's `.op-rpage`, like Add a
+  host): a Back link and a breadcrumb to New session; the name typed as
+  the title, with Cancel and Create project beside it and a line under
+  it saying what is still missing, then what the project will be; and
+  three numbered steps down a rail (`RoutineSteps`), each ticking itself
+  done with a summary — the repositories (`RepositoryRowList`: a row per
   repository the App can see, ticked rows growing a Default toggle and a
-  base-branch pill), a default host and agent, and instructions. Picking
-  a project offers its defaults — its host, its agent, its first default
+  base-branch pill; at least one, one of them a default), the default
+  host as chips, the default agent as chips. Create project returns to
+  New session on the new project, its defaults applied. Picking a
+  project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
   agent lives in the engine button, not a chip: opening it

@@ -53,6 +53,10 @@ export class ArchiveProjectCommandHandler
         throw new AppError(ProjectErrors.NOT_FOUND, {
           detail: `No project with id ${command.projectId}`,
         });
+      case 'unassigned':
+        throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+          detail: 'Sessions that name no project are listed in Unassigned',
+        });
       case 'in-use':
         throw new AppError(ProjectErrors.HAS_OPEN_SESSIONS, {
           detail: `Project ${outcome.project.slug} still has sessions that are not closed`,

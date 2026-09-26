@@ -231,9 +231,8 @@ function queryBindingsOf(source, hooks) {
 /**
  * A query result may not be handed down to its only consumer.
  *
- * Passing one page of rows to `DataTable` is the intended flow — the kit is
- * where data is rendered — and so is handing a mutation's pending flag to a
- * `forms/` child, which is forbidden to fetch. What this catches is narrower:
+ * Passing rows to the section that renders them is the intended flow, and so
+ * is handing a mutation's pending flag to a `forms/` child, which is forbidden to fetch. What this catches is narrower:
  * a screen that subscribes to a query so that exactly one sibling below it can
  * render the result. That sibling can call the hook itself, and until it does,
  * every settle of that query re-renders everything else on the page.

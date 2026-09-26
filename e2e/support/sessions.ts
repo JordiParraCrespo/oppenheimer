@@ -1,7 +1,7 @@
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 import { newContext } from './auth';
-import githubApp from './github-app.json';
+import githubApp from './github-app.json' with { type: 'json' };
 import { claimInstallation } from './github-stub';
 
 /**
@@ -216,9 +216,10 @@ export async function mintPairingToken(api: APIRequestContext, name: string): Pr
 let projectCounter = 0;
 
 /**
- * `POST /projects` holding the stub's `xrp-mobile` as its one default repository.
- * Every session names its project, so every spec that creates one makes this
- * first (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ * `POST /projects` holding the stub's `xrp-mobile` as its one default repository,
+ * for a spec about projects or moving between them. A session that names none is
+ * listed in the workspace's Unassigned project
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  */
 export async function createProject(
   api: APIRequestContext,
@@ -243,18 +244,6 @@ export async function createProject(
   return ((await created.json()) as { id: string }).id;
 }
 
-/** One project per installation, made on first use, so a spec's sessions share it. */
-const projectsByInstallation = new Map<string, Promise<string>>();
-
-function projectFor(api: APIRequestContext, installationId: string): Promise<string> {
-  let project = projectsByInstallation.get(installationId);
-  if (!project) {
-    project = createProject(api, installationId);
-    projectsByInstallation.set(installationId, project);
-  }
-  return project;
-}
-
 let sessionCounter = 0;
 
 /** What the composer can add to a session besides its checkout. */
@@ -276,12 +265,10 @@ export async function createSession(
   { agent = 'claude-code', ...choices }: SessionChoices = {},
 ): Promise<string> {
   sessionCounter += 1;
-  const projectId = await projectFor(api, installationId);
   const created = await api.post('/api/v1/sessions', {
     headers: { 'Idempotency-Key': `e2e-${hostId}-${process.pid}-${sessionCounter}-${Date.now()}` },
     data: {
       hostId,
-      projectId,
       agent,
       ...choices,
       checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],

@@ -3,6 +3,7 @@
   "validation",
   "errors",
   "auth",
+  "projects",
   "sessions",
   "hosts",
   "home",
@@ -13,7 +14,6 @@
   "onboarding",
   "pages",
   "public",
-  "table",
   "theme",
   "toasts",
   "emails"

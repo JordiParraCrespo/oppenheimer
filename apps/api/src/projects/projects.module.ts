@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
+import { PersonalWorkspaceProvisionedDomainEventHandler } from './application/event-handlers/personal-workspace-provisioned.domain-event-handler';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
 import { ProjectSettingsResolver } from './application/project-settings.resolver';
 import type { ProjectUsagePort } from './application/project-usage.port';
@@ -62,11 +63,12 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ...repositories,
     ProjectUsageRegistry,
     ProjectSettingsResolver,
+    PersonalWorkspaceProvisionedDomainEventHandler,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
   ],
   // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
-  // injects it to resolve — and, on a repository's first session, create — a
-  // project. The repository stays inside so no consumer can read rows past the
+  // injects it to resolve the project a session is listed under — the one it
+  // named, or the workspace's Unassigned project. The repository stays inside so no consumer can read rows past the
   // scoped lookup. `ProjectUsageRegistry` is the other half of that surface, and it
   // is a class rather than a token because it is a kernel-style registry: the one
   // thing another module reaches across to contribute the answer this module cannot

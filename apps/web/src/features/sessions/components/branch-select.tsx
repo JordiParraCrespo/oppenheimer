@@ -1,4 +1,8 @@
-import { ChipSelect, type ChipSelectOption } from '@oppenheimer/design-system-web';
+import {
+  ChipSelect,
+  type ChipSelectOption,
+  type ChipSelectTriggerVariant,
+} from '@oppenheimer/design-system-web';
 import { GitBranch } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -18,12 +22,15 @@ export function BranchSelect({
   onValueChange,
   loading,
   disabled,
+  variant,
 }: {
   branches: ChipSelectOption[];
   value: string | null;
   onValueChange: (value: string) => void;
   loading?: boolean;
   disabled?: boolean;
+  /** `tab` inside the composer's scope band; `chip` on its own. */
+  variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();
 
@@ -36,6 +43,7 @@ export function BranchSelect({
       loading={loading}
       loadingText={t('sessions.new.branch.loading')}
       disabled={disabled}
+      variant={variant}
       aria-label={t('sessions.new.branch.label')}
       placeholder={t('sessions.new.branch.placeholder')}
       searchPlaceholder={t('sessions.new.branch.search')}

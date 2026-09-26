@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
-import type { ProjectEntity } from '../domain/project.entity';
+import {
+  type ProjectEntity,
+  UNASSIGNED_PROJECT_NAME,
+  UNASSIGNED_PROJECT_SLUG,
+} from '../domain/project.entity';
 import { ProjectMapper } from '../project.mapper';
 import { ProjectResource } from '../projects.resource';
 import { ProjectOrmEntity } from './project.orm-entity';
@@ -74,20 +78,12 @@ export class ProjectRepository
             SET "name" = $${at + 1},
                 "defaultHostId" = $${at + 2},
                 "defaultAgent" = $${at + 3},
-                "instructions" = $${at + 4},
                 "updatedAt" = now()
-          WHERE "id" = $${at + 5}
+          WHERE "id" = $${at + 4}
             AND "archivedAt" IS NULL
             AND "id" IN (${reachable})
           RETURNING *`,
-        [
-          ...parameters,
-          entity.name,
-          entity.defaultHostId,
-          entity.defaultAgent,
-          entity.instructions,
-          entity.id,
-        ],
+        [...parameters, entity.name, entity.defaultHostId, entity.defaultAgent, entity.id],
       );
       if (updated.length === 0) return None;
 
@@ -136,6 +132,8 @@ export class ProjectRepository
       // Already retired: nothing to ask and nothing to write, and a retried request
       // after a lost response is not a conflict.
       if (project.isArchived) return { result: 'archived' as const, project };
+      // Where work that names no project goes; retiring it would strand that work.
+      if (project.isUnassigned) return { result: 'unassigned' as const, project };
 
       if (await stillInUse()) return { result: 'in-use' as const, project };
 
@@ -167,6 +165,33 @@ export class ProjectRepository
   async findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>> {
     const record = await this.scopedQuery(scope).andWhere('project.id = :id', { id }).getOne();
     return this.withRepositories(record);
+  }
+
+  async findUnassigned(scope: AccessScope): Promise<Option<ProjectEntity>> {
+    const record = await this.scopedQuery(scope).andWhere('project.isUnassigned = true').getOne();
+    return this.withRepositories(record);
+  }
+
+  /**
+   * One statement, so there is no window between asking and writing. The slug is
+   * `unassigned` unless a project of the workspace already holds it, else that
+   * with the first eight characters of the new id; `ON CONFLICT DO NOTHING`
+   * covers both the one-per-workspace index and a slug race, and either way the
+   * workspace ends with exactly one Unassigned project.
+   */
+  async provisionUnassigned(organizationId: string): Promise<void> {
+    const table = this.repository.metadata.tableName;
+    await this.repository.query(
+      `INSERT INTO "${table}" ("id", "organizationId", "name", "slug", "isUnassigned")
+       SELECT id, $1, $2,
+              CASE WHEN EXISTS (
+                SELECT 1 FROM "${table}" WHERE "organizationId" = $1 AND "slug" = $3
+              ) THEN $3 || '-' || substr(id::text, 1, 8) ELSE $3 END,
+              true
+         FROM (SELECT gen_random_uuid() AS id) minted
+       ON CONFLICT DO NOTHING`,
+      [organizationId, UNASSIGNED_PROJECT_NAME, UNASSIGNED_PROJECT_SLUG],
+    );
   }
 
   /** One project and its repositories, read by the id the scoped read verified. */

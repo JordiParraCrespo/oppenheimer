@@ -10,9 +10,9 @@ import language from './en/language.json';
 import nav from './en/nav.json';
 import onboarding from './en/onboarding.json';
 import pages from './en/pages.json';
+import projects from './en/projects.json';
 import publicCopy from './en/public.json';
 import sessions from './en/sessions.json';
-import table from './en/table.json';
 import theme from './en/theme.json';
 import toasts from './en/toasts.json';
 import validation from './en/validation.json';
@@ -31,9 +31,9 @@ const en = {
   onboarding,
   pages,
   public: publicCopy,
+  projects,
   sessions,
   hosts,
-  table,
   theme,
   toasts,
   emails,

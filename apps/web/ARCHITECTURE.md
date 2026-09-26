@@ -20,13 +20,13 @@ they disagree, fix the code or update both together. The tier-wide model is
   src/features/<module>/          screens sections dialogs forms
       │                           components hooks lib __tests__
       ├──────────────► @oppenheimer/frontend-web        the web platform kit
-      │                  AppShell, DataTable, PageHead, useTableQuery,
-      │                  useZodResolver, dateFormatter, LocalStorageService
+      │                  AppShell, PageHead, useZodResolver,
+      │                  dateFormatter, LocalStorageService
       │                       │
       │                       ▼
       │                @oppenheimer/design-system-web   Base UI + Tailwind v4
       │
-      ├──────────────► @oppenheimer/frontend-consumer   sessions, hosts; organizations, profile, api-tokens
+      ├──────────────► @oppenheimer/frontend-consumer   sessions, projects, hosts; organizations, profile, api-tokens
       │                       │
       └──────────────► @oppenheimer/frontend-core       auth, users, user-settings,
                               │                   capabilities, analytics, OppenheimerApp

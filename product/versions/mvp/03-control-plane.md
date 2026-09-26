@@ -130,11 +130,14 @@ boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 ## Projects, as built
 
 A project is a saved scope a person creates, and metadata only (10 has
-the schema). Four routes:
+the schema). Every workspace also has one **Unassigned** project, given
+with the workspace rather than created: a session that names no project
+is listed there, and it cannot be renamed or archived (`PROJECTS_008`).
+Four routes:
 
 - `POST /projects` — a name, the repositories (each with a base branch
   and whether a new session is offered it; at least one, one of them a
-  default), a default host and agent, and instructions. Each repository
+  default), and a default host and agent. Each repository
   is resolved live through the `github/` module's `RepositoryAccessPort`;
   a default host the caller cannot use is `HOSTS_001`. The slug is derived
   once from the name.
@@ -145,13 +148,15 @@ the schema). Four routes:
 - `DELETE /projects/{id}` — archives; refuses while sessions nobody has
   closed are listed in it, and fails closed when nothing can answer that.
 
-Sessions reach projects through one read, `ProjectLookupPort.findOneById`,
-which hides an archived project. `POST /sessions` requires `projectId`;
-`POST /sessions/{id}/move` changes it, and nothing else — no host is told,
-because nothing on a host names a project. A project's defaults are
-offered by the console; the API never applies them, and a session may
-check out repositories its project does not hold. A project's
-instructions are stored and not yet delivered (01).
+Sessions reach projects through `ProjectLookupPort`: `findOneById`, which
+hides an archived project, and `unassigned`, which provisions the
+workspace's Unassigned project if a workspace made on `/onboarding` has
+none yet. `POST /sessions` takes an optional `projectId` — absent is
+Unassigned; `POST /sessions/{id}/move` changes it, to any active project,
+and nothing else — no host is told, because nothing on a host names a
+project. A project's defaults are offered by the console; the API never
+applies them, and a session may check out repositories its project does
+not hold.
 
 ## Sessions, checkouts and the log
 
@@ -380,8 +385,8 @@ GitHub through the installation; a repository is remembered only by the
 checkout that took it, as GitHub's own id plus the installation and a
 name snapshot), hosts, host pairing tokens, projects (a saved scope a
 person creates: the repositories its sessions usually work on, each on a
-base branch and marked default or not, and a default host, agent and
-instructions — metadata only, so nothing on a host is named after it; see
+base branch and marked default or not, and a default host and agent —
+metadata only, so nothing on a host is named after it; see
 10, changed 2026-09-26 from projects auto-created per repository),
 **work_session**
 (workspace, project, host, agent, slug, name, the checkout the agent runs

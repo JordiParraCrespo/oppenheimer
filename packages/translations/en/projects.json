@@ -1,0 +1,43 @@
+{
+  "unassigned": "Unassigned",
+  "new": {
+    "title": "New project",
+    "back": "Back",
+    "nameLabel": "Project name",
+    "namePlaceholder": "Name this project",
+    "create": "Create project",
+    "creating": "Creating…",
+    "failed": "The project could not be created.",
+    "recap": {
+      "name": "Name the project, then pick its repositories.",
+      "repository": "Pick at least one repository.",
+      "default": "Mark at least one repository as default."
+    },
+    "repositories": {
+      "title": "Repositories",
+      "subtitle": "The code sessions in this project can clone.",
+      "summary_one": "{{count}} repository · {{defaults}} default",
+      "summary_other": "{{count}} repositories · {{defaults}} default",
+      "defaults": "Default repositories",
+      "defaultsHint": "Ticked in every new session. Add others per session.",
+      "defaultCount": "{{defaults}} of {{total}} by default",
+      "search": "Search repositories…",
+      "noMatch": "No repository matches “{{query}}”.",
+      "none": "No repository is connected yet.",
+      "default": "Default",
+      "defaultTitle": "Cloned by default in new sessions",
+      "branchSearch": "Search branches",
+      "branchEmpty": "No branch named “{{query}}”",
+      "branchLabel": "Base branch for {{name}}"
+    },
+    "host": {
+      "title": "Default host",
+      "subtitle": "Where new sessions run unless you pick another.",
+      "none": "No host is paired yet."
+    },
+    "agent": {
+      "title": "Default agent",
+      "subtitle": "Started in every new session. Change it per session."
+    }
+  }
+}

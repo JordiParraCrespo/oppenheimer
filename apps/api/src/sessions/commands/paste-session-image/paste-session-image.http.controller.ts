@@ -88,6 +88,7 @@ export class PasteSessionImageHttpController {
     description: 'The host’s runner cannot take images',
     code: 'SESSIONS_017',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async paste(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,

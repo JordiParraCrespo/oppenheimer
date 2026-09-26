@@ -37,16 +37,15 @@ export class SessionPlanFactory {
   ) {}
 
   /**
-   * The project the session is listed under: the one the caller named. There is
-   * no other way to find one — a project is created on purpose, never derived
+   * The project the session is listed under: the one the caller named, or the
+   * workspace's Unassigned project when it named none. A project is never derived
    * from a repository (`product/versions/mvp/10-api-modules-and-data-model.md`).
-   * The schema already requires the id; this refuses a caller that got past it.
    */
   async resolveProject(
     scope: AccessScope,
     input: Pick<CreateSessionDto, 'projectId'>,
   ): Promise<ProjectEntity> {
-    if (!input.projectId) throw new AppError(SessionErrors.PROJECT_REQUIRED);
+    if (!input.projectId) return this.projects.unassigned(scope);
     return requireActiveProject(this.projects, scope, input.projectId);
   }
 

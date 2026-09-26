@@ -164,10 +164,10 @@ describe('the two installation ids cannot be confused', () => {
 });
 
 describe('createSessionSchema', () => {
-  it('refuses a session that names no project: none is derived', () => {
+  it('takes a session that names no project: the API lists it in Unassigned', () => {
     expect(
       createSessionSchema.safeParse({ hostId: uuid, agent: 'claude-code', checkouts: [] }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('accepts a host, an agent and one checkout with its own base branch', () => {

@@ -161,6 +161,17 @@ wrong place.
 | `GRANT_003` <a id="grant_003" /> | The named principal does not belong to this organization  | 400  |
 | `GRANT_004` <a id="grant_004" /> | Access grants are written inside an organization          | 400  |
 
+## Rate limiting
+
+| Code                           | Title             | HTTP |
+| ------------------------------ | ----------------- | ---- |
+| `RATE_001` <a id="rate_001" /> | Too many requests | 429  |
+
+Any route can answer `RATE_001`: the limiter is global, and it buckets by the
+calling credential, then the user, then the IP. The response carries a
+`Retry-After` header, and the same number of seconds in the `retryAfter`
+member. Wait that long before retrying.
+
 ## Hosts
 
 A host is a machine someone paired with this control plane. It belongs to the
@@ -333,9 +344,11 @@ sends whoever hit it to the right place.
 ## Projects
 
 A project is a saved scope a person creates — the repositories its sessions usually
-work on and the defaults a new session is offered. It is metadata only: nothing on a
-host is named after it. Its `slug` is a stable handle derived once from its first name
-and never reissued. See `product/versions/mvp/10-api-modules-and-data-model.md`.
+work on and the defaults a new session is offered. It is metadata only: a session's
+directory and branch never name it. Its `slug` is a stable handle derived once from
+its first name and never reissued. Every workspace also has one **Unassigned**
+project, where a session that names no project is listed. See
+`product/versions/mvp/10-api-modules-and-data-model.md`.
 
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
@@ -346,6 +359,7 @@ and never reissued. See `product/versions/mvp/10-api-modules-and-data-model.md`.
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
 | `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
 | `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
+| `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -362,6 +376,10 @@ project holding its own invariants whatever the caller.
 
 `PROJECTS_007` should never be seen: the last slug a new project tries carries part
 of its own id. It is reported rather than retried.
+
+`PROJECTS_008` protects the one project every workspace has for sessions that name
+none. Its repositories and defaults can be edited like any project's; its name and
+its place cannot.
 
 `PROJECTS_004` is no longer raised. It answered a session's first repository whose
 auto-created project was archived; projects are no longer created from repositories,
@@ -386,7 +404,7 @@ are never reissued.
 | `SESSIONS_006` <a id="sessions_006" /> | That project is archived                        | 409  |
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
-| `SESSIONS_009` <a id="sessions_009" /> | A session must name its project                 | 400  |
+| `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 | `SESSIONS_012` <a id="sessions_012" /> | That image is too large to give the session     | 413  |
@@ -403,6 +421,9 @@ scoped read cannot see it, and distinguishing the two would confirm the id.
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
 already keys conversation state by.
+
+`SESSIONS_009` is no longer raised. A session that names no project is listed in the
+workspace's Unassigned project. The code stays reserved so it is never reused.
 
 `SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
 per session, so a second repository is refused here — on create by the body's own

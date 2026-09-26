@@ -27,7 +27,6 @@ const INPUT = {
   ],
   defaultHostId: 'host-1',
   defaultAgent: 'claude-code' as const,
-  instructions: 'Run pnpm test before every commit.',
 };
 
 describe('CreateProjectCommandHandler', () => {
@@ -64,7 +63,7 @@ describe('CreateProjectCommandHandler', () => {
     );
   });
 
-  it('creates the project with its repositories, defaults and instructions', async () => {
+  it('creates the project with its repositories and defaults', async () => {
     const project = await handler.execute(
       new CreateProjectCommand({ scope: scope(), input: INPUT }),
     );
@@ -75,7 +74,6 @@ describe('CreateProjectCommandHandler', () => {
     expect(project.createdByUserId).toBe('member-1');
     expect(project.defaultHostId).toBe('host-1');
     expect(project.defaultAgent).toBe('claude-code');
-    expect(project.instructions).toBe('Run pnpm test before every commit.');
     expect(project.repositories.map((repository) => repository.githubRepoId)).toEqual(['7', '42']);
     expect(settings.assertUsableHost).toHaveBeenCalledWith(scope(), 'host-1');
   });

@@ -42,6 +42,7 @@ export default defineConfig({
       '@oppenheimer/shared/schemas/auth',
       '@oppenheimer/shared/schemas/organization',
       '@oppenheimer/shared/schemas/profile',
+      '@oppenheimer/shared/schemas/project',
       '@oppenheimer/shared/schemas/role',
       '@oppenheimer/shared/constants',
       '@oppenheimer/shared/permissions',

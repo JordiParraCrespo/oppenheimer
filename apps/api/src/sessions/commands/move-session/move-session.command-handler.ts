@@ -46,7 +46,7 @@ export class MoveSessionCommandHandler
       });
     }
     // Already there: nothing to record, and a retry is not a conflict.
-    if (session.projectId === command.projectId) return { session, hints: [] };
+    if (session.projectId === command.projectId) return { sessionId: session.id, hints: [] };
 
     const target = await requireActiveProject(this.projects, command.scope, command.projectId);
     const outcome = await this.sessions.appendMove(session, target.id, [
@@ -62,6 +62,6 @@ export class MoveSessionCommandHandler
         detail: `Project ${target.slug} is archived`,
       });
     }
-    return { session, hints: [] };
+    return { sessionId: session.id, hints: [] };
   }
 }
