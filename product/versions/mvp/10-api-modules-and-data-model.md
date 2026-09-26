@@ -780,6 +780,12 @@ there.
 
 **`projects/`**
 
+> **Superseded in part, 2026-09-26.** A project is now a saved scope a
+> person creates, holding several repositories and a session's defaults;
+> auto-creation is only the API's fallback, and a session can move between
+> projects. See [`12-projects.md`](12-projects.md). This section is kept as
+> written.
+
 - `project` — `id`, `organizationId`, `name`, `slug`,
   `originGithubRepoId` bigint null, `archivedAt`, timestamps. Unique
   `(organizationId, slug)` and, partial on non-null,

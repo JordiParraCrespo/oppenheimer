@@ -192,3 +192,10 @@ earlier note:
   runner's writer orders frames, and that liveness is ping/pong.
 - `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
+- `versions/mvp/10-api-modules-and-data-model.md` had a project created
+  implicitly by the first session on a repository, one project per
+  repository, and no project chip on the console. The 2026-09-26 design
+  export made a project a saved scope a person creates, holding several
+  repositories and a session's defaults, with sessions movable between
+  projects. `versions/mvp/12-projects.md` is the design; 10's project
+  sections point to it (2026-09-26).
