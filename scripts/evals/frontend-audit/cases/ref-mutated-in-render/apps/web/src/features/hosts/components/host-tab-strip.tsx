@@ -32,8 +32,9 @@ export function HostTabStrip({
           onClick={() => onSelect(host.id)}
           className="flex items-center gap-1.5 px-2 py-1 text-fg"
         >
-          <StatusDot state={seenOnline.current.has(host.id) ? 'running' : 'idle'} />
-          {host.name}
+          <StatusDot state={seenOnline.current.has(host.id) ? 'running' : 'idle'}>
+            {host.name}
+          </StatusDot>
         </button>
       ))}
     </div>

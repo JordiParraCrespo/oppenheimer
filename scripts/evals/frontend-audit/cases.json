@@ -129,7 +129,8 @@
       "id": "clean-debounced-search",
       "commit": "feat(web): hosts directory with a name search",
       "expect": [],
-      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask."
+      "why": "Decoy for R3: the same feature as live-search-to-list, done the way the rules ask. U1 is tolerated: the rules send any searchable list in apps/web through DataTable, which is a fair finding here and not what the decoy is for.",
+      "tolerate": ["U1"]
     },
     {
       "id": "clean-effect-with-comment",

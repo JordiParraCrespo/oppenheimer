@@ -287,6 +287,7 @@ function grade(testCase, audit, tolerate, dir) {
       files.has(f.file) &&
       SERIOUS.has(f.severity) &&
       !tolerate.includes(f.rule) &&
+      !(testCase.tolerate ?? []).includes(f.rule) &&
       !named.has(`${f.rule}:${f.file}`),
   );
   const hits = expectations.filter((e) => e.hit).length;

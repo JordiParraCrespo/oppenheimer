@@ -15,8 +15,9 @@ export function HostCard({ host }: { host: HostEntity }) {
       onPointerLeave={() => setHoveredId(null)}
     >
       <div className="flex items-center gap-2">
-        <StatusDot state={host.online ? 'running' : 'idle'} />
-        <span className="truncate text-fg">{host.name}</span>
+        <StatusDot state={host.online ? 'running' : 'idle'} className="min-w-0 flex-1">
+          {host.name}
+        </StatusDot>
       </div>
       <span className="text-fg-muted">{host.summary}</span>
     </Card>

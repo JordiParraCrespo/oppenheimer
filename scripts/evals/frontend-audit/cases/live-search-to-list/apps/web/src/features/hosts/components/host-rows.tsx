@@ -10,8 +10,9 @@ export function HostRows({ hosts, query }: { hosts: HostEntity[]; query: string 
     <ul className="flex flex-col">
       {visible.map((host) => (
         <li key={host.id} className="flex items-center gap-2 py-1.5">
-          <StatusDot state={host.online ? 'running' : 'idle'} />
-          <span className="min-w-0 flex-1 truncate text-fg">{host.name}</span>
+          <StatusDot state={host.online ? 'running' : 'idle'} className="min-w-0 flex-1">
+            {host.name}
+          </StatusDot>
           <span className="figures text-fg-muted">{host.summary}</span>
         </li>
       ))}
