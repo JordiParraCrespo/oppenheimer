@@ -797,7 +797,9 @@ there.
   the driver exchanges a bigint; the wire's number becomes a string at
   the boundary. The MVP never shows a project chip —
   `00-scope.md` decided four chips, and a fifth is real friction on the
-  most-used screen for a concept with one instance. `POST /sessions`
+  most-used screen for a concept with one instance. (Superseded
+  2026-09-26 by 12: the export puts a project chip first, and a project
+  gains default repositories, a default host and a default agent.) `POST /sessions`
   takes an optional `projectId`; absent, the project is the one whose
   origin is the first checkout's repository.
 

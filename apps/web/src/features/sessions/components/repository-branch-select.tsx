@@ -1,5 +1,6 @@
 import {
   BrandGlyph,
+  type ChipSelectTriggerVariant,
   type RepositoryOption,
   type RepositoryScope,
   RepositorySelect,
@@ -40,6 +41,7 @@ export function RepositoryBranchSelect({
   loading,
   branchesLoading,
   disabled,
+  variant,
 }: {
   repositories: RepositoryOption[];
   value: RepositoryScope[];
@@ -49,6 +51,8 @@ export function RepositoryBranchSelect({
   loading?: boolean;
   branchesLoading?: boolean;
   disabled?: boolean;
+  /** `tab` inside the composer's scope band; `chip` on its own. */
+  variant?: ChipSelectTriggerVariant;
 }) {
   const { t } = useTranslation();
 
@@ -63,6 +67,7 @@ export function RepositoryBranchSelect({
       branchesLoading={branchesLoading}
       branchesLoadingText={t('sessions.new.branch.loading')}
       disabled={disabled}
+      variant={variant}
       aria-label={t('sessions.new.repository.label')}
       placeholder={t('sessions.new.repository.placeholder')}
       searchPlaceholder={t('sessions.new.repository.search')}

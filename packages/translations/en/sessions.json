@@ -70,6 +70,36 @@
       "use": "Use this host",
       "defaultName": "New host"
     },
+    "project": {
+      "label": "Project",
+      "placeholder": "Project",
+      "search": "Search projects…",
+      "empty": "No project matches.",
+      "loading": "Loading projects…",
+      "add": "New project…",
+      "noRepositories": "No repositories"
+    },
+    "projectDialog": {
+      "title": "New project",
+      "description": "A body of work: the repositories it holds, and what a new session in it starts with.",
+      "name": "Name",
+      "namePlaceholder": "XRP Mobile",
+      "repositories": "Default repositories",
+      "repositoriesHint": "Ticked in every new session. Add others per session.",
+      "defaultCount": "{{defaults}} of {{count}} by default",
+      "search": "Search repositories…",
+      "noMatch": "No repository matches “{{query}}”.",
+      "noRepositories": "No repository is connected yet.",
+      "default": "Default",
+      "defaultTitle": "Cloned by default in new sessions",
+      "branchEmpty": "No branch named “{{query}}”",
+      "host": "Default host",
+      "noHost": "No host is paired yet.",
+      "agent": "Default agent",
+      "create": "Create project",
+      "creating": "Creating…",
+      "failed": "The project could not be created."
+    },
     "repository": {
       "label": "Repositories",
       "placeholder": "Repository",

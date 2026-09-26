@@ -8,6 +8,7 @@ import { FindApiTokensHttpController } from '../../api-tokens/queries/find-api-t
 import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find-feature-flags/find-feature-flags.http.controller';
 import { MembersController } from '../../organizations/members.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
+import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
 import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
@@ -50,6 +51,7 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
     handler: 'findFeatureFlags',
   },
   'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
+  'POST /projects': { controller: CreateProjectHttpController, handler: 'create' },
   'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
   'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
   'GET /sessions': { controller: FindSessionsHttpController, handler: 'list' },

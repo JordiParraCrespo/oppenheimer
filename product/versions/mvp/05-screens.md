@@ -40,7 +40,10 @@
   and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
-- New session: chips for host, repository, branch; a composer for the
+- New session: chips for project, host, repository, branch, in the grey
+  band fused to the top of the composer (the tabbed composer of the
+  2026-09-26 export; the project chip and its New project… dialog are
+  12, which supersedes the four-chip sentence below); a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a

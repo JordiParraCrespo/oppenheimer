@@ -12,8 +12,8 @@ import { defaultModelFor } from '../lib/session-options';
 /**
  * What New session has been set to, and what it remembers between visits.
  *
- * The artboard says the chips remember the last choice, with one exception this
- * hook enforces: **`full` is never remembered**. Every other control can be
+ * The artboard says the chips remember the last choice — the project among
+ * them, since 12 — with one exception this hook enforces: **`full` is never remembered**. Every other control can be
  * restored from storage without consequence; a permission level that escalated
  * itself because it was used once is the failure `product/04-security-review.md`
  * exists to prevent, so a stored `full` reads back as `ask`.
@@ -25,6 +25,8 @@ import { defaultModelFor } from '../lib/session-options';
 const STORAGE_KEY = 'oppenheimer.new-session.draft';
 
 export interface NewSessionDraft {
+  /** The body of work the session belongs to; picking one prefills the rest. */
+  projectId: string | null;
   hostId: string | null;
   /** Repository row ids and the branch each is checked out from. */
   scope: RepositoryScope[];
@@ -35,6 +37,7 @@ export interface NewSessionDraft {
 }
 
 const FALLBACK: NewSessionDraft = {
+  projectId: null,
   hostId: null,
   scope: [],
   agent: 'claude-code',
@@ -43,8 +46,9 @@ const FALLBACK: NewSessionDraft = {
   effort: 'medium',
 };
 
-/** What is worth carrying between visits: the engine, never the scope. */
+/** What is worth carrying between visits: the project and the engine, never the scope. */
 interface RememberedChoices {
+  projectId: string | null;
   hostId: string | null;
   agent: CodingAgentId;
   model: string | null;
@@ -58,6 +62,7 @@ function remembered(): Partial<RememberedChoices> {
     const stored = JSON.parse(raw) as Partial<RememberedChoices>;
     const agent = isCodingAgentId(stored.agent) ? stored.agent : undefined;
     return {
+      projectId: typeof stored.projectId === 'string' ? stored.projectId : undefined,
       hostId: typeof stored.hostId === 'string' ? stored.hostId : undefined,
       agent,
       // A model is only meaningful for the agent it belongs to.
@@ -79,6 +84,7 @@ export function useNewSessionDraft() {
     const stored = remembered();
     return {
       ...FALLBACK,
+      projectId: stored.projectId ?? FALLBACK.projectId,
       hostId: stored.hostId ?? FALLBACK.hostId,
       agent: stored.agent ?? FALLBACK.agent,
       model: stored.model ?? (stored.agent ? defaultModelFor(stored.agent) : FALLBACK.model),
@@ -95,13 +101,13 @@ export function useNewSessionDraft() {
    * The external system is `localStorage`, which is what makes this an effect
    * rather than something the setter does: a state updater must be pure, and
    * writing from inside one ran twice per change under StrictMode. It syncs on
-   * the four fields that are remembered, so a repository or a permission level
+   * the five fields that are remembered, so a repository or a permission level
    * never triggers it.
    */
-  const { hostId, agent, model, effort } = draft;
+  const { projectId, hostId, agent, model, effort } = draft;
   useEffect(() => {
-    remember({ hostId, agent, model, effort });
-  }, [hostId, agent, model, effort]);
+    remember({ projectId, hostId, agent, model, effort });
+  }, [projectId, hostId, agent, model, effort]);
 
   /** Apply a change. What of it survives the visit is the effect above. */
   function update(patch: Partial<NewSessionDraft>) {
@@ -116,7 +122,7 @@ export function useNewSessionDraft() {
   return { draft, update, setEngine };
 }
 
-/** The four choices worth carrying between visits, as storage holds them. */
+/** The five choices worth carrying between visits, as storage holds them. */
 function remember(choices: RememberedChoices) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(choices));

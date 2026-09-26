@@ -1093,11 +1093,35 @@ export type ToggleFeatureFlagRequest = {
     comment?: string;
 };
 
+export type ProjectRepositoryResponseDto = {
+    id: string;
+    /**
+     * The GitHub installation this repository’s tokens are minted through.
+     */
+    installationId: string;
+    /**
+     * GitHub’s repository id, as a string because the column is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * A display snapshot of `owner/repo`, refreshed whenever the project is saved.
+     */
+    fullName: string;
+    /**
+     * Cloned into every new session of the project.
+     */
+    isDefault: boolean;
+    /**
+     * What those sessions branch from. Null is the repository’s own default branch, read live.
+     */
+    baseBranch?: string | null;
+};
+
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
     /**
-     * The GitHub repository’s name, as GitHub spells it. Display only.
+     * The display name: what the person called it, or the repository’s name for a project a first session created.
      */
     name: string;
     /**
@@ -1105,15 +1129,47 @@ export type ProjectResponseDto = {
      */
     slug: string;
     /**
-     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint.
+     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint. Null for a project made on the console.
      */
     originGithubRepoId?: string | null;
+    /**
+     * The host New session picks first for this project. Null is the composer’s last choice.
+     */
+    defaultHostId?: string | null;
+    /**
+     * The agent New session picks first for this project. Null is the composer’s last choice.
+     */
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    /**
+     * The repositories the project holds, in the order they were added.
+     */
+    repositories: Array<ProjectRepositoryResponseDto>;
     createdAt: string;
     updatedAt: string;
 };
 
-export type UpdateProjectRequest = {
+export type CreateProjectRequest = {
     name: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        isDefault?: boolean;
+        baseBranch?: string;
+    }>;
+    defaultHostId?: string;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+};
+
+export type UpdateProjectRequest = {
+    name?: string;
+    repositories?: Array<{
+        installationId: string;
+        githubRepoId: number;
+        isDefault?: boolean;
+        baseBranch?: string;
+    }>;
+    defaultHostId?: string | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
 };
 
 export type SessionLaunchResponseDto = {
@@ -5089,6 +5145,44 @@ export type ListProjectsResponses = {
 
 export type ListProjectsResponse = ListProjectsResponses[keyof ListProjectsResponses];
 
+export type CreateProjectData = {
+    body: CreateProjectRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/projects';
+};
+
+export type CreateProjectErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * GITHUB_001 — GitHub installation not found
+     *
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * PROJECTS_006 — That name is a directory another project already holds
+     */
+    409: ProblemDetailsDto;
+};
+
+export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
+
+export type CreateProjectResponses = {
+    201: ProjectResponseDto;
+};
+
+export type CreateProjectResponse = CreateProjectResponses[keyof CreateProjectResponses];
+
 export type ArchiveProjectData = {
     body?: never;
     path: {
@@ -5180,6 +5274,10 @@ export type UpdateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
+     * GITHUB_010 — That repository is not one this GitHub installation covers
+     *
+     * HOSTS_001 — Host not found
+     *
      * PROJECTS_001 — Project not found
      */
     404: ProblemDetailsDto;

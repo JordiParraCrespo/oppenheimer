@@ -49,6 +49,14 @@ export {
   useUploadAvatar,
 } from './profile.queries';
 export {
+  projectsKeys,
+  type UpdateProjectVariables,
+  useArchiveProject,
+  useCreateProject,
+  useProjects,
+  useUpdateProject,
+} from './projects.queries';
+export {
   type CreateSessionVariables,
   sessionsKeys,
   useCreateSession,
