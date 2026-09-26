@@ -61,6 +61,6 @@ export class StopSessionCommandHandler
       },
     ]);
     const { hints } = await this.dispatch.stop(session);
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

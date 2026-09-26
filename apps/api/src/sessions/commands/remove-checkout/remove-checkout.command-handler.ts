@@ -65,6 +65,6 @@ export class RemoveCheckoutCommandHandler
       },
     ]);
     const { hints } = await this.dispatch.removeCheckout(session, target);
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

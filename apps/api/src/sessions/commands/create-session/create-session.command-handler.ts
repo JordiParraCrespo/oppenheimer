@@ -54,7 +54,7 @@ export class CreateSessionCommandHandler
     // GitHub, the project or the host.
     if (command.idempotencyKey) {
       const existing = await this.sessions.findOneByIdempotencyKey(scope, command.idempotencyKey);
-      if (existing.isSome()) return { session: existing.unwrap(), hints: [] };
+      if (existing.isSome()) return { sessionId: existing.unwrap().id, hints: [] };
     }
 
     await requireLaunchableHost(this.hosts, scope, input.hostId, input.agent);
@@ -93,7 +93,7 @@ export class CreateSessionCommandHandler
         detail: `Project ${project.slug} is archived`,
       });
     }
-    if (!created.created) return { session: created.session, hints: [] };
+    if (!created.created) return { sessionId: created.session.id, hints: [] };
 
     // The name is asked for *while* the host is told about the session, so the
     // model's round trip overlaps the dispatch rather than following it. It
@@ -114,6 +114,6 @@ export class CreateSessionCommandHandler
       await naming,
       WorkSessionMapper.promptKeyFor(command.id),
     );
-    return { session: created.session, hints };
+    return { sessionId: created.session.id, hints };
   }
 }
