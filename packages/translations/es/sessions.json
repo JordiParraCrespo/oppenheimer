@@ -60,16 +60,6 @@
       "add": "Añadir host…",
       "offline": "Desconectado"
     },
-    "addHost": {
-      "title": "Añadir un host",
-      "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
-      "instruction": "Ejecuta esto en él, una vez",
-      "format": "Cómo leerlo",
-      "command": "Comando",
-      "agentPrompt": "Instrucción para el agente",
-      "use": "Usar este host",
-      "defaultName": "Nuevo host"
-    },
     "project": {
       "label": "Proyecto",
       "placeholder": "Proyecto",
@@ -78,34 +68,6 @@
       "loading": "Cargando proyectos…",
       "add": "Nuevo proyecto…",
       "noRepositories": "Sin repositorios"
-    },
-    "projectDialog": {
-      "title": "Nuevo proyecto",
-      "description": "Un cuerpo de trabajo: los repositorios que contiene y con qué empieza una sesión nueva en él.",
-      "name": "Nombre",
-      "namePlaceholder": "XRP Mobile",
-      "repositories": "Repositorios por defecto",
-      "repositoriesHint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-      "defaultCount": "{{defaults}} de {{count}} por defecto",
-      "search": "Buscar repositorios…",
-      "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-      "noRepositories": "Todavía no hay ningún repositorio conectado.",
-      "default": "Por defecto",
-      "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
-      "host": "Host por defecto",
-      "noHost": "Todavía no hay ningún host emparejado.",
-      "agent": "Agente por defecto",
-      "create": "Crear proyecto",
-      "creating": "Creando…",
-      "failed": "No se pudo crear el proyecto.",
-      "editTitle": "Ajustes del proyecto",
-      "save": "Guardar",
-      "saving": "Guardando…",
-      "saveFailed": "No se pudo guardar el proyecto.",
-      "deleteProject": "Eliminar proyecto",
-      "deleteBlocked": "Cierra sus sesiones primero.",
-      "deleting": "Eliminando…"
     },
     "repository": {
       "label": "Repositorios",
@@ -202,7 +164,7 @@
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
     "routines": "Rutinas",
-    "routinesSoon": "Las rutinas todavía no están aquí.",
+    "routinesSoon": "Las automatizaciones todavía no están aquí.",
     "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
   },
   "deleteSession": {

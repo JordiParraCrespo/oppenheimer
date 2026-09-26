@@ -28,6 +28,9 @@ import { Route as AuthOnboardingGithubRouteImport } from './routes/_auth/onboard
 import { Route as AuthOnboardingHostRouteImport } from './routes/_auth/onboarding/host'
 import { Route as AuthOnboardingReadyRouteImport } from './routes/_auth/onboarding/ready'
 import { Route as AuthOnboardingWorkspaceRouteImport } from './routes/_auth/onboarding/workspace'
+import { Route as AuthenticatedHostsNewRouteImport } from './routes/_authenticated/hosts/new'
+import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects/$projectId'
+import { Route as AuthenticatedProjectsNewRouteImport } from './routes/_authenticated/projects/new'
 import { Route as AuthenticatedSessionsIndexRouteImport } from './routes/_authenticated/sessions/index'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
@@ -125,6 +128,23 @@ const AuthOnboardingWorkspaceRoute = AuthOnboardingWorkspaceRouteImport.update({
   path: '/workspace',
   getParentRoute: () => AuthOnboardingRoute,
 } as any)
+const AuthenticatedHostsNewRoute = AuthenticatedHostsNewRouteImport.update({
+  id: '/hosts/new',
+  path: '/hosts/new',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProjectsProjectIdRoute =
+  AuthenticatedProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsNewRoute =
+  AuthenticatedProjectsNewRouteImport.update({
+    id: '/projects/new',
+    path: '/projects/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSessionsIndexRoute =
   AuthenticatedSessionsIndexRouteImport.update({
     id: '/sessions/',
@@ -160,6 +180,9 @@ export interface FileRoutesByFullPath {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/hosts/new': typeof AuthenticatedHostsNewRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding/': typeof AuthOnboardingIndexRoute
@@ -180,6 +203,9 @@ export interface FileRoutesByTo {
   '/onboarding/host': typeof AuthOnboardingHostRoute
   '/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/hosts/new': typeof AuthenticatedHostsNewRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects/new': typeof AuthenticatedProjectsNewRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/onboarding': typeof AuthOnboardingIndexRoute
@@ -205,6 +231,9 @@ export interface FileRoutesById {
   '/_auth/onboarding/host': typeof AuthOnboardingHostRoute
   '/_auth/onboarding/ready': typeof AuthOnboardingReadyRoute
   '/_auth/onboarding/workspace': typeof AuthOnboardingWorkspaceRoute
+  '/_authenticated/hosts/new': typeof AuthenticatedHostsNewRoute
+  '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/projects/new': typeof AuthenticatedProjectsNewRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_auth/onboarding/': typeof AuthOnboardingIndexRoute
@@ -228,6 +257,9 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/hosts/new'
+    | '/projects/$projectId'
+    | '/projects/new'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/onboarding/'
@@ -248,6 +280,9 @@ export interface FileRouteTypes {
     | '/onboarding/host'
     | '/onboarding/ready'
     | '/onboarding/workspace'
+    | '/hosts/new'
+    | '/projects/$projectId'
+    | '/projects/new'
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/onboarding'
@@ -272,6 +307,9 @@ export interface FileRouteTypes {
     | '/_auth/onboarding/host'
     | '/_auth/onboarding/ready'
     | '/_auth/onboarding/workspace'
+    | '/_authenticated/hosts/new'
+    | '/_authenticated/projects/$projectId'
+    | '/_authenticated/projects/new'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_auth/onboarding/'
@@ -423,6 +461,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOnboardingWorkspaceRouteImport
       parentRoute: typeof AuthOnboardingRoute
     }
+    '/_authenticated/hosts/new': {
+      id: '/_authenticated/hosts/new'
+      path: '/hosts/new'
+      fullPath: '/hosts/new'
+      preLoaderRoute: typeof AuthenticatedHostsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId': {
+      id: '/_authenticated/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/new': {
+      id: '/_authenticated/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof AuthenticatedProjectsNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/sessions/': {
       id: '/_authenticated/sessions/'
       path: '/sessions'
@@ -499,6 +558,9 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
+  AuthenticatedHostsNewRoute: typeof AuthenticatedHostsNewRoute
+  AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedProjectsNewRoute: typeof AuthenticatedProjectsNewRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedSessionsIndexRoute: typeof AuthenticatedSessionsIndexRoute
@@ -506,6 +568,9 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
+  AuthenticatedHostsNewRoute: AuthenticatedHostsNewRoute,
+  AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedProjectsNewRoute: AuthenticatedProjectsNewRoute,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedSessionsIndexRoute: AuthenticatedSessionsIndexRoute,

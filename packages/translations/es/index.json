@@ -365,16 +365,6 @@
         "add": "Añadir host…",
         "offline": "Desconectado"
       },
-      "addHost": {
-        "title": "Añadir un host",
-        "description": "Un servidor que controlas: una VM en la nube, una máquina de compilación o tu propia estación de trabajo.",
-        "instruction": "Ejecuta esto en él, una vez",
-        "format": "Cómo leerlo",
-        "command": "Comando",
-        "agentPrompt": "Instrucción para el agente",
-        "use": "Usar este host",
-        "defaultName": "Nuevo host"
-      },
       "project": {
         "label": "Proyecto",
         "placeholder": "Proyecto",
@@ -383,34 +373,6 @@
         "loading": "Cargando proyectos…",
         "add": "Nuevo proyecto…",
         "noRepositories": "Sin repositorios"
-      },
-      "projectDialog": {
-        "title": "Nuevo proyecto",
-        "description": "Un cuerpo de trabajo: los repositorios que contiene y con qué empieza una sesión nueva en él.",
-        "name": "Nombre",
-        "namePlaceholder": "XRP Mobile",
-        "repositories": "Repositorios por defecto",
-        "repositoriesHint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-        "defaultCount": "{{defaults}} de {{count}} por defecto",
-        "search": "Buscar repositorios…",
-        "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-        "noRepositories": "Todavía no hay ningún repositorio conectado.",
-        "default": "Por defecto",
-        "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-        "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
-        "host": "Host por defecto",
-        "noHost": "Todavía no hay ningún host emparejado.",
-        "agent": "Agente por defecto",
-        "create": "Crear proyecto",
-        "creating": "Creando…",
-        "failed": "No se pudo crear el proyecto.",
-        "editTitle": "Ajustes del proyecto",
-        "save": "Guardar",
-        "saving": "Guardando…",
-        "saveFailed": "No se pudo guardar el proyecto.",
-        "deleteProject": "Eliminar proyecto",
-        "deleteBlocked": "Cierra sus sesiones primero.",
-        "deleting": "Eliminando…"
       },
       "repository": {
         "label": "Repositorios",
@@ -507,7 +469,7 @@
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
       "routines": "Rutinas",
-      "routinesSoon": "Las rutinas todavía no están aquí.",
+      "routinesSoon": "Las automatizaciones todavía no están aquí.",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
     },
     "deleteSession": {
@@ -554,6 +516,90 @@
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
       "installerDigest": "SHA-256 del instalador: {{digest}}"
+    },
+    "add": {
+      "title": "Añadir un host",
+      "meta": "Nada del host queda expuesto a internet.",
+      "back": "Atrás",
+      "crumbNewSession": "Nueva sesión",
+      "use": "Usar este host",
+      "defaultName": "Nuevo host",
+      "install": {
+        "title": "Instalar",
+        "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
+        "done": "Instalado",
+        "format": "Formato de instalación",
+        "command": "Comando",
+        "agentPrompt": "Instrucción para el agente"
+      },
+      "connect": {
+        "title": "Conectar",
+        "subtitle": "El runner se registra con el nombre de máquina que reporta."
+      }
+    }
+  },
+  "projects": {
+    "page": {
+      "newTitle": "Nuevo proyecto",
+      "editTitle": "Ajustes del proyecto",
+      "name": "Nombre del proyecto",
+      "namePlaceholder": "Ponle nombre al proyecto",
+      "back": "Atrás",
+      "crumbSessions": "Sesiones",
+      "crumbNewSession": "Nueva sesión",
+      "create": "Crear proyecto",
+      "creating": "Creando…",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "failed": "No se pudo crear el proyecto.",
+      "saveFailed": "No se pudo guardar el proyecto.",
+      "recap": {
+        "name": "Ponle nombre al proyecto y elige sus repositorios.",
+        "repositories": "Elige al menos un repositorio.",
+        "default": "Marca al menos un repositorio por defecto."
+      },
+      "summary": {
+        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
+        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
+      },
+      "steps": {
+        "repositories": {
+          "title": "Repositorios",
+          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
+          "label": "Repositorios por defecto",
+          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
+          "defaultCount": "{{defaults}} de {{count}} por defecto",
+          "search": "Buscar repositorios…",
+          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+          "none": "Todavía no hay ningún repositorio conectado.",
+          "default": "Por defecto",
+          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
+        },
+        "host": {
+          "title": "Host por defecto",
+          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
+          "none": "Todavía no hay ningún host emparejado."
+        },
+        "agent": {
+          "title": "Agente por defecto",
+          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
+        }
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "hint": "Elimina este proyecto.",
+        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
+        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
+        "action": "Eliminar proyecto",
+        "deleting": "Eliminando…",
+        "failed": "No se pudo eliminar el proyecto."
+      }
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar {{name}}?",
+      "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
+      "confirm": "Eliminar proyecto"
     }
   },
   "home": {

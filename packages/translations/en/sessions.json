@@ -60,16 +60,6 @@
       "add": "Add host…",
       "offline": "Offline"
     },
-    "addHost": {
-      "title": "Add a host",
-      "description": "A server you control — a cloud VM, a build box, or your own workstation.",
-      "instruction": "Run this on it, once",
-      "format": "How to read it",
-      "command": "Command",
-      "agentPrompt": "Agent prompt",
-      "use": "Use this host",
-      "defaultName": "New host"
-    },
     "project": {
       "label": "Project",
       "placeholder": "Project",
@@ -78,34 +68,6 @@
       "loading": "Loading projects…",
       "add": "New project…",
       "noRepositories": "No repositories"
-    },
-    "projectDialog": {
-      "title": "New project",
-      "description": "A body of work: the repositories it holds, and what a new session in it starts with.",
-      "name": "Name",
-      "namePlaceholder": "XRP Mobile",
-      "repositories": "Default repositories",
-      "repositoriesHint": "Ticked in every new session. Add others per session.",
-      "defaultCount": "{{defaults}} of {{count}} by default",
-      "search": "Search repositories…",
-      "noMatch": "No repository matches “{{query}}”.",
-      "noRepositories": "No repository is connected yet.",
-      "default": "Default",
-      "defaultTitle": "Cloned by default in new sessions",
-      "branchEmpty": "No branch named “{{query}}”",
-      "host": "Default host",
-      "noHost": "No host is paired yet.",
-      "agent": "Default agent",
-      "create": "Create project",
-      "creating": "Creating…",
-      "failed": "The project could not be created.",
-      "editTitle": "Project settings",
-      "save": "Save",
-      "saving": "Saving…",
-      "saveFailed": "The project could not be saved.",
-      "deleteProject": "Delete project",
-      "deleteBlocked": "Close its sessions first.",
-      "deleting": "Deleting…"
     },
     "repository": {
       "label": "Repositories",
@@ -202,7 +164,7 @@
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
     "routines": "Routines",
-    "routinesSoon": "Routines are not here yet.",
+    "routinesSoon": "Automations are not here yet.",
     "writeFailed": "That change did not land. Try again."
   },
   "deleteSession": {

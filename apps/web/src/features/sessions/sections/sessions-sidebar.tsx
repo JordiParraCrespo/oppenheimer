@@ -6,7 +6,7 @@ import {
   Skeleton,
   useNow,
 } from '@oppenheimer/design-system-web';
-import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
   useMoveSession,
@@ -36,22 +36,12 @@ import { ProjectGroup } from './project-group';
 import type { SessionRowActions } from './session-row';
 
 /**
- * The dialogs load when first opened. The sidebar is on every authenticated
- * route, so what it imports is the console's first load, and the project
- * dialog alone carries the repository picker, the agent marks and a form.
+ * The dialog loads when first opened: the sidebar is on every authenticated
+ * route, so what it imports is the console's first load.
  */
-const ProjectDialog = lazy(() =>
-  import('../dialogs/project').then((module) => ({ default: module.ProjectDialog })),
-);
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
-
-/** Which dialog is open, and about what. */
-type Dialog =
-  | { kind: 'new-project' }
-  | { kind: 'project'; project: ProjectEntity }
-  | { kind: 'delete'; session: SessionEntity };
 
 /**
  * The console's sidebar body: the sessions grouped by project
@@ -66,11 +56,12 @@ type Dialog =
  * (the groups, in the order the API lists them) and the hosts (a facet's
  * names) — the minute clock the ages are read against, the state two siblings
  * share (the filters, the query, the folded groups, which row's menu or rename
- * is open, which dialog is up) and the two mutations a row cannot own: a
- * rename commits from the inline input, a move from the row menu's pane. The
- * head is a component that draws what it is handed; each group and each row
- * are sections, because the highlight is theirs to subscribe to; the delete
- * and the project dialog own their own mutations.
+ * is open, which row's delete is up) and the two mutations a row cannot own:
+ * a rename commits from the inline input, a move from the row menu's pane.
+ * The head is a component that draws what it is handed; each group and each
+ * row are sections, because the highlight is theirs to subscribe to; the
+ * delete dialog owns its own mutation, and New project and Project settings
+ * are pages (`/projects/new`, `/projects/$projectId`).
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -95,7 +86,7 @@ export function SessionsSidebar() {
   const [closed, setClosed] = useState<string[]>([]);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
-  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [deleting, setDeleting] = useState<SessionEntity | null>(null);
 
   const rename = useRenameSession();
   const move = useMoveSession();
@@ -141,7 +132,7 @@ export function SessionsSidebar() {
     onRenameCancel: () => setRenaming(null),
     onRename: (session) => setRenaming({ id: session.id, draft: session.name }),
     onMove: (session, projectId) => move.mutate({ id: session.id, projectId }),
-    onDelete: (session) => setDialog({ kind: 'delete', session }),
+    onDelete: (session) => setDeleting(session),
     moveTargets: (session) => projectsForMove(projects.data ?? [], session),
   };
 
@@ -159,7 +150,7 @@ export function SessionsSidebar() {
         onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
         onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
         onQueryChange={setQuery}
-        onNewProject={() => setDialog({ kind: 'new-project' })}
+        onNewProject={() => navigate({ to: '/projects/new' })}
       />
 
       {failure ? (
@@ -208,7 +199,9 @@ export function SessionsSidebar() {
                 onNewSessionHere={(target) =>
                   navigate({ to: '/sessions/new', search: { project: target.id } })
                 }
-                onSettings={(target) => setDialog({ kind: 'project', project: target })}
+                onSettings={(target) =>
+                  navigate({ to: '/projects/$projectId', params: { projectId: target.id } })
+                }
                 rows={rows}
               />
             );
@@ -217,26 +210,8 @@ export function SessionsSidebar() {
       </div>
 
       <Suspense fallback={null}>
-        {dialog?.kind === 'new-project' ? (
-          <ProjectDialog onClose={() => setDialog(null)} onSaved={() => setDialog(null)} />
-        ) : null}
-        {dialog?.kind === 'project' ? (
-          <ProjectDialog
-            project={dialog.project}
-            // The archive's own fence: resolved rows stay for ever so the slug is
-            // never reissued, and they do not hold a project.
-            openSessionCount={
-              all.filter(
-                (session) =>
-                  session.projectId === dialog.project.id && session.lifecycle !== 'resolved',
-              ).length
-            }
-            onClose={() => setDialog(null)}
-            onSaved={() => setDialog(null)}
-          />
-        ) : null}
-        {dialog?.kind === 'delete' ? (
-          <DeleteSessionDialog session={dialog.session} onClose={() => setDialog(null)} />
+        {deleting ? (
+          <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
         ) : null}
       </Suspense>
     </div>

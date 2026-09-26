@@ -201,6 +201,11 @@ earlier note:
   a project chip. The 2026-09-26 export puts one first on New session, with
   a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
   works out the data model, the API and the console for it (2026-09-26).
+- `versions/mvp/05-screens.md` and `12-projects-on-the-console.md`: the
+  project dialog and the Add host dialog are pages over the main column
+  (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
+  evening export, and the second rail item reads Automations. A project
+  needs a repository to be saved from the console (2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,

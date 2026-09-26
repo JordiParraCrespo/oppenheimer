@@ -97,11 +97,13 @@ export function ProjectGroup({
           ) : null}
         </SidebarEmptyRow>
       ) : (
-        <SessionList className="px-3">
-          {sessions.map((session) => (
-            <SessionRow key={session.id} session={session} now={now} rows={rows} />
-          ))}
-        </SessionList>
+        <div className="px-3">
+          <SessionList>
+            {sessions.map((session) => (
+              <SessionRow key={session.id} session={session} now={now} rows={rows} />
+            ))}
+          </SessionList>
+        </div>
       )}
     </div>
   );

@@ -30,14 +30,16 @@
   the header; the account menu at the bottom with appearance and
   language; hosts in a settings drawer. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
-  console's lists (Sessions current with its count; Routines drawn and
-  disabled until its page lands), the head reads Projects with the
+  console's lists (Sessions current with its count; Automations — the
+  2026-09-26 evening export's word for routines, in the copy only — drawn
+  and disabled until its page lands), the head reads Projects with the
   count, a New project button and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
   which starts the composer on that project with its defaults) and
-  Project settings (the project dialog editing; Delete project is the
-  archive and is disabled while the project has unresolved sessions). An
+  Project settings (the project page editing, `/projects/{id}`; Delete
+  project is the archive behind a confirm, and is disabled while the
+  project has unresolved sessions). An
   empty project shows an empty row with a link to start one. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
   menu listing the other projects that hold the session's repository,
@@ -50,13 +52,13 @@
   is one screen: a sidebar beside the pane a session opens in. The
   settings drawer above is a later slice, and a drawer is not a route;
   until it arrives the machines a workspace owns are *listed* nowhere —
-  a new one is paired from the Add host dialog below, or in onboarding,
+  a new one is paired on the Add a host page below, or in onboarding,
   and there is no unpair control yet.
   (Decided 2026-09-21 with the version-1 frames; the starter's Settings
   and Profile screens were deleted rather than left unnavigated.)
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
-  2026-09-26 export; the project chip and its New project… dialog are
+  2026-09-26 export; the project chip and its New project… page are
   12, which supersedes the four-chip sentence below); a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
@@ -105,7 +107,10 @@
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's
-  foot action opens the **Add host dialog**: the same instruction in
+  foot action opens the **Add a host page** (`/hosts/new`; a dialog until
+  the 2026-09-26 evening export made it a page over the main column, built
+  like the automation editor: a page header, then two numbered steps,
+  Install and Connect): the same instruction in
   two forms behind a Command / Agent prompt switch, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
@@ -115,7 +120,7 @@
   enabled then. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,
   because a first-run flow that ends on a machine which never came up
-  has claimed something the console cannot use; the dialog is picking
+  has claimed something the console cannot use; the page is picking
   the host of a session, and a session may be started on a machine
   whose runner is still coming up — the control plane records it and
   owes it to that host the moment it connects, which is what the

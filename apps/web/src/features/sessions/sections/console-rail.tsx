@@ -8,10 +8,11 @@ import { useTranslation } from 'react-i18next';
  * its lists (`product/versions/mvp/12-projects-on-the-console.md`).
  *
  * Sessions is the one list the console has today, so it is the current item
- * and carries the count. Routines is drawn where the export draws it and
+ * and carries the count. Automations — the 2026-09-26 evening export's word
+ * for routines, in the copy only — is drawn where the export draws it and
  * disabled: a control that goes nowhere is worse than one that says it is
- * not here yet, and the tooltip says so. It becomes a link when the routines
- * page lands.
+ * not here yet, and the tooltip says so. It becomes a link when that page
+ * lands.
  *
  * A section rather than kit, because the count is a product read; it is the
  * same list the sidebar subscribes to, so the read costs nothing extra.

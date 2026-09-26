@@ -1,13 +1,11 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ProjectSelect } from '../components/project-select';
-import { ProjectDialog } from '../dialogs/project';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
-import { useProjectSearch } from '../hooks/use-project-search';
+import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
 
 /**
@@ -20,14 +18,15 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * workspace has, so a refetch of the host list does not re-render it — what
  * it subscribes to is only whether that list has answered, because a pick
  * made before it has would drop the project's default host as if it were
- * gone. New project… is this chip's dialog: what it makes is picked here, and
- * so is the project the sidebar's "New session here" names in the address.
+ * gone. New project… is the project page (`/projects/new`), which lands back
+ * here with what it made in the address — the same `?project=` the sidebar's
+ * "New session here" names — and the chip picks it once the lists can.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
   const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
-  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const projects = useProjects();
@@ -55,33 +54,21 @@ export function NewSessionProject() {
   }
 
   // The sidebar's "New session here" names the project in the address.
-  useProjectSearch(search.project, projects.data, hostsReady === true, pick);
+  useSearchPick(search.project, projects.data, hostsReady === true, pick);
 
   return (
-    <>
-      <ProjectSelect
-        projects={toProjectOptions(projects.data ?? [], {
-          noRepositories: t('sessions.new.project.noRepositories'),
-        })}
-        value={value}
-        onValueChange={(id) => {
-          const next = projects.data?.find((candidate) => candidate.id === id);
-          if (next) pick(next);
-        }}
-        onNewProject={() => setCreating(true)}
-        loading={projects.isPending}
-        variant="tab"
-      />
-
-      {creating ? (
-        <ProjectDialog
-          onClose={() => setCreating(false)}
-          onSaved={(created) => {
-            pick(created);
-            setCreating(false);
-          }}
-        />
-      ) : null}
-    </>
+    <ProjectSelect
+      projects={toProjectOptions(projects.data ?? [], {
+        noRepositories: t('sessions.new.project.noRepositories'),
+      })}
+      value={value}
+      onValueChange={(id) => {
+        const next = projects.data?.find((candidate) => candidate.id === id);
+        if (next) pick(next);
+      }}
+      onNewProject={() => navigate({ to: '/projects/new' })}
+      loading={projects.isPending}
+      variant="tab"
+    />
   );
 }

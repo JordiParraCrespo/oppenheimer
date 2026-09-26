@@ -3,8 +3,6 @@ import type {
   ChipSelectOption,
   EffortStop,
   RepositoryOption,
-  RepositoryRowOption,
-  RepositoryRowValue,
   RepositoryScope,
 } from '@oppenheimer/design-system-web';
 import {
@@ -13,8 +11,9 @@ import {
   type CreateSessionInput,
   type HostEntity,
   type ProjectEntity,
-  type ProjectRepositoryInput,
+  parseRepositoryKey,
   type RepositoryEntity,
+  repositoryKey,
   shortName,
 } from '@oppenheimer/frontend-consumer';
 import {
@@ -27,43 +26,19 @@ import {
 } from '@oppenheimer/shared/agents';
 import { MAX_SESSION_CHECKOUTS } from '@oppenheimer/shared/schemas/session';
 
+// The key a picker's row is named by is the console's, kept in the product
+// package; re-exported so the chips beside this file read one vocabulary.
+export { parseRepositoryKey, repositoryKey } from '@oppenheimer/frontend-consumer';
+
 /**
  * Entities in, option shapes out. Nothing here renders, and nothing here
  * fetches: this is the one place that knows both the console's vocabulary and
  * the design system's, so a picker cannot drift from what the API answered.
  *
- * The one genuinely tricky mapping is the repository's **id**. A picker's rows
- * need one string each, and `githubRepoId` alone is not unique across two
- * installations of the App — so a row is keyed by the pair, and the pair is
- * what is parsed back out when a session is created.
+ * The one genuinely tricky mapping is the repository's **id**: a row is keyed
+ * by the installation and GitHub's id together (`repositoryKey`, the product
+ * package's), and the pair is parsed back out when a session is created.
  */
-
-/** A repository as this screen holds it: our installation row plus GitHub's id. */
-export interface RepositoryRef {
-  installationId: string;
-  githubRepoId: number;
-}
-
-/**
- * The picker's row id: `<installationId>:<githubRepoId>`. The id comes as a
- * number off the installation listing and as a string off a project row or a
- * checkout (the column is a bigint); the key is the same either way.
- */
-export function repositoryKey(ref: {
-  installationId: string;
-  githubRepoId: number | string;
-}): string {
-  return `${ref.installationId}:${ref.githubRepoId}`;
-}
-
-/** The pair a row id names, or null when it names nothing this screen knows. */
-export function parseRepositoryKey(key: string): RepositoryRef | null {
-  const separator = key.lastIndexOf(':');
-  if (separator < 1) return null;
-  const githubRepoId = Number(key.slice(separator + 1));
-  if (!Number.isInteger(githubRepoId) || githubRepoId <= 0) return null;
-  return { installationId: key.slice(0, separator), githubRepoId };
-}
 
 /**
  * The hosts, as the host chip's rows.
@@ -277,42 +252,4 @@ export interface NewSessionDraftShape {
   scope: RepositoryScope[];
   agent: CodingAgentId;
   model: string | null;
-}
-
-/**
- * The installations' repositories as the project dialog's rows, with the
- * branches of the ones already ticked. Keyed like the scope chip, so a row
- * ticked here is the same repository the chip will hold.
- */
-export function toProjectRepositoryRows(
-  repositories: readonly { repository: RepositoryEntity; installationId: string }[],
-  branches: ReadonlyMap<number, readonly BranchEntity[]>,
-): RepositoryRowOption[] {
-  return repositories.map(({ repository, installationId }) => ({
-    id: repositoryKey({ installationId, githubRepoId: repository.githubRepoId }),
-    name: repository.fullName,
-    defaultBranch: repository.defaultBranch,
-    branches: (branches.get(repository.githubRepoId) ?? []).map((branch) => ({
-      value: branch.name,
-    })),
-  }));
-}
-
-/**
- * The dialog's rows as `POST /projects` takes them. A row whose id no longer
- * parses is dropped rather than sent, for the same reason a checkout is.
- */
-export function toProjectRepositoryInputs(
-  rows: readonly RepositoryRowValue[],
-  defaultBranches: ReadonlyMap<string, string>,
-): ProjectRepositoryInput[] {
-  return rows.flatMap((row) => {
-    const ref = parseRepositoryKey(row.id);
-    if (!ref) return [];
-    // The repository's own default branch is not a choice, so it is not sent:
-    // absent reads live, and a renamed default branch follows.
-    const baseBranch =
-      row.branch && row.branch !== defaultBranches.get(row.id) ? row.branch : undefined;
-    return [{ ...ref, isDefault: row.isDefault, ...(baseBranch ? { baseBranch } : {}) }];
-  });
 }

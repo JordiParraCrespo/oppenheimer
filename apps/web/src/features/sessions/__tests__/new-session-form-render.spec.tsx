@@ -42,8 +42,6 @@ vi.mock('../components/agent-select', () => ({
   AgentSelect: chip('agent', { agent: 'codex', model: null }),
 }));
 vi.mock('../components/effort-select', () => ({ EffortSelect: chip('effort', 'high') }));
-vi.mock('../dialogs/add-host', () => ({ AddHostDialog: () => null }));
-vi.mock('../dialogs/project', () => ({ ProjectDialog: () => null }));
 
 /**
  * The reads, from a store the test can settle. `useSyncExternalStore` is what
