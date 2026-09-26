@@ -401,3 +401,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   project made in the dialog has no origin, so the auto-created path for
   callers that send only checkouts is unchanged. The grouped sidebar and
   the row menu are the next slice.
+- 2026-09-26: **a session's paths keep the project that created it.** A
+  session moves between projects (`POST /sessions/{id}/move`, one
+  `session.moved` event the row folds, 03), and its worktree and branch do
+  not: `work_session.projectSlug` snapshots the directory name at request,
+  and every later launch reads it from the row rather than from the project
+  the session is in now.
+

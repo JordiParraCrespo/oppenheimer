@@ -129,7 +129,7 @@ export function NewSessionForm() {
   }
 
   // The sidebar's "New session here" names the project in the address.
-  useProjectSearch(search.project, projects.data, pick);
+  useProjectSearch(search.project, projects.data, !hosts.isPending, pick);
 
   function start(prompt: string) {
     if (!draft.hostId) return;

@@ -44,8 +44,15 @@ export interface RepositoryRef {
   githubRepoId: number;
 }
 
-/** The picker's row id: `<installationId>:<githubRepoId>`. */
-export function repositoryKey(ref: RepositoryRef): string {
+/**
+ * The picker's row id: `<installationId>:<githubRepoId>`. The id comes as a
+ * number off the installation listing and as a string off a project row or a
+ * checkout (the column is a bigint); the key is the same either way.
+ */
+export function repositoryKey(ref: {
+  installationId: string;
+  githubRepoId: number | string;
+}): string {
   return `${ref.installationId}:${ref.githubRepoId}`;
 }
 

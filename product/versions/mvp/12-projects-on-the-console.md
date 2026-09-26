@@ -79,8 +79,8 @@ slug — and grows what the dialog edits.
 - `POST /sessions` is unchanged: `projectId` plus at most one checkout.
   The console always sends the project it shows, so the implicit "the
   project is the first checkout's" path is for API callers only.
-- Moving a session (`PATCH /sessions/{id}` with `projectId`) and the
-  row's rename are the sidebar slice's, not this one's.
+- Moving a session and the row's rename are the sidebar's: the route,
+  the event and what it leaves alone are 03's; the chrome is 05's.
 
 ### Console
 
@@ -124,27 +124,11 @@ slug — and grows what the dialog edits.
 
 ### The grouped sidebar
 
-- `Rail` left of the sidebar (a `rail` slot on the shell), Sessions current
-  with its count; Routines drawn where the export draws it and **disabled**
-  with a tooltip saying it is not here yet, until the routines page lands.
-- The head reads **Projects** with the count, a New project button (the
-  same dialog) and the filter menu, which gains a **Project** facet. Under
-  it `SidebarSearch` narrows rows live in the browser (the list is already
-  whole), then the active-filter chips.
-- One `SidebarProjectHeader` per project, in the order the API lists them,
-  its count and two hover actions: **New session here**
-  (`/sessions/new?project=<id>`, which starts the composer on that project
-  with its defaults) and **Project settings** (the project dialog in edit
-  mode: Save, and Delete project, which is the archive and stays disabled
-  while the project holds sessions). An empty project shows the empty row
-  with a link to start one. A session whose project the list does not hold
-  goes last under "Other sessions".
-- A row's ellipsis menu: **Rename** (inline, `PATCH /sessions/{id}`),
-  **Move to project…** (a pane in the same menu listing the other projects
-  that hold the session's repository, `POST /sessions/{id}/move`, one new
-  `session.moved` event the row folds), **Delete** (a confirm dialog over
-  the close: the session stops, its worktree leaves the host, the row stays
-  resolved so the name is never reissued).
+Built after New session, and specified where the rest of the console is:
+the rail, the grouped list, the head, the search, the header actions, the
+row menu and `?project=` are 05's sidebar bullet; the move route,
+`session.moved`, `SESSIONS_018` and the slug the host's paths keep are 03's.
+This note stays the projects-on-New-session note.
 
 ### Later slices, in order
 

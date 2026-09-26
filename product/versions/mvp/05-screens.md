@@ -25,10 +25,24 @@
   ending on New session"; decided 2026-09-19 with the version-1 frames.)
 - Sidebar: sessions as a branch glyph coloured by state, name, age on
   hover; a session still provisioning joins the list at once with a
-  pulsing grey glyph; New session on top; a filter menu (repository,
-  agent, host, sort) with the active filters as chips under the header;
-  the account menu at the bottom with appearance and language; hosts in
-  a settings drawer.
+  pulsing grey glyph; New session on top; a filter menu (project,
+  repository, agent, host, sort) with the active filters as chips under
+  the header; the account menu at the bottom with appearance and
+  language; hosts in a settings drawer. Since the 2026-09-26 export the
+  list is **grouped by project**: a rail left of the sidebar switches the
+  console's lists (Sessions current with its count; Routines drawn and
+  disabled until its page lands), the head reads Projects with the
+  count, a New project button and the filter menu, a live search box
+  narrows the rows, and each project is a folding header with its count
+  and two hover actions — New session here (`/sessions/new?project=`,
+  which starts the composer on that project with its defaults) and
+  Project settings (the project dialog editing; Delete project is the
+  archive and is disabled while the project has unresolved sessions). An
+  empty project shows an empty row with a link to start one. A row's
+  ellipsis menu: Rename inline, Move to project… as a pane in the same
+  menu listing the other projects that hold the session's repository,
+  and Delete, a confirm over the close that says whether to discard work
+  that is not pushed.
 - The sidebar **is** the console's navigation, and version 1 has no
   other destination: no nav rows, no chrome bar over the pane, no
   command palette, and no settings or profile page — the account menu

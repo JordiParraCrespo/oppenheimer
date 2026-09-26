@@ -13,14 +13,9 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { MoveSessionCommand } from './move-session.command';
 
 /**
- * Move a session to another project (`product/versions/mvp/12-projects-on-the-console.md`).
- *
- * Only a project that holds every repository the session checked out can take
- * it — the move dialog says so and this is what holds it to that. Nothing on
- * a host changes: the branch and the worktree stay where they are, because the
- * directory carries the slug of the project that created it and a path is
- * never an identity. So, like a rename, the move is one event the row folds
- * and no host is told.
+ * The move route of `product/versions/mvp/03-control-plane.md`: the check
+ * that the project holds the session's repositories, then the append. The
+ * host is told nothing; the paths it holds carry `session.projectSlug`.
  */
 @CommandHandler(MoveSessionCommand)
 export class MoveSessionCommandHandler

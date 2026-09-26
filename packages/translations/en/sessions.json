@@ -194,14 +194,17 @@
     "moveNone": "No other project holds this session's repository.",
     "delete": "Delete",
     "routines": "Routines",
-    "routinesSoon": "Routines are not here yet."
+    "routinesSoon": "Routines are not here yet.",
+    "writeFailed": "That change did not land. Try again."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
     "description": "The session stops, its worktree is removed from the host, and the transcript is gone. Commits already pushed stay on the remote.",
     "confirm": "Delete session",
     "deleting": "Deleting…",
-    "failed": "The session could not be deleted."
+    "failed": "The session could not be deleted.",
+    "discard": "Also discard work that is not pushed",
+    "keeps": "Deleting stops if the session has work that is not pushed."
   },
   "filters": {
     "label": "Filter sessions",

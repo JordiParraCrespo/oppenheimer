@@ -43,6 +43,7 @@ export class WorkSessionMapper
     record.id = entity.id;
     record.organizationId = entity.organizationId;
     record.projectId = entity.projectId;
+    record.projectSlug = entity.projectSlug;
     record.createdByUserId = entity.createdByUserId;
     record.hostId = entity.hostId;
     record.name = entity.name;
@@ -77,6 +78,7 @@ export class WorkSessionMapper
       updatedAt: record.updatedAt,
       props: {
         organizationId: record.organizationId,
+        projectSlug: record.projectSlug,
         createdByUserId: record.createdByUserId,
         hostId: record.hostId,
         slug: record.slug,

@@ -8,7 +8,7 @@ import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-gr
  * group even when empty, a session whose project is gone still shows, and a
  * session may move only where its repository already is.
  */
-const project = (id: string, repos: number[]) =>
+const project = (id: string, repos: string[]) =>
   new ProjectEntity(
     id,
     id,
@@ -28,19 +28,19 @@ const project = (id: string, repos: number[]) =>
     new Date(),
   );
 
-const session = (id: string, projectId: string, repos: number[], name = id) =>
+const session = (id: string, projectId: string, repos: string[], name = id) =>
   ({
     id,
     projectId,
     name,
-    checkouts: repos.map((githubRepoId) => ({ githubRepoId: String(githubRepoId) })),
+    checkouts: repos.map((githubRepoId) => ({ githubRepoId })),
   }) as unknown as SessionEntity;
 
 describe('groupByProject', () => {
   it('keeps the projects’ order, includes empty ones, and files orphans last', () => {
     const groups = groupByProject(
-      [project('b', [1]), project('a', [2])],
-      [session('s1', 'a', [2]), session('s2', 'gone', [3]), session('s3', 'b', [1])],
+      [project('b', ['1']), project('a', ['2'])],
+      [session('s1', 'a', ['2']), session('s2', 'gone', ['3']), session('s3', 'b', ['1'])],
     );
     expect(groups.map((group) => group.project?.id ?? null)).toEqual(['b', 'a', null]);
     expect(groups.map((group) => group.sessions.map((s) => s.id))).toEqual([
@@ -54,8 +54,10 @@ describe('groupByProject', () => {
 
 describe('projectsForMove', () => {
   it('offers every other project that holds all of the session’s repositories', () => {
-    const projects = [project('here', [1]), project('yes', [1, 2]), project('no', [2])];
-    expect(projectsForMove(projects, session('s', 'here', [1])).map((p) => p.id)).toEqual(['yes']);
+    const projects = [project('here', ['1']), project('yes', ['1', '2']), project('no', ['2'])];
+    expect(projectsForMove(projects, session('s', 'here', ['1'])).map((p) => p.id)).toEqual([
+      'yes',
+    ]);
     // A session with no checkout can go anywhere but where it is.
     expect(projectsForMove(projects, session('s', 'here', [])).map((p) => p.id)).toEqual([
       'yes',

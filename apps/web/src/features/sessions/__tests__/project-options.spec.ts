@@ -13,7 +13,7 @@ import {
  * matters: a default the workspace no longer has is skipped, never written.
  */
 const repo = (
-  githubRepoId: number,
+  githubRepoId: string,
   fullName: string,
   isDefault: boolean,
   baseBranch: string | null,
@@ -41,8 +41,8 @@ function project(
     'defaultHostId' in overrides ? (overrides.defaultHostId ?? null) : 'host-1',
     'defaultAgent' in overrides ? (overrides.defaultAgent ?? null) : 'codex',
     overrides.repositories ?? [
-      repo(1, 'acme/atlas', false, null),
-      repo(2, 'acme/xrp-mobile', true, 'develop'),
+      repo('1', 'acme/atlas', false, null),
+      repo('2', 'acme/xrp-mobile', true, 'develop'),
     ],
     new Date(),
     new Date(),
@@ -78,7 +78,7 @@ describe('projectPrefill', () => {
   });
 
   it('leaves the branch empty for a default repository on its own default branch', () => {
-    const own = project({ repositories: [repo(2, 'acme/xrp-mobile', true, null)] });
+    const own = project({ repositories: [repo('2', 'acme/xrp-mobile', true, null)] });
     expect(projectPrefill(own, []).scope?.[0]?.branch).toBe('');
   });
 });

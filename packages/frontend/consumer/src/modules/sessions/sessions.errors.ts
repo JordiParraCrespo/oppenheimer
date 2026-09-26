@@ -33,11 +33,6 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_007',
     message: 'Failed to give the image to the session',
   },
-  /**
-   * The API's own code for an image over the cap, raised here before the
-   * upload: a file that would be refused is not worth sending, and the reader
-   * sees the same words either way.
-   */
   RENAME_FAILED: {
     code: 'SESSIONS_CLIENT_008',
     message: 'Failed to rename the session',
@@ -50,6 +45,11 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_010',
     message: 'Failed to delete the session',
   },
+  /**
+   * The API's own code for an image over the cap, raised here before the
+   * upload: a file that would be refused is not worth sending, and the reader
+   * sees the same words either way.
+   */
   IMAGE_TOO_LARGE: {
     code: 'SESSIONS_012',
     message: 'That image is too large to give the session',

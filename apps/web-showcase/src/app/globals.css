@@ -1,8 +1,0 @@
-@import "tailwindcss";
-@import "@oppenheimer/design-system-web/styles";
-
-@source "../../../../packages/frontend/design-system/web/src/**/*.{ts,tsx}";
-
-/* Dark mode is class-driven. `[data-theme='dark']` is accepted too so markup
-   copied from the design export's pages themes correctly. */
-@custom-variant dark (&:where(.dark, .dark *, [data-theme='dark'], [data-theme='dark'] *));

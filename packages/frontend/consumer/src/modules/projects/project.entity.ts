@@ -8,7 +8,8 @@ import type { CodingAgentId } from '@oppenheimer/shared/agents';
 export interface ProjectRepository {
   id: string;
   installationId: string;
-  githubRepoId: number;
+  /** GitHub's id as the API sends it — a string, because the column is a bigint — the same type a checkout holds. */
+  githubRepoId: string;
   fullName: string;
   isDefault: boolean;
   baseBranch: string | null;
@@ -45,8 +46,8 @@ export class ProjectEntity {
     return this.repositories.map((repository) => shortName(repository.fullName)).join(', ');
   }
 
-  /** Whether the project holds this repository — what the move dialog asks. */
-  includesRepository(githubRepoId: number): boolean {
+  /** Whether the project holds this repository — what the move dialog asks. Takes the id as a checkout holds it. */
+  includesRepository(githubRepoId: string): boolean {
     return this.repositories.some((repository) => repository.githubRepoId === githubRepoId);
   }
 }

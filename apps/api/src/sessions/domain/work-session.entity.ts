@@ -29,6 +29,12 @@ import type { WorkSessionEventEntity } from './work-session-event.entity';
 export interface WorkSessionProps extends SessionFold {
   organizationId: string;
   projectId: string;
+  /**
+   * The project's directory name at request, which every path on the host
+   * carries (`projects/<projectSlug>/sessions/<slug>/`, the branch). A move
+   * changes `projectId` and leaves this alone: a path is never an identity.
+   */
+  projectSlug: string;
   createdByUserId: string;
   /**
    * The host the work runs on. It is the one reference in the schema a handler
@@ -47,6 +53,7 @@ export interface WorkSessionProps extends SessionFold {
 export interface CreateWorkSessionProps {
   organizationId: string;
   projectId: string;
+  projectSlug: string;
   createdByUserId: string;
   hostId: string;
   slug: string;
@@ -101,6 +108,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         },
         organizationId: props.organizationId,
         projectId: props.projectId,
+        projectSlug: props.projectSlug,
         createdByUserId: props.createdByUserId,
         hostId: props.hostId,
         slug: props.slug,
@@ -132,6 +140,11 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
 
   get projectId(): string {
     return this.props.projectId;
+  }
+
+  /** The directory name the host's paths carry; fixed at request, whatever project the session is in now. */
+  get projectSlug(): string {
+    return this.props.projectSlug;
   }
 
   get createdByUserId(): string {

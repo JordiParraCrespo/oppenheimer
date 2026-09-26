@@ -1,16 +1,11 @@
 import {
-  Button,
+  Alert,
+  AlertDescription,
   EmptyState,
-  IconButton,
-  SessionItem,
   SessionList,
-  SidebarEmptyRow,
-  SidebarProjectHeader,
-  SidebarSearch,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
-import type { ProjectEntity, SessionEntity, SessionGroup } from '@oppenheimer/frontend-consumer';
+import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
   useMoveSession,
@@ -18,15 +13,12 @@ import {
   useRenameSession,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { compactAge } from '@oppenheimer/frontend-web';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SessionFilterChips } from '../components/session-filter-chips';
-import { SessionRowMenu } from '../components/session-row-menu';
-import { SessionsFilterMenu } from '../components/sessions-filter-menu';
-import { DeleteSessionDialog } from '../dialogs/delete-session';
-import { ProjectDialog } from '../dialogs/project';
+import { ProjectGroup, type SessionRowActions } from '../components/project-group';
+import { SessionsSidebarHead } from '../components/sessions-sidebar-head';
 import {
   ALL,
   activeFilters,
@@ -42,33 +34,16 @@ import {
 import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-groups';
 
 /**
- * How a session's **group** reads as a dot.
- *
- * The group is what the sidebar shows because it is organised by what needs
- * you rather than by what a process is doing
- * (`product/versions/mvp/05-screens.md`): a session that failed, one whose
- * agent has been blocked for thirty seconds and one whose launch has sat
- * unready for a minute all want the same glance. `working` is the pulsing dot
- * of a session with something happening on a machine elsewhere.
- *
- * One dot is not the group's to give: a session the host has not built yet
- * reads as `idle`, because nothing needs you about it — but the artboard draws
- * it joining the list at once with a pulsing grey glyph, and that is the
- * **lifecycle** speaking, not the group. {@link dotFor} puts the two together.
+ * The dialogs load when first opened. The sidebar is on every authenticated
+ * route, so what it imports is the console's first load, and the project
+ * dialog alone carries the repository picker, the agent marks and a form.
  */
-const DOT: Record<SessionGroup, 'running' | 'idle' | 'failed' | 'pending' | 'completed'> = {
-  working: 'running',
-  'waiting-on-you': 'failed',
-  'ready-for-review': 'running',
-  landing: 'pending',
-  idle: 'idle',
-  resolved: 'completed',
-};
-
-/** The dot a row shows: provisioning first, then what needs you. */
-function dotFor(session: SessionEntity) {
-  return session.isProvisioning ? 'pending' : DOT[session.state];
-}
+const ProjectDialog = lazy(() =>
+  import('../dialogs/project').then((module) => ({ default: module.ProjectDialog })),
+);
+const DeleteSessionDialog = lazy(() =>
+  import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
+);
 
 /** Which dialog is open, and about what. */
 type Dialog =
@@ -77,19 +52,22 @@ type Dialog =
   | { kind: 'delete'; session: SessionEntity };
 
 /**
- * The console's sidebar body: New session, then the sessions grouped by
- * project (`product/versions/mvp/12-projects-on-the-console.md`).
+ * The console's sidebar body: the sessions grouped by project
+ * (`product/versions/mvp/05-screens.md`).
  *
  * The product is the list, so the list is the navigation. It is a feature
  * rather than kit because it reads product hooks; the brand row above it and
  * the account menu below it are the shell's, and the rail beside it is its
  * sibling section.
  *
- * Three reads: the sessions (the rows), the projects (the groups, in the
- * order the API lists them) and the hosts (a filter facet's names). Two
- * mutations live here because the row that triggers them is a component that
- * may not: a rename commits from the inline input, a move from the row menu's
- * pane. Delete and the project dialog own theirs.
+ * What lives here is the three reads — the sessions (the rows), the projects
+ * (the groups, in the order the API lists them) and the hosts (a facet's
+ * names) — the state two siblings share (the filters, the query, the folded
+ * groups, which row's menu or rename is open, which dialog is up) and the two
+ * mutations a row cannot own: a rename commits from the inline input, a move
+ * from the row menu's pane. The head and each group are components that draw
+ * what they are handed; the delete and the project dialog own their own
+ * mutations.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -100,6 +78,7 @@ type Dialog =
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const resolveError = useErrorMessage();
   const { data: sessions, isPending } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
@@ -117,19 +96,24 @@ export function SessionsSidebar() {
   const move = useMoveSession();
 
   const all = sessions ?? [];
-  const options = {
-    project: projectOptions(projects.data, t('sessions.filters.allProjects')),
-    repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
-    agent: agentOptions(all, t('sessions.filters.allAgents'), (agent) =>
-      t(`sessions.agents.${agent}` as 'sessions.agents.claude-code'),
-    ),
-    host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
-  };
+  const options = sessions
+    ? {
+        project: projectOptions(projects.data, t('sessions.filters.allProjects')),
+        repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
+        agent: agentOptions(all, t('sessions.filters.allAgents'), (agent) =>
+          t(`sessions.agents.${agent}` as 'sessions.agents.claude-code'),
+        ),
+        host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
+      }
+    : undefined;
   const visible = applyFilters(all, filters).filter((session) => matchesQuery(session, query));
   const dirty = isFiltered(filters);
-  const chips = activeFilters(filters, options);
+  const narrowed = dirty || query.trim().length > 0;
   const groups = groupByProject(projects.data ?? [], visible);
   const settled = sessions !== undefined && projects.data !== undefined;
+  // The write that failed last, if one did: a menu closes on its pick, so the
+  // failure has to stay on screen somewhere the row is.
+  const failure = move.error ?? rename.error;
 
   function commitRename() {
     if (!renaming) return;
@@ -139,56 +123,43 @@ export function SessionsSidebar() {
     setRenaming(null);
   }
 
+  const rows: SessionRowActions = {
+    link: (session) => <Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />,
+    menuFor,
+    onMenuOpenChange: (session, open) => setMenuFor(open ? session.id : null),
+    renaming,
+    onRenameDraft: (session, draft) => setRenaming({ id: session.id, draft }),
+    onRenameCommit: commitRename,
+    onRenameCancel: () => setRenaming(null),
+    onRename: (session) => setRenaming({ id: session.id, draft: session.name }),
+    onMove: (session, projectId) => move.mutate({ id: session.id, projectId }),
+    onDelete: (session) => setDialog({ kind: 'delete', session }),
+    moveTargets: (session) => projectsForMove(projects.data ?? [], session),
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-3 pb-2.5">
-        <Button size="sm" block render={<Link to="/sessions/new" />}>
-          {t('nav.newSession')}
-        </Button>
-      </div>
-
-      <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
-        <span className="min-w-0 flex-1 text-[11px] tracking-[0.04em] text-fg-muted uppercase">
-          {t('sessions.sidebar.projects')}
-        </span>
-        {/* No count until the list has settled: a zero under a request that
-            has not answered reads as "you have none", which is a different
-            thing from "not yet known". */}
-        {projects.data ? (
-          <span className="figures text-[11px] text-fg-muted">{projects.data.length}</span>
-        ) : null}
-        <IconButton
-          size="xs"
-          variant="quiet"
-          aria-label={t('sessions.sidebar.newProject')}
-          onClick={() => setDialog({ kind: 'new-project' })}
-        >
-          <Plus />
-        </IconButton>
-        {sessions ? (
-          <SessionsFilterMenu
-            filters={filters}
-            options={options}
-            dirty={dirty}
-            onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
-            onClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
-          />
-        ) : null}
-      </div>
-
-      <SidebarSearch
-        value={query}
-        onValueChange={setQuery}
-        placeholder={t('sessions.sidebar.search')}
-        aria-label={t('sessions.sidebar.search')}
-        clearLabel={t('sessions.sidebar.clearSearch')}
+      <SessionsSidebarHead
+        newSessionLink={<Link to="/sessions/new" />}
+        projectCount={projects.data?.length}
+        filters={filters}
+        options={options}
+        dirty={dirty}
+        chips={options ? activeFilters(filters, options) : []}
+        query={query}
+        onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
+        onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
+        onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
+        onQueryChange={setQuery}
+        onNewProject={() => setDialog({ kind: 'new-project' })}
       />
 
-      {dirty ? (
-        <SessionFilterChips
-          chips={chips}
-          onClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
-        />
+      {failure ? (
+        <Alert variant="destructive" className="mx-3 mb-2">
+          <AlertDescription>
+            {resolveError(failure, t('sessions.sidebar.writeFailed')).message}
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
@@ -210,172 +181,56 @@ export function SessionsSidebar() {
             </EmptyState>
           </div>
         ) : (
-          <>
-            {groups.map(({ project, sessions: rows }) => {
-              const key = project?.id ?? 'unfiled';
-              const open = !closed.includes(key);
-              return (
-                <div key={key} className="mt-1.5 flex flex-col">
-                  <SidebarProjectHeader
-                    name={project?.name ?? t('sessions.sidebar.unfiled')}
-                    count={rows.length}
-                    open={open}
-                    onOpenChange={(next) =>
-                      setClosed((current) =>
-                        next ? current.filter((id) => id !== key) : [...current, key],
-                      )
-                    }
-                    current={rows.some((session) => pathname === `/sessions/${session.id}`)}
-                    actions={
-                      project ? (
-                        <>
-                          <IconButton
-                            size="xs"
-                            variant="quiet"
-                            aria-label={t('sessions.sidebar.newSessionHere', {
-                              name: project.name,
-                            })}
-                            onClick={() =>
-                              navigate({ to: '/sessions/new', search: { project: project.id } })
-                            }
-                          >
-                            <Plus />
-                          </IconButton>
-                          <IconButton
-                            size="xs"
-                            variant="quiet"
-                            aria-label={t('sessions.sidebar.projectSettings', {
-                              name: project.name,
-                            })}
-                            onClick={() => setDialog({ kind: 'project', project })}
-                          >
-                            <Settings />
-                          </IconButton>
-                        </>
-                      ) : undefined
-                    }
-                  />
-                  {!open ? null : rows.length === 0 ? (
-                    <SidebarEmptyRow>
-                      {query || dirty
-                        ? t('sessions.sidebar.noMatches', { query })
-                        : t('sessions.sidebar.emptyProject')}{' '}
-                      {project && !query && !dirty ? (
-                        <Link to="/sessions/new" search={{ project: project.id }}>
-                          {t('sessions.sidebar.startOne')}
-                        </Link>
-                      ) : null}
-                    </SidebarEmptyRow>
-                  ) : (
-                    <SessionList className="px-3">
-                      {rows.map((session) => (
-                        <SessionRow
-                          key={session.id}
-                          session={session}
-                          pathname={pathname}
-                          menuOpen={menuFor === session.id}
-                          onMenuOpenChange={(next) => setMenuFor(next ? session.id : null)}
-                          rename={
-                            renaming?.id === session.id
-                              ? {
-                                  value: renaming.draft,
-                                  onValueChange: (draft) => setRenaming({ id: session.id, draft }),
-                                  onCommit: commitRename,
-                                  onCancel: () => setRenaming(null),
-                                  label: t('sessions.sidebar.renameLabel'),
-                                }
-                              : undefined
-                          }
-                          onRename={() => setRenaming({ id: session.id, draft: session.name })}
-                          onMove={(projectId) => move.mutate({ id: session.id, projectId })}
-                          onDelete={() => setDialog({ kind: 'delete', session })}
-                          moveTargets={projectsForMove(projects.data ?? [], session)}
-                        />
-                      ))}
-                    </SessionList>
-                  )}
-                </div>
-              );
-            })}
-            {dirty && visible.length === 0 ? (
-              <div className="px-3 pt-2">
-                <EmptyState compact>
-                  <EmptyState.Description>{t('sessions.filters.noMatches')}</EmptyState.Description>
-                </EmptyState>
-              </div>
-            ) : null}
-          </>
+          groups.map(({ project, sessions: members }) => {
+            const key = project?.id ?? 'unfiled';
+            return (
+              <ProjectGroup
+                key={key}
+                project={project}
+                sessions={members}
+                open={!closed.includes(key)}
+                onOpenChange={(next) =>
+                  setClosed((current) =>
+                    next ? current.filter((id) => id !== key) : [...current, key],
+                  )
+                }
+                pathname={pathname}
+                narrowed={narrowed}
+                query={query}
+                onNewSessionHere={(target) =>
+                  navigate({ to: '/sessions/new', search: { project: target.id } })
+                }
+                onSettings={(target) => setDialog({ kind: 'project', project: target })}
+                rows={rows}
+              />
+            );
+          })
         )}
       </div>
 
-      {dialog?.kind === 'new-project' ? (
-        <ProjectDialog onClose={() => setDialog(null)} onSaved={() => setDialog(null)} />
-      ) : null}
-      {dialog?.kind === 'project' ? (
-        <ProjectDialog
-          project={dialog.project}
-          sessionCount={all.filter((session) => session.projectId === dialog.project.id).length}
-          onClose={() => setDialog(null)}
-          onSaved={() => setDialog(null)}
-        />
-      ) : null}
-      {dialog?.kind === 'delete' ? (
-        <DeleteSessionDialog session={dialog.session} onClose={() => setDialog(null)} />
-      ) : null}
+      <Suspense fallback={null}>
+        {dialog?.kind === 'new-project' ? (
+          <ProjectDialog onClose={() => setDialog(null)} onSaved={() => setDialog(null)} />
+        ) : null}
+        {dialog?.kind === 'project' ? (
+          <ProjectDialog
+            project={dialog.project}
+            // The archive's own fence: resolved rows stay for ever so the slug is
+            // never reissued, and they do not hold a project.
+            openSessionCount={
+              all.filter(
+                (session) =>
+                  session.projectId === dialog.project.id && session.lifecycle !== 'resolved',
+              ).length
+            }
+            onClose={() => setDialog(null)}
+            onSaved={() => setDialog(null)}
+          />
+        ) : null}
+        {dialog?.kind === 'delete' ? (
+          <DeleteSessionDialog session={dialog.session} onClose={() => setDialog(null)} />
+        ) : null}
+      </Suspense>
     </div>
-  );
-}
-
-/**
- * One row. The age is derived on render rather than held: `compactAge` returns
- * the unit and the count, and the words are ours to translate — `null` is
- * "less than a minute", which the artboard leaves blank rather than labelling.
- * The ellipsis is the row's `action`, shown on hover and while its menu is
- * open; the inline rename replaces the name and hides both.
- */
-function SessionRow({
-  session,
-  pathname,
-  menuOpen,
-  onMenuOpenChange,
-  rename,
-  onRename,
-  onMove,
-  onDelete,
-  moveTargets,
-}: {
-  session: SessionEntity;
-  pathname: string;
-  menuOpen: boolean;
-  onMenuOpenChange: (open: boolean) => void;
-  rename?: React.ComponentProps<typeof SessionItem>['rename'];
-  onRename: () => void;
-  onMove: (projectId: string) => void;
-  onDelete: () => void;
-  moveTargets: ProjectEntity[];
-}) {
-  const { t } = useTranslation();
-  const age = compactAge(session.createdAt);
-
-  return (
-    <SessionItem
-      name={session.name}
-      age={age ? t(`common.relative.${age.unit}`, { count: age.count }) : undefined}
-      state={dotFor(session)}
-      active={pathname === `/sessions/${session.id}`}
-      render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
-      menuOpen={menuOpen}
-      rename={rename}
-      action={
-        <SessionRowMenu
-          open={menuOpen}
-          onOpenChange={onMenuOpenChange}
-          onRename={onRename}
-          onMove={onMove}
-          onDelete={onDelete}
-          projects={moveTargets.map((project) => ({ id: project.id, name: project.name }))}
-        />
-      }
-    />
   );
 }

@@ -29,6 +29,9 @@ import { SessionsErrors } from './sessions.errors';
  */
 /** Entries per page of the start log, and how many pages a start may span. */
 const START_LOG_PAGE = 50;
+/** The API's largest page (`PAGINATION.MAX_LIMIT`), so the whole list is as few requests as it can be. */
+const LIST_PAGE_LIMIT = 100;
+
 const MAX_START_LOG_PAGES = 20;
 
 function toCheckout(data: SessionCheckoutResponseDto): SessionCheckoutEntity {
@@ -105,12 +108,24 @@ export class SessionsRepository {
    * the body.
    */
   @MapApiError(SessionsErrors.FETCH_LIST_FAILED)
+  /**
+   * Every session in the workspace, whatever the endpoint's page size: the
+   * sidebar groups, searches and filters the whole list in the browser, so a
+   * page would be a list that silently ends. Pages are walked at the largest
+   * size the API allows until the total the first page reports is in hand.
+   */
   async findAll(): Promise<SessionEntity[]> {
-    const { data, error } = await heyApiSdk.listSessions();
-    // An absent body is a failed read, not an empty collection — returning `[]`
-    // would render "no sessions" over a request that never succeeded.
-    if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
-    return data.data.map(toEntity);
+    const sessions: SessionEntity[] = [];
+    for (let page = 1; ; page += 1) {
+      const { data, error } = await heyApiSdk.listSessions({
+        query: { page, limit: LIST_PAGE_LIMIT },
+      });
+      // An absent body is a failed read, not an empty collection — returning
+      // `[]` would render "no sessions" over a request that never succeeded.
+      if (error || !data?.data) throw new AppError(SessionsErrors.FETCH_LIST_FAILED);
+      sessions.push(...data.data.map(toEntity));
+      if (data.data.length === 0 || sessions.length >= data.meta.total) return sessions;
+    }
   }
 
   /**

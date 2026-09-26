@@ -146,39 +146,45 @@ export interface RenameSessionVariables {
   name: string;
 }
 
-export function useRenameSession(
-  options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, name }: RenameSessionVariables) => app.sessions.rename(id, name),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
-
 export interface MoveSessionVariables {
   id: string;
   projectId: string;
 }
 
-export function useMoveSession(
-  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+/**
+ * A write to one session's row that the API answers with the row: the detail
+ * takes the answer and the list is re-read. Rename and move are this shape,
+ * and the next patch will be too.
+ */
+function useSessionPatch<TVariables>(
+  patch: (app: ReturnType<typeof useConsumerApp>, variables: TVariables) => Promise<SessionEntity>,
+  options?: UseMutationOptions<SessionEntity, Error, TVariables>,
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, projectId }: MoveSessionVariables) => app.sessions.move(id, projectId),
+    mutationFn: (variables: TVariables) => patch(app, variables),
     ...withCacheOnSuccess(options, (session) => {
       queryClient.setQueryData(sessionsKeys.detail(session.id), session);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });
+}
+
+export function useRenameSession(
+  options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
+) {
+  return useSessionPatch(({ sessions }, { id, name }) => sessions.rename(id, name), options);
+}
+
+export function useMoveSession(
+  options?: UseMutationOptions<SessionEntity, Error, MoveSessionVariables>,
+) {
+  return useSessionPatch(
+    ({ sessions }, { id, projectId }) => sessions.move(id, projectId),
+    options,
+  );
 }
 
 export interface CloseSessionVariables {

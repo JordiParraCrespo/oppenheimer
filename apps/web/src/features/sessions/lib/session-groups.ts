@@ -43,9 +43,7 @@ export function projectsForMove(
   return projects.filter(
     (project) =>
       project.id !== session.projectId &&
-      session.checkouts.every((checkout) =>
-        project.includesRepository(Number(checkout.githubRepoId)),
-      ),
+      session.checkouts.every((checkout) => project.includesRepository(checkout.githubRepoId)),
   );
 }
 

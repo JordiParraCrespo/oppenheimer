@@ -76,21 +76,26 @@ function rowsOf(project: ProjectEntity | undefined): RepositoryRowValue[] {
  *
  * With a `project` it edits: the fields start on the project's own values,
  * the primary is Save, and Delete project — the archive — sits on the left,
- * disabled while the project holds sessions, because the API refuses that
- * and a button that can only answer with an error is not a button.
+ * disabled while the project holds unresolved sessions, because the API
+ * refuses exactly that and a button that can only answer with an error is
+ * not a button.
  *
  * What leaves is the created or saved project, so the section can select it.
  */
 export function ProjectDialog({
   project,
-  sessionCount = 0,
+  openSessionCount = 0,
   onClose,
   onSaved,
 }: {
   /** Absent creates; present edits this project. */
   project?: ProjectEntity;
-  /** How many sessions the project holds, which is what blocks deleting it. */
-  sessionCount?: number;
+  /**
+   * The project's **unresolved** sessions — the fence the archive itself
+   * applies (`countUnresolvedForProject`). Resolved rows stay for ever so a
+   * slug is never reissued, and they do not hold a project.
+   */
+  openSessionCount?: number;
   onClose: () => void;
   onSaved: (project: ProjectEntity) => void;
 }) {
@@ -285,8 +290,10 @@ export function ProjectDialog({
                 type="button"
                 variant="ghost"
                 className="mr-auto"
-                disabled={pending || sessionCount > 0}
-                title={sessionCount > 0 ? t('sessions.new.projectDialog.deleteBlocked') : undefined}
+                disabled={pending || openSessionCount > 0}
+                title={
+                  openSessionCount > 0 ? t('sessions.new.projectDialog.deleteBlocked') : undefined
+                }
                 onClick={() => archive.mutate(project.id)}
               >
                 {archive.isPending

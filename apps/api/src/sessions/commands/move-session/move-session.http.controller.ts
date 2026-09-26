@@ -52,7 +52,11 @@ export class MoveSessionHttpController {
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
-  @ApiProblemResponse({ status: 409, description: 'That project is archived', code: 'SESSIONS_006' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'That project is archived',
+    code: 'SESSIONS_006',
+  })
   @ApiProblemResponse({
     status: 409,
     description: 'That project does not include this session’s repository',

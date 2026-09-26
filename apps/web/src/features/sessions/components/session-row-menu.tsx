@@ -5,7 +5,6 @@ import {
   DropdownMenuItem,
   DropdownMenuPaneItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
   IconButton,
 } from '@oppenheimer/design-system-web';
@@ -21,6 +20,10 @@ import { useTranslation } from 'react-i18next';
  * (`packages/frontend/design-system/AGENTS.md`). The pane lists only the
  * projects that can take the session; the section computes which, because it
  * is the one holding both lists. An empty pane says why.
+ *
+ * No key hints: the export draws R, M and D beside the rows, and nothing
+ * listens for them yet. A painted key that does nothing is a claim, so they
+ * come back with the handler.
  *
  * Props in, choice out: the mutations are the section's and the dialog's.
  */
@@ -59,18 +62,13 @@ export function SessionRowMenu({
       <DropdownMenuContent align="end" className="min-w-47.5">
         {pane === 'root' ? (
           <>
-            <DropdownMenuItem onClick={onRename}>
-              {t('sessions.sidebar.rename')}
-              <DropdownMenuShortcut>R</DropdownMenuShortcut>
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
-              <DropdownMenuShortcut className="ml-0">M</DropdownMenuShortcut>
             </DropdownMenuPaneItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               {t('sessions.sidebar.delete')}
-              <DropdownMenuShortcut>D</DropdownMenuShortcut>
             </DropdownMenuItem>
           </>
         ) : (

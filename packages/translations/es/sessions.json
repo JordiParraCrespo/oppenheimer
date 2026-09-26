@@ -194,14 +194,17 @@
     "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
     "delete": "Eliminar",
     "routines": "Rutinas",
-    "routinesSoon": "Las rutinas todavía no están aquí."
+    "routinesSoon": "Las rutinas todavía no están aquí.",
+    "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
   },
   "deleteSession": {
     "title": "¿Eliminar “{{name}}”?",
     "description": "La sesión se detiene, su worktree se elimina del host y la transcripción desaparece. Los commits ya enviados se quedan en el remoto.",
     "confirm": "Eliminar sesión",
     "deleting": "Eliminando…",
-    "failed": "No se pudo eliminar la sesión."
+    "failed": "No se pudo eliminar la sesión.",
+    "discard": "Descartar también el trabajo sin enviar",
+    "keeps": "La eliminación se detiene si la sesión tiene trabajo sin enviar."
   },
   "filters": {
     "label": "Filtrar sesiones",

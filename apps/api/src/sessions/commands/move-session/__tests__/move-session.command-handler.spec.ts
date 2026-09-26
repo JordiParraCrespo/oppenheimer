@@ -2,8 +2,8 @@ import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectLookupPort } from '../../../../projects/application/project-lookup.port';
-import { ProjectRepositoryEntity } from '../../../../projects/domain/project-repository.entity';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
+import { ProjectRepositoryEntity } from '../../../../projects/domain/project-repository.entity';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionCheckoutEntity } from '../../../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
@@ -40,6 +40,7 @@ function session() {
   const entity = WorkSessionEntity.request({
     organizationId: 'org-acme',
     projectId: 'from',
+    projectSlug: 'xrp-mobile',
     createdByUserId: 'member-1',
     hostId: 'host-1',
     slug: 'brave-otter-a1b2c3',
