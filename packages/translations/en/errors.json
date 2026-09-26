@@ -67,6 +67,7 @@
     "GRANT_002": "You cannot grant more access than you have yourself.",
     "GRANT_003": "That person or team is not part of this organization.",
     "GRANT_004": "Choose an organization before managing access grants.",
+    "RATE_001": "You're sending requests too quickly. Wait a moment and try again.",
     "GITHUB_001": "We could not find that GitHub installation.",
     "GITHUB_002": "GitHub is not configured on this server.",
     "GITHUB_003": "Another workspace has already connected that GitHub installation.",

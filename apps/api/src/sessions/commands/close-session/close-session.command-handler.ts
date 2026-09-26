@@ -53,7 +53,7 @@ export class CloseSessionCommandHandler
       });
     }
     const session = found.unwrap();
-    if (session.isResolved) return { session, hints: [] };
+    if (session.isResolved) return { sessionId: session.id, hints: [] };
 
     await this.sessions.appendEvents(session, [
       {
@@ -69,6 +69,6 @@ export class CloseSessionCommandHandler
     const { hints } = await this.dispatch.close(session, {
       acceptUnpushedWork: command.acceptUnpushedWork,
     });
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

@@ -67,6 +67,7 @@
     "GRANT_002": "No puedes conceder más acceso del que tienes tú.",
     "GRANT_003": "Esa persona o equipo no forma parte de esta organización.",
     "GRANT_004": "Elige una organización antes de gestionar las concesiones de acceso.",
+    "RATE_001": "Estás enviando solicitudes demasiado rápido. Espera un momento y vuelve a intentarlo.",
     "GITHUB_001": "No hemos encontrado esa instalación de GitHub.",
     "GITHUB_002": "GitHub no está configurado en este servidor.",
     "GITHUB_003": "Otro espacio de trabajo ya ha conectado esa instalación de GitHub.",

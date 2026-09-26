@@ -74,6 +74,6 @@ export class RestartSessionCommandHandler
       session,
       await this.launches.build(session, projectSlug),
     );
-    return { session, hints };
+    return { sessionId: session.id, hints };
   }
 }

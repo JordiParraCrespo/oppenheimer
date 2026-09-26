@@ -45,6 +45,7 @@ export class ChangePasswordHttpController {
     description: 'The new password does not meet the password policy',
     code: 'PROFILE_006',
   })
+  @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async changePassword(
     @Req() request: Request,
     @CurrentUser('id') userId: string,
