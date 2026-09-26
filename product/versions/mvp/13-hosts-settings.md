@@ -22,7 +22,7 @@ already on the wire for it.
 | Dot and word: Running · N sessions / Idle / Offline | `status`, `runningSessionCount` | **added** |
 | "connected" / "last seen 2 days ago" | `online`, `lastSeenAt` | built |
 | Rename in place | `PATCH /hosts/{id}` | built |
-| Copy host ID | `id` | built |
+| Copy host ID | `id` | **left out for now** (2026-09-26) |
 | Remove host, and what it costs | `DELETE /hosts/{id}`, `runningSessionCount` | **removal now stops sessions** |
 | A removed host leaves the list | `GET /hosts` | **unpaired now excluded** |
 | Add host: command and agent prompt tabs | `POST /hosts/pairing` | built |
@@ -110,9 +110,10 @@ already on the wire for it.
   type. A host's name is display-only and nothing on disk derives from
   it, so the API keeps accepting any 1–80 characters; the hyphenation is
   the console's to do or not.
-- **The short id.** The frame shows `h_7f3a` beside Copy host ID. The id
-  is the row's UUID and that is what is copied; a short form is a
-  display choice.
+- **Copy host ID is left out for now.** The frame shows `h_7f3a` beside
+  it, but the id is the row's 36-character UUID, and no short form exists
+  to show. Decided 2026-09-26: the menu holds Rename and Remove host until
+  there is a reason to hand the id to someone.
 
 ## Open questions
 

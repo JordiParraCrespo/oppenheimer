@@ -58,10 +58,13 @@
   the count) — and the measured column the sections fill. `/settings`
   itself lands on Profile. It goes through the same guard and the same
   no-workspace redirect as the console. Hosts lists the machines as cards
-  with Add host on the right, which opens the console's one pairing page
-  (`/hosts/new?from=settings`): the header reads where it was opened
-  from — Hosts as the parent crumb, Done rather than Use this host, back
-  to the list. The rows each section draws — picture, name, email,
+  with Add host on the right, which opens the Add a host page inside
+  Settings (`/settings/hosts/new`, the settings sidebar still beside it,
+  the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
+  Use this host, all back to the list. It is the same screen the console
+  mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
+  opened the console's page with `?from=settings`; the frame keeps
+  Settings around it.) The rows each section draws — picture, name, email,
   password on Profile; rename, remove, the install command and the
   preflight on a host card — are their own slices; the frame, the routes
   and the way back are built (2026-09-26).
@@ -119,9 +122,9 @@
   foot action opens the **Add a host page** (`/hosts/new`; a dialog until
   the 2026-09-26 evening export made it a page over the main column, built
   like the automation editor: a page header, then two numbered steps,
-  Install and Connect; Settings → Hosts opens the same page with
-  `?from=settings`): the same instruction in
-  two forms behind a Command / Agent prompt switch, a copyable panel
+  Install and Connect; Settings → Hosts mounts the same screen inside its
+  own frame at `/settings/hosts/new`): the same instruction in
+  two forms behind Command / Agent prompt pills in the panel's band, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
   the token on screen, retiring it in the same write, so a command pasted

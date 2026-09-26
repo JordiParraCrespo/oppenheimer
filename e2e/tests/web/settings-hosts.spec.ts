@@ -10,12 +10,11 @@ import { provisionedUser, signInAs } from '../../support/web';
  * but no runner dials in, so the card reads offline with no last-seen line: the
  * page is about what the control plane holds, and a live link is the fleet
  * suite's subject. The legs are the page's verbs: the account menu's way in,
- * the card, Rename in place, Copy host ID, and Remove behind its confirm,
+ * the card, Rename in place, and Remove behind its confirm,
  * after which the host leaves the list and the timeline says why.
  */
-test('lists, renames, copies and removes a host from Settings', async ({ page, context }) => {
+test('lists, renames and removes a host from Settings', async ({ page }) => {
   test.slow();
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const owner = await provisionedUser('settingshosts');
   const hostId = await pairHost(owner.api, 'build-02');
 
@@ -51,11 +50,6 @@ test('lists, renames, copies and removes a host from Settings', async ({ page, c
   await card.getByRole('button', { name: 'Save' }).click();
   await expect(card).toContainText('build-03');
   await expect(input).toBeHidden();
-
-  // ── Copy host ID ─────────────────────────────────────────────────────────
-  await card.getByRole('button', { name: 'build-03 actions' }).click();
-  await page.getByRole('menuitem', { name: /Copy host ID/ }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(hostId);
 
   // ── Remove, behind its confirm ───────────────────────────────────────────
   await card.getByRole('button', { name: 'build-03 actions' }).click();

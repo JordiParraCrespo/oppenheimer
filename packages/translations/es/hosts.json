@@ -52,7 +52,6 @@
     "renameLabel": "Nombre del equipo",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "copyId": "Copiar ID del equipo",
     "remove": "Eliminar equipo",
     "removeTitle": "¿Eliminar {{name}}?",
     "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",

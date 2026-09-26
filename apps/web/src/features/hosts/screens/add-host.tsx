@@ -17,7 +17,7 @@ import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -47,22 +47,21 @@ const isFormat = (value: string): value is Format => (FORMATS as readonly string
  * one, unlike onboarding's Continue: a session may be started on a machine
  * whose runner is still coming up — the control plane records it and owes
  * it to that host the moment it connects. Using the host lands on New session
- * with it picked (`?host=`), the way a new project lands there picked. Opened
- * from Settings (`?from=settings`) the same page reads Hosts as its parent
- * and Done as its primary, back to the list.
+ * with it picked (`?host=`), the way a new project lands there picked. Mounted
+ * in Settings (`/settings/hosts/new`, inside the Settings frame) the same page
+ * reads Hosts as its parent and Done as its primary, back to the list.
  *
  * Both forms of the instruction come from the API with the secret already in
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen() {
+export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settings' }) {
   const { t } = useTranslation();
-  // Where the page was opened from is in the address, and the header reads
-  // everything it says — crumb, Cancel, Back, the primary — off this one
-  // fact: from Settings the parent is Hosts and the primary is Done, because
-  // nothing there is picking a machine for a session.
-  const search = useSearch({ from: '/_authenticated/_editor/hosts/new' });
-  const settings = search.from === 'settings';
+  // Where the page is mounted says where it was opened from, and the header
+  // reads everything it says — crumb, Cancel, Back, the primary — off this
+  // one fact: in Settings the parent is Hosts and the primary is Done,
+  // because nothing there is picking a machine for a session.
+  const settings = from === 'settings';
   const back = settings ? { to: '/settings/hosts' as const } : { to: '/sessions/new' as const };
   const navigate = useNavigate();
   const resolveError = useErrorMessage();

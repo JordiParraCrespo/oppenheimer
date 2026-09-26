@@ -416,7 +416,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
-
 - 2026-09-26: the version-1 frames gained a Settings page with a Hosts
   section, and the hosts backend is designed against it (13). A host
   read now carries a derived `status` and the count of sessions running
@@ -435,3 +434,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-26: 14's two open questions are settled. Geography comes from
   DB-IP Lite (free, no account), and the owner is emailed about a new
   network only when the host's country or ASN changes.
+- 2026-09-26: **Add host from Settings stays in Settings.** It opens the
+  Add a host page at `/settings/hosts/new`, inside the Settings frame with
+  its Back, as the frame draws it — not a dialog, and no longer the
+  console's page with `?from=settings`. The console keeps `/hosts/new`;
+  both mount the one screen. Copy host ID is left out of the host menu
+  for now (13).

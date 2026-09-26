@@ -61,9 +61,7 @@ export function HostRow({ host }: { host: HostEntity }) {
         action={
           <HostActionsMenu
             name={host.name}
-            id={host.id}
             onRename={() => setRenaming(true)}
-            onCopyId={() => void navigator.clipboard?.writeText(host.id)}
             onRemove={() => setRemoving(true)}
           />
         }

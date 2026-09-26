@@ -39,6 +39,7 @@ import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authe
 import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
 import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
+import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -196,6 +197,12 @@ const AuthenticatedSettingsHostsIndexRoute =
     path: '/hosts/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsHostsNewRoute =
+  AuthenticatedSettingsHostsNewRouteImport.update({
+    id: '/hosts/new',
+    path: '/hosts/new',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRoutesById {
@@ -282,6 +291,7 @@ export interface FileRoutesById {
   '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
   '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
   '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
+  '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
 export interface FileRouteTypes {
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts/new'
     | '/settings/hosts/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/hosts/new'
     | '/projects/$projectId'
     | '/projects/new'
+    | '/settings/hosts/new'
     | '/settings/hosts'
   id:
     | '__root__'
@@ -370,6 +382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_editor/hosts/new'
     | '/_authenticated/_editor/projects/$projectId'
     | '/_authenticated/_editor/projects/new'
+    | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
   fileRoutesById: FileRoutesById
 }
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsHostsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/hosts/new': {
+      id: '/_authenticated/settings/hosts/new'
+      path: '/hosts/new'
+      fullPath: '/settings/hosts/new'
+      preLoaderRoute: typeof AuthenticatedSettingsHostsNewRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
   }
 }
 
@@ -667,12 +687,14 @@ const AuthenticatedEditorRouteWithChildren =
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsHostsNewRoute: typeof AuthenticatedSettingsHostsNewRoute
   AuthenticatedSettingsHostsIndexRoute: typeof AuthenticatedSettingsHostsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsHostsNewRoute: AuthenticatedSettingsHostsNewRoute,
   AuthenticatedSettingsHostsIndexRoute: AuthenticatedSettingsHostsIndexRoute,
 }
 

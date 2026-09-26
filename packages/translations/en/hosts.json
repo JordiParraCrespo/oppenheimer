@@ -52,7 +52,6 @@
     "renameLabel": "Host name",
     "save": "Save",
     "cancel": "Cancel",
-    "copyId": "Copy host ID",
     "remove": "Remove host",
     "removeTitle": "Remove {{name}}?",
     "removeRunning_one": "{{count}} session is running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",

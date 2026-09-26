@@ -229,3 +229,7 @@ earlier note:
   heartbeat. `versions/mvp/14-host-metadata.md` splits it by rate of
   change into `host_inventory`, `host_presence`, `host_network` and
   `host_event`; the old columns go in a later contract step (2026-09-26).
+- `versions/mvp/05-screens.md` had Settings → Hosts open the console's
+  Add a host page with `?from=settings`. It now opens the same screen
+  inside Settings, at `/settings/hosts/new`, with the settings sidebar
+  beside it, and the host menu drops Copy host ID for now (2026-09-26).
