@@ -27,6 +27,11 @@ export type EmailVerificationEmailParams = ActionEmailParams;
  * its one action is the host list, where a pairing nobody recognises is undone.
  */
 export type HostPairedEmailParams = ActionEmailParams;
+/**
+ * A host connected from another country or network operator than before. A
+ * security notice like the pairing one: its one action is the host's page.
+ */
+export type HostNetworkChangedEmailParams = ActionEmailParams;
 
 export interface WelcomeEmailParams extends EmailFrameParams {
   eyebrow: string;
@@ -60,4 +65,5 @@ export abstract class EmailService {
   abstract sendWelcome(to: string, params: WelcomeEmailParams): Promise<void>;
   abstract sendInvitation(to: string, params: InvitationEmailParams): Promise<void>;
   abstract sendHostPaired(to: string, params: HostPairedEmailParams): Promise<void>;
+  abstract sendHostNetworkChanged(to: string, params: HostNetworkChangedEmailParams): Promise<void>;
 }

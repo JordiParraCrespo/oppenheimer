@@ -101,6 +101,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
   };
   const presence: HostPresencePort = {
     observe: vi.fn().mockResolvedValue(true),
+    connectedFrom: vi.fn().mockResolvedValue(undefined),
   };
   const events: RecordSessionEventsPort = {
     record: vi.fn(async (batch: RunnerEventBatch) => ({

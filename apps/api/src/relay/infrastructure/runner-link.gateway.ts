@@ -15,6 +15,7 @@ import type { HostAssertionPort } from '../../hosts/application/host-assertion.p
 import { HOST_ASSERTION } from '../../hosts/hosts.di-tokens';
 import type { LinkRegistryPort } from '../../links/application/link-registry.port';
 import { LINK_REGISTRY } from '../../links/links.di-tokens';
+import { clientAddressOf } from './client-address.util';
 import { CredentialsProcessor } from './credentials.processor';
 import { decodeFrame } from './frame.util';
 import { RelayEventsProcessor } from './relay-events.processor';
@@ -112,10 +113,13 @@ export class RunnerLinkGateway {
       );
       return;
     }
-    this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, hostId));
+    // Read before the upgrade: the address the link came from is a fact about
+    // this request, and the socket is handed over as soon as it is accepted.
+    const address = clientAddressOf(request, this.trustedProxyHops);
+    this.server.handleUpgrade(request, socket, head, (ws) => this.accept(ws, hostId, address));
   }
 
-  private accept(ws: WebSocket, hostId: string): void {
+  private accept(ws: WebSocket, hostId: string, address: string | null): void {
     const timer = setTimeout(
       () => ws.close(RUNNER_LINK_CLOSE_CODES.HELLO_TIMEOUT, 'hello expected'),
       HELLO_TIMEOUT_MS,
@@ -147,7 +151,7 @@ export class RunnerLinkGateway {
         ws.close(RUNNER_LINK_CLOSE_CODES.PROTOCOL_MISMATCH, 'protocol too new');
         return;
       }
-      void this.open(ws, hostId, hello.data);
+      void this.open(ws, hostId, hello.data, address);
     });
     ws.on('error', (error) => {
       this.logger.warn({
@@ -162,6 +166,7 @@ export class RunnerLinkGateway {
     ws: WebSocket,
     hostId: string,
     hello: ReturnType<typeof helloSchema.parse>,
+    address: string | null,
   ): Promise<void> {
     const link = new SocketRunnerLink(
       hostId,
@@ -231,7 +236,7 @@ export class RunnerLinkGateway {
       }),
     );
     try {
-      await this.events.onHello(link, hello, link.connectedAt);
+      await this.events.onHello(link, hello, link.connectedAt, address);
     } catch (error) {
       this.logger.error({ message: 'hello could not be recorded', hostId, error: String(error) });
     }
@@ -322,6 +327,11 @@ export class RunnerLinkGateway {
   }
 
   /** The fingerprint registration handed every host, which the runner pins. */
+  /** `TRUST_PROXY`: how many reverse-proxy hops to believe in `X-Forwarded-For`. */
+  private get trustedProxyHops(): number {
+    return this.configService.get<number>('app.trustProxy') ?? 0;
+  }
+
   private get keyFingerprint(): string | null {
     const value = this.configService.get<string>('hosts.signingKeyFingerprint');
     return value && /^[0-9a-f]{64}$/.test(value) ? value : null;

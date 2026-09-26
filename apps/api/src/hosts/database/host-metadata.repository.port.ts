@@ -1,3 +1,4 @@
+import type { DomainEvent } from '@oppenheimer/backend-ddd';
 import type {
   HostInventory,
   HostNetwork,
@@ -73,12 +74,16 @@ export interface HostMetadataRepositoryPort {
   recordInventory(hostId: string, inventory: HostInventory, at: Date): Promise<HostTimelineEntry[]>;
   /**
    * Record the address a link came from, make it the host's current network,
-   * and append `network_changed` when that moved the host.
+   * and append `network_changed` when that moved the host. `eventsFor` names
+   * the domain events a move owes — the new-network notice — and they are
+   * staged on the outbox in the same transaction, so a move and its email
+   * commit together or not at all.
    */
   recordNetwork(
     hostId: string,
     observation: NetworkObservation,
     at: Date,
+    eventsFor?: (movedFrom: HostNetwork, network: HostNetwork) => DomainEvent[],
   ): Promise<RecordedNetwork>;
   /** A host's timeline, newest first, keyset-paginated. */
   findTimeline(hostId: string, before: TimelineCursor | null, limit: number): Promise<TimelinePage>;

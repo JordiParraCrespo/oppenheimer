@@ -5,6 +5,7 @@ export {
   type EmailFrameParams,
   EmailService,
   type EmailVerificationEmailParams,
+  type HostNetworkChangedEmailParams,
   type HostPairedEmailParams,
   type InvitationEmailParams,
   type PasswordResetEmailParams,

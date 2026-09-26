@@ -1230,6 +1230,18 @@
       "closing": "Don't recognise it? Someone used one of your pairing tokens. The console cannot unpair a host yet. If you can reach the machine, run the runner’s uninstall command on it; if you cannot, unpair it through the API with DELETE /v1/hosts/{{hostId}}. Your unspent tokens expire within the hour.",
       "unknownMachine": "no hostname reported",
       "footerNote": "This is a security email, so you always receive it."
+    },
+    "hostNetworkChanged": {
+      "subject": "{{hostName}} is connecting from a new network",
+      "preview": "{{hostName}} moved from {{from}} to {{to}}. If you did not move it, act now.",
+      "heading": "A host moved to a new network",
+      "body": "{{hostName}} used to connect from {{from}}. It now connects from {{to}}, at {{ip}}.",
+      "action": "Open Oppenheimer",
+      "helper": "If you took the machine somewhere new, or its provider changed, there is nothing to do. We only write when the country or the network operator changes, not for every new address.",
+      "closing": "Don't recognise the move? The host's key may be in use somewhere else. Remove the host from Settings, or through the API with DELETE /v1/hosts/{{hostId}}; its runner is refused from that moment, and the sessions on it are stopped.",
+      "unknownPlace": "an unknown network",
+      "attribution": "IP geolocation by DB-IP.",
+      "footerNote": "This is a security email, so you always receive it."
     }
   }
 }

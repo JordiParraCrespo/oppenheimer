@@ -33,4 +33,13 @@ export interface HostPresencePort {
    * arrived on.
    */
   observe(hostId: string, report: PresenceReport, at?: Date): Promise<boolean>;
+
+  /**
+   * Record the public address a link came from, as this process saw it —
+   * never an address the runner reports. It becomes the host's current
+   * network, placed with the deployment's IP database when there is one, and
+   * a move to another country or network operator mails the owner. An unknown
+   * or unpaired host is ignored.
+   */
+  connectedFrom(hostId: string, address: string, at?: Date): Promise<void>;
 }

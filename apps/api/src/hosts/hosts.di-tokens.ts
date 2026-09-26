@@ -13,3 +13,4 @@ export const HOST_ACCESS = Symbol('HOST_ACCESS');
 export const HOST_PRESENCE = Symbol('HOST_PRESENCE');
 export const HOST_KEY = Symbol('HOST_KEY');
 export const HOST_METADATA_REPOSITORY = Symbol('HOST_METADATA_REPOSITORY');
+export const IP_GEOLOCATION = Symbol('IP_GEOLOCATION');

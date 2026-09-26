@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { type DomainEvent, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource, type EntityManager } from 'typeorm';
 import { inventoryChanges } from '../domain/host-inventory.policy';
 import type {
@@ -36,6 +37,7 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
   constructor(
     private readonly dataSource: DataSource,
     private readonly mapper: HostMapper,
+    private readonly outbox: OutboxService,
   ) {}
 
   async findForHosts(hostIds: readonly string[]): Promise<Map<string, HostMetadata>> {
@@ -204,8 +206,10 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
     hostId: string,
     observation: NetworkObservation,
     at: Date,
+    eventsFor?: (movedFrom: HostNetwork, network: HostNetwork) => DomainEvent[],
   ): Promise<RecordedNetwork> {
-    return this.dataSource.transaction(async (manager) => {
+    let staged = false;
+    const recorded = await this.dataSource.transaction(async (manager) => {
       const [presence] = (await manager.query(
         `SELECT "currentNetworkId" FROM "host_presence" WHERE "hostId" = $1 FOR UPDATE`,
         [hostId],
@@ -263,9 +267,16 @@ export class HostMetadataRepository implements HostMetadataRepositoryPort {
           ],
           at,
         );
+        const events = eventsFor?.(movedFrom, network) ?? [];
+        if (events.length > 0) {
+          await this.outbox.stageEvents(manager, events);
+          staged = true;
+        }
       }
       return { network, movedFrom };
     });
+    if (staged) await this.outbox.wake();
+    return recorded;
   }
 
   /** Q6. Newest first, keyset on (occurredAt, id), one row over the page to know there is more. */

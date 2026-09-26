@@ -35,12 +35,28 @@ export class RelayEventsProcessor {
     private readonly reconciliation: SessionReconciliationPort,
   ) {}
 
-  async onHello(link: RunnerLink, hello: HelloMessage, connectedAt = new Date()): Promise<void> {
+  async onHello(
+    link: RunnerLink,
+    hello: HelloMessage,
+    connectedAt = new Date(),
+    address: string | null = null,
+  ): Promise<void> {
     if (!(await this.presence.observe(link.hostId, { facts: hello.host, connectedAt }))) {
       // Unpaired between the handshake's check and this hello: nothing it holds
       // is reconciled, and it is told why rather than left to redial.
       this.closeUnpaired(link);
       return;
+    }
+    // Where the link came from, recorded once per link. A failure here costs
+    // the network row, never the link: presence is already written.
+    if (address) {
+      await this.presence.connectedFrom(link.hostId, address, connectedAt).catch((error) =>
+        this.logger.warn({
+          message: 'the network a runner connected from could not be recorded',
+          hostId: link.hostId,
+          error: String(error),
+        }),
+      );
     }
     // The snapshot is what the runner holds; the rows are what it should hold.
     // A launch that never arrived goes out again, and a pane tmux lost is

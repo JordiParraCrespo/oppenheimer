@@ -16,7 +16,15 @@ describe('resolveCapabilities', () => {
       github_app: false,
       hosts: false,
       session_namer: false,
+      ip_geolocation: false,
     });
+  });
+
+  it('reports IP geolocation once either database is named', () => {
+    expect(
+      resolveCapabilities(configWith({ 'hosts.geoipAsnDb': '/data/dbip-asn-lite.mmdb' }))
+        .ip_geolocation,
+    ).toBe(true);
   });
 
   it('only reports a session namer once a model can actually be called', () => {

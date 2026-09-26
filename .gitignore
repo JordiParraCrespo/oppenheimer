@@ -57,3 +57,6 @@ dump.rdb
 
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
+
+# IP databases fetched by scripts/geoip/fetch-dbip.mjs
+.data/

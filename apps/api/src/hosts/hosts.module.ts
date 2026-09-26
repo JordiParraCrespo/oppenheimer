@@ -7,6 +7,7 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import { AuthModule } from '../auth/auth.module';
 import { LinksModule } from '../links/links.module';
 import { UsersModule } from '../users/user.module';
+import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
@@ -49,8 +50,10 @@ import {
   HOST_PAIRING_TOKEN_REPOSITORY,
   HOST_PRESENCE,
   HOST_REPOSITORY,
+  IP_GEOLOCATION,
 } from './hosts.di-tokens';
 import { HostResource } from './hosts.resource';
+import { DbipGeolocationAdapter } from './infrastructure/dbip-geolocation.adapter';
 import { RunnerReleaseConfig } from './infrastructure/runner-release.config';
 import { FindHostHttpController } from './queries/find-host/find-host.http.controller';
 import { FindHostQueryHandler } from './queries/find-host/find-host.query-handler';
@@ -110,6 +113,8 @@ const repositories: Provider[] = [
   // writes the timeline inside its own transactions through the class.
   HostMetadataRepository,
   { provide: HOST_METADATA_REPOSITORY, useExisting: HostMetadataRepository },
+  // Offline: DB-IP Lite on disk. No database configured is an answer of all-null.
+  { provide: IP_GEOLOCATION, useClass: DbipGeolocationAdapter },
 ];
 
 const resolvers: Provider[] = [
@@ -164,6 +169,7 @@ const resolvers: Provider[] = [
     HostUsageRegistry,
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
+    HostNetworkChangedDomainEventHandler,
   ],
   // The two application ports, and nothing else. A consumer that could inject
   // the repository could skip `assertUsable` and read unpaired rows unscoped,
