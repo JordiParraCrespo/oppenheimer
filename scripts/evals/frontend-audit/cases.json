@@ -9,7 +9,8 @@
         {
           "rule": "R3",
           "accept": ["R4", "R6"],
-          "file": "apps/web/src/features/hosts/sections/host-directory.tsx"
+          "file": "apps/web/src/features/hosts/sections/host-directory.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/components/host-rows.tsx"]
         }
       ],
       "why": "The controlled SearchInput value reaches HostRows on every keystroke; the kit's useSearchDraft exists for this. The compiler cannot help: the prop really changes."
@@ -21,7 +22,8 @@
         {
           "rule": "R1",
           "accept": ["R2"],
-          "file": "apps/web/src/features/hosts/screens/hosts.tsx"
+          "file": "apps/web/src/features/hosts/screens/hosts.tsx",
+          "alsoFile": ["apps/web/src/features/hosts/sections/host-sessions.tsx"]
         }
       ],
       "why": "The screen subscribes to useSessions only to hand it to one section. `sessions ?? []` gets past check:structure's regex, so only judgment catches it."
