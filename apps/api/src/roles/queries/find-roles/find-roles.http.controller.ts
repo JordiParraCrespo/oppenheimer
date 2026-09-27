@@ -52,7 +52,7 @@ export class FindRolesHttpController {
   @ApiResponse({ status: 200, type: PaginatedRolesResponseDto })
   async findAll(@Query() query: FindRolesRequest, @Req() request: ScopedRequest) {
     const result = await this.queryBus.execute<FindRolesQuery, Paginated<RoleEntity>>(
-      new FindRolesQuery({ ...query, activeOrganizationId: tenantOrganizationIdOf(request) }),
+      new FindRolesQuery({ ...query, organizationId: tenantOrganizationIdOf(request) }),
     );
 
     return {

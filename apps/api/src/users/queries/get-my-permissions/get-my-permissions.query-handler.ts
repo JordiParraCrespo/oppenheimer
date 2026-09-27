@@ -12,7 +12,7 @@ export class GetMyPermissionsQueryHandler
   async execute(query: GetMyPermissionsQuery): Promise<PermissionDefinition[]> {
     return this.abilityFactory.permissionsForUser(
       { id: query.userId, role: query.role },
-      { organizationId: query.activeOrganizationId ?? null },
+      { organizationId: query.organizationId ?? null },
     );
   }
 }

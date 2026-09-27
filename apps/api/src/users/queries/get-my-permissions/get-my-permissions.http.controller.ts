@@ -38,7 +38,7 @@ export class GetMyPermissionsHttpController {
       new GetMyPermissionsQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
 

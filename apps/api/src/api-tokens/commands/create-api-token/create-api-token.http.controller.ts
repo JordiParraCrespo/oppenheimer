@@ -71,7 +71,7 @@ export class CreateApiTokenHttpController {
         actor: {
           id: user.id,
           role: user.role,
-          activeOrganizationId: tenantOrganizationIdOf(request),
+          organizationId: tenantOrganizationIdOf(request),
         },
         name: body.name,
         scopes: body.scopes,

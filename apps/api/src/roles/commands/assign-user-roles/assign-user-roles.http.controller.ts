@@ -59,18 +59,18 @@ export class AssignUserRolesHttpController {
     @CurrentUser() actor: { id: string; role?: string },
     @Req() request: ScopedRequest,
   ): Promise<RoleResponseDto[]> {
-    const activeOrganizationId = tenantOrganizationIdOf(request);
+    const organizationId = tenantOrganizationIdOf(request);
     await this.commandBus.execute<AssignUserRolesCommand, void>(
       new AssignUserRolesCommand({
         userId,
         roleIds: body.roleIds,
-        activeOrganizationId,
+        organizationId,
         actorId: actor.id,
         actorRole: actor.role,
       }),
     );
     const roles = await this.queryBus.execute<FindUserRolesQuery, RoleEntity[]>(
-      new FindUserRolesQuery(userId, activeOrganizationId),
+      new FindUserRolesQuery(userId, organizationId),
     );
     return roles.map((role) => this.mapper.toResponse(role));
   }

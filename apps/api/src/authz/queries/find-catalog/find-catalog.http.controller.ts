@@ -37,7 +37,7 @@ export class FindAuthzCatalogHttpController {
       new FindAuthzCatalogQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
   }

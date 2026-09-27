@@ -38,7 +38,7 @@ export class FindGrantablePermissionsHttpController {
       new FindGrantablePermissionsQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
 

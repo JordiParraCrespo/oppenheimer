@@ -15,7 +15,7 @@ export class FindRoleByIdQueryHandler implements IQueryHandler<FindRoleByIdQuery
   ) {}
 
   async execute(query: FindRoleByIdQuery): Promise<RoleEntity> {
-    const found = await this.roleRepository.findOneById(query.roleId, query.activeOrganizationId);
+    const found = await this.roleRepository.findOneById(query.roleId, query.organizationId);
     if (found.isNone()) throw new AppError(RoleErrors.NOT_FOUND);
     return found.unwrap();
   }

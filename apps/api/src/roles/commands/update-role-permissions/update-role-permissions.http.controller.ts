@@ -57,7 +57,7 @@ export class UpdateRolePermissionsHttpController {
         permissions: body.permissions,
         actorId: actor.id,
         actorRole: actor.role,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
       }),
     );
     const role = await this.queryBus.execute<FindRoleByIdQuery, RoleEntity>(

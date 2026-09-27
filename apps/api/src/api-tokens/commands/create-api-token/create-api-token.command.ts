@@ -7,7 +7,7 @@ export interface ApiTokenActor {
   /** Legacy single-role column, still unioned into the effective ability. */
   role?: string;
   /** Active organization, so org-scoped permission conditions resolve. */
-  activeOrganizationId?: string | null;
+  organizationId?: string | null;
 }
 
 export class CreateApiTokenCommand extends CommandBase {

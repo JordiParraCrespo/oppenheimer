@@ -101,7 +101,7 @@ describe('AssignUserRolesCommandHandler', () => {
       new AssignUserRolesCommand({
         userId: 'user-1',
         roleIds: ['r1', 'r2'],
-        activeOrganizationId: 'organization-1',
+        organizationId: 'organization-1',
       }),
     );
 
@@ -126,12 +126,12 @@ describe('AssignUserRolesCommandHandler', () => {
         roleIds: ['r1'],
         actorId: 'actor-1',
         actorRole: 'admin',
-        activeOrganizationId: 'organization-1',
+        organizationId: 'organization-1',
       }),
     );
 
     expect(grantPolicy.assertGrantable).toHaveBeenCalledWith(
-      { id: 'actor-1', role: 'admin', activeOrganizationId: 'organization-1' },
+      { id: 'actor-1', role: 'admin', organizationId: 'organization-1' },
       [permission.toDefinition()],
     );
   });

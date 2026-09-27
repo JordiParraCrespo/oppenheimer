@@ -51,7 +51,7 @@ export class FindCurrentCredentialHttpController {
       new FindCurrentCredentialQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
         grantedScopes: credential?.scopes ?? null,
       }),
     );

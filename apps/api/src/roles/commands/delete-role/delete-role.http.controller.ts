@@ -39,7 +39,7 @@ export class DeleteRoleHttpController {
     await this.commandBus.execute<DeleteRoleCommand, void>(
       new DeleteRoleCommand({
         roleId: id,
-        activeOrganizationId: tenantOrganizationIdOf(request),
+        organizationId: tenantOrganizationIdOf(request),
         actorId: actor.id,
         actorRole: actor.role,
       }),

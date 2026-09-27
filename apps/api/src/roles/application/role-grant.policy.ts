@@ -14,7 +14,7 @@ import { AbilityFactory } from './ability.factory';
 export interface RoleActor {
   id: string;
   role?: string;
-  activeOrganizationId?: string | null;
+  organizationId?: string | null;
 }
 
 /**
@@ -42,7 +42,7 @@ export class RoleGrantPolicy {
 
     const ability = await this.abilityFactory.createForUser(
       { id: actor.id, role: actor.role },
-      { organizationId: actor.activeOrganizationId ?? null },
+      { organizationId: actor.organizationId ?? null },
     );
 
     const ungrantable = ungrantablePermissions(ability, permissions);
@@ -70,7 +70,7 @@ export class RoleGrantPolicy {
 
     const ability = await this.abilityFactory.createForUser(
       { id: actor.id, role: actor.role },
-      { organizationId: actor.activeOrganizationId ?? null },
+      { organizationId: actor.organizationId ?? null },
     );
 
     const row = { id: role.id, organizationId: role.organizationId };
