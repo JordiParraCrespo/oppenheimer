@@ -108,7 +108,7 @@ async function bootstrap() {
   const bullBoardPassword = configService.get<string>('app.bullBoardPassword');
   const bullBoardMounted = setupBullBoard(
     app,
-    [QUEUE_NAMES.EMAIL, QUEUE_NAMES.FILE_PROCESSING],
+    [QUEUE_NAMES.EMAIL, QUEUE_NAMES.FILE_PROCESSING, QUEUE_NAMES.HOST_RETENTION],
     bullBoardUsername && bullBoardPassword
       ? { auth: { username: bullBoardUsername, password: bullBoardPassword } }
       : {},

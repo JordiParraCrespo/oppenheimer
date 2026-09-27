@@ -157,8 +157,8 @@ runner does with it and point back.
   `snapshotUploadUrl`, a presigned PUT for the agent's session files;
   `session.stopped` then reports the object's key and size.
   `session.create` and `restart` may carry `snapshotDownloadUrl` for a
-  session resuming on a fresh disk (14 §5). Host facts gain `vmSlots`,
-  the number of microVM sessions the host will hold (14 §2). Nothing else changes on
+  session resuming on a fresh disk (16 §5). Host facts gain `vmSlots`,
+  the number of microVM sessions the host will hold (16 §2). Nothing else changes on
   the wire for cloud machines: `machine.*` events are the control
   plane's own writes to the log, and a cloud host registers, dials and
   is driven exactly as any other (03 §Cloud hosts).

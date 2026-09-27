@@ -53,6 +53,7 @@
     "class-transformer": "^0.5.1",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
+    "maxmind": "^4",
     "multer": "2.2.0",
     "nestjs-pino": "^4.6.1",
     "nestjs-zod": "^4.3.1",

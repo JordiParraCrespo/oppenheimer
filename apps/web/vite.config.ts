@@ -40,6 +40,7 @@ export default defineConfig({
     // pre-bundle this CommonJS entrypoint into ESM.
     include: [
       '@oppenheimer/shared/schemas/auth',
+      '@oppenheimer/shared/schemas/host',
       '@oppenheimer/shared/schemas/organization',
       '@oppenheimer/shared/schemas/profile',
       '@oppenheimer/shared/schemas/project',

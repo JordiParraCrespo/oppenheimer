@@ -49,6 +49,9 @@ test('a new account walks the first-run flow into the console', async ({ page })
   // on a deployment with no GitHub App and no runner release configured.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  // The address moves before the step draws: wait for the host step itself, or
+  // the next click lands on the GitHub step's own Skip link still on screen.
+  await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
 
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
@@ -110,6 +113,9 @@ test('a finished account cannot walk back into the flow', async ({ page }) => {
   // Mid-walk the landing is reachable, claimed address and all.
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/host/, { timeout: 30_000 });
+  // The address moves before the step draws: wait for the host step itself, or
+  // the next click lands on the GitHub step's own Skip link still on screen.
+  await expect(page.getByRole('heading', { name: /add your first host/i })).toBeVisible();
   await page.getByRole('link', { name: /skip for now/i }).click();
   await expect(page).toHaveURL(/\/onboarding\/ready/, { timeout: 30_000 });
 

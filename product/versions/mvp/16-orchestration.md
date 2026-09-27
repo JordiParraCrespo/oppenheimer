@@ -1,4 +1,4 @@
-# 14 — Orchestration (v0.2)
+# 16 — Orchestration (v0.2)
 
 How many runners there are, who decides where a session runs, what a
 "queue" is in this system, and what survives what. Decided 2026-09-22

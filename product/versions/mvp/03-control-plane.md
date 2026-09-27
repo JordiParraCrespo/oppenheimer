@@ -430,9 +430,10 @@ of its authorization:
 
 | Route | Credential |
 |---|---|
-| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read` |
-| `POST /hosts/pairing`, `GET /hosts/pairing`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
+| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (14) |
+| `POST /hosts/pairing`, `GET /hosts/pairing`, `GET /hosts/pairing/{id}`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
 | `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
+| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (15) |
 | `POST /hosts/register` | the registration token in the body, and nothing else |
 | `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
 
@@ -440,7 +441,8 @@ Two routes therefore delete a host and they are not the same operation:
 `DELETE /hosts/{id}` is a person unpairing a machine they own, guarded by
 policies; `DELETE /hosts/self` is the machine saying it has been
 uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
-neither deletes the row.
+neither deletes the row, and both stop the sessions running on the host
+(one `session.stopped` each, from `sessions/`, on the unpaired event; 13).
 
 **The machine's own read of its host row is unscoped, by design.** A host
 is not tenant-scoped and there is no person on that request to scope by:
@@ -518,13 +520,13 @@ control plane creates the per-region network on connect),
 closed; the network stays, because a network something else in the
 person's account might use is not ours to delete). `POST /sessions`
 accepts `cloudAccountId` in place of `hostId`: the session row is
-created `starting` and **placement** runs the ladder of 14 §2 — a
+created `starting` and **placement** runs the ladder of 16 §2 — a
 running host with room, a stopped one, a new one within the account's
 cap — inside the create transaction; a session with no host yet keeps
 its `machineId` and is dispatched when that machine's runner registers,
 the "created while its host is offline" path 01 already has, with the
 boot as the reason the host is offline. The provider calls behind that
-are the machine jobs of 14 §3, and `machine` rows fold `machine.*`
+are the machine jobs of 16 §3, and `machine` rows fold `machine.*`
 events as sessions fold theirs. `POST /sessions/{id}/stop` and `/restart`
 are unchanged and are what pause and resume are made of.
 

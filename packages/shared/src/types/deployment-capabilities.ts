@@ -15,6 +15,11 @@
  * words — which costs nothing. It is a capability so that "why is no title ever
  * a model's" is answered by the startup log rather than by reading the naming
  * code.
+ *
+ * `ip_geolocation` says whether the networks a host connects from are placed
+ * on a map: a DB-IP Lite (or MaxMind) database on disk. Without one a network
+ * is still recorded, by address, and no new-network email is ever sent,
+ * because "moved country" cannot be told.
  */
 export const DEPLOYMENT_CAPABILITIES = [
   'google_oauth',
@@ -24,6 +29,7 @@ export const DEPLOYMENT_CAPABILITIES = [
   'github_app',
   'hosts',
   'session_namer',
+  'ip_geolocation',
 ] as const;
 
 export type DeploymentCapability = (typeof DEPLOYMENT_CAPABILITIES)[number];

@@ -78,6 +78,14 @@ const schema = z
         const digest = value?.trim().toLowerCase();
         return digest && /^[0-9a-f]{64}$/.test(digest) ? digest : undefined;
       }),
+    /**
+     * The IP databases a connecting host's address is placed with: DB-IP Lite
+     * City and ASN, `.mmdb` files on disk (`scripts/geoip/fetch-dbip.mjs`).
+     * Optional capability (`ip_geolocation`); either file alone is used for
+     * what it answers.
+     */
+    geoipCityDb: z.string().min(1).optional(),
+    geoipAsnDb: z.string().min(1).optional(),
   })
   .transform(({ apiPublicUrl, controlPlaneUrl, signingKey, ...rest }) => ({
     // Trailing slashes are stripped on both sides of the audience comparison,
@@ -97,8 +105,20 @@ export const hostsConfig = registerAs('hosts', () =>
     releaseChannel: 'RUNNER_RELEASE_CHANNEL',
     installUrl: 'RUNNER_INSTALL_URL',
     installSha256: 'RUNNER_INSTALL_SHA256',
+    geoipCityDb: 'HOSTS_GEOIP_CITY_DB',
+    geoipAsnDb: 'HOSTS_GEOIP_ASN_DB',
   }),
 );
+
+/**
+ * Whether a connecting host's network can be placed: at least one IP database
+ * is named. One function for the capability and the adapter, as for `hosts`.
+ */
+export function ipGeolocationIsConfigured(configService: ConfigService): boolean {
+  return Boolean(
+    configService.get<string>('hosts.geoipCityDb') || configService.get<string>('hosts.geoipAsnDb'),
+  );
+}
 
 /**
  * Whether this deployment can pair a machine at all: somewhere to download the

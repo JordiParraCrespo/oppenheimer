@@ -32,7 +32,7 @@ earlier note:
 - Note 00 proposed the Claude Agent SDK as the core. Note 01 replaced it
   with a raw terminal; the SDK is a later add-on for unattended runs.
 - Note 01 left the Agent SDK as a later add-on for unattended runs.
-  `versions/mvp/15-headless-runs.md` runs them through the
+  `versions/mvp/17-headless-runs.md` runs them through the
   CLI's headless mode (`claude -p --output-format stream-json`) launched
   by the Go runner instead, so no host needs a Node or Python runtime;
   the SDK library stays the upgrade path for approvals mid-turn
@@ -267,3 +267,25 @@ earlier note:
   0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
   display. Multi-account (note 06) is on the list with no version yet.
   VMs are not placed. See `next-steps/README.md`.
+- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  that hosts would be listed later in a drawer. The 2026-09-26 frames
+  draw a Settings page with a Hosts section, and
+  `versions/mvp/14-hosts-settings.md` designs its backend. Two host
+  behaviours changed with it: removing a host now stops the sessions
+  running on it (it used to close the link and leave them `open`), and
+  `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
+  (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+  metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
+  a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
+  heartbeat. `versions/mvp/15-host-metadata.md` splits it by rate of
+  change into `host_inventory`, `host_presence`, `host_network` and
+  `host_event`; the old columns go in a later contract step (2026-09-26).
+- `versions/mvp/05-screens.md` had Settings → Hosts open the console's
+  Add a host page with `?from=settings`. It now opens the same screen
+  inside Settings, at `/settings/hosts/new`, with the settings sidebar
+  beside it, and the host menu drops Copy host ID for now (2026-09-26).
+- `versions/mvp/14-hosts-settings.md` left the host card's region or
+  "local" open. It shows the city and country code of the host's
+  connecting address, from DB-IP Lite, instead of a cloud region
+  (2026-09-26).

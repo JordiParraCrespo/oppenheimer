@@ -10,15 +10,16 @@ import { cn } from '../lib/utils';
 /**
  * SettingsNav — the plain sidebar of the Settings pages: a way back to
  * the console on top, then eyebrow-labelled groups (Account, Workspace)
- * of 30px rows with an icon, a label and a mono count on the right. The
- * current row takes the active wash and medium weight. It sits on the
- * sidebar surface at 264px.
+ * of 32px rows with an icon, a label and a mono count on the right. The
+ * current row is lit (the sidebar's active surface) and medium weight. It is
+ * the version-1 glass rail at 264px: the sidebar surface at 72% over the
+ * page, blurred (`design/version1/ds-base.js`, `.op-sidebar`).
  */
 function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
     <nav
       data-slot="settings-nav"
-      className={cn('flex w-[264px] shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar px-3 pt-[18px] text-sidebar-foreground', className)}
+      className={cn('flex w-[264px] shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar/72 px-3 pt-[18px] text-sidebar-foreground backdrop-blur-[20px] backdrop-saturate-[1.8]', className)}
       {...props}
     />
   );
@@ -26,8 +27,8 @@ function SettingsNav({ className, ...props }: React.ComponentProps<'nav'>) {
 
 function SettingsNavGroup({ label, className, children, ...props }: React.ComponentProps<'div'> & { label: React.ReactNode }) {
   return (
-    <div data-slot="settings-nav-group" className={cn('mt-3 flex flex-col gap-0.5', className)} {...props}>
-      <span className="eyebrow px-2.5 py-1.5">{label}</span>
+    <div data-slot="settings-nav-group" className={cn('mt-1 flex flex-col gap-0.5 [&+&]:mt-3.5', className)} {...props}>
+      <span className="eyebrow px-2.5 py-1.5 leading-(--leading-body)">{label}</span>
       {children}
     </div>
   );
@@ -53,7 +54,7 @@ function SettingsNavItem({
       {
         type: 'button',
         className: cn(
-          'flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-sm tracking-[-0.009em] text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
+          'flex h-8 w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-operate text-fg no-underline outline-none transition-colors duration-instant ease-standard hover:bg-sidebar-item-hover hover:no-underline focus-visible:outline-2 focus-visible:outline-ring data-active:bg-sidebar-item-active data-active:font-medium [&_svg:not([class*=size-])]:size-[15px]',
           className,
         ),
         children: (

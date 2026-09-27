@@ -25,8 +25,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
 | 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
-| 14 | [Orchestration (v0.2)](14-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
-| 15 | [Headless runs](15-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
+| 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
+| 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
+| 16 | [Orchestration (v0.2)](16-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 17 | [Headless runs](17-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
 
 ## Decision log
 
@@ -327,7 +329,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   catalog and the cloud-config that pairs a fresh machine. `hosts/` is
   its only consumer and still owns the rows and the policy (03 §Cloud
   hosts, 10).
-- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 since 2026-09-27). One
+- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 and then 16 on 2026-09-27). One
   runner per host and many hosts per person; the control plane assigns a session to a host at
   create by a ladder (running host with room, stopped host, new host
   within the account's cap) and never lets hosts claim; a session
@@ -465,6 +467,33 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
+- 2026-09-26: the version-1 frames gained a Settings page with a Hosts
+  section, and the hosts backend is designed against it (14). A host
+  read now carries a derived `status` and the count of sessions running
+  on it; `GET /hosts` leaves unpaired hosts out unless asked; removing a
+  host stops the sessions running on it, where unpairing used to leave
+  them `open`; `GET /hosts/pairing/{id}`, listed in 10, is built and
+  returns the host the token paired; the runner reports its CPU count.
+- 2026-09-26: host metadata moves off the `host` row (15). What the
+  machine is goes to `host_inventory` (written only when its facts
+  change), whether it is there to `host_presence` (one narrow row
+  rewritten per heartbeat), where it connects from to `host_network`
+  (public addresses as the API saw them, kept 90 days), and what changed
+  to `host_event` (append-only, 180 days). Heartbeat history is
+  deliberately not stored. `host` keeps its old columns until the code
+  switches over (expand, switch, contract).
+- 2026-09-26: 15's two open questions are settled. Geography comes from
+  DB-IP Lite (free, no account), and the owner is emailed about a new
+  network only when the host's country or ASN changes.
+- 2026-09-26: **Add host from Settings stays in Settings.** It opens the
+  Add a host page at `/settings/hosts/new`, inside the Settings frame with
+  its Back, as the frame draws it — not a dialog, and no longer the
+  console's page with `?from=settings`. The console keeps `/hosts/new`;
+  both mount the one screen. Copy host ID is left out of the host menu
+  for now (14).
+- 2026-09-26: 14's first open question is settled: the host card's
+  location slot, drawn as "eu-west" / "local", shows the city and country
+  code of the host's connecting address from DB-IP Lite (15).
 - 2026-09-26: **a project is a saved scope a person creates, and metadata
   only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
   offered by default or not) and a default host and agent; none is
@@ -485,7 +514,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-26: orchestration renumbered from 12 to 13, because projects
   on the console took 12 first. Only the number and the references to it
   changed.
-- 2026-09-26: **automation runs through `claude -p`** (15). A routine's
+- 2026-09-26: **automation runs through `claude -p`** (17). A routine's
   run is an ordinary session whose window 0 is Claude Code headless with
   `--output-format stream-json`, started through `runner headless` so its
   output lands in a file the runner tails and tmux keeps the process
@@ -500,3 +529,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: orchestration renumbered from 13 to 14 and the headless-run
   note from 14 to 15 (`15-headless-runs.md`), because automations took 13
   first. Only the numbers and the references to them changed.
+- 2026-09-27: orchestration renumbered again from 14 to 16 and the
+  headless-run note from 15 to 17 (`17-headless-runs.md`), because hosts
+  in Settings and host metadata took 14 and 15 first. Only the numbers
+  and the references to them changed.

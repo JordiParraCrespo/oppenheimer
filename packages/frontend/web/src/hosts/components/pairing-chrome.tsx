@@ -1,4 +1,4 @@
-import { Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
+import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { TokenCountdown } from './token-countdown';
 
@@ -136,8 +136,45 @@ export function HostPairingStatus({
   const { t } = useTranslation();
   const step = layout === 'step';
 
+  if (!step) {
+    // Add a host's Connect row, drawn as the frames draw it
+    // (`design/version1/SessionsConsole.dc.html`, `Settings.dc.html`): a 7px
+    // dot, 13px words, inside a 44px card the page provides.
+    return (
+      <div data-slot="host-pairing-status" className="flex min-h-10.5 flex-col justify-center">
+        {host ? (
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* The dot follows what the API reports, not the row appearing:
+                  a runner that registered may still be starting. */}
+            <span
+              aria-hidden
+              className={cn(
+                'size-1.75 shrink-0 rounded-pill',
+                host.online ? 'bg-success' : 'bg-fg-subtle',
+              )}
+            />
+            <span className="font-mono text-[13px] text-fg">{host.name}</span>
+            {host.os ? <span className="text-xs text-fg-muted">{host.os}</span> : null}
+            <span className="flex-1" />
+            <span className="text-xs text-fg-muted">
+              {host.online ? t('hosts.pairing.online') : t('hosts.pairing.registered')}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 text-[13px] text-fg-muted">
+            <span
+              aria-hidden
+              className="size-1.75 shrink-0 animate-pulse-dot rounded-pill bg-fg-subtle"
+            />
+            {t('hosts.pairing.waiting')}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className={step ? 'flex min-h-13 flex-col justify-center' : 'flex min-h-13 items-center'}>
+    <div className="flex min-h-13 flex-col justify-center">
       {host ? (
         <div className="flex w-full flex-wrap items-center gap-2.5">
           {/* Registered is not the same as dialled in: the installer can

@@ -10,9 +10,12 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
  */
 export class FindHostsQuery extends QueryBase {
   readonly scope: AccessScope;
+  /** Removed hosts too — for naming the host of a session that outlived it. */
+  readonly includeUnpaired: boolean;
 
-  constructor(props: { scope: AccessScope }) {
+  constructor(props: { scope: AccessScope; includeUnpaired?: boolean }) {
     super();
     this.scope = props.scope;
+    this.includeUnpaired = props.includeUnpaired ?? false;
   }
 }

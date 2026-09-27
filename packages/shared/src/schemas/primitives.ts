@@ -193,7 +193,30 @@ export const hostFactsSchema = z.object({
   workspacePath: z.string(),
   /** Free bytes on the workspace filesystem. A JSON number; `uint64` in Go. */
   diskFreeBytes: z.number().int().min(0),
+  /**
+   * Logical CPUs the runner's process can use, for the "32 vCPU" on a host row.
+   * Optional because runners before it did not send it, and Go omits it at 0.
+   */
+  cpus: z.number().int().min(1).optional(),
   runnerVersion: z.string(),
+  /**
+   * The machine beyond what a session needs, for the host row and a rollout
+   * (`product/versions/mvp/15-host-metadata.md`). All optional: runners before
+   * them do not send them, and Go omits each one it could not read.
+   * `virtualization`, `cloudProvider` and `serviceManager` are the runner's
+   * words and stay open strings, so a newer runner's value is kept rather
+   * than refused.
+   */
+  osName: z.string().max(80).optional(),
+  kernelVersion: z.string().max(64).optional(),
+  cpuModel: z.string().max(128).optional(),
+  memoryTotalBytes: z.number().int().min(1).optional(),
+  diskTotalBytes: z.number().int().min(1).optional(),
+  virtualization: z.string().max(24).optional(),
+  cloudProvider: z.string().max(24).optional(),
+  timezone: z.string().max(64).optional(),
+  bootedAt: z.string().datetime({ offset: true }).optional(),
+  serviceManager: z.string().max(16).optional(),
 });
 
 export type HostFactsDto = z.infer<typeof hostFactsSchema>;

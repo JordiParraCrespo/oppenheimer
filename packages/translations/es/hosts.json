@@ -30,5 +30,32 @@
     },
     "crumbHosts": "Hosts",
     "done": "Listo"
+  },
+  "settings": {
+    "state": {
+      "running_one": "En marcha · {{count}} sesión",
+      "running_other": "En marcha · {{count}} sesiones",
+      "idle": "Inactivo",
+      "offline": "Desconectado"
+    },
+    "seen": {
+      "connected": "conectado",
+      "lastSeen": "visto {{when}}",
+      "now": "ahora"
+    },
+    "meta": {
+      "cpus": "{{count}} vCPU",
+      "runner": "runner {{version}}"
+    },
+    "actions": "Acciones de {{name}}",
+    "rename": "Renombrar",
+    "renameLabel": "Nombre del equipo",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "remove": "Eliminar equipo",
+    "removeTitle": "¿Eliminar {{name}}?",
+    "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+    "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+    "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
   }
 }

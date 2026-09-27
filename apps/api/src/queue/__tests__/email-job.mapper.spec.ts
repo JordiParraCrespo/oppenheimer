@@ -35,6 +35,16 @@ describe('EmailJobMapper', () => {
       'emails.emailVerification.helper',
       'emails.emailVerification.closing',
       'emails.emailVerification.footerNote',
+      'emails.hostNetworkChanged.subject',
+      'emails.hostNetworkChanged.preview',
+      'emails.hostNetworkChanged.heading',
+      'emails.hostNetworkChanged.body',
+      'emails.hostNetworkChanged.action',
+      'emails.hostNetworkChanged.helper',
+      'emails.hostNetworkChanged.closing',
+      'emails.hostNetworkChanged.unknownPlace',
+      'emails.hostNetworkChanged.attribution',
+      'emails.hostNetworkChanged.footerNote',
       'emails.hostPaired.subject',
       'emails.hostPaired.preview',
       'emails.hostPaired.heading',
@@ -167,5 +177,57 @@ describe('EmailJobMapper', () => {
     );
 
     expect(params.body).toContain('Dev box (no hostname reported)');
+  });
+
+  it('says where a host moved from and to, with the database’s attribution', () => {
+    const params = mapper.toHostNetworkChanged(
+      {
+        to: 'jordi@example.com',
+        userId: 'u1',
+        hostId: 'host-1',
+        hostName: 'optimus',
+        fromNetwork: {
+          ip: '195.235.113.3',
+          countryCode: 'ES',
+          city: 'Madrid',
+          asn: 3352,
+          asnOrg: 'Telefonica',
+        },
+        toNetwork: {
+          ip: '198.51.100.9',
+          countryCode: 'FR',
+          city: 'Paris',
+          asn: 16276,
+          asnOrg: 'OVH SAS',
+        },
+        url: 'https://app.oppenheimer.dev',
+      },
+      i18n.for('en', 'UTC'),
+    );
+
+    expect(params.subject).toBe('optimus is connecting from a new network');
+    expect(params.body).toBe(
+      'optimus used to connect from Madrid, ES · Telefonica. It now connects from Paris, FR · OVH SAS, at 198.51.100.9.',
+    );
+    expect(params.helperText).toContain('IP geolocation by DB-IP');
+    expect(params.closingText).toContain('DELETE /v1/hosts/host-1');
+    expect(params.recipientEmail).toBe('jordi@example.com');
+    expect(params.footer).toContain('security email');
+  });
+
+  it('names a network the database could not place as unknown', () => {
+    const params = mapper.toHostNetworkChanged(
+      {
+        to: 'jordi@example.com',
+        hostId: 'host-1',
+        hostName: 'optimus',
+        fromNetwork: { ip: '10.0.0.4', countryCode: null, city: null, asn: null, asnOrg: null },
+        toNetwork: { ip: '198.51.100.9', countryCode: 'FR', city: null, asn: null, asnOrg: null },
+        url: 'https://app.oppenheimer.dev',
+      },
+      i18n.for('es', 'UTC'),
+    );
+    expect(params.body).toContain('una red desconocida');
+    expect(params.body).toContain('FR');
   });
 });

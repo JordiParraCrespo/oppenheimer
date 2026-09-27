@@ -1,6 +1,7 @@
 import { isProvisionalSlug } from '@oppenheimer/frontend-consumer';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
 import { createFileRoute, Navigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { OnboardingWorkspaceScreen } from '@/features/organizations/screens/onboarding-workspace';
 
 export const Route = createFileRoute('/_auth/onboarding/workspace')({
@@ -22,13 +23,21 @@ export const Route = createFileRoute('/_auth/onboarding/workspace')({
  * Only a *settled, successful* read redirects. An unanswered query says
  * nothing about what the account has, and guessing would bounce a reader out
  * of first-run on a network blip.
+ *
+ * And it is decided once, on arrival. Submitting the step claims the address,
+ * and the claim writes the named workspace into the cache before the screen
+ * navigates on to GitHub — a gate that kept reading the list would see
+ * "claimed" and send the newcomer to the console, past the rest of the walk.
  */
 function WorkspaceStep() {
   const { data: organizations, isSuccess } = useOrganizations();
+  const [claimedOnArrival, setClaimedOnArrival] = useState<boolean | null>(null);
 
-  const claimed = isSuccess && organizations[0] ? !isProvisionalSlug(organizations[0].slug) : false;
+  if (claimedOnArrival === null && isSuccess) {
+    setClaimedOnArrival(organizations[0] ? !isProvisionalSlug(organizations[0].slug) : false);
+  }
 
-  if (claimed) return <Navigate to="/sessions" replace />;
+  if (claimedOnArrival) return <Navigate to="/sessions" replace />;
 
   return <OnboardingWorkspaceScreen />;
 }

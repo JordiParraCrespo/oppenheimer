@@ -1,4 +1,4 @@
-# 15 — Headless runs: automation through `claude -p`
+# 17 — Headless runs: automation through `claude -p`
 
 The 2026-09-26 export (`design/version1/Routines.dc.html`, drawn inside
 `SessionsConsole.dc.html`) gives the console a routines page, which the

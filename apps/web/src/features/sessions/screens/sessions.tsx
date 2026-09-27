@@ -1,6 +1,6 @@
 import { Button } from '@oppenheimer/design-system-web';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
-import { Link, Navigate } from '@tanstack/react-router';
+import { Link, Navigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -23,14 +23,24 @@ import { useTranslation } from 'react-i18next';
  * empty rather than bouncing to the composer and back, and a failed read is
  * not an empty workspace — guessing either way would move somebody off the
  * screen they asked for on a network blip.
+ *
+ * And only while `/sessions` is still where the router is going. The pane stays
+ * mounted while the next route loads, so a reader who clicked away before the
+ * list answered — the rail's Automations, say — would otherwise be sent to the
+ * composer after they had already left.
  */
 export function SessionsScreen() {
   const { t } = useTranslation();
   // Whether there are any, not the rows: the 2 s provisioning poll and a focus
   // refetch re-render this pane only when the answer flips.
   const { data: empty, isSuccess } = useSessions({ select: (rows) => rows.length === 0 });
+  const stillHere = useRouterState({
+    select: (state) => state.location.pathname.replace(/\/$/, '') === '/sessions',
+  });
 
-  if (isSuccess && empty) return <Navigate to="/sessions/new" replace />;
+  // Empty never draws the pane below: it forwards, or — once the reader is
+  // already on their way elsewhere — draws nothing while that route loads.
+  if (isSuccess && empty) return stillHere ? <Navigate to="/sessions/new" replace /> : null;
   if (empty === undefined) return null;
 
   return (

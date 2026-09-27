@@ -27,6 +27,10 @@ export class HostsService {
     return this.repository.pairings();
   }
 
+  rename(id: string, name: string): Promise<HostEntity> {
+    return this.repository.rename(id, name);
+  }
+
   remove(id: string): Promise<void> {
     return this.repository.remove(id);
   }

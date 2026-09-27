@@ -595,7 +595,7 @@ internal/
   for that session after the push and uploads them through the proxy
   before the VM is killed; on a create or restart that carries
   `snapshotDownloadUrl`, it unpacks them before relaunching the agent
-  with its resume flag. Capped at 50 MB, newest end kept (14 §5).
+  with its resume flag. Capped at 50 MB, newest end kept (16 §5).
 - **Firecracker snapshots** (memory restore) are not in v0.2: the boot
   on the kept disk is the resume, as it is for Claude Code on the web.
 

@@ -735,7 +735,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 **`hosts/`**
 
-- `host` — `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
+- `host` — (its metadata columns move to four side tables in 15) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
   `runnerVersion`, `capabilities` jsonb (git/tmux/disk and the detected
   agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyFingerprint` null,
@@ -769,7 +769,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
   `oci` | `alibaba`, a check constraint), `region`, `label`,
   `credential` (ciphertext under `MACHINES_ENCRYPTION_KEY`), `network`
   jsonb (the per-region VPC or VCN ids created on connect), `maxHosts`
-  (default 2, 14 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
+  (default 2, 16 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
   `host`: no `organizationId`, `keys: { owner, id }`.
 - `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
   paired, `providerRef` (the instance id), `spec` jsonb (the host's
@@ -905,7 +905,7 @@ there.
 
 - `work_session` — `id` (UUID v4, unguessable per F25, and also the tmux
   session name), `organizationId`, `projectId`, `createdByUserId`,
-  `hostId` (null while the session waits for a host, 14 §2), `machineId`
+  `hostId` (null while the session waits for a host, 16 §2), `machineId`
   null, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
   a check constraint), `cwdCheckoutId` null,
   `idempotencyKey` null, then the fold: `state`, `stateSeq`,
@@ -1029,13 +1029,14 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 `@RequireScopes` + Swagger decorators:
 
 ```
-GET    /hosts                     read Host          hosts:read
+GET    /hosts                     read Host          hosts:read    ?include=unpaired (14)
 GET    /hosts/{id}                read Host          hosts:read
+GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (15)
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }
 GET    /hosts/pairing             read Host          hosts:read    (F5: source IP)
-GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId
+GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (14)
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
 GET    /installations             read Installation  repositories:read
