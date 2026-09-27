@@ -11,7 +11,9 @@ import { loadMigrations } from './run-migrations';
  *
  * `HardenAuthTables` is also reverted and re-applied with rows in place, so its
  * `down()` is proven and so is the clean-up its `up()` does on a database that
- * already holds orphaned sessions and duplicate accounts.
+ * already holds sessions pointing at rows that are gone and duplicate
+ * accounts. `FK_session_user` and `FK_account_user` belong to the migration
+ * before it (`CascadeSignInsWithTheirUser`) and stay through the revert.
  *
  * The suite starts its own Postgres 16 container. Where Docker is not
  * available, `SCHEMA_TEST_DATABASE_URL` points it at a database you started
@@ -198,7 +200,7 @@ describe('the migrated schema (integration)', () => {
   });
 
   describe('reverting and re-applying HardenAuthTables', () => {
-    const HARDEN = 'HardenAuthTables1790000000000';
+    const HARDEN = 'HardenAuthTables1790300000000';
 
     /** Undoes migrations, newest first, until `HardenAuthTables` is no longer applied. */
     const revertThroughHarden = async () => {
@@ -213,7 +215,11 @@ describe('the migrated schema (integration)', () => {
 
     it('restores the original schema, and on re-apply cleans up what the keys forbid', async () => {
       const kept = { user: randomUUID(), session: randomUUID(), account: randomUUID() };
-      const stale = { orphan: randomUUID(), olderAccount: randomUUID() };
+      const stale = {
+        impersonation: randomUUID(),
+        workspace: randomUUID(),
+        olderAccount: randomUUID(),
+      };
 
       await dataSource.query(
         `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
@@ -234,22 +240,63 @@ describe('the migrated schema (integration)', () => {
       await revertThroughHarden();
 
       const keys = await foreignKeys();
-      expect(keys.has('FK_session_user')).toBe(false);
-      expect(keys.has('FK_account_user')).toBe(false);
-      const reverted = await indexes();
-      expect(reverted.has('PK_session')).toBe(false);
-      expect(reverted.has('PK_f55da76ac1c3ac420f444d2ff11')).toBe(true);
-      expect(reverted.has('UQ_e12875dfb3b1d92d7d7c5377e22')).toBe(true);
-      expect(reverted.has('IDX_session_userId')).toBe(false);
-      expect(reverted.has('IDX_invitation_inviterId')).toBe(false);
-      expect(reverted.has('UQ_account_providerId_accountId')).toBe(false);
+      for (const name of [
+        'FK_session_impersonatedBy',
+        'FK_session_activeOrganization',
+        'FK_session_activeTeam',
+      ]) {
+        expect(keys.has(name), name).toBe(false);
+      }
+      // CascadeSignInsWithTheirUser's, which runs before it.
+      expect(keys.get('FK_session_user')).toMatchObject({ onDelete: 'c', valid: true });
+      expect(keys.get('FK_account_user')).toMatchObject({ onDelete: 'c', valid: true });
 
-      // What the old schema let in: a session for nobody, and a second row for
-      // the same provider account, older than the one it duplicates.
+      const reverted = await indexes();
+      for (const name of [
+        'PK_user',
+        'UQ_user_email',
+        'PK_session',
+        'UQ_session_token',
+        'IDX_session_impersonatedBy',
+        'IDX_session_activeOrganizationId',
+        'IDX_session_activeTeamId',
+        'PK_account',
+        'UQ_account_providerId_accountId',
+        'PK_verification',
+        'IDX_verification_identifier_createdAt',
+        'IDX_verification_expiresAt',
+        'IDX_invitation_inviterId',
+        'IDX_invitation_teamId',
+      ]) {
+        expect(reverted.has(name), name).toBe(false);
+      }
+      for (const name of [
+        'PK_cace4a159ff9f2512dd42373760',
+        'UQ_e12875dfb3b1d92d7d7c5377e22',
+        'PK_f55da76ac1c3ac420f444d2ff11',
+        'UQ_232f8e85d7633bd6ddfad421696',
+        'PK_54115ee388cdb6d86bb4bf5b2ea',
+        'PK_f7e3a90ca384e71d6e2e93bb340',
+        'UQ_user_username',
+        'IDX_session_userId',
+        'IDX_account_userId',
+      ]) {
+        expect(reverted.has(name), name).toBe(true);
+      }
+
+      // What the reverted schema lets in: a session impersonated by nobody, one
+      // open on a workspace that does not exist, and a second row for the same
+      // provider account, older than the one it duplicates. Each has a real
+      // user, as FK_session_user and FK_account_user still require.
       await dataSource.query(
-        `INSERT INTO "session" ("id", "userId", "token", "expiresAt")
-         VALUES ($1, $2, 'orphan', now() + interval '1 day')`,
-        [stale.orphan, randomUUID()],
+        `INSERT INTO "session" ("id", "userId", "token", "expiresAt", "impersonatedBy")
+         VALUES ($1, $2, 'impersonated-by-nobody', now() + interval '1 day', $3)`,
+        [stale.impersonation, kept.user, randomUUID()],
+      );
+      await dataSource.query(
+        `INSERT INTO "session" ("id", "userId", "token", "expiresAt", "activeOrganizationId")
+         VALUES ($1, $2, 'gone-workspace', now() + interval '1 day', $3)`,
+        [stale.workspace, kept.user, randomUUID()],
       );
       await dataSource.query(
         `INSERT INTO "account" ("id", "userId", "accountId", "providerId", "updatedAt")
@@ -261,14 +308,21 @@ describe('the migrated schema (integration)', () => {
       await expectHardenedAuthTables();
 
       const [rows] = await dataSource.query(
-        `SELECT (SELECT array_agg("id"::text) FROM "session" WHERE "id" = ANY($1)) AS sessions,
-                (SELECT array_agg("id"::text) FROM "account" WHERE "id" = ANY($2)) AS accounts`,
+        `SELECT (SELECT array_agg("id"::text ORDER BY "token") FROM "session" WHERE "id" = ANY($1)) AS sessions,
+                (SELECT array_agg("id"::text) FROM "account" WHERE "id" = ANY($2)) AS accounts,
+                (SELECT "activeOrganizationId" FROM "session" WHERE "id" = $3) AS "goneWorkspace"`,
         [
-          [kept.session, stale.orphan],
+          [kept.session, stale.impersonation, stale.workspace],
           [kept.account, stale.olderAccount],
+          stale.workspace,
         ],
       );
-      expect(rows).toEqual({ sessions: [kept.session], accounts: [kept.account] });
+      // 'bea-device' sorts before 'gone-workspace'.
+      expect(rows).toEqual({
+        sessions: [kept.session, stale.workspace],
+        accounts: [kept.account],
+        goneWorkspace: null,
+      });
     });
   });
 });

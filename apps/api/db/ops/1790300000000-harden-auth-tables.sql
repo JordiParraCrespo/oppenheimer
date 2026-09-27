@@ -1,17 +1,21 @@
--- One-off, before deploying migration 1790000000000-HardenAuthTables on a
+-- One-off, before deploying migration 1790300000000-HardenAuthTables on a
 -- large database (a session, account, verification or invitation table over
 -- 100k rows or 128 MB). Small databases do not need it: the migration does
--- the same work itself. To undo it, 1790000000000-harden-auth-tables.rollback.sql.
+-- the same work itself. To undo it, 1790300000000-harden-auth-tables.rollback.sql.
 --
 -- Run it with psql in autocommit mode (the default; no -1, no BEGIN):
 --
---   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/db/ops/1790000000000-harden-auth-tables.sql
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/db/ops/1790300000000-harden-auth-tables.sql
 --
 -- Every step can be run again. Nothing here blocks reads or writes for more
 -- than a moment: the index builds are CONCURRENTLY and wait as long as they
 -- need to; the catalog steps (NOT VALID keys, attaching the unique index) wait
 -- at most 3 seconds for their lock, and if one times out you run the script
 -- again. VALIDATE CONSTRAINT only takes a SHARE UPDATE EXCLUSIVE lock.
+--
+-- session."userId" and account."userId" are not here: their keys and indexes
+-- (FK_session_user, FK_account_user, IDX_session_userId, IDX_account_userId)
+-- belong to 1790200000000-CascadeSignInsWithTheirUser, which runs first.
 
 \set ON_ERROR_STOP 1
 SET statement_timeout = 0;
@@ -20,10 +24,7 @@ SET statement_timeout = 0;
 --    deletes the duplicates, step 5 the orphans.
 SELECT current_setting('server_version') AS postgres,
        current_setting('TimeZone') AS database_time_zone;
-SELECT 'session.userId' AS "column", 'delete' AS fix, count(*) AS orphans
-  FROM "session" s WHERE NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = s."userId")
-UNION ALL
-SELECT 'session.impersonatedBy', 'delete', count(*)
+SELECT 'session.impersonatedBy' AS "column", 'delete' AS fix, count(*) AS orphans
   FROM "session" s WHERE s."impersonatedBy" IS NOT NULL
    AND NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = s."impersonatedBy")
 UNION ALL
@@ -33,10 +34,7 @@ SELECT 'session.activeOrganizationId', 'set null', count(*)
 UNION ALL
 SELECT 'session.activeTeamId', 'set null', count(*)
   FROM "session" s WHERE s."activeTeamId" IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM "team" t WHERE t."id" = s."activeTeamId")
-UNION ALL
-SELECT 'account.userId', 'delete', count(*)
-  FROM "account" a WHERE NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = a."userId");
+   AND NOT EXISTS (SELECT 1 FROM "team" t WHERE t."id" = s."activeTeamId");
 -- Every (providerId, accountId) with more than one row. Step 3 keeps the most
 -- recently updated row of each and deletes the others.
 SELECT "providerId", "accountId", count(*) AS "rows", array_agg("userId") AS "userIds"
@@ -50,9 +48,9 @@ DECLARE r record;
 BEGIN
   FOR r IN SELECT c.relname FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid
             WHERE NOT i.indisvalid AND c.relnamespace = 'public'::regnamespace AND c.relname IN
-              ('IDX_session_userId', 'IDX_session_impersonatedBy',
+              ('IDX_session_impersonatedBy',
                'IDX_session_activeOrganizationId', 'IDX_session_activeTeamId',
-               'IDX_account_userId', 'UQ_account_providerId_accountId',
+               'UQ_account_providerId_accountId',
                'IDX_verification_identifier_createdAt', 'IDX_verification_expiresAt',
                'IDX_invitation_inviterId', 'IDX_invitation_teamId')
   LOOP
@@ -60,14 +58,12 @@ BEGIN
     EXECUTE format('DROP INDEX %I', r.relname);  -- plain DROP: invalid indexes are not used
   END LOOP;
 END $$;
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_session_userId" ON "session" ("userId");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_session_impersonatedBy" ON "session" ("impersonatedBy")
   WHERE "impersonatedBy" IS NOT NULL;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_session_activeOrganizationId" ON "session" ("activeOrganizationId")
   WHERE "activeOrganizationId" IS NOT NULL;
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_session_activeTeamId" ON "session" ("activeTeamId")
   WHERE "activeTeamId" IS NOT NULL;
-CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_account_userId" ON "account" ("userId");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_verification_identifier_createdAt" ON "verification" ("identifier", "createdAt");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_verification_expiresAt" ON "verification" ("expiresAt");
 CREATE INDEX CONCURRENTLY IF NOT EXISTS "IDX_invitation_inviterId" ON "invitation" ("inviterId");
@@ -109,11 +105,9 @@ DO $$
 DECLARE k record;
 BEGIN
   FOR k IN SELECT * FROM (VALUES
-      ('session', 'FK_session_user', 'userId', 'user', 'CASCADE'),
       ('session', 'FK_session_impersonatedBy', 'impersonatedBy', 'user', 'CASCADE'),
       ('session', 'FK_session_activeOrganization', 'activeOrganizationId', 'organization', 'SET NULL'),
-      ('session', 'FK_session_activeTeam', 'activeTeamId', 'team', 'SET NULL'),
-      ('account', 'FK_account_user', 'userId', 'user', 'CASCADE')
+      ('session', 'FK_session_activeTeam', 'activeTeamId', 'team', 'SET NULL')
     ) AS v(tbl, name, col, ref, on_delete)
   LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = k.name) THEN
@@ -133,12 +127,11 @@ BEGIN
   LOOP
     DELETE FROM "session" WHERE ctid = ANY (ARRAY(
       SELECT s.ctid FROM "session" s
-       WHERE NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = s."userId")
-          OR (s."impersonatedBy" IS NOT NULL
-              AND NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = s."impersonatedBy"))
+       WHERE s."impersonatedBy" IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = s."impersonatedBy")
        LIMIT 5000));
     GET DIAGNOSTICS n = ROW_COUNT;
-    RAISE NOTICE 'session orphans deleted: %', n;
+    RAISE NOTICE 'sessions of a deleted impersonator deleted: %', n;
     EXIT WHEN n = 0;
     COMMIT;
   END LOOP;
@@ -164,23 +157,12 @@ BEGIN
     EXIT WHEN n = 0;
     COMMIT;
   END LOOP;
-  LOOP
-    DELETE FROM "account" WHERE ctid = ANY (ARRAY(
-      SELECT a.ctid FROM "account" a
-       WHERE NOT EXISTS (SELECT 1 FROM "user" u WHERE u."id" = a."userId") LIMIT 5000));
-    GET DIAGNOSTICS n = ROW_COUNT;
-    RAISE NOTICE 'account orphans deleted: %', n;
-    EXIT WHEN n = 0;
-    COMMIT;
-  END LOOP;
 END $$;
 
 -- 6. Check the existing rows against the keys. Reads and writes carry on.
-ALTER TABLE "session" VALIDATE CONSTRAINT "FK_session_user";
 ALTER TABLE "session" VALIDATE CONSTRAINT "FK_session_impersonatedBy";
 ALTER TABLE "session" VALIDATE CONSTRAINT "FK_session_activeOrganization";
 ALTER TABLE "session" VALIDATE CONSTRAINT "FK_session_activeTeam";
-ALTER TABLE "account" VALIDATE CONSTRAINT "FK_account_user";
 
 -- 7. Fresh statistics for the planner.
 ANALYZE "session";

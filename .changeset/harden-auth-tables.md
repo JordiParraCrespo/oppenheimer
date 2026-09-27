@@ -2,4 +2,4 @@
 "@oppenheimer/api": minor
 ---
 
-Foreign keys, indexes and a unique provider-account key on Better Auth's `session`, `account` and `verification` tables, and the missing foreign-key indexes on `invitation`; a user's sessions and logins now go with the user. Large databases run `apps/api/db/ops/1790000000000-harden-auth-tables.sql` first.
+Foreign keys and indexes for Better Auth's `session` (`impersonatedBy`, `activeOrganizationId`, `activeTeamId`), a unique provider-account key on `account`, indexes on `verification` and the missing foreign-key indexes on `invitation`, and readable names for the first migration's constraints. Large databases run `apps/api/db/ops/1790300000000-harden-auth-tables.sql` first.

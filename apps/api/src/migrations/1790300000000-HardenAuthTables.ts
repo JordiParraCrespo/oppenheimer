@@ -7,16 +7,16 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * starter's `HardenAuthTables` (flama#158); the `timestamptz` half of that
  * change was already done here by `StoreTimestampsWithTimeZone`.
  *
- * `session."userId"` and `account."userId"` had neither a foreign key nor an
- * index, and `DeleteUserCommandHandler` deletes the `user` row directly, so a
- * deleted user's sessions and credentials (password hash, OAuth tokens)
- * stayed behind. The other ids on `session` were as bare:
+ * `session."userId"` and `account."userId"` are not here: the migration just
+ * before this one, `CascadeSignInsWithTheirUser`, owns their foreign keys
+ * (`FK_session_user`, `FK_account_user`, ON DELETE CASCADE), their indexes
+ * (`IDX_session_userId`, `IDX_account_userId`) and the orphan clean-up that
+ * went with them. This one relies on them and leaves them to that one's
+ * `down()`. The other ids on `session` were as bare as those were:
  *
- *   userId               → user          CASCADE   a session means nothing without its user
  *   impersonatedBy       → user          CASCADE   an impersonation ends with the admin doing it
  *   activeOrganizationId → organization  SET NULL  the session outlives the workspace it had open
  *   activeTeamId         → team          SET NULL  same; a team is deleted with its organization
- *   account.userId       → user          CASCADE   a login means nothing without its user
  *
  * `delegatedCredentialId` stays without a key: it names either an `api_token`
  * row or an OAuth grant's digest prefix, so it has no single table to point at,
@@ -43,11 +43,11 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Access patterns and what serves each:
  *   Q1 session by token (every request)             → UQ_session_token
- *   Q2 a user's sessions; cascade on user delete     → IDX_session_userId
+ *   Q2 a user's sessions; cascade on user delete     → IDX_session_userId (CascadeSignInsWithTheirUser)
  *   Q3 cascades from user / organization / team      → IDX_session_impersonatedBy,
  *                                                      IDX_session_activeOrganizationId,
  *                                                      IDX_session_activeTeamId (partial: mostly null)
- *   Q4 a user's accounts; cascade on user delete     → IDX_account_userId
+ *   Q4 a user's accounts; cascade on user delete     → IDX_account_userId (CascadeSignInsWithTheirUser)
  *   Q5 account by provider + provider's id           → UQ_account_providerId_accountId
  *   Q6 newest verification for an identifier         → IDX_verification_identifier_createdAt
  *   Q7 expired verifications                         → IDX_verification_expiresAt
@@ -60,18 +60,15 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Q7 is what keeps that delete from scanning the table. Sessions expire the
  * same way on read; `session.expiresAt` needs no index for it.
  *
- * Locking: a session insert now takes a `FOR KEY SHARE` lock on its `user`
- * row, so it waits while another transaction holds that row `FOR UPDATE` —
- * as `PersonalWorkspaceRepository.provision` does for the moment it takes to
- * create the workspace. `member` and `user_role` inserts already did.
- *
  * Renames: whatever primary key and `email` / `token` unique constraints the
  * tables have are found by type and renamed `PK_user`, `UQ_user_email`,
- * `PK_session`, `UQ_session_token`, `PK_account`, `PK_verification`.
- * `down()` gives them back TypeORM's default names. Catalog-only.
+ * `PK_session`, `UQ_session_token`, `PK_account`, `PK_verification`. The
+ * `email` constraint is matched on its column alone, so `UQ_user_username`
+ * (`AddUserUsername`) is never taken for it. `down()` gives them back
+ * TypeORM's default names. Catalog-only.
  *
  * `down()` removes every key, unique and index this adds and restores the
- * names. It cannot bring back the orphaned or duplicate rows `up()` deleted.
+ * names; `CascadeSignInsWithTheirUser`'s keys and indexes stay. It cannot bring back the orphaned or duplicate rows `up()` deleted.
  *
  * ---------------------------------------------------------------------------
  * Large databases (a table over 100k rows or 128 MB): run the ops script.
@@ -81,15 +78,15 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * would block sign-ins for the whole deploy. So on a large table this migration
  * only checks that the slow work is done, and fails with a pointer here if it is
  * not. Before deploying, run with psql in autocommit mode
- * `apps/api/db/ops/1790000000000-harden-auth-tables.sql`; before reverting,
- * `apps/api/db/ops/1790000000000-harden-auth-tables.rollback.sql`. Both can be
+ * `apps/api/db/ops/1790300000000-harden-auth-tables.sql`; before reverting,
+ * `apps/api/db/ops/1790300000000-harden-auth-tables.rollback.sql`. Both can be
  * re-run. On small databases (development, CI, fresh installs) the migration
  * does all of it itself.
  * ---------------------------------------------------------------------------
  */
 
-const OPS = 'apps/api/db/ops/1790000000000-harden-auth-tables.sql';
-const ROLLBACK = 'apps/api/db/ops/1790000000000-harden-auth-tables.rollback.sql';
+const OPS = 'apps/api/db/ops/1790300000000-harden-auth-tables.sql';
+const ROLLBACK = 'apps/api/db/ops/1790300000000-harden-auth-tables.rollback.sql';
 
 /** [table, readable name, TypeORM's default name, unique column (none for the primary key)] */
 const RENAMES: [string, string, string, string?][] = [
@@ -103,8 +100,6 @@ const RENAMES: [string, string, string, string?][] = [
 
 /** [table, name, definition] */
 const INDEXES: [string, string, string][] = [
-  // Q2
-  ['session', 'IDX_session_userId', `("userId")`],
   // Q3
   [
     'session',
@@ -117,8 +112,6 @@ const INDEXES: [string, string, string][] = [
     `("activeOrganizationId") WHERE "activeOrganizationId" IS NOT NULL`,
   ],
   ['session', 'IDX_session_activeTeamId', `("activeTeamId") WHERE "activeTeamId" IS NOT NULL`],
-  // Q4
-  ['account', 'IDX_account_userId', `("userId")`],
   // Q6
   ['verification', 'IDX_verification_identifier_createdAt', `("identifier", "createdAt")`],
   // Q7
@@ -133,15 +126,13 @@ const TABLES = ['session', 'account', 'verification', 'invitation'];
 
 /** [table, name, column, referenced table, ON DELETE] */
 const FOREIGN_KEYS: [string, string, string, string, 'CASCADE' | 'SET NULL'][] = [
-  ['session', 'FK_session_user', 'userId', 'user', 'CASCADE'],
   ['session', 'FK_session_impersonatedBy', 'impersonatedBy', 'user', 'CASCADE'],
   ['session', 'FK_session_activeOrganization', 'activeOrganizationId', 'organization', 'SET NULL'],
   ['session', 'FK_session_activeTeam', 'activeTeamId', 'team', 'SET NULL'],
-  ['account', 'FK_account_user', 'userId', 'user', 'CASCADE'],
 ];
 
-export class HardenAuthTables1790000000000 implements MigrationInterface {
-  name = 'HardenAuthTables1790000000000';
+export class HardenAuthTables1790300000000 implements MigrationInterface {
+  name = 'HardenAuthTables1790300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`SET LOCAL lock_timeout = '5s'`);
