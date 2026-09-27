@@ -57,6 +57,13 @@ This is the shape the whole design turns on, so it comes first.
   project of notes, documents and bots needs. herdr-projects models the
   same case as a thread of kind `tab`, and a project with `repos = []`
   is ordinary there.
+  **Changed 2026-09-27:** the create body takes **exactly one** checkout
+  in the MVP. The runner makes a session as one worktree of one
+  repository, so a session sent with none was recorded, then refused by
+  the host at launch (`SESS_002`) and shown as failed. The API refuses it
+  before a row is written, and the console keeps its composer disabled
+  until a repository is picked. The model keeps zero as a valid
+  count; a session with no git returns when a runner can make one.
 
 A project is **not** a repository, and a session is **not** a
 repository. Sessions belong to projects, and repositories are what a

@@ -170,7 +170,8 @@ export interface CreateSessionCheckout {
 export interface CreateSessionInput {
   hostId: string;
   agent: SessionAgent;
-  checkouts: CreateSessionCheckout[];
+  /** Exactly one: a runner makes a session as one worktree of one repository. */
+  checkouts: [CreateSessionCheckout];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   launch?: Partial<SessionLaunch>;

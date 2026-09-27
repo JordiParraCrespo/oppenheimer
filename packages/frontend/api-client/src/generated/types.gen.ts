@@ -1437,11 +1437,13 @@ export type CreateSessionRequest = {
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
     projectId?: string;
     name?: string;
-    checkouts: Array<{
-        installationId: string;
-        githubRepoId: number;
-        baseBranch?: string;
-    }>;
+    checkouts: [
+        {
+            installationId: string;
+            githubRepoId: number;
+            baseBranch?: string;
+        }
+    ];
     cwdGithubRepoId?: number;
     launch?: {
         model?: string;

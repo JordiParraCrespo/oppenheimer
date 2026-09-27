@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
+import type { CreateSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCreateSession,
   useHosts,
@@ -82,13 +83,17 @@ export function NewSessionSend({
 
   function start(prompt: string) {
     const draft = getValues();
-    if (!draft.hostId || hostKnown === false || draft.scope.length === 0) return;
+    // One repository, exactly: the API refuses a session with none. A row
+    // whose key no longer parses is dropped by `toCheckouts`, so this also
+    // holds the send when the only pick named a repository gone since.
+    const [checkout] = toCheckouts(draft.scope);
+    if (!draft.hostId || hostKnown === false || !checkout) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input = {
+    const input: CreateSessionInput = {
       hostId: draft.hostId,
       agent: draft.agent,
       ...(projectId ? { projectId } : {}),
-      checkouts: toCheckouts(draft.scope),
+      checkouts: [checkout],
       launch: toLaunchInput(draft),
       prompt,
     };
