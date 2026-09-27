@@ -356,10 +356,6 @@
     "unassigned": "Sin asignar"
   },
   "sessions": {
-    "home": {
-      "openTitle": "Ninguna sesión abierta",
-      "openDescription": "Elige una en la barra lateral o inicia otra."
-    },
     "provisioning": {
       "title": "Iniciando tu sesión",
       "failedTitle": "La sesión no se inició",
@@ -403,7 +399,8 @@
       "resolved": "Terminada"
     },
     "closed": {
-      "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+      "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
+      "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
     },
     "new": {
       "title": "Nueva sesión",
@@ -651,7 +648,7 @@
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
       "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
     }

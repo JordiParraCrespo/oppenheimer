@@ -4,11 +4,15 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm'
 /**
  * Persistence model for the Better Auth `invitation` table — a pending
  * invitation to join an organization (optionally scoped to a team/workspace).
- * Owned by Better Auth.
+ * Owned by Better Auth. Its foreign keys live in the migrations: `organizationId`
+ * and `inviterId` cascade from `organization` and `user`, `teamId` is set null
+ * when its team goes.
  */
 @Entity('invitation')
-@Index(['organizationId'])
-@Index(['email'])
+@Index('IDX_invitation_organizationId', ['organizationId'])
+@Index('IDX_invitation_email', ['email'])
+@Index('IDX_invitation_inviterId', ['inviterId'])
+@Index('IDX_invitation_teamId', ['teamId'], { where: '"teamId" IS NOT NULL' })
 export class InvitationOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   id!: string;

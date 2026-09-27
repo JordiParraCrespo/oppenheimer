@@ -2,6 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AppError } from '@oppenheimer/backend-core';
 import type {
   AddMemberDto,
   CreateOrganizationDto,
@@ -23,6 +24,7 @@ import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles/roles.di-tokens'
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
 import { PersonalWorkspaceProvisionedDomainEvent } from './domain/events/personal-workspace-provisioned.domain-event';
+import { OrganizationErrors } from './domain/organization.errors';
 import { OrganizationSlug } from './domain/value-objects/organization-slug.value-object';
 import type {
   FullOrganizationResponseDto,
@@ -484,11 +486,21 @@ export class OrganizationsService {
     return (await this.enrichMembers([member]))[0];
   }
 
-  async getActiveMember(headers: IncomingHttpHeaders): Promise<MemberResponseDto> {
-    const result = await invokeOrganizationApi(() =>
-      auth.api.getActiveMember({ headers: this.headers(headers) }),
-    );
-    return (await this.enrichMembers([mapMember(result)]))[0];
+  /**
+   * The caller's own membership in `organizationId`, the organization the
+   * route names.
+   *
+   * Not Better Auth's `getActiveMember`, which answers for the session's
+   * *active* organization instead: a cookie session may have another one
+   * selected, and a token's delegated session has one only when the token is
+   * pinned to a single organization. Through it this route answered for the
+   * wrong organization or not at all, and read the caller's membership through
+   * any organization's path, including one they do not belong to.
+   */
+  async getMembership(organizationId: string, userId: string): Promise<MemberResponseDto> {
+    const member = await this.memberRecords.findOne({ where: { organizationId, userId } });
+    if (!member) throw new AppError(OrganizationErrors.NOT_A_MEMBER);
+    return (await this.enrichMembers([mapMember(member)]))[0];
   }
 
   private async enrichMembers(members: MemberResponseDto[]): Promise<MemberResponseDto[]> {
@@ -503,20 +515,38 @@ export class OrganizationsService {
     }));
   }
 
-  /** Keep Better Auth's organization role and the app's scoped RBAC role aligned. */
+  /**
+   * Keep Better Auth's organization role and the app's scoped RBAC role aligned.
+   *
+   * Only the role that stands for the membership (`owner` or `user`) is
+   * swapped. Custom roles an admin assigned in this organization are the
+   * member's too, and a roster change must not take them away.
+   */
   private async assignApplicationRole(
     userId: string,
     organizationId: string,
     organizationRole: string,
   ): Promise<void> {
-    const roleName = applicationRoleFor(organizationRole);
-    const role = await this.roles.findOneByName(roleName, null);
-    // The same catalog entry the sign-up path raises. Two writers reaching for
-    // the same missing role used to answer two different shapes — a bare
-    // `Error` here (a 500 with no code) and a problem document there — which is
-    // the slug duplication again, in the failure path.
-    if (role.isNone()) throw missingSystemRole(roleName);
-    await this.userRoles.setRolesForUser(userId, [role.unwrap().id], organizationId);
+    const membershipRoleIds = new Map<string, string>();
+    for (const name of MEMBERSHIP_ROLES) {
+      const role = await this.roles.findOneByName(name, null);
+      // The same catalog entry the sign-up path raises. Two writers reaching
+      // for the same missing role used to answer two different shapes — a bare
+      // `Error` here (a 500 with no code) and a problem document there — which
+      // is the slug duplication again, in the failure path.
+      if (role.isNone()) throw missingSystemRole(name);
+      membershipRoleIds.set(name, role.unwrap().id);
+    }
+    // The port answers a scoped read with the global assignments included;
+    // those are not this scope's to rewrite.
+    const [inScope, global] = await Promise.all([
+      this.userRoles.findRoleIdsForUser(userId, organizationId),
+      this.userRoles.findRoleIdsForUser(userId, null),
+    ]);
+    const membership = [...membershipRoleIds.values()];
+    const custom = inScope.filter((id) => !global.includes(id) && !membership.includes(id));
+    const roleId = membershipRoleIds.get(applicationRoleFor(organizationRole)) as string;
+    await this.userRoles.setRolesForUser(userId, [...custom, roleId], organizationId);
   }
 
   /**
@@ -559,6 +589,9 @@ export class OrganizationsService {
     };
   }
 }
+
+/** The application roles a membership maps onto; see {@link applicationRoleFor}. */
+const MEMBERSHIP_ROLES = ['owner', 'user'] as const;
 
 /**
  * Map Better Auth membership roles onto the application's system roles.

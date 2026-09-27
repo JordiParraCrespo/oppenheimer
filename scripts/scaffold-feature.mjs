@@ -30,7 +30,8 @@ const APPS = {
     dir: 'apps/web',
     features: 'src/features',
     product: 'consumer',
-    allow: ['public'],
+    // The same allowlist as `scripts/check-frontend-structure.mjs`.
+    allow: ['public', 'automations'],
     platform: 'web',
   },
   // oppenheimer:end web

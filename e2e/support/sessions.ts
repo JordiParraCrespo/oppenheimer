@@ -278,3 +278,40 @@ export async function createSession(
   expect(created.status(), await created.text()).toBe(201);
   return ((await created.json()) as { id: string }).id;
 }
+
+/**
+ * A session's stored lifecycle, as `GET /sessions/{id}` spells it: the
+ * `SESSION_STATES` of `@oppenheimer/shared`, which this package does not
+ * depend on.
+ */
+export type SessionLifecycle = 'starting' | 'open' | 'failed' | 'resolved';
+
+/** What the specs read off a session row. */
+export interface SessionRow {
+  id: string;
+  name: string;
+  lifecycle: SessionLifecycle;
+  stoppedAt: string | null;
+  checkouts: { branch: string; directoryName: string }[];
+}
+
+/** Wait until the session's stored lifecycle is `lifecycle`, and return the row. */
+export async function waitForLifecycle(
+  api: APIRequestContext,
+  sessionId: string,
+  lifecycle: SessionLifecycle,
+  timeout = 120_000,
+): Promise<SessionRow> {
+  let row: SessionRow | undefined;
+  await expect
+    .poll(
+      async () => {
+        row = (await (await api.get(`/api/v1/sessions/${sessionId}`)).json()) as SessionRow;
+        return row.lifecycle;
+      },
+      { timeout, intervals: [1_000, 2_000] },
+    )
+    .toBe(lifecycle);
+  if (!row) throw new Error(`session ${sessionId} was never read`);
+  return row;
+}

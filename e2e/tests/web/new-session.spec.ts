@@ -72,7 +72,7 @@ test.describe('New session', () => {
     await expect(projectDialog.getByRole('button', { name: 'Create project' })).toBeDisabled();
     await projectDialog.getByLabel('Name').fill('XRP');
     // Adding a repository makes it cloned by default.
-    await projectDialog.getByRole('combobox', { name: 'Add a repository…' }).click();
+    await projectDialog.getByRole('button', { name: 'Add a repository…' }).click();
     await projectDialog
       .getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) })
       .click();

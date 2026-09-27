@@ -1,8 +1,10 @@
 # @oppenheimer/api-client
 
 Typed HTTP client for `apps/api`, **generated** from the API's OpenAPI schema.
-Do not hand-edit files under `src/data-access/api/openapi` — they are overwritten
-on every regeneration.
+Do not hand-edit `src/generated/` — it is overwritten on every regeneration.
+The legacy class client under `src/data-access/api/openapi` is no longer
+generated (see below), so a change to an endpoint it wraps is made there by
+hand, matching `apps/api/openapi.json`.
 
 ## Regenerating
 
@@ -18,7 +20,8 @@ and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators. The
 legacy class client under `src/data-access/` remains until call sites finish
-moving to the SDK.
+moving to the SDK. Nothing regenerates it any more — the post-processing step
+only rebuilds its index files — so an endpoint change it wraps is made by hand.
 
 ## What's inside
 

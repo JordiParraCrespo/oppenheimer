@@ -46,7 +46,9 @@
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a
   confirm over the close that says whether to discard work that is not
-  pushed. The workspace's **Unassigned** project is the first group: a
+  pushed. The row stays until the host confirms the close, and the
+  sidebar never lists a resolved session (the API keeps it as a
+  tombstone). The workspace's **Unassigned** project is the first group: a
   session that names no project is listed there. Its settings edit its
   repositories and defaults like any project's, but its name is fixed
   and it has no Delete (`PROJECTS_008`).
@@ -183,6 +185,14 @@
   alias that moves under it. The foot row's two menus are denser than
   the sidebar's, and the design system owns that density. Runtime
   and lifetime chips arrive with the VM slice.
+- **When the composer can send.** A host is picked and still one this
+  workspace has, and exactly one repository is picked. Until both hold,
+  the text area and the send button are disabled; the chips stay live,
+  since they are how the gap is closed. The host may be offline (the
+  session is owed to it, above); a session with no repository may not,
+  because the runner makes a session as one worktree of one repository
+  and refuses one with none (`SESS_002`), and the API refuses it first
+  (10, changed 2026-09-27).
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
   stored; "Ask for approval" / "Approve for me" / "Full access" on the
@@ -199,12 +209,11 @@
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
   next visit's.
-- The pane beside the sidebar has four states, and each is a URL:
-  `/sessions/new` (the composer), `/sessions/{id}` (the terminal, or the
-  provisioning pane while the session is starting, or a closed session),
-  `/sessions` (nothing open: "No sessions open", and the way to start
-  one), and anything else (a 404 that keeps the sidebar rather than a
-  bare page).
+- The pane beside the sidebar is a URL: `/sessions/new` (the composer),
+  `/sessions/{id}` (the terminal, or the provisioning pane while the
+  session is starting, or a closed session), and anything else (a 404
+  that keeps the sidebar rather than a bare page). With no session open
+  the console lands on the composer; `/sessions` redirects there.
 - Provisioning: named steps with a ring, a check and a mono meta line
   (container or host, clone, checkout, start the agent), an elapsed
   clock and a status word, so a slow step is diagnosable. The eyebrow is the host, the title "Starting your

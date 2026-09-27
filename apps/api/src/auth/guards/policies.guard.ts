@@ -5,6 +5,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { AbilityPort } from '../application/ability.port';
 import { ABILITY } from '../auth.di-tokens';
 import { CHECK_POLICIES_KEY, type PolicyRule } from '../decorators/check-policies.decorator';
+import { ORGANIZATION_PARAM_KEY } from '../decorators/organization-scoped.decorator';
 import { AuthErrors } from '../domain/auth.errors';
 
 /**
@@ -60,7 +61,10 @@ export class PoliciesGuard implements CanActivate {
 
     // Memoized on the request: four call sites resolve the ability during a
     // single request, and `forRequest` also attaches it to `request.ability`.
-    const ability = await this.abilities.forRequest(request);
+    const ability = await this.abilities.forRequest(
+      request,
+      this.routeOrganizationId(context, request),
+    );
 
     // Returning `false` would hand back Nest's own codeless 403; throw the
     // catalog error instead so the response carries `AUTH_002` like every other
@@ -70,5 +74,26 @@ export class PoliciesGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  /**
+   * The organization an `@OrganizationScoped` route acts on, from its path.
+   *
+   * The caller's roles in *that* organization decide, not in the session's
+   * active one: a session may have another organization selected, and a
+   * token's delegated session has none unless the token is pinned to one.
+   * Someone who is not a member there holds no roles in it, so only their
+   * global roles count.
+   */
+  private routeOrganizationId(
+    context: ExecutionContext,
+    request: { params?: Record<string, unknown> },
+  ): string | null {
+    const param = this.reflector.getAllAndOverride<string>(ORGANIZATION_PARAM_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    const value = param ? request.params?.[param] : undefined;
+    return typeof value === 'string' ? value : null;
   }
 }

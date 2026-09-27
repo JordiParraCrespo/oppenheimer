@@ -44,7 +44,11 @@ type linkHandler struct {
 	// with it, and a stop queued behind a create must not run on a socket
 	// that is already gone. Outcomes travel through the reporter, which
 	// resends them on the next link.
-	life context.Context
+	//
+	// It ends only when the daemon does, or when the host is unpaired
+	// (endLife): no command runs for a host that is no longer one.
+	life    context.Context
+	endLife context.CancelFunc
 	// lanes orders each session's commands off the read loop.
 	lanes *lanes
 
@@ -83,9 +87,11 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		logger.Error("could not mint a run id; the link stays down", slog.Any("error", err))
 		return
 	}
+	life, endLife := context.WithCancel(ctx)
+	defer endLife()
 	handler := &linkHandler{
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
-		bootToken: a.Pairing.BootToken, life: ctx, lanes: newLanes(),
+		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -100,6 +106,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 			if _, err := a.Pairing.MarkRevoked(); err != nil {
 				logger.Error("could not record that this host was unpaired", slog.Any("error", err))
 			}
+			handler.unpaired(ctx)
 		},
 	})
 	if err != nil {
@@ -114,10 +121,64 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
-	// Run returns only when ctx ends or the host was unpaired. Sessions carry
-	// on in tmux either way: ending someone's work is `uninstall --force`'s
-	// decision, not a side effect of losing the control plane.
+	// Run returns only when ctx ends or the host was unpaired. A lost or
+	// ended link leaves sessions running in tmux: ending someone's work is not
+	// a side effect of losing the control plane. Unpaired is the exception,
+	// because it is a decision (OnUnpaired above).
 	_ = client.Run(ctx)
+}
+
+// unpairedDrain bounds how long an unpaired host waits for the commands it
+// was running to return before it stops its sessions anyway.
+const unpairedDrain = 30 * time.Second
+
+// unpairedRetry is how long an unpaired host waits before trying again to stop
+// a session it could not; it doubles up to unpairedRetryMax. A var so a test
+// need not wait a real second.
+var (
+	unpairedRetry    = time.Second
+	unpairedRetryMax = time.Minute
+)
+
+// unpaired is a person removing this host, and removing a host stops the
+// sessions on it (03, 14): the control plane has already recorded each one
+// stopped, and the remove dialog promised their terminals close. An agent left
+// running here would keep working where no console can see it. Stopping keeps
+// every checkout on disk — it is not a close.
+//
+// The order is the point. Commands in flight are cancelled and the lanes
+// closed and drained first, so a create still cloning cannot start its tmux
+// session after the stop has already looked; then every session goes. A
+// create that got as far as tmux before the cancel is ended by the same stop.
+//
+// There is no second verdict to try again on, so a stop that fails is retried
+// for as long as the daemon lives — which, unpaired, is quietly, until the
+// service manager stops it.
+func (h *linkHandler) unpaired(ctx context.Context) {
+	if h.endLife != nil {
+		h.endLife()
+	}
+	if !h.lanes.close(unpairedDrain) {
+		h.logger.Warn("commands were still running when this host was unpaired; stopping its sessions anyway")
+	}
+	wait := unpairedRetry
+	for {
+		ended, err := h.app.Sessions.EndAll(context.WithoutCancel(ctx))
+		if len(ended) > 0 {
+			h.logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
+		}
+		if err == nil {
+			return
+		}
+		h.logger.Error("could not stop every session of this unpaired host; trying again",
+			slog.Any("error", err), slog.Duration("in", wait))
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(wait):
+		}
+		wait = min(wait*2, unpairedRetryMax)
+	}
 }
 
 /* ---------------------------------------------------------------- link.Handler */
