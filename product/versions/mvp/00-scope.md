@@ -87,7 +87,9 @@ Virtual machines in any form (Shared workspace VM, Clean VM,
 Firecracker, tart, cloud adapters), sleep tiers, account objects and
 volumes, the egress proxy, agents beyond the catalog (Cursor,
 Gemini and the rest Orca and Synara run), Create PR and diff
-view, preview URLs, auto-fix and routines, usage meters, delegation,
+view, preview URLs, auto-fix and automations — the scheduler, the
+GitHub trigger, the runs; the console's automations list and its pages
+have their routes so the rail is whole (05, 13) — usage meters, delegation,
 Tailscale mode, orgs and billing, agent personalities and any other
 directory under `~/oppenheimer-ai`.
 

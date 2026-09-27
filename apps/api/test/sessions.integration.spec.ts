@@ -375,8 +375,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "projectSlug", "createdByUserId", "hostId", "name", "slug", "agent")
+           VALUES ($1, $2, $3, 'xrp-mobile', $4, $5, $6, $7, 'claude-code')`,
           [
             randomUUID(),
             organizationId,
@@ -542,8 +542,8 @@ describe('sessions: the log, the fold and the keys (integration)', () => {
       await expect(
         dataSource.query(
           `INSERT INTO "work_session"
-             ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name", "slug", "agent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'claude-code')`,
+             ("id", "organizationId", "projectId", "projectSlug", "createdByUserId", "hostId", "name", "slug", "agent")
+           VALUES ($1, $2, $3, 'xrp-mobile', $4, $5, $6, $7, 'claude-code')`,
           [randomUUID(), organizationId, projectId, userId, hostId, 'x', 'bold-otter-abc123'],
         ),
       ).rejects.toThrow(/UQ_work_session_project_slug|duplicate key/i);

@@ -209,6 +209,10 @@ earlier note:
   (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
   evening export, and the second rail item reads Automations. A project
   needs a repository to be saved from the console (2026-09-26).
+- `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
+  console's automations list and its pages have their routes now, so the
+  rail is whole; the automation itself — scheduler, trigger, runs — stays
+  after (`versions/mvp/13-automations.md`, 2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,

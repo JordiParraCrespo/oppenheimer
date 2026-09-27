@@ -4,6 +4,7 @@
   "errors",
   "auth",
   "sessions",
+  "automations",
   "hosts",
   "projects",
   "settings",
