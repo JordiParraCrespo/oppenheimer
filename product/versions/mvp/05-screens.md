@@ -31,8 +31,9 @@
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
-  the address current, and the automations list is the second sidebar
-  (13) — the head reads Projects with the
+  the address current, each named with its list's count beside the rail
+  the moment it is hovered or focused, and the automations list is the
+  second sidebar (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
