@@ -2,6 +2,7 @@
 
 import { shareEntities, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
 import {
+  type QueryClient,
   skipToken,
   type UseMutationOptions,
   type UseQueryOptions,
@@ -41,8 +42,9 @@ export const sessionsKeys = {
 const PROVISIONING_POLL_MS = 2000;
 
 /**
- * The sessions this console asked to close and has not yet seen resolve, each
- * with the timer that ends its watch.
+ * The sessions a console asked to close and has not yet seen resolve, each
+ * with the timer that ends its watch — per `QueryClient`, so the watch lives
+ * and dies with the cache it keeps polling, and two clients never share one.
  *
  * A close is answered by the host, not by the request, so the row stays `open`
  * for a beat after Delete — the same "not settled, and nothing pushes it" as a
@@ -50,22 +52,33 @@ const PROVISIONING_POLL_MS = 2000;
  * its row leaves the list, or after {@link CLOSE_WATCH_MS} for a host that is
  * offline and will answer only when it is back.
  */
-const closing = new Map<string, ReturnType<typeof setTimeout>>();
+const closeWatches = new WeakMap<QueryClient, Map<string, ReturnType<typeof setTimeout>>>();
 
 const CLOSE_WATCH_MS = 60_000;
 
+function closesOf(queryClient: QueryClient): Map<string, ReturnType<typeof setTimeout>> {
+  let watches = closeWatches.get(queryClient);
+  if (!watches) {
+    watches = new Map();
+    closeWatches.set(queryClient, watches);
+  }
+  return watches;
+}
+
 /** Watch a close; asking again restarts the watch rather than adding a second. */
-function watchClose(id: string): void {
-  clearTimeout(closing.get(id));
-  closing.set(
+function watchClose(queryClient: QueryClient, id: string): void {
+  const watches = closesOf(queryClient);
+  clearTimeout(watches.get(id));
+  watches.set(
     id,
-    setTimeout(() => closing.delete(id), CLOSE_WATCH_MS),
+    setTimeout(() => watches.delete(id), CLOSE_WATCH_MS),
   );
 }
 
-function unwatchClose(id: string): void {
-  clearTimeout(closing.get(id));
-  closing.delete(id);
+function unwatchClose(queryClient: QueryClient, id: string): void {
+  const watches = closesOf(queryClient);
+  clearTimeout(watches.get(id));
+  watches.delete(id);
 }
 
 /**
@@ -103,16 +116,19 @@ export function useSessions<TData = SessionEntity[]>(
         queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
       }
       const listed = sessions.filter((session) => !session.isResolved);
-      for (const id of closing.keys()) {
-        if (!listed.some((session) => session.id === id)) unwatchClose(id);
+      for (const id of closesOf(queryClient).keys()) {
+        if (!listed.some((session) => session.id === id)) unwatchClose(queryClient, id);
       }
       return listed;
     },
     // Entities are classes: without this every poll is a new object per row,
     // and the sidebar re-renders every row every two seconds.
     structuralSharing: shareEntities,
+    // The query's own rows, before any caller's `select`.
     refetchInterval: (query) =>
-      query.state.data?.some((session) => session.isProvisioning || closing.has(session.id))
+      query.state.data?.some(
+        (session) => session.isProvisioning || closesOf(queryClient).has(session.id),
+      )
         ? PROVISIONING_POLL_MS
         : false,
     ...options,
@@ -251,7 +267,7 @@ export function useCloseSession(
     mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
       app.sessions.close(id, acceptUnpushedWork),
     ...withCacheOnSuccess(options, (session) => {
-      watchClose(session.id);
+      watchClose(queryClient, session.id);
       queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
     }),
   });

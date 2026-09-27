@@ -132,6 +132,14 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 // was running to return before it stops its sessions anyway.
 const unpairedDrain = 30 * time.Second
 
+// unpairedRetry is how long an unpaired host waits before trying again to stop
+// a session it could not; it doubles up to unpairedRetryMax. A var so a test
+// need not wait a real second.
+var (
+	unpairedRetry    = time.Second
+	unpairedRetryMax = time.Minute
+)
+
 // unpaired is a person removing this host, and removing a host stops the
 // sessions on it (03, 14): the control plane has already recorded each one
 // stopped, and the remove dialog promised their terminals close. An agent left
@@ -142,6 +150,10 @@ const unpairedDrain = 30 * time.Second
 // closed and drained first, so a create still cloning cannot start its tmux
 // session after the stop has already looked; then every session goes. A
 // create that got as far as tmux before the cancel is ended by the same stop.
+//
+// There is no second verdict to try again on, so a stop that fails is retried
+// for as long as the daemon lives — which, unpaired, is quietly, until the
+// service manager stops it.
 func (h *linkHandler) unpaired(ctx context.Context) {
 	if h.endLife != nil {
 		h.endLife()
@@ -149,12 +161,23 @@ func (h *linkHandler) unpaired(ctx context.Context) {
 	if !h.lanes.close(unpairedDrain) {
 		h.logger.Warn("commands were still running when this host was unpaired; stopping its sessions anyway")
 	}
-	ended, err := h.app.Sessions.EndAll(context.WithoutCancel(ctx))
-	if err != nil {
-		h.logger.Error("could not stop every session of this unpaired host", slog.Any("error", err))
-	}
-	if len(ended) > 0 {
-		h.logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
+	wait := unpairedRetry
+	for {
+		ended, err := h.app.Sessions.EndAll(context.WithoutCancel(ctx))
+		if len(ended) > 0 {
+			h.logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
+		}
+		if err == nil {
+			return
+		}
+		h.logger.Error("could not stop every session of this unpaired host; trying again",
+			slog.Any("error", err), slog.Duration("in", wait))
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(wait):
+		}
+		wait = min(wait*2, unpairedRetryMax)
 	}
 }
 

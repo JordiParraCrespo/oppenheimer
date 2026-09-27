@@ -103,7 +103,8 @@ docker exec -it <host> fleet-host cut|restore|kill-runner
 
 It is opt-in (`E2E_FLEET=1`, which `e2e:fleet` sets), so `e2e` and `e2e:api`
 never select it. The specs that open the console
-(`console.spec.ts`, `delete-session.spec.ts`, `remove-host.spec.ts`) need it
+(`console.spec.ts`, `delete-session.spec.ts`, `remove-host.spec.ts`,
+`project-journey.spec.ts`) need it
 running (`stack.mjs up --web`) and skip without it. Two things about the hosts are deliberate:
 
 - **The API is reached on the host's loopback.** The runner speaks plain HTTP

@@ -155,6 +155,51 @@ describe('a deleted session', () => {
     expect(findAll).toHaveBeenCalledTimes(reads);
   }, 15_000);
 
+  it('is watched by a reader that selects less than the rows', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([live])
+      .mockResolvedValueOnce([live])
+      .mockResolvedValue([resolved]);
+    const close = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(
+      () => ({
+        empty: useSessions({ select: (rows) => rows.length === 0 }),
+        close: useCloseSession(),
+      }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.empty.data).toBe(false));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.empty.data).toBe(true), { timeout: 8_000 });
+  }, 15_000);
+
+  it('is watched by the client that asked, not by another', async () => {
+    const asked = setup({
+      findAll: vi.fn().mockResolvedValue([live]),
+      close: vi.fn().mockResolvedValue(live),
+    });
+    const other = vi.fn().mockResolvedValue([live]);
+    const bystander = setup({ findAll: other });
+    const mine = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper: asked.wrapper,
+    });
+    const theirs = renderHook(() => useSessions(), { wrapper: bystander.wrapper });
+    await waitFor(() => expect(mine.result.current.list.data).toHaveLength(1));
+    await waitFor(() => expect(theirs.result.current.data).toHaveLength(1));
+
+    mine.result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(mine.result.current.close.isSuccess).toBe(true));
+    // The other client reads its list for its own reasons while the watch is
+    // live; that read must not start it polling for a close it never asked.
+    await bystander.queryClient.refetchQueries();
+    const reads = other.mock.calls.length;
+    await pause(2_500);
+    expect(other).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
   it('asked again, is watched for a full window from the second ask', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {

@@ -52,7 +52,16 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     return <SessionProvisioning session={session} />;
   }
 
-  if (!session.isLive) return <SessionClosed name={session.name} deleted={session.isResolved} />;
+  if (!session.isLive) {
+    // Resolved is a delete: the worktree went with it, so its copy does not
+    // point at the branch.
+    return (
+      <SessionClosed
+        name={session.name}
+        copy={session.isResolved ? 'sessions.closed.deleted' : 'sessions.closed.description'}
+      />
+    );
+  }
 
   return (
     /* The artboard frames the terminal rather than bleeding it: 14px of canvas
@@ -83,13 +92,17 @@ function SessionSkeleton() {
 }
 
 /**
- * A session whose terminal is gone: stopped, or deleted. Stopped, the work is
- * on its branch, which is what the reader wants to hear — there is no
- * reattaching to a tmux session that has exited. Deleted (resolved), the
- * worktree is gone too, so saying the work is on its branch would be a promise
- * about files that no longer exist.
+ * A session whose terminal is gone: stopped or deleted. There is no reattaching
+ * to a tmux session that has exited; the caller says which sentence explains
+ * why.
  */
-function SessionClosed({ name, deleted }: { name: string; deleted: boolean }) {
+function SessionClosed({
+  name,
+  copy,
+}: {
+  name: string;
+  copy: 'sessions.closed.description' | 'sessions.closed.deleted';
+}) {
   const { t } = useTranslation();
 
   return (
@@ -99,9 +112,7 @@ function SessionClosed({ name, deleted }: { name: string; deleted: boolean }) {
           <CircleOff />
         </EmptyState.Media>
         <EmptyState.Title>{name}</EmptyState.Title>
-        <EmptyState.Description>
-          {deleted ? t('sessions.closed.deleted') : t('sessions.closed.description')}
-        </EmptyState.Description>
+        <EmptyState.Description>{t(copy)}</EmptyState.Description>
       </EmptyState.Header>
       <EmptyState.Content>
         <Button variant="secondary" render={<Link to="/sessions/new" />}>

@@ -25,10 +25,17 @@ test('removing a host stops its sessions on the machine', async ({ page }) => {
   const installationId = await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'remove');
   const sessionId = await createSession(api, box.id, installationId);
-  await waitForLifecycle(api, sessionId, 'open');
+  const { checkouts } = await waitForLifecycle(api, sessionId, 'open');
+  const tmuxName = `opp-${sessionId}`;
   const tmux = () =>
     box.host.exec('tmux -L oppenheimer ls -F "#{session_name}" 2>/dev/null || true');
-  expect(tmux()).toContain('opp-');
+  expect(tmux()).toContain(tmuxName);
+  // This session's worktree: the runner names its directory after the session.
+  const worktree = () =>
+    box.host.exec(
+      `cd ~/oppenheimer-ai/workspaces/*/*/worktrees/*-${sessionId} && git branch --show-current`,
+    );
+  expect(worktree()).toBe(checkouts[0]?.branch);
 
   await signInAs(page, user);
   await page.goto('/settings/hosts');
@@ -42,8 +49,9 @@ test('removing a host stops its sessions on the machine', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Remove host' }).click();
   await expect(page.getByTestId('host-card')).toHaveCount(0);
 
-  await expect.poll(tmux, { timeout: 30_000 }).not.toContain('opp-');
-  expect(box.host.exec('ls -d ~/oppenheimer-ai/workspaces/*/*/worktrees/*')).not.toBe('');
-  const session = await (await api.get(`/api/v1/sessions/${sessionId}`)).json();
-  expect(session.stoppedAt).not.toBeNull();
+  // Stopped, not closed: its tmux session is gone and its worktree is not.
+  await expect.poll(tmux, { timeout: 30_000 }).not.toContain(tmuxName);
+  expect(worktree()).toBe(checkouts[0]?.branch);
+  const { stoppedAt } = await waitForLifecycle(api, sessionId, 'open', 10_000);
+  expect(stoppedAt).not.toBeNull();
 });
