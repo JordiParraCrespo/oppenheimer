@@ -245,3 +245,11 @@ earlier note:
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
+- `versions/mvp/05-screens.md` and `versions/mvp/13-automations.md` had
+  New project, Project settings, the automation editor and the console's
+  Add a host as pages over the main column (`/projects/new`,
+  `/projects/{id}`, `/automations/new`, `/hosts/new`) since the 2026-09-26
+  evening export. The 2026-09-27 export draws them as dialogs over the
+  console again, and the owner chose the dialogs: none has a URL, and
+  Settings keeps its Add a host page at `/settings/hosts/new`
+  (2026-09-27).

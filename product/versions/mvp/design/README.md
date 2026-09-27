@@ -110,12 +110,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   One departure from the frames: Move lists every other project rather
   than only those that include the session's repository, because a
   project is metadata and a session may move anywhere (10).
-- As of the 2026-09-27 export the frames draw New project, Project
-  settings, the automation editor and the console's Add a host as dialogs,
-  while `../05-screens.md` (and the console built from it) still has them
-  as pages (`/projects/{id}`, `/hosts/new`, the `.op-rpage` layout). The
-  note has not been reconciled with these frames yet. The workspace-invite
-  email also runs ahead of the notes, which keep workspaces personal with
-  no invitations.
+- The 2026-09-27 export draws New project, Project settings, the
+  automation editor and the console's Add a host as dialogs, and the owner
+  chose the dialogs the same day: `../05-screens.md`, `../13-automations.md`
+  and the decision logs say so, and the page routes (`/projects/new`,
+  `/projects/{id}`, `/automations/new`, `/hosts/new`) go. Settings keeps
+  its Add a host page. The workspace-invite email still runs ahead of the
+  notes, which keep workspaces personal with no invitations.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

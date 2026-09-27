@@ -463,3 +463,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: **the automations sidebar leaves out Unassigned**: an
   automation is set up for a project, and Unassigned only holds the
   sessions that name none (13).
+- 2026-09-27: **the console's project, automation and Add a host screens
+  are dialogs again**, as the 2026-09-27 export draws them: New project and
+  Project settings are one project dialog, New and Edit automation one
+  automation dialog (Task, Trigger, Where it runs), and the host chip's
+  Add a host a dialog whose command and prompt fold behind Inspect. None
+  has a URL; `/projects/new`, `/projects/{id}`, `/hosts/new` and
+  `/automations/new` go. Settings keeps its Add a host page at
+  `/settings/hosts/new` with the same content (05, 13).

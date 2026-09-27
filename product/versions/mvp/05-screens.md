@@ -37,9 +37,9 @@
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
   which starts the composer on that project with its defaults) and
-  Project settings (the project page editing, `/projects/{id}`; Delete
-  project is the archive behind a confirm, and is disabled while the
-  project has unresolved sessions). An
+  Project settings (the project dialog editing; Delete project is the
+  archive behind a confirm, and is disabled while the project has
+  unresolved sessions). An
   empty project shows an empty row with a link to start one. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
   menu listing every other project — moving is a label change, nothing
@@ -65,10 +65,12 @@
   with Add host on the right, which opens the Add a host page inside
   Settings (`/settings/hosts/new`, the settings sidebar still beside it,
   the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
-  Use this host, all back to the list. It is the same screen the console
-  mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
-  opened the console's page with `?from=settings`; the frame keeps
-  Settings around it.) The rows each section draws — picture, name, email,
+  Use this host, all back to the list. Settings keeps a page where the
+  console has a dialog; the pairing content inside is the same. (Until
+  2026-09-26 late, Settings opened the console's page with
+  `?from=settings`; the frame keeps Settings around it. Since 2026-09-27
+  the console's Add a host is a dialog again, and Settings' is the one
+  page.) The rows each section draws — picture, name, email,
   password on Profile; rename, remove, the install command and the
   preflight on a host card — are their own slices; the frame, the routes
   and the way back are built (2026-09-26).
@@ -82,17 +84,21 @@
   the right. The project chip leads the row, because picking a project
   offers the rest; it starts on the workspace's **Unassigned** project,
   which is where a session that names none is listed, so the chip and
-  the session never disagree. Its foot action is **New project…**, a
-  page in the main pane (the evening export's `.op-rpage`, like Add a
-  host): a Back link and a breadcrumb to New session; the name typed as
-  the title, with Cancel and Create project beside it and a line under
-  it saying what is still missing, then what the project will be; and
-  three numbered steps down a rail (`RoutineSteps`), each ticking itself
-  done with a summary — the repositories (`RepositoryRowList`: a row per
-  repository the App can see, ticked rows growing a Default toggle and a
-  base-branch pill; at least one, one of them a default), the default
-  host as chips, the default agent as chips. Create project returns to
-  New session on the new project, its defaults applied. Picking a
+  the session never disagree. Its foot action is **New project…**, the
+  **project dialog** over the console (the 2026-09-27 export; the same
+  dialog is Project settings when it edits): a title and Close; the
+  Name; Repositories — an Add a repository… search over what the App can
+  see, the chosen ones as removable rows, at least one; then a folding
+  **Defaults · optional** section, what every new session in the project
+  starts with and each changeable per session — the default host as
+  chips, the default agent as chips, and per chosen repository a Cloned
+  by default toggle and its base branch. The foot holds Cancel and
+  Create project (Save when editing, with Delete project on the left).
+  Creating returns to New session on the new project, its defaults
+  applied. (From the 2026-09-26 evening export until 2026-09-27 this was
+  a page in the main pane at `/projects/new` and `/projects/{id}`, with
+  numbered steps down a rail; the export's `SessionsConsole (pages)`
+  keeps that frame.) Picking a
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
@@ -139,12 +145,14 @@
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's
-  foot action opens the **Add a host page** (`/hosts/new`; a dialog until
-  the 2026-09-26 evening export made it a page over the main column, built
-  like the automation editor: a page header, then two numbered steps,
-  Install and Connect; Settings → Hosts mounts the same screen inside its
-  own frame at `/settings/hosts/new`): the same instruction in
-  two forms behind Command / Agent prompt pills in the panel's band, a copyable panel
+  foot action opens the **Add a host dialog** over the console (a dialog
+  first, a page at `/hosts/new` from the 2026-09-26 evening export, a
+  dialog again since 2026-09-27; Settings → Hosts keeps the same content
+  as a page inside its own frame at `/settings/hosts/new`): one line
+  saying to run one command on the machine and that nothing on it is
+  exposed to the internet, copy buttons for the command and the agent
+  prompt, and an **Inspect command and prompt** disclosure holding the
+  same instruction in two forms behind Command / Agent prompt pills, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
   the token on screen, retiring it in the same write, so a command pasted
@@ -153,7 +161,7 @@
   enabled then. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,
   because a first-run flow that ends on a machine which never came up
-  has claimed something the console cannot use; the page is picking
+  has claimed something the console cannot use; the dialog is picking
   the host of a session, and a session may be started on a machine
   whose runner is still coming up — the control plane records it and
   owes it to that host the moment it connects, which is what the
