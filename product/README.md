@@ -245,3 +245,7 @@ earlier note:
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
+- `versions/mvp/05-screens.md` gave `/sessions` its own pane, "No session
+  open" and a New session button, once a workspace had sessions. It now
+  opens New session, as it already did for an empty workspace
+  (2026-09-27).

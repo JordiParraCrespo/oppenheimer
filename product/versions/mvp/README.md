@@ -463,3 +463,5 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: **the automations sidebar leaves out Unassigned**: an
   automation is set up for a project, and Unassigned only holds the
   sessions that name none (13).
+- 2026-09-27: **nothing open is New session**: `/sessions` redirects to the
+  composer instead of drawing a "No session open" pane (05).

@@ -1,8 +1,4 @@
 {
-  "home": {
-    "openTitle": "Ninguna sesión abierta",
-    "openDescription": "Elige una en la barra lateral o inicia otra."
-  },
   "provisioning": {
     "title": "Iniciando tu sesión",
     "failedTitle": "La sesión no se inició",

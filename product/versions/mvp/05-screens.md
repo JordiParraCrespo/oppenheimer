@@ -183,12 +183,14 @@
   them. It is a convenience, not a record: the scope is never
   remembered, because the repositories one visit is about are not the
   next visit's.
-- The pane beside the sidebar has four states, and each is a URL:
+- The pane beside the sidebar has three states, and each is a URL:
   `/sessions/new` (the composer), `/sessions/{id}` (the terminal, or the
   provisioning pane while the session is starting, or a closed session),
-  `/sessions` (nothing open: "No sessions open", and the way to start
-  one), and anything else (a 404 that keeps the sidebar rather than a
-  bare page).
+  and anything else (a 404 that keeps the sidebar rather than a bare
+  page). `/sessions`, nothing open, is the composer too: it redirects to
+  `/sessions/new`. (It used to be a fourth pane, "No session open" and a
+  New session button, shown once a workspace had sessions; its one way on
+  was the composer, so it is the composer. Changed 2026-09-27.)
 - Provisioning: named steps with a ring, a check and a mono meta line
   (container or host, clone, checkout, start the agent), an elapsed
   clock and a status word, so a slow step is diagnosable. The eyebrow is the host, the title "Starting your
