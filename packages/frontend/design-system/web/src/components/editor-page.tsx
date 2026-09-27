@@ -8,11 +8,12 @@ import { cn } from '../lib/utils';
 
 /**
  * EditorPage — the page over the main column: New project, Add a host, the
- * automation editor (`design/version1/SessionsConsole.dc.html`, `op-rpage`).
- * The frame and nothing in it: a canvas column that scrolls on its own, a
- * 760px body centred in it with 24px over 32px of gutter and 72px of air
- * underneath, and the Back pill that sits above the page header. What a page
- * puts in the body — a `PageHeader`, then `RoutineSteps` — is the page's.
+ * automations overview and its editor (`design/version1/SessionsConsole.dc.html`,
+ * `op-rpage` and `op-rp`). The frame and nothing in it: a canvas column that
+ * scrolls on its own, the measured body centred in it — `wide` for a page
+ * that holds a table — and the Back pill that sits above the page header.
+ * `EditorPageTop` is a first row for a page that opens on view tabs and one
+ * action. What a page puts in the body is the page's.
  *
  * `EditorPageBack` navigates, so it takes `render` for the router's link the
  * way `Link` does; on its own it is an anchor.
@@ -37,12 +38,32 @@ function EditorPage({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-/** The measured column inside the page: 760px, centred, the export's padding. */
-function EditorPageBody({ className, ...props }: React.ComponentProps<'div'>) {
+/** The measured column inside the page, centred; `wide` is the overview's, which holds a table. */
+function EditorPageBody({
+  wide,
+  className,
+  ...props
+}: React.ComponentProps<'div'> & { wide?: boolean }) {
   return (
     <div
       data-slot="editor-page-body"
-      className={cn('mx-auto flex w-full max-w-190 flex-col px-8 pt-6 pb-18', className)}
+      data-wide={wide || undefined}
+      className={cn(
+        'mx-auto flex w-full flex-col px-8 pt-6 pb-18',
+        wide ? 'max-w-230 gap-4' : 'max-w-190',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** A page's first row: the view tabs on the left, its one action pushed right. */
+function EditorPageTop({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="editor-page-top"
+      className={cn('mb-1 flex items-center gap-3 [&>:last-child:not(:first-child)]:ml-auto', className)}
       {...props}
     />
   );
@@ -75,4 +96,4 @@ function EditorPageBack({
   });
 }
 
-export { EditorPage, EditorPageBack, EditorPageBody };
+export { EditorPage, EditorPageBack, EditorPageBody, EditorPageTop };

@@ -24,6 +24,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
+| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
 
 ## Decision log
 
@@ -428,3 +429,5 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   with the project level. The console is the evening export's: the grouped
   sidebar with Unassigned first, the project page, Move to any project. A
   session checks out any repositories, usually one.
+- 2026-09-26: **the automations routes exist ahead of their API**, so the
+  rail is whole; automations themselves stay after the MVP (00, 13).

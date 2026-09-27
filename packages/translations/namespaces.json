@@ -5,6 +5,7 @@
   "auth",
   "projects",
   "sessions",
+  "automations",
   "hosts",
   "settings",
   "home",
