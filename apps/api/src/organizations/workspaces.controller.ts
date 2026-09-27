@@ -8,7 +8,6 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Query,
   Req,
   UseGuards,
   Version,
@@ -19,7 +18,9 @@ import { isOrganizationAllowed } from '@oppenheimer/shared';
 import type { Request } from 'express';
 import { CheckPolicies } from '../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../auth/decorators/current-scope.decorator';
+import { OrganizationScoped } from '../auth/decorators/organization-scoped.decorator';
 import { RequireScopes } from '../auth/decorators/require-scopes.decorator';
+import { type TenantRequest, tenantOrganizationIdOf } from '../auth/domain/request-tenant.types';
 import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../auth/guards/policies.guard';
@@ -84,27 +85,37 @@ export class WorkspacesController {
   @Get()
   @Version('1')
   @RequireScopes('workspaces:read')
+  @OrganizationScoped('organizationId', 'query')
   @CheckPolicies({ action: 'read', subject: 'Workspace' })
   @ApiOperation({
     summary: "List an organization's workspaces (defaults to the active org)",
   })
-  @ApiQuery({ name: 'organizationId', required: false })
+  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({ status: 200, type: [WorkspaceResponseDto] })
-  list(
-    @Req() req: Request,
-    @Query('organizationId') organizationId?: string,
-  ): Promise<WorkspaceResponseDto[]> {
-    return this.workspaces.listForOrganization(req.headers, organizationId);
+  list(@Req() req: Request & TenantRequest): Promise<WorkspaceResponseDto[]> {
+    // The request's tenant: the `organizationId` query field, or the
+    // session's organization — the one the request was authorized in.
+    return this.workspaces.listForOrganization(
+      req.headers,
+      tenantOrganizationIdOf(req) ?? undefined,
+    );
   }
 
   @Post()
   @Version('1')
   @RequireScopes('workspaces:write')
+  @OrganizationScoped('organizationId', 'body')
   @CheckPolicies({ action: 'create', subject: 'Workspace' })
   @ApiOperation({ summary: 'Create a workspace' })
   @ApiResponse({ status: 201, type: WorkspaceResponseDto })
-  create(@Req() req: Request, @Body() body: CreateWorkspaceRequest): Promise<WorkspaceResponseDto> {
-    return this.workspaces.create(req.headers, body);
+  create(
+    @Req() req: Request & TenantRequest,
+    @Body() body: CreateWorkspaceRequest,
+  ): Promise<WorkspaceResponseDto> {
+    return this.workspaces.create(req.headers, {
+      ...body,
+      organizationId: tenantOrganizationIdOf(req) ?? undefined,
+    });
   }
 
   @Patch(':id')

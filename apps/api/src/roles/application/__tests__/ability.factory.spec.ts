@@ -52,10 +52,10 @@ describe('AbilityFactory', () => {
 
   describe('forRequest', () => {
     /** A request `ApiAuthGuard` stamped with its tenant. */
-    const requestIn = (organizationId: string | null, source: 'route' | 'session' = 'route') => ({
+    const requestIn = (organizationId: string | null) => ({
       user: { id: 'user-1' },
       session: { activeTeamId: null },
-      tenant: { organizationId, source },
+      tenant: { organizationId },
     });
 
     it("builds the ability in the request's tenant", async () => {
@@ -99,21 +99,11 @@ describe('AbilityFactory', () => {
       expect(userRoleRepo.findRolesForUser).toHaveBeenCalledTimes(1);
     });
 
-    it("never serves one organization's memoized ability for another", async () => {
-      // The contract has no organization argument to disagree with the memo:
-      // the organization is the request's, and a memo built for one tenant is
-      // not reused once the request names another.
+    it('takes no organization argument: the tenant on the request is the only input', () => {
+      // An argument the memo cannot see is how one organization's ability was
+      // served for another. The tenant is write-once (see the
+      // RequestTenantResolver spec), so the plain per-request memo is safe.
       expect(factory.forRequest.length).toBe(1);
-      const request: { user: { id: string }; tenant: { organizationId: string; source: 'route' } } =
-        { user: { id: 'user-1' }, tenant: { organizationId: 'org-a', source: 'route' } };
-
-      const inA = await factory.forRequest(request);
-      request.tenant = { organizationId: 'org-b', source: 'route' };
-      const inB = await factory.forRequest(request);
-
-      expect(inB).not.toBe(inA);
-      expect(userRoleRepo.findRolesForUser).toHaveBeenNthCalledWith(1, 'user-1', 'org-a');
-      expect(userRoleRepo.findRolesForUser).toHaveBeenNthCalledWith(2, 'user-1', 'org-b');
     });
   });
 

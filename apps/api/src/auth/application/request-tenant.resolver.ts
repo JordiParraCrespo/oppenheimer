@@ -1,93 +1,40 @@
-import { type ExecutionContext, Inject, Injectable, Optional } from '@nestjs/common';
+import { type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import { z } from 'zod';
-import { ACTIVE_ORGANIZATION } from '../auth.di-tokens';
-import { ORGANIZATION_PARAM_KEY } from '../decorators/organization-scoped.decorator';
-import { AuthErrors } from '../domain/auth.errors';
-import type { RequestTenant, TenantRequest } from '../domain/request-tenant.types';
 import {
-  ACTIVE_ORGANIZATION_HEADER,
-  type ActiveOrganizationPort,
-} from './active-organization.port';
-
-/** The request members the tenant is read from and written to. */
-interface ResolvableRequest extends TenantRequest {
-  headers?: Record<string, string | string[] | undefined>;
-  params?: Record<string, unknown>;
-  user?: Record<string, unknown> | null;
-  session?: Record<string, unknown> | null;
-}
+  ORGANIZATION_PARAM_KEY,
+  type OrganizationScope,
+} from '../decorators/organization-scoped.decorator';
+import { AuthErrors } from '../domain/auth.errors';
+import type { RequestTenant } from '../domain/request-tenant.types';
+import { pinnedOrganizationIdOf, type ScopeContext } from '../domain/scope-context.types';
+import type { RequestTenantPort, TenantSourceRequest } from './request-tenant.port';
 
 /** The same check `ParseUUIDPipe` makes, before anything reaches Postgres. */
 const ORGANIZATION_ID = z.string().uuid();
 
 /**
- * Decides, once per request, the organization it acts in — its tenant — and
- * writes it to `request.tenant` (see `RequestTenant`).
- *
- * 1. A route marked `@OrganizationScoped(param)` acts in the organization its
- *    path names. **It fails closed**: a value that is missing or not a UUID is
- *    refused here, never replaced by the session's organization — that would
- *    authorize the request in a tenant it does not name. It is also checked
- *    before any lookup, so a malformed id is a 400 rather than a Postgres
- *    error.
- * 2. Any other route acts in the session's active organization, or the
- *    organization an `X-Active-Organization` header names once
- *    {@link ACTIVE_ORGANIZATION} has checked the caller belongs to it. The
- *    header is not consulted on a route that names its organization: the path
- *    already said.
- *
- * `ApiAuthGuard` stamps the tenant right after it authenticates, so it is on
- * the request before any guard, interceptor or handler builds an ability. The
- * stamp is written once and cannot be reassigned.
+ * The `REQUEST_TENANT` adapter: the organization a route names through
+ * `@OrganizationScoped`, otherwise the session's. The rule it implements is
+ * `product/versions/mvp/08-auth.md`.
  */
 @Injectable()
-export class RequestTenantResolver {
-  constructor(
-    private readonly reflector: Reflector,
-    @Optional()
-    @Inject(ACTIVE_ORGANIZATION)
-    private readonly activeOrganization?: ActiveOrganizationPort,
-  ) {}
+export class RequestTenantResolver implements RequestTenantPort {
+  constructor(private readonly reflector: Reflector) {}
 
-  /**
-   * The organization an `@OrganizationScoped` route names in its path, checked;
-   * `undefined` for a route that names none. `ScopesGuard` reads the same
-   * answer to hold a credential to its organizations.
-   */
-  routeOrganizationId(context: ExecutionContext, request: ResolvableRequest): string | undefined {
-    const param = this.reflector.getAllAndOverride<string | undefined>(ORGANIZATION_PARAM_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (!param) return undefined;
-
-    const value = request.params?.[param];
-    // The decorator names a parameter the route does not declare. Nothing a
-    // client sent can cause this, so it is the server's fault, not theirs.
-    if (value === undefined || value === null || value === '') {
-      throw new AppError(AuthErrors.ROUTE_ORGANIZATION_MISSING, {
-        detail: `The route declares @OrganizationScoped('${param}') but has no "${param}" parameter.`,
-      });
-    }
-    if (!ORGANIZATION_ID.safeParse(value).success) {
-      throw new AppError(AuthErrors.ROUTE_ORGANIZATION_INVALID, {
-        detail: `"${param}" must be an organization id (a UUID).`,
-        extensions: { param },
-      });
-    }
-    return value as string;
-  }
-
-  /**
-   * Resolve the request's tenant and write it to `request.tenant`, once.
-   * A request already stamped keeps its tenant.
-   */
-  async stamp(context: ExecutionContext, request: ResolvableRequest): Promise<RequestTenant> {
+  stamp(
+    context: ExecutionContext,
+    request: TenantSourceRequest,
+    credential?: ScopeContext | null,
+  ): RequestTenant {
     if (request.tenant) return request.tenant;
 
-    const tenant = await this.resolve(context, request);
+    const tenant: RequestTenant = {
+      organizationId:
+        this.routeOrganizationId(context, request) ??
+        this.sessionOrganizationId(request, credential),
+    };
     Object.defineProperty(request, 'tenant', {
       value: Object.freeze(tenant),
       enumerable: true,
@@ -97,37 +44,60 @@ export class RequestTenantResolver {
     return tenant;
   }
 
-  private async resolve(
+  /**
+   * The organization the route names, checked; `undefined` when it names none
+   * (or an optional query/body field is left out). Fails closed: a value that
+   * is not a UUID is refused, never replaced by the session's organization.
+   */
+  private routeOrganizationId(
     context: ExecutionContext,
-    request: ResolvableRequest,
-  ): Promise<RequestTenant> {
-    const fromRoute = this.routeOrganizationId(context, request);
-    if (fromRoute !== undefined) return { organizationId: fromRoute, source: 'route' };
+    request: TenantSourceRequest,
+  ): string | undefined {
+    const scope = this.reflector.getAllAndOverride<OrganizationScope | undefined>(
+      ORGANIZATION_PARAM_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (!scope) return undefined;
 
-    const sessionValue = request.session?.activeOrganizationId;
-    const sessionOrganizationId = typeof sessionValue === 'string' ? sessionValue : null;
-    const header = headerValue(request.headers?.[ACTIVE_ORGANIZATION_HEADER])?.trim();
-    const userId = typeof request.user?.id === 'string' ? request.user.id : undefined;
-
-    // An anonymous caller has no memberships to check a header against, and a
-    // deployment without the port has no way to check one: both act in the
-    // session's organization (for an anonymous caller, none).
-    if (!header || !userId || !this.activeOrganization) {
-      return { organizationId: sessionOrganizationId, source: 'session' };
+    const value = fieldsOf(request, scope.from)?.[scope.param];
+    if (value === undefined || value === null || value === '') {
+      if (scope.from !== 'path') return undefined;
+      // The decorator names a path parameter the route does not declare.
+      // Nothing a client sent can cause this, so it is the server's fault.
+      throw new AppError(AuthErrors.ROUTE_ORGANIZATION_MISSING, {
+        detail: `The route declares @OrganizationScoped('${scope.param}') but has no "${scope.param}" parameter.`,
+      });
     }
+    if (!ORGANIZATION_ID.safeParse(value).success) {
+      throw new AppError(AuthErrors.ROUTE_ORGANIZATION_INVALID, {
+        detail: `"${scope.param}" must be an organization id (a UUID).`,
+        extensions: { param: scope.param },
+      });
+    }
+    return value as string;
+  }
 
-    const organizationId = await this.activeOrganization.resolve({
-      userId,
-      sessionOrganizationId,
-      header,
-    });
-    return {
-      organizationId,
-      source: organizationId === sessionOrganizationId ? 'session' : 'header',
-    };
+  /**
+   * The session's active organization. A guard that runs before
+   * `ApiAuthGuard` has written the session passes the scoped credential
+   * instead: its delegated session is pinned to the same organization.
+   */
+  private sessionOrganizationId(
+    request: TenantSourceRequest,
+    credential: ScopeContext | null | undefined,
+  ): string | null {
+    if (credential) return pinnedOrganizationIdOf(credential);
+    const value = request.session?.activeOrganizationId;
+    return typeof value === 'string' ? value : null;
   }
 }
 
-function headerValue(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+function fieldsOf(
+  request: TenantSourceRequest,
+  from: OrganizationScope['from'],
+): Record<string, unknown> | undefined {
+  if (from === 'path') return request.params;
+  if (from === 'query') return request.query;
+  const body = request.body;
+  return body && typeof body === 'object' ? (body as Record<string, unknown>) : undefined;
 }

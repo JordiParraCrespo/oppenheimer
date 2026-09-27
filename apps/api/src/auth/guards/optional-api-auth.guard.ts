@@ -27,7 +27,7 @@ export class OptionalApiAuthGuard extends ApiAuthGuard {
       request.session = null;
       request.scopeContext = null;
       // An anonymous caller still acts in the organization a route names.
-      await this.tenants.stamp(context, request);
+      this.tenants.stamp(context, request);
       return true;
     }
   }

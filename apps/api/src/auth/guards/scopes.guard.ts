@@ -3,8 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import { isOrganizationAllowed, missingScopes, type Scope } from '@oppenheimer/shared';
 import type { CredentialScopePort } from '../application/credential-scope.port';
-import { RequestTenantResolver } from '../application/request-tenant.resolver';
-import { CREDENTIAL_SCOPE } from '../auth.di-tokens';
+import type { RequestTenantPort } from '../application/request-tenant.port';
+import { CREDENTIAL_SCOPE, REQUEST_TENANT } from '../auth.di-tokens';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../decorators/require-scopes.decorator';
 import { AuthErrors } from '../domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
@@ -32,7 +32,8 @@ export class ScopesGuard implements CanActivate {
     private readonly reflector: Reflector,
     @Inject(CREDENTIAL_SCOPE)
     private readonly credentials: CredentialScopePort,
-    private readonly tenants: RequestTenantResolver,
+    @Inject(REQUEST_TENANT)
+    private readonly tenants: RequestTenantPort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -75,6 +76,11 @@ export class ScopesGuard implements CanActivate {
     }
   }
 
+  /**
+   * The request's tenant — stamped here, through the one writer, because this
+   * guard runs before `ApiAuthGuard` — must be within the credential's
+   * organizations.
+   */
   private assertOrganization(
     context: ExecutionContext,
     request: ScopedRequest,
@@ -82,26 +88,9 @@ export class ScopesGuard implements CanActivate {
   ): void {
     if (!scopeContext.resourceScope.organizationIds) return;
 
-    const organizationId = this.organizationIdFor(context, request);
+    const { organizationId } = this.tenants.stamp(context, request, scopeContext);
     if (!isOrganizationAllowed(scopeContext.resourceScope, organizationId)) {
       throw new AppError(AuthErrors.ORGANIZATION_OUT_OF_SCOPE);
     }
-  }
-
-  /**
-   * The organization this request acts on: the parameter the route declared
-   * via `@OrganizationScoped` — read, and refused when malformed, by the same
-   * `RequestTenantResolver` that stamps the request's tenant — falling back to
-   * an explicit `organizationId` in the body or query string on a route that
-   * names none.
-   */
-  private organizationIdFor(context: ExecutionContext, request: ScopedRequest): string | null {
-    const fromParam = this.tenants.routeOrganizationId(context, request);
-    const body = request.body as Record<string, unknown> | undefined;
-    const fromBody = typeof body?.organizationId === 'string' ? body.organizationId : undefined;
-    const query = request.query as Record<string, unknown> | undefined;
-    const fromQuery = typeof query?.organizationId === 'string' ? query.organizationId : undefined;
-
-    return fromParam ?? fromBody ?? fromQuery ?? null;
   }
 }

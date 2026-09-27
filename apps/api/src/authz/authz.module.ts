@@ -3,7 +3,6 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule, SCOPE_RESOLVER } from '@oppenheimer/backend-authz';
 import { ApiTokenResource } from '../api-tokens/api-tokens.resource';
-import { ACTIVE_ORGANIZATION } from '../auth/auth.di-tokens';
 import { FeatureFlagResource } from '../feature-flags/feature-flags.resource';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
@@ -12,7 +11,6 @@ import { ORGANIZATION_RESOURCES } from '../organizations/organizations.resource'
 import { RoleOrmEntity } from '../roles/database/role.orm-entity';
 import { RoleResource } from '../roles/roles.resource';
 import { UserResource } from '../users/users.resource';
-import { ActiveOrganizationResolver } from './application/active-organization.resolver';
 import { PrincipalResidencyChecker } from './application/principal-residency.policy';
 import { ScopeResolver } from './application/scope.resolver';
 import { ACCESS_GRANT_REPOSITORY } from './authz.di-tokens';
@@ -90,10 +88,6 @@ const repositories: Provider[] = [
     ...queryHandlers,
     ...mappers,
     ...repositories,
-    ActiveOrganizationResolver,
-    // The kernel stamps each request's tenant and asks this which organization
-    // a request that names none acts in (the session's, or a checked header).
-    { provide: ACTIVE_ORGANIZATION, useExisting: ActiveOrganizationResolver },
     PrincipalResidencyChecker,
     AccessScopeInterceptor,
     // Behind the port, so an application needing hierarchical scope resolution
@@ -101,13 +95,6 @@ const repositories: Provider[] = [
     // substitutes its own implementation without touching a call site.
     { provide: SCOPE_RESOLVER, useClass: ScopeResolver },
   ],
-  exports: [
-    SCOPE_RESOLVER,
-    ACCESS_GRANT_REPOSITORY,
-    AccessScopeInterceptor,
-    ActiveOrganizationResolver,
-    ACTIVE_ORGANIZATION,
-    TypeOrmModule,
-  ],
+  exports: [SCOPE_RESOLVER, ACCESS_GRANT_REPOSITORY, AccessScopeInterceptor, TypeOrmModule],
 })
 export class AuthzModule {}

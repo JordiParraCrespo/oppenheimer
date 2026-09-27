@@ -1,8 +1,12 @@
 import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
-import type { ActiveOrganizationPort } from '../active-organization.port';
+import {
+  ORGANIZATION_PARAM_KEY,
+  type OrganizationScope,
+} from '../../decorators/organization-scoped.decorator';
+import type { ScopeContext } from '../../domain/scope-context.types';
 import { RequestTenantResolver } from '../request-tenant.resolver';
 
 const ORG_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -13,10 +17,32 @@ const context = {
   getClass: () => class {},
 } as unknown as ExecutionContext;
 
+/** A token restricted to `organizationIds`. */
+const tokenFor = (organizationIds: string[]): ScopeContext => ({
+  kind: 'api-token',
+  credentialId: 'token-1',
+  userId: 'u1',
+  owner: {
+    id: 'u1',
+    email: 'u1@example.com',
+    firstName: 'U',
+    lastName: 'One',
+    role: 'user',
+    isActive: true,
+    emailVerified: true,
+  },
+  scopes: [],
+  resourceScope: toResourceScope(organizationIds),
+  expiresAt: null,
+});
+
 describe('RequestTenantResolver', () => {
   let metadata: Record<string, unknown>;
-  let activeOrganization: { resolve: ReturnType<typeof vi.fn> };
   let resolver: RequestTenantResolver;
+
+  const scopedBy = (scope: OrganizationScope) => {
+    metadata[ORGANIZATION_PARAM_KEY] = scope;
+  };
 
   beforeEach(() => {
     metadata = {};
@@ -24,110 +50,107 @@ describe('RequestTenantResolver', () => {
     vi.spyOn(reflector, 'getAllAndOverride').mockImplementation(
       ((key: string) => metadata[key]) as never,
     );
-    activeOrganization = { resolve: vi.fn().mockResolvedValue(ORG_B) };
-    resolver = new RequestTenantResolver(
-      reflector,
-      activeOrganization as unknown as ActiveOrganizationPort,
-    );
+    resolver = new RequestTenantResolver(reflector);
   });
 
-  describe('on an @OrganizationScoped route', () => {
-    beforeEach(() => {
-      metadata[ORGANIZATION_PARAM_KEY] = 'orgId';
+  describe('on a route that names its organization in the path', () => {
+    beforeEach(() => scopedBy({ param: 'orgId', from: 'path' }));
+
+    it("acts in the path's organization, not the session's", () => {
+      const request = { params: { orgId: ORG_B }, session: { activeOrganizationId: ORG_A } };
+
+      expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_B });
+      expect(request).toMatchObject({ tenant: { organizationId: ORG_B } });
     });
 
-    it("acts in the path's organization, not the session's", async () => {
-      const request = {
-        params: { orgId: ORG_B },
-        user: { id: 'u1' },
-        session: { activeOrganizationId: ORG_A },
-        headers: { 'x-active-organization': ORG_A },
-      };
+    it('refuses a malformed id, never falling back to the session', () => {
+      const request = { params: { orgId: "x' OR 1=1" }, session: { activeOrganizationId: ORG_A } };
 
-      await expect(resolver.stamp(context, request)).resolves.toEqual({
-        organizationId: ORG_B,
-        source: 'route',
-      });
-      expect(request).toMatchObject({ tenant: { organizationId: ORG_B, source: 'route' } });
-      // The path already said; the header is not consulted.
-      expect(activeOrganization.resolve).not.toHaveBeenCalled();
-    });
-
-    it('refuses a malformed id before any lookup, never falling back to the session', async () => {
-      const request = {
-        params: { orgId: "x' OR 1=1" },
-        user: { id: 'u1' },
-        session: { activeOrganizationId: ORG_A },
-      };
-
-      await expect(resolver.stamp(context, request)).rejects.toMatchObject({
-        code: 'AUTHZ_003',
-        status: 400,
-      });
+      expect(() => resolver.stamp(context, request)).toThrow(
+        expect.objectContaining({ code: 'AUTHZ_003' }),
+      );
       expect(request).not.toHaveProperty('tenant');
-      expect(activeOrganization.resolve).not.toHaveBeenCalled();
     });
 
-    it('refuses a route whose declared parameter is missing, never falling back to the session', async () => {
+    it('refuses a route whose declared parameter is missing, never falling back to the session', () => {
       const request = { params: {}, session: { activeOrganizationId: ORG_A } };
 
-      await expect(resolver.stamp(context, request)).rejects.toMatchObject({
-        code: 'AUTHZ_004',
-      });
+      expect(() => resolver.stamp(context, request)).toThrow(
+        expect.objectContaining({ code: 'AUTHZ_004' }),
+      );
       expect(request).not.toHaveProperty('tenant');
     });
+  });
+
+  describe('on a route that takes an optional organization in the query', () => {
+    beforeEach(() => scopedBy({ param: 'organizationId', from: 'query' }));
+
+    it('acts in the organization the query names', () => {
+      const request = {
+        query: { organizationId: ORG_B },
+        session: { activeOrganizationId: ORG_A },
+      };
+      expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_B });
+    });
+
+    it("acts in the session's organization when the query names none", () => {
+      const request = { query: {}, session: { activeOrganizationId: ORG_A } };
+      expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_A });
+    });
+
+    it('refuses a malformed id there too', () => {
+      const request = { query: { organizationId: 'nope' }, session: null };
+      expect(() => resolver.stamp(context, request)).toThrow(
+        expect.objectContaining({ code: 'AUTHZ_003' }),
+      );
+    });
+  });
+
+  it('reads an optional body field the same way', () => {
+    scopedBy({ param: 'organizationId', from: 'body' });
+    const request = { body: { organizationId: ORG_B }, session: { activeOrganizationId: ORG_A } };
+
+    expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_B });
   });
 
   describe('on a route that names no organization', () => {
-    it("acts in the session's active organization", async () => {
-      const request = { user: { id: 'u1' }, session: { activeOrganizationId: ORG_A } };
-
-      await expect(resolver.stamp(context, request)).resolves.toEqual({
-        organizationId: ORG_A,
-        source: 'session',
-      });
+    it("acts in the session's active organization", () => {
+      const request = { session: { activeOrganizationId: ORG_A } };
+      expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_A });
     });
 
-    it('acts in no organization when the session has none', async () => {
-      await expect(resolver.stamp(context, { user: { id: 'u1' }, session: null })).resolves.toEqual(
-        { organizationId: null, source: 'session' },
-      );
+    it('acts in no organization when the session has none', () => {
+      expect(resolver.stamp(context, { session: null })).toEqual({ organizationId: null });
     });
 
-    it('acts in a header-named organization once the port has checked the membership', async () => {
+    it('ignores any X-Active-Organization header: there is no such override', () => {
       const request = {
-        user: { id: 'u1' },
+        headers: { 'x-active-organization': ORG_B },
         session: { activeOrganizationId: ORG_A },
-        headers: { 'x-active-organization': ` ${ORG_B} ` },
       };
+      expect(resolver.stamp(context, request)).toEqual({ organizationId: ORG_A });
+    });
 
-      await expect(resolver.stamp(context, request)).resolves.toEqual({
-        organizationId: ORG_B,
-        source: 'header',
-      });
-      expect(activeOrganization.resolve).toHaveBeenCalledWith({
-        userId: 'u1',
-        sessionOrganizationId: ORG_A,
-        header: ORG_B,
+    it("acts in a scoped credential's pinned organization before the session exists", () => {
+      expect(resolver.stamp(context, {}, tokenFor([ORG_A]))).toEqual({ organizationId: ORG_A });
+      expect(resolver.stamp(context, {}, tokenFor([ORG_A, ORG_B]))).toEqual({
+        organizationId: null,
       });
     });
   });
 
-  it('stamps once: a second stamp keeps the first tenant, and the field cannot be reassigned', async () => {
-    const request: Record<string, unknown> = {
-      user: { id: 'u1' },
-      session: { activeOrganizationId: ORG_A },
-    };
+  it('stamps once: a second stamp keeps the first tenant, and the field cannot be reassigned', () => {
+    const request: Record<string, unknown> = { session: { activeOrganizationId: ORG_A } };
 
-    const first = await resolver.stamp(context, request);
-    metadata[ORGANIZATION_PARAM_KEY] = 'orgId';
+    const first = resolver.stamp(context, request);
+    scopedBy({ param: 'orgId', from: 'path' });
     request.params = { orgId: ORG_B };
-    const second = await resolver.stamp(context, request);
+    const second = resolver.stamp(context, request);
 
     expect(second).toBe(first);
     expect(() => {
-      request.tenant = { organizationId: ORG_B, source: 'route' };
+      request.tenant = { organizationId: ORG_B };
     }).toThrow(TypeError);
-    expect(request.tenant).toEqual({ organizationId: ORG_A, source: 'session' });
+    expect(request.tenant).toEqual({ organizationId: ORG_A });
   });
 });

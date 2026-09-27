@@ -126,7 +126,7 @@ describe('PoliciesGuard', () => {
     const request = {
       user: { id: 'u1' },
       params: { orgId: 'org-b' },
-      tenant: { organizationId: 'org-b', source: 'route' },
+      tenant: { organizationId: 'org-b' },
     };
 
     await guard.canActivate(contextWith(request));

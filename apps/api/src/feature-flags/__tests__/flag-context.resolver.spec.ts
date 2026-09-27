@@ -7,7 +7,7 @@ describe('flagContextOf', () => {
       flagContextOf(
         {
           user: { id: 'u1', email: 'ada@acme.com', role: 'admin' },
-          tenant: { organizationId: 'org-1', source: 'session' },
+          tenant: { organizationId: 'org-1' },
         },
         { platform: 'ios', appVersion: '2.1.0' },
       ),

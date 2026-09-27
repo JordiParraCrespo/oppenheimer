@@ -141,7 +141,7 @@ describe('ScopesGuard', () => {
   describe('organization restriction', () => {
     beforeEach(() => {
       metadata[REQUIRE_SCOPES_KEY] = ['members:read'];
-      metadata[ORGANIZATION_PARAM_KEY] = 'orgId';
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'orgId', from: 'path' };
     });
 
     it('admits a request inside the credential’s organizations', async () => {
@@ -177,8 +177,8 @@ describe('ScopesGuard', () => {
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
 
-    it('also reads the organization from the request body', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+    it('holds a body-named organization to the restriction on a route that declares it', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'body' };
       useCredential(
         tokenContext({
           scopes: ['members:read'],
@@ -192,8 +192,8 @@ describe('ScopesGuard', () => {
       });
     });
 
-    it('also reads the organization from the query string', async () => {
-      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+    it('holds a query-named organization to the restriction on a route that declares it', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = { param: 'organizationId', from: 'query' };
       useCredential(
         tokenContext({
           scopes: ['members:read'],
@@ -219,7 +219,22 @@ describe('ScopesGuard', () => {
       await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'AUTHZ_003' });
     });
 
-    it('allows a route that names no organization at all', async () => {
+    it('checks the same tenant the request is stamped with, before ApiAuthGuard runs', async () => {
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1]),
+        }),
+      );
+      request.params = { orgId: ORG_1 };
+
+      await guard.canActivate(context());
+
+      // Stamped here, through the one writer; ApiAuthGuard's later stamp is a no-op.
+      expect(request.tenant).toEqual({ organizationId: ORG_1 });
+    });
+
+    it("acts in a single-organization token's pinned organization on a route that names none", async () => {
       metadata[ORGANIZATION_PARAM_KEY] = undefined;
       useCredential(
         tokenContext({
@@ -227,8 +242,29 @@ describe('ScopesGuard', () => {
           resourceScope: toResourceScope([ORG_1]),
         }),
       );
+      // A body or query `organizationId` on a route that does not declare it
+      // is not the tenant and cannot move the request out of the restriction.
+      request.body = { organizationId: ORG_2 };
+      request.query = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
+      expect(request.tenant).toEqual({ organizationId: ORG_1 });
+    });
+
+    it('leaves a multi-organization token in no organization on a route that names none', async () => {
+      metadata[ORGANIZATION_PARAM_KEY] = undefined;
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1, ORG_2]),
+        }),
+      );
+      request.session = { activeOrganizationId: ORG_2 };
+
+      await expect(guard.canActivate(context())).resolves.toBe(true);
+      // Null means no organization's roles, grants or rows: global roles only,
+      // so there is nothing outside the restriction to reach.
+      expect(request.tenant).toEqual({ organizationId: null });
     });
   });
 

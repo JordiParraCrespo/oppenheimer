@@ -41,13 +41,12 @@ export const AuthErrors = {
     httpStatus: 500,
   },
   /**
-   * An `@OrganizationScoped` route whose path value is not an organization id.
-   * Refused before anything is looked up — the request is never authorized in
-   * the session's organization instead of the one the path names.
+   * An `@OrganizationScoped` route whose organization value is not a UUID,
+   * refused before anything is looked up.
    */
   ROUTE_ORGANIZATION_INVALID: {
     code: 'AUTHZ_003',
-    message: 'The organization in the path is not a valid organization id',
+    message: 'The organization this request names is not a valid id',
     httpStatus: 400,
   },
   /**

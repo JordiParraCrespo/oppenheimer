@@ -6,7 +6,7 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import type { AbilityPort } from '../../auth/application/ability.port';
-import { type RequestTenant, tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
+import { type TenantRequest, tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
 import type { RoleRepositoryPort } from '../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../database/user-role.repository.port';
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
@@ -22,22 +22,14 @@ export interface AuthenticatedUser {
 /** Where the per-request ability is memoized. */
 const ABILITY_CACHE = Symbol('authz.ability');
 
-/** A memoized ability and the organization it was built for. */
-interface CachedAbility {
-  organizationId: string | null;
-  ability: AppAbility;
-}
-
 /** The subset of the request object the factory reads and writes. */
-export interface AbilityRequest {
+export interface AbilityRequest extends TenantRequest {
   user?: AuthenticatedUser;
   session?: {
     activeTeamId?: string | null;
   } | null;
-  /** The organization the request acts in, stamped by `ApiAuthGuard`. */
-  tenant?: RequestTenant;
   ability?: AppAbility;
-  [ABILITY_CACHE]?: CachedAbility;
+  [ABILITY_CACHE]?: AppAbility;
 }
 
 /** Request-scoped context used to interpolate resource-scoping conditions. */
@@ -45,8 +37,7 @@ export interface AbilityScope {
   /**
    * The organization the ability is built in: the caller's roles scoped to it
    * count, and the `${activeOrganizationId}` condition placeholder resolves to
-   * it. For a request, its tenant — on an `@OrganizationScoped` route the
-   * organization the path names, not necessarily the session's active one.
+   * it. For a request, its tenant.
    */
   organizationId?: string | null;
   /** The caller's active workspace/team (from `session.activeTeamId`). */
@@ -81,23 +72,20 @@ export class AbilityFactory implements AbilityPort {
    * three api-token handlers). Without the memo each one re-reads the role
    * tables, so the same answer is computed up to four times per request.
    *
-   * The organization comes from the request (`request.tenant`, written once by
-   * `ApiAuthGuard`), never from an argument: an argument the memo could not see
-   * is how the first caller's organization came to be served to every later
-   * caller asking about another. The memo also records the organization it was
-   * built for and is only reused for that one.
+   * The organization comes from the request (`request.tenant`, write-once),
+   * never from an argument the memo could not see, so every caller in a
+   * request asks about the same organization.
    */
   async forRequest(request: AbilityRequest): Promise<AppAbility> {
-    const organizationId = tenantOrganizationIdOf(request);
     const cached = request[ABILITY_CACHE];
-    if (cached && cached.organizationId === organizationId) return cached.ability;
+    if (cached) return cached;
 
     const ability = await this.createForUser(request.user ?? {}, {
-      organizationId,
+      organizationId: tenantOrganizationIdOf(request),
       activeTeamId: request.session?.activeTeamId ?? null,
     });
 
-    request[ABILITY_CACHE] = { organizationId, ability };
+    request[ABILITY_CACHE] = ability;
     request.ability = ability;
     return ability;
   }

@@ -11,7 +11,7 @@ function contextFor(request: object): ExecutionContext {
   return { switchToHttp: () => ({ getRequest: () => request }) } as unknown as ExecutionContext;
 }
 
-const tenants = { stamp: vi.fn().mockResolvedValue({ organizationId: null, source: 'session' }) };
+const tenants = { stamp: vi.fn().mockReturnValue({ organizationId: null }) };
 
 describe('OptionalApiAuthGuard', () => {
   let guard: OptionalApiAuthGuard;

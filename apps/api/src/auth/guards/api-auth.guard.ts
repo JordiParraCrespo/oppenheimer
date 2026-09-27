@@ -1,10 +1,14 @@
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../application/credential-scope.port';
-import { RequestTenantResolver } from '../application/request-tenant.resolver';
-import { CREDENTIAL_SCOPE, DELEGATED_SESSION } from '../auth.di-tokens';
+import type { RequestTenantPort } from '../application/request-tenant.port';
+import { CREDENTIAL_SCOPE, DELEGATED_SESSION, REQUEST_TENANT } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
-import { isHostCredential, type ScopedRequest } from '../domain/scope-context.types';
+import {
+  isHostCredential,
+  pinnedOrganizationIdOf,
+  type ScopedRequest,
+} from '../domain/scope-context.types';
 import { auth } from '../infrastructure/better-auth.config';
 import { betterAuthHeaders } from '../infrastructure/better-auth.util';
 import type { DelegatedSessionPort } from '../infrastructure/delegated-session.port';
@@ -13,7 +17,7 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
  * Authenticates a request by any of the three supported credentials and
  * populates `request.user` / `request.session` / `request.scopeContext`, then
  * stamps `request.tenant` — the one organization the request acts in (see
- * `RequestTenantResolver`) — before any guard or handler builds an ability.
+ * the `REQUEST_TENANT` port) — before any guard or handler builds an ability.
  *
  * Replaces Better Auth's own `AuthGuard`, which only understands session
  * cookies. For a scoped credential this guard additionally mints a short-lived
@@ -32,13 +36,14 @@ export class ApiAuthGuard implements CanActivate {
     private readonly credentials: CredentialScopePort,
     @Inject(DELEGATED_SESSION)
     private readonly delegatedSessions: DelegatedSessionPort,
-    protected readonly tenants: RequestTenantResolver,
+    @Inject(REQUEST_TENANT)
+    protected readonly tenants: RequestTenantPort,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<ScopedRequest>();
     await this.authenticate(request);
-    await this.tenants.stamp(context, request);
+    this.tenants.stamp(context, request);
     return true;
   }
 
@@ -59,10 +64,7 @@ export class ApiAuthGuard implements CanActivate {
 
     // A token restricted to exactly one organization acts inside it by
     // default, so organization-scoped routes resolve without an explicit id.
-    const pinnedOrganizationId =
-      scopeContext.resourceScope.organizationIds?.length === 1
-        ? scopeContext.resourceScope.organizationIds[0]
-        : null;
+    const pinnedOrganizationId = pinnedOrganizationIdOf(scopeContext);
 
     const sessionToken = await this.delegatedSessions.resolveSessionToken({
       credentialId: scopeContext.credentialId,
@@ -88,7 +90,7 @@ export class ApiAuthGuard implements CanActivate {
   /**
    * Cookie-session path. Note that `request.session` is set to the session
    * itself (not Better Auth's `{ session, user }` envelope), which is the shape
-   * `RequestTenantResolver` reads `activeOrganizationId` from.
+   * the `REQUEST_TENANT` port reads `activeOrganizationId` from.
    */
   private async authenticateSession(request: ScopedRequest): Promise<void> {
     const session = await auth.api.getSession({

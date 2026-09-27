@@ -1,17 +1,15 @@
 import type { AppAbility } from '@oppenheimer/shared';
-import type { RequestTenant } from '../domain/request-tenant.types';
+import type { TenantRequest } from '../domain/request-tenant.types';
 
-/** The request members the ability builder reads and writes. */
-export interface AbilityRequest {
+/**
+ * The request members the ability builder reads and writes. The ability is
+ * built in the request's tenant (`TenantRequest`) and no other organization.
+ */
+export interface AbilityRequest extends TenantRequest {
   user?: Record<string, unknown>;
   session?: {
     activeTeamId?: string | null;
   } | null;
-  /**
-   * The organization the request acts in, stamped once by `ApiAuthGuard`. The
-   * ability is built for this organization and no other; see `RequestTenant`.
-   */
-  tenant?: RequestTenant;
   ability?: AppAbility;
 }
 
