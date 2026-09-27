@@ -1,28 +1,34 @@
 import { ArgumentInvalidException, ArgumentNotProvidedException } from '@oppenheimer/backend-ddd';
 import { describe, expect, it } from 'vitest';
 import { ProjectEntity } from '../domain/project.entity';
-import { ProjectRepositoryEntity } from '../domain/project-repository.entity';
 
-const VALID = { organizationId: 'org-1', name: 'xrp-mobile', slug: 'xrp-mobile' };
+const REPOSITORIES = [
+  {
+    installationId: 'installation-1',
+    githubRepoId: '42',
+    repositoryFullName: 'acme/xrp-mobile',
+    baseBranch: 'main',
+    isDefault: true,
+  },
+];
+
+const VALID = {
+  organizationId: 'org-1',
+  name: 'xrp-mobile',
+  slug: 'xrp-mobile',
+  repositories: REPOSITORIES,
+};
 
 describe('ProjectEntity', () => {
-  it('starts un-archived, with the origin repository recorded as a string', () => {
-    const project = ProjectEntity.createNew({ ...VALID, originGithubRepoId: '821374923' });
+  it('starts un-archived', () => {
+    const project = ProjectEntity.createNew(VALID);
 
     expect(project.archivedAt).toBeNull();
     expect(project.isArchived).toBe(false);
-    // A bigint id stays a string all the way through: it is not promised to fit
-    // in a JavaScript number.
-    expect(project.originGithubRepoId).toBe('821374923');
-  });
-
-  it('defaults the origin to null rather than undefined', () => {
-    expect(ProjectEntity.createNew(VALID).originGithubRepoId).toBeNull();
   });
 
   it('keeps the slug when the project is renamed', () => {
-    // The whole point of splitting the two: the slug is a directory on every host
-    // holding the project, so renaming must not touch it.
+    // The slug is the project's stable handle; renaming is display only.
     const project = ProjectEntity.createNew(VALID);
 
     project.rename('XRP Mobile (v2)');
@@ -32,9 +38,9 @@ describe('ProjectEntity', () => {
   });
 
   it('offers no way to change the slug, and archives one way only', () => {
-    // A slug setter would be a directory move on every host with live work
-    // inside it. `archive` exists and has no counterpart: a retired slug is never
-    // reissued, so archiving is a one-way door by construction.
+    // A slug setter would break every link to the project. `archive` exists and
+    // has no counterpart: a retired slug is never reissued, so archiving is a
+    // one-way door by construction.
     const descriptor = (name: string) =>
       Object.getOwnPropertyDescriptor(ProjectEntity.prototype, name);
     const methods = Object.getOwnPropertyNames(ProjectEntity.prototype).filter(
@@ -58,60 +64,131 @@ describe('ProjectEntity', () => {
     expect(() => ProjectEntity.createNew(VALID).rename('')).toThrow(ArgumentNotProvidedException);
   });
 
-  it('refuses a slug that is not a directory name, and admits the owner--repo form', () => {
-    for (const slug of ['XRP Mobile', 'xrp_mobile', 'xrp---mobile', '-xrp', 'xrp-', '']) {
+  it('refuses a slug that is not lower-case kebab', () => {
+    for (const slug of ['XRP Mobile', 'xrp_mobile', 'xrp--mobile', '-xrp', 'xrp-', '']) {
       expect(() => ProjectEntity.createNew({ ...VALID, slug })).toThrow(ArgumentInvalidException);
     }
-    expect(ProjectEntity.createNew({ ...VALID, slug: 'acme--xrp-mobile' }).slug).toBe(
-      'acme--xrp-mobile',
+    expect(ProjectEntity.createNew({ ...VALID, slug: 'client-sites-3f9a7b2c' }).slug).toBe(
+      'client-sites-3f9a7b2c',
     );
   });
 });
 
-describe('ProjectEntity: defaults and repositories', () => {
-  const repo = (githubRepoId: string, isDefault = false) =>
-    ProjectRepositoryEntity.createNew({
-      installationId: 'installation-1',
-      githubRepoId,
-      fullName: `acme/repo-${githubRepoId}`,
-      isDefault,
-    });
+describe('a project’s repositories and defaults', () => {
+  const repo = (githubRepoId: string, isDefault = false) => ({
+    installationId: 'installation-1',
+    githubRepoId,
+    repositoryFullName: `acme/repo-${githubRepoId}`,
+    baseBranch: 'main',
+    isDefault,
+  });
 
-  it('starts with no defaults and no repositories', () => {
+  it('starts with no defaults, and is not the Unassigned project', () => {
     const project = ProjectEntity.createNew(VALID);
+
     expect(project.defaultHostId).toBeNull();
     expect(project.defaultAgent).toBeNull();
-    expect(project.repositories).toEqual([]);
-    expect(project.defaultRepositories).toEqual([]);
+    expect(project.isUnassigned).toBe(false);
+    expect(project.createdByUserId).toBeNull();
   });
 
-  it('changes only the fields given, and keeps the slug', () => {
-    const project = ProjectEntity.createNew(VALID);
-    project.change({ defaultHostId: 'host-1', repositories: [repo('1'), repo('2', true)] });
-    project.change({ name: 'XRP Mobile' });
+  it('refuses to be created holding no repository, or none offered by default', () => {
+    expect(() => ProjectEntity.createNew({ ...VALID, repositories: [] })).toThrow(
+      ArgumentInvalidException,
+    );
+    expect(() => ProjectEntity.createNew({ ...VALID, repositories: [repo('1')] })).toThrow(
+      ArgumentInvalidException,
+    );
+  });
 
-    expect(project.name).toBe('XRP Mobile');
+  it('refuses one repository twice and a blank base', () => {
+    expect(() =>
+      ProjectEntity.createNew({ ...VALID, repositories: [repo('1', true), repo('1')] }),
+    ).toThrow(ArgumentInvalidException);
+    expect(() =>
+      ProjectEntity.createNew({
+        ...VALID,
+        repositories: [{ ...repo('1', true), baseBranch: '  ' }],
+      }),
+    ).toThrow(ArgumentInvalidException);
+  });
+
+  it('replaces the repositories as a set, and leaves the rest alone', () => {
+    const project = ProjectEntity.createNew({ ...VALID, defaultAgent: 'codex' });
+
+    project.configure({ repositories: [repo('7'), repo('8', true)] });
+
+    expect(project.repositories.map((repository) => repository.githubRepoId)).toEqual(['7', '8']);
+    expect(project.defaultAgent).toBe('codex');
     expect(project.slug).toBe('xrp-mobile');
-    expect(project.defaultHostId).toBe('host-1');
-    expect(project.defaultRepositories.map((r) => r.githubRepoId)).toEqual(['2']);
-    expect(project.includesRepository('1')).toBe(true);
-    expect(project.includesRepository('9')).toBe(false);
   });
 
-  it('refuses the same repository twice and an agent the catalog does not know', () => {
+  it('refuses a set that would leave no default, and keeps the old one', () => {
     const project = ProjectEntity.createNew(VALID);
-    expect(() => project.change({ repositories: [repo('1'), repo('1')] })).toThrow(
+
+    expect(() => project.configure({ repositories: [repo('7')] })).toThrow(
       ArgumentInvalidException,
     );
-    expect(() => project.change({ defaultAgent: 'vim' as unknown as 'claude-code' })).toThrow(
-      ArgumentInvalidException,
-    );
+    expect(project.repositories).toEqual(REPOSITORIES);
   });
 
-  it('reads a repository’s owner and name off its full name', () => {
-    const row = repo('5');
-    expect(row.owner).toBe('acme');
-    expect(row.name).toBe('repo-5');
-    expect(row.baseBranch).toBeNull();
+  it('clears a default given null, and leaves it given nothing', () => {
+    const project = ProjectEntity.createNew({
+      ...VALID,
+      defaultHostId: 'host-1',
+      defaultAgent: 'codex',
+    });
+
+    project.configure({ defaultHostId: null });
+
+    expect(project.defaultHostId).toBeNull();
+    expect(project.defaultAgent).toBe('codex');
+  });
+
+  describe('the Unassigned project', () => {
+    const unassigned = () =>
+      ProjectEntity.create({
+        id: 'project-unassigned',
+        props: {
+          organizationId: 'org-1',
+          name: 'Unassigned',
+          slug: 'unassigned',
+          archivedAt: null,
+          createdByUserId: null,
+          repositories: [],
+          defaultHostId: null,
+          defaultAgent: null,
+          isUnassigned: true,
+        },
+      });
+
+    it('holds no repository, and takes defaults like any project', () => {
+      const project = unassigned();
+
+      project.configure({ defaultAgent: 'codex', repositories: [repo('7', true)] });
+
+      expect(project.defaultAgent).toBe('codex');
+      expect(project.repositories.map((repository) => repository.githubRepoId)).toEqual(['7']);
+    });
+
+    it('keeps its name', () => {
+      const project = unassigned();
+
+      expect(() => project.rename('Personal')).toThrow(ArgumentInvalidException);
+      expect(() => project.configure({ name: 'Personal' })).toThrow(ArgumentInvalidException);
+      expect(() => project.configure({ name: 'Unassigned' })).not.toThrow();
+    });
+
+    it('cannot be archived', () => {
+      expect(() => unassigned().archive(new Date())).toThrow(ArgumentInvalidException);
+    });
+  });
+
+  it('hands out copies, so the list changes only through configure', () => {
+    const project = ProjectEntity.createNew(VALID);
+
+    project.repositories[0].baseBranch = 'hacked';
+
+    expect(project.repositories[0].baseBranch).toBe('main');
   });
 });

@@ -37,31 +37,16 @@ export class SessionPlanFactory {
   ) {}
 
   /**
-   * The project this session belongs in: the one the caller named, or the one whose
-   * origin is the first checkout's repository — created on the spot if that
-   * repository has never had a session.
-   *
-   * The console shows no project chip, which is why the second path exists: a fifth
-   * chip on the most-used screen, for a concept with one instance, is real friction.
+   * The project the session is listed under: the one the caller named, or the
+   * workspace's Unassigned project when it named none. A project is never derived
+   * from a repository (`product/versions/mvp/10-api-modules-and-data-model.md`).
    */
   async resolveProject(
     scope: AccessScope,
-    input: Pick<CreateSessionDto, 'projectId' | 'checkouts'>,
+    input: Pick<CreateSessionDto, 'projectId'>,
   ): Promise<ProjectEntity> {
-    if (input.projectId) {
-      return requireActiveProject(this.projects, scope, input.projectId);
-    }
-
-    const first = input.checkouts[0];
-    if (!first) throw new AppError(SessionErrors.PROJECT_REQUIRED);
-
-    const repository = await this.repositoryOf(scope, first);
-    const [owner] = repository.fullName.split('/');
-    return this.projects.ensureForRepository(scope, {
-      githubRepoId: String(repository.githubRepoId),
-      owner,
-      name: repository.name,
-    });
+    if (!input.projectId) return this.projects.unassigned(scope);
+    return requireActiveProject(this.projects, scope, input.projectId);
   }
 
   /**
@@ -99,7 +84,9 @@ export class SessionPlanFactory {
       // The base defaults to the repository's default branch; the session's own
       // branch is created from it and is never the base itself.
       baseBranch: input.baseBranch ?? repository.defaultBranch,
-      branch: sessionBranchName(session.projectSlug, session.slug),
+      // Every checkout of a session is on its one branch; a session that already
+      // has one keeps the name it recorded.
+      branch: session.branch ?? sessionBranchName(session.slug),
     });
     session.attachCheckout(checkout);
     return checkout;

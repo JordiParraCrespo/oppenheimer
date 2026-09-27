@@ -30,9 +30,9 @@
   the header; the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
-  console's lists (Sessions current with its count; Automations — the
-  2026-09-26 evening export's word for routines, in the copy only — drawn
-  and disabled until its page lands), the head reads Projects with the
+  console's lists — Sessions and Automations, both links, the one under
+  the address current, and the automations list is the second sidebar
+  (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
@@ -42,9 +42,13 @@
   project has unresolved sessions). An
   empty project shows an empty row with a link to start one. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
-  menu listing the other projects that hold the session's repository,
-  and Delete, a confirm over the close that says whether to discard work
-  that is not pushed.
+  menu listing every other project — moving is a label change, nothing
+  on the host moves (10), so it asks for no confirmation — and Delete, a
+  confirm over the close that says whether to discard work that is not
+  pushed. The workspace's **Unassigned** project is the first group: a
+  session that names no project is listed there. Its settings edit its
+  repositories and defaults like any project's, but its name is fixed
+  and it has no Delete (`PROJECTS_008`).
 - The sidebar **is** the console's navigation: no nav rows, no chrome
   bar over the pane, no command palette. The console is one screen: a
   sidebar beside the pane a session opens in.
@@ -58,43 +62,51 @@
   the count) — and the measured column the sections fill. `/settings`
   itself lands on Profile. It goes through the same guard and the same
   no-workspace redirect as the console. Hosts lists the machines as cards
-  with Add host on the right, which opens the console's one pairing page
-  (`/hosts/new?from=settings`): the header reads where it was opened
-  from — Hosts as the parent crumb, Done rather than Use this host, back
-  to the list. The rows a host card draws — rename, remove, the install
-  command and the preflight — are the hosts slice's; the frame, the
-  routes and the way back are built (2026-09-26).
+  with Add host on the right, which opens the Add a host page inside
+  Settings (`/settings/hosts/new`, the settings sidebar still beside it,
+  the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
+  Use this host, all back to the list. It is the same screen the console
+  mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
+  opened the console's page with `?from=settings`; the frame keeps
+  Settings around it.) The rows a host card draws — rename, remove, the install command and
+  the preflight — are their own slices; the frame, the routes
+  and the way back are built (2026-09-26).
 
-  **Profile is built** (2026-09-26), in the export's order and then
-  what it left out. The card: the picture (Upload, and Remove once there
-  is one), the email with Change, Full name, Username with its `@`, and
-  the save row that appears only when something changed — Discard, Save
-  changes — and reads Saved until the next edit. Full name is **two
-  fields side by side**, not the export's one: the account keeps first
-  and last name apart (sign-up asks for both, the initials and the
-  member list are built from them), and splitting one string on its
-  first space would get every name that does not fit that shape wrong.
-  Username is lowercase letters, digits and single hyphens, up to 39 —
-  GitHub's shape, so the handle in a commit trailer reads the same on
-  both sides — unique across accounts, optional, and typed capitals
-  are lowered as you type. Change email sends a link to the new address
-  and moves nothing until it is followed; the link lands back on
-  `/settings/profile?emailChanged=1`, which says so. Then two groups the
-  export did not draw: **Sign-in**, the password in a dialog that signs
-  every other device out, and **Devices**, each browser signed in as
-  platform and browser with when it was last active, this one marked,
-  Sign out on each other and Sign out of all other devices under them.
-  **Account** is last, as drawn: Delete account opens a dialog that
-  asks for the email typed out (08 says what goes with it).
+  **Profile** holds, in order: the card — picture (Upload, Remove once
+  there is one), email with Change, full name, `@`username, and the save
+  row (Discard, Save changes, then Saved) that appears only when
+  something changed; **Sign-in**, the password changed in a dialog;
+  **Devices**, each signed-in browser with when it was last active, this
+  one marked, Sign out on the others and Sign out of all other devices;
+  and **Account**, Delete account behind a dialog that asks for the
+  email typed out. Full name is **two fields side by side**, not the
+  export's one, because the account stores first and last name apart
+  and splitting one string on its first space gets names wrong.
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
-  2026-09-26 export; the project chip and its New project… page are
-  12, which supersedes the four-chip sentence below); a composer for the
+  2026-09-26 export); a composer for the
   first task whose foot row reads scope of action, then engine: attach
   and the permission level on the left (ask for approval, approve for
   me, full access, the last in a warning tone because it changes a
   machine unattended); the agent and model, the effort and dictation on
-  the right. The agent lives in the engine button, not a chip: opening it
+  the right. The project chip leads the row, because picking a project
+  offers the rest; it starts on the workspace's **Unassigned** project,
+  which is where a session that names none is listed, so the chip and
+  the session never disagree. Its foot action is **New project…**, a
+  page in the main pane (the evening export's `.op-rpage`, like Add a
+  host): a Back link and a breadcrumb to New session; the name typed as
+  the title, with Cancel and Create project beside it and a line under
+  it saying what is still missing, then what the project will be; and
+  three numbered steps down a rail (`RoutineSteps`), each ticking itself
+  done with a summary — the repositories (`RepositoryRowList`: a row per
+  repository the App can see, ticked rows growing a Default toggle and a
+  base-branch pill; at least one, one of them a default), the default
+  host as chips, the default agent as chips. Create project returns to
+  New session on the new project, its defaults applied. Picking a
+  project offers its defaults — its host, its agent, its first default
+  repository on its base — and the chips stay the person's to change: a
+  repository outside the project is as good as one inside it (10). The
+  agent lives in the engine button, not a chip: opening it
   lists the harnesses, choosing one slides to its models with a search,
   and a blank terminal is picked outright. Effort is a five-stop slider
   (Minimal to Max) in a popover, not a list.
@@ -140,9 +152,9 @@
   foot action opens the **Add a host page** (`/hosts/new`; a dialog until
   the 2026-09-26 evening export made it a page over the main column, built
   like the automation editor: a page header, then two numbered steps,
-  Install and Connect; Settings → Hosts opens the same page with
-  `?from=settings`): the same instruction in
-  two forms behind a Command / Agent prompt switch, a copyable panel
+  Install and Connect; Settings → Hosts mounts the same screen inside its
+  own frame at `/settings/hosts/new`): the same instruction in
+  two forms behind Command / Agent prompt pills in the panel's band, a copyable panel
   (the command form carries the installer's SHA-256 under it when the
   deployment published one), the token line — whose New token replaces
   the token on screen, retiring it in the same write, so a command pasted
@@ -220,10 +232,12 @@
   prompt**, as a drag-and-drop does in a local terminal (01
   `session.image`). The status bar says while it travels; a refusal
   stays on screen until dismissed.
-- Settings → Hosts (above): hosts with the install command, the agent
-  prompt, an online dot, and the preflight result (git, tmux, claude);
-  the card's rows are built with the slice that needs them. Accounts
-  arrive with the accounts slice.
+- Settings → Hosts (above): each host a card with its status and running
+  session count, rename, copy ID, and a remove dialog that names what
+  removal stops — built, its backend is 14. The install command and the
+  agent prompt are the pairing page's; the preflight result (git, tmux,
+  claude) comes with the slice that needs it. Accounts arrive with the
+  accounts slice.
 - A host row also carries what the update story needs to be operable on
   a fleet of one: the running **version**, the **channel**, whether it
   is **pinned** (and to what), and the **last update outcome** —

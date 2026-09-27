@@ -56,9 +56,10 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
   are features named after their modules (`profile`, `hosts`). There is one
-  pairing surface, `/hosts/new`; the composer's host chip and Settings → Hosts
-  open the same screen, and `?from=settings` is how the header knows which
-  (`product/versions/mvp/05-screens.md`).
+  pairing screen, `AddHostScreen`, mounted twice: at `/hosts/new` over the
+  console's main column for the composer's host chip, and at
+  `/settings/hosts/new` inside Settings, where `from="settings"` makes its
+  header read Hosts and Done (`product/versions/mvp/05-screens.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:

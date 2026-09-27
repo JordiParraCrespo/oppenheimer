@@ -18,8 +18,8 @@ import type { NavTo, SettingsNavGroupConfig } from '../lib/nav';
  * app answers with a section that reads the product hook — so a refetch of
  * that list re-renders the number and not this sidebar. Which row is
  * current is the router's answer, not a string comparison: a row is active
- * while the route is under its destination, so a page beneath it keeps its
- * parent lit.
+ * on its destination only, and a page beneath it (Add a host under Hosts)
+ * leaves it unlit, as the frame draws it.
  */
 export function SettingsSidebar({
   groups,
@@ -42,7 +42,9 @@ export function SettingsSidebar({
         <SettingsNavGroup key={group.labelKey} label={t(`settings.nav.${group.labelKey}`)}>
           {group.items.map((item) => {
             const Icon = item.icon;
-            const active = Boolean(matchRoute({ to: item.to, fuzzy: true }));
+            // Lit on the section itself only: the frame leaves the row unlit
+            // while a page under it (Add a host) is open.
+            const active = Boolean(matchRoute({ to: item.to }));
             return (
               <SettingsNavItem
                 key={item.to}

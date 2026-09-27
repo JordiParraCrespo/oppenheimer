@@ -24,7 +24,6 @@ function session(overrides: Partial<Parameters<typeof WorkSessionEntity.request>
   return WorkSessionEntity.request({
     organizationId: 'org-acme',
     projectId: 'project-1',
-    projectSlug: 'xrp-mobile',
     createdByUserId: 'user-1',
     hostId: 'host-1',
     slug: 'bold-otter-3f9a7k',
@@ -42,7 +41,7 @@ function checkout(work: WorkSessionEntity, directoryName: string, githubRepoId =
     repositoryFullName: `acme/${directoryName}`,
     directoryName,
     baseBranch: 'main',
-    branch: sessionBranchName('xrp-mobile', work.slug),
+    branch: sessionBranchName(work.slug),
   });
 }
 
@@ -168,12 +167,10 @@ describe('the checkouts the aggregate holds', () => {
 });
 
 describe('the two derived names', () => {
-  it('builds a branch that carries both ids', () => {
-    // Both segments are unique-constrained, so a branch name is self-identifying and
-    // collision-free by construction — no pre-flight check against GitHub, no race.
-    expect(sessionBranchName('xrp-mobile', 'bold-otter-3f9a7k')).toBe(
-      'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
-    );
+  it('builds a branch from the session’s slug alone', () => {
+    // The slug is unique in the workspace, so the branch is self-identifying and
+    // collision-free by construction; no project in it, so a move renames nothing.
+    expect(sessionBranchName('bold-otter-3f9a7k')).toBe('oppenheimer/bold-otter-3f9a7k');
   });
 
   it('derives every directory candidate from the repository', () => {
@@ -220,5 +217,42 @@ describe('the minted slug', () => {
   it('does not repeat itself over a run of mints', () => {
     const minted = new Set(Array.from({ length: 500 }, () => mintSessionSlug()));
     expect(minted.size).toBeGreaterThan(495);
+  });
+});
+
+describe('a moved session', () => {
+  it('is listed under the project the log moved it to', () => {
+    // A project is metadata: nothing on disk names it, so this is the whole move.
+    const work = session();
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }));
+
+    expect(work.projectId).toBe('project-2');
+  });
+
+  it('reports the branch its checkouts recorded, or none before it has one', () => {
+    const work = session();
+    expect(work.branch).toBeNull();
+
+    work.attachCheckout(checkout(work, 'xrp-mobile'));
+
+    expect(work.branch).toBe(`oppenheimer/${work.slug}`);
+  });
+
+  it('stays where it ended once it is closed', () => {
+    const work = session();
+    work.recordEvent(entry(SESSION_EVENT_KINDS.CLOSED));
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1', to: 'project-2' }));
+
+    expect(work.projectId).toBe('project-1');
+  });
+
+  it('ignores a move that names no project', () => {
+    const work = session();
+
+    work.recordEvent(entry(SESSION_EVENT_KINDS.MOVED, { from: 'project-1' }));
+
+    expect(work.projectId).toBe('project-1');
   });
 });

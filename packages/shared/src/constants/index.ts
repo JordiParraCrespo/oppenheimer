@@ -63,4 +63,6 @@ export const ORGANIZATION_ROLES = {
 export const QUEUE_NAMES = {
   EMAIL: 'email',
   FILE_PROCESSING: 'file-processing',
+  /** The daily purge of host networks and timeline past their retention. */
+  HOST_RETENTION: 'host-retention',
 } as const;

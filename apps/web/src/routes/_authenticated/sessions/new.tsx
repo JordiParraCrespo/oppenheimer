@@ -7,7 +7,7 @@ import { NewSessionScreen } from '@/features/sessions/screens/new-session';
  *
  * `?project=` is the sidebar's "New session here" and what a new project
  * lands with: the project chip starts on that project and its defaults
- * prefill the rest (`product/versions/mvp/12-projects-on-the-console.md`).
+ * prefill the rest (`product/versions/mvp/05-screens.md`).
  * `?host=` is what Add a host lands with: the host chip starts on the
  * machine it paired. Unknown keys are carried through, as `__root.tsx` asks.
  */

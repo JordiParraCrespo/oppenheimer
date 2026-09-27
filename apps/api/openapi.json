@@ -5015,9 +5015,20 @@
     },
     "/api/v1/hosts": {
       "get": {
-        "description": "The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.",
+        "description": "The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.",
         "operationId": "list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Add the hosts that were removed — for naming the host of a session that outlived it.",
+            "schema": {
+              "enum": ["unpaired"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -5196,6 +5207,69 @@
       }
     },
     "/api/v1/hosts/pairing/{id}": {
+      "get": {
+        "description": "What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.",
+        "operationId": "getPairingToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingTokenStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_002 — Pairing token not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get one pairing token, and the host it paired",
+        "tags": ["Hosts"]
+      },
       "delete": {
         "description": "Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.",
         "operationId": "revoke",
@@ -5581,6 +5655,71 @@
           }
         ],
         "summary": "Unpair a host",
+        "tags": ["Hosts"]
+      }
+    },
+    "/api/v1/hosts/{id}/timeline": {
+      "get": {
+        "description": "Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.",
+        "operationId": "getHostTimeline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostTimelinePageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A host’s timeline, newest first",
         "tags": ["Hosts"]
       }
     },
@@ -7774,7 +7913,7 @@
         "tags": ["Projects"]
       },
       "post": {
-        "description": "A body of work with a name, the repositories it holds (each saying whether every new session clones it, and what it branches from), and the host and agent New session picks first. The directory name is derived from the first default repository, else the first repository, else the name, and never changes. A project made here has no origin repository: the one a first session creates for a repository is found by GitHub’s id, this one by its own.",
+        "description": "A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.",
         "operationId": "createProject",
         "parameters": [],
         "requestBody": {
@@ -7794,6 +7933,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PROJECTS_006 — The repository list is not one a project can hold",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -7819,17 +7968,7 @@
             }
           },
           "404": {
-            "description": "GITHUB_010 — That repository is not one this GitHub installation covers\n\nGITHUB_001 — GitHub installation not found\n\nHOSTS_001 — Host not found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "PROJECTS_006 — That name is a directory another project already holds",
+            "description": "HOSTS_001 — Host not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7912,7 +8051,7 @@
         "tags": ["Projects"]
       },
       "patch": {
-        "description": "Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.",
+        "description": "The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.",
         "operationId": "updateProject",
         "parameters": [
           {
@@ -7945,6 +8084,16 @@
               }
             }
           },
+          "400": {
+            "description": "PROJECTS_006 — The repository list is not one a project can hold",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
           "401": {
             "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
             "content": {
@@ -7966,7 +8115,17 @@
             }
           },
           "404": {
-            "description": "GITHUB_010 — That repository is not one this GitHub installation covers\n\nHOSTS_001 — Host not found\n\nPROJECTS_001 — Project not found",
+            "description": "PROJECTS_001 — Project not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7981,7 +8140,7 @@
             "bearer": []
           }
         ],
-        "summary": "Edit a project",
+        "summary": "Change a project",
         "tags": ["Projects"]
       },
       "delete": {
@@ -8039,7 +8198,7 @@
             }
           },
           "409": {
-            "description": "PROJECTS_005 — The project still has open sessions",
+            "description": "PROJECTS_005 — The project still has open sessions\n\nPROJECTS_008 — The Unassigned project cannot be renamed or archived",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8070,9 +8229,37 @@
     },
     "/api/v1/sessions": {
       "get": {
-        "description": "Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
+        "description": "Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.",
         "operationId": "listSessions",
         "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Default `recent`",
+            "schema": {
+              "enum": ["recent", "oldest", "name"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "agent",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "githubRepoId",
+            "required": false,
+            "in": "query",
+            "description": "A live checkout of it",
+            "schema": {
+              "type": "number"
+            }
+          },
           {
             "name": "state",
             "required": false,
@@ -8199,16 +8386,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SessionResponseDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "SESSIONS_009 — No project to put the session in",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetailsDto"
                 }
               }
             }
@@ -9131,7 +9308,7 @@
     },
     "/api/v1/sessions/{id}/move": {
       "post": {
-        "description": "Only a project that includes every repository the session checked out can take it. The branch and the worktree stay where they are: the directory carries the slug of the project that created the session, and nothing on the host changes.",
+        "description": "Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.",
         "operationId": "moveSession",
         "parameters": [
           {
@@ -9154,7 +9331,7 @@
           }
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
@@ -9185,7 +9362,7 @@
             }
           },
           "404": {
-            "description": "PROJECTS_001 — Project not found\n\nSESSIONS_001 — Session not found",
+            "description": "SESSIONS_001 — Session not found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9195,7 +9372,7 @@
             }
           },
           "409": {
-            "description": "SESSIONS_018 — That project does not include this session’s repository\n\nSESSIONS_006 — That project is archived\n\nSESSIONS_005 — That session is closed",
+            "description": "SESSIONS_006 — That project is archived\n\nSESSIONS_005 — That session is closed",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9210,7 +9387,7 @@
             "bearer": []
           }
         ],
-        "summary": "Move a session to another project",
+        "summary": "List a session under another project",
         "tags": ["Sessions"]
       }
     },
@@ -11530,6 +11707,158 @@
         },
         "required": ["name", "commitSha", "protected", "isDefault"]
       },
+      "HostStatus": {
+        "type": "string",
+        "enum": ["running", "idle", "offline", "unpaired"],
+        "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`."
+      },
+      "HostMachineResponseDto": {
+        "type": "object",
+        "properties": {
+          "osName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Ubuntu 24.04.1 LTS"
+          },
+          "kernelVersion": {
+            "type": "string",
+            "nullable": true,
+            "example": "6.8.0-45-generic"
+          },
+          "cpuModel": {
+            "type": "string",
+            "nullable": true,
+            "example": "AMD EPYC 7B13"
+          },
+          "cpuCount": {
+            "type": "number",
+            "nullable": true,
+            "example": 32
+          },
+          "memoryTotalBytes": {
+            "type": "number",
+            "nullable": true,
+            "example": 68719476736
+          },
+          "diskTotalBytes": {
+            "type": "number",
+            "nullable": true,
+            "example": 1000000000000
+          },
+          "virtualization": {
+            "type": "string",
+            "nullable": true,
+            "example": "vm",
+            "description": "`none`, `vm` or `container`, as the runner read it from local files."
+          },
+          "cloudProvider": {
+            "type": "string",
+            "nullable": true,
+            "example": "hetzner",
+            "description": "The vendor the firmware names; never the answer of a metadata call."
+          },
+          "timezone": {
+            "type": "string",
+            "nullable": true,
+            "example": "Europe/Madrid"
+          },
+          "bootedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "channel": {
+            "type": "string",
+            "nullable": true,
+            "example": "stable"
+          },
+          "serviceManager": {
+            "type": "string",
+            "nullable": true,
+            "example": "systemd"
+          },
+          "changedAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the machine last changed, not when it last reported."
+          }
+        },
+        "required": ["changedAt"]
+      },
+      "HostVitalsResponseDto": {
+        "type": "object",
+        "properties": {
+          "connectedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "When the current (or last) link opened."
+          },
+          "roundTripMillis": {
+            "type": "number",
+            "nullable": true,
+            "example": 41,
+            "description": "The link’s last ping/pong."
+          },
+          "loadAverage": {
+            "type": "number",
+            "nullable": true,
+            "example": 1.25,
+            "description": "One-minute load average."
+          },
+          "memoryAvailableBytes": {
+            "type": "number",
+            "nullable": true
+          },
+          "diskFreeBytes": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "HostNetworkResponseDto": {
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "example": "203.0.113.7"
+          },
+          "countryCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "ES"
+          },
+          "region": {
+            "type": "string",
+            "nullable": true,
+            "example": "Catalonia"
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "example": "Barcelona"
+          },
+          "asn": {
+            "type": "number",
+            "nullable": true,
+            "example": 24940
+          },
+          "asnOrg": {
+            "type": "string",
+            "nullable": true,
+            "example": "Hetzner Online GmbH"
+          },
+          "firstSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["ip", "firstSeenAt", "lastSeenAt"]
+      },
       "HostResponseDto": {
         "type": "object",
         "properties": {
@@ -11580,10 +11909,53 @@
             "type": "boolean",
             "description": "Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored."
           },
+          "status": {
+            "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostStatus"
+              }
+            ]
+          },
+          "runningSessionCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s."
+          },
           "lastSeenAt": {
             "format": "date-time",
             "type": "string",
             "nullable": true
+          },
+          "machine": {
+            "nullable": true,
+            "description": "What the machine is. Null until the runner has reported its facts.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostMachineResponseDto"
+              }
+            ]
+          },
+          "vitals": {
+            "nullable": true,
+            "description": "Its last live numbers. Null until its first link.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostVitalsResponseDto"
+              }
+            ]
+          },
+          "network": {
+            "nullable": true,
+            "description": "Where its current (or last) link came from. Null until one has.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostNetworkResponseDto"
+              }
+            ]
           },
           "unpairedAt": {
             "format": "date-time",
@@ -11606,6 +11978,8 @@
           "name",
           "publicKeyFingerprint",
           "online",
+          "status",
+          "runningSessionCount",
           "createdAt",
           "updatedAt"
         ]
@@ -11660,6 +12034,70 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          }
+        },
+        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+      },
+      "PairingTokenStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name the machine will adopt when it registers with this token.",
+            "example": "Dev box"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Non-secret display prefix. The secret is shown once, in the install command.",
+            "example": "opr_reg_a1b2c3"
+          },
+          "createdFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count."
+          },
+          "redeemedFromIp": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where it was spent from — a different fact from where it was minted."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "revokedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "redeemedHostId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The host this token created."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "host": {
+            "nullable": true,
+            "description": "The host this token paired, as the hosts list shows it. Null until a runner spends the token.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HostResponseDto"
+              }
+            ]
           }
         },
         "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
@@ -11826,8 +12264,55 @@
                 "minimum": 0,
                 "exclusiveMinimum": false
               },
+              "cpus": {
+                "type": "integer",
+                "minimum": 1,
+                "exclusiveMinimum": false
+              },
               "runnerVersion": {
                 "type": "string"
+              },
+              "osName": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "kernelVersion": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "cpuModel": {
+                "type": "string",
+                "maxLength": 128
+              },
+              "memoryTotalBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "exclusiveMinimum": false
+              },
+              "diskTotalBytes": {
+                "type": "integer",
+                "minimum": 1,
+                "exclusiveMinimum": false
+              },
+              "virtualization": {
+                "type": "string",
+                "maxLength": 24
+              },
+              "cloudProvider": {
+                "type": "string",
+                "maxLength": 24
+              },
+              "timezone": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "bootedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "serviceManager": {
+                "type": "string",
+                "maxLength": 16
               }
             },
             "required": [
@@ -11870,6 +12355,53 @@
           }
         },
         "required": ["hostId", "fingerprint"]
+      },
+      "HostTimelineEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Opaque; increases with time."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "paired",
+              "renamed",
+              "unpaired",
+              "facts_changed",
+              "network_changed",
+              "runner_updated",
+              "runner_rolled_back"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "description": "`renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions."
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "kind", "payload", "occurredAt"]
+      },
+      "HostTimelinePageResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostTimelineEntryResponseDto"
+            }
+          },
+          "next": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `before` for the next, older page; null at the end."
+          }
+        },
+        "required": ["entries"]
       },
       "RenameHostRequest": {
         "type": "object",
@@ -12803,37 +13335,38 @@
       "ProjectRepositoryResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
           "installationId": {
             "type": "string",
             "format": "uuid",
-            "description": "The GitHub installation this repository’s tokens are minted through."
+            "description": "Our `github_installation` row, not GitHub’s number."
           },
           "githubRepoId": {
             "type": "string",
             "description": "GitHub’s repository id, as a string because the column is a bigint.",
             "example": "821374923"
           },
-          "fullName": {
+          "repositoryFullName": {
             "type": "string",
-            "description": "A display snapshot of `owner/repo`, refreshed whenever the project is saved.",
+            "description": "`owner/repo` as GitHub spelled it when the project was last saved. Display only.",
             "example": "acme/xrp-mobile"
-          },
-          "isDefault": {
-            "type": "boolean",
-            "description": "Cloned into every new session of the project."
           },
           "baseBranch": {
             "type": "string",
-            "description": "What those sessions branch from. Null is the repository’s own default branch, read live.",
-            "nullable": true,
+            "description": "What a session’s branch is created from.",
             "example": "main"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Offered to a new session. The API never applies it."
           }
         },
-        "required": ["id", "installationId", "githubRepoId", "fullName", "isDefault"]
+        "required": [
+          "installationId",
+          "githubRepoId",
+          "repositoryFullName",
+          "baseBranch",
+          "isDefault"
+        ]
       },
       "ProjectResponseDto": {
         "type": "object",
@@ -12848,38 +13381,35 @@
           },
           "name": {
             "type": "string",
-            "description": "The display name: what the person called it, or the repository’s name for a project a first session created.",
-            "example": "XRP Mobile"
+            "description": "Display name. Free to change; the slug does not follow it.",
+            "example": "xrp-mobile"
           },
           "slug": {
             "type": "string",
-            "description": "The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.",
+            "description": "The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.",
             "example": "xrp-mobile"
           },
-          "originGithubRepoId": {
-            "type": "string",
-            "description": "GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint. Null for a project made on the console.",
-            "nullable": true,
-            "example": "821374923"
-          },
-          "defaultHostId": {
-            "type": "string",
-            "description": "The host New session picks first for this project. Null is the composer’s last choice.",
-            "nullable": true,
-            "format": "uuid"
-          },
-          "defaultAgent": {
-            "type": "string",
-            "description": "The agent New session picks first for this project. Null is the composer’s last choice.",
-            "nullable": true,
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
-          },
           "repositories": {
-            "description": "The repositories the project holds, in the order they were added.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProjectRepositoryResponseDto"
             }
+          },
+          "defaultHostId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it."
+          },
+          "defaultAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent a new session is offered, from the coding-agent catalog.",
+            "example": "claude-code"
+          },
+          "isUnassigned": {
+            "type": "boolean",
+            "description": "The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository."
           },
           "createdAt": {
             "format": "date-time",
@@ -12896,6 +13426,7 @@
           "name",
           "slug",
           "repositories",
+          "isUnassigned",
           "createdAt",
           "updatedAt"
         ]
@@ -12910,6 +13441,7 @@
           },
           "repositories": {
             "type": "array",
+            "minItems": 1,
             "maxItems": 20,
             "items": {
               "type": "object",
@@ -12923,30 +13455,30 @@
                   "minimum": 0,
                   "exclusiveMinimum": true
                 },
-                "isDefault": {
-                  "type": "boolean",
-                  "default": false
-                },
                 "baseBranch": {
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 255
+                },
+                "isDefault": {
+                  "type": "boolean"
                 }
               },
-              "required": ["installationId", "githubRepoId"]
-            },
-            "default": []
+              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
+            }
           },
           "defaultHostId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "defaultAgent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+            "nullable": true
           }
         },
-        "required": ["name"]
+        "required": ["name", "repositories"]
       },
       "UpdateProjectRequest": {
         "type": "object",
@@ -12958,6 +13490,7 @@
           },
           "repositories": {
             "type": "array",
+            "minItems": 1,
             "maxItems": 20,
             "items": {
               "type": "object",
@@ -12971,17 +13504,16 @@
                   "minimum": 0,
                   "exclusiveMinimum": true
                 },
-                "isDefault": {
-                  "type": "boolean",
-                  "default": false
-                },
                 "baseBranch": {
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 255
+                },
+                "isDefault": {
+                  "type": "boolean"
                 }
               },
-              "required": ["installationId", "githubRepoId"]
+              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
             }
           },
           "defaultHostId": {
@@ -13092,7 +13624,8 @@
           },
           "projectId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "The project the session is listed under."
           },
           "hostId": {
             "type": "string",

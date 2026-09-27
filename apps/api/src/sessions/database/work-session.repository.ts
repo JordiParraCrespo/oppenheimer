@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { OutboxService, Paginated } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
-import { DataSource, type EntityManager, In, Repository } from 'typeorm';
+import { DataSource, type EntityManager, In, Repository, type SelectQueryBuilder } from 'typeorm';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -95,8 +95,8 @@ export class WorkSessionRepository
         `INSERT INTO "work_session"
            ("id", "organizationId", "projectId", "createdByUserId", "hostId", "name",
             "nameSource", "slug", "agent", "cwdCheckoutId", "idempotencyKey",
-            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt", "projectSlug")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+            "state", "stateSeq", "agentSessionId", "lastEventAt", "stoppedAt")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          -- The index is partial, so its predicate has to be repeated or Postgres
          -- cannot infer which constraint is meant.
          ON CONFLICT ("organizationId", "idempotencyKey")
@@ -124,7 +124,6 @@ export class WorkSessionRepository
           record.agentSessionId,
           record.lastEventAt,
           record.stoppedAt,
-          record.projectSlug,
         ],
       );
       if (inserted.length === 0) return 'taken' as const;
@@ -166,6 +165,26 @@ export class WorkSessionRepository
       this.appendWithin(manager, session, events),
     );
     await this.flushEvents(session);
+    return outcome;
+  }
+
+  async appendMove(
+    session: WorkSessionEntity,
+    targetProjectId: string,
+    events: NewSessionEvent[],
+  ): Promise<'moved' | 'project-archived'> {
+    const outcome = await this.dataSource.transaction(async (manager) => {
+      const active: { id: string }[] = await manager.query(
+        `SELECT "id" FROM "project"
+          WHERE "id" = $1 AND "organizationId" = $2 AND "archivedAt" IS NULL
+          FOR SHARE`,
+        [targetProjectId, session.organizationId],
+      );
+      if (active.length === 0) return 'project-archived' as const;
+      await this.appendWithin(manager, session, events);
+      return 'moved' as const;
+    });
+    if (outcome === 'moved') await this.flushEvents(session);
     return outcome;
   }
 
@@ -211,9 +230,21 @@ export class WorkSessionRepository
     if (filters.projectId) query.andWhere('session.projectId = :projectId', filters);
     if (filters.hostId) query.andWhere('session.hostId = :hostId', filters);
     if (filters.state) query.andWhere('session.state = :state', filters);
+    if (filters.agent) query.andWhere('session.agent = :agent', filters);
+    if (filters.githubRepoId !== undefined) {
+      // A live checkout of the repository. The child table is read by the
+      // session ids the scoped root query already admits, never on its own.
+      query.andWhere(
+        `EXISTS (SELECT 1 FROM "session_checkout" checkout
+                  WHERE checkout."sessionId" = session.id
+                    AND checkout."githubRepoId" = :githubRepoId
+                    AND checkout."removedAt" IS NULL)`,
+        { githubRepoId: String(filters.githubRepoId) },
+      );
+    }
+    applySort(query, filters.sort ?? 'recent');
 
     const [records, count] = await query
-      .orderBy('session.createdAt', 'DESC')
       .skip((filters.page - 1) * filters.limit)
       .take(filters.limit)
       .getManyAndCount();
@@ -276,16 +307,40 @@ export class WorkSessionRepository
         firstPrompts.set(event.sessionId, text);
       }
     }
-    return records.map((record) => {
+    return records.flatMap((record) => {
       const prompt = firstPrompts.get(record.id);
-      return {
-        session: this.mapper.toDomain(record, checkouts.get(record.id) ?? []),
-        // The slug the host's paths carry, from the row: a moved session is
-        // still under the project that created it on disk.
-        projectSlug: record.projectSlug,
-        ...(prompt ? { prompt } : {}),
-      };
+      return [
+        {
+          session: this.mapper.toDomain(record, checkouts.get(record.id) ?? []),
+          ...(prompt ? { prompt } : {}),
+        },
+      ];
     });
+  }
+
+  async findRunningOnHostForSystem(hostId: string): Promise<WorkSessionEntity[]> {
+    const records = await this.running(
+      'a removed host stops whatever runs on it, and there is no person on a domain event to scope by',
+    )
+      .andWhere('session.hostId = :hostId', { hostId })
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    if (records.length === 0) return [];
+    const checkouts = await this.checkoutsFor(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, checkouts.get(record.id) ?? []));
+  }
+
+  async countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>> {
+    if (hostIds.length === 0) return new Map();
+    const rows: { hostId: string; count: string }[] = await this.running(
+      'the hosts were read under the caller’s scope already, and this returns a count per host rather than a row',
+    )
+      .andWhere('session.hostId IN (:...hostIds)', { hostIds: [...hostIds] })
+      .select('session.hostId', 'hostId')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('session.hostId')
+      .getRawMany();
+    return new Map(rows.map((row) => [row.hostId, Number(row.count)]));
   }
 
   async findEvents(
@@ -508,6 +563,17 @@ export class WorkSessionRepository
   }
 
   /** Checkouts for a page of sessions, in one query rather than one per row. */
+  /**
+   * "Running" as the host list and host removal mean it: the agent is up, so
+   * the lifecycle is `starting` or `open` and nobody has stopped it. Served by
+   * `IDX_work_session_host_state`.
+   */
+  private running(reason: string) {
+    return this.unscopedQuery(reason)
+      .where('session.state IN (:...runningStates)', { runningStates: ['starting', 'open'] })
+      .andWhere('session.stoppedAt IS NULL');
+  }
+
   private async checkoutsFor(
     sessionIds: string[],
   ): Promise<Map<string, SessionCheckoutOrmEntity[]>> {
@@ -526,4 +592,21 @@ export class WorkSessionRepository
     }
     return byId;
   }
+}
+
+/**
+ * The list's order. `recent` is last activity first, with sessions nothing has
+ * happened in yet by their creation; the id breaks every tie so a page boundary
+ * is stable.
+ */
+function applySort(
+  query: SelectQueryBuilder<WorkSessionOrmEntity>,
+  sort: NonNullable<SessionFilters['sort']>,
+): void {
+  if (sort === 'oldest') query.orderBy('session.createdAt', 'ASC');
+  else if (sort === 'name') query.orderBy('LOWER(session.name)', 'ASC');
+  else {
+    query.orderBy('COALESCE(session.lastEventAt, session.createdAt)', 'DESC');
+  }
+  query.addOrderBy('session.id', 'ASC');
 }

@@ -17,7 +17,7 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
@@ -135,17 +135,20 @@ earlier note:
   GitHub already enforces.
 - Note 11 said one worktree per session under
   `workspaces/<repo>/main`. `versions/mvp/10-api-modules-and-data-model.md`
-  supersedes its §1: a **project** level sits above the repository, a
-  session may check out **several** repositories, and those checkouts
-  live under the session rather than under the repo. The store is a
+  supersedes its §1: a session may check out **several** repositories,
+  those checkouts live under the session rather than under the repo, and
+  one bare store per repository serves the workspace. The store is a
   bare clone, always owner-prefixed, and every directory name is a
-  database constraint instead of a convention. Note 11 §2 onward still
-  stands.
+  database constraint instead of a convention. A **project** level above
+  the repository was in 10's first draft and was taken out on
+  2026-09-26, when a project became a saved scope a person creates and
+  metadata only, so a session can move between projects without anything
+  on disk moving. Note 11 §2 onward still stands.
 - `versions/mvp/08-auth.md` said hosts belong to the workspace that
   paired them, then to a workspace and an owner. `versions/mvp/10` now
   makes a host the person's, borrowed by every workspace they are in,
   the way Better Auth hangs devices and logins off `user`; the on-disk
-  layout gains a `workspaces/<org>/` level above `projects/`. Note 06's
+  layout gains a `workspaces/<org>/` level. Note 06's
   per-account config directories remain the answer to several logins on
   one machine, and remain a later slice.
 - `versions/mvp/10` first mirrored every installation's repository set
@@ -165,10 +168,6 @@ earlier note:
   beside the console — `/settings`, opened from the account menu, with
   Profile and Hosts as its sections and the console's pairing page behind
   Add host — and 05 records that page; the drawer is gone (2026-09-26).
-- The 2026-09-26 export draws Profile's **Full name** as one field. The
-  account keeps first and last name apart, so `versions/mvp/05-screens.md`
-  records it as two fields in the same row rather than one string split
-  on its first space (2026-09-26).
 - `versions/mvp/10-api-modules-and-data-model.md` said a model was a
   launch option "recorded in the log, not a column", and made the
   promotion conditional on a reader needing it per row. `restart` is that
@@ -206,16 +205,43 @@ earlier note:
   installation page (2026-09-26).
 - `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
   a project chip. The 2026-09-26 export puts one first on New session, with
-  a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
-  works out the data model, the API and the console for it (2026-09-26).
-- `versions/mvp/05-screens.md` and `12-projects-on-the-console.md`: the
-  project dialog and the Add host dialog are pages over the main column
-  (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
-  evening export, and the second rail item reads Automations. A project
-  needs a repository to be saved from the console (2026-09-26).
+  a New project page behind it; 05 and 10 now carry the chip, the page and
+  the model (2026-09-26). The chip starts on the workspace's Unassigned
+  project, where a session that names none is listed.
+- `versions/mvp/05-screens.md`: the project dialog and the Add host dialog
+  are pages over the main column (`/projects/new`, `/projects/{id}`,
+  `/hosts/new`) since the 2026-09-26 evening export, and the second rail
+  item reads Automations. A project needs a repository to be saved from the
+  console (2026-09-26).
+- `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
+  console's automations list and its pages have their routes now, so the
+  rail is whole; the automation itself — scheduler, trigger, runs — stays
+  after (`versions/mvp/13-automations.md`, 2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
   0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
   display. Multi-account (note 06) is on the list with no version yet.
   VMs are not placed. See `next-steps/README.md`.
+- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  that hosts would be listed later in a drawer. The 2026-09-26 frames
+  draw a Settings page with a Hosts section, and
+  `versions/mvp/14-hosts-settings.md` designs its backend. Two host
+  behaviours changed with it: removing a host now stops the sessions
+  running on it (it used to close the link and leave them `open`), and
+  `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
+  (2026-09-26).
+- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+  metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
+  a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
+  heartbeat. `versions/mvp/15-host-metadata.md` splits it by rate of
+  change into `host_inventory`, `host_presence`, `host_network` and
+  `host_event`; the old columns go in a later contract step (2026-09-26).
+- `versions/mvp/05-screens.md` had Settings → Hosts open the console's
+  Add a host page with `?from=settings`. It now opens the same screen
+  inside Settings, at `/settings/hosts/new`, with the settings sidebar
+  beside it, and the host menu drops Copy host ID for now (2026-09-26).
+- `versions/mvp/14-hosts-settings.md` left the host card's region or
+  "local" open. It shows the city and country code of the host's
+  connecting address, from DB-IP Lite, instead of a cloud region
+  (2026-09-26).

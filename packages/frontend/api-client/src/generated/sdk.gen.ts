@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangeEmailData, ChangeEmailErrors, ChangeEmailResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAccountData, DeleteAccountErrors, DeleteAccountResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
+import type { AcceptData, AcceptErrors, AcceptResponses, ActiveData, ActiveErrors, ActiveResponses, AddData, AddErrors, AddMemberData, AddMemberErrors, AddMemberResponses, AddResponses, AddSessionCheckoutData, AddSessionCheckoutErrors, AddSessionCheckoutResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, AssignData, AssignErrors, AssignResponses, BanData, BanErrors, BanResponses, CancelData, CancelErrors, CancelResponses, CatalogData, CatalogErrors, CatalogResponses, ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CheckData, CheckErrors, CheckResponses, CheckSlugData, CheckSlugErrors, CheckSlugResponses, CloseSessionData, CloseSessionErrors, CloseSessionResponses, CollectSessionImageData, CollectSessionImageErrors, CollectSessionImageResponses, ConnectInstallationData, ConnectInstallationErrors, ConnectInstallationResponses, Create2Data, Create2Errors, Create2Responses, Create3Data, Create3Errors, Create3Responses, Create4Data, Create4Errors, Create4Responses, Create5Data, Create5Errors, Create5Responses, CreateData, CreateErrors, CreateFlagSegmentData, CreateFlagSegmentErrors, CreateFlagSegmentResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateResponses, CreateSessionData, CreateSessionErrors, CreateSessionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, CurrentData, CurrentErrors, CurrentResponses, DeleteAvatarData, DeleteAvatarErrors, DeleteAvatarResponses, DeleteFlagSegmentData, DeleteFlagSegmentErrors, DeleteFlagSegmentResponses, DeploymentCapabilitiesData, DeploymentCapabilitiesResponses, DisconnectInstallationData, DisconnectInstallationErrors, DisconnectInstallationResponses, EvaluateFeatureFlagData, EvaluateFeatureFlagErrors, EvaluateFeatureFlagResponses, FindAll2Data, FindAll2Errors, FindAll2Responses, FindAll3Data, FindAll3Errors, FindAll3Responses, FindAllData, FindAllErrors, FindAllResponses, FindFeatureFlagData, FindFeatureFlagErrors, FindFeatureFlagResponses, FindFeatureFlagsData, FindFeatureFlagsErrors, FindFeatureFlagsResponses, FindFlagChangesData, FindFlagChangesErrors, FindFlagChangesResponses, FindFlagSegmentsData, FindFlagSegmentsErrors, FindFlagSegmentsResponses, FindOne2Data, FindOne2Errors, FindOne2Responses, FindOneData, FindOneErrors, FindOneResponses, FindSessionsData, FindSessionsErrors, FindSessionsResponses, FindUserRolesData, FindUserRolesErrors, FindUserRolesResponses, Get2Data, Get2Errors, Get2Responses, GetClientFeatureFlagsData, GetClientFeatureFlagsResponses, GetData, GetErrors, GetFullData, GetFullErrors, GetFullResponses, GetHostTimelineData, GetHostTimelineErrors, GetHostTimelineResponses, GetPairingTokenData, GetPairingTokenErrors, GetPairingTokenResponses, GetProfileData, GetProfileErrors, GetProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetResponses, GetSessionData, GetSessionErrors, GetSessionResponses, GetSettingsData, GetSettingsErrors, GetSettingsResponses, GetUserData, GetUserErrors, GetUserResponses, ImpersonateData, ImpersonateErrors, ImpersonateResponses, InviteData, InviteErrors, InviteResponses, IssueAttachTicketData, IssueAttachTicketErrors, IssueAttachTicketResponses, LeaveData, LeaveErrors, LeaveResponses, List2Data, List2Errors, List2Responses, List3Data, List3Errors, List3Responses, List4Data, List4Errors, List4Responses, List5Data, List5Errors, List5Responses, List6Data, List6Errors, List6Responses, List7Data, List7Errors, List7Responses, ListData, ListErrors, ListInstallationRepositoriesData, ListInstallationRepositoriesErrors, ListInstallationRepositoriesResponses, ListInstallationsData, ListInstallationsErrors, ListInstallationsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListMine2Data, ListMine2Errors, ListMine2Responses, ListMineData, ListMineErrors, ListMineResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListResponses, ListSessionEventsData, ListSessionEventsErrors, ListSessionEventsResponses, ListSessionsData, ListSessionsErrors, ListSessionsResponses, ListUsersData, ListUsersErrors, ListUserSessionsData, ListUserSessionsErrors, ListUserSessionsResponses, ListUsersResponses, MeData, MeErrors, MeResponses, MintData, MintErrors, MintResponses, MoveSessionData, MoveSessionErrors, MoveSessionResponses, PasteSessionImageData, PasteSessionImageErrors, PasteSessionImageResponses, Permissions2Data, Permissions2Errors, Permissions2Responses, PermissionsData, PermissionsErrors, PermissionsResponses, ReadinessData, ReadinessErrors, ReadinessResponses, RegisterData, RegisterErrors, RegisterResponses, RejectData, RejectErrors, RejectResponses, Remove2Data, Remove2Errors, Remove2Responses, Remove3Data, Remove3Errors, Remove3Responses, Remove4Data, Remove4Errors, Remove4Responses, Remove5Data, Remove5Errors, Remove5Responses, RemoveData, RemoveErrors, RemoveMemberData, RemoveMemberErrors, RemoveMemberResponses, RemoveResponses, RemoveSessionCheckoutData, RemoveSessionCheckoutErrors, RemoveSessionCheckoutResponses, RemoveUserData, RemoveUserErrors, RemoveUserResponses, RenameData, RenameErrors, RenameResponses, RenameSessionData, RenameSessionErrors, RenameSessionResponses, RestartSessionData, RestartSessionErrors, RestartSessionResponses, Revoke2Data, Revoke2Errors, Revoke2Responses, Revoke3Data, Revoke3Errors, Revoke3Responses, RevokeData, RevokeErrors, RevokeOtherSessionsData, RevokeOtherSessionsErrors, RevokeOtherSessionsResponses, RevokeResponses, RevokeSession2Data, RevokeSession2Errors, RevokeSession2Responses, RevokeSessionData, RevokeSessionErrors, RevokeSessionResponses, RevokeSessionsData, RevokeSessionsErrors, RevokeSessionsResponses, SetActive2Data, SetActive2Errors, SetActive2Responses, SetActiveData, SetActiveErrors, SetActiveResponses, SetPasswordData, SetPasswordErrors, SetPasswordResponses, SetRoleData, SetRoleErrors, SetRoleResponses, StopImpersonatingData, StopImpersonatingErrors, StopImpersonatingResponses, StopSessionData, StopSessionErrors, StopSessionResponses, ToggleFeatureFlagData, ToggleFeatureFlagErrors, ToggleFeatureFlagResponses, UnbanData, UnbanErrors, UnbanResponses, UninstallData, UninstallErrors, UninstallResponses, UnpairData, UnpairErrors, UnpairResponses, Update2Data, Update2Errors, Update2Responses, Update3Data, Update3Errors, Update3Responses, Update4Data, Update4Errors, Update4Responses, UpdateData, UpdateErrors, UpdateFeatureFlagData, UpdateFeatureFlagErrors, UpdateFeatureFlagResponses, UpdateFlagSegmentData, UpdateFlagSegmentErrors, UpdateFlagSegmentResponses, UpdatePermissionsData, UpdatePermissionsErrors, UpdatePermissionsResponses, UpdateProfileData, UpdateProfileErrors, UpdateProfileResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateResponses, UpdateRoleData, UpdateRoleErrors, UpdateRoleResponses, UpdateSettingsData, UpdateSettingsErrors, UpdateSettingsResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses, UploadAvatarData, UploadAvatarErrors, UploadAvatarResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -108,36 +108,6 @@ export const revokeSession = <ThrowOnError extends boolean = false>(options: Opt
 export const changePassword = <ThrowOnError extends boolean = false>(options: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options.client ?? client).post<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/profile/password',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Ask to change the current user’s email address
- *
- * Session-authenticated only. Sends a link to the new address; the account moves when the link is followed. The answer is the same whether or not another account holds the address.
- */
-export const changeEmail = <ThrowOnError extends boolean = false>(options: Options<ChangeEmailData, ThrowOnError>): RequestResult<ChangeEmailResponses, ChangeEmailErrors, ThrowOnError> => (options.client ?? client).post<ChangeEmailResponses, ChangeEmailErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profile/email',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete the current user’s account
- *
- * Session-authenticated only. Stops the sessions and unpairs the hosts, then removes the workspaces nobody else is in, the account and every sign-in. Cannot be undone.
- */
-export const deleteAccount = <ThrowOnError extends boolean = false>(options: Options<DeleteAccountData, ThrowOnError>): RequestResult<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError> => (options.client ?? client).delete<DeleteAccountResponses, DeleteAccountErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/v1/profile',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -777,7 +747,7 @@ export const disconnectInstallation = <ThrowOnError extends boolean = false>(opt
 /**
  * List the hosts the caller can reach
  *
- * The machines the caller paired, plus any shared with them. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock.
+ * The machines the caller paired, plus any shared with them, each with its status and the sessions running on it. `online` is derived from the last heartbeat inside the same query, so one response is judged against one clock. Unpaired hosts are left out unless `include=unpaired`.
  */
 export const list6 = <ThrowOnError extends boolean = false>(options?: Options<List6Data, ThrowOnError>): RequestResult<List6Responses, List6Errors, ThrowOnError> => (options?.client ?? client).get<List6Responses, List6Errors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -817,6 +787,17 @@ export const mint = <ThrowOnError extends boolean = false>(options: Options<Mint
  * Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.
  */
 export const revoke3 = <ThrowOnError extends boolean = false>(options: Options<Revoke3Data, ThrowOnError>): RequestResult<Revoke3Responses, Revoke3Errors, ThrowOnError> => (options.client ?? client).delete<Revoke3Responses, Revoke3Errors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/pairing/{id}',
+    ...options
+});
+
+/**
+ * Get one pairing token, and the host it paired
+ *
+ * What Add host polls while it listens for a machine: `host` stays null until a runner spends the token, then carries the new host with its status and the tools it reported.
+ */
+export const getPairingToken = <ThrowOnError extends boolean = false>(options: Options<GetPairingTokenData, ThrowOnError>): RequestResult<GetPairingTokenResponses, GetPairingTokenErrors, ThrowOnError> => (options.client ?? client).get<GetPairingTokenResponses, GetPairingTokenErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/hosts/pairing/{id}',
     ...options
@@ -891,6 +872,17 @@ export const rename = <ThrowOnError extends boolean = false>(options: Options<Re
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * A host’s timeline, newest first
+ *
+ * Paired, renamed, unpaired, what changed about the machine, the networks it moved between and its runner updates. Kept for 180 days.
+ */
+export const getHostTimeline = <ThrowOnError extends boolean = false>(options: Options<GetHostTimelineData, ThrowOnError>): RequestResult<GetHostTimelineResponses, GetHostTimelineErrors, ThrowOnError> => (options.client ?? client).get<GetHostTimelineResponses, GetHostTimelineErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/hosts/{id}/timeline',
+    ...options
 });
 
 /**
@@ -1182,7 +1174,7 @@ export const listProjects = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Create a project
  *
- * A body of work with a name, the repositories it holds (each saying whether every new session clones it, and what it branches from), and the host and agent New session picks first. The directory name is derived from the first default repository, else the first repository, else the name, and never changes. A project made here has no origin repository: the one a first session creates for a repository is found by GitHub’s id, this one by its own.
+ * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
  */
 export const createProject = <ThrowOnError extends boolean = false>(options: Options<CreateProjectData, ThrowOnError>): RequestResult<CreateProjectResponses, CreateProjectErrors, ThrowOnError> => (options.client ?? client).post<CreateProjectResponses, CreateProjectErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1215,9 +1207,9 @@ export const getProject = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
- * Edit a project
+ * Change a project
  *
- * Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.
+ * The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.
  */
 export const updateProject = <ThrowOnError extends boolean = false>(options: Options<UpdateProjectData, ThrowOnError>): RequestResult<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError> => (options.client ?? client).patch<UpdateProjectResponses, UpdateProjectErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1232,7 +1224,7 @@ export const updateProject = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List the sessions in the caller’s workspace
  *
- * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
+ * Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
 export const listSessions = <ThrowOnError extends boolean = false>(options?: Options<ListSessionsData, ThrowOnError>): RequestResult<ListSessionsResponses, ListSessionsErrors, ThrowOnError> => (options?.client ?? client).get<ListSessionsResponses, ListSessionsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1383,9 +1375,9 @@ export const renameSession = <ThrowOnError extends boolean = false>(options: Opt
 });
 
 /**
- * Move a session to another project
+ * List a session under another project
  *
- * Only a project that includes every repository the session checked out can take it. The branch and the worktree stay where they are: the directory carries the slug of the project that created the session, and nothing on the host changes.
+ * Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.
  */
 export const moveSession = <ThrowOnError extends boolean = false>(options: Options<MoveSessionData, ThrowOnError>): RequestResult<MoveSessionResponses, MoveSessionErrors, ThrowOnError> => (options.client ?? client).post<MoveSessionResponses, MoveSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

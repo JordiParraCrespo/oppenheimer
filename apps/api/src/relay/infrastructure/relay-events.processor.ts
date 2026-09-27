@@ -35,12 +35,28 @@ export class RelayEventsProcessor {
     private readonly reconciliation: SessionReconciliationPort,
   ) {}
 
-  async onHello(link: RunnerLink, hello: HelloMessage): Promise<void> {
-    if (!(await this.presence.observe(link.hostId, hello.host))) {
+  async onHello(
+    link: RunnerLink,
+    hello: HelloMessage,
+    connectedAt = new Date(),
+    address: string | null = null,
+  ): Promise<void> {
+    if (!(await this.presence.observe(link.hostId, { facts: hello.host, connectedAt }))) {
       // Unpaired between the handshake's check and this hello: nothing it holds
       // is reconciled, and it is told why rather than left to redial.
       this.closeUnpaired(link);
       return;
+    }
+    // Where the link came from, recorded once per link. A failure here costs
+    // the network row, never the link: presence is already written.
+    if (address) {
+      await this.presence.connectedFrom(link.hostId, address, connectedAt).catch((error) =>
+        this.logger.warn({
+          message: 'the network a runner connected from could not be recorded',
+          hostId: link.hostId,
+          error: String(error),
+        }),
+      );
     }
     // The snapshot is what the runner holds; the rows are what it should hold.
     // A launch that never arrived goes out again, and a pane tmux lost is
@@ -65,7 +81,14 @@ export class RelayEventsProcessor {
   async onHeartbeat(link: RunnerLink, heartbeat: HeartbeatMessage): Promise<void> {
     // Receipt time, not `sentAt`: presence is when this process heard from the
     // host, and a skewed clock on the host must not take it offline.
-    if (!(await this.presence.observe(link.hostId, heartbeat.host))) {
+    const report = {
+      facts: heartbeat.host,
+      channel: heartbeat.channel,
+      loadAverage: heartbeat.load.loadAverage1m,
+      memoryAvailableBytes: heartbeat.load.memoryAvailableBytes,
+      roundTripMillis: link.roundTripMillis ?? null,
+    };
+    if (!(await this.presence.observe(link.hostId, report))) {
       // The host was unpaired while its link was open. The domain event closes
       // the link at once on the instance that holds it; this is what closes it
       // on every other one, within a heartbeat.

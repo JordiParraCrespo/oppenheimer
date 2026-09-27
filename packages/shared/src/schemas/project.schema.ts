@@ -10,60 +10,85 @@ import {
 /**
  * Project shapes.
  *
- * A project is the body of work a session belongs to
- * (`product/versions/mvp/12-projects-on-the-console.md`): a free display name
- * over an immutable slug, the repositories it holds, and the defaults New
- * session is prefilled with when the project is picked.
+ * A project is a **saved scope a person creates**: the repositories its sessions
+ * usually work on, the base each one branches from, which of them are offered by
+ * default, and the host and agent a new session starts with
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). Every workspace also
+ * has one Unassigned project, where a session that names none is listed; it
+ * cannot be renamed or archived. The defaults are offered, never
+ * applied: a session chooses its own repositories, and they need not be in its
+ * project at all.
  *
- * `slug` is absent from every input: it is a directory name on every host that
- * holds the project, so it is derived on the server — from the first default
- * repository, else the first repository, else the name — and never renamed.
- * A path is never an identity.
+ * `slug` is in no request body: it is the project's stable handle, derived once
+ * from its first name and never reissued. A project is metadata; nothing on a
+ * host is named after it.
  *
  * Schemas state the constraint only, never a message (`.agents/rules/forms.md`).
  */
 
-/** How many repositories a project may list. A body of work, not an organisation. */
+/** How many repositories one project may hold. The dialog shows them all at once. */
 export const MAX_PROJECT_REPOSITORIES = 20;
 
 /**
- * One repository of a project.
+ * One repository a project holds.
  *
- * `installationId` is **our row's UUID**, as on a session checkout. `isDefault`
- * marks a repository cloned into every new session of the project; `baseBranch`
- * is what those sessions branch from, and absent means the repository's own
- * default branch, read live.
+ * `installationId` is **our row's UUID**; `githubRepoId` is GitHub's number. The
+ * name is not accepted: the API asks GitHub for it on every write and keeps a
+ * display snapshot, because GitHub owns what a repository is called.
  */
-export const projectRepositorySchema = z.object({
+export const projectRepositoryInputSchema = z.object({
   installationId: installationIdSchema,
   githubRepoId: githubRepoIdSchema,
-  isDefault: z.boolean().default(false),
-  baseBranch: gitRefSchema.optional(),
+  baseBranch: gitRefSchema,
+  isDefault: z.boolean(),
 });
 
-export type ProjectRepositoryDto = z.infer<typeof projectRepositorySchema>;
+export type ProjectRepositoryInputDto = z.infer<typeof projectRepositoryInputSchema>;
 
-/** `POST /projects`. What the New project dialog sends. */
-export const createProjectSchema = z.object({
+/**
+ * The repository list as a whole. It is replaced as a set on every write, in the
+ * order given, so "at least one, at least one default, no repository twice" hold
+ * after every call rather than after the last of several.
+ */
+export const projectRepositoriesSchema = z
+  .array(projectRepositoryInputSchema)
+  .min(1)
+  .max(MAX_PROJECT_REPOSITORIES)
+  .refine((repositories) => repositories.some((repository) => repository.isDefault))
+  .refine(
+    (repositories) =>
+      new Set(repositories.map((repository) => repository.githubRepoId)).size ===
+      repositories.length,
+  );
+
+const projectFields = {
   name: displayNameSchema,
-  repositories: z.array(projectRepositorySchema).max(MAX_PROJECT_REPOSITORIES).default([]),
-  /** The host New session picks first for this project. */
-  defaultHostId: z.string().uuid().optional(),
-  /** The agent New session picks first for this project. */
-  defaultAgent: codingAgentSchema.optional(),
+  repositories: projectRepositoriesSchema,
+  /** A host the caller can use. Null clears it. A suggestion, never a grant. */
+  defaultHostId: z.string().uuid().nullable(),
+  /** An agent from the catalog. Null clears it. */
+  defaultAgent: codingAgentSchema.nullable(),
+};
+
+/** `POST /projects`. Name and repositories are required; the defaults are not. */
+export const createProjectSchema = z.object({
+  name: projectFields.name,
+  repositories: projectFields.repositories,
+  defaultHostId: projectFields.defaultHostId.optional(),
+  defaultAgent: projectFields.defaultAgent.optional(),
 });
 
 export type CreateProjectDto = z.infer<typeof createProjectSchema>;
 
 /**
- * `PATCH /projects/{id}`. Every field optional, and only the given ones change:
- * `repositories` given replaces the set, `defaultHostId: null` clears the host.
+ * `PATCH /projects/{id}`. Every field optional, so a name-only caller keeps
+ * working; an absent field is left as it is, and `null` clears a default.
  */
 export const updateProjectSchema = z.object({
-  name: displayNameSchema.optional(),
-  repositories: z.array(projectRepositorySchema).max(MAX_PROJECT_REPOSITORIES).optional(),
-  defaultHostId: z.string().uuid().nullable().optional(),
-  defaultAgent: codingAgentSchema.nullable().optional(),
+  name: projectFields.name.optional(),
+  repositories: projectFields.repositories.optional(),
+  defaultHostId: projectFields.defaultHostId.optional(),
+  defaultAgent: projectFields.defaultAgent.optional(),
 });
 
 export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
@@ -72,8 +97,8 @@ export type UpdateProjectDto = z.infer<typeof updateProjectSchema>;
  * `GET /projects`.
  *
  * Archived projects are left out by default: a retired project's slug stays
- * claimed for ever so its directory name is never reissued, which means the
- * listing would otherwise grow monotonically with rows nobody can put work in.
+ * claimed for ever so it is never reissued, which means the listing would
+ * otherwise grow monotonically with rows nobody can put work in.
  * `includeArchived` is what the settings screen passes to show the history.
  */
 export const listProjectsQuerySchema = z.object({

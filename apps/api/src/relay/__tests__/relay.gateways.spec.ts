@@ -101,6 +101,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
   };
   const presence: HostPresencePort = {
     observe: vi.fn().mockResolvedValue(true),
+    connectedFrom: vi.fn().mockResolvedValue(undefined),
   };
   const events: RecordSessionEventsPort = {
     record: vi.fn(async (batch: RunnerEventBatch) => ({
@@ -313,7 +314,11 @@ describe('runner link', () => {
     expect(h.registry.find(HOST)?.runId).toBe('run-1');
     expect(h.presence.observe).toHaveBeenCalledWith(
       HOST,
-      expect.objectContaining({ hostname: 'mbp' }),
+      expect.objectContaining({
+        facts: expect.objectContaining({ hostname: 'mbp' }),
+        // The hello is when the link opened.
+        connectedAt: expect.any(Date),
+      }),
     );
   });
 
@@ -423,7 +428,6 @@ describe('runner link', () => {
       commandId,
       sessionId: SESSION,
       organizationSlug: 'jordi',
-      projectSlug: 'xrp',
       sessionSlug: 'swift-wren-7gyezw',
       agent: 'claude-code',
       launch: { permission: 'ask' },

@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { expectProblemDocument, newContext, signedUpContext } from '../../support/auth';
 import { titleFor } from '../../support/namer-stub';
-import { connectInstallation, pairHost, STUB_REPOSITORIES } from '../../support/sessions';
+import {
+  connectInstallation,
+  createProject,
+  pairHost,
+  STUB_REPOSITORIES,
+} from '../../support/sessions';
 
 /**
  * Sessions through the deployed pipeline.
@@ -28,11 +33,13 @@ test.describe('Sessions', () => {
 
     const hostId = await pairHost(api, 'Session box');
     const installationId = await connectInstallation(api);
+    const projectId = await createProject(api, installationId);
 
     const created = await api.post('/api/v1/sessions', {
       headers: { 'Idempotency-Key': `e2e-${Date.now()}` },
       data: {
         hostId,
+        projectId,
         agent: 'claude-code',
         checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
       },
@@ -48,6 +55,7 @@ test.describe('Sessions', () => {
       headers: { 'Idempotency-Key': `e2e-grok-${Date.now()}` },
       data: {
         hostId,
+        projectId,
         agent: 'grok',
         checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
       },
@@ -69,6 +77,16 @@ test.describe('Sessions', () => {
     const page = await listed.json();
     expect(page.data.some((row: { id: string }) => row.id === session.id)).toBe(true);
     expect(page.meta.total).toBeGreaterThan(0);
+
+    expect(session.projectId).toBe(projectId);
+    // Moving is a label change: the slug, the directory and the branch stay.
+    const elsewhere = await createProject(api, installationId);
+    const moved = await api.post(`/api/v1/sessions/${session.id}/move`, {
+      data: { projectId: elsewhere },
+      failOnStatusCode: false,
+    });
+    expect(moved.status(), await moved.text()).toBe(201);
+    expect((await moved.json()).projectId).toBe(elsewhere);
 
     const stopped = await api.post(`/api/v1/sessions/${session.id}/stop`, {
       failOnStatusCode: false,
@@ -121,12 +139,14 @@ test.describe('Sessions', () => {
     const { api } = await signedUpContext('sessionlaunch');
     const hostId = await pairHost(api, 'Launch box');
     const installationId = await connectInstallation(api);
+    const projectId = await createProject(api, installationId);
 
     const task = 'fix the wallet list empty state on mobile';
     const created = await api.post('/api/v1/sessions', {
       headers: { 'Idempotency-Key': `e2e-launch-${Date.now()}` },
       data: {
         hostId,
+        projectId,
         agent: 'claude-code',
         checkouts: [
           {
@@ -201,17 +221,35 @@ test.describe('Sessions', () => {
     await expectProblemDocument(detail, { status: 404, code: 'SESSIONS_001' });
   });
 
-  test('a session with no repositories must name its project', async () => {
-    const { api } = await signedUpContext('sessionnoproject');
+  test('a new workspace has an Unassigned project, which keeps its name and its place', async () => {
+    const { api } = await signedUpContext('sessionunassigned');
 
-    const created = await api.post('/api/v1/sessions', {
-      data: { hostId: crypto.randomUUID(), agent: 'claude-code', checkouts: [] },
+    // Provisioned with the workspace, from the outbox: a session that names no
+    // project is listed here, so it exists before the first one does.
+    let unassigned: { id: string; name: string; isUnassigned: boolean } | undefined;
+    await expect
+      .poll(async () => {
+        const listed = await api.get('/api/v1/projects', { failOnStatusCode: false });
+        const projects = (await listed.json()) as {
+          id: string;
+          name: string;
+          isUnassigned: boolean;
+        }[];
+        unassigned = projects.find((project) => project.isUnassigned);
+        return unassigned?.name;
+      })
+      .toBe('Unassigned');
+
+    const renamed = await api.patch(`/api/v1/projects/${unassigned?.id}`, {
+      data: { name: 'Personal' },
       failOnStatusCode: false,
     });
+    await expectProblemDocument(renamed, { status: 409, code: 'PROJECTS_008' });
 
-    // Zero checkouts is a real session — a project of notes needs no git at all —
-    // but then nothing says which project's directory it belongs in.
-    expect([400, 404]).toContain(created.status());
+    const archived = await api.delete(`/api/v1/projects/${unassigned?.id}`, {
+      failOnStatusCode: false,
+    });
+    await expectProblemDocument(archived, { status: 409, code: 'PROJECTS_008' });
   });
 
   test('a body the schema refuses never reaches a handler', async () => {
@@ -252,10 +290,12 @@ test.describe('Sessions', () => {
     const { api } = await signedUpContext('sessionimage');
     const hostId = await pairHost(api, 'Image box');
     const installationId = await connectInstallation(api);
+    const projectId = await createProject(api, installationId);
     const created = await api.post('/api/v1/sessions', {
       headers: { 'Idempotency-Key': `e2e-image-${Date.now()}` },
       data: {
         hostId,
+        projectId,
         agent: 'claude-code',
         checkouts: [{ installationId, githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId }],
       },

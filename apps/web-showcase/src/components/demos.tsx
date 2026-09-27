@@ -122,7 +122,12 @@ import {
   RoutineRunList,
   RoutineRunsEmpty,
 } from '@oppenheimer/design-system-web/routine-item';
-import { EditorPage, EditorPageBack, EditorPageBody } from '@oppenheimer/design-system-web/editor-page';
+import {
+  EditorPage,
+  EditorPageBack,
+  EditorPageBody,
+  EditorPageTop,
+} from '@oppenheimer/design-system-web/editor-page';
 import {
   SettingsContent,
   SettingsMain,
@@ -1163,6 +1168,29 @@ export function EditorPageDemo() {
             <div className="h-11 rounded-2xl border border-border-subtle bg-card" />
           </RoutineStep>
         </RoutineSteps>
+        </EditorPageBody>
+      </EditorPage>
+    </div>
+  );
+}
+
+export function EditorPageWideDemo() {
+  const [tab, setTab] = React.useState('automations');
+  return (
+    <div className="flex h-105 w-full overflow-hidden rounded-2xl border border-border-subtle">
+      <EditorPage>
+        <EditorPageBody wide>
+          <EditorPageTop>
+            <PillTabs value={tab} onValueChange={setTab}>
+              <PillTab value="automations">Automations</PillTab>
+              <PillTab value="runs">Runs</PillTab>
+            </PillTabs>
+            <Button variant="secondary" size="sm">
+              New automation
+            </Button>
+          </EditorPageTop>
+          <div className="h-28 rounded-2xl border border-border-subtle bg-card" />
+          <div className="h-40 rounded-2xl border border-border-subtle bg-card" />
         </EditorPageBody>
       </EditorPage>
     </div>

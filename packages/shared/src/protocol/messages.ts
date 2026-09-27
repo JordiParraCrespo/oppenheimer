@@ -86,6 +86,8 @@ export const heartbeatSchema = z.object({
   load: z.object({
     /** One-minute load average, as the kernel reports it. Not part of `Facts`. */
     loadAverage1m: z.number().min(0),
+    /** What a new process could have without swapping. Omitted where the runner cannot read it honestly. */
+    memoryAvailableBytes: z.number().int().min(0).optional(),
   }),
   sessions: z.array(sessionSnapshotSchema),
 });
@@ -192,9 +194,10 @@ export type EventsAckMessage = z.infer<typeof eventsAckSchema>;
  * where the agent starts.
  *
  * Every path segment is a unique-constrained column, so the runner derives
- * `workspaces/<organizationSlug>/projects/<projectSlug>/sessions/<sessionSlug>/`
- * without asking. `branch` is always the session's own
- * `oppenheimer/<project>/<session>`, created from each checkout's base and
+ * `workspaces/<organizationSlug>/sessions/<sessionSlug>/` without asking. No
+ * project travels: a project is metadata, and nothing on a host is named after
+ * it. `branch` is always the session's own — `oppenheimer/<session>`, or the
+ * name its checkouts already recorded — created from each checkout's base and
  * never the base itself.
  */
 export const sessionCreateSchema = z.object({
@@ -202,7 +205,6 @@ export const sessionCreateSchema = z.object({
   commandId: commandIdSchema,
   sessionId: sessionIdSchema,
   organizationSlug: gitRefSchema,
-  projectSlug: gitRefSchema,
   sessionSlug: gitRefSchema,
   agent: protocolAgentSchema,
   /**

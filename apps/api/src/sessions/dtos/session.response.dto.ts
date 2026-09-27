@@ -106,7 +106,7 @@ export class SessionResponseDto {
   @ApiProperty({ format: 'uuid' })
   organizationId!: string;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ format: 'uuid', description: 'The project the session is listed under.' })
   projectId!: string;
 
   @ApiProperty({ format: 'uuid' })

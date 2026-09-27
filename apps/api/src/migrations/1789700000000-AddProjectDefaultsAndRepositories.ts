@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * A project made on the console (`product/versions/mvp/12-projects-on-the-console.md`):
+ * A project made on the console (`product/versions/mvp/10-api-modules-and-data-model.md`):
  * the defaults New session is prefilled with, and the repositories it holds.
  *
  * `defaultHostId` is `ON DELETE SET NULL`: removing a machine must not take a

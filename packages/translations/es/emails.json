@@ -65,5 +65,17 @@
     "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento. La consola aún no puede desemparejar un equipo. Si tienes acceso a ese equipo, ejecuta en él el comando uninstall del runner; si no, desemparéjalo a través de la API con DELETE /v1/hosts/{{hostId}}. Tus tokens sin usar caducan en menos de una hora.",
     "unknownMachine": "sin nombre de equipo",
     "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+  },
+  "hostNetworkChanged": {
+    "subject": "{{hostName}} se conecta desde una red nueva",
+    "preview": "{{hostName}} ha pasado de {{from}} a {{to}}. Si no lo has movido tú, actúa ya.",
+    "heading": "Un equipo se ha movido a una red nueva",
+    "body": "{{hostName}} se conectaba desde {{from}}. Ahora se conecta desde {{to}}, con la dirección {{ip}}.",
+    "action": "Abrir Oppenheimer",
+    "helper": "Si has llevado el equipo a otro sitio, o ha cambiado su proveedor, no tienes que hacer nada. Solo escribimos cuando cambia el país o el operador de red, no por cada dirección nueva.",
+    "closing": "¿No reconoces el cambio? Puede que la clave del equipo se esté usando en otro sitio. Elimina el equipo desde Ajustes, o a través de la API con DELETE /v1/hosts/{{hostId}}; su runner queda rechazado desde ese momento y las sesiones que tenga se detienen.",
+    "unknownPlace": "una red desconocida",
+    "attribution": "Geolocalización IP de DB-IP.",
+    "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
   }
 }

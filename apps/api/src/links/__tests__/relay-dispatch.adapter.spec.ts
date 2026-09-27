@@ -24,7 +24,6 @@ function session(agent: 'claude-code' | 'shell' = 'claude-code'): WorkSessionEnt
   const entity = WorkSessionEntity.request({
     organizationId: ORG,
     projectId: PROJECT,
-    projectSlug: 'xrp-mobile',
     createdByUserId: 'user-1',
     hostId: HOST,
     slug: 'bold-otter-3f9a7k',
@@ -68,7 +67,6 @@ describe('RelayDispatchAdapter', () => {
     const { adapter, link } = harness(false);
     const outcome = await adapter.create(session(), {
       organizationSlug: 'jordi',
-      projectSlug: 'xrp-mobile',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     });
     expect(outcome).toEqual({ delivered: false, hints: ['host_offline'] });
@@ -80,7 +78,6 @@ describe('RelayDispatchAdapter', () => {
     const entity = session();
     const outcome = await adapter.create(entity, {
       organizationSlug: 'jordi',
-      projectSlug: 'xrp-mobile',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
       prompt: 'Fix the wallet list empty state',
     });
@@ -101,7 +98,6 @@ describe('RelayDispatchAdapter', () => {
     const { adapter, link } = harness(true);
     await adapter.create(session('shell'), {
       organizationSlug: 'jordi',
-      projectSlug: 'xrp-mobile',
       branch: 'oppenheimer/xrp-mobile/bold-otter-3f9a7k',
     });
     const [message] = vi.mocked(link.send).mock.calls[0];
@@ -130,7 +126,6 @@ describe('RelayDispatchAdapter', () => {
     const entity = session();
     const outcome = await adapter.addCheckout(entity, entity.checkouts[0], {
       organizationSlug: 'jordi',
-      projectSlug: 'xrp-mobile',
       branch: 'x',
     });
     expect(outcome).toEqual({ delivered: false, hints: ['not_supported'] });

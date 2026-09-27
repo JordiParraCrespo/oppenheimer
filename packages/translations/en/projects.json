@@ -54,11 +54,13 @@
       "action": "Delete project",
       "deleting": "Deleting…",
       "failed": "The project could not be deleted."
-    }
+    },
+    "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
   },
   "deleteDialog": {
     "title": "Delete {{name}}?",
     "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
     "confirm": "Delete project"
-  }
+  },
+  "unassigned": "Unassigned"
 }

@@ -4,8 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
+import { PersonalWorkspaceProvisionedDomainEventHandler } from './application/event-handlers/personal-workspace-provisioned.domain-event-handler';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
-import { ProjectRepositoriesResolver } from './application/project-repositories.resolver';
+import { ProjectSettingsResolver } from './application/project-settings.resolver';
 import type { ProjectUsagePort } from './application/project-usage.port';
 import { ProjectUsageRegistry } from './application/project-usage.registry';
 import { ArchiveProjectCommandHandler } from './commands/archive-project/archive-project.command-handler';
@@ -29,8 +30,8 @@ import { FindProjectsQueryHandler } from './queries/find-projects/find-projects.
 // `GET /projects/:id`.
 const httpControllers = [
   FindProjectsHttpController,
-  CreateProjectHttpController,
   FindProjectHttpController,
+  CreateProjectHttpController,
   UpdateProjectHttpController,
   ArchiveProjectHttpController,
 ];
@@ -47,13 +48,12 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
 @Module({
   imports: [
     CqrsModule,
-    TypeOrmModule.forFeature([ProjectOrmEntity, ProjectRepositoryOrmEntity]),
-    AuthzKernelModule.forFeature([ProjectResource]),
-    // What a project made on the console names: repositories an installation
-    // covers, and a host the workspace holds. Both are confirmed through the
-    // ports those modules publish, never read from their tables.
+    // What a project's repositories are called, and whether the workspace still
+    // reaches them; and whether a default host is one the caller can use.
     GithubModule,
     HostsModule,
+    TypeOrmModule.forFeature([ProjectOrmEntity, ProjectRepositoryOrmEntity]),
+    AuthzKernelModule.forFeature([ProjectResource]),
   ],
   controllers: [...httpControllers],
   providers: [
@@ -62,12 +62,13 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ...mappers,
     ...repositories,
     ProjectUsageRegistry,
-    ProjectRepositoriesResolver,
+    ProjectSettingsResolver,
+    PersonalWorkspaceProvisionedDomainEventHandler,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
   ],
   // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
-  // injects it to resolve — and, on a repository's first session, create — a
-  // project. The repository stays inside so no consumer can read rows past the
+  // injects it to resolve the project a session is listed under — the one it
+  // named, or the workspace's Unassigned project. The repository stays inside so no consumer can read rows past the
   // scoped lookup. `ProjectUsageRegistry` is the other half of that surface, and it
   // is a class rather than a token because it is a kernel-style registry: the one
   // thing another module reaches across to contribute the answer this module cannot

@@ -125,7 +125,7 @@ describe('the session fold', () => {
     const moved = foldSessionLog([
       entry(SESSION_EVENT_KINDS.REQUESTED),
       entry(SESSION_EVENT_KINDS.MOVED, { projectId: 'p-2', fromProjectId: 'p-1' }),
-      entry(SESSION_EVENT_KINDS.MOVED, { projectId: 'p-3', fromProjectId: 'p-2' }),
+      entry(SESSION_EVENT_KINDS.MOVED, { from: 'p-2', to: 'p-3' }),
       entry(SESSION_EVENT_KINDS.MOVED, {}),
     ]);
     expect(moved.projectId).toBe('p-3');

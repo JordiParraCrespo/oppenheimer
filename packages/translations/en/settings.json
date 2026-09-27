@@ -90,7 +90,7 @@
     "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
     "add": "Add host",
     "empty": "No hosts yet",
-    "emptyHint": "Add one and your sessions have somewhere to run.",
+    "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
     "online": "Online",
     "offline": "Offline",
     "failed": "The hosts could not be loaded."

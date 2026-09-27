@@ -127,7 +127,9 @@
       "PROJECTS_003": "Ahora mismo no se pueden archivar proyectos. Inténtalo en un momento.",
       "PROJECTS_004": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
       "PROJECTS_005": "Ese proyecto todavía tiene sesiones sin cerrar.",
-      "PROJECTS_006": "Ese nombre ya es el directorio de otro proyecto. Añade un repositorio o elige otro nombre.",
+      "PROJECTS_006": "Un proyecto necesita al menos un repositorio, y al menos uno de ellos ofrecido por defecto.",
+      "PROJECTS_007": "No hemos encontrado un nombre libre para ese proyecto. Prueba con otro nombre.",
+      "PROJECTS_008": "El proyecto Sin asignar conserva su nombre y no se puede eliminar.",
       "SESSIONS_001": "No hemos encontrado esa sesión.",
       "SESSIONS_002": "Elige un espacio de trabajo antes de trabajar con sesiones.",
       "SESSIONS_003": "No hemos encontrado ese checkout en esta sesión.",
@@ -136,7 +138,7 @@
       "SESSIONS_006": "Ese proyecto está archivado, así que no admite trabajo nuevo.",
       "SESSIONS_007": "Ese repositorio ya ha usado todos los nombres de carpeta que puede tener en esta sesión.",
       "SESSIONS_008": "No hemos podido abrir un terminal ahora mismo. Inténtalo en un momento.",
-      "SESSIONS_009": "Elige un proyecto, o añade un repositorio del que tomarlo.",
+      "SESSIONS_009": "Elige un proyecto para esta sesión.",
       "SESSIONS_010": "Una sesión trabaja con un solo repositorio. Inicia otra sesión para otro.",
       "SESSIONS_011": "El runner de este equipo es demasiado antiguo para ese agente. Actualiza el runner o elige otro agente.",
       "HOSTS_001": "No se ha encontrado ese equipo.",
@@ -174,7 +176,6 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "SESSIONS_018": "Ese proyecto no incluye el repositorio de esta sesión. Añádeselo primero.",
       "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
     },
     "notFound": {
@@ -308,6 +309,72 @@
     "showPassword": "Mostrar contraseña",
     "legal": "Al continuar aceptas nuestros <terms>Términos</terms> y la <privacy>Política de privacidad</privacy>.",
     "passwordsDoNotMatch": "Las contraseñas no coinciden"
+  },
+  "projects": {
+    "page": {
+      "newTitle": "Nuevo proyecto",
+      "editTitle": "Ajustes del proyecto",
+      "name": "Nombre del proyecto",
+      "namePlaceholder": "Ponle nombre al proyecto",
+      "back": "Atrás",
+      "crumbSessions": "Sesiones",
+      "crumbNewSession": "Nueva sesión",
+      "create": "Crear proyecto",
+      "creating": "Creando…",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "failed": "No se pudo crear el proyecto.",
+      "saveFailed": "No se pudo guardar el proyecto.",
+      "recap": {
+        "name": "Ponle nombre al proyecto y elige sus repositorios.",
+        "repositories": "Elige al menos un repositorio.",
+        "default": "Marca al menos un repositorio por defecto."
+      },
+      "summary": {
+        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
+        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
+      },
+      "steps": {
+        "repositories": {
+          "title": "Repositorios",
+          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
+          "label": "Repositorios por defecto",
+          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
+          "defaultCount": "{{defaults}} de {{count}} por defecto",
+          "search": "Buscar repositorios…",
+          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+          "none": "Todavía no hay ningún repositorio conectado.",
+          "default": "Por defecto",
+          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
+          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
+        },
+        "host": {
+          "title": "Host por defecto",
+          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
+          "none": "Todavía no hay ningún host emparejado."
+        },
+        "agent": {
+          "title": "Agente por defecto",
+          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
+        }
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "hint": "Elimina este proyecto.",
+        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
+        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
+        "action": "Eliminar proyecto",
+        "deleting": "Eliminando…",
+        "failed": "No se pudo eliminar el proyecto."
+      },
+      "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar {{name}}?",
+      "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
+      "confirm": "Eliminar proyecto"
+    },
+    "unassigned": "Sin asignar"
   },
   "sessions": {
     "home": {
@@ -474,8 +541,6 @@
       "moveTitle": "Mover a un proyecto",
       "moveNone": "Ningún otro proyecto contiene el repositorio de esta sesión.",
       "delete": "Eliminar",
-      "routines": "Rutinas",
-      "routinesSoon": "Las automatizaciones todavía no están aquí.",
       "writeFailed": "Ese cambio no se aplicó. Inténtalo de nuevo."
     },
     "deleteSession": {
@@ -510,6 +575,40 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    },
+    "row": {
+      "actions": "Acciones de la sesión",
+      "move": "Mover a un proyecto…",
+      "moveTitle": "Mover a un proyecto"
+    }
+  },
+  "automations": {
+    "sidebar": {
+      "new": "Nueva automatización",
+      "projects": "Proyectos",
+      "all": "Todas las automatizaciones",
+      "emptyProject": "Todavía no hay automatizaciones.",
+      "createOne": "Crea una",
+      "newHere": "Nueva automatización en {{name}}",
+      "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
+    },
+    "page": {
+      "tabs": {
+        "automations": "Automatizaciones",
+        "runs": "Ejecuciones"
+      },
+      "new": "Nueva automatización",
+      "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+      "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
+    },
+    "editor": {
+      "newTitle": "Nueva automatización",
+      "name": "Nombre de la automatización",
+      "namePlaceholder": "Ponle nombre a la automatización",
+      "back": "Atrás",
+      "crumb": "Automatizaciones",
+      "create": "Crear automatización",
+      "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
     }
   },
   "hosts": {
@@ -544,70 +643,33 @@
       },
       "crumbHosts": "Hosts",
       "done": "Listo"
-    }
-  },
-  "projects": {
-    "page": {
-      "newTitle": "Nuevo proyecto",
-      "editTitle": "Ajustes del proyecto",
-      "name": "Nombre del proyecto",
-      "namePlaceholder": "Ponle nombre al proyecto",
-      "back": "Atrás",
-      "crumbSessions": "Sesiones",
-      "crumbNewSession": "Nueva sesión",
-      "create": "Crear proyecto",
-      "creating": "Creando…",
-      "save": "Guardar cambios",
-      "saving": "Guardando…",
-      "failed": "No se pudo crear el proyecto.",
-      "saveFailed": "No se pudo guardar el proyecto.",
-      "recap": {
-        "name": "Ponle nombre al proyecto y elige sus repositorios.",
-        "repositories": "Elige al menos un repositorio.",
-        "default": "Marca al menos un repositorio por defecto."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositorios",
-          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-          "label": "Repositorios por defecto",
-          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-          "defaultCount": "{{defaults}} de {{count}} por defecto",
-          "search": "Buscar repositorios…",
-          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-          "none": "Todavía no hay ningún repositorio conectado.",
-          "default": "Por defecto",
-          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-        },
-        "host": {
-          "title": "Host por defecto",
-          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-          "none": "Todavía no hay ningún host emparejado."
-        },
-        "agent": {
-          "title": "Agente por defecto",
-          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-        }
-      },
-      "delete": {
-        "title": "Eliminar proyecto",
-        "hint": "Elimina este proyecto.",
-        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
-        "action": "Eliminar proyecto",
-        "deleting": "Eliminando…",
-        "failed": "No se pudo eliminar el proyecto."
-      }
     },
-    "deleteDialog": {
-      "title": "¿Eliminar {{name}}?",
-      "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
-      "confirm": "Eliminar proyecto"
+    "settings": {
+      "state": {
+        "running_one": "En marcha · {{count}} sesión",
+        "running_other": "En marcha · {{count}} sesiones",
+        "idle": "Inactivo",
+        "offline": "Desconectado"
+      },
+      "seen": {
+        "connected": "conectado",
+        "lastSeen": "visto {{when}}",
+        "now": "ahora"
+      },
+      "meta": {
+        "cpus": "{{count}} vCPU",
+        "runner": "runner {{version}}"
+      },
+      "actions": "Acciones de {{name}}",
+      "rename": "Renombrar",
+      "renameLabel": "Nombre del equipo",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "remove": "Eliminar equipo",
+      "removeTitle": "¿Eliminar {{name}}?",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
     }
   },
   "settings": {
@@ -702,7 +764,7 @@
       "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
       "add": "Añadir host",
       "empty": "Todavía no hay hosts",
-      "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
+      "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
       "online": "En línea",
       "offline": "Sin conexión",
       "failed": "No se pudieron cargar los hosts."
@@ -751,8 +813,9 @@
     "commandTitle": "Paleta de comandos",
     "commandDescription": "Busca una página o una acción.",
     "sidebarTitle": "Navegación",
-    "sidebarDescription": "Tus sesiones y tu cuenta.",
-    "settings": "Ajustes"
+    "sidebarDescription": "Tus sesiones, tus automatizaciones y tu cuenta.",
+    "settings": "Ajustes",
+    "automations": "Automatizaciones"
   },
   "control": {
     "accessDeniedTitle": "Se necesita acceso al panel de control",
@@ -1465,6 +1528,18 @@
       "helper": "Si lo has emparejado tú, no tienes que hacer nada. En ese equipo, el comando status del runner muestra la misma huella, para que compruebes que es el que querías.",
       "closing": "¿No lo reconoces? Alguien ha usado uno de tus tokens de emparejamiento. La consola aún no puede desemparejar un equipo. Si tienes acceso a ese equipo, ejecuta en él el comando uninstall del runner; si no, desemparéjalo a través de la API con DELETE /v1/hosts/{{hostId}}. Tus tokens sin usar caducan en menos de una hora.",
       "unknownMachine": "sin nombre de equipo",
+      "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
+    },
+    "hostNetworkChanged": {
+      "subject": "{{hostName}} se conecta desde una red nueva",
+      "preview": "{{hostName}} ha pasado de {{from}} a {{to}}. Si no lo has movido tú, actúa ya.",
+      "heading": "Un equipo se ha movido a una red nueva",
+      "body": "{{hostName}} se conectaba desde {{from}}. Ahora se conecta desde {{to}}, con la dirección {{ip}}.",
+      "action": "Abrir Oppenheimer",
+      "helper": "Si has llevado el equipo a otro sitio, o ha cambiado su proveedor, no tienes que hacer nada. Solo escribimos cuando cambia el país o el operador de red, no por cada dirección nueva.",
+      "closing": "¿No reconoces el cambio? Puede que la clave del equipo se esté usando en otro sitio. Elimina el equipo desde Ajustes, o a través de la API con DELETE /v1/hosts/{{hostId}}; su runner queda rechazado desde ese momento y las sesiones que tenga se detienen.",
+      "unknownPlace": "una red desconocida",
+      "attribution": "Geolocalización IP de DB-IP.",
       "footerNote": "Este es un correo de seguridad, por eso siempre lo recibirás."
     }
   }

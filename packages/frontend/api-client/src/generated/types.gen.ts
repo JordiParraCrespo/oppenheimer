@@ -673,6 +673,64 @@ export type RepositoryBranchResponseDto = {
     isDefault: boolean;
 };
 
+/**
+ * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+ */
+export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
+
+export type HostMachineResponseDto = {
+    osName?: string | null;
+    kernelVersion?: string | null;
+    cpuModel?: string | null;
+    cpuCount?: number | null;
+    memoryTotalBytes?: number | null;
+    diskTotalBytes?: number | null;
+    /**
+     * `none`, `vm` or `container`, as the runner read it from local files.
+     */
+    virtualization?: string | null;
+    /**
+     * The vendor the firmware names; never the answer of a metadata call.
+     */
+    cloudProvider?: string | null;
+    timezone?: string | null;
+    bootedAt?: string | null;
+    channel?: string | null;
+    serviceManager?: string | null;
+    /**
+     * When the machine last changed, not when it last reported.
+     */
+    changedAt: string;
+};
+
+export type HostVitalsResponseDto = {
+    /**
+     * When the current (or last) link opened.
+     */
+    connectedAt?: string | null;
+    /**
+     * The link’s last ping/pong.
+     */
+    roundTripMillis?: number | null;
+    /**
+     * One-minute load average.
+     */
+    loadAverage?: number | null;
+    memoryAvailableBytes?: number | null;
+    diskFreeBytes?: number | null;
+};
+
+export type HostNetworkResponseDto = {
+    ip: string;
+    countryCode?: string | null;
+    region?: string | null;
+    city?: string | null;
+    asn?: number | null;
+    asnOrg?: string | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+};
+
 export type HostResponseDto = {
     id: string;
     /**
@@ -698,7 +756,27 @@ export type HostResponseDto = {
      * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
      */
     online: boolean;
+    /**
+     * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+     */
+    status: HostStatus;
+    /**
+     * Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.
+     */
+    runningSessionCount: number;
     lastSeenAt?: string | null;
+    /**
+     * What the machine is. Null until the runner has reported its facts.
+     */
+    machine?: HostMachineResponseDto | null;
+    /**
+     * Its last live numbers. Null until its first link.
+     */
+    vitals?: HostVitalsResponseDto | null;
+    /**
+     * Where its current (or last) link came from. Null until one has.
+     */
+    network?: HostNetworkResponseDto | null;
     /**
      * When the host was unpaired. The row is kept so its history survives.
      */
@@ -733,6 +811,38 @@ export type PairingTokenResponseDto = {
      */
     redeemedHostId?: string | null;
     createdAt: string;
+};
+
+export type PairingTokenStatusResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+    /**
+     * The host this token paired, as the hosts list shows it. Null until a runner spends the token.
+     */
+    host?: HostResponseDto | null;
 };
 
 export type MintPairingTokenRequest = {
@@ -800,7 +910,18 @@ export type RegisterHostRequest = {
         }> | null;
         workspacePath: string;
         diskFreeBytes: number;
+        cpus?: number;
         runnerVersion: string;
+        osName?: string;
+        kernelVersion?: string;
+        cpuModel?: string;
+        memoryTotalBytes?: number;
+        diskTotalBytes?: number;
+        virtualization?: string;
+        cloudProvider?: string;
+        timezone?: string;
+        bootedAt?: string;
+        serviceManager?: string;
     };
 };
 
@@ -821,6 +942,29 @@ export type HostRegistrationResponseDto = {
      * Where the runner fetches signed release artifacts from.
      */
     releaseBaseUrl?: string;
+};
+
+export type HostTimelineEntryResponseDto = {
+    /**
+     * Opaque; increases with time.
+     */
+    id: string;
+    kind: 'paired' | 'renamed' | 'unpaired' | 'facts_changed' | 'network_changed' | 'runner_updated' | 'runner_rolled_back';
+    /**
+     * `renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    occurredAt: string;
+};
+
+export type HostTimelinePageResponseDto = {
+    entries: Array<HostTimelineEntryResponseDto>;
+    /**
+     * Pass as `before` for the next, older page; null at the end.
+     */
+    next?: string | null;
 };
 
 export type RenameHostRequest = {
@@ -1107,9 +1251,8 @@ export type ToggleFeatureFlagRequest = {
 };
 
 export type ProjectRepositoryResponseDto = {
-    id: string;
     /**
-     * The GitHub installation this repository’s tokens are minted through.
+     * Our `github_installation` row, not GitHub’s number.
      */
     installationId: string;
     /**
@@ -1117,59 +1260,56 @@ export type ProjectRepositoryResponseDto = {
      */
     githubRepoId: string;
     /**
-     * A display snapshot of `owner/repo`, refreshed whenever the project is saved.
+     * `owner/repo` as GitHub spelled it when the project was last saved. Display only.
      */
-    fullName: string;
+    repositoryFullName: string;
     /**
-     * Cloned into every new session of the project.
+     * What a session’s branch is created from.
+     */
+    baseBranch: string;
+    /**
+     * Offered to a new session. The API never applies it.
      */
     isDefault: boolean;
-    /**
-     * What those sessions branch from. Null is the repository’s own default branch, read live.
-     */
-    baseBranch?: string | null;
 };
 
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
     /**
-     * The display name: what the person called it, or the repository’s name for a project a first session created.
+     * Display name. Free to change; the slug does not follow it.
      */
     name: string;
     /**
-     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
+     * The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.
      */
     slug: string;
+    repositories: Array<ProjectRepositoryResponseDto>;
     /**
-     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint. Null for a project made on the console.
-     */
-    originGithubRepoId?: string | null;
-    /**
-     * The host New session picks first for this project. Null is the composer’s last choice.
+     * The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it.
      */
     defaultHostId?: string | null;
     /**
-     * The agent New session picks first for this project. Null is the composer’s last choice.
+     * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: string | null;
     /**
-     * The repositories the project holds, in the order they were added.
+     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
      */
-    repositories: Array<ProjectRepositoryResponseDto>;
+    isUnassigned: boolean;
     createdAt: string;
     updatedAt: string;
 };
 
 export type CreateProjectRequest = {
     name: string;
-    repositories?: Array<{
+    repositories: Array<{
         installationId: string;
         githubRepoId: number;
-        isDefault?: boolean;
-        baseBranch?: string;
+        baseBranch: string;
+        isDefault: boolean;
     }>;
-    defaultHostId?: string;
+    defaultHostId?: string | null;
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
 };
 
@@ -1178,8 +1318,8 @@ export type UpdateProjectRequest = {
     repositories?: Array<{
         installationId: string;
         githubRepoId: number;
-        isDefault?: boolean;
-        baseBranch?: string;
+        baseBranch: string;
+        isDefault: boolean;
     }>;
     defaultHostId?: string | null;
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
@@ -1239,6 +1379,9 @@ export type SessionCheckoutResponseDto = {
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
+    /**
+     * The project the session is listed under.
+     */
     projectId: string;
     hostId: string;
     /**
@@ -3921,7 +4064,12 @@ export type DisconnectInstallationResponse = DisconnectInstallationResponses[key
 export type List6Data = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Add the hosts that were removed — for naming the host of a session that outlived it.
+         */
+        include?: 'unpaired';
+    };
     url: '/api/v1/hosts';
 };
 
@@ -4042,6 +4190,38 @@ export type Revoke3Responses = {
 };
 
 export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
+
+export type GetPairingTokenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/pairing/{id}';
+};
+
+export type GetPairingTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_002 — Pairing token not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetPairingTokenError = GetPairingTokenErrors[keyof GetPairingTokenErrors];
+
+export type GetPairingTokenResponses = {
+    200: PairingTokenStatusResponseDto;
+};
+
+export type GetPairingTokenResponse = GetPairingTokenResponses[keyof GetPairingTokenResponses];
 
 export type RegisterData = {
     body: RegisterHostRequest;
@@ -4225,6 +4405,38 @@ export type RenameResponses = {
 };
 
 export type RenameResponse = RenameResponses[keyof RenameResponses];
+
+export type GetHostTimelineData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/timeline';
+};
+
+export type GetHostTimelineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetHostTimelineError = GetHostTimelineErrors[keyof GetHostTimelineErrors];
+
+export type GetHostTimelineResponses = {
+    200: HostTimelinePageResponseDto;
+};
+
+export type GetHostTimelineResponse = GetHostTimelineResponses[keyof GetHostTimelineResponses];
 
 export type ListUsersData = {
     body?: never;
@@ -5259,6 +5471,10 @@ export type CreateProjectData = {
 
 export type CreateProjectErrors = {
     /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -5267,17 +5483,9 @@ export type CreateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_010 — That repository is not one this GitHub installation covers
-     *
-     * GITHUB_001 — GitHub installation not found
-     *
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
-    /**
-     * PROJECTS_006 — That name is a directory another project already holds
-     */
-    409: ProblemDetailsDto;
 };
 
 export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
@@ -5312,6 +5520,8 @@ export type ArchiveProjectErrors = {
     404: ProblemDetailsDto;
     /**
      * PROJECTS_005 — The project still has open sessions
+     *
+     * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;
     /**
@@ -5371,6 +5581,10 @@ export type UpdateProjectData = {
 
 export type UpdateProjectErrors = {
     /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -5379,13 +5593,13 @@ export type UpdateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_010 — That repository is not one this GitHub installation covers
-     *
-     * HOSTS_001 — Host not found
-     *
      * PROJECTS_001 — Project not found
      */
     404: ProblemDetailsDto;
+    /**
+     * PROJECTS_008 — The Unassigned project cannot be renamed or archived
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
@@ -5400,6 +5614,15 @@ export type ListSessionsData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Default `recent`
+         */
+        sort?: 'recent' | 'oldest' | 'name';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        /**
+         * A live checkout of it
+         */
+        githubRepoId?: number;
         /**
          * The stored lifecycle, not the derived group.
          */
@@ -5457,10 +5680,6 @@ export type CreateSessionData = {
 };
 
 export type CreateSessionErrors = {
-    /**
-     * SESSIONS_009 — No project to put the session in
-     */
-    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5920,14 +6139,10 @@ export type MoveSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * PROJECTS_001 — Project not found
-     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_018 — That project does not include this session’s repository
-     *
      * SESSIONS_006 — That project is archived
      *
      * SESSIONS_005 — That session is closed
@@ -5938,7 +6153,7 @@ export type MoveSessionErrors = {
 export type MoveSessionError = MoveSessionErrors[keyof MoveSessionErrors];
 
 export type MoveSessionResponses = {
-    200: SessionResponseDto;
+    201: SessionResponseDto;
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];

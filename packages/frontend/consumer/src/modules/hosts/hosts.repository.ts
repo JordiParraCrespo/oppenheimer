@@ -40,6 +40,18 @@ function toEntity(data: HostDto): HostEntity {
     data.runnerVersion ?? null,
     data.lastSeenAt ? new Date(data.lastSeenAt) : null,
     new Date(data.createdAt),
+    {
+      status: data.status,
+      runningSessionCount: data.runningSessionCount,
+      osName: data.machine?.osName ?? null,
+      cpuCount: data.machine?.cpuCount ?? null,
+      memoryTotalBytes: data.machine?.memoryTotalBytes ?? null,
+      cloudProvider: data.machine?.cloudProvider ?? null,
+      countryCode: data.network?.countryCode ?? null,
+      city: data.network?.city ?? null,
+      asnOrg: data.network?.asnOrg ?? null,
+      roundTripMillis: data.vitals?.roundTripMillis ?? null,
+    },
   );
 }
 
@@ -97,6 +109,18 @@ export class HostsRepository {
       expiresAt: new Date(token.expiresAt),
       redeemedHostId: token.redeemedHostId ?? null,
     }));
+  }
+
+  /** Display only: nothing on any machine derives from a host's name. */
+  @MapApiError(HostsErrors.RENAME_FAILED)
+  async rename(id: string, name: string): Promise<HostEntity> {
+    const { data, error } = await heyApiClient.patch<{ 200: HostDto }>({
+      url: `${HOSTS_URL}/{id}`,
+      path: { id },
+      body: { name },
+    });
+    if (error || !data) throw new AppError(HostsErrors.RENAME_FAILED);
+    return toEntity(data);
   }
 
   @MapApiError(HostsErrors.REMOVE_FAILED)

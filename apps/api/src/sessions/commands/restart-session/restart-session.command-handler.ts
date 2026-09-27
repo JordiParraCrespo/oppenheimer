@@ -56,9 +56,8 @@ export class RestartSessionCommandHandler
       });
     }
 
-    // The project must still take work; the paths are the session's own.
+    // Nothing restarts under a retired project.
     await requireActiveProject(this.projects, command.scope, session.projectId);
-    const projectSlug = session.projectSlug;
 
     await this.sessions.appendEvents(session, [
       {
@@ -71,10 +70,7 @@ export class RestartSessionCommandHandler
         payload: { requestedBy: 'api' },
       },
     ]);
-    const { hints } = await this.dispatch.restart(
-      session,
-      await this.launches.build(session, projectSlug),
-    );
+    const { hints } = await this.dispatch.restart(session, await this.launches.build(session));
     return { sessionId: session.id, hints };
   }
 }

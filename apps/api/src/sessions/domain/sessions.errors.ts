@@ -79,17 +79,6 @@ export const SessionErrors = {
     httpStatus: 503,
   },
   /**
-   * A session with no checkouts and no project named. Zero checkouts is a real
-   * session — a project of notes and documents needs no git at all — but then
-   * nothing says which project's directory it belongs in, and the project cannot
-   * be derived from a repository that was not asked for.
-   */
-  PROJECT_REQUIRED: {
-    code: 'SESSIONS_009',
-    message: 'A session with no repositories must name its project',
-    httpStatus: 400,
-  },
-  /**
    * A second repository on a session that has one. A runner makes one worktree
    * per session in the MVP, so a session is one repository (00); the create
    * body is capped by its schema, and this is the same rule for adding one
@@ -155,16 +144,6 @@ export const SessionErrors = {
   HOST_CANNOT_TAKE_IMAGES: {
     code: 'SESSIONS_017',
     message: 'The session’s host cannot take images until its runner is updated',
-    httpStatus: 409,
-  },
-  /**
-   * A session moves only to a project that holds every repository it checked
-   * out: a project is what a session's repositories belong to, and one that
-   * does not include them would group work it cannot explain.
-   */
-  PROJECT_LACKS_REPOSITORY: {
-    code: 'SESSIONS_018',
-    message: 'That project does not include this session’s repository',
     httpStatus: 409,
   },
 } as const satisfies Record<string, ErrorDefinition>;

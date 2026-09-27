@@ -94,7 +94,7 @@ export class AddCheckoutCommandHandler
     const { hints } = await this.dispatch.addCheckout(
       session,
       checkout,
-      await this.launches.build(session, session.projectSlug, { branch: checkout.branch }),
+      await this.launches.build(session),
     );
     return { sessionId: session.id, hints };
   }

@@ -127,6 +127,37 @@ The App's six settings (`GITHUB_APP_*`, the slug included) are the
 connected yet" from "this deployment has no App". Without them the module
 boots, the list is empty, and every GitHub-backed route answers `GITHUB_002`.
 
+## Projects, as built
+
+A project is a saved scope a person creates, and metadata only (10 has
+the schema). Every workspace also has one **Unassigned** project, given
+with the workspace rather than created: a session that names no project
+is listed there, and it cannot be renamed or archived (`PROJECTS_008`).
+Four routes:
+
+- `POST /projects` — a name, the repositories (each with a base branch
+  and whether a new session is offered it; at least one, one of them a
+  default), and a default host and agent. Each repository
+  is resolved live through the `github/` module's `RepositoryAccessPort`;
+  a default host the caller cannot use is `HOSTS_001`. The slug is derived
+  once from the name.
+- `PATCH /projects/{id}` — any of those; the repositories are replaced as
+  a whole set in one transaction with the project row, and a save that
+  loaded before an archive landed finds nothing to update.
+- `GET /projects`, `GET /projects/{id}` — with the repositories embedded.
+- `DELETE /projects/{id}` — archives; refuses while sessions nobody has
+  closed are listed in it, and fails closed when nothing can answer that.
+
+Sessions reach projects through `ProjectLookupPort`: `findOneById`, which
+hides an archived project, and `unassigned`, which provisions the
+workspace's Unassigned project if a workspace made on `/onboarding` has
+none yet. `POST /sessions` takes an optional `projectId` — absent is
+Unassigned; `POST /sessions/{id}/move` changes it, to any active project,
+and nothing else — no host is told, because nothing on a host names a
+project. A project's defaults are offered by the console; the API never
+applies them, and a session may check out repositories its project does
+not hold.
+
 ## Sessions, checkouts and the log
 
 The work itself: `work_session`, `session_checkout` — which is also **where a
@@ -260,17 +291,16 @@ what stops a second naming, since the *first* prompt is the one it names from
 and there is only one of those. The one line that leaves the host is the
 person's own prompt.
 
-**A session moves between projects as one event, and its paths do not.**
-`POST /sessions/{id}/move` appends `session.moved` (`{ projectId,
-fromProjectId }`), which the fold projects onto `projectId`; only a project
-that holds every repository the session checked out can take it
-(`SESSIONS_018`), an archived one cannot (`SESSIONS_006`), and a move to the
-project the session is already in is a no-op. Nothing on the host changes:
-the worktree and the branch carry the slug of the project that created the
-session, so `work_session.projectSlug` snapshots that slug at request and a
-restart, a checkout added later and a re-dispatch after a hello all read it
-from the row, never from the project the session is in now. A path is never
-an identity. Like a rename, a move tells no host anything.
+**A session moves between projects as one event, and nothing else moves.**
+`POST /sessions/{id}/move` appends `session.moved` (`{ from, to }`; an entry
+written while the payload was `{ projectId, fromProjectId }` still folds),
+which the fold projects onto `projectId`. Any active project can take any
+session — a project is metadata, so there is no rule about its repositories
+(`SESSIONS_018` is retired) — an archived one cannot (`SESSIONS_006`), and a
+move to the project the session is already in is a no-op. Nothing on the
+host changes, because nothing on the host names a project: the session's
+directory is `workspaces/<org>/sessions/<slug>` and its branch
+`oppenheimer/<slug>`. Like a rename, a move tells no host anything.
 
 ## The relay, as built
 
@@ -365,12 +395,15 @@ coverage they get.
 users, installations, repositories (**not a table**: listed live from
 GitHub through the installation; a repository is remembered only by the
 checkout that took it, as GitHub's own id plus the installation and a
-name snapshot), hosts, host pairing tokens, projects (the body of work a
-session belongs to; auto-created from the first repository a session checks
-out, and found again by that repository's GitHub id; its slug is a directory
-name on every host and is never reissued), **work_session**
+name snapshot), hosts, host pairing tokens, projects (a saved scope a
+person creates: the repositories its sessions usually work on, each on a
+base branch and marked default or not, and a default host and agent —
+metadata only, so nothing on a host is named after it; see
+10, changed 2026-09-26 from projects auto-created per repository),
+**work_session**
 (workspace, project, host, agent, slug, name, the checkout the agent runs
-in, and the fold of its log) — a session belongs to a project —,
+in, and the fold of its log) — a session is listed under one project and
+can be moved to another, which moves nothing on a host —,
 **session_checkout** (one repository per session, on the session's own
 branch, and where a repository is remembered), **work_session_event** (the
 append-only log the row is a fold of). Attach tickets are **not a table**: a
@@ -397,9 +430,10 @@ of its authorization:
 
 | Route | Credential |
 |---|---|
-| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read` |
-| `POST /hosts/pairing`, `GET /hosts/pairing`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
+| `GET /hosts`, `GET /hosts/{id}` | the person's, plus `read Host` and `hosts:read`. The list leaves unpaired hosts out unless `include=unpaired`; both carry a derived `status` and `runningSessionCount` (14) |
+| `POST /hosts/pairing`, `GET /hosts/pairing`, `GET /hosts/pairing/{id}`, `DELETE /hosts/pairing/{id}` | the person's, plus `create`/`read`/`delete Host` and `hosts:*` — pairing is a Host verb, not a noun of its own |
 | `PATCH /hosts/{id}`, `DELETE /hosts/{id}` | the person's: rename, and the console's unpair |
+| `GET /hosts/{id}/timeline` | the person's, plus `read Host` and `hosts:read`: what changed about the host, newest first (15) |
 | `POST /hosts/register` | the registration token in the body, and nothing else |
 | `DELETE /hosts/self` | the host's boot JWT as a bearer; the host is the token's subject, so the path names no id and a host can only ever remove itself |
 
@@ -407,7 +441,8 @@ Two routes therefore delete a host and they are not the same operation:
 `DELETE /hosts/{id}` is a person unpairing a machine they own, guarded by
 policies; `DELETE /hosts/self` is the machine saying it has been
 uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
-neither deletes the row.
+neither deletes the row, and both stop the sessions running on the host
+(one `session.stopped` each, from `sessions/`, on the unpaired event; 13).
 
 **The machine's own read of its host row is unscoped, by design.** A host
 is not tenant-scoped and there is no person on that request to scope by:

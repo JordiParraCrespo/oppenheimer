@@ -100,6 +100,10 @@ export const MAX_SESSION_CHECKOUTS = 1;
 const createSessionFields = z.object({
   hostId: z.string().uuid(),
   agent: codingAgentSchema,
+  /**
+   * The project the session is listed under. Absent lists it in the workspace's
+   * Unassigned project; a project is never derived from a repository.
+   */
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
@@ -170,16 +174,6 @@ export const renameSessionSchema = z.object({
 });
 
 export type RenameSessionDto = z.infer<typeof renameSessionSchema>;
-
-/**
- * `POST /sessions/{id}/move`. The project the session moves to; it must hold
- * every repository the session checked out. Nothing on the host changes.
- */
-export const moveSessionSchema = z.object({
-  projectId: z.string().uuid(),
-});
-
-export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
 
 /**
  * The **stored lifecycle**, `work_session.state` — the fold of the append-only
@@ -282,14 +276,39 @@ export const closeSessionSchema = z.object({
 export type CloseSessionDto = z.infer<typeof closeSessionSchema>;
 
 /**
- * `GET /sessions`. The three filters the sidebar and the project screen need,
- * and nothing else: `state` is the **stored lifecycle**, not the derived group,
+ * `POST /sessions/{id}/move`. Lists the session under another project. Nothing
+ * moves on disk: a project is metadata, and a session's directory and branch
+ * never name it (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ */
+export const moveSessionSchema = z.object({
+  projectId: z.string().uuid(),
+});
+
+export type MoveSessionDto = z.infer<typeof moveSessionSchema>;
+
+/** The orders the session list can come back in. */
+export const SESSION_SORTS = ['recent', 'oldest', 'name'] as const;
+
+export const sessionSortSchema = z.enum(SESSION_SORTS);
+
+export type SessionSortDto = z.infer<typeof sessionSortSchema>;
+
+/**
+ * `GET /sessions`. `state` is the **stored lifecycle**, not the derived group,
  * because a group is computed on read and cannot be an index.
+ *
+ * `githubRepoId`, `agent` and `sort` are the frames' sidebar filters, and
+ * provisional with the rest of how sessions are organized (05): `recent` is last
+ * activity first and is the default, `oldest` is creation order, `name` is
+ * alphabetical.
  */
 export const listSessionsQuerySchema = paginationSchema.extend({
   projectId: z.string().uuid().optional(),
   hostId: z.string().uuid().optional(),
   state: sessionStateSchema.optional(),
+  githubRepoId: z.coerce.number().int().positive().optional(),
+  agent: codingAgentSchema.optional(),
+  sort: sessionSortSchema.optional(),
 });
 
 export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;

@@ -90,7 +90,7 @@
     "description": "Servidores donde se ejecutan tus sesiones. Nada del host queda expuesto a internet.",
     "add": "Añadir host",
     "empty": "Todavía no hay hosts",
-    "emptyHint": "Añade uno y tus sesiones tendrán dónde ejecutarse.",
+    "emptyHint": "Los equipos que conectes aparecen aquí con sus sesiones en curso. Las sesiones no pueden empezar hasta que uno esté en línea.",
     "online": "En línea",
     "offline": "Sin conexión",
     "failed": "No se pudieron cargar los hosts."

@@ -4,6 +4,7 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 export class MoveSessionCommand extends CommandBase {
   readonly scope: AccessScope;
   readonly sessionId: string;
+  /** The project to list the session under. */
   readonly projectId: string;
 
   constructor(props: CommandProps<MoveSessionCommand>) {

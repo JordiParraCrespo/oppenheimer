@@ -37,10 +37,9 @@ export function toProjectRepositoryInputs(
   return rows.flatMap((row) => {
     const ref = parseRepositoryKey(row.id);
     if (!ref) return [];
-    // The repository's own default branch is not a choice, so it is not sent:
-    // absent reads live, and a renamed default branch follows.
-    const baseBranch =
-      row.branch && row.branch !== defaultBranches.get(row.id) ? row.branch : undefined;
-    return [{ ...ref, isDefault: row.isDefault, ...(baseBranch ? { baseBranch } : {}) }];
+    // Every row carries its base: the one picked, else the repository's own
+    // default, which is what the row's pill shows until someone picks another.
+    const baseBranch = row.branch || defaultBranches.get(row.id) || '';
+    return [{ ...ref, isDefault: row.isDefault, baseBranch }];
   });
 }
