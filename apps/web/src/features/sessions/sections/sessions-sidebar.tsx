@@ -42,6 +42,9 @@ import type { SessionRowActions } from './session-row';
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
+const ProjectDialog = lazy(() =>
+  import('../dialogs/project').then((module) => ({ default: module.ProjectDialog })),
+);
 
 /**
  * The console's sidebar body: the sessions grouped by project
@@ -60,8 +63,8 @@ const DeleteSessionDialog = lazy(() =>
  * a rename commits from the inline input, a move from the row menu's pane.
  * The head is a component that draws what it is handed; each group and each
  * row are sections, because the highlight is theirs to subscribe to; the
- * delete dialog owns its own mutation, and New project and Project settings
- * are pages (`/projects/new`, `/projects/$projectId`).
+ * delete dialog and the project dialog — New project behind the plus,
+ * Project settings behind a header's cog — own their own mutations.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -87,6 +90,8 @@ export function SessionsSidebar() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
+  // Which project dialog is up: `'new'`, or the id of the one being edited.
+  const [projectDialog, setProjectDialog] = useState<'new' | string | null>(null);
 
   const rename = useRenameSession();
   const move = useMoveSession();
@@ -156,7 +161,7 @@ export function SessionsSidebar() {
         onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
         onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
         onQueryChange={setQuery}
-        onNewProject={() => navigate({ to: '/projects/new' })}
+        onNewProject={() => setProjectDialog('new')}
       />
 
       {failure ? (
@@ -205,9 +210,7 @@ export function SessionsSidebar() {
                 onNewSessionHere={(target) =>
                   navigate({ to: '/sessions/new', search: { project: target.id } })
                 }
-                onSettings={(target) =>
-                  navigate({ to: '/projects/$projectId', params: { projectId: target.id } })
-                }
+                onSettings={(target) => setProjectDialog(target.id)}
                 rows={rows}
               />
             );
@@ -218,6 +221,19 @@ export function SessionsSidebar() {
       <Suspense fallback={null}>
         {deleting ? (
           <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
+        ) : null}
+        {projectDialog ? (
+          <ProjectDialog
+            projectId={projectDialog === 'new' ? undefined : projectDialog}
+            onClose={() => setProjectDialog(null)}
+            onSaved={(saved) => {
+              // A new project lands on New session with it picked, which is
+              // what a person who just made one wants next; a saved one closes.
+              const created = projectDialog === 'new';
+              setProjectDialog(null);
+              if (created) navigate({ to: '/sessions/new', search: { project: saved.id } });
+            }}
+          />
         ) : null}
       </Suspense>
     </div>

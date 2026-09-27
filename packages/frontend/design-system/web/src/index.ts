@@ -87,6 +87,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from './components/dialog';
+export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
 export {
   DropdownMenu,
   DropdownMenuBack,
@@ -176,6 +177,8 @@ export {
   PopoverTrigger,
 } from './components/popover';
 export { Rail, RailItem, RailMark } from './components/rail';
+export type { RepositoryAddOption } from './components/repository-add-field';
+export { RepositoryAddField } from './components/repository-add-field';
 export type {
   RepositoryRowBranch,
   RepositoryRowOption,
@@ -272,6 +275,7 @@ export { Toaster, toast } from './components/sonner';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
 export { StepHeader } from './components/step-header';
+export { StepTab, StepTabs, StepTabsList, StepTabsPanel } from './components/step-tabs';
 export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';

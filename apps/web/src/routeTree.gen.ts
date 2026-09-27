@@ -18,7 +18,6 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthPublicRouteImport } from './routes/_auth/_public'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
 import { Route as AuthenticatedSplatRouteImport } from './routes/_authenticated/$'
-import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/_editor'
 import { Route as AuthenticatedAutomationsRouteImport } from './routes/_authenticated/automations'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
@@ -38,10 +37,6 @@ import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings/profile'
-import { Route as AuthenticatedEditorAutomationsNewRouteImport } from './routes/_authenticated/_editor/automations/new'
-import { Route as AuthenticatedEditorHostsNewRouteImport } from './routes/_authenticated/_editor/hosts/new'
-import { Route as AuthenticatedEditorProjectsProjectIdRouteImport } from './routes/_authenticated/_editor/projects/$projectId'
-import { Route as AuthenticatedEditorProjectsNewRouteImport } from './routes/_authenticated/_editor/projects/new'
 import { Route as AuthenticatedSettingsHostsIndexRouteImport } from './routes/_authenticated/settings/hosts/index'
 import { Route as AuthenticatedSettingsHostsNewRouteImport } from './routes/_authenticated/settings/hosts/new'
 
@@ -85,10 +80,6 @@ const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
 const AuthenticatedSplatRoute = AuthenticatedSplatRouteImport.update({
   id: '/$',
   path: '/$',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
-  id: '/_editor',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAutomationsRoute =
@@ -195,30 +186,6 @@ const AuthenticatedSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedEditorAutomationsNewRoute =
-  AuthenticatedEditorAutomationsNewRouteImport.update({
-    id: '/automations/new',
-    path: '/automations/new',
-    getParentRoute: () => AuthenticatedEditorRoute,
-  } as any)
-const AuthenticatedEditorHostsNewRoute =
-  AuthenticatedEditorHostsNewRouteImport.update({
-    id: '/hosts/new',
-    path: '/hosts/new',
-    getParentRoute: () => AuthenticatedEditorRoute,
-  } as any)
-const AuthenticatedEditorProjectsProjectIdRoute =
-  AuthenticatedEditorProjectsProjectIdRouteImport.update({
-    id: '/projects/$projectId',
-    path: '/projects/$projectId',
-    getParentRoute: () => AuthenticatedEditorRoute,
-  } as any)
-const AuthenticatedEditorProjectsNewRoute =
-  AuthenticatedEditorProjectsNewRouteImport.update({
-    id: '/projects/new',
-    path: '/projects/new',
-    getParentRoute: () => AuthenticatedEditorRoute,
-  } as any)
 const AuthenticatedSettingsHostsIndexRoute =
   AuthenticatedSettingsHostsIndexRouteImport.update({
     id: '/hosts/',
@@ -258,10 +225,6 @@ export interface FileRoutesByFullPath {
   '/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/automations/new': typeof AuthenticatedEditorAutomationsNewRoute
-  '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
-  '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
-  '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
@@ -288,10 +251,6 @@ export interface FileRoutesByTo {
   '/automations': typeof AuthenticatedAutomationsIndexRoute
   '/sessions': typeof AuthenticatedSessionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/automations/new': typeof AuthenticatedEditorAutomationsNewRoute
-  '/hosts/new': typeof AuthenticatedEditorHostsNewRoute
-  '/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
-  '/projects/new': typeof AuthenticatedEditorProjectsNewRoute
   '/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/settings/hosts': typeof AuthenticatedSettingsHostsIndexRoute
 }
@@ -306,7 +265,6 @@ export interface FileRoutesById {
   '/_auth/_public': typeof AuthPublicRouteWithChildren
   '/_auth/onboarding': typeof AuthOnboardingRouteWithChildren
   '/_authenticated/$': typeof AuthenticatedSplatRoute
-  '/_authenticated/_editor': typeof AuthenticatedEditorRouteWithChildren
   '/_authenticated/automations': typeof AuthenticatedAutomationsRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/oauth/consent': typeof OauthConsentRoute
@@ -326,10 +284,6 @@ export interface FileRoutesById {
   '/_authenticated/automations/': typeof AuthenticatedAutomationsIndexRoute
   '/_authenticated/sessions/': typeof AuthenticatedSessionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/_editor/automations/new': typeof AuthenticatedEditorAutomationsNewRoute
-  '/_authenticated/_editor/hosts/new': typeof AuthenticatedEditorHostsNewRoute
-  '/_authenticated/_editor/projects/$projectId': typeof AuthenticatedEditorProjectsProjectIdRoute
-  '/_authenticated/_editor/projects/new': typeof AuthenticatedEditorProjectsNewRoute
   '/_authenticated/settings/hosts/new': typeof AuthenticatedSettingsHostsNewRoute
   '/_authenticated/settings/hosts/': typeof AuthenticatedSettingsHostsIndexRoute
 }
@@ -361,10 +315,6 @@ export interface FileRouteTypes {
     | '/automations/'
     | '/sessions/'
     | '/settings/'
-    | '/automations/new'
-    | '/hosts/new'
-    | '/projects/$projectId'
-    | '/projects/new'
     | '/settings/hosts/new'
     | '/settings/hosts/'
   fileRoutesByTo: FileRoutesByTo
@@ -391,10 +341,6 @@ export interface FileRouteTypes {
     | '/automations'
     | '/sessions'
     | '/settings'
-    | '/automations/new'
-    | '/hosts/new'
-    | '/projects/$projectId'
-    | '/projects/new'
     | '/settings/hosts/new'
     | '/settings/hosts'
   id:
@@ -408,7 +354,6 @@ export interface FileRouteTypes {
     | '/_auth/_public'
     | '/_auth/onboarding'
     | '/_authenticated/$'
-    | '/_authenticated/_editor'
     | '/_authenticated/automations'
     | '/_authenticated/settings'
     | '/oauth/consent'
@@ -428,10 +373,6 @@ export interface FileRouteTypes {
     | '/_authenticated/automations/'
     | '/_authenticated/sessions/'
     | '/_authenticated/settings/'
-    | '/_authenticated/_editor/automations/new'
-    | '/_authenticated/_editor/hosts/new'
-    | '/_authenticated/_editor/projects/$projectId'
-    | '/_authenticated/_editor/projects/new'
     | '/_authenticated/settings/hosts/new'
     | '/_authenticated/settings/hosts/'
   fileRoutesById: FileRoutesById
@@ -509,13 +450,6 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/$'
       preLoaderRoute: typeof AuthenticatedSplatRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/_editor': {
-      id: '/_authenticated/_editor'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedEditorRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/automations': {
@@ -651,34 +585,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/_editor/automations/new': {
-      id: '/_authenticated/_editor/automations/new'
-      path: '/automations/new'
-      fullPath: '/automations/new'
-      preLoaderRoute: typeof AuthenticatedEditorAutomationsNewRouteImport
-      parentRoute: typeof AuthenticatedEditorRoute
-    }
-    '/_authenticated/_editor/hosts/new': {
-      id: '/_authenticated/_editor/hosts/new'
-      path: '/hosts/new'
-      fullPath: '/hosts/new'
-      preLoaderRoute: typeof AuthenticatedEditorHostsNewRouteImport
-      parentRoute: typeof AuthenticatedEditorRoute
-    }
-    '/_authenticated/_editor/projects/$projectId': {
-      id: '/_authenticated/_editor/projects/$projectId'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof AuthenticatedEditorProjectsProjectIdRouteImport
-      parentRoute: typeof AuthenticatedEditorRoute
-    }
-    '/_authenticated/_editor/projects/new': {
-      id: '/_authenticated/_editor/projects/new'
-      path: '/projects/new'
-      fullPath: '/projects/new'
-      preLoaderRoute: typeof AuthenticatedEditorProjectsNewRouteImport
-      parentRoute: typeof AuthenticatedEditorRoute
-    }
     '/_authenticated/settings/hosts/': {
       id: '/_authenticated/settings/hosts/'
       path: '/hosts'
@@ -746,25 +652,6 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-interface AuthenticatedEditorRouteChildren {
-  AuthenticatedEditorAutomationsNewRoute: typeof AuthenticatedEditorAutomationsNewRoute
-  AuthenticatedEditorHostsNewRoute: typeof AuthenticatedEditorHostsNewRoute
-  AuthenticatedEditorProjectsProjectIdRoute: typeof AuthenticatedEditorProjectsProjectIdRoute
-  AuthenticatedEditorProjectsNewRoute: typeof AuthenticatedEditorProjectsNewRoute
-}
-
-const AuthenticatedEditorRouteChildren: AuthenticatedEditorRouteChildren = {
-  AuthenticatedEditorAutomationsNewRoute:
-    AuthenticatedEditorAutomationsNewRoute,
-  AuthenticatedEditorHostsNewRoute: AuthenticatedEditorHostsNewRoute,
-  AuthenticatedEditorProjectsProjectIdRoute:
-    AuthenticatedEditorProjectsProjectIdRoute,
-  AuthenticatedEditorProjectsNewRoute: AuthenticatedEditorProjectsNewRoute,
-}
-
-const AuthenticatedEditorRouteWithChildren =
-  AuthenticatedEditorRoute._addFileChildren(AuthenticatedEditorRouteChildren)
-
 interface AuthenticatedAutomationsRouteChildren {
   AuthenticatedAutomationsRunsRoute: typeof AuthenticatedAutomationsRunsRoute
   AuthenticatedAutomationsIndexRoute: typeof AuthenticatedAutomationsIndexRoute
@@ -802,7 +689,6 @@ const AuthenticatedSettingsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSplatRoute: typeof AuthenticatedSplatRoute
-  AuthenticatedEditorRoute: typeof AuthenticatedEditorRouteWithChildren
   AuthenticatedAutomationsRoute: typeof AuthenticatedAutomationsRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
@@ -812,7 +698,6 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSplatRoute: AuthenticatedSplatRoute,
-  AuthenticatedEditorRoute: AuthenticatedEditorRouteWithChildren,
   AuthenticatedAutomationsRoute: AuthenticatedAutomationsRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,

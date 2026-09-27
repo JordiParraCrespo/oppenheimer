@@ -2,29 +2,33 @@ import {
   Alert,
   AlertDescription,
   Button,
-  Card,
-  CodeBlock,
-  Skeleton,
+  Separator,
   StepHeader,
 } from '@oppenheimer/design-system-web';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { AuthLink, HostPairingChrome } from '@oppenheimer/frontend-web';
+import {
+  AuthLink,
+  HostPairingCopyButtons,
+  HostPairingInspect,
+  HostPairingStatus,
+  HostPairingToken,
+} from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
-/** How much of either block is shown before it scrolls; the rest is one copy away. */
-const CODE_MAX_LINES = 12;
-
 /**
- * Onboarding step 4: pair the first host. The same registration token in two
- * forms — the install command and a prompt for an agent already running on the
- * machine — then a status line that resolves in place when the runner
- * registers. Continue waits for that.
+ * Onboarding step 4: pair the first host (`design/version1/AddHost.dc.html`,
+ * the 2026-09-27 export). One sentence — run one command on the machine —
+ * then the two copy buttons at the large size, the token line, the command
+ * and the prompt folded behind Inspect command and prompt, a rule, and the
+ * status line that resolves in place when the runner registers. Continue
+ * waits for that.
  *
- * What is this step's is the two cards and that wait. The token line and the
- * status row below them are `HostPairingChrome`, which the console's Add host
- * dialog draws too, and the flow under both is `useHostPairing`.
+ * What is this step's is the layout and that wait. The buttons, the fold,
+ * the token line and the status row are the kit's pairing parts, which the
+ * console's Add a host dialog draws too, and the flow under both is
+ * `useHostPairing`.
  *
  * Both forms come from the API with the secret already in them: it is shown
  * once, and the server is the only place that knows it, so neither string is
@@ -70,52 +74,21 @@ export function OnboardingHostScreen({
         </Alert>
       )}
 
-      {/* Both blocks are capped to the same number of lines so the two cards
-          stay the same height: the agent prompt the server composes runs to
-          thirty-odd lines, and uncapped it stretched the pair down the page. */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card padded>
-          {pairing ? (
-            <CodeBlock
-              title={t('onboarding.flow.host.installCommand')}
-              code={pairing.installCommand}
-              maxLines={CODE_MAX_LINES}
-              note={
-                pairing.installScriptSha256
-                  ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
-                  : undefined
-              }
-              copyLabel={t('common.copy')}
-              copiedLabel={t('common.copied')}
-            />
-          ) : (
-            <Skeleton className="h-24 w-full" />
-          )}
-        </Card>
-        <Card padded>
-          {pairing ? (
-            <CodeBlock
-              title={t('onboarding.flow.host.agentPrompt')}
-              code={pairing.agentPrompt}
-              maxLines={CODE_MAX_LINES}
-              note={t('onboarding.flow.host.agentNote')}
-              copyLabel={t('common.copy')}
-              copiedLabel={t('common.copied')}
-            />
-          ) : (
-            <Skeleton className="h-24 w-full" />
-          )}
-        </Card>
+      <div className="flex flex-col gap-2.5">
+        <HostPairingCopyButtons pairing={pairing ?? null} size="lg" />
+        <HostPairingToken
+          expiresAt={expiresAt}
+          expired={expired}
+          onRegenerate={regenerate}
+          busy={isPending}
+          layout="step"
+        />
       </div>
 
-      <HostPairingChrome
-        layout="step"
-        expiresAt={expiresAt}
-        expired={expired}
-        onRegenerate={regenerate}
-        busy={isPending}
-        host={host}
-      />
+      <HostPairingInspect pairing={pairing ?? null} />
+
+      <Separator />
+      <HostPairingStatus host={host} layout="step" />
 
       <div className="flex flex-col items-start gap-3.5">
         {/* Online, not merely registered: the row appears when the runner

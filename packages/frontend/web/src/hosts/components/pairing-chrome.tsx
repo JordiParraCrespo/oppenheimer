@@ -17,12 +17,13 @@ export interface PairingHost {
  * The pairing chrome: the token's clock, the way to replace it, and the status
  * line that resolves in place when a runner spends it.
  *
- * One place because two surfaces show the same three facts — the onboarding
- * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host page — and a feature may not import another feature. What
- * differs between them is *above* this: the step lays the two forms of the
- * instruction out as cards, the page puts them behind a switch. What this
- * owns is everything below that, which the two had written twice.
+ * One place because three surfaces show the same facts — the onboarding
+ * step (`apps/web/.../hosts/screens/onboarding-host.tsx`), the console's
+ * Add a host dialog (`.../sessions/dialogs/add-host.tsx`) and the Add a host
+ * page inside Settings — and a feature may not import another feature. Above
+ * this sit the copy buttons and the Inspect fold (`pairing-install.tsx`) on
+ * the first two, and the tabbed panel on the Settings page. What this owns
+ * is everything below that, which the surfaces had written twice.
  *
  * The page draws the two halves apart — the token line under its Install
  * step, the status row as its Connect step — so they are exported on their
@@ -89,7 +90,13 @@ export function HostPairingToken({
   expired: boolean;
   onRegenerate: () => void;
   busy?: boolean;
-  layout?: 'step' | 'dialog';
+  /**
+   * `step`: onboarding's 12px line. `dialog`: the 11.5px of the Settings
+   * page's Connect step, the link pushed to the right. `inline`: the same
+   * 11.5px under the console dialog's copy buttons, the link beside the clock
+   * (`design/version1/SessionsConsole.dc.html`).
+   */
+  layout?: 'step' | 'dialog' | 'inline';
 }) {
   const { t } = useTranslation();
   const step = layout === 'step';
@@ -97,13 +104,15 @@ export function HostPairingToken({
   return (
     <div
       className={
-        step ? 'flex flex-wrap items-baseline gap-3' : 'flex items-baseline justify-between gap-3'
+        layout === 'dialog'
+          ? 'flex items-baseline justify-between gap-3'
+          : 'flex flex-wrap items-baseline gap-2.5'
       }
     >
       <span
         className={
           step
-            ? 'figures text-xs whitespace-nowrap text-fg-muted'
+            ? 'figures text-xs whitespace-nowrap text-fg-subtle'
             : 'figures text-[11.5px] whitespace-nowrap text-fg-subtle'
         }
       >

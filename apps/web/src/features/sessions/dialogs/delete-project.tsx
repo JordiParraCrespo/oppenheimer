@@ -15,7 +15,7 @@ import { useErrorMessage } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Delete a project, from the row at the foot of Project settings.
+ * Delete a project, from the foot of the Project settings dialog.
  *
  * "Delete" is the console's word for the API's archive: the row is kept so
  * its slug is never reissued, and the list stops showing it. The confirm is
@@ -46,7 +46,7 @@ export function DeleteProjectDialog({
           <div className="px-7">
             <Alert variant="destructive">
               <AlertDescription>
-                {resolveError(archive.error, t('projects.page.delete.failed')).message}
+                {resolveError(archive.error, t('projects.deleteDialog.failed')).message}
               </AlertDescription>
             </Alert>
           </div>
@@ -62,7 +62,7 @@ export function DeleteProjectDialog({
             onClick={() => archive.mutate(project.id)}
           >
             {archive.isPending
-              ? t('projects.page.delete.deleting')
+              ? t('projects.deleteDialog.deleting')
               : t('projects.deleteDialog.confirm')}
           </Button>
         </DialogFooter>

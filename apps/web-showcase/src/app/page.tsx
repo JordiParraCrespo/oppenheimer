@@ -65,6 +65,8 @@ import {
   PermissionDemo,
   ScopeChips,
   RepositoryRowListDemo,
+  DisclosureDemo,
+  StepTabsDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -748,6 +750,16 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="disclosure"
+        title="Disclosure"
+        meta="disclosure.tsx"
+        desc="A fold inside a dialog or a step: one row that reads as a label, an optional word beside it, a summary on the right while closed, and a chevron that turns over 140ms. Add a host folds the install command and the agent prompt behind Inspect command and prompt, in the muted tone; the project dialog folds its Defaults with the summary of what is set."
+        code={`<Disclosure><DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">Defaults</DisclosureTrigger><DisclosurePanel>…</DisclosurePanel></Disclosure>`}
+      >
+        <DisclosureDemo />
+      </Spec>
+
+      <Spec
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
@@ -773,10 +785,11 @@ export default function Page() {
 
       <Spec
         id="reporows"
-        title="RepositoryRowList"
-        meta="repository-row-list.tsx"
-        desc="The project dialog's repository picker: a 14px card with a search row and one row per repository the App can see. Tick a row to include it; it then grows a Default toggle (cloned into every new session) and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Untied rows keep the controls' space but not their ink, so the list never reflows. The caller renders the label, the help glyph and the count above it."
-        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
+        title="RepositoryAddField · RepositoryRowList"
+        meta="repository-add-field.tsx · repository-row-list.tsx"
+        desc="The project dialog's repositories, in two controls. RepositoryAddField decides which are in the project: a search field that reads Add a repository…, a listbox on focus of the repositories the App can see that are not yet added, and a 14px card of the ones added, each with an X. RepositoryRowList, in the Defaults fold under it, says what each does in a new session: a Cloned by default checkbox, the mono name and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Adding a repository adds it cloned by default on its own branch."
+        code={`<RepositoryAddField repositories={repos} value={ids} onValueChange={setIds} />
+<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
       >
         <RepositoryRowListDemo />
       </Spec>
@@ -873,7 +886,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px, 28px radius, the modal shadow, a blurred scrim, a 4px rise. Add a host opens from the composer's host chip and from Settings: one instruction block whose header band carries the Command / Agent prompt tabs and a single Copy, the code at a fixed height so the token line under it never moves, and a status line that resolves in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, Copy install command and Copy agent prompt, the token line, the command and the prompt behind an Inspect fold, and a status box that resolves in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -972,10 +985,20 @@ export default function Page() {
       </Spec>
 
       <Spec
+        id="steptabs"
+        title="StepTabs"
+        meta="step-tabs.tsx"
+        desc="The automation editor's steps under the dialog's title: Task, Trigger, Where it runs. A pill track on the hover wash with 3px of inset, each step 30px with a 16px round mono number; the open step lifts onto the popover colour, a finished one turns its number into a check on the success green, and a step not yet reachable is disabled rather than hidden. A wizard: the footer's Next moves forward, a tab goes back or skips ahead once everything before it is done."
+        code={`<StepTabs value={step} onValueChange={setStep}><StepTabsList><StepTab value="0" number={1} done>Task</StepTab>…</StepTabsList><StepTabsPanel value="0">…</StepTabsPanel></StepTabs>`}
+      >
+        <StepTabsDemo />
+      </Spec>
+
+      <Spec
         id="editorpage"
         title="EditorPage"
         meta="editor-page.tsx"
-        desc="The page over the main column — New project, Add a host, the automations overview and its editor — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
+        desc="The page over the main column — the automations overview, and Add a host inside Settings — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
         code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>
 <EditorPage><EditorPageBody wide><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
       >

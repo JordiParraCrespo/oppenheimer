@@ -38,8 +38,8 @@
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
   which starts the composer on that project with its defaults) and
-  Project settings (the project page editing, `/projects/{id}`; Delete
-  project is the archive behind a confirm, and is disabled while the
+  Project settings (the project dialog editing; Delete project on its
+  footer is the archive behind a confirm, and is disabled while the
   project has unresolved sessions). An
   empty project shows an empty row with a link to start one. A row's
   ellipsis menu: Rename inline, Move to project… as a pane in the same
@@ -66,10 +66,10 @@
   with Add host on the right, which opens the Add a host page inside
   Settings (`/settings/hosts/new`, the settings sidebar still beside it,
   the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
-  Use this host, all back to the list. It is the same screen the console
-  mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
-  opened the console's page with `?from=settings`; the frame keeps
-  Settings around it.) The rows a host card draws — rename, remove, the
+  Use this host, all back to the list. The console pairs in a dialog
+  since the 2026-09-27 export; Settings keeps its page, because its frame
+  keeps Settings around it, and shows the Command / Agent prompt panel
+  outright rather than behind a fold. The rows a host card draws — rename, remove, the
   install command and the preflight — are their own slices; the frame,
   the routes and the way back are built (2026-09-26).
 
@@ -94,16 +94,19 @@
   offers the rest; it starts on the workspace's **Unassigned** project,
   which is where a session that names none is listed, so the chip and
   the session never disagree. Its foot action is **New project…**, a
-  page in the main pane (the evening export's `.op-rpage`, like Add a
-  host): a Back link and a breadcrumb to New session; the name typed as
-  the title, with Cancel and Create project beside it and a line under
-  it saying what is still missing, then what the project will be; and
-  three numbered steps down a rail (`RoutineSteps`), each ticking itself
-  done with a summary — the repositories (`RepositoryRowList`: a row per
-  repository the App can see, ticked rows growing a Default toggle and a
-  base-branch pill; at least one, one of them a default), the default
-  host as chips, the default agent as chips. Create project returns to
-  New session on the new project, its defaults applied. Picking a
+  dialog over the console (the 2026-09-27 export; a page over the main
+  pane for one day before it): the name; Repositories as a field that
+  adds one at a time from the App's list (`RepositoryAddField`), the
+  added ones listed under it with an X; then a **Defaults** fold,
+  optional, that reads what is set while closed — the host as chips, the
+  agent as chips, and Cloned by default (`RepositoryRowList`: a checkbox
+  per added repository with its base-branch pill). Create project is off
+  until there is a name, a repository and one cloned by default; it
+  closes the dialog with the project picked in the chip, its defaults
+  applied. The same dialog, editing, is Project settings behind a
+  header's cog in the sidebar, Delete project on its footer's left; a
+  new project made from the sidebar's plus lands on New session with it
+  picked (`?project=`). Picking a
   project offers its defaults — its host, its agent, its first default
   repository on its base — and the chips stay the person's to change: a
   repository outside the project is as good as one inside it (10). The
@@ -150,21 +153,25 @@
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's
-  foot action opens the **Add a host page** (`/hosts/new`; a dialog until
-  the 2026-09-26 evening export made it a page over the main column, built
-  like the automation editor: a page header, then two numbered steps,
-  Install and Connect; Settings → Hosts mounts the same screen inside its
-  own frame at `/settings/hosts/new`): the same instruction in
-  two forms behind Command / Agent prompt pills in the panel's band, a copyable panel
-  (the command form carries the installer's SHA-256 under it when the
-  deployment published one), the token line — whose New token replaces
-  the token on screen, retiring it in the same write, so a command pasted
-  into the wrong window stops working at once — and a status line that resolves in place from
-  "Listening for this host…" to the registered host, with Use this host
-  enabled then. **Registered, not online**, and that is the difference
+  foot action opens the **Add a host dialog** (the 2026-09-27 export; a
+  page over the main column for one day before it, and a dialog before
+  that): one sentence — run one command on the machine — then **Copy
+  install command** and **Copy agent prompt**, each reading Copied for a
+  moment, because the way in is copying the instruction rather than
+  reading it; the token line under them — whose New token replaces the
+  token on screen, retiring it in the same write, so a command pasted
+  into the wrong window stops working at once; the instruction itself
+  behind an **Inspect command and prompt** fold, as one panel with
+  Command / Agent prompt tabs (the command form carries the installer's
+  SHA-256 under it when the deployment published one); and a status box
+  that resolves in place from "Waiting for the host to connect…" to the
+  registered host, with Use this host enabled then, which closes the
+  dialog with the machine picked in the chip. Settings → Hosts pairs on
+  its own page instead (`/settings/hosts/new`, below), with the panel
+  shown outright. **Registered, not online**, and that is the difference
   from onboarding: the step's Continue waits for the runner to dial in,
   because a first-run flow that ends on a machine which never came up
-  has claimed something the console cannot use; the page is picking
+  has claimed something the console cannot use; the dialog is picking
   the host of a session, and a session may be started on a machine
   whose runner is still coming up — the control plane records it and
   owes it to that host the moment it connects, which is what the

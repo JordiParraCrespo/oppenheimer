@@ -465,3 +465,10 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   sessions that name none (13).
 - 2026-09-27: Settings → Profile is specified in 05; credential writes
   (password, email, devices, deleting the account) are session-only (08).
+- 2026-09-27: **New project, Project settings, the console's Add a host
+  and the automation editor are dialogs over the console again**, as the
+  2026-09-27 export draws them; the `_editor` pages of 2026-09-26 are
+  gone. Settings keeps its Add a host page. Add a host copies first —
+  Copy install command, Copy agent prompt — and shows the instruction
+  behind an Inspect fold, in the console and in onboarding; the
+  automation editor is a three-step wizard, built as a shell (05, 13).

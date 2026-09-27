@@ -19,11 +19,36 @@
   },
   "editor": {
     "newTitle": "New automation",
-    "name": "Automation name",
+    "stepsLabel": "Automation steps",
+    "steps": {
+      "task": "Task",
+      "trigger": "Trigger",
+      "where": "Where it runs"
+    },
+    "name": "Name",
     "namePlaceholder": "Name this automation",
+    "prompt": "What should the agent do?",
+    "promptPlaceholder": "Describe the work for every run…",
+    "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
+    "anyTrigger": "Any trigger starts a run.",
+    "addTrigger": "Add a trigger",
+    "triggersSoon": "Schedules and GitHub events arrive with the automations API.",
+    "code": "Code",
+    "runsOn": "Runs on",
+    "project": "Project",
+    "repositories": "Repositories",
+    "host": "Host",
+    "agent": "Agent",
+    "model": "Model",
+    "notSet": "Not set",
+    "runsHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
+    "missing": {
+      "name": "Add a name.",
+      "prompt": "Describe the work.",
+      "trigger": "Add a trigger."
+    },
     "back": "Back",
-    "crumb": "Automations",
-    "create": "Create automation",
-    "recap": "Name the automation, then say where it runs."
+    "next": "Next",
+    "create": "Create automation"
   }
 }

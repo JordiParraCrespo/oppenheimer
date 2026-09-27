@@ -31,7 +31,7 @@ function RunsListFilters({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="runs-list-filters"
-      className={cn('mb-0.5 flex flex-wrap items-center gap-2 border-b border-border-subtle px-1.5 pt-1.5 pb-2', className)}
+      className={cn('mb-0.5 flex flex-wrap items-center gap-2 px-1.5 pt-1.5 pb-2', className)}
       {...props}
     />
   );

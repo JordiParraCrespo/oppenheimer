@@ -46,3 +46,30 @@ what a full run looked like and steal a trick, not a target inventory.
 - Third-party logos: the export carried PNG copies from another repo.
   The decision was vendors' official SVGs inline, in the vendor's colour,
   with a neutral glyph where none is available.
+
+## 2026-09-27 — the dialogs came back
+
+Not a recipe to replay; what this export needed that the workflow did not
+predict.
+
+- An export can reverse the one before it inside a day: the 2026-09-26
+  evening frames made New project, Add a host and the automation editor
+  pages over the main column, and the 2026-09-27 frames made them dialogs
+  again, keeping the replaced artboards as `SessionsConsole (pages)` and
+  `AddHost (cards)`. Diff the frame against the previous sync before
+  reading it whole; the delta was three dialogs and one fold, and the
+  export's own README named it.
+- A dialog that two features open (the sidebar and the composer both open
+  New project) lives in the feature whose surfaces open it, not in a
+  feature named after the entity: `features/projects/` went away and its
+  helpers moved to `sessions/lib/`. The state of "which dialog is up" is
+  each surface's own `useState`; nothing crossed features or the URL.
+- The parts two features draw identically (the two copy buttons, the
+  Inspect fold) went to the kit's `hosts/` concern with a hook of their
+  own (`useCopied`), because a feature may not import another. The
+  design-system linter's `no-restyle` then decides where the rest goes:
+  a gap on `DialogBody` or `DisclosurePanel` is a plain wrapper, a red
+  ghost button is a `destructive-ghost` variant, never a class.
+- Base UI's `Collapsible` and `Tabs` were enough for the fold and the
+  wizard strip; the data attributes to style against are `data-panel-open`
+  on the trigger and `data-active` on a tab.
