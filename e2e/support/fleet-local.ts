@@ -102,7 +102,9 @@ function register(record: Pick<LocalRecord, 'user' | 'home'>, argv: string[]): v
       return;
     } catch (error) {
       const stderr = String((error as { stderr?: string }).stderr ?? '');
-      if (!stderr.includes('429') || attempt === 4) {
+      // The runner prints the problem's title (PAIR_007), not the status.
+      const throttled = stderr.includes('429') || stderr.includes('limiting registrations');
+      if (!throttled || attempt === 4) {
         process.stderr.write(stderr);
         throw error;
       }

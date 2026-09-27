@@ -294,8 +294,13 @@ async function startApi(build) {
 }
 
 // oppenheimer:begin web
-async function startWeb() {
+async function startWeb(build) {
   if (await httpOk(WEB_URL)) return;
+  // Vite serves the app's own source, but resolves the workspace packages it
+  // imports (`@oppenheimer/frontend-core/react`, …) from their `dist/`, which
+  // a fresh checkout does not have and the API's build does not produce.
+  if (build)
+    run('pnpm', ['turbo', 'run', 'build', '--filter=@oppenheimer/web^...'], { stdio: 'inherit' });
   const out = daemon('web', 'pnpm', ['--filter', '@oppenheimer/web', 'dev']);
   await waitFor('the console', () => httpOk(WEB_URL), { timeout: 120_000, logFile: out });
   log(`console on ${WEB_URL} (log: ${out})`);
@@ -310,7 +315,7 @@ async function up(flags) {
   await startStub('namer-stub', 4320);
   await startApi(!flags.has('--no-build'));
   // oppenheimer:begin web
-  if (flags.has('--web')) await startWeb();
+  if (flags.has('--web')) await startWeb(!flags.has('--no-build'));
   // oppenheimer:end web
   log(`up. The API's log is ${join(STATE, 'api.log')}, where the suites read it`);
 }
