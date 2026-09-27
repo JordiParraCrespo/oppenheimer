@@ -4,7 +4,7 @@ import { groupByProject, matchesQuery, projectsForMove } from '../lib/session-gr
 
 /**
  * The sidebar's groups and the move pane's targets
- * (`product/versions/mvp/12-projects-on-the-console.md`): every project is a
+ * (`product/versions/mvp/05-screens.md`): every project is a
  * group even when empty, a session whose project is gone still shows, and a
  * session may move only where its repository already is.
  */
@@ -13,7 +13,7 @@ const project = (id: string, repos: string[]) =>
     id,
     id,
     id,
-    null,
+    id === 'unassigned',
     null,
     null,
     repos.map((githubRepoId) => ({
@@ -22,7 +22,7 @@ const project = (id: string, repos: string[]) =>
       githubRepoId,
       fullName: `acme/${githubRepoId}`,
       isDefault: true,
-      baseBranch: null,
+      baseBranch: 'main',
     })),
     new Date(),
     new Date(),
@@ -53,16 +53,19 @@ describe('groupByProject', () => {
 });
 
 describe('projectsForMove', () => {
-  it('offers every other project that holds all of the session’s repositories', () => {
+  it('offers every other project, whatever repositories it holds', () => {
     const projects = [project('here', ['1']), project('yes', ['1', '2']), project('no', ['2'])];
     expect(projectsForMove(projects, session('s', 'here', ['1'])).map((p) => p.id)).toEqual([
       'yes',
-    ]);
-    // A session with no checkout can go anywhere but where it is.
-    expect(projectsForMove(projects, session('s', 'here', [])).map((p) => p.id)).toEqual([
-      'yes',
       'no',
     ]);
+  });
+});
+
+describe('groupByProject, Unassigned', () => {
+  it('puts the Unassigned project first', () => {
+    const groups = groupByProject([project('newer', []), project('unassigned', [])], []);
+    expect(groups.map((group) => group.project?.id)).toEqual(['unassigned', 'newer']);
   });
 });
 

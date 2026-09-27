@@ -37,7 +37,7 @@ export class ArchiveProjectHttpController {
   @Delete(':id')
   @Version('1')
   // `update Project`, not `delete`: nothing is deleted. The row outlives the
-  // project so its directory name is never reissued on any host that held it.
+  // project so its slug is never reissued.
   @CheckPolicies({ action: 'update', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({
@@ -48,6 +48,11 @@ export class ArchiveProjectHttpController {
   })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The Unassigned project cannot be renamed or archived',
+    code: 'PROJECTS_008',
+  })
   @ApiProblemResponse({
     status: 409,
     description: 'The project still has open sessions',

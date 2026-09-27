@@ -54,11 +54,13 @@
       "action": "Eliminar proyecto",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar el proyecto."
-    }
+    },
+    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
   },
   "deleteDialog": {
     "title": "¿Eliminar {{name}}?",
     "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
     "confirm": "Eliminar proyecto"
-  }
+  },
+  "unassigned": "Sin asignar"
 }

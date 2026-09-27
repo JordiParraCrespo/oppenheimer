@@ -126,10 +126,8 @@ describe('the declaration itself', () => {
   });
 
   it('declares only the actions a route or a credential can exercise', () => {
-    // `create` is the console's New project dialog (`POST /projects`); the
-    // project a first session makes for a repository still goes through a port
-    // inside the process and asks no permission. Nothing else: archiving is
-    // `update`, because the row outlives the project.
+    // `create` is `POST /projects`; archiving is `update`, because nothing is
+    // deleted. No `delete`: it would be a permission with nothing behind it.
     expect(ProjectResource.actions.map((action) => action.name)).toEqual([
       'read',
       'create',

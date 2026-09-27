@@ -41,7 +41,7 @@ export function SessionRowMenu({
   onMove: (projectId: string) => void;
   onDelete: () => void;
   /** Where the session may move: every other project holding its repository. */
-  projects: { id: string; name: string }[];
+  projects: { id: string; name: string; isUnassigned?: boolean }[];
 }) {
   const { t } = useTranslation();
   const [pane, setPane] = useState<'root' | 'move'>('root');
@@ -82,7 +82,7 @@ export function SessionRowMenu({
             ) : (
               projects.map((project) => (
                 <DropdownMenuItem key={project.id} onClick={() => onMove(project.id)}>
-                  {project.name}
+                  {project.isUnassigned ? t('projects.unassigned') : project.name}
                 </DropdownMenuItem>
               ))
             )}

@@ -7,6 +7,7 @@ import {
 import { AppError, MapApiError } from '@oppenheimer/frontend-core';
 import { isCodingAgentId } from '@oppenheimer/shared/agents';
 import { injectable } from 'inversify';
+import { repositoryKey } from '../installations/repository-key';
 import {
   type CreateProjectInput,
   ProjectEntity,
@@ -20,16 +21,19 @@ function toEntity(data: ProjectResponseDto): ProjectEntity {
     data.id,
     data.name,
     data.slug,
-    data.originGithubRepoId ?? null,
+    data.isUnassigned,
     data.defaultHostId ?? null,
     isCodingAgentId(data.defaultAgent) ? data.defaultAgent : null,
     data.repositories.map((repository) => ({
-      id: repository.id,
+      id: repositoryKey({
+        installationId: repository.installationId,
+        githubRepoId: Number(repository.githubRepoId),
+      }),
       installationId: repository.installationId,
       githubRepoId: repository.githubRepoId,
-      fullName: repository.fullName,
+      fullName: repository.repositoryFullName,
       isDefault: repository.isDefault,
-      baseBranch: repository.baseBranch ?? null,
+      baseBranch: repository.baseBranch,
     })),
     new Date(data.createdAt),
     new Date(data.updatedAt),
@@ -41,7 +45,7 @@ function toRepositoryRows(rows: ProjectRepositoryInput[]): CreateProjectRequest[
     installationId: row.installationId,
     githubRepoId: row.githubRepoId,
     isDefault: row.isDefault,
-    ...(row.baseBranch ? { baseBranch: row.baseBranch } : {}),
+    baseBranch: row.baseBranch,
   }));
 }
 

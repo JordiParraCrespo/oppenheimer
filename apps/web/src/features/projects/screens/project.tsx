@@ -12,6 +12,7 @@ import {
   PageHeaderCrumbs,
   PageHeaderHere,
   PageHeaderMeta,
+  PageHeaderNote,
   PageHeaderRow,
   PageHeaderTitleInput,
   RepositoryRowList,
@@ -67,7 +68,7 @@ function rowsOf(project: ProjectEntity | undefined): RepositoryRowValue[] {
 /**
  * New project, and Project settings: the page over the main column behind
  * the project chip's foot row, the sidebar's plus and a project header's cog
- * (`product/versions/mvp/12-projects-on-the-console.md`).
+ * (`product/versions/mvp/05-screens.md`).
  *
  * The 2026-09-26 evening export made it a page rather than a dialog, built
  * like the automation editor: a page header whose title is the name, Cancel
@@ -110,6 +111,9 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
   const editing = project !== undefined;
+  // The workspace's Unassigned project: its name is fixed and it cannot be
+  // deleted (`PROJECTS_008`); its repositories and defaults edit like any other.
+  const fixed = project?.isUnassigned === true;
   const [rows, setRows] = useState<RepositoryRowValue[]>(() => rowsOf(project));
   const [defaultHostId, setDefaultHostId] = useState<string | null>(project?.defaultHostId ?? null);
   const [defaultAgent, setDefaultAgent] = useState<CodingAgentId | null>(
@@ -165,7 +169,11 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   // The recap under the title reads the name as it is typed; this page is the
   // lowest component that shows it, so the subscription is here.
   const name = useWatch({ control, name: 'name' });
-  const block = projectBlock(name ?? '', { rows, defaultHostId, defaultAgent });
+  const block = projectBlock(
+    name ?? '',
+    { rows, defaultHostId, defaultAgent },
+    { holdsNone: fixed },
+  );
   const summary = repositorySummary(rows);
   const hostName = hosts.data?.find((host) => host.id === defaultHostId)?.name;
   const agentLabel = defaultAgent ? CODING_AGENTS[defaultAgent].label : undefined;
@@ -173,13 +181,23 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   function submit(values: NameValues) {
     if (block) return;
     const input = {
-      name: values.name.trim(),
-      repositories: toProjectRepositoryInputs(shown, defaultBranches),
+      // Unassigned keeps its name, so the name is not sent for it.
+      ...(fixed ? {} : { name: values.name.trim() }),
+      // Unassigned with no repository leaves the list as it is: the API holds a
+      // project's repositories to at least one whenever they are sent.
+      ...(fixed && shown.length === 0
+        ? {}
+        : { repositories: toProjectRepositoryInputs(shown, defaultBranches) }),
       defaultHostId,
       defaultAgent,
     };
     if (project) update.mutate({ id: project.id, input });
-    else create.mutate(input);
+    else
+      create.mutate({
+        ...input,
+        name: values.name.trim(),
+        repositories: toProjectRepositoryInputs(shown, defaultBranches),
+      });
   }
 
   const back = editing ? { to: '/sessions' as const } : { to: '/sessions/new' as const };
@@ -204,14 +222,23 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
           <PageHeaderRow
             icon={<Folder />}
             title={
-              <PageHeaderTitleInput
-                {...register('name')}
-                aria-label={t('projects.page.name')}
-                placeholder={t('projects.page.namePlaceholder')}
-                aria-invalid={Boolean(errors.name)}
-                disabled={pending}
-                autoFocus={!editing}
-              />
+              fixed ? (
+                <PageHeaderTitleInput
+                  value={t('projects.unassigned')}
+                  aria-label={t('projects.page.name')}
+                  readOnly
+                  disabled
+                />
+              ) : (
+                <PageHeaderTitleInput
+                  {...register('name')}
+                  aria-label={t('projects.page.name')}
+                  placeholder={t('projects.page.namePlaceholder')}
+                  aria-invalid={Boolean(errors.name)}
+                  disabled={pending}
+                  autoFocus={!editing}
+                />
+              )
             }
             actions={
               <>
@@ -246,6 +273,7 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
                     .join(' · ')}
             </span>
           </PageHeaderMeta>
+          {fixed ? <PageHeaderNote>{t('projects.page.unassignedHint')}</PageHeaderNote> : null}
         </PageHeader>
 
         {failure ? (
@@ -358,7 +386,7 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
           </RoutineStep>
         </RoutineSteps>
 
-        {project ? (
+        {project && !fixed ? (
           <div className="mt-8 flex items-center gap-4 rounded-2xl border border-border-subtle bg-card px-5 py-4">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="font-medium text-fg">{t('projects.page.delete.title')}</span>

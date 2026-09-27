@@ -32,4 +32,16 @@ describe('repositorySummary', () => {
       defaults: 1,
     });
   });
+
+  it('lets the Unassigned project save with no repository, but not with no default', () => {
+    const draft = { rows: [], defaultHostId: 'host-1', defaultAgent: null };
+    expect(projectBlock('Unassigned', draft, { holdsNone: true })).toBeNull();
+    expect(
+      projectBlock(
+        'Unassigned',
+        { ...draft, rows: [{ id: 'inst:1', isDefault: false, branch: 'main' }] },
+        { holdsNone: true },
+      ),
+    ).toBe('default');
+  });
 });

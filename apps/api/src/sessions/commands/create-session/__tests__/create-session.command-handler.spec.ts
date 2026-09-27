@@ -29,6 +29,7 @@ const SCOPE = {
 
 const INPUT = {
   hostId: 'host-1',
+  projectId: 'project-1',
   agent: 'claude-code' as const,
   checkouts: [{ installationId: 'installation-1', githubRepoId: 42 }],
 };
@@ -38,7 +39,15 @@ function project() {
     organizationId: 'org-acme',
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
-    originGithubRepoId: '42',
+    repositories: [
+      {
+        installationId: 'installation-1',
+        githubRepoId: '42',
+        repositoryFullName: 'acme/xrp-mobile',
+        baseBranch: 'main',
+        isDefault: true,
+      },
+    ],
   });
 }
 
@@ -138,7 +147,6 @@ describe('CreateSessionCommandHandler', () => {
       session: WorkSessionEntity.request({
         organizationId: 'org-acme',
         projectId: 'project-1',
-        projectSlug: 'xrp-mobile',
         createdByUserId: 'user-1',
         hostId: 'host-1',
         slug: 'bold-otter-3f9a7k',
@@ -156,7 +164,6 @@ describe('CreateSessionCommandHandler', () => {
     const existing = WorkSessionEntity.request({
       organizationId: 'org-acme',
       projectId: 'project-1',
-      projectSlug: 'xrp-mobile',
       createdByUserId: 'user-1',
       hostId: 'host-1',
       slug: 'bold-otter-3f9a7k',
@@ -177,7 +184,6 @@ describe('CreateSessionCommandHandler', () => {
     const other = WorkSessionEntity.request({
       organizationId: 'org-acme',
       projectId: 'project-1',
-      projectSlug: 'xrp-mobile',
       createdByUserId: 'user-1',
       hostId: 'host-1',
       slug: 'quiet-heron-b210c4',

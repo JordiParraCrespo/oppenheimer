@@ -196,15 +196,21 @@ export function capRepositories(
  */
 export function toProjectOptions(
   projects: readonly ProjectEntity[],
-  labels: { noRepositories: string },
+  labels: { noRepositories: string; unassigned: string },
 ): ChipSelectOption[] {
-  return projects.map((project) => {
+  // Unassigned first, under its translated name: it is where work that names
+  // no project goes, and the API's spelling of it is English.
+  const ordered = [
+    ...projects.filter((project) => project.isUnassigned),
+    ...projects.filter((project) => !project.isUnassigned),
+  ];
+  return ordered.map((project) => {
     const defaults = project.defaultRepositories.map((repository) =>
       shortName(repository.fullName),
     );
     return {
       value: project.id,
-      label: project.name,
+      label: project.isUnassigned ? labels.unassigned : project.name,
       description: defaults.length ? defaults.join(' · ') : labels.noRepositories,
       keywords: project.repositories.map((repository) => repository.fullName).join(' '),
     };
@@ -213,7 +219,7 @@ export function toProjectOptions(
 
 /**
  * What picking a project sets on the draft
- * (`product/versions/mvp/12-projects-on-the-console.md`): the host from its
+ * (`product/versions/mvp/05-screens.md`): the host from its
  * default when that host is still in the list, the first default repository
  * with its base branch, and the agent with that agent's default model. A
  * default the workspace no longer has is skipped rather than written, so the

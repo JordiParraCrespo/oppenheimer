@@ -60,11 +60,6 @@ export class CreateSessionHttpController {
       'Send one. A retry after a lost response returns the session already created instead of minting a second directory and a second branch.',
   })
   @ApiResponse({ status: 201, type: SessionResponseDto })
-  @ApiProblemResponse({
-    status: 400,
-    description: 'No project to put the session in',
-    code: 'SESSIONS_009',
-  })
   @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
     status: 404,

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The console's rail: the strip left of the sidebar that switches between
- * its lists (`product/versions/mvp/12-projects-on-the-console.md`,
+ * its lists (`product/versions/mvp/05-screens.md`,
  * `…/13-automations.md`).
  *
  * Two lists, two links: Sessions with its count, and Automations. Which is

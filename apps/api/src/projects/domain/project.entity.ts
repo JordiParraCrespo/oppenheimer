@@ -5,83 +5,80 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
-import { type CodingAgentId, isCodingAgentId } from '@oppenheimer/shared/agents';
-import { type ProjectRepositoryEntity } from './project-repository.entity';
+import {
+  type ProjectRepositoryProps,
+  projectRepositoriesProblem,
+} from './project-repositories.policy';
 import { PROJECT_SLUG_MAX_LENGTH, PROJECT_SLUG_PATTERN } from './project-slug.policy';
+
+/** The name every workspace's Unassigned project carries. It cannot be changed. */
+export const UNASSIGNED_PROJECT_NAME = 'Unassigned';
+
+/** The slug the Unassigned project takes when no project of the workspace holds it. */
+export const UNASSIGNED_PROJECT_SLUG = 'unassigned';
 
 export interface ProjectProps {
   /** Tenant the project belongs to. Immutable — a project never moves workspace. */
   organizationId: string;
-  /** Display name: the GitHub repository's name as GitHub spells it. Free to change. */
+  /** Display name. Free to change. */
   name: string;
-  /**
-   * Directory name under `projects/` on every host holding the project. There is
-   * no setter: see the class comment.
-   */
+  /** The project's stable handle, derived from its first name. There is no setter. */
   slug: string;
-  /**
-   * GitHub's repository id, kept as the string the driver exchanges a bigint as.
-   * GitHub's ids are inside the safe integer range today and the column says
-   * they will not stay there, so nothing here converts.
-   */
-  originGithubRepoId: string | null;
-  /**
-   * The host New session picks first for this project. Null is "the composer's
-   * last choice"; the column is `ON DELETE SET NULL`, so a removed machine reads
-   * back as no default rather than a dangling id.
-   */
-  defaultHostId: string | null;
-  /** The agent New session picks first for this project, or null for the last choice. */
-  defaultAgent: CodingAgentId | null;
-  /**
-   * The repositories the project holds, each saying whether every new session
-   * clones it and what it branches from. Owned here: nothing outside the
-   * aggregate adds or removes one.
-   */
-  repositories: ProjectRepositoryEntity[];
   /**
    * When the project was retired. Set by the archive command, which refuses while
    * the project still holds sessions nobody has closed — a question only the module
    * that owns sessions can answer.
    */
   archivedAt: Date | null;
+  /** Who created the project. Audit only; null once that account is gone. */
+  createdByUserId: string | null;
+  /**
+   * The repositories the project holds, in the order a person put them. Empty
+   * only for a project from before projects held repositories that had no
+   * checkout to backfill from; every write leaves at least one.
+   */
+  repositories: ProjectRepositoryProps[];
+  /** The host a new session is offered. A suggestion, never a grant. */
+  defaultHostId: string | null;
+  /** The agent a new session is offered, from the closed catalog. */
+  defaultAgent: string | null;
+  /**
+   * The workspace's Unassigned project: where a session that names no project
+   * is listed. One per workspace; never renamed, never archived, and it may hold
+   * no repository.
+   */
+  isUnassigned: boolean;
 }
 
 export interface CreateProjectProps {
   organizationId: string;
   name: string;
   slug: string;
-  originGithubRepoId?: string | null;
+  /** At least one, and at least one of them a default. */
+  repositories: ProjectRepositoryProps[];
+  /** The id to create the row under, when the slug was derived from it. */
+  id?: string;
+  createdByUserId?: string | null;
   defaultHostId?: string | null;
-  defaultAgent?: CodingAgentId | null;
-  repositories?: ProjectRepositoryEntity[];
+  defaultAgent?: string | null;
 }
 
-/** What the project dialog edits, as one change: absent leaves a field as it is. */
-export interface ProjectChanges {
+/** What a person may change about a project; absent leaves a field as it is. */
+export interface ProjectSettings {
   name?: string;
+  repositories?: ProjectRepositoryProps[];
   defaultHostId?: string | null;
-  defaultAgent?: CodingAgentId | null;
-  repositories?: ProjectRepositoryEntity[];
+  defaultAgent?: string | null;
 }
 
 /**
- * Project aggregate root — a body of work, and the name its directory takes.
+ * Project aggregate root — a saved scope a person creates: the repositories its
+ * sessions usually work on, and the host and agent a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * A project sits above the repository on disk, because a session may check out
- * several:
- * `~/oppenheimer-ai/workspaces/<org.slug>/projects/<project.slug>/`
- * (`product/11-workspace-layout.md`, `product/versions/mvp/03-control-plane.md`).
- *
- * **The slug is immutable and the name is free**, and that split is the whole
- * design of this aggregate. The slug is a directory on every host that holds the
- * project, with work inside it, so a rename that changed it would have to move
- * `projects/<old>/` on every one of those machines; the name is only ever
- * displayed, so renaming is free. The cost is that a project's directory keeps
- * the name of the repository that created it for ever, which is cheap against
- * moving directories under running work.
- *
- * `archivedAt` is the column that keeps a retired slug out of circulation.
+ * A project is **metadata only**. Nothing on a host is named after it, so a
+ * session can be listed under any project without anything moving, and renaming
+ * is free. The slug is a stable handle derived from the first name; archiving
+ * keeps it, so it is never reissued.
  */
 export class ProjectEntity extends AggregateRoot<ProjectProps> {
   /** Rehydrate an existing project (used by the mapper). */
@@ -91,17 +88,19 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
 
   /** Create a brand-new project with a generated id. */
   static createNew(props: CreateProjectProps): ProjectEntity {
+    assertHoldable(props.repositories);
     return new ProjectEntity({
-      id: randomUUID(),
+      id: props.id ?? randomUUID(),
       props: {
         organizationId: props.organizationId,
         name: props.name,
         slug: props.slug,
-        originGithubRepoId: props.originGithubRepoId ?? null,
+        archivedAt: null,
+        createdByUserId: props.createdByUserId ?? null,
+        repositories: props.repositories.map((repository) => ({ ...repository })),
         defaultHostId: props.defaultHostId ?? null,
         defaultAgent: props.defaultAgent ?? null,
-        repositories: props.repositories ?? [],
-        archivedAt: null,
+        isUnassigned: false,
       },
     });
   }
@@ -118,32 +117,6 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return this.props.slug;
   }
 
-  get originGithubRepoId(): string | null {
-    return this.props.originGithubRepoId;
-  }
-
-  get defaultHostId(): string | null {
-    return this.props.defaultHostId;
-  }
-
-  get defaultAgent(): CodingAgentId | null {
-    return this.props.defaultAgent;
-  }
-
-  get repositories(): readonly ProjectRepositoryEntity[] {
-    return this.props.repositories;
-  }
-
-  /** The repositories every new session of the project clones, in the order they were listed. */
-  get defaultRepositories(): readonly ProjectRepositoryEntity[] {
-    return this.props.repositories.filter((repository) => repository.isDefault);
-  }
-
-  /** Whether the project holds this repository — what the move dialog asks. */
-  includesRepository(githubRepoId: string): boolean {
-    return this.props.repositories.some((repository) => repository.githubRepoId === githubRepoId);
-  }
-
   get archivedAt(): Date | null {
     return this.props.archivedAt;
   }
@@ -152,35 +125,65 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     return this.props.archivedAt !== null;
   }
 
-  /**
-   * Retire the project. Idempotent: the first archive is the one that counts.
-   *
-   * There is no un-archive, and that is the point. The slug is a directory name on
-   * every host that held the project and it is never reissued, so archiving is a
-   * one-way door by construction rather than by policy.
-   */
-  archive(at: Date): void {
-    this.props.archivedAt = this.props.archivedAt ?? at;
-    this.setUpdatedAt(new Date());
+  get createdByUserId(): string | null {
+    return this.props.createdByUserId;
   }
 
-  /** Rename the project. Display only: the slug and every path stay as they are. */
-  rename(name: string): void {
-    this.props.name = name;
+  /** A copy: the list is changed only through {@link configure}. */
+  get repositories(): ProjectRepositoryProps[] {
+    return this.props.repositories.map((repository) => ({ ...repository }));
+  }
+
+  get defaultHostId(): string | null {
+    return this.props.defaultHostId;
+  }
+
+  get defaultAgent(): string | null {
+    return this.props.defaultAgent;
+  }
+
+  get isUnassigned(): boolean {
+    return this.props.isUnassigned;
+  }
+
+  /**
+   * Change what a person may change: the name, the repositories as a whole set
+   * and the defaults. Never the slug, and never the Unassigned project's name.
+   *
+   * The repositories are replaced, not merged, so the list's invariants hold after
+   * every call rather than after the last of several.
+   */
+  configure(settings: ProjectSettings): void {
+    if (settings.name !== undefined && settings.name !== this.props.name) {
+      this.assertNotUnassigned('renamed');
+    }
+    if (settings.repositories !== undefined) {
+      assertHoldable(settings.repositories);
+      this.props.repositories = settings.repositories.map((repository) => ({ ...repository }));
+    }
+    if (settings.name !== undefined) this.props.name = settings.name;
+    if (settings.defaultHostId !== undefined) this.props.defaultHostId = settings.defaultHostId;
+    if (settings.defaultAgent !== undefined) this.props.defaultAgent = settings.defaultAgent;
     this.setUpdatedAt(new Date());
     this.validate();
   }
 
   /**
-   * Apply what the dialog edited. One method rather than a setter per field so
-   * the invariants — one row per repository, a real agent — are checked once
-   * over the whole change, and the slug is not among the fields by construction.
+   * Retire the project. Idempotent: the first archive is the one that counts.
+   *
+   * There is no un-archive. The slug stays with the retired row and is never
+   * reissued, so a link to a retired project can never land on a new one.
    */
-  change(changes: ProjectChanges): void {
-    if (changes.name !== undefined) this.props.name = changes.name;
-    if (changes.defaultHostId !== undefined) this.props.defaultHostId = changes.defaultHostId;
-    if (changes.defaultAgent !== undefined) this.props.defaultAgent = changes.defaultAgent;
-    if (changes.repositories !== undefined) this.props.repositories = [...changes.repositories];
+  archive(at: Date): void {
+    this.assertNotUnassigned('archived');
+    this.props.archivedAt = this.props.archivedAt ?? at;
+    this.setUpdatedAt(new Date());
+  }
+
+  /** Rename the project. Display only: the slug stays as it is. */
+  rename(name: string): void {
+    if (name !== this.props.name) this.assertNotUnassigned('renamed');
+    this.props.name = name;
     this.setUpdatedAt(new Date());
     this.validate();
   }
@@ -192,8 +195,7 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
     if (!this.props.name?.trim()) {
       throw new ArgumentNotProvidedException('Project name cannot be empty');
     }
-    // The slug is a directory name, so an invalid one is not a display problem a
-    // client could work around — it is a path that cannot be created.
+    // The slug is a handle that sits in URLs, so it is held to its shape here.
     if (!PROJECT_SLUG_PATTERN.test(this.props.slug)) {
       throw new ArgumentInvalidException(
         'Project slug must be lower-case letters, digits and dashes',
@@ -204,19 +206,28 @@ export class ProjectEntity extends AggregateRoot<ProjectProps> {
         `Project slug must be at most ${PROJECT_SLUG_MAX_LENGTH} characters`,
       );
     }
-    if (this.props.defaultAgent !== null && !isCodingAgentId(this.props.defaultAgent)) {
-      throw new ArgumentInvalidException(`Unknown agent ${String(this.props.defaultAgent)}`);
+    // An empty list is the Unassigned project's, or a legacy row the backfill could
+    // not fill, and it is read, not written; anything non-empty must be a list a
+    // project can hold.
+    if (this.props.repositories.length > 0) assertHoldable(this.props.repositories);
+  }
+
+  /**
+   * The Unassigned project is where unfiled work goes; it keeps its name and its
+   * place. The handlers ask first and answer with `PROJECTS_008`; this is the
+   * aggregate holding the invariant whatever the caller.
+   */
+  private assertNotUnassigned(change: 'renamed' | 'archived'): void {
+    if (this.props.isUnassigned) {
+      throw new ArgumentInvalidException(`The Unassigned project cannot be ${change}`);
     }
-    // One row per repository: the same repository twice is two base branches for
-    // one directory, which no session could honour.
-    const seen = new Set<string>();
-    for (const repository of this.props.repositories) {
-      if (seen.has(repository.githubRepoId)) {
-        throw new ArgumentInvalidException(
-          `Repository ${repository.fullName} is listed twice on this project`,
-        );
-      }
-      seen.add(repository.githubRepoId);
-    }
+  }
+}
+
+/** Refuse a repository list a project cannot hold, naming what is wrong with it. */
+function assertHoldable(repositories: readonly ProjectRepositoryProps[]): void {
+  const problem = projectRepositoriesProblem(repositories);
+  if (problem) {
+    throw new ArgumentInvalidException(`Project repositories are invalid: ${problem}`);
   }
 }

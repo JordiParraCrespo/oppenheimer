@@ -98,7 +98,13 @@ export function SessionsSidebar() {
   const all = sessions ?? [];
   const options = sessions
     ? {
-        project: projectOptions(projects.data, t('sessions.filters.allProjects')),
+        project: projectOptions(
+          projects.data?.map((project) => ({
+            id: project.id,
+            name: project.isUnassigned ? t('projects.unassigned') : project.name,
+          })),
+          t('sessions.filters.allProjects'),
+        ),
         repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
         agent: agentOptions(all, t('sessions.filters.allAgents'), (agent) =>
           t(`sessions.agents.${agent}` as 'sessions.agents.claude-code'),

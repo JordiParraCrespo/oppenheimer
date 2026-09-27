@@ -32,7 +32,7 @@ import { NewSessionSend } from './new-session-send';
  * The chips sit in the composer's `scope` slot, the grey band fused to the
  * top of the field (the 2026-09-26 export's tabbed composer): project first,
  * because picking one prefills the rest
- * (`product/versions/mvp/12-projects-on-the-console.md`); then the host, the
+ * (`product/versions/mvp/05-screens.md`); then the host, the
  * repository, and the branch while exactly one repository is selected.
  */
 export function NewSessionForm() {

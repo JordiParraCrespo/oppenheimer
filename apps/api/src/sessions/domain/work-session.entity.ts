@@ -28,13 +28,11 @@ import type { WorkSessionEventEntity } from './work-session-event.entity';
 
 export interface WorkSessionProps extends SessionFold {
   organizationId: string;
-  projectId: string;
   /**
-   * The project's directory name at request, which every path on the host
-   * carries (`projects/<projectSlug>/sessions/<slug>/`, the branch). A move
-   * changes `projectId` and leaves this alone: a path is never an identity.
+   * The project the session is listed under. Folded from `session.moved`; never
+   * null on a row. A project is metadata, so nothing on disk depends on it.
    */
-  projectSlug: string;
+  projectId: string;
   createdByUserId: string;
   /**
    * The host the work runs on. It is the one reference in the schema a handler
@@ -53,7 +51,6 @@ export interface WorkSessionProps extends SessionFold {
 export interface CreateWorkSessionProps {
   organizationId: string;
   projectId: string;
-  projectSlug: string;
   createdByUserId: string;
   hostId: string;
   slug: string;
@@ -79,7 +76,7 @@ export interface CreateWorkSessionProps {
  * out of it.
  *
  * Rows are never hard-deleted. Closing records `session.closed`, the state folds
- * to `resolved` and the row stays for ever: `uq (projectId, slug)` is the
+ * to `resolved` and the row stays for ever: `uq (organizationId, slug)` is the
  * tombstone that stops a new session inheriting a retired session's directory
  * name, and therefore a stranger's agent conversation state.
  */
@@ -108,7 +105,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
         },
         organizationId: props.organizationId,
         projectId: props.projectId,
-        projectSlug: props.projectSlug,
         createdByUserId: props.createdByUserId,
         hostId: props.hostId,
         slug: props.slug,
@@ -142,9 +138,13 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     return this.props.projectId;
   }
 
-  /** The directory name the host's paths carry; fixed at request, whatever project the session is in now. */
-  get projectSlug(): string {
-    return this.props.projectSlug;
+  /**
+   * The session's working branch, as its checkouts recorded it, or null before it
+   * has any. Every checkout of a session is on the same branch, and a recorded
+   * branch is never re-derived: sessions from before the flat layout keep theirs.
+   */
+  get branch(): string | null {
+    return this.props.checkouts[0]?.branch ?? null;
   }
 
   get createdByUserId(): string {
@@ -254,7 +254,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       agentSessionId: this.props.agentSessionId,
       lastEventAt: this.props.lastEventAt,
       stoppedAt: this.props.stoppedAt,
-      projectId: this.props.projectId,
       name: this.props.name,
       nameSource: this.props.nameSource,
       cwdCheckoutId: this.props.cwdCheckoutId,
@@ -263,6 +262,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
       reportHash: this.props.reportHash,
       ackedReportHash: this.props.ackedReportHash,
       launch: this.props.launch,
+      projectId: this.props.projectId,
     };
   }
 
@@ -281,7 +281,6 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.agentSessionId = fold.agentSessionId;
     this.props.lastEventAt = fold.lastEventAt;
     this.props.stoppedAt = fold.stoppedAt;
-    if (fold.projectId) this.props.projectId = fold.projectId;
     this.props.name = fold.name;
     this.props.nameSource = fold.nameSource;
     this.props.cwdCheckoutId = fold.cwdCheckoutId;
@@ -290,6 +289,7 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
     this.props.reportHash = fold.reportHash;
     this.props.ackedReportHash = fold.ackedReportHash;
     this.props.launch = fold.launch;
+    this.props.projectId = fold.projectId ?? this.props.projectId;
   }
 
   /**

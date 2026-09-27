@@ -8,7 +8,7 @@ import { ArchiveProjectCommandHandler } from '../archive-project.command-handler
 /**
  * Archiving is the destructive path in this module, and the whole of its design is
  * that it **fails closed**: it asks whoever contributed an answer whether any work
- * is still going on inside the project's directory, and refuses if nothing did.
+ * is still listed in the project, and refuses if nothing did.
  * That refusal is a DI fact — an empty registry — rather than a caught exception,
  * which is what these tests pin.
  *
@@ -30,7 +30,15 @@ function project(archivedAt: Date | null = null) {
     organizationId: 'org-acme',
     name: 'xrp-mobile',
     slug: 'xrp-mobile',
-    originGithubRepoId: '42',
+    repositories: [
+      {
+        installationId: 'installation-1',
+        githubRepoId: '42',
+        repositoryFullName: 'acme/xrp-mobile',
+        baseBranch: 'main',
+        isDefault: true,
+      },
+    ],
   });
   if (archivedAt) entity.archive(archivedAt);
   return entity;
@@ -110,5 +118,16 @@ describe('ArchiveProjectCommandHandler', () => {
     vi.mocked(projects.archiveIfUnused).mockResolvedValue({ result: 'not-found' });
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
+  });
+
+  it('refuses the Unassigned project', async () => {
+    // Sessions that name no project are listed there; retiring it would leave
+    // that work nowhere to go.
+    vi.mocked(projects.archiveIfUnused).mockResolvedValue({
+      result: 'unassigned',
+      project: project(),
+    });
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_008' });
   });
 });

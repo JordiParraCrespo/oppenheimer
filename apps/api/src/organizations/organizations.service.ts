@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
   AddMemberDto,
@@ -21,6 +22,7 @@ import type { UserRoleRepositoryPort } from '../roles/database/user-role.reposit
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles/roles.di-tokens';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
+import { PersonalWorkspaceProvisionedDomainEvent } from './domain/events/personal-workspace-provisioned.domain-event';
 import { OrganizationSlug } from './domain/value-objects/organization-slug.value-object';
 import type {
   FullOrganizationResponseDto,
@@ -76,6 +78,7 @@ export class OrganizationsService {
     private readonly sessions: Repository<Session>,
     @InjectRepository(AccessGrantOrmEntity)
     private readonly accessGrants: Repository<AccessGrantOrmEntity>,
+    private readonly events: EventEmitter2,
   ) {}
 
   private headers(headers: IncomingHttpHeaders): Headers {
@@ -145,9 +148,43 @@ export class OrganizationsService {
         throw error;
       }
       await this.provisionDefaultWorkspace(requestHeaders, organization.id, creatorId);
+      await this.announceProvisioned(organization, creatorId);
     }
 
     return organization;
+  }
+
+  /**
+   * Tell the rest of the API that the caller's workspace exists, as sign-up's
+   * provisioning does: the one organization the console creates is the
+   * caller's own, on `/onboarding`, when the sign-up hook did not land. What
+   * listens gives the workspace what it starts with — its Unassigned project.
+   *
+   * In process rather than through the outbox, because Better Auth has already
+   * committed the organization outside any transaction of ours, and
+   * best-effort: a listener that fails is logged, and what it would have
+   * provisioned is provisioned on first use instead.
+   */
+  private async announceProvisioned(
+    organization: OrganizationResponseDto,
+    ownerId: string,
+  ): Promise<void> {
+    try {
+      await this.events.emitAsync(
+        PersonalWorkspaceProvisionedDomainEvent.name,
+        new PersonalWorkspaceProvisionedDomainEvent({
+          aggregateId: organization.id,
+          ownerId,
+          name: organization.name,
+          slug: organization.slug,
+        }),
+      );
+    } catch (error) {
+      this.logger.error(
+        { message: 'A listener failed on a new workspace', organizationId: organization.id },
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   /**

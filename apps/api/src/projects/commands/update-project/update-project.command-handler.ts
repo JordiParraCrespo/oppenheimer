@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { ProjectRepositoriesResolver } from '../../application/project-repositories.resolver';
+import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import type { ProjectEntity } from '../../domain/project.entity';
 import { ProjectErrors } from '../../domain/projects.errors';
@@ -9,11 +9,17 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { UpdateProjectCommand } from './update-project.command';
 
 /**
- * What the project dialog saves: the name, the defaults and the repository
- * set, each only when given. The repositories and the host go through the
- * same checks a create runs, and the write is one targeted update that the
- * row's own `archivedAt` guards — so a project retired between the read and
- * the write is reported missing, never revived.
+ * Changes what a person may change about a project: its name, its repositories as
+ * a whole set and its defaults. Never the slug — it is the project's stable
+ * handle, and the aggregate offers no way to change it — and never the
+ * Unassigned project's name (`PROJECTS_008`).
+ *
+ * Editing a project never reaches into a session: what a session checked out is
+ * on its own checkout rows.
+ *
+ * Returns the saved aggregate rather than its id: the handler has the stored row
+ * in hand, and making the controller ask the bus for it again would be a second
+ * scoped round-trip to rebuild what this one just read.
  */
 @CommandHandler(UpdateProjectCommand)
 export class UpdateProjectCommandHandler
@@ -22,39 +28,41 @@ export class UpdateProjectCommandHandler
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projects: ProjectRepositoryPort,
-    private readonly resolver: ProjectRepositoriesResolver,
+    private readonly settings: ProjectSettingsResolver,
   ) {}
 
-  async execute(command: UpdateProjectCommand): Promise<ProjectEntity> {
-    const { scope, changes } = command;
-    const found = await this.projects.findOneById(scope, command.projectId);
+  async execute({ scope, projectId, changes }: UpdateProjectCommand): Promise<ProjectEntity> {
+    const found = await this.projects.findOneById(scope, projectId);
     if (found.isNone()) {
-      throw new AppError(ProjectErrors.NOT_FOUND, {
-        detail: `No project with id ${command.projectId}`,
+      throw new AppError(ProjectErrors.NOT_FOUND, { detail: `No project with id ${projectId}` });
+    }
+
+    const project = found.unwrap();
+    if (project.isUnassigned && changes.name !== undefined && changes.name !== project.name) {
+      throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+        detail: 'The Unassigned project keeps its name',
       });
     }
 
-    await this.resolver.assertHost(scope, changes.defaultHostId);
-    const repositories =
-      changes.repositories === undefined
-        ? undefined
-        : await this.resolver.resolveRepositories(scope, changes.repositories);
+    await this.settings.assertUsableHost(scope, changes.defaultHostId);
+    const repositories = changes.repositories
+      ? await this.settings.repositories(scope, changes.repositories)
+      : undefined;
 
-    // Through the aggregate, so the change is validated by the same invariants a
+    // Through the aggregate, so every field is validated by the same invariants a
     // creation goes through, then written as a targeted update: the row is the
     // authority on whether the project is still active.
-    const project = found.unwrap();
-    project.change({
+    project.configure({
       name: changes.name,
+      repositories,
       defaultHostId: changes.defaultHostId,
       defaultAgent: changes.defaultAgent,
-      repositories,
     });
 
-    const saved = await this.projects.saveIfActive(scope, project);
+    const saved = await this.projects.saveSettingsIfActive(scope, project);
     if (saved.isNone()) {
       throw new AppError(ProjectErrors.NOT_FOUND, {
-        detail: `No active project with id ${command.projectId}`,
+        detail: `No active project with id ${projectId}`,
       });
     }
     return saved.unwrap();

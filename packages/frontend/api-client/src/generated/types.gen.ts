@@ -1094,9 +1094,8 @@ export type ToggleFeatureFlagRequest = {
 };
 
 export type ProjectRepositoryResponseDto = {
-    id: string;
     /**
-     * The GitHub installation this repository’s tokens are minted through.
+     * Our `github_installation` row, not GitHub’s number.
      */
     installationId: string;
     /**
@@ -1104,59 +1103,56 @@ export type ProjectRepositoryResponseDto = {
      */
     githubRepoId: string;
     /**
-     * A display snapshot of `owner/repo`, refreshed whenever the project is saved.
+     * `owner/repo` as GitHub spelled it when the project was last saved. Display only.
      */
-    fullName: string;
+    repositoryFullName: string;
     /**
-     * Cloned into every new session of the project.
+     * What a session’s branch is created from.
+     */
+    baseBranch: string;
+    /**
+     * Offered to a new session. The API never applies it.
      */
     isDefault: boolean;
-    /**
-     * What those sessions branch from. Null is the repository’s own default branch, read live.
-     */
-    baseBranch?: string | null;
 };
 
 export type ProjectResponseDto = {
     id: string;
     organizationId: string;
     /**
-     * The display name: what the person called it, or the repository’s name for a project a first session created.
+     * Display name. Free to change; the slug does not follow it.
      */
     name: string;
     /**
-     * The project’s directory name on every host that holds it. Immutable, and derived from the repository: `<repo>`, or `<owner>--<repo>` when another repository already holds that name.
+     * The project’s stable handle, derived once from its first name. It never changes and is never reissued, archived projects included.
      */
     slug: string;
+    repositories: Array<ProjectRepositoryResponseDto>;
     /**
-     * GitHub’s id for the repository whose first session created the project, as a string because the column is a bigint. Null for a project made on the console.
-     */
-    originGithubRepoId?: string | null;
-    /**
-     * The host New session picks first for this project. Null is the composer’s last choice.
+     * The host a new session is offered. A suggestion, never a grant: a session on it still needs the caller to be able to use it.
      */
     defaultHostId?: string | null;
     /**
-     * The agent New session picks first for this project. Null is the composer’s last choice.
+     * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+    defaultAgent?: string | null;
     /**
-     * The repositories the project holds, in the order they were added.
+     * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived, and it may hold no repository.
      */
-    repositories: Array<ProjectRepositoryResponseDto>;
+    isUnassigned: boolean;
     createdAt: string;
     updatedAt: string;
 };
 
 export type CreateProjectRequest = {
     name: string;
-    repositories?: Array<{
+    repositories: Array<{
         installationId: string;
         githubRepoId: number;
-        isDefault?: boolean;
-        baseBranch?: string;
+        baseBranch: string;
+        isDefault: boolean;
     }>;
-    defaultHostId?: string;
+    defaultHostId?: string | null;
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
 };
 
@@ -1165,8 +1161,8 @@ export type UpdateProjectRequest = {
     repositories?: Array<{
         installationId: string;
         githubRepoId: number;
-        isDefault?: boolean;
-        baseBranch?: string;
+        baseBranch: string;
+        isDefault: boolean;
     }>;
     defaultHostId?: string | null;
     defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
@@ -1226,6 +1222,9 @@ export type SessionCheckoutResponseDto = {
 export type SessionResponseDto = {
     id: string;
     organizationId: string;
+    /**
+     * The project the session is listed under.
+     */
     projectId: string;
     hostId: string;
     /**
@@ -5170,6 +5169,10 @@ export type CreateProjectData = {
 
 export type CreateProjectErrors = {
     /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -5178,17 +5181,9 @@ export type CreateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_010 — That repository is not one this GitHub installation covers
-     *
-     * GITHUB_001 — GitHub installation not found
-     *
      * HOSTS_001 — Host not found
      */
     404: ProblemDetailsDto;
-    /**
-     * PROJECTS_006 — That name is a directory another project already holds
-     */
-    409: ProblemDetailsDto;
 };
 
 export type CreateProjectError = CreateProjectErrors[keyof CreateProjectErrors];
@@ -5223,6 +5218,8 @@ export type ArchiveProjectErrors = {
     404: ProblemDetailsDto;
     /**
      * PROJECTS_005 — The project still has open sessions
+     *
+     * PROJECTS_008 — The Unassigned project cannot be renamed or archived
      */
     409: ProblemDetailsDto;
     /**
@@ -5282,6 +5279,10 @@ export type UpdateProjectData = {
 
 export type UpdateProjectErrors = {
     /**
+     * PROJECTS_006 — The repository list is not one a project can hold
+     */
+    400: ProblemDetailsDto;
+    /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
     401: ProblemDetailsDto;
@@ -5290,13 +5291,13 @@ export type UpdateProjectErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * GITHUB_010 — That repository is not one this GitHub installation covers
-     *
-     * HOSTS_001 — Host not found
-     *
      * PROJECTS_001 — Project not found
      */
     404: ProblemDetailsDto;
+    /**
+     * PROJECTS_008 — The Unassigned project cannot be renamed or archived
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UpdateProjectError = UpdateProjectErrors[keyof UpdateProjectErrors];
@@ -5311,6 +5312,15 @@ export type ListSessionsData = {
     body?: never;
     path?: never;
     query?: {
+        /**
+         * Default `recent`
+         */
+        sort?: 'recent' | 'oldest' | 'name';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'shell';
+        /**
+         * A live checkout of it
+         */
+        githubRepoId?: number;
         /**
          * The stored lifecycle, not the derived group.
          */
@@ -5368,10 +5378,6 @@ export type CreateSessionData = {
 };
 
 export type CreateSessionErrors = {
-    /**
-     * SESSIONS_009 — No project to put the session in
-     */
-    400: ProblemDetailsDto;
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -5831,14 +5837,10 @@ export type MoveSessionErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * PROJECTS_001 — Project not found
-     *
      * SESSIONS_001 — Session not found
      */
     404: ProblemDetailsDto;
     /**
-     * SESSIONS_018 — That project does not include this session’s repository
-     *
      * SESSIONS_006 — That project is archived
      *
      * SESSIONS_005 — That session is closed
@@ -5849,7 +5851,7 @@ export type MoveSessionErrors = {
 export type MoveSessionError = MoveSessionErrors[keyof MoveSessionErrors];
 
 export type MoveSessionResponses = {
-    200: SessionResponseDto;
+    201: SessionResponseDto;
 };
 
 export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponses];

@@ -2058,7 +2058,7 @@ export const listProjectsOptions = (options?: Options<ListProjectsData>) => quer
 /**
  * Create a project
  *
- * A body of work with a name, the repositories it holds (each saying whether every new session clones it, and what it branches from), and the host and agent New session picks first. The directory name is derived from the first default repository, else the first repository, else the name, and never changes. A project made here has no origin repository: the one a first session creates for a repository is found by GitHub’s id, this one by its own.
+ * A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.
  */
 export const createProjectMutation = (options?: Partial<Options<CreateProjectData>>): UseMutationOptions<CreateProjectResponse, CreateProjectError, Options<CreateProjectData>> => {
     const mutationOptions: UseMutationOptions<CreateProjectResponse, CreateProjectError, Options<CreateProjectData>> = {
@@ -2112,9 +2112,9 @@ export const getProjectOptions = (options: Options<GetProjectData>) => queryOpti
 });
 
 /**
- * Edit a project
+ * Change a project
  *
- * Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.
+ * The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.
  */
 export const updateProjectMutation = (options?: Partial<Options<UpdateProjectData>>): UseMutationOptions<UpdateProjectResponse, UpdateProjectError, Options<UpdateProjectData>> => {
     const mutationOptions: UseMutationOptions<UpdateProjectResponse, UpdateProjectError, Options<UpdateProjectData>> = {
@@ -2135,7 +2135,7 @@ export const listSessionsQueryKey = (options?: Options<ListSessionsData>) => cre
 /**
  * List the sessions in the caller’s workspace
  *
- * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
+ * Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
 export const listSessionsOptions = (options?: Options<ListSessionsData>) => queryOptions<ListSessionsResponse, ListSessionsError, ListSessionsResponse, ReturnType<typeof listSessionsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -2155,7 +2155,7 @@ export const listSessionsInfiniteQueryKey = (options?: Options<ListSessionsData>
 /**
  * List the sessions in the caller’s workspace
  *
- * Newest first. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
+ * Last activity first unless `sort` says otherwise. Each session’s `state` is the derived group the sidebar shows; `lifecycle` is the stored fold of its log.
  */
 export const listSessionsInfiniteOptions = (options?: Options<ListSessionsData>) => {
     const opts = infiniteQueryOptions<ListSessionsResponse, ListSessionsError, InfiniteData<ListSessionsResponse>, QueryKey<Options<ListSessionsData>>, number | Pick<QueryKey<Options<ListSessionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -2394,9 +2394,9 @@ export const renameSessionMutation = (options?: Partial<Options<RenameSessionDat
 };
 
 /**
- * Move a session to another project
+ * List a session under another project
  *
- * Only a project that includes every repository the session checked out can take it. The branch and the worktree stay where they are: the directory carries the slug of the project that created the session, and nothing on the host changes.
+ * Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.
  */
 export const moveSessionMutation = (options?: Partial<Options<MoveSessionData>>): UseMutationOptions<MoveSessionResponse, MoveSessionError, Options<MoveSessionData>> => {
     const mutationOptions: UseMutationOptions<MoveSessionResponse, MoveSessionError, Options<MoveSessionData>> = {

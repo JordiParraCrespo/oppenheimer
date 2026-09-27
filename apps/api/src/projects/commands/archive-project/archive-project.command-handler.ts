@@ -9,10 +9,10 @@ import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { ArchiveProjectCommand } from './archive-project.command';
 
 /**
- * Retires a project: its directory name leaves circulation and nothing new can be
- * put in it. The row is never deleted — `uq (organizationId, slug)` is a permanent
- * tombstone, so a new project can never inherit a retired one's directory and the
- * grants keyed on its id can never be inherited with it.
+ * Retires a project: nothing new can be listed under it. The row is never deleted
+ * — `uq (organizationId, slug)` is a permanent tombstone, so a new project can
+ * never inherit a retired one's handle, and the grants keyed on its id can never
+ * be inherited with it.
  *
  * **It fails closed, and that is a DI fact rather than a caught exception.** "Is
  * any session still open in this project" is a question only the module that owns
@@ -52,6 +52,10 @@ export class ArchiveProjectCommandHandler
       case 'not-found':
         throw new AppError(ProjectErrors.NOT_FOUND, {
           detail: `No project with id ${command.projectId}`,
+        });
+      case 'unassigned':
+        throw new AppError(ProjectErrors.UNASSIGNED_FIXED, {
+          detail: 'Sessions that name no project are listed in Unassigned',
         });
       case 'in-use':
         throw new AppError(ProjectErrors.HAS_OPEN_SESSIONS, {

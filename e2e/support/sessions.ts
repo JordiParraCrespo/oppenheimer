@@ -213,6 +213,37 @@ export async function mintPairingToken(api: APIRequestContext, name: string): Pr
   return tokenFrom(((await minted.json()) as { installCommand: string }).installCommand);
 }
 
+let projectCounter = 0;
+
+/**
+ * `POST /projects` holding the stub's `xrp-mobile` as its one default repository,
+ * for a spec about projects or moving between them. A session that names none is
+ * listed in the workspace's Unassigned project
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
+ */
+export async function createProject(
+  api: APIRequestContext,
+  installationId: string,
+  name = `E2E project ${process.pid}-${++projectCounter}`,
+): Promise<string> {
+  const created = await api.post('/api/v1/projects', {
+    data: {
+      name,
+      repositories: [
+        {
+          installationId,
+          githubRepoId: STUB_REPOSITORIES.mobile.githubRepoId,
+          baseBranch: STUB_REPOSITORIES.mobile.defaultBranch,
+          isDefault: true,
+        },
+      ],
+    },
+    failOnStatusCode: false,
+  });
+  expect(created.status(), await created.text()).toBe(201);
+  return ((await created.json()) as { id: string }).id;
+}
+
 let sessionCounter = 0;
 
 /** What the composer can add to a session besides its checkout. */
