@@ -15,13 +15,14 @@ import {
   displayNameSchema,
   githubRepoIdSchema,
   gitRefSchema,
+  installationIdSchema,
   promptSchema,
 } from './primitives';
 
 /**
  * Automation shapes (`product/versions/mvp/16-automations-architecture.md`).
  *
- * What the editor's four steps send — Where, When, What, Agent — and the
+ * What the editor's three steps send — Task, Trigger, Where it runs — and the
  * queries the overview, the runs list, the history chart and the trigger
  * preview make. The constraints decidable from the body alone are here; whether
  * the project holds the repositories, whether the host is the owner's and
@@ -100,7 +101,7 @@ export const triggerInputSchema = z.union([scheduleTriggerInputSchema, githubTri
 export type TriggerInputDto = z.infer<typeof triggerInputSchema>;
 
 /**
- * Step 4's engine row: the model, the permission level and the effort.
+ * How each run's agent is started: the model, the permission level and the effort.
  * Permission is `auto` or `full` only — `ask` has nobody to ask — and `auto`
  * is the default, because a default that escalates is the one mistake this
  * field must not make.
@@ -113,24 +114,40 @@ export const automationLaunchSchema = z.object({
 
 export type AutomationLaunchDto = z.infer<typeof automationLaunchSchema>;
 
+/**
+ * One repository an automation works in. The editor offers the project's
+ * repositories first and then every other repository the workspace's
+ * installations reach, so a repository is named the way a session's checkout
+ * is — our installation row plus GitHub's id — rather than by project.
+ */
+export const automationRepositoryInputSchema = z.object({
+  installationId: installationIdSchema,
+  githubRepoId: githubRepoIdSchema,
+});
+
+export type AutomationRepositoryInputDto = z.infer<typeof automationRepositoryInputSchema>;
+
 const repositoriesSchema = z
-  .array(githubRepoIdSchema)
+  .array(automationRepositoryInputSchema)
   .min(1)
   .max(MAX_AUTOMATION_REPOSITORIES)
-  .refine((ids) => new Set(ids).size === ids.length);
+  .refine((items) => new Set(items.map((item) => item.githubRepoId)).size === items.length);
 
 const automationFields = z.object({
-  /** Step 1, Where. */
+  /** Where it runs: the project it is listed under, its repositories and host. */
   projectId: z.string().uuid(),
   repositories: repositoriesSchema,
   hostId: z.string().uuid(),
-  /** The page title. */
+  /** Task. */
   name: displayNameSchema,
-  /** Step 2, When: any trigger starts a run. */
+  /** Trigger: any trigger starts a run. */
   triggers: z.array(triggerInputSchema).min(1).max(MAX_AUTOMATION_TRIGGERS),
-  /** Step 3, What. */
   prompt: promptSchema,
-  /** Step 4, Agent. */
+  /**
+   * Where it runs, continued: the agent and its model. Permission and effort are
+   * not drawn by the frames; they default (`auto`, the agent's own effort) and
+   * the API takes them for callers that set them.
+   */
   agent: codingAgentSchema,
   launch: automationLaunchSchema.default({ permission: 'auto' }),
   /** Absent is active: an automation starts listening as soon as it is saved. */
@@ -143,11 +160,11 @@ const automationFields = z.object({
 
 /** Every GitHub trigger listens only on repositories the automation works in. */
 function triggersWithinRepositories(value: {
-  repositories?: number[];
+  repositories?: AutomationRepositoryInputDto[];
   triggers?: TriggerInputDto[];
 }): boolean {
   if (!value.repositories || !value.triggers) return true;
-  const allowed = new Set(value.repositories);
+  const allowed = new Set(value.repositories.map((repository) => repository.githubRepoId));
   return value.triggers.every(
     (trigger) =>
       trigger.source !== 'github' || trigger.repositories.every((id) => allowed.has(id)),

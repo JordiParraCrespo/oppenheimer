@@ -164,6 +164,10 @@ export class WorkSessionOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   ackedReportHash!: string | null;
 
+  /** Who asked for the session: `person`, or `automation` (whose run points back here). */
+  @Column({ type: 'varchar', length: 16, default: 'person' })
+  origin!: 'person' | 'automation';
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 
