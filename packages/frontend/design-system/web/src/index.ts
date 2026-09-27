@@ -217,6 +217,7 @@ export { Separator } from './components/separator';
 export type { SessionRename } from './components/session-item';
 export { SessionItem, SessionList } from './components/session-item';
 export {
+  SettingsForm,
   SettingsGroup,
   SettingsHeading,
   SettingsRow,

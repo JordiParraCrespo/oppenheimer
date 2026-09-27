@@ -5,6 +5,8 @@ import { Session } from '../auth/database/session.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 import { UsersModule } from '../users/user.module';
 import { LocaleResolver } from './application/locale.resolver';
+import { ChangeEmailCommandHandler } from './commands/change-email/change-email.command-handler';
+import { ChangeEmailHttpController } from './commands/change-email/change-email.http.controller';
 import { ChangePasswordCommandHandler } from './commands/change-password/change-password.command-handler';
 import { ChangePasswordHttpController } from './commands/change-password/change-password.http.controller';
 import { DeleteAvatarCommandHandler } from './commands/delete-avatar/delete-avatar.command-handler';
@@ -40,8 +42,8 @@ import { GetUserSettingsHttpController } from './queries/get-user-settings/get-u
 import { GetUserSettingsQueryHandler } from './queries/get-user-settings/get-user-settings.query-handler';
 
 // Registration order matters: every static sub-route (`settings`, `avatar`,
-// `sessions`) must be matched before `sessions/:id`, and the bare `GET`/`PATCH`
-// on the collection last.
+// `sessions`, `email`) must be matched before `sessions/:id`, and the bare
+// `GET`/`PATCH`/`DELETE` on the collection last.
 const httpControllers = [
   GetUserSettingsHttpController,
   UpdateUserSettingsHttpController,
@@ -51,6 +53,7 @@ const httpControllers = [
   RevokeOtherSessionsHttpController,
   RevokeSessionHttpController,
   ChangePasswordHttpController,
+  ChangeEmailHttpController,
   GetProfileHttpController,
   UpdateProfileHttpController,
 ];
@@ -63,6 +66,7 @@ const commandHandlers: Provider[] = [
   ChangePasswordCommandHandler,
   RevokeSessionCommandHandler,
   RevokeOtherSessionsCommandHandler,
+  ChangeEmailCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -85,7 +89,8 @@ const adapters: Provider[] = [
 ];
 
 /**
- * The caller's own account: profile fields, preferences, password and sessions.
+ * The caller's own account: profile fields, preferences, email, password and
+ * sessions.
  *
  * Imports `UsersModule` for its `USER_REPOSITORY` — the `user` row is that
  * module's aggregate, and this module reads and updates the profile columns on

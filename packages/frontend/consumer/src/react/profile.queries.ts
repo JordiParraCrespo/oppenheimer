@@ -1,7 +1,12 @@
 'use client';
 
 import { usersKeys, withCacheOnSuccess } from '@oppenheimer/frontend-core/react';
-import type { ChangeOwnPasswordDto, UpdateProfileDto } from '@oppenheimer/shared/schemas/profile';
+import type {
+  ChangeEmailDto,
+  ChangeOwnPasswordDto,
+  DeleteAccountDto,
+  UpdateProfileDto,
+} from '@oppenheimer/shared/schemas/profile';
 import {
   type UseMutationOptions,
   type UseQueryOptions,
@@ -137,5 +142,33 @@ export function useRevokeOtherProfileSessions(options?: UseMutationOptions<void,
     ...withCacheOnSuccess(options, () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.sessions() });
     }),
+  });
+}
+
+/**
+ * Asking to move the account to another address. Nothing is cached: the
+ * profile keeps its current address until the link sent to the new one is
+ * followed, and that lands back on Settings with a fresh load.
+ */
+export function useChangeEmail(options?: UseMutationOptions<void, Error, ChangeEmailDto>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    mutationFn: (dto: ChangeEmailDto) => app.profile.changeEmail(dto),
+    ...options,
+  });
+}
+
+/**
+ * Deleting the account. Leaves the cache alone: the caller signs out next,
+ * and signing out is what clears it — clearing here would re-fetch every
+ * mounted query as a 401 in the moment between the two.
+ */
+export function useDeleteAccount(options?: UseMutationOptions<void, Error, DeleteAccountDto>) {
+  const app = useConsumerApp();
+
+  return useMutation({
+    mutationFn: (dto: DeleteAccountDto) => app.profile.deleteAccount(dto),
+    ...options,
   });
 }

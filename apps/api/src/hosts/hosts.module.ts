@@ -10,6 +10,7 @@ import { UsersModule } from '../users/user.module';
 import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
+import { HostAccountErasure } from './application/host-account-erasure.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
 import { HostCredentialResolver } from './application/host-credential.resolver';
 import { HostKeyResolver } from './application/host-key.resolver';
@@ -168,6 +169,7 @@ const resolvers: Provider[] = [
     ...repositories,
     ...resolvers,
     ...AuthModule.contributeCredentials([HostCredentialResolver]),
+    ...UsersModule.contributeAccountErasure([HostAccountErasure]),
     RunnerReleaseConfig,
     HostUsageRegistry,
     HostPrincipalGuard,
