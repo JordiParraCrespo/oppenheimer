@@ -495,6 +495,8 @@ export const setActive = <ThrowOnError extends boolean = false>(options: Options
 
 /**
  * Get the caller's own membership in an organization
+ *
+ * Answers for the organization in the path, never the session’s active one. A caller who is not a member there holds no roles in it and is refused by the policy check (AUTH_002).
  */
 export const getMembership = <ThrowOnError extends boolean = false>(options: Options<GetMembershipData, ThrowOnError>): RequestResult<GetMembershipResponses, GetMembershipErrors, ThrowOnError> => (options.client ?? client).get<GetMembershipResponses, GetMembershipErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

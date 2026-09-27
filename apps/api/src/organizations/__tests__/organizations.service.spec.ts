@@ -508,26 +508,5 @@ describe('OrganizationsService', () => {
       expect(result.id).toBe('m1');
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', [], 'org1');
     });
-
-    it("reads the caller's own membership row in the organization named", async () => {
-      memberRecords.findOne.mockResolvedValue({ ...memberRecord, createdAt: new Date() });
-
-      const result = await service.getMembership('org1', 'u1');
-
-      // The organization comes from the path, never the session's active one.
-      expect(memberRecords.findOne).toHaveBeenCalledWith({
-        where: { organizationId: 'org1', userId: 'u1' },
-      });
-      expect(result).toMatchObject({ id: 'm1', organizationId: 'org1', userId: 'u1' });
-      expect(result.user).toMatchObject({ email: 'member@x.com' });
-    });
-
-    it('refuses a caller with no membership there as not a member (ORG_003)', async () => {
-      memberRecords.findOne.mockResolvedValue(null);
-
-      await expect(service.getMembership('org1', 'u1')).rejects.toMatchObject({
-        code: 'ORG_003',
-      });
-    });
   });
 });

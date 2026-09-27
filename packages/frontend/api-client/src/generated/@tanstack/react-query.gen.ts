@@ -895,6 +895,8 @@ export const getMembershipQueryKey = (options: Options<GetMembershipData>) => cr
 
 /**
  * Get the caller's own membership in an organization
+ *
+ * Answers for the organization in the path, never the session’s active one. A caller who is not a member there holds no roles in it and is refused by the policy check (AUTH_002).
  */
 export const getMembershipOptions = (options: Options<GetMembershipData>) => queryOptions<GetMembershipResponse, GetMembershipError, GetMembershipResponse, ReturnType<typeof getMembershipQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

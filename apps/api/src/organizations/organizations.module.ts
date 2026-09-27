@@ -10,6 +10,7 @@ import { WorkspaceAccountErasure } from './application/workspace-account-erasure
 import { ProvisionPersonalWorkspaceCommandHandler } from './commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from './database/invitation.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
+import { MemberRepository } from './database/member.repository';
 import { OrganizationOrmEntity } from './database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from './database/personal-workspace.repository';
 import { WorkspaceLookupRepository } from './database/workspace-lookup.repository';
@@ -17,8 +18,14 @@ import { InvitationsController, OrganizationInvitationsController } from './invi
 import { InvitationsService } from './invitations.service';
 import { MembersController } from './members.controller';
 import { OrganizationsController } from './organizations.controller';
-import { PERSONAL_WORKSPACE_REPOSITORY, WORKSPACE_LOOKUP } from './organizations.di-tokens';
+import {
+  MEMBER_REPOSITORY,
+  PERSONAL_WORKSPACE_REPOSITORY,
+  WORKSPACE_LOOKUP,
+} from './organizations.di-tokens';
 import { OrganizationsService } from './organizations.service';
+import { GetMembershipHttpController } from './queries/get-membership/get-membership.http.controller';
+import { GetMembershipQueryHandler } from './queries/get-membership/get-membership.query-handler';
 import { WorkspacesController } from './workspaces.controller';
 import { WorkspacesService } from './workspaces.service';
 
@@ -38,9 +45,12 @@ import { WorkspacesService } from './workspaces.service';
  */
 const commandHandlers: Provider[] = [ProvisionPersonalWorkspaceCommandHandler];
 
+const queryHandlers: Provider[] = [GetMembershipQueryHandler];
+
 const repositories: Provider[] = [
   { provide: PERSONAL_WORKSPACE_REPOSITORY, useClass: PersonalWorkspaceRepository },
   { provide: WORKSPACE_LOOKUP, useClass: WorkspaceLookupRepository },
+  { provide: MEMBER_REPOSITORY, useClass: MemberRepository },
 ];
 
 @Module({
@@ -62,6 +72,9 @@ const repositories: Provider[] = [
   ],
   controllers: [
     OrganizationsController,
+    // Before `MembersController`: the static `members/me` segment is
+    // registered ahead of the parameterized member routes.
+    GetMembershipHttpController,
     MembersController,
     OrganizationInvitationsController,
     InvitationsController,
@@ -72,6 +85,7 @@ const repositories: Provider[] = [
     InvitationsService,
     WorkspacesService,
     ...commandHandlers,
+    ...queryHandlers,
     ...repositories,
     ...UsersModule.contributeAccountErasure([WorkspaceAccountErasure]),
   ],
