@@ -1,7 +1,7 @@
 import type { RepositoryRowValue } from '@oppenheimer/design-system-web';
 
 /**
- * What the project page holds while it is being filled, apart from the
+ * What the project dialog holds while it is being filled, apart from the
  * name, which is the form's: the rows the picker ticked, the default host,
  * the default agent.
  */

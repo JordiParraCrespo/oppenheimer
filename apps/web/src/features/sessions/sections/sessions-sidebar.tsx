@@ -6,7 +6,7 @@ import {
   Skeleton,
   useNow,
 } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
   useMoveSession,
@@ -42,6 +42,9 @@ import type { SessionRowActions } from './session-row';
 const DeleteSessionDialog = lazy(() =>
   import('../dialogs/delete-session').then((module) => ({ default: module.DeleteSessionDialog })),
 );
+const ProjectDialog = lazy(() =>
+  import('../dialogs/project').then((module) => ({ default: module.ProjectDialog })),
+);
 
 /**
  * The console's sidebar body: the sessions grouped by project
@@ -61,7 +64,9 @@ const DeleteSessionDialog = lazy(() =>
  * The head is a component that draws what it is handed; each group and each
  * row are sections, because the highlight is theirs to subscribe to; the
  * delete dialog owns its own mutation, and New project and Project settings
- * are pages (`/projects/new`, `/projects/$projectId`).
+ * are one dialog over the console, held open here because the head's New
+ * project and every group's cog open it (`design/version1/SessionsConsole.dc.html`).
+ * A project made from here opens New session on it.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -87,6 +92,8 @@ export function SessionsSidebar() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
+  // The project dialog: `{}` creates one, `{ project }` edits it.
+  const [projectDialog, setProjectDialog] = useState<{ project?: ProjectEntity } | null>(null);
 
   const rename = useRenameSession();
   const move = useMoveSession();
@@ -156,7 +163,7 @@ export function SessionsSidebar() {
         onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
         onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
         onQueryChange={setQuery}
-        onNewProject={() => navigate({ to: '/projects/new' })}
+        onNewProject={() => setProjectDialog({})}
       />
 
       {failure ? (
@@ -205,9 +212,7 @@ export function SessionsSidebar() {
                 onNewSessionHere={(target) =>
                   navigate({ to: '/sessions/new', search: { project: target.id } })
                 }
-                onSettings={(target) =>
-                  navigate({ to: '/projects/$projectId', params: { projectId: target.id } })
-                }
+                onSettings={(target) => setProjectDialog({ project: target })}
                 rows={rows}
               />
             );
@@ -218,6 +223,16 @@ export function SessionsSidebar() {
       <Suspense fallback={null}>
         {deleting ? (
           <DeleteSessionDialog session={deleting} onClose={() => setDeleting(null)} />
+        ) : null}
+        {projectDialog ? (
+          <ProjectDialog
+            key={projectDialog.project?.id ?? 'new'}
+            project={projectDialog.project}
+            onClose={() => setProjectDialog(null)}
+            onCreated={(created) =>
+              navigate({ to: '/sessions/new', search: { project: created.id } })
+            }
+          />
         ) : null}
       </Suspense>
     </div>

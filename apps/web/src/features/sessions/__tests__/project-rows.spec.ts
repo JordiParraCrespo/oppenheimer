@@ -2,7 +2,7 @@ import { repositoryKey } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
 import { toProjectRepositoryInputs } from '../lib/project-rows';
 
-/** What the project page sends (`product/versions/mvp/05-screens.md`). */
+/** What the project dialog sends (`product/versions/mvp/05-screens.md`). */
 describe('toProjectRepositoryInputs', () => {
   const id = repositoryKey({ installationId: 'inst-1', githubRepoId: 2 });
 

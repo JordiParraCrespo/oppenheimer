@@ -13,7 +13,6 @@
     "title": "Add a host",
     "meta": "Nothing on the host is exposed to the internet.",
     "back": "Back",
-    "crumbNewSession": "New session",
     "use": "Use this host",
     "defaultName": "New host",
     "install": {
@@ -29,7 +28,13 @@
       "subtitle": "The runner registers itself with the hostname it reports."
     },
     "crumbHosts": "Hosts",
-    "done": "Done"
+    "done": "Done",
+    "dialog": {
+      "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.",
+      "copyCommand": "Copy command",
+      "copyPrompt": "Copy agent prompt",
+      "inspect": "Inspect command and prompt"
+    }
   },
   "settings": {
     "state": {

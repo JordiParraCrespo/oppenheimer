@@ -310,63 +310,48 @@
     "passwordsDoNotMatch": "Passwords do not match"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "New project",
       "editTitle": "Project settings",
-      "name": "Project name",
-      "namePlaceholder": "Name this project",
-      "back": "Back",
-      "crumbSessions": "Sessions",
-      "crumbNewSession": "New session",
+      "name": "Name",
+      "namePlaceholder": "Name your project",
       "create": "Create project",
       "creating": "Creating…",
       "save": "Save changes",
       "saving": "Saving…",
       "failed": "The project could not be created.",
       "saveFailed": "The project could not be saved.",
-      "recap": {
-        "name": "Name the project, then pick its repositories.",
-        "repositories": "Pick at least one repository.",
-        "default": "Mark at least one repository as default."
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted.",
+      "repositories": {
+        "label": "Repositories",
+        "add": "Add a repository…",
+        "remove": "Remove {{name}}",
+        "hint": "Sessions in this project can clone these. Add at least one.",
+        "needsDefault": "Clone at least one of them by default, under Defaults.",
+        "noMatch": "No repository matches “{{query}}”.",
+        "none": "No repository left to add.",
+        "branchEmpty": "No branch named “{{query}}”"
       },
-      "summary": {
-        "repositories_one": "{{count}} repository · {{defaults}} default",
-        "repositories_other": "{{count}} repositories · {{defaults}} default"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositories",
-          "subtitle": "The code sessions in this project can clone.",
-          "label": "Default repositories",
-          "hint": "Ticked in every new session. Add others per session.",
-          "defaultCount": "{{defaults}} of {{count}} by default",
-          "search": "Search repositories…",
-          "noMatch": "No repository matches “{{query}}”.",
-          "none": "No repository is connected yet.",
-          "default": "Default",
-          "defaultTitle": "Cloned by default in new sessions",
-          "branchEmpty": "No branch named “{{query}}”"
-        },
-        "host": {
-          "title": "Default host",
-          "subtitle": "Where new sessions run unless you pick another.",
-          "none": "No host is paired yet."
-        },
-        "agent": {
-          "title": "Default agent",
-          "subtitle": "Started in every new session. Change it per session."
-        }
+      "defaults": {
+        "label": "Defaults",
+        "optional": "optional",
+        "hint": "What every new session in this project starts with. Each can be changed per session.",
+        "host": "Host",
+        "noHost": "No host is paired yet.",
+        "agent": "Agent",
+        "cloned": "Cloned by default",
+        "clonedNone": "Select repositories above first.",
+        "clonedSummary_one": "{{count}} cloned",
+        "clonedSummary_other": "{{count}} cloned"
       },
       "delete": {
-        "title": "Delete project",
-        "hint": "Delete this project.",
-        "blocked_one": "Move or delete its {{count}} session first.",
-        "blocked_other": "Move or delete its {{count}} sessions first.",
         "action": "Delete project",
+        "hint": "Delete this project",
+        "blocked_one": "Move or delete its {{count}} session first",
+        "blocked_other": "Move or delete its {{count}} sessions first",
         "deleting": "Deleting…",
         "failed": "The project could not be deleted."
-      },
-      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+      }
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
@@ -602,10 +587,8 @@
     },
     "editor": {
       "newTitle": "New automation",
-      "name": "Automation name",
+      "name": "Name",
       "namePlaceholder": "Name this automation",
-      "back": "Back",
-      "crumb": "Automations",
       "create": "Create automation",
       "recap": "Name the automation, then say where it runs."
     }
@@ -625,7 +608,6 @@
       "title": "Add a host",
       "meta": "Nothing on the host is exposed to the internet.",
       "back": "Back",
-      "crumbNewSession": "New session",
       "use": "Use this host",
       "defaultName": "New host",
       "install": {
@@ -641,7 +623,13 @@
         "subtitle": "The runner registers itself with the hostname it reports."
       },
       "crumbHosts": "Hosts",
-      "done": "Done"
+      "done": "Done",
+      "dialog": {
+        "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.",
+        "copyCommand": "Copy command",
+        "copyPrompt": "Copy agent prompt",
+        "inspect": "Inspect command and prompt"
+      }
     },
     "settings": {
       "state": {

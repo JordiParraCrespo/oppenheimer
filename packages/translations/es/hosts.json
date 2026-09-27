@@ -13,7 +13,6 @@
     "title": "Añadir un host",
     "meta": "Nada del host queda expuesto a internet.",
     "back": "Atrás",
-    "crumbNewSession": "Nueva sesión",
     "use": "Usar este host",
     "defaultName": "Nuevo host",
     "install": {
@@ -29,7 +28,13 @@
       "subtitle": "El runner se registra con el nombre de máquina que reporta."
     },
     "crumbHosts": "Hosts",
-    "done": "Listo"
+    "done": "Listo",
+    "dialog": {
+      "description": "Ejecuta un comando en la máquina donde quieres las sesiones. Nada de ella queda expuesto a internet.",
+      "copyCommand": "Copiar comando",
+      "copyPrompt": "Copiar instrucción para el agente",
+      "inspect": "Ver el comando y la instrucción"
+    }
   },
   "settings": {
     "state": {

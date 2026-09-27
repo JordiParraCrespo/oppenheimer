@@ -10,15 +10,15 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * Add host, in a browser, against the real control plane.
  *
- * The Add a host page is how a machine is paired from inside the console
- * (`product/versions/mvp/05-screens.md`), and what it hands the reader is a
+ * The Add a host dialog is how a machine is paired from inside the console
+ * (`design/version1/SessionsConsole.dc.html`), and what it hands the reader is a
  * live credential: the install command it prints carries a token the API
  * minted for this account, and spending it is what makes the machine theirs.
  * So the spec spends it — the secret comes off the screen, a runner redeems it
  * anonymously the way the installer does, and the status line is watched to
  * resolve.
  *
- * The regenerate leg is the one worth the extra minute. It proves the page
+ * The regenerate leg is the one worth the extra minute. It proves the dialog
  * is watching **its** token rather than the host list: after a new token is
  * minted, a runner spending the *old* one gives this account a host, and the
  * status line must stay "Listening for this host…" — otherwise Use this host
@@ -44,10 +44,14 @@ test('pairs a machine from the console and selects it for the next session', asy
   await page.getByRole('button', { name: 'Host' }).click();
   await page.getByRole('button', { name: 'Add host…' }).click();
 
-  // A page over the main column since the 2026-09-26 evening export, not a pane.
-  await expect(page).toHaveURL(/\/hosts\/new$/);
-  const pane = page.getByRole('main');
-  await expect(pane.getByRole('heading', { name: 'Add a host' })).toBeVisible();
+  // A dialog over the console since the 2026-09-27 export, with no address.
+  const pane = page.getByRole('dialog', { name: 'Add a host' });
+  await expect(pane).toBeVisible();
+  await expect(page).toHaveURL(/\/sessions\/new$/);
+  // The copy buttons lead; the instruction itself folds behind Inspect.
+  await expect(pane.getByRole('button', { name: 'Copy command' })).toBeVisible();
+  await expect(pane.getByRole('button', { name: 'Copy agent prompt' })).toBeVisible();
+  await pane.getByRole('button', { name: 'Inspect command and prompt' }).click();
 
   // The status line, which is a different element from the panel the command
   // is printed in — asserting on text alone would match the token's own name.
@@ -84,15 +88,16 @@ test('pairs a machine from the console and selects it for the next session', asy
 
   // The status line resolves in place. The name is the token's, not the one
   // the runner detected — naming the machine before it exists is what the mint
-  // is for, and the page names it "New host".
+  // is for, and the dialog names it "New host".
   await expect(status).toContainText('New host', { timeout: 30_000 });
   const use = pane.getByRole('button', { name: 'Use this host' });
   await expect(use).toBeEnabled();
   await use.click();
 
-  // Back on New session with the machine in the address, and in the draft: the
+  // The dialog closes on New session with the machine in the draft: the
   // machine just paired is the one the next session will run on.
-  await expect(page).toHaveURL(/\/sessions\/new\?host=/);
+  await expect(pane).toBeHidden();
+  await expect(page).toHaveURL(/\/sessions\/new$/);
   await expect(page.getByRole('button', { name: 'Host' })).toContainText('New host');
 
   // And the control plane holds it under the id the runner was given.

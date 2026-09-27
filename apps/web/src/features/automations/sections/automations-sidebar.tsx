@@ -10,8 +10,16 @@ import {
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+/**
+ * The dialog loads when first opened: the sidebar is on every automations
+ * route, and what it imports is that list's first load.
+ */
+const NewAutomationDialog = lazy(() =>
+  import('../dialogs/new-automation').then((module) => ({ default: module.NewAutomationDialog })),
+);
 
 /**
  * The console's sidebar body on its automations list
@@ -27,6 +35,11 @@ import { useTranslation } from 'react-i18next';
  * The rows, the search that narrows them and the expanded runs under the
  * selected one arrive with that slice — a search with nothing to narrow is
  * not mounted.
+ *
+ * New automation, on top and in each group, opens the New automation dialog
+ * over the console; a group's opens it for that project. Which one is open is
+ * this sidebar's state, because its buttons are the only ones that open it
+ * from here.
  */
 export function AutomationsSidebar() {
   const { t } = useTranslation();
@@ -34,13 +47,15 @@ export function AutomationsSidebar() {
   const projects = useProjects();
   const named = projects.data?.filter((project) => !project.isUnassigned);
   const [closed, setClosed] = useState<string[]>([]);
+  // The New automation dialog: `{}` from the top, `{ project }` from a group.
+  const [creating, setCreating] = useState<{ project?: string } | null>(null);
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-3 pb-2.5">
-        <Button size="sm" block render={<Link to="/automations/new" />}>
+        <Button size="sm" block onClick={() => setCreating({})}>
           {t('automations.sidebar.new')}
         </Button>
       </div>
@@ -85,7 +100,7 @@ export function AutomationsSidebar() {
                       size="xs"
                       variant="quiet"
                       aria-label={t('automations.sidebar.newHere', { name: project.name })}
-                      render={<Link to="/automations/new" search={{ project: project.id }} />}
+                      onClick={() => setCreating({ project: project.id })}
                     >
                       <Plus />
                     </IconButton>
@@ -94,9 +109,9 @@ export function AutomationsSidebar() {
                 {open ? (
                   <SidebarEmptyRow>
                     {t('automations.sidebar.emptyProject')}{' '}
-                    <Link to="/automations/new" search={{ project: project.id }}>
+                    <button type="button" onClick={() => setCreating({ project: project.id })}>
                       {t('automations.sidebar.createOne')}
-                    </Link>
+                    </button>
                   </SidebarEmptyRow>
                 ) : null}
               </div>
@@ -114,6 +129,12 @@ export function AutomationsSidebar() {
           </div>
         )}
       </div>
+
+      <Suspense fallback={null}>
+        {creating ? (
+          <NewAutomationDialog project={creating.project} onClose={() => setCreating(null)} />
+        ) : null}
+      </Suspense>
     </div>
   );
 }

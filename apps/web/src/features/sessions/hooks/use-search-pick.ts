@@ -3,12 +3,11 @@ import { useEffect, useRef } from 'react';
 /**
  * Apply an id named in the address once the list can answer it.
  *
- * The external system is the URL: the sidebar's "New session here" names a
- * project in `/sessions/new?project=`, and the Add a host page names the
- * machine it paired in `?host=`. The chip has to start on it, which needs the
- * entity and not just the id — and, for a project, the host list, since a
- * default host the list has not answered for yet would be skipped as if it
- * were gone. The pick runs once per address: a value the reader then changes
+ * The external system is the URL: the sidebar's "New session here", and a
+ * project made from the sidebar, name it in `/sessions/new?project=`. The
+ * chip has to start on it, which needs the entity and not just the id — and
+ * the host list, since a default host the list has not answered for yet
+ * would be skipped as if it were gone. The pick runs once per address: a value the reader then changes
  * by hand stays changed, and an id the list does not hold is ignored rather
  * than written.
  */

@@ -55,11 +55,18 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 - Building a screen this console does not have. There is no profile page
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
-  are features named after their modules (`profile`, `hosts`). There is one
-  pairing screen, `AddHostScreen`, mounted twice: at `/hosts/new` over the
-  console's main column for the composer's host chip, and at
-  `/settings/hosts/new` inside Settings, where `from="settings"` makes its
-  header read Hosts and Done (`product/versions/mvp/05-screens.md`).
+  are features named after their modules (`profile`, `hosts`). Pairing a
+  machine has two surfaces over one set of parts: the Add a host dialog the
+  composer's host chip opens (`features/sessions/dialogs/add-host.tsx`), and
+  the page at `/settings/hosts/new` inside Settings
+  (`features/hosts/screens/add-host.tsx`). The instruction panel, the token
+  line and the status row are the kit's (`@oppenheimer/frontend-web`
+  `hosts`), because a feature may not import another.
+- Giving a dialog a URL. New project, Project settings, Add a host and New
+  automation are dialogs over the console (`design/version1/SessionsConsole.dc.html`,
+  2026-09-27): the trigger holds the open state and the dialog has no route,
+  as a drawer has none (`product/versions/mvp/05-screens.md`). What happens
+  after a create is the trigger's to decide.
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:

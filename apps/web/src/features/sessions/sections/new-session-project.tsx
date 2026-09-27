@@ -1,12 +1,21 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
+import { lazy, Suspense, useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ProjectSelect } from '../components/project-select';
 import { useNewSessionDraft } from '../hooks/use-new-session-form';
 import { useSearchPick } from '../hooks/use-search-pick';
 import { projectPrefill, toProjectOptions } from '../lib/session-options';
+
+/**
+ * The dialog loads when first opened: New session is the console's landing
+ * screen, and making a project is the rare path through it.
+ */
+const ProjectDialog = lazy(() =>
+  import('../dialogs/project').then((module) => ({ default: module.ProjectDialog })),
+);
 
 /**
  * The project chip, bound to the draft: first in the scope band, because
@@ -18,15 +27,16 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * workspace has, so a refetch of the host list does not re-render it — what
  * it subscribes to is only whether that list has answered, because a pick
  * made before it has would drop the project's default host as if it were
- * gone. New project… is the project page (`/projects/new`), which lands back
- * here with what it made in the address — the same `?project=` the sidebar's
- * "New session here" names — and the chip picks it once the lists can.
+ * gone. New project… opens the project dialog over the console, and what it
+ * makes comes straight back to this chip, picked with its defaults. The
+ * sidebar's "New session here" names a project in the address instead
+ * (`?project=`), and the chip picks that once the lists can.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
   const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
-  const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const projects = useProjects();
@@ -61,19 +71,24 @@ export function NewSessionProject() {
   useSearchPick(search.project, projects.data, hostsReady === true, pick);
 
   return (
-    <ProjectSelect
-      projects={toProjectOptions(projects.data ?? [], {
-        noRepositories: t('sessions.new.project.noRepositories'),
-        unassigned: t('projects.unassigned'),
-      })}
-      value={value}
-      onValueChange={(id) => {
-        const next = projects.data?.find((candidate) => candidate.id === id);
-        if (next) pick(next);
-      }}
-      onNewProject={() => navigate({ to: '/projects/new' })}
-      loading={projects.isPending}
-      variant="tab"
-    />
+    <>
+      <ProjectSelect
+        projects={toProjectOptions(projects.data ?? [], {
+          noRepositories: t('sessions.new.project.noRepositories'),
+          unassigned: t('projects.unassigned'),
+        })}
+        value={value}
+        onValueChange={(id) => {
+          const next = projects.data?.find((candidate) => candidate.id === id);
+          if (next) pick(next);
+        }}
+        onNewProject={() => setCreating(true)}
+        loading={projects.isPending}
+        variant="tab"
+      />
+      <Suspense fallback={null}>
+        {creating ? <ProjectDialog onClose={() => setCreating(false)} onCreated={pick} /> : null}
+      </Suspense>
+    </>
   );
 }

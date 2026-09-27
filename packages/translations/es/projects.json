@@ -1,61 +1,46 @@
 {
-  "page": {
+  "dialog": {
     "newTitle": "Nuevo proyecto",
     "editTitle": "Ajustes del proyecto",
-    "name": "Nombre del proyecto",
+    "name": "Nombre",
     "namePlaceholder": "Ponle nombre al proyecto",
-    "back": "Atrás",
-    "crumbSessions": "Sesiones",
-    "crumbNewSession": "Nueva sesión",
     "create": "Crear proyecto",
     "creating": "Creando…",
     "save": "Guardar cambios",
     "saving": "Guardando…",
     "failed": "No se pudo crear el proyecto.",
     "saveFailed": "No se pudo guardar el proyecto.",
-    "recap": {
-      "name": "Ponle nombre al proyecto y elige sus repositorios.",
-      "repositories": "Elige al menos un repositorio.",
-      "default": "Marca al menos un repositorio por defecto."
+    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar.",
+    "repositories": {
+      "label": "Repositorios",
+      "add": "Añadir un repositorio…",
+      "remove": "Quitar {{name}}",
+      "hint": "Las sesiones de este proyecto pueden clonarlos. Añade al menos uno.",
+      "needsDefault": "Clona al menos uno por defecto, en Valores por defecto.",
+      "noMatch": "Ningún repositorio coincide con “{{query}}”.",
+      "none": "No quedan repositorios por añadir.",
+      "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
     },
-    "summary": {
-      "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-      "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-    },
-    "steps": {
-      "repositories": {
-        "title": "Repositorios",
-        "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-        "label": "Repositorios por defecto",
-        "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-        "defaultCount": "{{defaults}} de {{count}} por defecto",
-        "search": "Buscar repositorios…",
-        "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-        "none": "Todavía no hay ningún repositorio conectado.",
-        "default": "Por defecto",
-        "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-        "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-      },
-      "host": {
-        "title": "Host por defecto",
-        "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-        "none": "Todavía no hay ningún host emparejado."
-      },
-      "agent": {
-        "title": "Agente por defecto",
-        "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-      }
+    "defaults": {
+      "label": "Valores por defecto",
+      "optional": "opcional",
+      "hint": "Con lo que empieza cada sesión nueva de este proyecto. Todo se puede cambiar por sesión.",
+      "host": "Host",
+      "noHost": "Todavía no hay ningún host emparejado.",
+      "agent": "Agente",
+      "cloned": "Clonados por defecto",
+      "clonedNone": "Primero elige repositorios arriba.",
+      "clonedSummary_one": "{{count}} clonado",
+      "clonedSummary_other": "{{count}} clonados"
     },
     "delete": {
-      "title": "Eliminar proyecto",
-      "hint": "Elimina este proyecto.",
-      "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-      "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
       "action": "Eliminar proyecto",
+      "hint": "Elimina este proyecto",
+      "blocked_one": "Mueve o elimina su {{count}} sesión primero",
+      "blocked_other": "Mueve o elimina sus {{count}} sesiones primero",
       "deleting": "Eliminando…",
       "failed": "No se pudo eliminar el proyecto."
-    },
-    "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
+    }
   },
   "deleteDialog": {
     "title": "¿Eliminar {{name}}?",

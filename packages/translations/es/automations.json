@@ -19,10 +19,8 @@
   },
   "editor": {
     "newTitle": "Nueva automatización",
-    "name": "Nombre de la automatización",
+    "name": "Nombre",
     "namePlaceholder": "Ponle nombre a la automatización",
-    "back": "Atrás",
-    "crumb": "Automatizaciones",
     "create": "Crear automatización",
     "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
   }

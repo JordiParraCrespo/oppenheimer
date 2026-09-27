@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AddHostScreen } from '@/features/hosts/screens/add-host';
 
 /**
- * Settings → Hosts → Add a host: a page inside the Settings frame, not a
- * dialog and not the console's page (`design/version1/Settings.dc.html`) —
+ * Settings → Hosts → Add a host: a page inside the Settings frame, not the
+ * dialog the console pairs a machine in (`design/version1/Settings.dc.html`) —
  * Back, Hosts / Add a host, Cancel and Done all return to the list. The
  * column's own gap is the frame's; the page brings its own spacing.
  */
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/_authenticated/settings/hosts/new')({
 function SettingsAddHost() {
   return (
     <div className="flex flex-col">
-      <AddHostScreen from="settings" />
+      <AddHostScreen />
     </div>
   );
 }

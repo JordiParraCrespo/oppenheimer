@@ -19,10 +19,8 @@
   },
   "editor": {
     "newTitle": "New automation",
-    "name": "Automation name",
+    "name": "Name",
     "namePlaceholder": "Name this automation",
-    "back": "Back",
-    "crumb": "Automations",
     "create": "Create automation",
     "recap": "Name the automation, then say where it runs."
   }

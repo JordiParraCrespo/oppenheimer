@@ -13,7 +13,7 @@ import { provisionedUser, signInAs } from '../../support/web';
  *
  * What this covers that nothing else can: the screen's five pickers are bound
  * to four live reads and two writes, and a session created here is a row the
- * API actually holds — in the project the page made, with the launch
+ * API actually holds — in the project the dialog made, with the launch
  * options the foot row was set to, the first task in its log, and a name
  * derived from that task.
  *
@@ -26,8 +26,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  * `e2e/README.md`.
  *
  * An account with no machine is no longer a separate screen: the composer
- * renders either way and the host chip's foot action opens Add host, which is
- * `add-host.spec.ts`'s subject.
+ * renders either way and the host chip's foot action opens the Add a host
+ * dialog, which is `add-host.spec.ts`'s subject.
  */
 test.describe('New session', () => {
   test('starts a session with the scope, the foot row and the first task', async ({ page }) => {
@@ -56,26 +56,37 @@ test.describe('New session', () => {
     const composer = page.getByRole('textbox', { name: /Describe a task/ });
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
-    // ── The project chip, and the page behind its foot row ───────────────────
+    // ── The project chip, and the dialog behind its foot row ─────────────────
     // A fresh workspace has only its Unassigned project, and the chip starts
     // there: it is where a session that names none is listed. The way to a
-    // named one is inside the chip, a page over the main column (the
-    // 2026-09-26 evening export).
+    // named one is inside the chip, a dialog over the console (the 2026-09-27
+    // export) with no address of its own.
     await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
       'Unassigned',
     );
     await page.getByRole('button', { name: 'Project', exact: true }).click();
     await page.getByRole('button', { name: 'New project…' }).click();
-    await expect(page).toHaveURL(/\/projects\/new$/);
-    // Save is off until the project is whole, and the recap says what is missing.
-    await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
-    await page.getByLabel('Project name').fill('XRP');
-    // Ticking a repository makes it a default.
-    await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
-    await page.getByRole('button', { name: 'E2E box' }).click();
-    await page.getByRole('button', { name: 'Create project' }).click();
-    // Creating lands back on New session with the project in the address…
-    await expect(page).toHaveURL(/\/sessions\/new\?project=/);
+    const projectDialog = page.getByRole('dialog', { name: 'New project' });
+    await expect(projectDialog).toBeVisible();
+    await expect(page).toHaveURL(/\/sessions\/new$/);
+    // Create is off until the project has a name and a repository.
+    await expect(projectDialog.getByRole('button', { name: 'Create project' })).toBeDisabled();
+    await projectDialog.getByLabel('Name', { exact: true }).fill('XRP');
+    // Adding a repository clones it by default.
+    await projectDialog.getByRole('button', { name: 'Add a repository…' }).click();
+    await page.getByRole('textbox', { name: 'Add a repository…' }).fill('xrp-web');
+    await page.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.web.name) }).click();
+    await expect(
+      projectDialog.getByRole('button', {
+        name: new RegExp(`Remove .*${STUB_REPOSITORIES.web.name}`),
+      }),
+    ).toBeVisible();
+    // The default host is under the folded Defaults.
+    await projectDialog.getByRole('button', { name: /Defaults/ }).click();
+    await projectDialog.getByRole('button', { name: 'E2E box' }).click();
+    await projectDialog.getByRole('button', { name: 'Create project' }).click();
+    // Creating closes the dialog and hands the project straight to the chip…
+    await expect(projectDialog).toBeHidden();
     // …and picking it prefilled the host and the repository from its defaults.
     await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');

@@ -38,7 +38,8 @@ multi-line, so a grep for `export` misses most of them.
 | How hard the agent thinks | `EffortPicker` | a dropdown of five words |
 | What the agent may touch unattended | `PermissionMenu` | a toggle |
 | Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
-| Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
+| Which repositories a project holds, and which it clones from which branch | `RepositoryRowList` (add and remove) + `RepositoryDefaultRows` (cloned by default, base branch) | a `RepositorySelect` in a dialog, a table |
+| A part of a form or dialog that folds away (Defaults · optional, Inspect command and prompt) | `Disclosure` | a hand-built chevron row, an accordion |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
@@ -48,7 +49,9 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| A page over the main column that fills a thing in steps (New project, Add a host) | `EditorPage` from the `_editor` layout route, then `PageHeader` parts + `RoutineSteps` | a `Dialog`, a `Card` of `Field`s, a hand-rolled scroll column |
+| A page over the main column (the automations overview) | `EditorPage` from its layout route, then `PageHeader` parts | a hand-rolled scroll column |
+| Making or editing a thing from the console (New project, Project settings, Add a host, New automation) | a `Dialog` in the feature's `dialogs/`, opened from local state at its trigger; no route | a page, a URL per dialog |
+| A page inside Settings that fills a thing in steps (Add a host) | `PageHeader` parts + `RoutineSteps` | a `Dialog`, a `Card` of `Field`s |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 
