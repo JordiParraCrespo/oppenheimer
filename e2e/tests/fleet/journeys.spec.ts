@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { WEB_URL } from '../../playwright.config';
 import { signedUpContext } from '../../support/auth';
 import { pairedHosts } from '../../support/fleet';
-import { connectInstallation, STUB_REPOSITORIES } from '../../support/sessions';
+import { connectInstallation, createSession, STUB_REPOSITORIES } from '../../support/sessions';
 import { signInAs } from '../../support/web';
 
 /**
@@ -31,7 +31,7 @@ test('projects, sessions and hosts round trip through the console', async ({ pag
   test.skip(!up, `the console is not running on ${WEB_URL}`);
 
   const { api, user } = await signedUpContext('journeys');
-  await connectInstallation(api);
+  const installationId = await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'journeys');
   const project = `Wallet ${Date.now().toString(36)}`;
 
@@ -96,6 +96,21 @@ test('projects, sessions and hosts round trip through the console', async ({ pag
     })
     .toBe('resolved');
 
+  // A session left running, for removing the host to stop.
+  const running = await createSession(api, box.id, installationId);
+  await expect
+    .poll(
+      async () => {
+        const response = await api.get(`/api/v1/sessions/${running}`);
+        return ((await response.json()) as { lifecycle: string }).lifecycle;
+      },
+      { timeout: 120_000, intervals: [1_000, 2_000] },
+    )
+    .toBe('open');
+  const tmux = () =>
+    box.host.exec('tmux -L oppenheimer ls -F "#{session_name}" 2>/dev/null || true');
+  expect(tmux()).toContain('opp-');
+
   // Rename the host, then remove it.
   await page.goto('/settings/hosts');
   const card = page.getByTestId('host-card');
@@ -112,7 +127,21 @@ test('projects, sessions and hosts round trip through the console', async ({ pag
 
   await card.getByRole('button', { name: `${renamed} actions` }).click();
   await page.getByRole('menuitem', { name: 'Remove host' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Remove host' }).click();
+  const remove = page.getByRole('dialog');
+  await expect(remove).toContainText(`1 session is running on ${renamed}. It is stopped`);
+  await remove.getByRole('button', { name: 'Remove host' }).click();
   await expect(page.getByTestId('host-card')).toHaveCount(0);
   await expect(page.getByText('No hosts yet')).toBeVisible();
+
+  // What the dialog promised, on the machine: the agent's tmux session is gone
+  // and its worktree is still there. The control plane recorded it stopped.
+  await expect.poll(tmux, { timeout: 30_000 }).not.toContain('opp-');
+  const stopped = (await (await api.get(`/api/v1/sessions/${running}`)).json()) as {
+    stoppedAt: string | null;
+    checkouts: { directoryName: string }[];
+  };
+  expect(stopped.stoppedAt).not.toBeNull();
+  expect(
+    box.host.exec('ls -d ~/oppenheimer-ai/workspaces/acme-labs/xrp-mobile/worktrees/*'),
+  ).not.toBe('');
 });

@@ -96,9 +96,22 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		Logger:          logger,
 		// Unpaired is terminal. Recorded in the identity so the next boot does
 		// not dial either and `runner status` can say why the host is quiet.
+		//
+		// It is also a person removing this host, and removing a host stops the
+		// sessions on it (03, 14): the control plane has already recorded each
+		// one stopped, and the remove dialog promised their terminals close. An
+		// agent left running here would keep working where no console can see
+		// it. Stopping keeps every checkout on disk — it is not a close.
 		OnUnpaired: func() {
 			if _, err := a.Pairing.MarkRevoked(); err != nil {
 				logger.Error("could not record that this host was unpaired", slog.Any("error", err))
+			}
+			ended, err := a.Sessions.EndAll(context.WithoutCancel(ctx))
+			if err != nil {
+				logger.Error("could not stop every session of this unpaired host", slog.Any("error", err))
+			}
+			if len(ended) > 0 {
+				logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
 			}
 		},
 	})
@@ -114,9 +127,10 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	// entries in the control plane's log.
 	a.Sessions.SetPublisher(handler)
 	a.Link = client
-	// Run returns only when ctx ends or the host was unpaired. Sessions carry
-	// on in tmux either way: ending someone's work is `uninstall --force`'s
-	// decision, not a side effect of losing the control plane.
+	// Run returns only when ctx ends or the host was unpaired. A lost or
+	// ended link leaves sessions running in tmux: ending someone's work is not
+	// a side effect of losing the control plane. Unpaired is the exception,
+	// because it is a decision (OnUnpaired above).
 	_ = client.Run(ctx)
 }
 

@@ -52,7 +52,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     return <SessionProvisioning session={session} />;
   }
 
-  if (!session.isLive) return <SessionClosed name={session.name} />;
+  if (!session.isLive) return <SessionClosed name={session.name} deleted={session.isResolved} />;
 
   return (
     /* The artboard frames the terminal rather than bleeding it: 14px of canvas
@@ -83,11 +83,13 @@ function SessionSkeleton() {
 }
 
 /**
- * A session whose terminal is gone: stopped, or closed from another tab. The
- * work is on its branch, which is what the reader wants to hear — there is no
- * reattaching to a tmux session that has exited.
+ * A session whose terminal is gone: stopped, or deleted. Stopped, the work is
+ * on its branch, which is what the reader wants to hear — there is no
+ * reattaching to a tmux session that has exited. Deleted (resolved), the
+ * worktree is gone too, so saying the work is on its branch would be a promise
+ * about files that no longer exist.
  */
-function SessionClosed({ name }: { name: string }) {
+function SessionClosed({ name, deleted }: { name: string; deleted: boolean }) {
   const { t } = useTranslation();
 
   return (
@@ -97,7 +99,9 @@ function SessionClosed({ name }: { name: string }) {
           <CircleOff />
         </EmptyState.Media>
         <EmptyState.Title>{name}</EmptyState.Title>
-        <EmptyState.Description>{t('sessions.closed.description')}</EmptyState.Description>
+        <EmptyState.Description>
+          {deleted ? t('sessions.closed.deleted') : t('sessions.closed.description')}
+        </EmptyState.Description>
       </EmptyState.Header>
       <EmptyState.Content>
         <Button variant="secondary" render={<Link to="/sessions/new" />}>
