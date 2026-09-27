@@ -20,7 +20,7 @@ for the detail and sources.
 | 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
-| 14 | [A developer's day on GitHub](14-a-developers-day-on-github.md) | What hurts (review load, agent floods, resuming, waiting on CI, after-hours work) and sixteen ideas; the first four: a WIP limit for agents, a collision radar, resume cards, an evidence pack on agent PRs |
+| 14 | [Reviewing at the speed agents write](14-a-developers-day-on-github.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
 | next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP: 0.2 Git/GitHub, 0.3 Kanban, 0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat display, plus multi-account with no version yet |
 
@@ -224,3 +224,9 @@ earlier note:
   0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
   display. Multi-account (note 06) is on the list with no version yet.
   VMs are not placed. See `next-steps/README.md`.
+- Note 14's first version proposed protecting the reviewer and the
+  evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
+  owner rejected it the same day (2026-09-27): the product is for people
+  who push hard. Note 14 now goes after the review bottleneck instead,
+  with lanes, auto-merge for easy PRs, and a review session prepared
+  with the context.

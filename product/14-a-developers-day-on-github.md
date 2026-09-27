@@ -1,4 +1,4 @@
-# 14 — A developer's day on GitHub: what hurts, and what we could do about it
+# 14 — Reviewing at the speed agents write
 
 The owner asked on 2026-09-27 for research and forward thinking: when a
 developer deals with GitHub, what would make them more productive or give
@@ -63,202 +63,292 @@ Sources are in §6. Vendor numbers are flagged as vendor numbers.
    to ship by 33%. Meta's nudges cut time in review 6.8%, and its "next
    reviewable diff" raised review actions 17%. Small PRs merge faster.
 
-The shape of it: developers now produce more than they can review, lose
-more time finding and resuming than coding, wait on machines, and work
-later. A product that runs their agents on their machines is on the
-causing side of the first and last points, unless it is designed not
-to be.
+The shape of it: developers now produce more than they can review, and
+they lose more time finding context and resuming than coding. This note
+does not answer that by writing less. It answers it by **reviewing
+faster, with the context already gathered, and by taking the easy PRs out
+of human review altogether.**
 
-## 2. The principle this note proposes
+## 2. The principle (owner, 2026-09-27)
 
-**Oppenheimer should protect the reviewer and the evening, not only speed
-up the writer.** An agent console that helps people open more PRs, faster,
-adds to finding 1. The ideas below spend the one thing we have that nobody
-else does — the developer's own machines and the sessions running on them —
-on the other side of the ledger: less to review, easier to trust, fewer
-interruptions, less waiting, and work that stays in working hours.
+This section exists to make you **review what matters, fast, with the
+right context in front of you, and let everything easy through without
+you.** It is a tool for people who push hard. It does not slow agents
+down, cap them or hold their work back. Throughput is the point, and the
+reviewer is the bottleneck, so the product goes after the bottleneck.
 
-## 3. Ideas, by the moment in the day they help
+The first version of this note proposed the opposite: WIP limits on agent
+PRs, quiet hours, overnight holds, "protect the evening". The owner
+rejected that on 2026-09-27, and the change is recorded in `README.md`'s
+decisions that changed.
 
-Each idea: what it is · the finding it answers · why it is ours · how it
-decides (rule, or where an agent/Jev helps) · a rough size (S/M/L).
+Three moves follow from it:
 
-### Starting the day
+1. **Sort every PR into a lane** by how much human attention it needs:
+   none, a glance, or a real review (§3).
+2. **Take the "none" lane off your plate** with auto-merge. Rules you can
+   read decide it, a session that ran the code verifies it, and the
+   policy is proven on your history before it is switched on (§4).
+3. **Make the real reviews fast** with a review session prepared on your
+   host before you open the PR: the checkout built, the tests run, the
+   context loaded and a brief waiting (§5).
 
-**3.1 While you were away.** Instead of a notification stream, a
-**changelog of state** since your last visit: PRs where the turn flipped
-to you, checks that went red or green, what merged, what your agents
-finished overnight and what they are waiting on. Grouped, not
-chronological, with one *Seen*. Findings 4, 5. Ours because it includes
-the sessions on your hosts, not just GitHub. Pure rules over the events
-§6 of the PR note already stores. **S** once events exist.
+## 3. Three lanes
 
-**3.2 Agents work at night, you decide in the morning.** Sessions may run
-outside your hours, but nothing they produce reaches you — or anyone —
-until your day starts. Pushes and PRs made overnight are held as drafts
-and released as one bundle in *While you were away*. Finding 7. Only a
-product that runs the agent and owns delivery can do it. A rule: working
-hours and time zone, which the queue already needs. **S.**
+Every PR in the queue lands in exactly one lane. Rules decide first, and
+Jev's gated answers second (`next-steps/0.2-pull-requests.md` §8). The
+lane is shown on the row, with its reasons.
 
-**3.3 Review-ready checkouts.** For each PR in *Needs your review*, an
-idle host fetches the branch into a worktree, installs dependencies and
-runs the affected tests before you open it. When you press *Check out in
-a session*, it opens in seconds with the results already there. Finding 6
-(Uber and Codespaces show the win). Ours: it is your host, with warm
-caches, at no cloud cost. Rules: the queue order and a per-host
-concurrency cap. **M.**
+| Lane | What it means | What you do | Typical PRs |
+|------|---------------|-------------|-------------|
+| **Auto** | Meets the repository's auto-merge policy, and the review session found nothing | Nothing. It merges when green, and you see it in *While you were away* | Docs, tests only, formatting, images, patch dependency bumps, generated files, small refactors that both Jev and the session say change nothing |
+| **Quick** | Needs a person, but is small and clear | One key in triage, with the brief on screen: `a` to approve, `r` to request changes | Small fixes and features outside risky paths, with checks green and no findings |
+| **Deep** | Risky paths, large, or the session found something | Open the prepared review session (§5) | Auth, migrations, public APIs, billing, workflows, XL PRs, anything with findings |
 
-### Doing the work
+Triage (0.2 §0) walks **Quick** first when you have a few minutes, and
+**Deep** when you choose to. *Auto* never enters it.
 
-**3.4 Collision radar.** Before a session starts, and on every push, list
-the other open PRs and running sessions — yours and your agents' — that
-touch the same files. Show it on the session header ("2 open PRs touch
-`orders/total.ts`") and suggest an order to merge. Findings 8, 9. Ours:
-we see every session's worktree before anything is pushed, which GitHub
-cannot. A rule: overlap of changed paths, weighted by lines. **S–M.**
+## 4. Auto-merge: the lane that removes reviews
 
-**3.5 WIP limit for agents.** A per-repository cap on open
-agent-authored PRs (default 3, echoing kanban). When it is reached, new
-sessions still work, but their PRs wait in a local queue until one
-merges, and the console says so. Findings 1, 2: the one direct brake on
-flooding your own reviewers, and GitHub's new PR limits exist for the
-same reason. Ours because we open the PRs. A rule. **S.**
+### 4.1 What others do, and what it proves
 
-**3.6 Resume cards.** When you leave a session, or it goes idle, keep a
-card on its row: the last command, the agent's last question, what it is
-waiting on (CI, you, a review), and the files touched since you last
-looked. Opening the session shows the card before the terminal. Finding 5:
-the 93% of resumptions that begin by rebuilding context. Built from the
-terminal, the hooks (`versions/mvp/02-runner.md` §9) and git — rules
-only. **S.**
+- **Rules alone work.** One team auto-merges about 15% of its PRs (22 of
+  143 in the period described, from 19 contributors). Their rules are no
+  public interface changes, no migrations, all checks green, nothing in
+  finance code, and no code comments from humans or bots. A GitHub
+  Action sweeps every few minutes. They report no incidents and plan to
+  widen the rules.
+- **gitStream** approves "safe changes" by rule: PRs that are only docs,
+  tests, images or formatting. It labels them and says why in a comment.
+- **Mergify** merges on conditions written in YAML. Since June 2026 it
+  honours "require approval of the most recent push".
+- **GitHub Copilot** can submit an approving review that counts toward
+  required approvals, since 2026-09-01. It is off by default, controlled
+  by admins, **scoped to file paths the admin names**, and dismissed by a
+  new push like any other approval.
 
-**3.7 Fill the wait.** When you push and CI starts, the console knows
-this repository's median check time and offers what fits in it: "CI takes
-about 11 minutes here; 2 reviews in your queue take under 5." One click
-enters triage (0.2 §0) on the quick ones. Findings 4, 6, 9. Rules: check
-duration history and the review-time estimate. **S.**
+So auto-merge by rule is established. What nobody else has is the step
+between the rule and the merge: a session on a real checkout that ran
+the code.
 
-### Before and during review
+### 4.2 Our policy
 
-**3.8 Evidence pack on agent PRs.** Every PR a session opens carries
-proof in a collapsed section of its description: the commands it ran and
-their exit codes, which tests ran and passed, screenshots when it touched
-UI, and a link to the session's transcript. The reviewer checks the
-evidence before reading code. Finding 3 ("almost right"): trust comes
-from seeing it run, not from the agent saying so. Ours: we hold the
-terminal, so the evidence is the real record, not the agent's summary of
-it. Rules: collect what the session actually executed. **M.**
+Each repository has a policy in the console, read top to bottom like the
+turn table (0.2 §3.1). A PR is **Auto** only when every line holds:
 
-**3.9 Pre-review gate.** Before a session's PR goes to people, a
-checklist runs, and the PR is opened as a draft until it passes or you
-override it:
-- size under the repository's limit, otherwise a proposed split (3.10);
-- tests changed when source changed;
-- the PR template filled;
-- no leftover debug output or TODOs added;
-- the local checks green (3.3);
-- for PRs titled refactor, chore or docs, Jev's *changes behaviour?* check
-  (0.2 §8.6).
+1. **Allowed shape.** Any one of:
+   - only docs, tests, images or formatting (gitStream's rule);
+   - a patch or minor dependency bump from a known bot, lockfile
+     included;
+   - only generated files, and the session re-runs the repository's own
+     generation command and gets the same bytes;
+   - a *refactor*, *chore* or *docs* PR where Jev's *changes behaviour?*
+     is under 0.1 **and** the session's run agrees: the tests are
+     unchanged and green.
+2. **No forbidden path.** Migrations, auth, public API or wire contracts,
+   CI workflows, billing, and anything the repository adds. The list is
+   code, versioned with the policy.
+3. **Size** under a limit the repository sets. The default is M (§3.4
+   of the 0.2 note).
+4. **All required checks green** on the head commit.
+5. **The review session's verdict is *no findings***. It ran the
+   affected tests locally, and nothing in the diff is left uncovered by
+   them.
+6. **No open threads**, and no comments from people.
 
-Findings 1, 3. Rules, plus the one Jev question that caught the hidden
-changes in the spike. **S–M.**
+The PR shows the policy's lines ticked, so "why did this merge?" always
+has an answer.
 
-**3.10 Split into a stack.** When a session's diff is past the size
-limit, propose a split by package and directory, ordered by the import
-graph — a deterministic grouping the person can edit — and have the
-session produce it as stacked branches. Findings 1, 9 (small PRs merge
-faster). Ours: the agent that wrote the change is still there to split
-it. The grouping is a rule; the agent executes. **M.**
+### 4.3 Prove it before switching it on
 
-**3.11 Familiarity map.** On a PR's Files tab, mark each file by how
-well *you* know it, from your own commits and reviews: familiar, seen,
-new to you. Reviewers put their attention where they know least, and it
-also shows who else knows a file well. Findings 2, 4. Rules over git
-history. **S.**
+A policy starts in **dry run**. The console replays it over the
+repository's last 100 merged PRs and reports something like: "would have
+auto-merged 18, of which 0 were reverted or followed by a fix within a
+week". The person reads the 18, tightens or loosens a line, and switches
+the policy on only when the list looks right. The replay stays on the
+policy page as its track record.
 
-**3.12 Known flaky, said out loud.** A check that failed and then passed
-on the same commit is marked flaky, and its history is kept per test. A
-PR's *CI failing* reason then reads "known flaky: `upload.spec` failed 4
-of the last 30 runs", with *Re-run* one click away, instead of sending
-someone to debug it. The same failure signature on several PRs at once
-reads "probably broken on main". Finding 6. Rules over check history. **M.**
+### 4.4 When an auto-merge is wrong
 
-### Load and fairness
+After an auto-merge, the console watches the base branch's checks on
+their next run. If they go red in a way the merge touched, three things
+happen:
 
-**3.13 Review load, visible to the person carrying it.** Personal first:
-"you did 11 of the 14 reviews on this repository this week". With teams,
-the same view becomes a suggestion when a review is requested ("Mara has
-0 reviews waiting, Tom has 9"), never a leaderboard. Finding 2. Rules. **S.**
+- a session opens a revert PR;
+- the policy line that let the PR through is marked;
+- the repository's next matching PRs go to **Quick** until someone
+  looks.
 
-### Ending the day, and the week
+Every auto-merge is in an audit log with its policy version and its
+evidence.
 
-**3.14 Quiet hours for people.** Nudges, reminders and review requests
-you send are held outside the recipient's working hours when we know
-them, and yours are held outside yours. Your own after-hours activity
-appears only to you, as a trend: "7 reviews after 21:00 this week, up
-from 2". Finding 7. Rules. **S.**
+### 4.5 Who approves
 
-**3.15 The shipped log.** A weekly list of what you merged, reviewed and
-unblocked, written from events with a template, ready to paste into a
-standup or a one-to-one. Finding 4: status reporting is collaboration
-time that nobody counts. JetBrains' 66% say metrics miss their work; this
-is the work, in their words (PR titles), not a score. Rules. **S.**
+This decides where auto-merge works on day one.
 
-**3.16 Stale-work sweep.** PRs and branches idle for 14 days, and
-sessions idle for 7, gathered on one screen with *revive*, *close* and
-*delete branch* per row, and a sweep that can be scheduled as an
-automation (13). Less open work means less to track. Rules. **S.**
+- **Repositories without required reviews** (most personal ones): the
+  console merges through the App when the policy holds. Nothing else is
+  needed.
+- **Repositories that require an approval**: an agent PR is opened with
+  the person's authorization, so the person is its author, and GitHub
+  will not let them approve it. The approval has to come from another
+  reviewer identity. There are two options to verify before building:
+  - whether a review by our GitHub App counts toward the required
+    approvals, the way Copilot's now can (path-scoped);
+  - a bypass list in the repository's rules that names the App.
 
-### Later, and bolder
+  Until one of them is verified, these repositories get **Quick** instead
+  of **Auto**.
 
-- **Why is this code like this?** A session's transcript is linked from
-  its commits (the trailer already exists, note 05 §3). From a line in
-  the diff or in `git blame`, open the conversation that wrote it. Code
-  archaeology for the agent era. **M.**
-- **Mobile triage** (0.5): the triage keys become swipes, for the small
-  reviews that should not wait for a laptop. **M.**
-- **A merge queue for your own agents' PRs** in a repository without
-  one: rebase, run the checks on your host, merge in order, stop on red.
-  Finding 9's 33%. **L.**
+## 5. The review session
 
-## 4. What to build first
+The owner's idea: **a predefined session with all the context, so
+reviews are faster.** Only Oppenheimer can build this piece, because it
+runs on the developer's own host with their toolchain. The other tools
+only read diffs.
 
-Scored on the evidence behind it, how far it is only ours, and size:
+### 5.1 Prepared before you open it
 
-| Idea | Evidence | Only ours | Size | Pick |
-|------|----------|-----------|------|------|
-| 3.5 WIP limit for agents | strong (1, 2) | yes | S | **first** |
-| 3.4 Collision radar | medium (8, 9) | yes | S–M | **first** |
-| 3.6 Resume cards | strong (5) | yes | S | **first** |
-| 3.8 Evidence pack | strong (3) | yes | M | **first** |
-| 3.2 Night work, morning decisions | medium (7) | yes | S | next |
-| 3.1 While you were away | medium (4, 5) | partly | S | next |
-| 3.9 Pre-review gate | strong (1, 3) | partly | S–M | next |
-| 3.7 Fill the wait | medium | partly | S | next |
-| 3.12 Known flaky | strong (6) | no | M | next |
-| 3.3 Review-ready checkouts | strong (6) | yes | M | after |
-| 3.10 Split into a stack | medium (9) | yes | M | after |
-| 3.11, 3.13, 3.14, 3.15, 3.16 | medium | no | S | as the PR area grows |
+When a PR enters *Needs your review*, or lands in **Deep**, the console
+starts its review session on your default host, in the background:
 
-The first four share a theme that could be the product's promise: **your
-agents do not flood your reviewers, collide with each other, lose your
-place, or ask to be trusted without proof.**
+1. A worktree at the PR's head, with dependencies installed from the
+   host's warm cache.
+2. The affected checks run locally, using the repository's own
+   affected-only command where it has one (this repository's is
+   `scripts/ci/affected.mjs`).
+3. The app started, when the repository declares how, with a preview URL
+   through the host so UI changes can be clicked.
+4. The **context pack** loaded into the agent (§5.2).
+5. The agent's **review brief** written (§5.3), with its comments drafted
+   as a pending review.
 
-## 5. Questions for the owner
+When you open the PR, that work is already done. The top of your queue is
+prepared first, and how many are prepared at once follows the host's
+capacity, the way sessions already do.
 
-1. Is §2's principle the product's — protect the reviewer and the
-   evening — even when it means holding back what agents produce (3.2,
-   3.5, 3.9)?
-2. Which of the four firsts belong in 0.2 beside the PR list and triage,
-   and which wait?
-3. Quiet hours and the WIP limit need defaults. Are working hours
-   09:00–18:00 in the browser's time zone, and 3 open agent PRs per
-   repository, right to start with?
-4. The evidence pack puts terminal-derived content into a public PR
-   description. What must never appear there (paths, environment,
-   tokens), beyond what the runner already redacts?
+### 5.2 The context pack
 
-## 6. Sources
+Code gathers it, so the agent does not have to guess:
+
+- **The PR:** title, description, linked issue, labels, the conversation
+  and earlier review threads.
+- **The diff and related code:** the callers and importers of every
+  changed symbol, and the tests that cover the changed files, found on
+  the checkout with the language server or `ripgrep`.
+- **History:** the last commits to each changed file. For changed lines,
+  `git blame` leads to the PRs that last touched them and their
+  discussions, so "why is it like this?" is answered before it is asked.
+- **The rules:** the repository's `AGENTS.md`, `REVIEW.md`, `CODEOWNERS`,
+  contributing guide and PR template.
+- **Checks:** CI results with the failing step, plus the output of the
+  local run.
+- **For agent PRs:** the authoring session's transcript and its evidence
+  pack (§6.3), so the reviewing agent knows what the authoring agent
+  tried.
+
+### 5.3 The brief
+
+What you see first, above the diff:
+
+- **Purpose**, in two lines.
+- **Reading order:** the core change first, callers next, tests last.
+  Code computes this from the import graph; the agent does not choose it.
+- **What it ran:** the commands and their results. For example: "Ran the
+  `orders` tests: 48 passed. Started the app; checkout with an empty cart
+  returns 400."
+- **Findings**, each tied to a line, with a severity. They are drafted as
+  pending review comments: `enter` keeps one, `e` edits it, `x` drops it.
+- **Questions it could not answer.** These are usually the questions for
+  the author.
+- **The lane**, and why.
+
+Pullpo's AI analysis gives the purpose, the relevant files and
+suggestions, from the diff. The brief adds the part that needs a
+machine: it ran the code.
+
+### 5.4 Talking to it
+
+The session is a live terminal on a real checkout, beside the diff. The
+reviewer asks, and the agent answers by doing:
+
+- "What else calls `total()`?"
+- "Run the migration against a copy of the dev database."
+- "Try it with an empty cart."
+- "Show me this screen on mobile."
+
+A finding the reviewer confirms becomes a review comment with one key.
+
+### 5.5 Review presets
+
+How a repository is reviewed is saved as a **preset**, beside the
+automation templates (13). A preset holds the agent and model, the setup
+commands, which checks to run, how to start the app, extra review rules,
+and the auto-merge policy. It is created from a first review and edited
+like a project's defaults. New PRs in that repository use it without
+asking.
+
+## 6. Also worth building
+
+These are kept from the first version because they make the same person
+faster:
+
+- **6.1 Collision radar.** Shows the open PRs and running sessions that
+  touch the same files, on the session header and on the PR, with a
+  suggested merge order. Finding 8. Rules. **S–M.**
+- **6.2 Resume cards.** Every session's row shows the last command, the
+  agent's last question and what it is waiting on. Finding 5. Rules.
+  **S.**
+- **6.3 Evidence pack on agent PRs.** The PR carries the commands the
+  authoring session ran, the tests and their results, screenshots and a
+  link to the transcript. It feeds the reviewer, the review session and
+  the auto-merge policy. Finding 3. **M.**
+- **6.4 Known flaky.** A check that failed and then passed on the same
+  commit is marked flaky, with its history, so *CI failing* reads "known
+  flaky, 4 of 30 runs". The same failure across several PRs reads
+  "probably broken on main". Finding 6. **M.**
+- **6.5 Fill the wait.** While your CI runs, the console offers the
+  Quick-lane reviews that fit in its median time. **S.**
+- **6.6 Split into a stack.** An XL agent PR is split by package along
+  the import graph, and the session that wrote it carries the split out.
+  Finding 9. **M.**
+- **6.7 While you were away.** The state that changed since your last
+  visit, grouped, including what auto-merged and why. **S.**
+- **6.8 Familiarity map.** Files are marked by how well you know them,
+  from your own commits and reviews. **S.**
+- **6.9 Shipped log.** A weekly list of what merged, what you reviewed
+  and what auto-merged, built from events and ready for a standup. **S.**
+
+Dropped from the first version, by the owner's call: the WIP limit on
+agent PRs, quiet hours, holding overnight agent work until morning, and
+review-load fairness as a feature.
+
+## 7. What to build first
+
+| Piece | Why first |
+|-------|-----------|
+| The review session, prepared (§5.1–§5.3) | The owner's core idea, the largest time saving on every real review, and only ours |
+| Lanes, with **Quick** in triage (§3) | Turns the queue from a list into a plan, and needs only rules and Jev's gated answers |
+| Auto-merge in **dry run** (§4.2–§4.3) | Proves the number on the owner's own history before anything merges by itself |
+| Evidence pack (§6.3) | Feeds all three above |
+
+After those: auto-merge switched on for repositories without required
+reviews, then the collision radar, then presets.
+
+## 8. Questions for the owner
+
+1. For auto-merge in repositories that require an approval (§4.5), which
+   do we verify first: whether an App review counts, or a bypass list?
+   And which repositories come first?
+2. Should a review session be prepared for every PR in *Needs your
+   review*, or only for the **Deep** lane? The first is faster to open;
+   the second spends less agent time.
+3. Which agent and model should a review session use by default: the
+   same as authoring sessions, or a separate choice per preset?
+4. Does auto-merge cover only the owner's own and their agents' PRs, or
+   anyone's PR in the repository once the policy holds?
+
+## 9. Sources
 
 Gathered 2026-09-27. Vendor data is marked (v).
 
@@ -288,6 +378,19 @@ Gathered 2026-09-27. Vendor data is marked (v).
 - Graphite, time to merge (v): <https://graphite.com/research/median-time-to-merge-prs>
 - Uber Devpod: <https://www.uber.com/us/en/blog/devpod-improving-developer-productivity-at-uber/>;
   Codespaces prebuilds: <https://github.blog/news-insights/product-news/codespaces-largest-repositories-faster/>
+
+- Pullpo: <https://pullpo.io/>, docs <https://docs.pullpo.io/>, AI
+  analysis <https://docs.pullpo.io/channels-ai>, alerts and reminders
+  <https://docs.pullpo.io/channels-notifications>. Pullpo opens a Slack
+  channel per PR, posts an AI analysis (purpose, relevant files,
+  suggestions), sends CI, commit and approval alerts and stale
+  reminders, and sells Insights (cycle time, throughput, change failure
+  rate, DevEx surveys) and Conventional Comments. Its site claims a 23%
+  cut in cycle time at one customer (vendor).
+- Auto-merging 15% of PRs by rule (Swizec Teller): <https://swizec.com/blog/we-now-auto-approve-and-merge-15p-of-prs>
+- gitStream, approve safe changes: <https://docs.gitstream.cm/automations/approve-safe-changes/>
+- Mergify and the most-recent-push rule: <https://docs.mergify.com/changelog/2026-06-19-merge-protections-honor-githubs-require-approval-of-most-recent-push/>
+- Copilot code review can approve PRs (2026-09-01): <https://github.blog/changelog/2026-09-01-copilot-code-review-can-now-approve-pull-requests/>
 
 Not verified: the agent-PR volume of 4M to 17M a month; the merge-conflict
 study; the date GitHub's PR cap launched; the LeadDev figures (search
