@@ -1,10 +1,8 @@
 # @oppenheimer/api-client
 
 Typed HTTP client for `apps/api`, **generated** from the API's OpenAPI schema.
-Do not hand-edit `src/generated/` — it is overwritten on every regeneration.
-The legacy class client under `src/data-access/api/openapi` is no longer
-generated (see below), so a change to an endpoint it wraps is made there by
-hand, matching `apps/api/openapi.json`.
+The generated client is `src/generated/` (SDK, types, TanStack Query options);
+it is overwritten on every regeneration, so never edit it by hand.
 
 ## Regenerating
 
@@ -18,18 +16,21 @@ Query `queryOptions` / `queryKeys`). Screens still go through
 `@oppenheimer/frontend-core`, `-consumer` and `-admin` wrappers so persist policy
 and entity mapping stay in one place.
 
-Regenerate after any change to an API endpoint or its Swagger decorators. The
-legacy class client under `src/data-access/` remains until call sites finish
-moving to the SDK. Nothing regenerates it any more — the post-processing step
-only rebuilds its index files — so an endpoint change it wraps is made by hand.
+Regenerate after any change to an API endpoint or its Swagger decorators.
+
+The legacy class clients under `src/data-access/api/openapi` (`*Api`) are not
+regenerated — the post-processing step only rebuilds their index files — and
+are kept only for the call sites that still use them. Do not add new callers:
+use the SDK in `src/generated/`. When a class's last caller moves to the SDK,
+delete the class.
 
 ## What's inside
 
-| Export path                  | Contents                                   |
-| ---------------------------- | ------------------------------------------ |
-| `@oppenheimer/api-client`          | Client entry point                         |
-| `@oppenheimer/api-client/models`   | Generated request/response models          |
-| `@oppenheimer/api-client/services` | Generated per-tag service classes (`*Api`) |
+| Export path                        | Contents                                                 |
+| ---------------------------------- | -------------------------------------------------------- |
+| `@oppenheimer/api-client`          | Client entry point                                       |
+| `@oppenheimer/api-client/models`   | Generated request/response models                        |
+| `@oppenheimer/api-client/services` | Legacy per-tag service classes (`*Api`), not regenerated |
 
 ## One runtime dependency — by design
 

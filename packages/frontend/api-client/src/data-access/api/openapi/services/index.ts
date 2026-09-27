@@ -6,7 +6,6 @@ export { AuthorizationApi } from './AuthorizationApi';
 export { HealthApi } from './HealthApi';
 export { InvitationsApi } from './InvitationsApi';
 export { OrganizationInvitationsApi } from './OrganizationInvitationsApi';
-export { OrganizationMembersApi } from './OrganizationMembersApi';
 export { OrganizationsApi } from './OrganizationsApi';
 export { ProfileApi } from './ProfileApi';
 export { RolesApi } from './RolesApi';
