@@ -44,7 +44,9 @@
           }
         ],
         "summary": "Get the current user’s preferences",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       },
       "put": {
         "description": "Every preference is required — this is a replace, not a patch.",
@@ -98,7 +100,9 @@
           }
         ],
         "summary": "Replace the current user’s preferences",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile/avatar": {
@@ -117,7 +121,9 @@
                     "format": "binary"
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -190,7 +196,9 @@
           }
         ],
         "summary": "Upload the current user’s avatar",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       },
       "delete": {
         "operationId": "deleteAvatar",
@@ -243,7 +251,9 @@
           }
         ],
         "summary": "Remove the current user’s avatar",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile/sessions": {
@@ -292,7 +302,9 @@
           }
         ],
         "summary": "List the current user’s active sessions",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       },
       "delete": {
         "description": "Session-authenticated only. The session making the request survives.",
@@ -329,7 +341,9 @@
           }
         ],
         "summary": "Sign out every other session",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile/sessions/{id}": {
@@ -397,7 +411,9 @@
           }
         ],
         "summary": "Revoke one of the current user’s sessions",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile/password": {
@@ -466,7 +482,9 @@
           }
         ],
         "summary": "Change the current user’s password",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile/email": {
@@ -535,7 +553,9 @@
           }
         ],
         "summary": "Ask to change the current user’s email address",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/profile": {
@@ -590,7 +610,9 @@
           }
         ],
         "summary": "Get the current user’s profile",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       },
       "patch": {
         "operationId": "updateProfile",
@@ -653,7 +675,9 @@
           }
         ],
         "summary": "Update the current user’s profile",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       },
       "delete": {
         "description": "Session-authenticated only. Unpairs the hosts, removes the personal workspace and its work, then the account and every sign-in. Cannot be undone.",
@@ -720,7 +744,9 @@
           }
         ],
         "summary": "Delete the current user’s account",
-        "tags": ["Profile"]
+        "tags": [
+          "Profile"
+        ]
       }
     },
     "/api/v1/users": {
@@ -802,7 +828,9 @@
           }
         ],
         "summary": "List all users (admin)",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/api/v1/users/me": {
@@ -847,7 +875,9 @@
           }
         ],
         "summary": "Get current user profile",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/api/v1/users/me/permissions": {
@@ -893,7 +923,9 @@
           }
         ],
         "summary": "Get the current user’s effective permissions",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/api/v1/users/{id}": {
@@ -957,7 +989,9 @@
           }
         ],
         "summary": "Get user by ID",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       },
       "patch": {
         "operationId": "update",
@@ -1029,7 +1063,9 @@
           }
         ],
         "summary": "Update user",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       },
       "delete": {
         "operationId": "remove",
@@ -1084,7 +1120,9 @@
           }
         ],
         "summary": "Delete user",
-        "tags": ["Users"]
+        "tags": [
+          "Users"
+        ]
       }
     },
     "/api/v1/authz/catalog": {
@@ -1130,7 +1168,9 @@
           }
         ],
         "summary": "List every declared resource and what the caller may grant",
-        "tags": ["Authorization"]
+        "tags": [
+          "Authorization"
+        ]
       }
     },
     "/api/v1/access-grants": {
@@ -1178,7 +1218,9 @@
           }
         ],
         "summary": "List the access grants in the active organization",
-        "tags": ["Access grants"]
+        "tags": [
+          "Access grants"
+        ]
       },
       "post": {
         "description": "The grant may not exceed the granter’s own access. Omitting resourceId grants every resource of that type, which requires already holding all of them.",
@@ -1242,7 +1284,9 @@
           }
         ],
         "summary": "Grant access to specific records",
-        "tags": ["Access grants"]
+        "tags": [
+          "Access grants"
+        ]
       }
     },
     "/api/v1/access-grants/{id}": {
@@ -1299,7 +1343,9 @@
           }
         ],
         "summary": "Revoke an access grant",
-        "tags": ["Access grants"]
+        "tags": [
+          "Access grants"
+        ]
       }
     },
     "/api/v1/me/credential": {
@@ -1345,7 +1391,9 @@
           }
         ],
         "summary": "Describe the calling credential and its effective permissions",
-        "tags": ["API tokens"]
+        "tags": [
+          "API tokens"
+        ]
       }
     },
     "/api/v1/tokens": {
@@ -1394,7 +1442,9 @@
           }
         ],
         "summary": "List the caller’s API tokens",
-        "tags": ["API tokens"]
+        "tags": [
+          "API tokens"
+        ]
       },
       "post": {
         "description": "Creates a scoped API token for the caller. The secret is returned once and cannot be retrieved again. Scopes may not exceed what the caller is themselves permitted to do.",
@@ -1468,7 +1518,9 @@
           }
         ],
         "summary": "Mint an API token",
-        "tags": ["API tokens"]
+        "tags": [
+          "API tokens"
+        ]
       }
     },
     "/api/v1/tokens/permissions": {
@@ -1514,7 +1566,9 @@
           }
         ],
         "summary": "List the permission catalog and what the caller may grant",
-        "tags": ["API tokens"]
+        "tags": [
+          "API tokens"
+        ]
       }
     },
     "/api/v1/tokens/{id}": {
@@ -1572,7 +1626,9 @@
           }
         ],
         "summary": "Revoke an API token",
-        "tags": ["API tokens"]
+        "tags": [
+          "API tokens"
+        ]
       }
     },
     "/api/v1/roles": {
@@ -1645,7 +1701,9 @@
           }
         ],
         "summary": "List all roles",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       },
       "post": {
         "operationId": "create",
@@ -1708,7 +1766,9 @@
           }
         ],
         "summary": "Create role",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       }
     },
     "/api/v1/roles/{id}": {
@@ -1772,7 +1832,9 @@
           }
         ],
         "summary": "Get role by ID",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       },
       "patch": {
         "operationId": "update",
@@ -1844,7 +1906,9 @@
           }
         ],
         "summary": "Update a role (description and/or permissions)",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       },
       "delete": {
         "operationId": "remove",
@@ -1899,7 +1963,9 @@
           }
         ],
         "summary": "Delete role",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       }
     },
     "/api/v1/roles/{id}/permissions": {
@@ -1973,7 +2039,9 @@
           }
         ],
         "summary": "Replace a role's permission set",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       }
     },
     "/api/v1/users/{userId}/roles": {
@@ -2030,7 +2098,9 @@
           }
         ],
         "summary": "List a user's assigned roles",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       },
       "put": {
         "operationId": "assign",
@@ -2105,7 +2175,9 @@
           }
         ],
         "summary": "Replace a user's assigned roles",
-        "tags": ["Roles"]
+        "tags": [
+          "Roles"
+        ]
       }
     },
     "/api/v1/organizations": {
@@ -2190,7 +2262,9 @@
           }
         ],
         "summary": "Create an organization",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       },
       "get": {
         "operationId": "list",
@@ -2266,7 +2340,9 @@
           }
         ],
         "summary": "List the caller's organizations",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       }
     },
     "/api/v1/organizations/check-slug": {
@@ -2351,7 +2427,9 @@
           }
         ],
         "summary": "Check whether an organization slug is available",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       }
     },
     "/api/v1/organizations/{id}": {
@@ -2435,7 +2513,9 @@
           }
         ],
         "summary": "Get an organization with its members, invitations and workspaces",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       },
       "patch": {
         "operationId": "update",
@@ -2527,7 +2607,9 @@
           }
         ],
         "summary": "Update an organization",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       },
       "delete": {
         "operationId": "remove",
@@ -2609,7 +2691,9 @@
           }
         ],
         "summary": "Delete an organization",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       }
     },
     "/api/v1/organizations/{id}/set-active": {
@@ -2693,7 +2777,9 @@
           }
         ],
         "summary": "Set the active organization for the current session",
-        "tags": ["Organizations"]
+        "tags": [
+          "Organizations"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/members/me": {
@@ -2777,7 +2863,9 @@
           }
         ],
         "summary": "Get the caller's own membership in an organization",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/members": {
@@ -2886,7 +2974,9 @@
           }
         ],
         "summary": "List members of an organization",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       },
       "post": {
         "operationId": "add",
@@ -2978,7 +3068,9 @@
           }
         ],
         "summary": "Add an existing user as a member",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/members/{memberId}": {
@@ -3080,7 +3172,9 @@
           }
         ],
         "summary": "Change a member's organization role",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/members/{memberIdOrEmail}": {
@@ -3172,7 +3266,9 @@
           }
         ],
         "summary": "Remove a member from an organization",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/leave": {
@@ -3256,7 +3352,9 @@
           }
         ],
         "summary": "Leave an organization",
-        "tags": ["Organization members"]
+        "tags": [
+          "Organization members"
+        ]
       }
     },
     "/api/v1/organizations/{orgId}/invitations": {
@@ -3350,7 +3448,9 @@
           }
         ],
         "summary": "Invite a member to an organization",
-        "tags": ["Organization invitations"]
+        "tags": [
+          "Organization invitations"
+        ]
       },
       "get": {
         "operationId": "list",
@@ -3435,7 +3535,9 @@
           }
         ],
         "summary": "List pending invitations for an organization",
-        "tags": ["Organization invitations"]
+        "tags": [
+          "Organization invitations"
+        ]
       }
     },
     "/api/v1/invitations": {
@@ -3513,7 +3615,9 @@
           }
         ],
         "summary": "List the caller's pending invitations",
-        "tags": ["Invitations"]
+        "tags": [
+          "Invitations"
+        ]
       }
     },
     "/api/v1/invitations/{id}": {
@@ -3597,7 +3701,9 @@
           }
         ],
         "summary": "Get an invitation by id",
-        "tags": ["Invitations"]
+        "tags": [
+          "Invitations"
+        ]
       }
     },
     "/api/v1/invitations/{id}/accept": {
@@ -3681,7 +3787,9 @@
           }
         ],
         "summary": "Accept an invitation",
-        "tags": ["Invitations"]
+        "tags": [
+          "Invitations"
+        ]
       }
     },
     "/api/v1/invitations/{id}/reject": {
@@ -3765,7 +3873,9 @@
           }
         ],
         "summary": "Reject an invitation",
-        "tags": ["Invitations"]
+        "tags": [
+          "Invitations"
+        ]
       }
     },
     "/api/v1/invitations/{id}/cancel": {
@@ -3849,7 +3959,9 @@
           }
         ],
         "summary": "Cancel an invitation (organization manager)",
-        "tags": ["Invitations"]
+        "tags": [
+          "Invitations"
+        ]
       }
     },
     "/api/v1/workspaces/mine": {
@@ -3927,7 +4039,9 @@
           }
         ],
         "summary": "List the caller's workspaces",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/workspaces": {
@@ -4014,7 +4128,9 @@
           }
         ],
         "summary": "List an organization's workspaces (defaults to the active org)",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "post": {
         "operationId": "create",
@@ -4097,7 +4213,9 @@
           }
         ],
         "summary": "Create a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/workspaces/{id}": {
@@ -4191,7 +4309,9 @@
           }
         ],
         "summary": "Rename a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "delete": {
         "operationId": "remove",
@@ -4266,7 +4386,9 @@
           }
         ],
         "summary": "Delete a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/workspaces/{id}/set-active": {
@@ -4350,7 +4472,9 @@
           }
         ],
         "summary": "Set the active workspace for the current session",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/workspaces/{id}/members": {
@@ -4437,7 +4561,9 @@
           }
         ],
         "summary": "List members of a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       },
       "post": {
         "operationId": "addMember",
@@ -4529,7 +4655,9 @@
           }
         ],
         "summary": "Add a user to a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/workspaces/{id}/members/{userId}": {
@@ -4614,7 +4742,9 @@
           }
         ],
         "summary": "Remove a user from a workspace",
-        "tags": ["Workspaces"]
+        "tags": [
+          "Workspaces"
+        ]
       }
     },
     "/api/v1/installations": {
@@ -4663,7 +4793,9 @@
           }
         ],
         "summary": "List the workspace’s connected GitHub installations",
-        "tags": ["GitHub installations"]
+        "tags": [
+          "GitHub installations"
+        ]
       },
       "post": {
         "description": "Called with the `installation_id` and OAuth `code` GitHub puts on the install redirect. The code is exchanged once to prove the caller can see the installation, then discarded — it is never stored. Re-posting the same installation refreshes what GitHub reports about it.",
@@ -4747,7 +4879,9 @@
           }
         ],
         "summary": "Connect a GitHub App installation to the workspace",
-        "tags": ["GitHub installations"]
+        "tags": [
+          "GitHub installations"
+        ]
       }
     },
     "/api/v1/installations/{id}/repositories": {
@@ -4845,7 +4979,9 @@
           }
         ],
         "summary": "List the repositories an installation covers",
-        "tags": ["GitHub installations"]
+        "tags": [
+          "GitHub installations"
+        ]
       }
     },
     "/api/v1/installations/{id}/repositories/{githubRepoId}/branches": {
@@ -4951,7 +5087,9 @@
           }
         ],
         "summary": "List a repository’s branches",
-        "tags": ["GitHub installations"]
+        "tags": [
+          "GitHub installations"
+        ]
       }
     },
     "/api/v1/installations/{id}": {
@@ -5009,7 +5147,9 @@
           }
         ],
         "summary": "Disconnect a GitHub App installation",
-        "tags": ["GitHub installations"]
+        "tags": [
+          "GitHub installations"
+        ]
       }
     },
     "/api/v1/hosts": {
@@ -5023,7 +5163,9 @@
             "in": "query",
             "description": "Add the hosts that were removed — for naming the host of a session that outlived it.",
             "schema": {
-              "enum": ["unpaired"],
+              "enum": [
+                "unpaired"
+              ],
               "type": "string"
             }
           }
@@ -5069,7 +5211,9 @@
           }
         ],
         "summary": "List the hosts the caller can reach",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/pairing": {
@@ -5118,7 +5262,9 @@
           }
         ],
         "summary": "List the caller’s pairing tokens",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       },
       "post": {
         "description": "Names the machine before it exists and returns the install command that pairs it. The secret is inside that command and is shown exactly once — only its digest is stored. With `replaces`, the caller’s named token is revoked in the same write.",
@@ -5202,7 +5348,9 @@
           }
         ],
         "summary": "Mint a pairing token for a new host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/pairing/{id}": {
@@ -5267,7 +5415,9 @@
           }
         ],
         "summary": "Get one pairing token, and the host it paired",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       },
       "delete": {
         "description": "Takes effect immediately: a revoked token cannot pair a machine even if someone still holds the secret. The record is kept so the pairing history survives.",
@@ -5323,7 +5473,9 @@
           }
         ],
         "summary": "Revoke a pairing token",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/register": {
@@ -5384,7 +5536,9 @@
           }
         },
         "summary": "Redeem a registration token and become a host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/self": {
@@ -5413,7 +5567,9 @@
           }
         ],
         "summary": "Unpair the calling host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/self/images/{commandId}": {
@@ -5461,7 +5617,9 @@
           }
         ],
         "summary": "Collect an image parked for the calling host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/{id}": {
@@ -5525,7 +5683,9 @@
           }
         ],
         "summary": "Get one host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       },
       "patch": {
         "description": "Display only — nothing on the machine is named after this.",
@@ -5598,7 +5758,9 @@
           }
         ],
         "summary": "Rename a host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       },
       "delete": {
         "description": "Stops this machine being given work. The record is kept so the pairing history survives; the runner on it learns it is gone the next time it connects.",
@@ -5654,7 +5816,9 @@
           }
         ],
         "summary": "Unpair a host",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/hosts/{id}/timeline": {
@@ -5719,7 +5883,9 @@
           }
         ],
         "summary": "A host’s timeline, newest first",
-        "tags": ["Hosts"]
+        "tags": [
+          "Hosts"
+        ]
       }
     },
     "/api/v1/admin/users": {
@@ -5739,7 +5905,10 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["email", "name"],
+              "enum": [
+                "email",
+                "name"
+              ],
               "type": "string"
             }
           },
@@ -5772,7 +5941,10 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["asc", "desc"],
+              "enum": [
+                "asc",
+                "desc"
+              ],
               "type": "string"
             }
           }
@@ -5855,7 +6027,9 @@
           }
         ],
         "summary": "List users",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       },
       "post": {
         "operationId": "createUser",
@@ -5948,7 +6122,9 @@
           }
         ],
         "summary": "Create a user",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/stop-impersonating": {
@@ -6033,7 +6209,9 @@
           }
         ],
         "summary": "Stop impersonating and restore the admin session",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/sessions/revoke": {
@@ -6137,7 +6315,9 @@
           }
         ],
         "summary": "Revoke one of a user's sessions by id",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}": {
@@ -6231,7 +6411,9 @@
           }
         ],
         "summary": "Get a user",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       },
       "patch": {
         "operationId": "updateUser",
@@ -6333,7 +6515,9 @@
           }
         ],
         "summary": "Update a user's profile fields",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       },
       "delete": {
         "operationId": "removeUser",
@@ -6425,7 +6609,9 @@
           }
         ],
         "summary": "Delete a user",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/role": {
@@ -6529,7 +6715,9 @@
           }
         ],
         "summary": "Set a user's global role",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/ban": {
@@ -6633,7 +6821,9 @@
           }
         ],
         "summary": "Ban a user",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/unban": {
@@ -6727,7 +6917,9 @@
           }
         ],
         "summary": "Unban a user",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/impersonate": {
@@ -6821,7 +7013,9 @@
           }
         ],
         "summary": "Impersonate a user (issues an impersonation session)",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/sessions": {
@@ -6918,7 +7112,9 @@
           }
         ],
         "summary": "List a user's sessions",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/revoke-sessions": {
@@ -7012,7 +7208,9 @@
           }
         ],
         "summary": "Revoke all of a user's sessions",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/admin/users/{id}/set-password": {
@@ -7116,7 +7314,9 @@
           }
         ],
         "summary": "Set a user's password",
-        "tags": ["Admin"]
+        "tags": [
+          "Admin"
+        ]
       }
     },
     "/api/v1/feature-flags": {
@@ -7138,7 +7338,11 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["web", "ios", "android"],
+              "enum": [
+                "web",
+                "ios",
+                "android"
+              ],
               "type": "string"
             }
           }
@@ -7156,7 +7360,9 @@
           }
         },
         "summary": "The caller’s feature flags",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/changes": {
@@ -7193,7 +7399,10 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["flag", "segment"],
+              "enum": [
+                "flag",
+                "segment"
+              ],
               "type": "string"
             }
           }
@@ -7236,7 +7445,9 @@
           }
         ],
         "summary": "Feature flag audit trail",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/segments": {
@@ -7284,7 +7495,9 @@
           }
         ],
         "summary": "List flag segments and the flags that target them",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       },
       "post": {
         "operationId": "createFlagSegment",
@@ -7357,7 +7570,9 @@
           }
         ],
         "summary": "Create a flag segment",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/segments/{key}": {
@@ -7442,7 +7657,9 @@
           }
         ],
         "summary": "Update a flag segment",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       },
       "delete": {
         "operationId": "deleteFlagSegment",
@@ -7516,7 +7733,9 @@
           }
         ],
         "summary": "Delete a flag segment no flag targets",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/admin": {
@@ -7565,7 +7784,9 @@
           }
         ],
         "summary": "List feature flags with their targeting",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/admin/{key}/evaluate": {
@@ -7630,7 +7851,9 @@
           }
         ],
         "summary": "Explain a flag for a given context",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/feature-flags/admin/{key}": {
@@ -7694,7 +7917,9 @@
           }
         ],
         "summary": "Get a feature flag with its targeting",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       },
       "put": {
         "description": "Sets the master switch, the ordered rules and the fallthrough in one write. Recorded on the audit trail with the optional comment.",
@@ -7777,7 +8002,9 @@
           }
         ],
         "summary": "Replace a feature flag’s targeting",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       },
       "patch": {
         "description": "Flips the master switch only. Off serves `false` (or the default variant) to everyone — the kill switch. Takes effect on this replica immediately and on every other within the snapshot poll interval.",
@@ -7850,7 +8077,9 @@
           }
         ],
         "summary": "Switch a feature flag on or off",
-        "tags": ["Feature flags"]
+        "tags": [
+          "Feature flags"
+        ]
       }
     },
     "/api/v1/projects": {
@@ -7909,7 +8138,9 @@
           }
         ],
         "summary": "List the projects in the caller’s workspace",
-        "tags": ["Projects"]
+        "tags": [
+          "Projects"
+        ]
       },
       "post": {
         "description": "A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.",
@@ -7983,7 +8214,9 @@
           }
         ],
         "summary": "Create a project",
-        "tags": ["Projects"]
+        "tags": [
+          "Projects"
+        ]
       }
     },
     "/api/v1/projects/{id}": {
@@ -8047,7 +8280,9 @@
           }
         ],
         "summary": "Get one project",
-        "tags": ["Projects"]
+        "tags": [
+          "Projects"
+        ]
       },
       "patch": {
         "description": "The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.",
@@ -8140,7 +8375,9 @@
           }
         ],
         "summary": "Change a project",
-        "tags": ["Projects"]
+        "tags": [
+          "Projects"
+        ]
       },
       "delete": {
         "description": "Retires the project so no new session can be started in it. The row is kept for ever: its slug is a directory name on every host that held it, and a retired name is never reissued. Refuses while the project still has sessions that are not closed.",
@@ -8223,7 +8460,9 @@
           }
         ],
         "summary": "Archive a project",
-        "tags": ["Projects"]
+        "tags": [
+          "Projects"
+        ]
       }
     },
     "/api/v1/sessions": {
@@ -8237,7 +8476,11 @@
             "in": "query",
             "description": "Default `recent`",
             "schema": {
-              "enum": ["recent", "oldest", "name"],
+              "enum": [
+                "recent",
+                "oldest",
+                "name"
+              ],
               "type": "string"
             }
           },
@@ -8246,7 +8489,13 @@
             "required": false,
             "in": "query",
             "schema": {
-              "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+              "enum": [
+                "claude-code",
+                "codex",
+                "opencode",
+                "grok",
+                "shell"
+              ],
               "type": "string"
             }
           },
@@ -8265,7 +8514,12 @@
             "in": "query",
             "description": "The stored lifecycle, not the derived group.",
             "schema": {
-              "enum": ["starting", "open", "failed", "resolved"],
+              "enum": [
+                "starting",
+                "open",
+                "failed",
+                "resolved"
+              ],
               "type": "string"
             }
           },
@@ -8344,7 +8598,9 @@
           }
         ],
         "summary": "List the sessions in the caller’s workspace",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       },
       "post": {
         "description": "Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.",
@@ -8446,7 +8702,9 @@
           }
         ],
         "summary": "Start a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/events": {
@@ -8529,7 +8787,9 @@
           }
         ],
         "summary": "Read a session’s log",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/attach-ticket": {
@@ -8634,7 +8894,9 @@
           }
         ],
         "summary": "Mint a ticket for a terminal on this session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/images": {
@@ -8668,7 +8930,9 @@
                     "description": "The tmux window; 0 when absent."
                   }
                 },
-                "required": ["file"]
+                "required": [
+                  "file"
+                ]
               }
             }
           }
@@ -8774,7 +9038,9 @@
           }
         ],
         "summary": "Paste an image into a session’s prompt",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/stop": {
@@ -8849,7 +9115,9 @@
           }
         ],
         "summary": "Stop a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/restart": {
@@ -8924,7 +9192,9 @@
           }
         ],
         "summary": "Restart a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/checkouts": {
@@ -9009,7 +9279,9 @@
           }
         ],
         "summary": "Add a repository to a running session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/checkouts/{checkoutId}": {
@@ -9082,7 +9354,9 @@
           }
         ],
         "summary": "Remove a repository from a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}": {
@@ -9147,7 +9421,9 @@
           }
         ],
         "summary": "Read one session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       },
       "patch": {
         "description": "Display only. The slug is the session’s directory name and the last segment of its branch, and it never changes. A name typed here is never overwritten by the title derived from the first prompt.",
@@ -9230,7 +9506,9 @@
           }
         ],
         "summary": "Rename a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       },
       "delete": {
         "description": "Pushes each checkout’s branch, then removes the worktrees and prunes. The row is never deleted: its slug is the session’s directory name on the host and a retired name is never reissued, because the coding agents key their conversation state by working directory. Refuses when a checkout has unpushed work unless the loss is accepted.",
@@ -9302,7 +9580,9 @@
           }
         ],
         "summary": "Close a session",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
       }
     },
     "/api/v1/sessions/{id}/move": {
@@ -9387,7 +9667,955 @@
           }
         ],
         "summary": "List a session under another project",
-        "tags": ["Sessions"]
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/automations": {
+      "get": {
+        "description": "Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.",
+        "operationId": "listAutomations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutomationResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the workspace’s automations",
+        "tags": [
+          "Automations"
+        ]
+      },
+      "post": {
+        "description": "A saved prompt, where it runs and the triggers that start it. The caller becomes its owner: every run acts as them. It starts listening as soon as it is saved.",
+        "operationId": "createAutomation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAutomationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AUTOMATIONS_006 — A trigger would never fire\n\nAUTOMATIONS_005 — That agent cannot run an automation\n\nAUTOMATIONS_007 — That project cannot hold automations",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an automation",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/trigger-preview": {
+      "post": {
+        "description": "“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.",
+        "operationId": "previewAutomationTrigger",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewTriggerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriggerPreviewResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replay a GitHub trigger against recent events",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/{id}": {
+      "get": {
+        "operationId": "getAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one automation",
+        "tags": [
+          "Automations"
+        ]
+      },
+      "patch": {
+        "description": "What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.",
+        "operationId": "updateAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AUTOMATIONS_003 — The automation was changed by someone else",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save an automation",
+        "tags": [
+          "Automations"
+        ]
+      },
+      "delete": {
+        "description": "Its triggers stop now. Past runs are kept, and read “Deleted automation”.",
+        "operationId": "deleteAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an automation",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/{id}/pause": {
+      "post": {
+        "description": "Triggers are ignored until it is resumed; Run now still works. Its schedule stops firing now.",
+        "operationId": "pauseAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pause an automation",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/{id}/resume": {
+      "post": {
+        "description": "Triggers listen again, and each schedule’s next slot is computed from now, so a paused week does not fire a burst of missed runs.",
+        "operationId": "resumeAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resume an automation",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/{id}/duplicate": {
+      "post": {
+        "description": "A copy named after the original, owned by the caller, with the same instructions, place and triggers and a first revision of its own.",
+        "operationId": "duplicateAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Duplicate an automation",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automations/{id}/run": {
+      "post": {
+        "description": "Queues a run that starts a session as the automation’s owner, whether or not it is paused. The run comes back queued; its session follows within seconds.",
+        "operationId": "runAutomation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idempotency-key",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "A retried Run now is the same run.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_001 — Automation not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run an automation now",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automation-runs": {
+      "get": {
+        "description": "The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.",
+        "operationId": "listAutomationRuns",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunPageResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List automation runs",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automation-runs/history": {
+      "get": {
+        "description": "One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.",
+        "operationId": "getAutomationRunHistory",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunHistoryResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run history by day",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automation-runs/{id}": {
+      "get": {
+        "description": "Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.",
+        "operationId": "getAutomationRun",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationRunResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AUTOMATIONS_008 — Run not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read one automation run",
+        "tags": [
+          "Automations"
+        ]
+      }
+    },
+    "/api/v1/automation-settings": {
+      "get": {
+        "description": "Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.",
+        "operationId": "getAutomationSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The workspace’s automation limits",
+        "tags": [
+          "Automations"
+        ]
+      },
+      "patch": {
+        "description": "Rate caps, runs at once per host, overlap, the stale TTL, the missed-slot grace and the longest run. Null clears a value back to the platform default; the platform ceilings still apply.",
+        "operationId": "updateAutomationSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationSettingsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set the workspace’s automation limits",
+        "tags": [
+          "Automations"
+        ]
       }
     },
     "/api/v1/health": {
@@ -9415,7 +10643,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9430,7 +10660,9 @@
                       "example": {},
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9449,7 +10681,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9483,7 +10717,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9503,7 +10739,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9526,7 +10764,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9542,7 +10782,9 @@
           }
         },
         "summary": "Liveness check",
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/health/capabilities": {
@@ -9562,7 +10804,9 @@
           }
         },
         "summary": "Client-facing capabilities of this deployment",
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/ready": {
@@ -9590,7 +10834,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9605,7 +10851,9 @@
                       "example": {},
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9624,7 +10872,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9658,7 +10908,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9678,7 +10930,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9701,7 +10955,9 @@
                       },
                       "additionalProperties": {
                         "type": "object",
-                        "required": ["status"],
+                        "required": [
+                          "status"
+                        ],
                         "properties": {
                           "status": {
                             "type": "string"
@@ -9717,7 +10973,9 @@
           }
         },
         "summary": "Readiness check",
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     }
   },
@@ -9752,7 +11010,10 @@
             "description": "Why the value was rejected"
           }
         },
-        "required": ["name", "reason"]
+        "required": [
+          "name",
+          "reason"
+        ]
       },
       "ProblemDetailsDto": {
         "type": "object",
@@ -9804,7 +11065,11 @@
             }
           }
         },
-        "required": ["type", "title", "status"]
+        "required": [
+          "type",
+          "title",
+          "status"
+        ]
       },
       "UserSettingsResponseDto": {
         "type": "object",
@@ -9814,15 +11079,25 @@
           },
           "theme": {
             "type": "string",
-            "enum": ["light", "dark", "system"]
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
           },
           "locale": {
             "type": "string",
-            "enum": ["en", "es"]
+            "enum": [
+              "en",
+              "es"
+            ]
           },
           "density": {
             "type": "string",
-            "enum": ["comfortable", "compact"]
+            "enum": [
+              "comfortable",
+              "compact"
+            ]
           },
           "weeklyDigest": {
             "type": "boolean"
@@ -9855,15 +11130,25 @@
         "properties": {
           "theme": {
             "type": "string",
-            "enum": ["light", "dark", "system"]
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
           },
           "locale": {
             "type": "string",
-            "enum": ["en", "es"]
+            "enum": [
+              "en",
+              "es"
+            ]
           },
           "density": {
             "type": "string",
-            "enum": ["comfortable", "compact"]
+            "enum": [
+              "comfortable",
+              "compact"
+            ]
           },
           "weeklyDigest": {
             "type": "boolean"
@@ -9872,7 +11157,13 @@
             "type": "boolean"
           }
         },
-        "required": ["theme", "locale", "density", "weeklyDigest", "productUpdates"]
+        "required": [
+          "theme",
+          "locale",
+          "density",
+          "weeklyDigest",
+          "productUpdates"
+        ]
       },
       "ProfileResponseDto": {
         "type": "object",
@@ -10000,7 +11291,10 @@
             "default": true
           }
         },
-        "required": ["currentPassword", "newPassword"]
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
       },
       "ChangeEmailRequest": {
         "type": "object",
@@ -10016,7 +11310,9 @@
             "maxLength": 2048
           }
         },
-        "required": ["newEmail"]
+        "required": [
+          "newEmail"
+        ]
       },
       "UpdateProfileRequest": {
         "type": "object",
@@ -10119,7 +11415,12 @@
             "example": 3
           }
         },
-        "required": ["total", "page", "limit", "totalPages"]
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
       },
       "PaginatedUsersResponseDto": {
         "type": "object",
@@ -10134,7 +11435,10 @@
             "$ref": "#/components/schemas/PaginationMetaDto"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "MyPermissionsResponseDto": {
         "type": "object",
@@ -10148,7 +11452,9 @@
             }
           }
         },
-        "required": ["permissions"]
+        "required": [
+          "permissions"
+        ]
       },
       "UpdateUserRequest": {
         "type": "object",
@@ -10172,7 +11478,9 @@
             "maxLength": 254
           }
         },
-        "required": ["confirmation"]
+        "required": [
+          "confirmation"
+        ]
       },
       "ResourceActionDto": {
         "type": "object",
@@ -10191,7 +11499,9 @@
             "example": false
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "AuthzResourceDto": {
         "type": "object",
@@ -10216,7 +11526,9 @@
           },
           "fields": {
             "description": "Attributes that may be granted or denied individually.",
-            "example": ["name"],
+            "example": [
+              "name"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -10224,7 +11536,9 @@
           },
           "scopes": {
             "description": "Scope dimensions this resource can be narrowed by.",
-            "example": ["organization"],
+            "example": [
+              "organization"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -10236,7 +11550,13 @@
             "example": "projects"
           }
         },
-        "required": ["subject", "label", "group", "actions", "scopes"]
+        "required": [
+          "subject",
+          "label",
+          "group",
+          "actions",
+          "scopes"
+        ]
       },
       "AuthzResourceGroupDto": {
         "type": "object",
@@ -10252,7 +11572,10 @@
             }
           }
         },
-        "required": ["group", "resources"]
+        "required": [
+          "group",
+          "resources"
+        ]
       },
       "AuthzRuleDto": {
         "type": "object",
@@ -10266,7 +11589,10 @@
             "example": "Project"
           }
         },
-        "required": ["action", "subject"]
+        "required": [
+          "action",
+          "subject"
+        ]
       },
       "AuthzCatalogResponseDto": {
         "type": "object",
@@ -10285,7 +11611,10 @@
             }
           }
         },
-        "required": ["groups", "grantable"]
+        "required": [
+          "groups",
+          "grantable"
+        ]
       },
       "AccessGrantResponseDto": {
         "type": "object",
@@ -10300,7 +11629,11 @@
           },
           "principalType": {
             "type": "string",
-            "enum": ["user", "team", "role"]
+            "enum": [
+              "user",
+              "team",
+              "role"
+            ]
           },
           "principalId": {
             "type": "string",
@@ -10346,7 +11679,11 @@
         "properties": {
           "principalType": {
             "type": "string",
-            "enum": ["user", "team", "role"]
+            "enum": [
+              "user",
+              "team",
+              "role"
+            ]
           },
           "principalId": {
             "type": "string",
@@ -10368,7 +11705,11 @@
             "nullable": true
           }
         },
-        "required": ["principalType", "principalId", "resourceType"]
+        "required": [
+          "principalType",
+          "principalId",
+          "resourceType"
+        ]
       },
       "CurrentCredentialResponseDto": {
         "type": "object",
@@ -10376,7 +11717,11 @@
           "kind": {
             "type": "string",
             "description": "How the caller authenticated.",
-            "enum": ["session", "api-token", "oauth"]
+            "enum": [
+              "session",
+              "api-token",
+              "oauth"
+            ]
           },
           "userId": {
             "type": "string"
@@ -10415,6 +11760,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10452,6 +11799,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10500,7 +11849,10 @@
           "scopes": {
             "type": "array",
             "description": "Granted permissions.",
-            "example": ["users:read", "roles:write"],
+            "example": [
+              "users:read",
+              "roles:write"
+            ],
             "items": {
               "type": "string",
               "enum": [
@@ -10528,6 +11880,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10596,7 +11950,10 @@
             "example": "User"
           }
         },
-        "required": ["action", "subject"]
+        "required": [
+          "action",
+          "subject"
+        ]
       },
       "ScopeLevelDto": {
         "type": "object",
@@ -10628,6 +11985,8 @@
               "projects:write",
               "sessions:read",
               "sessions:write",
+              "automations:read",
+              "automations:write",
               "repositories:read",
               "repositories:write",
               "flags:read",
@@ -10651,7 +12010,12 @@
             }
           }
         },
-        "required": ["scope", "label", "description", "policies"]
+        "required": [
+          "scope",
+          "label",
+          "description",
+          "policies"
+        ]
       },
       "ScopeLevelsDto": {
         "type": "object",
@@ -10663,7 +12027,10 @@
             "$ref": "#/components/schemas/ScopeLevelDto"
           }
         },
-        "required": ["read", "write"]
+        "required": [
+          "read",
+          "write"
+        ]
       },
       "PermissionGroupDto": {
         "type": "object",
@@ -10683,6 +12050,7 @@
               "hosts",
               "projects",
               "sessions",
+              "automations",
               "repositories",
               "flags"
             ],
@@ -10704,7 +12072,12 @@
             "$ref": "#/components/schemas/ScopeLevelsDto"
           }
         },
-        "required": ["resource", "label", "description", "levels"]
+        "required": [
+          "resource",
+          "label",
+          "description",
+          "levels"
+        ]
       },
       "PermissionCatalogResponseDto": {
         "type": "object",
@@ -10719,7 +12092,10 @@
           "grantable": {
             "type": "array",
             "description": "Scopes the caller may put on a token. Anything outside this list is refused at creation.",
-            "example": ["profile:read", "users:read"],
+            "example": [
+              "profile:read",
+              "users:read"
+            ],
             "items": {
               "type": "string",
               "enum": [
@@ -10747,6 +12123,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10755,7 +12133,10 @@
             }
           }
         },
-        "required": ["groups", "grantable"]
+        "required": [
+          "groups",
+          "grantable"
+        ]
       },
       "CreateApiTokenRequest": {
         "type": "object",
@@ -10795,6 +12176,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -10828,7 +12211,10 @@
             }
           }
         },
-        "required": ["name", "scopes"]
+        "required": [
+          "name",
+          "scopes"
+        ]
       },
       "CreatedApiTokenResponseDto": {
         "type": "object",
@@ -10847,7 +12233,10 @@
           "scopes": {
             "type": "array",
             "description": "Granted permissions.",
-            "example": ["users:read", "roles:write"],
+            "example": [
+              "users:read",
+              "roles:write"
+            ],
             "items": {
               "type": "string",
               "enum": [
@@ -10875,6 +12264,8 @@
                 "projects:write",
                 "sessions:read",
                 "sessions:write",
+                "automations:read",
+                "automations:write",
                 "repositories:read",
                 "repositories:write",
                 "flags:read",
@@ -11002,7 +12393,12 @@
             "type": "number"
           }
         },
-        "required": ["total", "page", "limit", "totalPages"]
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
       },
       "PaginatedRolesResponseDto": {
         "type": "object",
@@ -11017,7 +12413,10 @@
             "$ref": "#/components/schemas/RolePaginationMetaDto"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "CreateRoleRequest": {
         "type": "object",
@@ -11063,12 +12462,17 @@
                   "type": "string"
                 }
               },
-              "required": ["action", "subject"]
+              "required": [
+                "action",
+                "subject"
+              ]
             },
             "default": []
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "UpdateRoleRequest": {
         "type": "object",
@@ -11108,7 +12512,10 @@
                   "type": "string"
                 }
               },
-              "required": ["action", "subject"]
+              "required": [
+                "action",
+                "subject"
+              ]
             }
           }
         }
@@ -11147,11 +12554,16 @@
                   "type": "string"
                 }
               },
-              "required": ["action", "subject"]
+              "required": [
+                "action",
+                "subject"
+              ]
             }
           }
         },
-        "required": ["permissions"]
+        "required": [
+          "permissions"
+        ]
       },
       "AssignUserRolesRequest": {
         "type": "object",
@@ -11164,7 +12576,9 @@
             }
           }
         },
-        "required": ["roleIds"]
+        "required": [
+          "roleIds"
+        ]
       },
       "CreateOrganizationRequest": {
         "type": "object",
@@ -11185,7 +12599,9 @@
             "format": "uri"
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "OrganizationResponseDto": {
         "type": "object",
@@ -11214,7 +12630,14 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "slug", "logo", "metadata", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "logo",
+          "metadata",
+          "createdAt"
+        ]
       },
       "CheckSlugRequest": {
         "type": "object",
@@ -11226,7 +12649,9 @@
             "pattern": "^[a-z0-9-]+$"
           }
         },
-        "required": ["slug"]
+        "required": [
+          "slug"
+        ]
       },
       "SlugAvailabilityResponseDto": {
         "type": "object",
@@ -11236,7 +12661,9 @@
             "description": "True when the slug is available."
           }
         },
-        "required": ["available"]
+        "required": [
+          "available"
+        ]
       },
       "MemberUserResponseDto": {
         "type": "object",
@@ -11308,7 +12735,14 @@
             ]
           }
         },
-        "required": ["id", "organizationId", "userId", "role", "createdAt", "user"]
+        "required": [
+          "id",
+          "organizationId",
+          "userId",
+          "role",
+          "createdAt",
+          "user"
+        ]
       },
       "InvitationResponseDto": {
         "type": "object",
@@ -11447,7 +12881,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"],
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ],
             "default": "member"
           },
           "teamId": {
@@ -11455,17 +12893,25 @@
             "format": "uuid"
           }
         },
-        "required": ["userId"]
+        "required": [
+          "userId"
+        ]
       },
       "UpdateMemberRoleRequest": {
         "type": "object",
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"]
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
           }
         },
-        "required": ["role"]
+        "required": [
+          "role"
+        ]
       },
       "InviteMemberRequest": {
         "type": "object",
@@ -11476,7 +12922,11 @@
           },
           "role": {
             "type": "string",
-            "enum": ["owner", "admin", "member"],
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ],
             "default": "member"
           },
           "teamId": {
@@ -11484,7 +12934,9 @@
             "format": "uuid"
           }
         },
-        "required": ["email"]
+        "required": [
+          "email"
+        ]
       },
       "WorkspaceResponseDto": {
         "type": "object",
@@ -11508,7 +12960,13 @@
             "nullable": true
           }
         },
-        "required": ["id", "name", "organizationId", "createdAt", "updatedAt"]
+        "required": [
+          "id",
+          "name",
+          "organizationId",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "CreateWorkspaceRequest": {
         "type": "object",
@@ -11523,7 +12981,9 @@
             "format": "uuid"
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "UpdateWorkspaceRequest": {
         "type": "object",
@@ -11534,7 +12994,9 @@
             "maxLength": 100
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "WorkspaceMemberResponseDto": {
         "type": "object",
@@ -11553,7 +13015,12 @@
             "type": "string"
           }
         },
-        "required": ["id", "teamId", "userId", "createdAt"]
+        "required": [
+          "id",
+          "teamId",
+          "userId",
+          "createdAt"
+        ]
       },
       "AddWorkspaceMemberRequest": {
         "type": "object",
@@ -11563,7 +13030,9 @@
             "format": "uuid"
           }
         },
-        "required": ["userId"]
+        "required": [
+          "userId"
+        ]
       },
       "InstallationResponseDto": {
         "type": "object",
@@ -11590,11 +13059,17 @@
           "accountType": {
             "type": "string",
             "example": "Organization",
-            "enum": ["User", "Organization"]
+            "enum": [
+              "User",
+              "Organization"
+            ]
           },
           "repositorySelection": {
             "type": "string",
-            "enum": ["all", "selected"],
+            "enum": [
+              "all",
+              "selected"
+            ],
             "description": "What the installation dialog granted. GitHub enforces it, not us."
           },
           "installedByUserId": {
@@ -11642,7 +13117,10 @@
             "minLength": 1
           }
         },
-        "required": ["githubInstallationId", "code"]
+        "required": [
+          "githubInstallationId",
+          "code"
+        ]
       },
       "RepositoryResponseDto": {
         "type": "object",
@@ -11709,11 +13187,21 @@
             "description": "Whether this is the repository’s default branch."
           }
         },
-        "required": ["name", "commitSha", "protected", "isDefault"]
+        "required": [
+          "name",
+          "commitSha",
+          "protected",
+          "isDefault"
+        ]
       },
       "HostStatus": {
         "type": "string",
-        "enum": ["running", "idle", "offline", "unpaired"],
+        "enum": [
+          "running",
+          "idle",
+          "offline",
+          "unpaired"
+        ],
         "description": "One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`."
       },
       "HostMachineResponseDto": {
@@ -11787,7 +13275,9 @@
             "description": "When the machine last changed, not when it last reported."
           }
         },
-        "required": ["changedAt"]
+        "required": [
+          "changedAt"
+        ]
       },
       "HostVitalsResponseDto": {
         "type": "object",
@@ -11861,7 +13351,11 @@
             "type": "string"
           }
         },
-        "required": ["ip", "firstSeenAt", "lastSeenAt"]
+        "required": [
+          "ip",
+          "firstSeenAt",
+          "lastSeenAt"
+        ]
       },
       "HostResponseDto": {
         "type": "object",
@@ -12040,7 +13534,13 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "expiresAt",
+          "createdAt"
+        ]
       },
       "PairingTokenStatusResponseDto": {
         "type": "object",
@@ -12104,7 +13604,13 @@
             ]
           }
         },
-        "required": ["id", "name", "prefix", "expiresAt", "createdAt"]
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "expiresAt",
+          "createdAt"
+        ]
       },
       "MintPairingTokenRequest": {
         "type": "object",
@@ -12119,7 +13625,9 @@
             "format": "uuid"
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "MintedPairingTokenResponseDto": {
         "type": "object",
@@ -12218,7 +13726,13 @@
             "properties": {
               "platform": {
                 "type": "string",
-                "enum": ["macos", "debian", "ubuntu", "linux", "unsupported"]
+                "enum": [
+                  "macos",
+                  "debian",
+                  "ubuntu",
+                  "linux",
+                  "unsupported"
+                ]
               },
               "osVersion": {
                 "type": "string"
@@ -12256,7 +13770,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["name", "required"]
+                  "required": [
+                    "name",
+                    "required"
+                  ]
                 },
                 "nullable": true
               },
@@ -12333,7 +13850,11 @@
             ]
           }
         },
-        "required": ["token", "name", "publicKey"]
+        "required": [
+          "token",
+          "name",
+          "publicKey"
+        ]
       },
       "HostRegistrationResponseDto": {
         "type": "object",
@@ -12358,7 +13879,10 @@
             "example": "https://releases.oppenheimer.dev"
           }
         },
-        "required": ["hostId", "fingerprint"]
+        "required": [
+          "hostId",
+          "fingerprint"
+        ]
       },
       "HostTimelineEntryResponseDto": {
         "type": "object",
@@ -12388,7 +13912,12 @@
             "type": "string"
           }
         },
-        "required": ["id", "kind", "payload", "occurredAt"]
+        "required": [
+          "id",
+          "kind",
+          "payload",
+          "occurredAt"
+        ]
       },
       "HostTimelinePageResponseDto": {
         "type": "object",
@@ -12405,7 +13934,9 @@
             "description": "Pass as `before` for the next, older page; null at the end."
           }
         },
-        "required": ["entries"]
+        "required": [
+          "entries"
+        ]
       },
       "RenameHostRequest": {
         "type": "object",
@@ -12416,7 +13947,9 @@
             "maxLength": 80
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "AdminUserResponseDto": {
         "type": "object",
@@ -12488,7 +14021,12 @@
             "nullable": true
           }
         },
-        "required": ["users", "total", "limit", "offset"]
+        "required": [
+          "users",
+          "total",
+          "limit",
+          "offset"
+        ]
       },
       "AdminCreateUserRequest": {
         "type": "object",
@@ -12519,7 +14057,10 @@
             ]
           }
         },
-        "required": ["email", "name"]
+        "required": [
+          "email",
+          "name"
+        ]
       },
       "RevokeSessionRequest": {
         "type": "object",
@@ -12529,7 +14070,9 @@
             "minLength": 1
           }
         },
-        "required": ["sessionId"]
+        "required": [
+          "sessionId"
+        ]
       },
       "AdminSuccessResponseDto": {
         "type": "object",
@@ -12538,7 +14081,9 @@
             "type": "boolean"
           }
         },
-        "required": ["success"]
+        "required": [
+          "success"
+        ]
       },
       "AdminUpdateUserRequest": {
         "type": "object",
@@ -12578,7 +14123,9 @@
             ]
           }
         },
-        "required": ["role"]
+        "required": [
+          "role"
+        ]
       },
       "BanUserRequest": {
         "type": "object",
@@ -12620,7 +14167,14 @@
             "type": "string"
           }
         },
-        "required": ["id", "userId", "expiresAt", "ipAddress", "userAgent", "createdAt"]
+        "required": [
+          "id",
+          "userId",
+          "expiresAt",
+          "ipAddress",
+          "userAgent",
+          "createdAt"
+        ]
       },
       "SetUserPasswordRequest": {
         "type": "object",
@@ -12630,7 +14184,9 @@
             "minLength": 8
           }
         },
-        "required": ["newPassword"]
+        "required": [
+          "newPassword"
+        ]
       },
       "ClientFeatureFlagsResponseDto": {
         "type": "object",
@@ -12654,7 +14210,10 @@
             "description": "Every client flag, keyed by name."
           }
         },
-        "required": ["version", "flags"]
+        "required": [
+          "version",
+          "flags"
+        ]
       },
       "FlagChangeResponseDto": {
         "type": "object",
@@ -12664,7 +14223,10 @@
           },
           "subjectType": {
             "type": "string",
-            "enum": ["flag", "segment"]
+            "enum": [
+              "flag",
+              "segment"
+            ]
           },
           "subjectKey": {
             "type": "string"
@@ -12731,7 +14293,12 @@
             "type": "number"
           }
         },
-        "required": ["total", "page", "limit", "totalPages"]
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
       },
       "PaginatedFlagChangesResponseDto": {
         "type": "object",
@@ -12746,7 +14313,10 @@
             "$ref": "#/components/schemas/FlagChangePaginationMetaDto"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "FlagConditionDto": {
         "type": "object",
@@ -12765,7 +14335,13 @@
           },
           "operator": {
             "type": "string",
-            "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+            "enum": [
+              "in",
+              "not_in",
+              "ends_with",
+              "semver_gte",
+              "semver_lt"
+            ]
           },
           "values": {
             "type": "array",
@@ -12774,7 +14350,11 @@
             }
           }
         },
-        "required": ["attribute", "operator", "values"]
+        "required": [
+          "attribute",
+          "operator",
+          "values"
+        ]
       },
       "FlagSegmentResponseDto": {
         "type": "object",
@@ -12812,7 +14392,15 @@
             "type": "string"
           }
         },
-        "required": ["key", "name", "description", "conditions", "usedBy", "updatedBy", "updatedAt"]
+        "required": [
+          "key",
+          "name",
+          "description",
+          "conditions",
+          "usedBy",
+          "updatedBy",
+          "updatedAt"
+        ]
       },
       "CreateFlagSegmentRequest": {
         "type": "object",
@@ -12853,7 +14441,13 @@
                 },
                 "operator": {
                   "type": "string",
-                  "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                  "enum": [
+                    "in",
+                    "not_in",
+                    "ends_with",
+                    "semver_gte",
+                    "semver_lt"
+                  ]
                 },
                 "values": {
                   "type": "array",
@@ -12866,7 +14460,11 @@
                   }
                 }
               },
-              "required": ["attribute", "operator", "values"]
+              "required": [
+                "attribute",
+                "operator",
+                "values"
+              ]
             }
           },
           "comment": {
@@ -12874,7 +14472,11 @@
             "maxLength": 500
           }
         },
-        "required": ["key", "name", "conditions"]
+        "required": [
+          "key",
+          "name",
+          "conditions"
+        ]
       },
       "UpdateFlagSegmentRequest": {
         "type": "object",
@@ -12910,7 +14512,13 @@
                 },
                 "operator": {
                   "type": "string",
-                  "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                  "enum": [
+                    "in",
+                    "not_in",
+                    "ends_with",
+                    "semver_gte",
+                    "semver_lt"
+                  ]
                 },
                 "values": {
                   "type": "array",
@@ -12923,7 +14531,11 @@
                   }
                 }
               },
-              "required": ["attribute", "operator", "values"]
+              "required": [
+                "attribute",
+                "operator",
+                "values"
+              ]
             }
           },
           "comment": {
@@ -12950,7 +14562,10 @@
             "description": "Percentage of the audience, 0–100. The arms sum to 100."
           }
         },
-        "required": ["value", "weight"]
+        "required": [
+          "value",
+          "weight"
+        ]
       },
       "FlagServeDto": {
         "type": "object",
@@ -12995,7 +14610,11 @@
             "$ref": "#/components/schemas/FlagServeDto"
           }
         },
-        "required": ["id", "conditions", "serve"]
+        "required": [
+          "id",
+          "conditions",
+          "serve"
+        ]
       },
       "FeatureFlagConfigResponseDto": {
         "type": "object",
@@ -13028,7 +14647,13 @@
             "type": "string"
           }
         },
-        "required": ["enabled", "rules", "fallthrough", "updatedBy", "updatedAt"]
+        "required": [
+          "enabled",
+          "rules",
+          "fallthrough",
+          "updatedBy",
+          "updatedAt"
+        ]
       },
       "FeatureFlagResponseDto": {
         "type": "object",
@@ -13041,14 +14666,21 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["release", "ops", "experiment"]
+            "enum": [
+              "release",
+              "ops",
+              "experiment"
+            ]
           },
           "owner": {
             "type": "string"
           },
           "type": {
             "type": "string",
-            "enum": ["boolean", "variant"]
+            "enum": [
+              "boolean",
+              "variant"
+            ]
           },
           "variants": {
             "description": "The values a variant flag takes; empty for a boolean flag.",
@@ -13074,7 +14706,10 @@
           },
           "bucketBy": {
             "type": "string",
-            "enum": ["organization", "user"]
+            "enum": [
+              "organization",
+              "user"
+            ]
           },
           "expiresAt": {
             "type": "string",
@@ -13129,14 +14764,25 @@
           },
           "reason": {
             "type": "string",
-            "enum": ["DEFAULT", "DISABLED", "TARGETING_MATCH", "SPLIT", "FALLTHROUGH", "ERROR"]
+            "enum": [
+              "DEFAULT",
+              "DISABLED",
+              "TARGETING_MATCH",
+              "SPLIT",
+              "FALLTHROUGH",
+              "ERROR"
+            ]
           },
           "ruleId": {
             "type": "string",
             "description": "The rule that decided, when one did."
           }
         },
-        "required": ["key", "value", "reason"]
+        "required": [
+          "key",
+          "value",
+          "reason"
+        ]
       },
       "UpdateFeatureFlagRequest": {
         "type": "object",
@@ -13180,7 +14826,13 @@
                       },
                       "operator": {
                         "type": "string",
-                        "enum": ["in", "not_in", "ends_with", "semver_gte", "semver_lt"]
+                        "enum": [
+                          "in",
+                          "not_in",
+                          "ends_with",
+                          "semver_gte",
+                          "semver_lt"
+                        ]
                       },
                       "values": {
                         "type": "array",
@@ -13193,7 +14845,11 @@
                         }
                       }
                     },
-                    "required": ["attribute", "operator", "values"]
+                    "required": [
+                      "attribute",
+                      "operator",
+                      "values"
+                    ]
                   }
                 },
                 "serve": {
@@ -13214,7 +14870,9 @@
                           ]
                         }
                       },
-                      "required": ["value"]
+                      "required": [
+                        "value"
+                      ]
                     },
                     {
                       "type": "object",
@@ -13246,16 +14904,25 @@
                                 "exclusiveMaximum": false
                               }
                             },
-                            "required": ["value", "weight"]
+                            "required": [
+                              "value",
+                              "weight"
+                            ]
                           }
                         }
                       },
-                      "required": ["split"]
+                      "required": [
+                        "split"
+                      ]
                     }
                   ]
                 }
               },
-              "required": ["id", "conditions", "serve"]
+              "required": [
+                "id",
+                "conditions",
+                "serve"
+              ]
             }
           },
           "fallthrough": {
@@ -13276,7 +14943,9 @@
                     ]
                   }
                 },
-                "required": ["value"]
+                "required": [
+                  "value"
+                ]
               },
               {
                 "type": "object",
@@ -13308,11 +14977,16 @@
                           "exclusiveMaximum": false
                         }
                       },
-                      "required": ["value", "weight"]
+                      "required": [
+                        "value",
+                        "weight"
+                      ]
                     }
                   }
                 },
-                "required": ["split"]
+                "required": [
+                  "split"
+                ]
               }
             ]
           },
@@ -13321,7 +14995,11 @@
             "maxLength": 500
           }
         },
-        "required": ["enabled", "rules", "fallthrough"]
+        "required": [
+          "enabled",
+          "rules",
+          "fallthrough"
+        ]
       },
       "ToggleFeatureFlagRequest": {
         "type": "object",
@@ -13334,7 +15012,9 @@
             "maxLength": 500
           }
         },
-        "required": ["enabled"]
+        "required": [
+          "enabled"
+        ]
       },
       "ProjectRepositoryResponseDto": {
         "type": "object",
@@ -13468,7 +15148,12 @@
                   "type": "boolean"
                 }
               },
-              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
+              "required": [
+                "installationId",
+                "githubRepoId",
+                "baseBranch",
+                "isDefault"
+              ]
             }
           },
           "defaultHostId": {
@@ -13478,11 +15163,20 @@
           },
           "defaultAgent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell"
+            ],
             "nullable": true
           }
         },
-        "required": ["name", "repositories"]
+        "required": [
+          "name",
+          "repositories"
+        ]
       },
       "UpdateProjectRequest": {
         "type": "object",
@@ -13517,7 +15211,12 @@
                   "type": "boolean"
                 }
               },
-              "required": ["installationId", "githubRepoId", "baseBranch", "isDefault"]
+              "required": [
+                "installationId",
+                "githubRepoId",
+                "baseBranch",
+                "isDefault"
+              ]
             }
           },
           "defaultHostId": {
@@ -13527,7 +15226,13 @@
           },
           "defaultAgent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"],
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell"
+            ],
             "nullable": true
           }
         }
@@ -13543,18 +15248,30 @@
           },
           "permission": {
             "type": "string",
-            "enum": ["ask", "auto", "full"],
+            "enum": [
+              "ask",
+              "auto",
+              "full"
+            ],
             "nullable": true,
             "description": "What the agent may do on the host without asking. `full` is the one level that changes a machine unattended, and is never a remembered default. Null for an agent with no approvals (the blank terminal)."
           },
           "effort": {
             "type": "string",
-            "enum": ["minimal", "low", "medium", "high", "max"],
+            "enum": [
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "max"
+            ],
             "nullable": true,
             "description": "How hard the agent may think. Null leaves the agent its own default."
           }
         },
-        "required": ["permission"]
+        "required": [
+          "permission"
+        ]
       },
       "SessionCheckoutResponseDto": {
         "type": "object",
@@ -13590,7 +15307,10 @@
           },
           "mode": {
             "type": "string",
-            "enum": ["worktree", "clone"],
+            "enum": [
+              "worktree",
+              "clone"
+            ],
             "description": "Recorded rather than guessed: cleanup differs between the two."
           },
           "baseBranch": {
@@ -13667,7 +15387,12 @@
           },
           "lifecycle": {
             "type": "string",
-            "enum": ["starting", "open", "failed", "resolved"],
+            "enum": [
+              "starting",
+              "open",
+              "failed",
+              "resolved"
+            ],
             "description": "The stored lifecycle: the fold of the session’s append-only log. It answers whether the work is finished, not whether a process is running — stopping a session does not move it."
           },
           "cwdCheckoutId": {
@@ -13754,7 +15479,12 @@
             "example": 3
           }
         },
-        "required": ["total", "page", "limit", "totalPages"]
+        "required": [
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ]
       },
       "PaginatedSessionsResponseDto": {
         "type": "object",
@@ -13769,7 +15499,10 @@
             "$ref": "#/components/schemas/SessionPageMetaDto"
           }
         },
-        "required": ["data", "meta"]
+        "required": [
+          "data",
+          "meta"
+        ]
       },
       "CreateSessionRequest": {
         "type": "object",
@@ -13780,7 +15513,13 @@
           },
           "agent": {
             "type": "string",
-            "enum": ["claude-code", "codex", "opencode", "grok", "shell"]
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell"
+            ]
           },
           "projectId": {
             "type": "string",
@@ -13813,7 +15552,10 @@
                   "maxLength": 255
                 }
               },
-              "required": ["installationId", "githubRepoId"]
+              "required": [
+                "installationId",
+                "githubRepoId"
+              ]
             }
           },
           "cwdGithubRepoId": {
@@ -13831,11 +15573,21 @@
               },
               "permission": {
                 "type": "string",
-                "enum": ["ask", "auto", "full"]
+                "enum": [
+                  "ask",
+                  "auto",
+                  "full"
+                ]
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "low", "medium", "high", "max"]
+                "enum": [
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ]
               }
             }
           },
@@ -13845,7 +15597,11 @@
             "maxLength": 2048
           }
         },
-        "required": ["hostId", "agent", "checkouts"]
+        "required": [
+          "hostId",
+          "agent",
+          "checkouts"
+        ]
       },
       "SessionEventResponseDto": {
         "type": "object",
@@ -13865,7 +15621,10 @@
           },
           "source": {
             "type": "string",
-            "enum": ["runner", "api"],
+            "enum": [
+              "runner",
+              "api"
+            ],
             "description": "Who wrote the entry."
           },
           "kind": {
@@ -13915,7 +15674,10 @@
             "example": 24
           }
         },
-        "required": ["data", "nextSeq"]
+        "required": [
+          "data",
+          "nextSeq"
+        ]
       },
       "IssueAttachTicketRequest": {
         "type": "object",
@@ -13949,7 +15711,12 @@
             "example": 0
           }
         },
-        "required": ["ticket", "url", "expiresAt", "window"]
+        "required": [
+          "ticket",
+          "url",
+          "expiresAt",
+          "window"
+        ]
       },
       "AddCheckoutRequest": {
         "type": "object",
@@ -13969,7 +15736,10 @@
             "maxLength": 255
           }
         },
-        "required": ["installationId", "githubRepoId"]
+        "required": [
+          "installationId",
+          "githubRepoId"
+        ]
       },
       "RenameSessionRequest": {
         "type": "object",
@@ -13980,7 +15750,9 @@
             "maxLength": 200
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "MoveSessionRequest": {
         "type": "object",
@@ -13990,7 +15762,1511 @@
             "format": "uuid"
           }
         },
-        "required": ["projectId"]
+        "required": [
+          "projectId"
+        ]
+      },
+      "AutomationRepositoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The installation its tokens are minted through."
+          },
+          "githubRepoId": {
+            "type": "string",
+            "description": "GitHub’s repository id, as a string (a bigint).",
+            "example": "821374923"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "`owner/repo`, as it was when the revision was saved.",
+            "example": "acme/xrp-mobile"
+          }
+        },
+        "required": [
+          "installationId",
+          "githubRepoId",
+          "fullName"
+        ]
+      },
+      "AutomationRevisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "number",
+            "description": "Numbered from 1; each save that changes what a run executes adds one."
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent": {
+            "type": "string",
+            "example": "claude-code"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "permission": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "full"
+            ]
+          },
+          "effort": {
+            "type": "string",
+            "nullable": true
+          },
+          "prompt": {
+            "type": "string",
+            "description": "The instructions every run is given."
+          },
+          "repositories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRepositoryResponseDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "hostId",
+          "agent",
+          "permission",
+          "prompt",
+          "repositories",
+          "createdAt"
+        ]
+      },
+      "ScheduleResponseDto": {
+        "type": "object",
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "once",
+              "hourly",
+              "daily",
+              "weekdays",
+              "weekly",
+              "monthly"
+            ]
+          },
+          "hour": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "minute": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 59
+          },
+          "days": {
+            "description": "Weekly: 0 = Sunday … 6 = Saturday.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "dayOfMonth": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 28
+          },
+          "date": {
+            "type": "string",
+            "description": "Once: the local date, `YYYY-MM-DD`."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The IANA zone the wall time is in.",
+            "example": "Europe/Madrid"
+          }
+        },
+        "required": [
+          "frequency",
+          "hour",
+          "minute",
+          "timezone"
+        ]
+      },
+      "TriggerFilterResponseDto": {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": [
+              "any",
+              "equals"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "The branch or label, when `op` is `equals`."
+          }
+        },
+        "required": [
+          "op"
+        ]
+      },
+      "AutomationTriggerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "number",
+            "description": "The card’s place in the editor, from 0."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "schedule",
+              "github"
+            ]
+          },
+          "event": {
+            "type": "string",
+            "description": "`schedule`, or the catalog event (`pr_opened`, `push`, …)."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleResponseDto"
+          },
+          "repositories": {
+            "description": "GitHub: the repositories it listens on.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filter": {
+            "$ref": "#/components/schemas/TriggerFilterResponseDto"
+          },
+          "nextFireAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Schedule: the next slot, UTC."
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "source",
+          "event"
+        ]
+      },
+      "AutomationRunSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "description": "The name the agent gave the session, or the automation’s name and cause."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed",
+              "cancelled",
+              "skipped",
+              "expired"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "createdAt"
+        ]
+      },
+      "AutomationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Whose runs these are: every run acts as this person."
+          },
+          "ownedByMe": {
+            "type": "boolean",
+            "description": "Whether the caller owns it."
+          },
+          "name": {
+            "type": "string",
+            "example": "Review new pull requests"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "running"
+            ],
+            "description": "`running` while any run is live, else `active` or `paused`."
+          },
+          "pausedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pausedReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "user",
+              "project_archived",
+              "host_unpaired",
+              "owner_lost_access"
+            ]
+          },
+          "nextRunAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "The earliest next slot of its schedule triggers. Null when paused or event-only."
+          },
+          "revision": {
+            "$ref": "#/components/schemas/AutomationRevisionResponseDto"
+          },
+          "triggers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationTriggerResponseDto"
+            }
+          },
+          "overlap": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "skip",
+              "queue"
+            ]
+          },
+          "maxRunsPerHour": {
+            "type": "number",
+            "nullable": true
+          },
+          "version": {
+            "type": "number",
+            "description": "Send it back on a save; a stale one is refused (`AUTOMATIONS_003`)."
+          },
+          "runCount": {
+            "type": "number",
+            "description": "Runs that became sessions, over the listed window."
+          },
+          "lastRuns": {
+            "description": "The last six, newest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRunSummaryResponseDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "projectId",
+          "ownerUserId",
+          "ownedByMe",
+          "name",
+          "status",
+          "revision",
+          "triggers",
+          "version",
+          "runCount",
+          "lastRuns",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateAutomationRequest": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "installationId",
+                "githubRepoId"
+              ]
+            }
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "triggers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "schedule"
+                      ]
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": [
+                        "once",
+                        "hourly",
+                        "daily",
+                        "weekdays",
+                        "weekly",
+                        "monthly"
+                      ]
+                    },
+                    "hour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 23,
+                      "exclusiveMaximum": false
+                    },
+                    "minute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 59,
+                      "exclusiveMaximum": false
+                    },
+                    "days": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 7,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": false,
+                        "maximum": 6,
+                        "exclusiveMaximum": false
+                      }
+                    },
+                    "dayOfMonth": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "exclusiveMinimum": false,
+                      "maximum": 28,
+                      "exclusiveMaximum": false
+                    },
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "frequency",
+                    "hour",
+                    "minute",
+                    "timezone"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "github"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "pr_opened",
+                        "pr_draft",
+                        "pr_sync",
+                        "pr_merged",
+                        "comment",
+                        "push",
+                        "issue_labeled",
+                        "check_failed",
+                        "issue_opened",
+                        "mention",
+                        "release"
+                      ]
+                    },
+                    "repositories": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                      }
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "any"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "op"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "equals"
+                              ]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "op",
+                            "value"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "event",
+                    "repositories",
+                    "filter"
+                  ]
+                }
+              ]
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "agent": {
+            "type": "string",
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell"
+            ]
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "full"
+                ],
+                "default": "auto"
+              },
+              "effort": {
+                "type": "string",
+                "enum": [
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ]
+              }
+            },
+            "default": {
+              "permission": "auto"
+            }
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          },
+          "overlap": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "queue"
+            ],
+            "nullable": true
+          },
+          "maxRunsPerHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          }
+        },
+        "required": [
+          "projectId",
+          "repositories",
+          "hostId",
+          "name",
+          "triggers",
+          "prompt",
+          "agent"
+        ]
+      },
+      "PreviewTriggerRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "github"
+            ]
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "pr_opened",
+              "pr_draft",
+              "pr_sync",
+              "pr_merged",
+              "comment",
+              "push",
+              "issue_labeled",
+              "check_failed",
+              "issue_opened",
+              "mention",
+              "release"
+            ]
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "exclusiveMinimum": true
+            }
+          },
+          "filter": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "type": "string",
+                    "enum": [
+                      "any"
+                    ]
+                  }
+                },
+                "required": [
+                  "op"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "type": "string",
+                    "enum": [
+                      "equals"
+                    ]
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                },
+                "required": [
+                  "op",
+                  "value"
+                ]
+              }
+            ]
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 30,
+            "exclusiveMaximum": false,
+            "default": 7
+          }
+        },
+        "required": [
+          "source",
+          "event",
+          "repositories",
+          "filter"
+        ]
+      },
+      "TriggerPreviewMatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "example": "acme/xrp-mobile"
+          },
+          "ref": {
+            "type": "string",
+            "example": "#124"
+          },
+          "title": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string",
+            "example": "jordiparra"
+          },
+          "url": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository",
+          "occurredAt"
+        ]
+      },
+      "TriggerPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "How many stored events the card matches in the window."
+          },
+          "days": {
+            "type": "number"
+          },
+          "matches": {
+            "description": "The two most recent.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TriggerPreviewMatchResponseDto"
+            }
+          }
+        },
+        "required": [
+          "count",
+          "days",
+          "matches"
+        ]
+      },
+      "UpdateAutomationRequest": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "repositories": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "installationId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "githubRepoId": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                }
+              },
+              "required": [
+                "installationId",
+                "githubRepoId"
+              ]
+            }
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "triggers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "schedule"
+                      ]
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "enum": [
+                        "once",
+                        "hourly",
+                        "daily",
+                        "weekdays",
+                        "weekly",
+                        "monthly"
+                      ]
+                    },
+                    "hour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 23,
+                      "exclusiveMaximum": false
+                    },
+                    "minute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": false,
+                      "maximum": 59,
+                      "exclusiveMaximum": false
+                    },
+                    "days": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 7,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": false,
+                        "maximum": 6,
+                        "exclusiveMaximum": false
+                      }
+                    },
+                    "dayOfMonth": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "exclusiveMinimum": false,
+                      "maximum": 28,
+                      "exclusiveMaximum": false
+                    },
+                    "date": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "timezone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "frequency",
+                    "hour",
+                    "minute",
+                    "timezone"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "github"
+                      ]
+                    },
+                    "event": {
+                      "type": "string",
+                      "enum": [
+                        "pr_opened",
+                        "pr_draft",
+                        "pr_sync",
+                        "pr_merged",
+                        "comment",
+                        "push",
+                        "issue_labeled",
+                        "check_failed",
+                        "issue_opened",
+                        "mention",
+                        "release"
+                      ]
+                    },
+                    "repositories": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 20,
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "exclusiveMinimum": true
+                      }
+                    },
+                    "filter": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "any"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "op"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "op": {
+                              "type": "string",
+                              "enum": [
+                                "equals"
+                              ]
+                            },
+                            "value": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "op",
+                            "value"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "event",
+                    "repositories",
+                    "filter"
+                  ]
+                }
+              ]
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "agent": {
+            "type": "string",
+            "enum": [
+              "claude-code",
+              "codex",
+              "opencode",
+              "grok",
+              "shell"
+            ]
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "permission": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "full"
+                ],
+                "default": "auto"
+              },
+              "effort": {
+                "type": "string",
+                "enum": [
+                  "minimal",
+                  "low",
+                  "medium",
+                  "high",
+                  "max"
+                ]
+              }
+            },
+            "default": {
+              "permission": "auto"
+            }
+          },
+          "overlap": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "queue"
+            ],
+            "nullable": true
+          },
+          "maxRunsPerHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 1000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "RunCauseResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Pull request opened"
+          },
+          "text": {
+            "type": "string",
+            "example": "Harden API config loading"
+          },
+          "ref": {
+            "type": "string",
+            "example": "acme/xrp-mobile#124"
+          },
+          "actor": {
+            "type": "string",
+            "example": "jordiparra"
+          },
+          "url": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string",
+            "description": "The catalog event, or `schedule` / `manual`."
+          }
+        },
+        "required": [
+          "label",
+          "text",
+          "eventType"
+        ]
+      },
+      "RunTurnResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "in_progress",
+              "requires_action",
+              "completed",
+              "failed",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "exitCode": {
+            "type": "number",
+            "nullable": true
+          },
+          "result": {
+            "type": "string",
+            "nullable": true,
+            "description": "The agent’s final message."
+          },
+          "failureDetail": {
+            "type": "string",
+            "nullable": true
+          },
+          "costUsd": {
+            "type": "number",
+            "nullable": true,
+            "description": "The agent’s own estimate."
+          },
+          "permissionDenials": {
+            "type": "number"
+          },
+          "prompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "The prompt the agent was given."
+          }
+        },
+        "required": [
+          "state",
+          "permissionDenials"
+        ]
+      },
+      "AutomationRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "automationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "automationName": {
+            "type": "string",
+            "description": "The automation’s name, kept when it is deleted."
+          },
+          "automationDeleted": {
+            "type": "boolean",
+            "description": "The automation was deleted; the list reads “Deleted automation”."
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed",
+              "cancelled",
+              "skipped",
+              "expired"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "skipped",
+              "expired",
+              "dispatched"
+            ],
+            "description": "What became of the firing before a session."
+          },
+          "skipReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "paused",
+              "deleted",
+              "own_event",
+              "automation_rate_limited",
+              "workspace_rate_limited",
+              "overlapping",
+              "missed",
+              "not_launchable",
+              "agent_unavailable"
+            ]
+          },
+          "cause": {
+            "type": "string",
+            "enum": [
+              "schedule",
+              "event",
+              "manual"
+            ]
+          },
+          "causeSummary": {
+            "$ref": "#/components/schemas/RunCauseResponseDto"
+          },
+          "title": {
+            "type": "string",
+            "example": "Review #124 · Harden API config loading"
+          },
+          "sessionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "branch": {
+            "type": "string",
+            "nullable": true,
+            "description": "The session’s working branch."
+          },
+          "revisionNumber": {
+            "type": "number"
+          },
+          "agent": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "hostId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledFor": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "dispatchedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "endedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true,
+            "description": "Milliseconds, once ended."
+          },
+          "turn": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunTurnResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "automationId",
+          "automationName",
+          "automationDeleted",
+          "projectId",
+          "status",
+          "outcome",
+          "cause",
+          "causeSummary",
+          "title",
+          "revisionNumber",
+          "agent",
+          "hostId",
+          "createdAt"
+        ]
+      },
+      "RunStatusCountsResponseDto": {
+        "type": "object",
+        "properties": {
+          "all": {
+            "type": "number"
+          },
+          "completed": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "running": {
+            "type": "number",
+            "description": "Queued and running together, as the Running tab shows them."
+          }
+        },
+        "required": [
+          "all",
+          "completed",
+          "failed",
+          "running"
+        ]
+      },
+      "AutomationRunPageResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationRunResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "counts": {
+            "description": "Per status tab, under the same facets but not the status filter.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunStatusCountsResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "counts"
+        ]
+      },
+      "RunHistoryDayResponseDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The local calendar day, `YYYY-MM-DD`.",
+            "example": "2026-09-25"
+          },
+          "succeeded": {
+            "type": "number",
+            "description": "Runs that did not fail, running ones included, as the chart counts them."
+          },
+          "failed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "succeeded",
+          "failed"
+        ]
+      },
+      "RunHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "description": "Oldest first, today last.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunHistoryDayResponseDto"
+            }
+          },
+          "succeeded": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Madrid"
+          }
+        },
+        "required": [
+          "days",
+          "succeeded",
+          "failed",
+          "total",
+          "timezone"
+        ]
+      },
+      "AutomationSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "maxRunsPerAutomationHour": {
+            "type": "number"
+          },
+          "maxRunsPerWorkspaceHour": {
+            "type": "number"
+          },
+          "headlessRunsPerHost": {
+            "type": "number"
+          },
+          "overlap": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "queue"
+            ]
+          },
+          "staleTtlSeconds": {
+            "type": "number"
+          },
+          "missedGraceSeconds": {
+            "type": "number"
+          },
+          "maxRunSeconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "maxRunsPerAutomationHour",
+          "maxRunsPerWorkspaceHour",
+          "headlessRunsPerHost",
+          "overlap",
+          "staleTtlSeconds",
+          "missedGraceSeconds",
+          "maxRunSeconds"
+        ]
+      },
+      "UpdateAutomationSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "maxRunsPerAutomationHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 10000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "maxRunsPerWorkspaceHour": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 100000,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "headlessRunsPerHost": {
+            "type": "integer",
+            "minimum": 1,
+            "exclusiveMinimum": false,
+            "maximum": 100,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "overlap": {
+            "type": "string",
+            "enum": [
+              "skip",
+              "queue"
+            ],
+            "nullable": true
+          },
+          "staleTtlSeconds": {
+            "type": "integer",
+            "minimum": 60,
+            "exclusiveMinimum": false,
+            "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "missedGraceSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 86400,
+            "exclusiveMaximum": false,
+            "nullable": true
+          },
+          "maxRunSeconds": {
+            "type": "integer",
+            "minimum": 60,
+            "exclusiveMinimum": false,
+            "maximum": 604800,
+            "exclusiveMaximum": false,
+            "nullable": true
+          }
+        }
       },
       "CapabilitiesResponseDto": {
         "type": "object",
@@ -14014,7 +17290,12 @@
             "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
           }
         },
-        "required": ["google_oauth", "github_oauth", "github_app", "github_app_install_url"]
+        "required": [
+          "google_oauth",
+          "github_oauth",
+          "github_app",
+          "github_app_install_url"
+        ]
       }
     }
   }
