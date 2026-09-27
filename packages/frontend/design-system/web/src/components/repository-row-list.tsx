@@ -1,32 +1,38 @@
 'use client';
 
-import { ChevronDownIcon, GitBranchIcon, SearchIcon } from 'lucide-react';
+import { ChevronDownIcon, GitBranchIcon, SearchIcon, XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { BrandGlyph } from './brand-glyph';
 import { Checkbox } from './checkbox';
-import { Chip } from './chip';
 import { ChipSelectEmpty, ChipSelectItem, ChipSelectPopup, ChipSelectSearch } from './chip-select';
+import { IconButton } from './icon-button';
+import { inputVariants } from './input';
 import { Popover, PopoverTrigger } from './popover';
 
 /**
- * RepositoryRowList — the project dialog's repository picker: a 14px card
- * with a search row on top and one row per repository the App can see. A
- * row is a checkbox and the mono name; once ticked it grows a "Default"
- * toggle chip (cloned into every new session) and a 168px pill for the base
- * branch, which opens the same searchable pane the scope chips use. Untied
- * rows keep the two controls' space but not their ink, so ticking a row
- * never reflows the list.
+ * The project dialog's repositories, in the two places the frame puts them
+ * (`design/version1/SessionsConsole.dc.html`, the `proj-title` dialog). Both
+ * edit one value — the rows a project holds — and the caller owns it.
  *
- * It is a form control, not a menu: the caller owns `value` and renders the
- * label, the help glyph and the "1 of 4 by default" count above it.
+ * `RepositoryRowList` is the field: an "Add a repository…" field that opens
+ * the searchable pane over the repositories the App can see and not yet
+ * chosen, then the chosen ones as mono rows in a 14px card, each with a
+ * remove button. An added row is cloned by default and starts on the
+ * repository's own default branch. The pane is `ChipSelect`'s — a search row,
+ * arrow keys and Enter — on the Popover every picker here is built on,
+ * rather than Base UI's Combobox, which would put a second list engine on
+ * the console's first load (`scripts/check-bundle-size.mjs`).
+ *
+ * `RepositoryDefaultRows` is the same rows under the dialog's folding
+ * Defaults: a checkbox that says whether new sessions clone it, and a 168px
+ * pill for the base branch, which opens the same searchable pane the scope
+ * chips use.
  *
  * ```tsx
- * <RepositoryRowList
- *   repositories={[{ id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [...] }]}
- *   value={[{ id: 'xrp-mobile', isDefault: true, branch: 'main' }]}
- *   onValueChange={setRows}
- * />
+ * <RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />
+ * <RepositoryDefaultRows repositories={repos} value={rows} onValueChange={setRows} />
  * ```
  */
 type RepositoryRowBranch = { value: string; label?: string; description?: string };
@@ -47,212 +53,324 @@ type RepositoryRowValue = {
   branch: string;
 };
 
-const defaultEmptyText = (query: string): React.ReactNode => `No repository matches “${query}”.`;
+const defaultEmptyText = (query: string): React.ReactNode =>
+  query ? `No repository matches “${query}”.` : 'No repository to add.';
+const defaultRemoveLabel = (name: string): string => `Remove ${name}`;
 const defaultBranchEmptyText = (query: string): React.ReactNode => `No branch named “${query}”`;
 const defaultBranchLabel = (name: string): string => `Base branch for ${name}`;
+
+/** A chosen row's name, as it reads in both lists. */
+function nameOf(repositories: readonly RepositoryRowOption[], id: string) {
+  return repositories.find((repo) => repo.id === id)?.name ?? id;
+}
 
 function RepositoryRowList({
   repositories,
   value,
   onValueChange,
-  searchPlaceholder = 'Search repositories…',
+  placeholder = 'Add a repository…',
   emptyText: emptyTextProp,
-  defaultLabel = 'Default',
-  defaultTitle = 'Cloned by default in new sessions',
-  branchSearchPlaceholder = 'Search branches',
-  branchEmptyText: branchEmptyTextProp,
-  branchLabel: branchLabelProp,
+  removeLabel: removeLabelProp,
+  disabled,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'onChange'> & {
   repositories: RepositoryRowOption[];
   value: RepositoryRowValue[];
   onValueChange: (value: RepositoryRowValue[]) => void;
-  searchPlaceholder?: string;
+  placeholder?: string;
+  /** The popup's line when nothing is left to add, or nothing matches. */
   emptyText?: (query: string) => React.ReactNode;
-  defaultLabel?: React.ReactNode;
-  defaultTitle?: string;
-  branchSearchPlaceholder?: string;
-  branchEmptyText?: (query: string) => React.ReactNode;
-  branchLabel?: (name: string) => string;
+  removeLabel?: (name: string) => string;
+  disabled?: boolean;
 }) {
   // Defaults resolved in the body, not the signature: the React Compiler
   // leaves a component whose default parameter is a function uncompiled.
   const emptyText = emptyTextProp ?? defaultEmptyText;
-  const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
-  const branchLabel = branchLabelProp ?? defaultBranchLabel;
+  const removeLabel = removeLabelProp ?? defaultRemoveLabel;
+  const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
+  const [active, setActive] = React.useState(0);
+  const chosen = new Set(value.map((row) => row.id));
   const term = query.trim().toLowerCase();
-  const shown = repositories.filter((repo) => (term ? repo.name.toLowerCase().includes(term) : true));
-  const byId = new Map(value.map((row) => [row.id, row]));
+  const available = repositories.filter(
+    (repo) => !chosen.has(repo.id) && (term ? repo.name.toLowerCase().includes(term) : true),
+  );
 
-  function patch(id: string, next: Partial<RepositoryRowValue> | null) {
-    if (next === null) return onValueChange(value.filter((row) => row.id !== id));
-    const current = byId.get(id);
-    if (current) return onValueChange(value.map((row) => (row.id === id ? { ...row, ...next } : row)));
-    const repo = repositories.find((r) => r.id === id);
-    if (!repo) return;
-    onValueChange([...value, { id, isDefault: true, branch: repo.defaultBranch, ...next }]);
+  function add(repo: RepositoryRowOption) {
+    onValueChange([...value, { id: repo.id, isDefault: true, branch: repo.defaultBranch }]);
+    setOpen(false);
+    setQuery('');
+  }
+
+  function onKeyDown(event: React.KeyboardEvent) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActive((i) => Math.min(i + 1, available.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const repo = available[active];
+      if (repo) add(repo);
+    }
   }
 
   return (
     <div
       data-slot="repository-row-list"
-      className={cn(
-        'flex flex-col overflow-hidden rounded-md border border-border-subtle bg-card',
-        className,
-      )}
+      className={cn('flex flex-col gap-2', className)}
       {...props}
     >
-      <div className="flex items-center gap-[7px] border-b border-border-subtle px-3 py-2 text-fg-subtle">
-        <SearchIcon className="size-3.5 shrink-0" aria-hidden />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none placeholder:text-fg-subtle"
-        />
-      </div>
-      {shown.length === 0 ? (
-        <p className="m-0 p-3 text-[12.5px] text-fg-subtle">{emptyText(query)}</p>
-      ) : (
-        shown.map((repo) => (
-          <RepositoryRow
-            key={repo.id}
-            repository={repo}
-            row={byId.get(repo.id)}
-            onToggle={(on) => patch(repo.id, on ? {} : null)}
-            onDefaultChange={(isDefault) => patch(repo.id, { isDefault })}
-            onBranchChange={(branch) => patch(repo.id, { branch })}
-            defaultLabel={defaultLabel}
-            defaultTitle={defaultTitle}
-            branchSearchPlaceholder={branchSearchPlaceholder}
-            branchEmptyText={branchEmptyText}
-            branchLabel={branchLabel(repo.name)}
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          setActive(0);
+          if (!next) setQuery('');
+        }}
+      >
+        <PopoverTrigger
+          disabled={disabled}
+          render={
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              data-slot="repository-row-list-add"
+              className={cn(inputVariants({ size: 'md' }), 'cursor-text text-left text-fg-subtle')}
+            />
+          }
+        >
+          <SearchIcon className="size-3.75" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-field-placeholder">{placeholder}</span>
+        </PopoverTrigger>
+        <ChipSelectPopup style={{ width: 'var(--anchor-width)' }}>
+          <ChipSelectSearch
+            value={query}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onKeyDown}
           />
-        ))
-      )}
+          <div role="listbox" aria-label={placeholder}>
+            {available.length > 0 ? (
+              available.map((repo, index) => (
+                <ChipSelectItem
+                  key={repo.id}
+                  mono
+                  highlighted={index === active}
+                  leading={<BrandGlyph name="github" size={15} aria-hidden className="opacity-70" />}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => add(repo)}
+                >
+                  {repo.name}
+                </ChipSelectItem>
+              ))
+            ) : (
+              <ChipSelectEmpty className="text-left text-fg-subtle">
+                {emptyText(query.trim())}
+              </ChipSelectEmpty>
+            )}
+          </div>
+        </ChipSelectPopup>
+      </Popover>
+
+      {value.length > 0 ? (
+        <div className="flex flex-col rounded-md border border-border-subtle">
+          {value.map((row) => {
+            const name = nameOf(repositories, row.id);
+            return (
+              <div
+                key={row.id}
+                data-slot="repository-row"
+                className="flex min-h-10 items-center gap-2.5 border-b border-border-subtle pr-1.5 pl-3 last:border-b-0"
+              >
+                <BrandGlyph name="github" size={15} aria-hidden className="shrink-0 opacity-70" />
+                <span
+                  title={name}
+                  className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-fg"
+                >
+                  {name}
+                </span>
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="quiet"
+                  aria-label={removeLabel(name)}
+                  disabled={disabled}
+                  onClick={() => onValueChange(value.filter((other) => other.id !== row.id))}
+                >
+                  <XIcon />
+                </IconButton>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function RepositoryRow({
-  repository,
-  row,
-  onToggle,
-  onDefaultChange,
-  onBranchChange,
-  defaultLabel,
-  defaultTitle,
-  branchSearchPlaceholder,
-  branchEmptyText,
-  branchLabel,
-}: {
-  repository: RepositoryRowOption;
-  row: RepositoryRowValue | undefined;
-  onToggle: (on: boolean) => void;
-  onDefaultChange: (isDefault: boolean) => void;
-  onBranchChange: (branch: string) => void;
-  defaultLabel: React.ReactNode;
-  defaultTitle: string;
-  branchSearchPlaceholder: string;
-  branchEmptyText: (query: string) => React.ReactNode;
-  branchLabel: string;
+function RepositoryDefaultRows({
+  repositories,
+  value,
+  onValueChange,
+  branchSearchPlaceholder = 'Search branches',
+  branchEmptyText: branchEmptyTextProp,
+  branchLabel: branchLabelProp,
+  disabled,
+  className,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'onChange'> & {
+  repositories: RepositoryRowOption[];
+  value: RepositoryRowValue[];
+  onValueChange: (value: RepositoryRowValue[]) => void;
+  branchSearchPlaceholder?: string;
+  branchEmptyText?: (query: string) => React.ReactNode;
+  branchLabel?: (name: string) => string;
+  disabled?: boolean;
 }) {
-  const [open, setOpen] = React.useState(false);
-  const [query, setQuery] = React.useState('');
-  const on = row !== undefined;
-  const term = query.trim().toLowerCase();
-  const branches = repository.branches.filter((branch) =>
-    term ? (branch.label ?? branch.value).toLowerCase().includes(term) : true,
-  );
-  const id = `repo-row-${repository.id}`;
+  const branchEmptyText = branchEmptyTextProp ?? defaultBranchEmptyText;
+  const branchLabel = branchLabelProp ?? defaultBranchLabel;
+
+  function patch(id: string, next: Partial<RepositoryRowValue>) {
+    onValueChange(value.map((row) => (row.id === id ? { ...row, ...next } : row)));
+  }
 
   return (
     <div
-      data-slot="repository-row"
-      data-on={on || undefined}
-      className="flex min-h-10 items-center gap-3 border-b border-border-subtle py-1.5 pr-2.5 pl-3 last:border-b-0"
+      data-slot="repository-default-rows"
+      className={cn('flex flex-col rounded-md border border-border-subtle', className)}
+      {...props}
     >
-      <Checkbox
-        id={id}
-        checked={on}
-        onCheckedChange={(checked) => onToggle(checked === true)}
-        className="size-4"
-      />
-      <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer truncate font-mono text-[12.5px] text-fg">
-        {repository.name}
-      </label>
-      <Chip
-        selected={row?.isDefault ?? false}
-        aria-pressed={row?.isDefault ?? false}
-        title={defaultTitle}
-        onClick={() => onDefaultChange(!(row?.isDefault ?? false))}
-        className={cn('shrink-0', !on && 'invisible')}
-      >
-        {defaultLabel}
-      </Chip>
-      <div className={cn('relative flex w-[168px] shrink-0 items-center', !on && 'invisible')}>
-        <Popover
-          open={open}
-          onOpenChange={(next) => {
-            setOpen(next);
-            if (!next) setQuery('');
-          }}
-        >
-          <PopoverTrigger
-            render={
-              <button
-                type="button"
-                aria-label={branchLabel}
-                aria-haspopup="listbox"
-                data-slot="repository-row-branch"
-                className="flex h-7 w-full items-center gap-1.5 rounded-pill bg-hover-surface pr-2 pl-2.5 text-fg-subtle outline-none transition-[background-color,box-shadow] duration-fast ease-standard hover:bg-control-hover data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:ring-3 focus-visible:ring-ring"
-              />
-            }
+      {value.map((row) => {
+        const repository = repositories.find((repo) => repo.id === row.id);
+        const name = repository?.name ?? row.id;
+        const id = `repo-default-${row.id}`;
+        return (
+          <div
+            key={row.id}
+            data-slot="repository-default-row"
+            data-on={row.isDefault || undefined}
+            className="flex min-h-10 items-center gap-3 border-b border-border-subtle py-1.5 pr-2.5 pl-3 last:border-b-0"
           >
-            <GitBranchIcon className="size-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left font-mono text-xs text-fg">
-              {row?.branch}
-            </span>
-            <ChevronDownIcon className="size-3 shrink-0" aria-hidden />
-          </PopoverTrigger>
-          <ChipSelectPopup width={260} side="bottom" align="start">
-            <ChipSelectSearch
-              value={query}
-              placeholder={branchSearchPlaceholder}
-              aria-label={branchSearchPlaceholder}
-              onChange={(event) => setQuery(event.target.value)}
+            <Checkbox
+              id={id}
+              checked={row.isDefault}
+              disabled={disabled}
+              onCheckedChange={(checked) => patch(row.id, { isDefault: checked === true })}
+              className="size-4"
             />
-            <div role="listbox" aria-label={branchLabel} className="max-h-[220px] overflow-y-auto">
-              {branches.length > 0 ? (
-                branches.map((branch) => (
-                  <ChipSelectItem
-                    key={branch.value}
-                    selected={branch.value === row?.branch}
-                    description={branch.description}
-                    mono
-                    onClick={() => {
-                      onBranchChange(branch.value);
-                      setOpen(false);
-                      setQuery('');
-                    }}
-                  >
-                    {branch.label ?? branch.value}
-                  </ChipSelectItem>
-                ))
-              ) : (
-                <ChipSelectEmpty className="text-left text-fg-subtle">{branchEmptyText(query)}</ChipSelectEmpty>
-              )}
-            </div>
-          </ChipSelectPopup>
-        </Popover>
-      </div>
+            <label
+              htmlFor={id}
+              title={name}
+              className="min-w-0 flex-1 cursor-pointer truncate font-mono text-[12.5px] text-fg"
+            >
+              {name}
+            </label>
+            <BranchPill
+              branches={repository?.branches ?? []}
+              value={row.branch}
+              onValueChange={(branch) => patch(row.id, { branch })}
+              label={branchLabel(name)}
+              searchPlaceholder={branchSearchPlaceholder}
+              emptyText={branchEmptyText}
+              disabled={disabled}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-export { RepositoryRowList };
+/** A row's base branch: the pill, and the searchable pane behind it. */
+function BranchPill({
+  branches,
+  value,
+  onValueChange,
+  label,
+  searchPlaceholder,
+  emptyText,
+  disabled,
+}: {
+  branches: RepositoryRowBranch[];
+  value: string;
+  onValueChange: (branch: string) => void;
+  label: string;
+  searchPlaceholder: string;
+  emptyText: (query: string) => React.ReactNode;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const term = query.trim().toLowerCase();
+  const shown = branches.filter((branch) =>
+    term ? (branch.label ?? branch.value).toLowerCase().includes(term) : true,
+  );
+
+  return (
+    <div className="relative flex w-42 shrink-0 items-center">
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setQuery('');
+        }}
+      >
+        <PopoverTrigger
+          disabled={disabled}
+          render={
+            <button
+              type="button"
+              aria-label={label}
+              aria-haspopup="listbox"
+              data-slot="repository-row-branch"
+              className="flex h-7 w-full items-center gap-1.5 rounded-pill bg-hover-surface pr-2 pl-2.5 text-fg-subtle outline-none transition-[background-color,box-shadow] duration-fast ease-standard hover:bg-control-hover data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:ring-3 focus-visible:ring-ring disabled:opacity-50"
+            />
+          }
+        >
+          <GitBranchIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-left font-mono text-xs text-fg">{value}</span>
+          <ChevronDownIcon className="size-3 shrink-0" aria-hidden />
+        </PopoverTrigger>
+        <ChipSelectPopup width={260} side="bottom" align="start">
+          <ChipSelectSearch
+            value={query}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <div role="listbox" aria-label={label} className="max-h-55 overflow-y-auto">
+            {shown.length > 0 ? (
+              shown.map((branch) => (
+                <ChipSelectItem
+                  key={branch.value}
+                  selected={branch.value === value}
+                  description={branch.description}
+                  mono
+                  onClick={() => {
+                    onValueChange(branch.value);
+                    setOpen(false);
+                    setQuery('');
+                  }}
+                >
+                  {branch.label ?? branch.value}
+                </ChipSelectItem>
+              ))
+            ) : (
+              <ChipSelectEmpty className="text-left text-fg-subtle">{emptyText(query)}</ChipSelectEmpty>
+            )}
+          </div>
+        </ChipSelectPopup>
+      </Popover>
+    </div>
+  );
+}
+
+export { RepositoryDefaultRows, RepositoryRowList };
 export type { RepositoryRowBranch, RepositoryRowOption, RepositoryRowValue };

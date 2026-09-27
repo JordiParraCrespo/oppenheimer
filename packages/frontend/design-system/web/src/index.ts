@@ -87,6 +87,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from './components/dialog';
+export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
 export {
   DropdownMenu,
   DropdownMenuBack,
@@ -181,7 +182,7 @@ export type {
   RepositoryRowOption,
   RepositoryRowValue,
 } from './components/repository-row-list';
-export { RepositoryRowList } from './components/repository-row-list';
+export { RepositoryDefaultRows, RepositoryRowList } from './components/repository-row-list';
 export type {
   RepositoryBranch,
   RepositoryOption,

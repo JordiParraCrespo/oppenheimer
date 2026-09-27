@@ -44,6 +44,9 @@ const buttonVariants = cva(
         social:
           'gap-2.5 border-border bg-card font-semibold text-fg hover:border-border-strong hover:bg-card-hover active:bg-card-active',
         destructive: 'bg-danger text-white hover:brightness-[1.08]',
+        // A destructive action that is not the dialog's point, on its left:
+        // Delete project in Project settings (`SessionsConsole.dc.html`).
+        'ghost-danger': 'text-danger hover:bg-hover-surface active:bg-active-surface',
         // Legacy aliases from the starter's components; not part of the system.
         default: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',
         inverse: 'bg-fg text-fg-inverted hover:opacity-90',

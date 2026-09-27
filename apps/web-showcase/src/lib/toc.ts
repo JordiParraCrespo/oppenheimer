@@ -116,6 +116,7 @@ export const TOC: TocGroup[] = [
       { id: 'checkbox', label: 'Checkbox', icon: SquareCheckIcon, components: ['checkbox'] },
       { id: 'chipselect', label: 'ChipSelect', icon: SquareChevronDownIcon, components: ['chip-select', 'popover'] },
       { id: 'reporows', label: 'RepositoryRowList', icon: ListChecksIcon, components: ['repository-row-list', 'repository-select'] },
+      { id: 'disclosure', label: 'Disclosure', icon: ChevronDownCircleIcon, components: ['disclosure'] },
       { id: 'fieldselect', label: 'FieldSelect', icon: SquareChevronDownIcon, components: ['field-select'] },
       { id: 'composer', label: 'Composer', icon: MessageSquareIcon, components: ['composer'] },
       { id: 'engine', label: 'AgentModelSelect', icon: BotIcon, components: ['agent-model-select'] },

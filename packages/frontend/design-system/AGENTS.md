@@ -85,7 +85,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **One instruction block, one Copy.** Add a host shows the install command
   and the agent prompt as tabs on the header band of one
   `CodeBlock layout="panel"`, at a fixed height so the token line under it
-  never moves. Never two blocks with two copy buttons.
+  never moves. Never two blocks with two copy buttons. The console's Add a
+  host dialog leads with Copy command and Copy agent prompt as buttons and
+  folds that one block behind "Inspect command and prompt" (`Disclosure`);
+  Settings' page shows the block open.
 
 ## Conventions
 

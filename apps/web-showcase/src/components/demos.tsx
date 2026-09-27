@@ -64,6 +64,12 @@ import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ImageCarousel } from '@oppenheimer/design-system-web/image-carousel';
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web/rail';
 import {
+  Disclosure,
+  DisclosurePanel,
+  DisclosureTrigger,
+} from '@oppenheimer/design-system-web/disclosure';
+import {
+  RepositoryDefaultRows,
   RepositoryRowList,
   type RepositoryRowValue,
 } from '@oppenheimer/design-system-web/repository-row-list';
@@ -1068,16 +1074,41 @@ export function RepositoryRowListDemo() {
     { id: 'xrp-mobile', isDefault: true, branch: 'main' },
     { id: 'atlas', isDefault: false, branch: 'develop' },
   ]);
-  const defaults = rows.filter((r) => r.isDefault).length;
   return (
-    <div className="flex w-full max-w-[484px] flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-fg">Default repositories</span>
-        <span className="figures text-[11.5px] text-fg-subtle">
-          {defaults} of {rows.length} by default
-        </span>
+    <div className="flex w-full max-w-[484px] flex-col gap-5">
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-fg">Repositories</span>
+        <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
       </div>
-      <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+      <div className="flex flex-col gap-2">
+        <span className="text-[12.5px] text-fg-muted">Cloned by default</span>
+        <RepositoryDefaultRows repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Disclosure ──────────────────────────────────────────────────────────── */
+
+export function DisclosureDemo() {
+  return (
+    <div className="flex w-full max-w-[484px] flex-col gap-6">
+      <Disclosure>
+        <DisclosureTrigger meta="optional" summary="mac-studio · Claude Code · 1 cloned">
+          Defaults
+        </DisclosureTrigger>
+        <DisclosurePanel>
+          <p className="mt-3.5 text-[13px] text-fg-muted">
+            What every new session in this project starts with. Each can be changed per session.
+          </p>
+        </DisclosurePanel>
+      </Disclosure>
+      <Disclosure>
+        <DisclosureTrigger variant="quiet">Inspect command and prompt</DisclosureTrigger>
+        <DisclosurePanel>
+          <p className="mt-2.5 font-mono text-xs text-fg">curl -fsSL https://app.oppenheimer.dev/install.sh | sh</p>
+        </DisclosurePanel>
+      </Disclosure>
     </div>
   );
 }

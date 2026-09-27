@@ -65,6 +65,7 @@ import {
   PermissionDemo,
   ScopeChips,
   RepositoryRowListDemo,
+  DisclosureDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -231,6 +232,9 @@ export default function Page() {
         </Swatch>
         <Swatch label="destructive">
           <Button variant="destructive">Stop run</Button>
+        </Swatch>
+        <Swatch label="ghost-danger">
+          <Button variant="ghost-danger">Delete project</Button>
         </Swatch>
         <Swatch label="disabled">
           <Button disabled>Continue</Button>
@@ -741,7 +745,7 @@ export default function Page() {
         id="checkbox"
         title="Checkbox"
         meta="checkbox.tsx"
-        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryRowList and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
+        desc="One tick, 18px at the 5px radius, filling with the accent when checked. The row in RepositoryDefaultRows and FieldSelect, and on its own the one yes-or-no a dialog asks before an action it cannot undo: the Delete session dialog's discard of unpushed work. Wrap it in a FieldLabel so the words are the target too."
         code={`<FieldLabel className="flex items-center gap-2.5"><Checkbox checked={discard} onCheckedChange={setDiscard} /> Discard unpushed work</FieldLabel>`}
       >
         <CheckboxDemo />
@@ -773,12 +777,26 @@ export default function Page() {
 
       <Spec
         id="reporows"
-        title="RepositoryRowList"
+        title="RepositoryRowList · RepositoryDefaultRows"
         meta="repository-row-list.tsx"
-        desc="The project dialog's repository picker: a 14px card with a search row and one row per repository the App can see. Tick a row to include it; it then grows a Default toggle (cloned into every new session) and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Untied rows keep the controls' space but not their ink, so the list never reflows. The caller renders the label, the help glyph and the count above it."
-        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />`}
+        desc="The project dialog's repositories, in the two places it puts them. RepositoryRowList is the field: an Add a repository… combobox over the repositories the App can see and not yet chosen, then the chosen ones as mono rows in a 14px card, each with a remove button; an added row is cloned by default and starts on the repository's default branch. RepositoryDefaultRows is the same rows under the dialog's folding Defaults: a checkbox for whether new sessions clone it and a 168px pill for the base branch, which opens the same searchable pane the scope chips use. Both edit one value the caller owns."
+        code={`<RepositoryRowList repositories={repos} value={rows} onValueChange={setRows} />
+<RepositoryDefaultRows repositories={repos} value={rows} onValueChange={setRows} />`}
       >
         <RepositoryRowListDemo />
+      </Spec>
+
+      <Spec
+        id="disclosure"
+        title="Disclosure"
+        meta="disclosure.tsx"
+        desc="A section of a form or dialog that folds away: a borderless row, words on the left and a chevron on the right, the part it hides under it. The label variant reads as a field label with a meta word (optional) and a summary of what the folded section holds, shown only while it is folded; the quiet variant is the 13px muted line for what most readers never open, like Add a host's Inspect command and prompt."
+        code={`<Disclosure>
+  <DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">Defaults</DisclosureTrigger>
+  <DisclosurePanel>…</DisclosurePanel>
+</Disclosure>`}
+      >
+        <DisclosureDemo />
       </Spec>
 
       <Spec
@@ -975,7 +993,7 @@ export default function Page() {
         id="editorpage"
         title="EditorPage"
         meta="editor-page.tsx"
-        desc="The page over the main column — New project, Add a host, the automations overview and its editor — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
+        desc="The page over the main column — the automations overview, and Settings' Add a host page — and nothing in it. EditorPage is the canvas column that scrolls on its own; EditorPageBody the measured body, wide for a page that holds a table; EditorPageBack the pill above the page header; EditorPageTop a first row for a page that opens on view tabs and one action. The console mounts the frame from a layout route and each page fills the body."
         code={`<EditorPage><EditorPageBody><EditorPageBack render={<Link to="/sessions" />}>Back</EditorPageBack><PageHeader>…</PageHeader><RoutineSteps>…</RoutineSteps></EditorPageBody></EditorPage>
 <EditorPage><EditorPageBody wide><EditorPageTop><PillTabs …>…</PillTabs><Button size="sm" variant="secondary">New automation</Button></EditorPageTop>…</EditorPageBody></EditorPage>`}
       >

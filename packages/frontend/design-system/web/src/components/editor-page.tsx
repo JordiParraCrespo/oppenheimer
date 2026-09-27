@@ -7,9 +7,11 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * EditorPage — the page over the main column: New project, Add a host, the
- * automations overview and its editor (`design/version1/SessionsConsole.dc.html`,
- * `op-rpage` and `op-rp`). The frame and nothing in it: a canvas column that
+ * EditorPage — the page over the main column: the automations overview, and
+ * Settings' Add a host page (`design/version1/SessionsConsole.dc.html`,
+ * `op-rp`; `Settings.dc.html`). New project, Project settings, the console's
+ * Add a host and the automation editor are dialogs over the console since
+ * the 2026-09-27 export. The frame and nothing in it: a canvas column that
  * scrolls on its own, the measured body centred in it — `wide` for a page
  * that holds a table — and the Back pill that sits above the page header.
  * `EditorPageTop` is a first row for a page that opens on view tabs and one
