@@ -278,3 +278,23 @@ export async function createSession(
   expect(created.status(), await created.text()).toBe(201);
   return ((await created.json()) as { id: string }).id;
 }
+
+/** Wait until the session's stored lifecycle is `lifecycle`, and return the row. */
+export async function waitForLifecycle(
+  api: APIRequestContext,
+  sessionId: string,
+  lifecycle: string,
+  timeout = 120_000,
+): Promise<{ name: string; lifecycle: string; stoppedAt: string | null }> {
+  let row: { name: string; lifecycle: string; stoppedAt: string | null } | undefined;
+  await expect
+    .poll(
+      async () => {
+        row = await (await api.get(`/api/v1/sessions/${sessionId}`)).json();
+        return row?.lifecycle;
+      },
+      { timeout, intervals: [1_000, 2_000] },
+    )
+    .toBe(lifecycle);
+  return row as { name: string; lifecycle: string; stoppedAt: string | null };
+}
