@@ -5,7 +5,7 @@ import type { RoleEntity } from '../domain/role.entity';
 import { RoleMapper } from '../roles.mapper';
 import { RoleOrmEntity } from './role.orm-entity';
 import { UserRoleOrmEntity } from './user-role.orm-entity';
-import type { UserRoleRepositoryPort } from './user-role.repository.port';
+import { MEMBERSHIP_ROLES, type UserRoleRepositoryPort } from './user-role.repository.port';
 
 /**
  * TypeORM-backed adapter for the user ↔ role join. Reads resolve to domain
@@ -76,6 +76,38 @@ export class UserRoleRepository implements UserRoleRepositoryPort {
       .orIgnore()
       .execute();
     if (organizationId) await bumpRoleVersion(manager, organizationId);
+  }
+
+  async replaceMembershipRole(
+    userId: string,
+    organizationId: string,
+    roleId: string,
+  ): Promise<void> {
+    // The global system roles a membership maps onto, by name: the rows the
+    // swap may remove. Anything else scoped to the organization is left alone.
+    const membershipRoles = await this.roleRepository.find({
+      where: { name: In([...MEMBERSHIP_ROLES]), organizationId: IsNull() },
+      select: { id: true },
+    });
+    const replaced = membershipRoles.map((role) => role.id).filter((id) => id !== roleId);
+
+    await this.userRoleRepository.manager.transaction(async (manager) => {
+      if (replaced.length > 0) {
+        await manager.delete(UserRoleOrmEntity, {
+          userId,
+          organizationId,
+          roleId: In(replaced),
+        });
+      }
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(UserRoleOrmEntity)
+        .values({ userId, roleId, organizationId })
+        .orIgnore()
+        .execute();
+      await bumpRoleVersion(manager, organizationId);
+    });
   }
 
   async setRolesForUser(

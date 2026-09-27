@@ -114,7 +114,9 @@ export class InvitationsService {
     if (role.isNone()) {
       throw new Error(`Required system role "${applicationRole}" is missing`);
     }
-    await this.userRoles.setRolesForUser(userId, [role.unwrap().id], invitation.organizationId);
+    // Swap only the membership role: a custom role already assigned in this
+    // organization stays the member's.
+    await this.userRoles.replaceMembershipRole(userId, invitation.organizationId, role.unwrap().id);
   }
 
   async reject(headers: IncomingHttpHeaders, invitationId: string): Promise<InvitationResponseDto> {

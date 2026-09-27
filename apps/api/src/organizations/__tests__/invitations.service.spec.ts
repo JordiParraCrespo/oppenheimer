@@ -38,7 +38,7 @@ const invitation = {
 describe('InvitationsService', () => {
   let service: InvitationsService;
   const roles = { findOneByName: vi.fn() };
-  const userRoles = { setRolesForUser: vi.fn().mockResolvedValue(undefined) };
+  const userRoles = { replaceMembershipRole: vi.fn().mockResolvedValue(undefined) };
   const invitationRecords = { findOne: vi.fn().mockResolvedValue(null) };
   const memberRecords = { exists: vi.fn().mockResolvedValue(false) };
 
@@ -81,7 +81,7 @@ describe('InvitationsService', () => {
       expect.objectContaining({ body: { invitationId: 'inv1' } }),
     );
     expect(roles.findOneByName).toHaveBeenCalledWith('user', null);
-    expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u2', ['role1'], 'org1');
+    expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u2', 'org1', 'role1');
   });
 
   it('grants the organization-scoped owner application role to an invited admin', async () => {
@@ -93,7 +93,7 @@ describe('InvitationsService', () => {
     await service.accept(headers, 'inv1');
 
     expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
-    expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u2', ['role1'], 'org1');
+    expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u2', 'org1', 'role1');
   });
 
   it('repairs and returns an already-accepted invitation for the same member', async () => {
@@ -109,7 +109,7 @@ describe('InvitationsService', () => {
     expect(api.setActiveOrganization).toHaveBeenCalledWith(
       expect.objectContaining({ body: { organizationId: 'org1' } }),
     );
-    expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u2', ['role1'], 'org1');
+    expect(userRoles.replaceMembershipRole).toHaveBeenCalledWith('u2', 'org1', 'role1');
   });
 
   it('does not recover an accepted invitation for a different account', async () => {
@@ -130,7 +130,7 @@ describe('InvitationsService', () => {
     await expect(service.accept(headers, 'inv1')).rejects.toThrow(
       'Required system role "user" is missing',
     );
-    expect(userRoles.setRolesForUser).not.toHaveBeenCalled();
+    expect(userRoles.replaceMembershipRole).not.toHaveBeenCalled();
   });
 
   it('rejects an invitation unwrapping the `{ invitation }` envelope', async () => {

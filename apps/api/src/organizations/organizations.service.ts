@@ -519,34 +519,23 @@ export class OrganizationsService {
    * Keep Better Auth's organization role and the app's scoped RBAC role aligned.
    *
    * Only the role that stands for the membership (`owner` or `user`) is
-   * swapped. Custom roles an admin assigned in this organization are the
-   * member's too, and a roster change must not take them away.
+   * swapped, by the roles port; custom roles an admin assigned in this
+   * organization are the member's too, and a roster change must not take them
+   * away.
    */
   private async assignApplicationRole(
     userId: string,
     organizationId: string,
     organizationRole: string,
   ): Promise<void> {
-    const membershipRoleIds = new Map<string, string>();
-    for (const name of MEMBERSHIP_ROLES) {
-      const role = await this.roles.findOneByName(name, null);
-      // The same catalog entry the sign-up path raises. Two writers reaching
-      // for the same missing role used to answer two different shapes — a bare
-      // `Error` here (a 500 with no code) and a problem document there — which
-      // is the slug duplication again, in the failure path.
-      if (role.isNone()) throw missingSystemRole(name);
-      membershipRoleIds.set(name, role.unwrap().id);
-    }
-    // The port answers a scoped read with the global assignments included;
-    // those are not this scope's to rewrite.
-    const [inScope, global] = await Promise.all([
-      this.userRoles.findRoleIdsForUser(userId, organizationId),
-      this.userRoles.findRoleIdsForUser(userId, null),
-    ]);
-    const membership = [...membershipRoleIds.values()];
-    const custom = inScope.filter((id) => !global.includes(id) && !membership.includes(id));
-    const roleId = membershipRoleIds.get(applicationRoleFor(organizationRole)) as string;
-    await this.userRoles.setRolesForUser(userId, [...custom, roleId], organizationId);
+    const roleName = applicationRoleFor(organizationRole);
+    const role = await this.roles.findOneByName(roleName, null);
+    // The same catalog entry the sign-up path raises. Two writers reaching for
+    // the same missing role used to answer two different shapes — a bare
+    // `Error` here (a 500 with no code) and a problem document there — which is
+    // the slug duplication again, in the failure path.
+    if (role.isNone()) throw missingSystemRole(roleName);
+    await this.userRoles.replaceMembershipRole(userId, organizationId, role.unwrap().id);
   }
 
   /**
@@ -589,9 +578,6 @@ export class OrganizationsService {
     };
   }
 }
-
-/** The application roles a membership maps onto; see {@link applicationRoleFor}. */
-const MEMBERSHIP_ROLES = ['owner', 'user'] as const;
 
 /**
  * Map Better Auth membership roles onto the application's system roles.

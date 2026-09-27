@@ -31,6 +31,7 @@ describe('AbilityFactory', () => {
       findRolesForUser: vi.fn().mockResolvedValue([]),
       setRolesForUser: vi.fn(),
       assignRoleToUser: vi.fn(),
+      replaceMembershipRole: vi.fn(),
     };
     roleRepo = { findOneByName: vi.fn().mockResolvedValue(None) };
     factory = new AbilityFactory(userRoleRepo, roleRepo as RoleRepositoryPort);

@@ -44,6 +44,7 @@ describe('AssignUserRolesCommandHandler', () => {
       findRolesForUser: vi.fn(),
       setRolesForUser: vi.fn().mockResolvedValue(undefined),
       assignRoleToUser: vi.fn(),
+      replaceMembershipRole: vi.fn(),
     };
     grantPolicy = {
       assertGrantable: vi.fn().mockResolvedValue(undefined),
