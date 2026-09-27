@@ -465,3 +465,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   sessions that name none (13).
 - 2026-09-27: Settings → Profile is specified in 05; credential writes
   (password, email, devices, deleting the account) are session-only (08).
+- 2026-09-27: **a session checks out exactly one repository in the MVP.** A
+  session with none was accepted, then refused by the host at launch
+  (`SESS_002`) and shown as failed. The create body now takes one checkout,
+  no fewer, and the console's composer stays disabled until a repository is
+  picked. A session with no git returns when a runner can make one (00, 10).

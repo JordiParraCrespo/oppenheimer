@@ -204,8 +204,8 @@ a host comes back as a `host_offline` hint on the response, not as a second
 entry from a second writer.
 
 **Creating a session sets how it is launched, and what it is for.**
-`POST /sessions` takes the host, the agent, the checkouts and an optional
-name, plus two fields the composer's foot row and text area set:
+`POST /sessions` takes the host, the agent, the checkouts (exactly one in
+the MVP, 10) and an optional name, plus two fields the composer's foot row and text area set:
 
 ```ts
 launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Effort }

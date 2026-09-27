@@ -30,7 +30,9 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   out **one repository** in the MVP (changed 2026-09-23, #56): the runner makes one worktree per session,
   and a session that asked for two was accepted, refused by the host and
   left spinning. The API refuses a second repository before a row is
-  written. The model still keeps checkouts as a list with a primary
+  written, and since 2026-09-27 it refuses a session with none too: the
+  runner refused one at launch, so it failed after it was recorded (10).
+  The model still keeps checkouts as a list with a primary
   (the `cwd` checkout, where the agent launches), so several
   repositories, one worktree each, is the next runner slice (11's R3)
   rather than a schema change; it was decided on 2026-09-19 and is
