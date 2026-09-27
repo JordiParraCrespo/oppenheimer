@@ -93,8 +93,7 @@ export class PublishArticleHttpController {
 ```
 
 - `ApiAuthGuard` authenticates a session cookie, an API token or an OAuth
-  token, populates `request.user`, and stamps `request.tenant` — the one
-  organization the request acts in (below).
+  token, populates `request.user`, and stamps the request's tenant (below).
 - `PoliciesGuard` asks the `ABILITY` port for the caller's ability,
   `AbilityFactory.forRequest(request)`: the union of the user's roles'
   permissions in the request's tenant (plus the legacy `user.role`), built
@@ -257,13 +256,9 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
-- **Org-scoped CASL** — every request is authorized in one organization, its
-  tenant: the organization an `@OrganizationScoped` route names, otherwise the
-  session's (or a checked `X-Active-Organization`). The rule — how the tenant
-  is resolved, that it fails closed, what a non-member gets — is written once
-  in `product/versions/mvp/08-auth.md`; read the tenant with
-  `tenantOrganizationIdOf(request)`, never from the session. Scope tenant rows
-  with the `${activeOrganizationId}` placeholder (it resolves to the tenant):
+- **Org-scoped CASL** — one request tenant, read `product/versions/mvp/08-auth.md`.
+  Read it with `tenantOrganizationIdOf(request)`. Scope tenant rows with the
+  `${activeOrganizationId}` placeholder, which resolves to the tenant:
   `{ action: 'read', subject: 'Article', conditions: { organizationId: '${activeOrganizationId}' } }`,
   then enforce per row with `canAccessRow(request.ability, 'read', 'Article', row)`.
 - **Lockout protection** — a system role that grants `manage all` cannot have

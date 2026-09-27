@@ -481,10 +481,4 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   behind an Inspect fold, in the console and in onboarding; the
   automation editor holds its Task step alone until the API names a
   trigger (05, 13).
-- 2026-09-27: **the organization a route names is the organization
-  authorization runs in** (08). Each request's tenant is decided once and
-  read by the ability, the `${activeOrganizationId}` placeholder and the
-  access scope alike; a route that names its organization fails closed on a
-  malformed id (`AUTHZ_003`), and a non-member is refused by the policy
-  check (`AUTH_002`). Before it, organization routes were authorized in the
-  session's active organization.
+- 2026-09-27: organization routes are authorized in the organization they name (08).

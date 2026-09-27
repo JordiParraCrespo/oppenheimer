@@ -103,13 +103,6 @@ earlier note:
   per session. The model keeps checkouts as a list with a primary, so several
   repositories returns with the runner slice that makes several worktrees.
   Recorded in 00, 05, 10 and the MVP decision log.
-- Organization routes were authorized in the session's active
-  organization, whichever organization their path named, so a session
-  with another workspace selected — or an API token pinned to none — was
-  judged by the wrong roles. `versions/mvp/08-auth.md` now records the
-  rule: the organization a route names is the organization authorization
-  runs in, decided once per request and read by the ability, the access
-  scope and the handlers alike, failing closed on a malformed id.
 - `versions/mvp/10-api-modules-and-data-model.md` said a session has zero or
   more checkouts, zero being a session with no git. The runner makes a
   session from exactly one repository, so a session with none was recorded,
