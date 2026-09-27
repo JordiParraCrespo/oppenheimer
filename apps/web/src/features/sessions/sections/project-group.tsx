@@ -49,6 +49,12 @@ export function ProjectGroup({
   rows: SessionRowActions;
 }) {
   const { t } = useTranslation();
+  // Unassigned under its translated name; the API's spelling is English.
+  const label = project
+    ? project.isUnassigned
+      ? t('projects.unassigned')
+      : project.name
+    : t('sessions.sidebar.unfiled');
   const current = useRouterState({
     select: (state) =>
       sessions.some((session) => state.location.pathname === `/sessions/${session.id}`),
@@ -57,7 +63,7 @@ export function ProjectGroup({
   return (
     <div className="mt-1.5 flex flex-col">
       <SidebarProjectHeader
-        name={project?.name ?? t('sessions.sidebar.unfiled')}
+        name={label}
         count={sessions.length}
         open={open}
         onOpenChange={onOpenChange}
@@ -68,7 +74,7 @@ export function ProjectGroup({
               <IconButton
                 size="xs"
                 variant="quiet"
-                aria-label={t('sessions.sidebar.newSessionHere', { name: project.name })}
+                aria-label={t('sessions.sidebar.newSessionHere', { name: label })}
                 onClick={() => onNewSessionHere(project)}
               >
                 <Plus />
@@ -76,7 +82,7 @@ export function ProjectGroup({
               <IconButton
                 size="xs"
                 variant="quiet"
-                aria-label={t('sessions.sidebar.projectSettings', { name: project.name })}
+                aria-label={t('sessions.sidebar.projectSettings', { name: label })}
                 onClick={() => onSettings(project)}
               >
                 <Settings />

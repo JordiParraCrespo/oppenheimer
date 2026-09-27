@@ -1,10 +1,12 @@
-# 14 — Routines and headless runs: automation through `claude -p`
+# 15 — Headless runs: automation through `claude -p`
 
 The 2026-09-26 export (`design/version1/Routines.dc.html`, drawn inside
 `SessionsConsole.dc.html`) gives the console a routines page, which the
 evening export's copy calls **Automations**; the rename is in the copy
 only, and this note keeps `routine` for the model as the frames and
-`design/README.md` do. A routine is a saved prompt with a project, an agent, a model and a host, plus the
+`design/README.md` do. 13 records the console's side of automations
+and leaves their data model open; this note is the host's side. A
+routine is a saved prompt with a project, an agent, a model and a host, plus the
 triggers that start it; each start is a **run** with a state, a cause
 and a duration. This note decides how a run executes on a host, which is
 the part the design cannot show, and names what the rest of the stack
@@ -106,7 +108,7 @@ auto`) instead is a catalog change, left open below.
 `.mcp.json` servers, `CLAUDE.md` and skills **with no trust prompt**. A
 run therefore executes whatever its repository configures. Runs are
 allowed only on repositories already in one of the person's projects
-(12), which they connected and chose; that is the same trust they give
+(10), which they connected and chose; that is the same trust they give
 the interactive session they would otherwise start there. Runs are not
 `--bare`: a routine that ignored the repository's `CLAUDE.md` would do
 the work worse than a person's session in the same place. A trigger's
@@ -184,9 +186,9 @@ Recorded here, written into each note when its slice is built:
 
 ## Open
 
-- **Scope.** `00-scope.md` lists routines as a later slice and the
-  export draws them in the MVP console; which it is decides whether §7's
-  GitHub triggers ship with schedules or after them.
+- **When.** Automations stay after the MVP (00, 13): only their console
+  routes exist ahead of the API. Whether §7's GitHub triggers ship with
+  schedules or after them is decided with that slice.
 - **Whose login a run uses.** The run uses the host's Claude Code as its
   owner logged it in. Anthropic's Agent SDK terms say third parties may
   not "offer claude.ai login or rate limits for their products" without

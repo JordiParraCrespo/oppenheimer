@@ -87,9 +87,8 @@ export const SESSION_EVENT_KINDS = {
   /** The display name changed — by a person, or by the namer reading the first prompt. */
   NAMED: 'session.named',
   /**
-   * The session was moved to another project. Payload `{ projectId, fromProjectId }`.
-   * Its branch and worktree stay where they are: the directory name carries the
-   * slug of the project that created it, and a path is never an identity.
+   * The session is listed under another project. Payload `{ from, to }`. Nothing
+   * moves on disk: a session's directory and branch never name a project.
    */
   MOVED: 'session.moved',
   /** A repository was added to a session. */
@@ -155,11 +154,6 @@ export interface SessionFold {
   lastEventAt: Date | null;
   /** When the agent and the tmux session last ended. Null while it is running. */
   stoppedAt: Date | null;
-  /**
-   * The project the session belongs to, when the log moved it; null means the
-   * row's own value stands (the project it was requested in).
-   */
-  projectId: string | null;
   /** Null until something names the session; the slug stands in until then. */
   name: string | null;
   /** A derived title (`model` or `prompt`) never overwrites one a person typed. */
@@ -178,6 +172,11 @@ export interface SessionFold {
   ackedReportHash: string | null;
   /** The model, permission level and effort this session was launched with. */
   launch: SessionLaunchFold;
+  /**
+   * The project the session is listed under, once a move has said so. Null in a
+   * fold that has seen no move, where the row's own `projectId` stands.
+   */
+  projectId: string | null;
 }
 
 export const INITIAL_SESSION_FOLD: SessionFold = {
@@ -186,7 +185,6 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   agentSessionId: null,
   lastEventAt: null,
   stoppedAt: null,
-  projectId: null,
   name: null,
   nameSource: null,
   cwdCheckoutId: null,
@@ -195,6 +193,7 @@ export const INITIAL_SESSION_FOLD: SessionFold = {
   reportHash: null,
   ackedReportHash: null,
   launch: { model: null, permission: 'ask', effort: null },
+  projectId: null,
 };
 
 /**
@@ -314,11 +313,6 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       closed.stoppedAt = closed.stoppedAt ?? event.occurredAt;
       return closed;
     }
-    case SESSION_EVENT_KINDS.MOVED: {
-      const projectId = stringField(event.payload, 'projectId');
-      if (projectId) next.projectId = projectId;
-      return next;
-    }
     case SESSION_EVENT_KINDS.NAMED: {
       const name = stringField(event.payload, 'name');
       if (!name) return next;
@@ -332,6 +326,16 @@ export function foldSessionEvent(fold: SessionFold, event: SessionLogEntry): Ses
       next.nameSource = source;
       return next;
     }
+    case SESSION_EVENT_KINDS.MOVED:
+      // Listing only. A resolved session is a tombstone and stays where it ended.
+      if (next.state === 'resolved') return next;
+      // `{ from, to }`; an entry written before the payload was settled carries
+      // `{ projectId, fromProjectId }`, and a replay still has to read it.
+      next.projectId =
+        stringField(event.payload, 'to') ??
+        stringField(event.payload, 'projectId') ??
+        next.projectId;
+      return next;
     case SESSION_EVENT_KINDS.CWD_SET:
       next.cwdCheckoutId = stringField(event.payload, 'checkoutId');
       return next;

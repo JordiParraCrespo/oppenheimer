@@ -1,4 +1,5 @@
 import auth from './es/auth.json';
+import automations from './es/automations.json';
 import common from './es/common.json';
 import consent from './es/consent.json';
 import control from './es/control.json';
@@ -31,9 +32,10 @@ const es = {
   onboarding,
   pages,
   public: publicCopy,
-  sessions,
-  hosts,
   projects,
+  sessions,
+  automations,
+  hosts,
   settings,
   theme,
   toasts,

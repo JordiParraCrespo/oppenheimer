@@ -35,25 +35,15 @@ export class CreateProjectHttpController {
     operationId: 'createProject',
     summary: 'Create a project',
     description:
-      'A body of work with a name, the repositories it holds (each saying whether every new session clones it, and what it branches from), and the host and agent New session picks first. The directory name is derived from the first default repository, else the first repository, else the name, and never changes. A project made here has no origin repository: the one a first session creates for a repository is found by GitHub’s id, this one by its own.',
+      'A saved scope: the repositories its sessions usually work on, each with a base branch and whether it is offered by default, plus the host and agent a new session starts with. The defaults are offered, never applied. The slug is derived from the name once and never changes.',
   })
   @ApiResponse({ status: 201, type: ProjectResponseDto })
-  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
-    status: 404,
-    description: 'GitHub installation not found',
-    code: 'GITHUB_001',
-  })
-  @ApiProblemResponse({
-    status: 404,
-    description: 'That repository is not one this GitHub installation covers',
-    code: 'GITHUB_010',
-  })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'That name is a directory another project already holds',
+    status: 400,
+    description: 'The repository list is not one a project can hold',
     code: 'PROJECTS_006',
   })
+  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   async create(
     @CurrentAccessScope() scope: AccessScope,
     @Body() body: CreateProjectRequest,

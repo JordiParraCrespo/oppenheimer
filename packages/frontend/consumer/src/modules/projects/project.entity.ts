@@ -2,8 +2,7 @@ import type { CodingAgentId } from '@oppenheimer/shared/agents';
 
 /**
  * One repository a project holds: whether every new session clones it, and
- * what those sessions branch from (`null` is the repository's own default
- * branch, read live).
+ * what those sessions branch from.
  */
 export interface ProjectRepository {
   id: string;
@@ -12,23 +11,25 @@ export interface ProjectRepository {
   githubRepoId: string;
   fullName: string;
   isDefault: boolean;
-  baseBranch: string | null;
+  baseBranch: string;
 }
 
 /**
- * A project: the body of work a session belongs to, and what New session is
- * prefilled with when it is picked (`product/versions/mvp/12-projects-on-the-console.md`).
+ * A project: the body of work a session is listed under, and what New session
+ * is prefilled with when it is picked
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * `slug` is the directory name on every host that holds the project and never
- * changes; `name` is free. A project with an `originGithubRepoId` was made by
- * a repository's first session; one without was made in the dialog.
+ * It is metadata: a session's directory and branch never name it, so a session
+ * moves between projects freely. `slug` is a stable handle that never changes;
+ * `name` is free — except the Unassigned project's, the one every workspace has
+ * for sessions that name none, which also cannot be deleted.
  */
 export class ProjectEntity {
   constructor(
     public readonly id: string,
     public readonly name: string,
     public readonly slug: string,
-    public readonly originGithubRepoId: string | null,
+    public readonly isUnassigned: boolean,
     public readonly defaultHostId: string | null,
     public readonly defaultAgent: CodingAgentId | null,
     public readonly repositories: ProjectRepository[],
@@ -45,11 +46,6 @@ export class ProjectEntity {
   get shortName(): string {
     return this.repositories.map((repository) => shortName(repository.fullName)).join(', ');
   }
-
-  /** Whether the project holds this repository — what the move dialog asks. Takes the id as a checkout holds it. */
-  includesRepository(githubRepoId: string): boolean {
-    return this.repositories.some((repository) => repository.githubRepoId === githubRepoId);
-  }
 }
 
 /** The `xrp-mobile` of `acme/xrp-mobile`. */
@@ -62,8 +58,8 @@ export interface ProjectRepositoryInput {
   installationId: string;
   githubRepoId: number;
   isDefault: boolean;
-  /** Absent is the repository's own default branch. */
-  baseBranch?: string;
+  /** What sessions branch from; the repository's own default when nobody picked another. */
+  baseBranch: string;
 }
 
 export interface CreateProjectInput {

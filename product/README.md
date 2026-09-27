@@ -17,7 +17,7 @@ for the detail and sources.
 | 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
 | 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
 | 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: projects above repos, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
 | 12 | [Lessons from Grok Bot](12-lessons-from-grok-bot.md) | A reconstructed desktop agent app: brokered descriptors with hints, resumable migration streams, recreate-with-data updates, disk pressure, epoch-guarded reconnects; what we do not take |
 | 13 | [Lessons from herdr](13-lessons-from-herdr.md) | herdr's source read in full: where it puts the process boundary and what that costs, agent manifests as versioned data with priorities and guards, hooks over scraping; and a 340-line SSH web terminal as the list of what not to do |
 | 14 | [Ephemeral cloud machines](14-ephemeral-cloud-machines.md) | The research behind v0.2: a per-task VM the way Claude Code on the web does it, on AWS, Oracle and Alibaba; what Anthropic's own self-hosted runner does; each provider's SDK, sleep, price, free money and quotas checked; why pause, resume and delete later is the headline and what each verb is per provider; the agent-login gap; AWS, then Oracle while the $300 trial runs, Alibaba on demand. The decisions live in `versions/mvp/03` and `10` |
@@ -32,7 +32,7 @@ earlier note:
 - Note 00 proposed the Claude Agent SDK as the core. Note 01 replaced it
   with a raw terminal; the SDK is a later add-on for unattended runs.
 - Note 01 left the Agent SDK as a later add-on for unattended runs.
-  `versions/mvp/14-routines-and-headless-runs.md` runs them through the
+  `versions/mvp/15-headless-runs.md` runs them through the
   CLI's headless mode (`claude -p --output-format stream-json`) launched
   by the Go runner instead, so no host needs a Node or Python runtime;
   the SDK library stays the upgrade path for approvals mid-turn
@@ -144,17 +144,20 @@ earlier note:
   GitHub already enforces.
 - Note 11 said one worktree per session under
   `workspaces/<repo>/main`. `versions/mvp/10-api-modules-and-data-model.md`
-  supersedes its §1: a **project** level sits above the repository, a
-  session may check out **several** repositories, and those checkouts
-  live under the session rather than under the repo. The store is a
+  supersedes its §1: a session may check out **several** repositories,
+  those checkouts live under the session rather than under the repo, and
+  one bare store per repository serves the workspace. The store is a
   bare clone, always owner-prefixed, and every directory name is a
-  database constraint instead of a convention. Note 11 §2 onward still
-  stands.
+  database constraint instead of a convention. A **project** level above
+  the repository was in 10's first draft and was taken out on
+  2026-09-26, when a project became a saved scope a person creates and
+  metadata only, so a session can move between projects without anything
+  on disk moving. Note 11 §2 onward still stands.
 - `versions/mvp/08-auth.md` said hosts belong to the workspace that
   paired them, then to a workspace and an owner. `versions/mvp/10` now
   makes a host the person's, borrowed by every workspace they are in,
   the way Better Auth hangs devices and logins off `user`; the on-disk
-  layout gains a `workspaces/<org>/` level above `projects/`. Note 06's
+  layout gains a `workspaces/<org>/` level. Note 06's
   per-account config directories remain the answer to several logins on
   one machine, and remain a later slice.
 - `versions/mvp/10` first mirrored every installation's repository set
@@ -246,13 +249,18 @@ earlier note:
   installation page (2026-09-26).
 - `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
   a project chip. The 2026-09-26 export puts one first on New session, with
-  a New project… dialog behind it; `versions/mvp/12-projects-on-the-console.md`
-  works out the data model, the API and the console for it (2026-09-26).
-- `versions/mvp/05-screens.md` and `12-projects-on-the-console.md`: the
-  project dialog and the Add host dialog are pages over the main column
-  (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
-  evening export, and the second rail item reads Automations. A project
-  needs a repository to be saved from the console (2026-09-26).
+  a New project page behind it; 05 and 10 now carry the chip, the page and
+  the model (2026-09-26). The chip starts on the workspace's Unassigned
+  project, where a session that names none is listed.
+- `versions/mvp/05-screens.md`: the project dialog and the Add host dialog
+  are pages over the main column (`/projects/new`, `/projects/{id}`,
+  `/hosts/new`) since the 2026-09-26 evening export, and the second rail
+  item reads Automations. A project needs a repository to be saved from the
+  console (2026-09-26).
+- `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
+  console's automations list and its pages have their routes now, so the
+  rail is whole; the automation itself — scheduler, trigger, runs — stays
+  after (`versions/mvp/13-automations.md`, 2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,

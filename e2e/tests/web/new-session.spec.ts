@@ -57,22 +57,27 @@ test.describe('New session', () => {
     expect((await composer.boundingBox())?.height, 'the empty composer is 128px tall').toBe(128);
 
     // ── The project chip, and the page behind its foot row ───────────────────
-    // A fresh workspace holds no project; the way to one is inside the chip,
-    // and it is a page over the main column (the 2026-09-26 evening export).
-    await page.getByRole('button', { name: 'Project' }).click();
-    await page.getByRole('option', { name: 'New project…' }).click();
+    // A fresh workspace has only its Unassigned project, and the chip starts
+    // there: it is where a session that names none is listed. The way to a
+    // named one is inside the chip, a page over the main column (the
+    // 2026-09-26 evening export).
+    await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText(
+      'Unassigned',
+    );
+    await page.getByRole('button', { name: 'Project', exact: true }).click();
+    await page.getByRole('button', { name: 'New project…' }).click();
     await expect(page).toHaveURL(/\/projects\/new$/);
     // Save is off until the project is whole, and the recap says what is missing.
     await expect(page.getByRole('button', { name: 'Create project' })).toBeDisabled();
     await page.getByLabel('Project name').fill('XRP');
-    // Ticking a repository makes it a default and names the project's directory.
+    // Ticking a repository makes it a default.
     await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.web.name) }).check();
     await page.getByRole('button', { name: 'E2E box' }).click();
     await page.getByRole('button', { name: 'Create project' }).click();
     // Creating lands back on New session with the project in the address…
     await expect(page).toHaveURL(/\/sessions\/new\?project=/);
     // …and picking it prefilled the host and the repository from its defaults.
-    await expect(page.getByRole('button', { name: 'Project' })).toContainText('XRP');
+    await expect(page.getByRole('button', { name: 'Project', exact: true })).toContainText('XRP');
     await expect(page.getByRole('button', { name: 'Host' })).toContainText('E2E box');
     await expect(page.getByRole('button', { name: 'Repositories' })).toContainText(
       STUB_REPOSITORIES.web.name,
@@ -132,12 +137,13 @@ test.describe('New session', () => {
     expect(session.hostId).toBe(hostId);
     expect(session.agent).toBe('claude-code');
 
-    // The session is in the project the page made, whose directory is named
-    // after the repository ticked there — not after the one the session checked out.
+    // The session is in the project the page made, which took its slug from
+    // its name; a project names nothing on disk.
     const projects = await owner.api.get('/api/v1/projects');
-    const [project] = (await projects.json()) as { id: string; name: string; slug: string }[];
-    expect(project?.name).toBe('XRP');
-    expect(project?.slug).toBe(STUB_REPOSITORIES.web.name);
+    const project = ((await projects.json()) as { id: string; name: string; slug: string }[]).find(
+      (candidate) => candidate.name === 'XRP',
+    );
+    expect(project?.slug).toBe('xrp');
     expect(session.projectId).toBe(project?.id);
     expect(session.launch.permission, 'the foot row is what was sent').toBe('auto');
     expect(session.launch.model, 'the engine button carries a model').toBeTruthy();
@@ -147,7 +153,7 @@ test.describe('New session', () => {
     const [checkout] = session.checkouts;
     expect(checkout?.repositoryFullName).toContain(STUB_REPOSITORIES.mobile.name);
     expect(checkout?.baseBranch).toBe(STUB_BRANCH);
-    expect(checkout?.branch).toBe(`oppenheimer/${STUB_REPOSITORIES.web.name}/${session.slug}`);
+    expect(checkout?.branch).toBe(`oppenheimer/${session.slug}`);
 
     // ── The first task is in the log, and it named the session ───────────────
     const log = await owner.api.get(`/api/v1/sessions/${sessionId}/events`, {

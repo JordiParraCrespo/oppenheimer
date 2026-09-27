@@ -24,9 +24,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
-| 13 | [Orchestration (v0.2)](13-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
-| 14 | [Routines and headless runs](14-routines-and-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
+| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
+| 14 | [Orchestration (v0.2)](14-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 15 | [Headless runs](15-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
 
 ## Decision log
 
@@ -327,7 +327,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   catalog and the cloud-config that pairs a fresh machine. `hosts/` is
   its only consumer and still owns the rows and the policy (03 §Cloud
   hosts, 10).
-- 2026-09-22: **orchestration is 12** (13 since 2026-09-26). One
+- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 since 2026-09-27). One
   runner per host and many hosts per person; the control plane assigns a session to a host at
   create by a ladder (running host with room, stopped host, new host
   within the account's cap) and never lets hosts claim; a session
@@ -448,13 +448,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `POST /projects`, the two defaults and a `project_repository` table; a
   project made in the dialog has no origin, so the auto-created path for
   callers that send only checkouts is unchanged. The grouped sidebar and
-  the row menu are the next slice.
+  the row menu are the next slice. (12 was folded into 05 and 10 and
+  deleted the same day; the entries below changed most of it.)
 - 2026-09-26: **a session's paths keep the project that created it.** A
   session moves between projects (`POST /sessions/{id}/move`, one
   `session.moved` event the row folds, 03), and its worktree and branch do
   not: `work_session.projectSlug` snapshots the directory name at request,
   and every later launch reads it from the row rather than from the project
-  the session is in now.
+  the session is in now. (Reversed the same day: the layout lost its
+  project level, so a move touches nothing on disk and there is no slug to
+  keep; see the entry on projects as metadata below.)
 - 2026-09-26: **Settings is a page, not a drawer.** The export draws it
   beside the console, opened from the account menu: `/settings` with
   Profile and Hosts as sections, Add host opening the console's one
@@ -462,10 +465,27 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   and no-workspace redirect and draws its own chrome. The drawer 05
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
+- 2026-09-26: **a project is a saved scope a person creates, and metadata
+  only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
+  offered by default or not) and a default host and agent; none is
+  auto-created, and a session that names no project is listed in the
+  workspace's **Unassigned** project, which cannot be renamed or archived.
+  Nothing on a host is named after a project — the layout is
+  `workspaces/<org>/{repos,sessions}` and the branch `oppenheimer/<session>`
+  — so moving a session to any project is a label change, with no rule about
+  its repositories (`SESSIONS_018` retired). `work_session.projectSlug` goes
+  with the project level. The console is the evening export's: the grouped
+  sidebar with Unassigned first, the project page, Move to any project. A
+  session checks out any repositories, usually one.
+- 2026-09-26: **the automations routes exist ahead of their API**, so the
+  rail is whole; automations themselves stay after the MVP (00, 13).
+- 2026-09-27: **the automations sidebar leaves out Unassigned**: an
+  automation is set up for a project, and Unassigned only holds the
+  sessions that name none (13).
 - 2026-09-26: orchestration renumbered from 12 to 13, because projects
   on the console took 12 first. Only the number and the references to it
   changed.
-- 2026-09-26: **automation runs through `claude -p`** (14). A routine's
+- 2026-09-26: **automation runs through `claude -p`** (15). A routine's
   run is an ordinary session whose window 0 is Claude Code headless with
   `--output-format stream-json`, started through `runner headless` so its
   output lands in a file the runner tails and tmux keeps the process
@@ -477,3 +497,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   terminal. Triggers and any Linear or Slack integration live in the
   control plane. Whether routines ship in the MVP, and whether an
   unattended run may use the host's subscription login, stay open.
+- 2026-09-27: orchestration renumbered from 13 to 14 and the headless-run
+  note from 14 to 15 (`15-headless-runs.md`), because automations took 13
+  first. Only the numbers and the references to them changed.

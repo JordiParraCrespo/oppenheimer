@@ -104,6 +104,18 @@ runner does with it and point back.
   and records none for one without, so the blank terminal is sent no
   level rather than whatever the composer last held.
 
+  **No project travels** (2026-09-26). The slugs are the workspace's
+  and the session's, the directory is `workspaces/<org>/sessions/<slug>`
+  and `branch` is the session's own (`oppenheimer/<slug>`, or the name
+  its checkouts already recorded), so a session moved to another project
+  sends the same frame. `projectSlug` was dropped from the message; the
+  runner never read it, and a JSON field a runner does not know is
+  ignored, so no version bump. A project puts nothing on the wire. If it
+  ever does (instructions for the agent were proposed and left out on
+  2026-09-26), that arrives as a field a runner advertises it takes, the
+  way `session.image` is capability-gated, never as an optional field an
+  older runner silently drops.
+
   **A new catalog agent does not move the protocol version.** A runner
   probes the command of every agent it can launch (02 §10), so its last
   inventory says which `agent` values it knows. The control plane sends
@@ -145,8 +157,8 @@ runner does with it and point back.
   `snapshotUploadUrl`, a presigned PUT for the agent's session files;
   `session.stopped` then reports the object's key and size.
   `session.create` and `restart` may carry `snapshotDownloadUrl` for a
-  session resuming on a fresh disk (13 §5). Host facts gain `vmSlots`,
-  the number of microVM sessions the host will hold (13 §2). Nothing else changes on
+  session resuming on a fresh disk (14 §5). Host facts gain `vmSlots`,
+  the number of microVM sessions the host will hold (14 §2). Nothing else changes on
   the wire for cloud machines: `machine.*` events are the control
   plane's own writes to the log, and a cloud host registers, dials and
   is driven exactly as any other (03 §Cloud hosts).

@@ -126,7 +126,9 @@
       "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
       "PROJECTS_004": "That project is archived, so no new work can go in it.",
       "PROJECTS_005": "That project still has sessions nobody has closed.",
-      "PROJECTS_006": "That name is already a project’s directory. Add a repository, or pick another name.",
+      "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
+      "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
+      "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
       "SESSIONS_001": "We could not find that session.",
       "SESSIONS_002": "Choose a workspace before working with sessions.",
       "SESSIONS_003": "We could not find that checkout on this session.",
@@ -135,7 +137,7 @@
       "SESSIONS_006": "That project is archived, so no new work can go in it.",
       "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
       "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
-      "SESSIONS_009": "Choose a project, or add a repository to take one from.",
+      "SESSIONS_009": "Choose a project for this session.",
       "SESSIONS_010": "A session works on one repository. Start a new session for another.",
       "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
       "HOSTS_001": "That host could not be found.",
@@ -168,7 +170,6 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-      "SESSIONS_018": "That project does not include this session's repository. Add the repository to it first.",
       "HOSTS_007": "No image is waiting for that command."
     },
     "notFound": {
@@ -302,6 +303,72 @@
     "showPassword": "Show password",
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
     "passwordsDoNotMatch": "Passwords do not match"
+  },
+  "projects": {
+    "page": {
+      "newTitle": "New project",
+      "editTitle": "Project settings",
+      "name": "Project name",
+      "namePlaceholder": "Name this project",
+      "back": "Back",
+      "crumbSessions": "Sessions",
+      "crumbNewSession": "New session",
+      "create": "Create project",
+      "creating": "Creating…",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "failed": "The project could not be created.",
+      "saveFailed": "The project could not be saved.",
+      "recap": {
+        "name": "Name the project, then pick its repositories.",
+        "repositories": "Pick at least one repository.",
+        "default": "Mark at least one repository as default."
+      },
+      "summary": {
+        "repositories_one": "{{count}} repository · {{defaults}} default",
+        "repositories_other": "{{count}} repositories · {{defaults}} default"
+      },
+      "steps": {
+        "repositories": {
+          "title": "Repositories",
+          "subtitle": "The code sessions in this project can clone.",
+          "label": "Default repositories",
+          "hint": "Ticked in every new session. Add others per session.",
+          "defaultCount": "{{defaults}} of {{count}} by default",
+          "search": "Search repositories…",
+          "noMatch": "No repository matches “{{query}}”.",
+          "none": "No repository is connected yet.",
+          "default": "Default",
+          "defaultTitle": "Cloned by default in new sessions",
+          "branchEmpty": "No branch named “{{query}}”"
+        },
+        "host": {
+          "title": "Default host",
+          "subtitle": "Where new sessions run unless you pick another.",
+          "none": "No host is paired yet."
+        },
+        "agent": {
+          "title": "Default agent",
+          "subtitle": "Started in every new session. Change it per session."
+        }
+      },
+      "delete": {
+        "title": "Delete project",
+        "hint": "Delete this project.",
+        "blocked_one": "Move or delete its {{count}} session first.",
+        "blocked_other": "Move or delete its {{count}} sessions first.",
+        "action": "Delete project",
+        "deleting": "Deleting…",
+        "failed": "The project could not be deleted."
+      },
+      "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
+    },
+    "deleteDialog": {
+      "title": "Delete {{name}}?",
+      "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
+      "confirm": "Delete project"
+    },
+    "unassigned": "Unassigned"
   },
   "sessions": {
     "home": {
@@ -468,8 +535,6 @@
       "moveTitle": "Move to project",
       "moveNone": "No other project holds this session's repository.",
       "delete": "Delete",
-      "routines": "Routines",
-      "routinesSoon": "Automations are not here yet.",
       "writeFailed": "That change did not land. Try again."
     },
     "deleteSession": {
@@ -504,6 +569,40 @@
     "agents": {
       "claude-code": "Claude Code",
       "codex": "Codex"
+    },
+    "row": {
+      "actions": "Session actions",
+      "move": "Move to project…",
+      "moveTitle": "Move to project"
+    }
+  },
+  "automations": {
+    "sidebar": {
+      "new": "New automation",
+      "projects": "Projects",
+      "all": "All automations",
+      "emptyProject": "No automations yet.",
+      "createOne": "Create one",
+      "newHere": "New automation in {{name}}",
+      "noProjects": "No project yet. Make one from New session, and its automations gather here."
+    },
+    "page": {
+      "tabs": {
+        "automations": "Automations",
+        "runs": "Runs"
+      },
+      "new": "New automation",
+      "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
+      "runsEmpty": "No runs yet. Each run appears here with the session it started."
+    },
+    "editor": {
+      "newTitle": "New automation",
+      "name": "Automation name",
+      "namePlaceholder": "Name this automation",
+      "back": "Back",
+      "crumb": "Automations",
+      "create": "Create automation",
+      "recap": "Name the automation, then say where it runs."
     }
   },
   "hosts": {
@@ -538,70 +637,6 @@
       },
       "crumbHosts": "Hosts",
       "done": "Done"
-    }
-  },
-  "projects": {
-    "page": {
-      "newTitle": "New project",
-      "editTitle": "Project settings",
-      "name": "Project name",
-      "namePlaceholder": "Name this project",
-      "back": "Back",
-      "crumbSessions": "Sessions",
-      "crumbNewSession": "New session",
-      "create": "Create project",
-      "creating": "Creating…",
-      "save": "Save changes",
-      "saving": "Saving…",
-      "failed": "The project could not be created.",
-      "saveFailed": "The project could not be saved.",
-      "recap": {
-        "name": "Name the project, then pick its repositories.",
-        "repositories": "Pick at least one repository.",
-        "default": "Mark at least one repository as default."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repository · {{defaults}} default",
-        "repositories_other": "{{count}} repositories · {{defaults}} default"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositories",
-          "subtitle": "The code sessions in this project can clone.",
-          "label": "Default repositories",
-          "hint": "Ticked in every new session. Add others per session.",
-          "defaultCount": "{{defaults}} of {{count}} by default",
-          "search": "Search repositories…",
-          "noMatch": "No repository matches “{{query}}”.",
-          "none": "No repository is connected yet.",
-          "default": "Default",
-          "defaultTitle": "Cloned by default in new sessions",
-          "branchEmpty": "No branch named “{{query}}”"
-        },
-        "host": {
-          "title": "Default host",
-          "subtitle": "Where new sessions run unless you pick another.",
-          "none": "No host is paired yet."
-        },
-        "agent": {
-          "title": "Default agent",
-          "subtitle": "Started in every new session. Change it per session."
-        }
-      },
-      "delete": {
-        "title": "Delete project",
-        "hint": "Delete this project.",
-        "blocked_one": "Move or delete its {{count}} session first.",
-        "blocked_other": "Move or delete its {{count}} sessions first.",
-        "action": "Delete project",
-        "deleting": "Deleting…",
-        "failed": "The project could not be deleted."
-      }
-    },
-    "deleteDialog": {
-      "title": "Delete {{name}}?",
-      "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
-      "confirm": "Delete project"
     }
   },
   "settings": {
@@ -672,8 +707,9 @@
     "commandTitle": "Command palette",
     "commandDescription": "Search for a page or an action.",
     "sidebarTitle": "Navigation",
-    "sidebarDescription": "Your sessions and your account.",
-    "settings": "Settings"
+    "sidebarDescription": "Your sessions, your automations and your account.",
+    "settings": "Settings",
+    "automations": "Automations"
   },
   "control": {
     "accessDeniedTitle": "Control plane access required",

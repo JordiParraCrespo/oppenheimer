@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * The project chip of New session: the body of work the session belongs to,
  * first in the composer's scope band because picking it prefills the rest
- * (`product/versions/mvp/12-projects-on-the-console.md`).
+ * (`product/versions/mvp/05-screens.md`).
  *
  * Props in, choice out — the list is read by the section above. What this
  * file owns is the chip's copy and its foot row, **New project…**, which

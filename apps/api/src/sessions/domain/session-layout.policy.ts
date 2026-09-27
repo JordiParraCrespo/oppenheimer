@@ -4,9 +4,13 @@
  * `product/versions/mvp/03-control-plane.md`).
  *
  * ```
- * checkout  workspaces/<organization.slug>/projects/<project.slug>/sessions/<session.slug>/<directoryName>
- * branch    oppenheimer/<project.slug>/<session.slug>
+ * checkout  workspaces/<organization.slug>/sessions/<session.slug>/<directoryName>
+ * branch    oppenheimer/<session.slug>
  * ```
+ *
+ * No project in either: a project is metadata, so a session listed under another
+ * project names the same directory and the same branch
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
  * Nothing here asks the filesystem anything. Both names are functions of rows the
  * control plane already holds, so two runner versions cannot disagree about them
@@ -21,16 +25,18 @@ const BRANCH_NAMESPACE = 'oppenheimer';
  * The working branch: always the session's own, created from each checkout's
  * base and never the base itself.
  *
- * Both segments are unique-constrained — `uq (organizationId, slug)` on the
- * project and `uq (projectId, slug)` on the session — so a branch name is
- * self-identifying and collision-free by construction. Two sessions can never
- * want the same branch of the same repository, which needs no pre-flight check
- * against GitHub and has no race. It also sidesteps the hard git rule behind the
- * decision: git refuses to add a worktree on a branch another worktree already
- * has checked out, so two sessions "on main" would fail at the second.
+ * `uq (organizationId, slug)` on the session makes it collision-free inside a
+ * workspace, and the slug's random tail makes it so across workspaces sharing a
+ * repository. Two sessions can never want the same branch, which needs no
+ * pre-flight check against GitHub and has no race — and git refuses a worktree
+ * on a branch another worktree already holds, so two sessions "on main" would
+ * fail at the second.
+ *
+ * A session created before this rule keeps the branch its checkouts recorded
+ * (`oppenheimer/<project>/<session>`); nothing re-derives a branch that exists.
  */
-export function sessionBranchName(projectSlug: string, sessionSlug: string): string {
-  return `${BRANCH_NAMESPACE}/${projectSlug}/${sessionSlug}`;
+export function sessionBranchName(sessionSlug: string): string {
+  return `${BRANCH_NAMESPACE}/${sessionSlug}`;
 }
 
 /**

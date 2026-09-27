@@ -89,5 +89,11 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   Settings is: `../05-screens.md` records it as the one destination
   beside the console, with its routes, the catalog row and the decision
   log in `../README.md` say the same, and `../../../brief.html` follows.
+- Projects as the frames draw them are in the notes as of 2026-09-26:
+  the project chip, the project page, the grouped sidebar and Move in
+  `../05-screens.md`, the schema in `../10-api-modules-and-data-model.md`.
+  One departure from the frames: Move lists every other project rather
+  than only those that include the session's repository, because a
+  project is metadata and a session may move anywhere (10).
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

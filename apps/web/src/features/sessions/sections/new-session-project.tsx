@@ -11,7 +11,7 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
 /**
  * The project chip, bound to the draft: first in the scope band, because
  * picking a project prefills the host, the repository and the agent
- * (`product/versions/mvp/12-projects-on-the-console.md`).
+ * (`product/versions/mvp/05-screens.md`).
  *
  * It subscribes to the projects because it draws them. The hosts it only
  * reads at pick time, to know which project default is still a machine this
@@ -36,9 +36,13 @@ export function NewSessionProject() {
   const { data: hostsReady } = useHosts({ select: () => true });
 
   // A remembered project the workspace no longer has, or one not yet loaded,
-  // is shown as none rather than as an id: the list is the truth once it
-  // answers, and only then is "that project is gone" a fact.
-  const value = projects.data?.some((project) => project.id === field.value) ? field.value : null;
+  // is shown as Unassigned rather than as an id: the list is the truth once it
+  // answers, and only then is "that project is gone" a fact. The send leaves
+  // such an id out, and the API lists the session in Unassigned — so what the
+  // chip says and where the session lands never disagree.
+  const value = projects.data?.some((project) => project.id === field.value)
+    ? field.value
+    : (projects.data?.find((project) => project.isUnassigned)?.id ?? null);
 
   /** Picking a project: the chip, then what its defaults set on the others. */
   function pick(next: ProjectEntity) {
@@ -60,6 +64,7 @@ export function NewSessionProject() {
     <ProjectSelect
       projects={toProjectOptions(projects.data ?? [], {
         noRepositories: t('sessions.new.project.noRepositories'),
+        unassigned: t('projects.unassigned'),
       })}
       value={value}
       onValueChange={(id) => {
