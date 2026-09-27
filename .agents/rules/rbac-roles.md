@@ -82,7 +82,7 @@ Add the guards and a policy. The guard resolves the caller's ability from their
 roles and checks the rule:
 
 ```ts
-@UseGuards(AuthGuard, PoliciesGuard)
+@UseGuards(ApiAuthGuard, PoliciesGuard)
 @Controller("articles")
 export class PublishArticleHttpController {
   @Post(":id/publish")
@@ -92,12 +92,18 @@ export class PublishArticleHttpController {
 }
 ```
 
-- `AuthGuard` (Better Auth) authenticates and populates `request.user`.
-- `PoliciesGuard` builds the ability via `AbilityFactory.createForUser(user)`
-  (union of the user's roles' permissions, falling back to the legacy
-  `user.role`), checks every `@CheckPolicies` rule, and attaches the built
-  ability to `request.ability`.
-- No `@CheckPolicies` ⇒ any authenticated user passes (e.g. `GET /users/me`).
+- `ApiAuthGuard` authenticates a session cookie, an API token or an OAuth
+  token, populates `request.user`, and stamps `request.tenant` — the one
+  organization the request acts in (below).
+- `PoliciesGuard` asks the `ABILITY` port for the caller's ability,
+  `AbilityFactory.forRequest(request)`: the union of the user's roles'
+  permissions in the request's tenant (plus the legacy `user.role`), built
+  once and memoized on the request. It checks every `@CheckPolicies` rule and
+  attaches the ability to `request.ability`.
+- **No `@CheckPolicies` is fail-closed.** A route that declares neither
+  `@CheckPolicies` nor `@NoPolicy('reason')` is refused (`AUTHZ_002`), and
+  `route-policy-coverage.spec.ts` fails the build. A route open to any
+  authenticated caller says so with `@NoPolicy` (e.g. `GET /users/me`).
 
 ### An endpoint a client gates a destination on declares its rules once
 
@@ -251,15 +257,15 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
-- **Org-scoped CASL** — `PoliciesGuard` asks the `ABILITY` port
-  (`AbilityFactory.forRequest`) for the caller's ability in one organization:
-  on an `@OrganizationScoped` route, the one the path names; elsewhere,
-  `session.activeOrganizationId`. A caller who is not a member of the path's
-  organization holds no roles there, so only their global roles count; the
-  placeholder `${activeOrganizationId}` resolves to that same organization. Scope tenant
-  resources with a condition placeholder:
+- **Org-scoped CASL** — every request is authorized in one organization, its
+  tenant: the organization an `@OrganizationScoped` route names, otherwise the
+  session's (or a checked `X-Active-Organization`). The rule — how the tenant
+  is resolved, that it fails closed, what a non-member gets — is written once
+  in `product/versions/mvp/08-auth.md`; read the tenant with
+  `tenantOrganizationIdOf(request)`, never from the session. Scope tenant rows
+  with the `${activeOrganizationId}` placeholder (it resolves to the tenant):
   `{ action: 'read', subject: 'Article', conditions: { organizationId: '${activeOrganizationId}' } }`,
-  then enforce per-row in the handler via `request.ability.can('read', subject('Article', row))`.
+  then enforce per row with `canAccessRow(request.ability, 'read', 'Article', row)`.
 - **Lockout protection** — a system role that grants `manage all` cannot have
   that rule removed (`RoleErrors.ADMIN_LOCKOUT`, enforced in the update-role
   command handlers via `RoleEntity.grantsFullAccess`).

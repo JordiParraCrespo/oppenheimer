@@ -110,6 +110,34 @@ history) to work on the MVP.
   refuses it is the answer, so a stale credential never falls back to a
   session. What a credential authorizes (`ScopeContext`) and what the
   guards do with it are unchanged.
+- **The organization a route names is the organization authorization
+  runs in.** Every request acts in exactly one organization — its
+  *tenant* — decided once, when it is authenticated, and stamped on the
+  request (`RequestTenantResolver` in `apps/api/src/auth`, called by
+  `ApiAuthGuard`). On a route marked `@OrganizationScoped(param)` the
+  tenant is the organization that path parameter names; on any other
+  route it is the session's active organization, or the one an
+  `X-Active-Organization` header names once it is checked against the
+  caller's memberships (a token's delegated session carries an
+  organization only when the token is pinned to one). Everything that
+  asks "which organization" reads that one value: the CASL ability
+  `PoliciesGuard` checks (the caller's global roles plus the ones
+  scoped to the tenant), the `${activeOrganizationId}` condition
+  placeholder stored in role rows, which keeps its name and resolves to
+  the tenant, the access scope `ScopeResolver` builds (teams, roles and
+  grants), and every controller that hands a use case "the
+  organization". A route that names its organization **fails closed**:
+  a path value that is not a UUID is refused with `AUTHZ_003` (400)
+  before anything is looked up, and is never replaced by the session's
+  organization. A caller who is not a member of the organization a
+  route names holds no roles there, so only their global roles count
+  and the policy check refuses them with `AUTH_002`; a route's own
+  "not a member" error (`ORG_003`) is left for a caller whose global
+  roles pass that check — a platform admin — but who has no membership
+  there, as `GET /organizations/:orgId/members/me` answers. (Decided
+  2026-09-27; before it, an organization route was authorized in the
+  session's active organization while acting on the one in its path,
+  and a token pinned to none held only its global roles there.)
 - **Credential writes are session-only.** Changing the password or the
   email, signing devices out and deleting the account carry no scope, so
   no API token or OAuth client reaches them: a leaked token that could do
