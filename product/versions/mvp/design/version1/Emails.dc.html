@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="./ds-base.js"></script>
+<style>a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}body{margin:0}</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);color:var(--fg);padding:40px 40px 80px">
+<div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:40px">
+
+<header style="display:flex;flex-direction:column;gap:8px">
+<span class="op-wordmark" style="font-size:20px">Oppenheimer<span class="op-wordmark__sub">Console</span></span>
+<h1 style="margin:24px 0 0;font-family:var(--font-display);font-size:38px;font-weight:600;letter-spacing:-0.024em;line-height:1.1">Emails</h1>
+<p style="margin:0;font-size:15px;color:var(--fg-muted);max-width:620px;text-wrap:pretty">Every message the platform sends. Each template is a standalone, send-ready HTML file in <span style="font-family:var(--font-mono);font-size:13px;color:var(--fg)">version1/emails/</span>, previewed here at the width it renders.</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle)">Auth</span>
+<span style="font-size:12px;font-family:var(--font-mono);color:var(--fg-subtle)">5</span>
+</div>
+
+<article id="verify-email" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Confirm email</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">Account created with email and password on Create account.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Confirm your email address</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Confirm jordiparra99@gmail.com to finish creating your Oppenheimer account. The link expires in 24 hours.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Link lifetime</span><span style="font-size:13px;font-family:var(--font-mono)">24 h</span></div>
+<a href="./emails/verify-email.html" target="_blank" style="font-size:13px">Open verify-email.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/verify-email.html" title="Confirm email" onLoad="{{ fit }}" style="border:0;display:block;height:640px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+
+<article id="reset-password" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Reset password</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">Send reset link on Reset your password, or Resend link on Check your email.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Reset your password</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Use this link to set a new password. It expires in 30 minutes and works once.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Link lifetime</span><span style="font-size:13px;font-family:var(--font-mono)">30 min · single use</span></div>
+<a href="./emails/reset-password.html" target="_blank" style="font-size:13px">Open reset-password.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/reset-password.html" title="Reset password" onLoad="{{ fit }}" style="border:0;display:block;height:760px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+
+<article id="password-changed" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Password changed</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">New password saved on Set password, or changed from Settings.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Your password was changed</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">The password for your Oppenheimer account was changed. Other sessions were signed out.</span></div>
+<a href="./emails/password-changed.html" target="_blank" style="font-size:13px">Open password-changed.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/password-changed.html" title="Password changed" onLoad="{{ fit }}" style="border:0;display:block;height:720px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+
+<article id="new-sign-in" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">New sign-in</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">Sign-in from a device or location not seen on this account, by any method.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">New sign-in to your account</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Your Oppenheimer account was signed in from a new device: Safari on iOS, Madrid, ES.</span></div>
+<a href="./emails/new-sign-in.html" target="_blank" style="font-size:13px">Open new-sign-in.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/new-sign-in.html" title="New sign-in" onLoad="{{ fit }}" style="border:0;display:block;height:760px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+
+<article id="change-email" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Confirm new email</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">Change on the Email row in Settings. Sent to the new address; the old one gets a notice.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Confirm your new email address</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Confirm this address to make it the sign-in email for your Oppenheimer account.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Link lifetime</span><span style="font-size:13px;font-family:var(--font-mono)">24 h · single use</span></div>
+<a href="./emails/change-email.html" target="_blank" style="font-size:13px">Open change-email.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/change-email.html" title="Confirm new email" onLoad="{{ fit }}" style="border:0;display:block;height:680px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle)">Workspace</span>
+<span style="font-size:12px;font-family:var(--font-mono);color:var(--fg-subtle)">2</span>
+</div>
+<article id="workspace-invite" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Workspace invite</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">A workspace admin invites an address that is not yet a member.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Adrián invited you to Flama on Oppenheimer</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Join the Flama workspace to see its sessions, projects and hosts. The invite expires in 7 days.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Link lifetime</span><span style="font-size:13px;font-family:var(--font-mono)">7 d</span></div>
+<a href="./emails/workspace-invite.html" target="_blank" style="font-size:13px">Open workspace-invite.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/workspace-invite.html" title="Workspace invite" onLoad="{{ fit }}" style="border:0;display:block;height:820px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+<article id="welcome" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Workspace ready</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">Onboarding finished on Ready: workspace created, GitHub connected, first host online.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">Your workspace is ready</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Flama is set up with GitHub connected and one host online. Start your first session.</span></div>
+<a href="./emails/welcome.html" target="_blank" style="font-size:13px">Open welcome.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/welcome.html" title="Workspace ready" onLoad="{{ fit }}" style="border:0;display:block;height:680px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--fg-subtle)">Sessions</span>
+<span style="font-size:12px;font-family:var(--font-mono);color:var(--fg-subtle)">3</span>
+</div>
+<article id="session-needs-input" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Session needs input</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">A session enters Needs input and nobody opens it within 5 minutes.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">{session} needs input</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Codex paused invoice triage on optimus and is waiting for your answer.</span></div>
+<a href="./emails/session-needs-input.html" target="_blank" style="font-size:13px">Open session-needs-input.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/session-needs-input.html" title="Session needs input" onLoad="{{ fit }}" style="border:0;display:block;height:780px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+<article id="session-failed" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Session failed</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">A session ends Failed. Commits already pushed are kept.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">{session} failed</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">retriever eval stopped on fable after 4h 12m: exit code 1 in the eval step.</span></div>
+<a href="./emails/session-failed.html" target="_blank" style="font-size:13px">Open session-failed.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/session-failed.html" title="Session failed" onLoad="{{ fit }}" style="border:0;display:block;height:860px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+<article id="session-completed" style="display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:32px;padding:28px;border-radius:18px;background:var(--card)">
+<div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+<h2 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.016em">Session completed</h2>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Trigger</span><span style="font-size:14px;color:var(--fg-muted);text-wrap:pretty">A session ends Completed after running 10 minutes or longer.</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Subject</span><span style="font-size:14px">{session} completed</span></div>
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:var(--fg-subtle)">Preheader</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">Claude Code finished on optimus and opened pull request #122 against main.</span></div>
+<a href="./emails/session-completed.html" target="_blank" style="font-size:13px">Open session-completed.html</a>
+</div>
+<div style="min-width:0;display:flex;justify-content:center;border-radius:14px;background:var(--canvas);padding:16px;overflow:hidden">
+<iframe src="./emails/session-completed.html" title="Session completed" onLoad="{{ fit }}" style="border:0;display:block;height:720px;max-width:100%;width:{{ frameW }}"></iframe>
+</div>
+</article>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;previewWidth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Desktop 600&quot;,&quot;Mobile 375&quot;],&quot;default&quot;:&quot;Desktop 600&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  fit = (e) => {
+    const f = e.target;
+    const d = f.contentDocument;
+    if (!d || !d.body) return;
+    const set = () => { f.style.height = d.documentElement.scrollHeight + 'px'; };
+    set();
+    if (f._ro) f._ro.disconnect();
+    f._ro = new ResizeObserver(set);
+    f._ro.observe(d.body);
+  };
+  renderVals() {
+    const w = this.props.previewWidth ?? 'Desktop 600';
+    return { fit: this.fit, frameW: w === 'Mobile 375' ? '375px' : '640px' };
+  }
+}
+</script>
+</body>
+</html>

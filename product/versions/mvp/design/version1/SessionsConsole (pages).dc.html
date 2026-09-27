@@ -195,57 +195,52 @@
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:var(--card)">
 
 <sc-if value="{{ projPageOpen }}">
-<div class="op-scrim" onClick="{{ closeProj }}">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="proj-title" onClick="{{ stop }}" style="max-width:540px;overflow:visible">
-<div class="op-dialog__head"><h2 class="op-dialog__title" id="proj-title" style="margin:0">{{ projDlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeProj }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:22px">
-<label class="op-field"><span class="op-label">Name</span><span class="op-input op-input--md"><input class="op-input__el" type="text" autoFocus="{{ true }}" placeholder="Name your project" value="{{ projName }}" onChange="{{ setProjName }}"></span></label>
+<div class="op-rpage">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeProj }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ closeProj }}">{{ pageBackLabel }}</button><span>/</span><span class="op-ph__here">{{ projDlgTitle }}</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="boxes" size="16" hint-size="16px,16px"></x-import></span>
+<input class="op-ph__title op-ph__input" type="text" aria-label="Project name" placeholder="Name this project" value="{{ projName }}" onChange="{{ setProjName }}">
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeProj }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ projSaveBlocked }}" onClick="{{ saveProject }}">{{ projSaveLabel }}</button>
+</div>
+</div>
+<div class="op-ph__meta"><span class="op-recap" data-ready="{{ projReady }}" key="{{ projRecap }}">{{ projRecap }}</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ projS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Repositories</span><span class="op-st__sub">The code sessions in this project can clone.</span><span class="op-st__sum" key="{{ projS1Sum }}">{{ projS1Sum }}</span></div>
+<div class="op-st__body">
 <div class="op-field">
-<span class="op-label">Repositories</span>
-<div style="position:relative">
-<label class="op-input op-input--md" style="cursor:text"><span class="op-input__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="15" hint-size="15px,15px"></x-import></span><input class="op-input__el" type="text" role="combobox" aria-expanded="{{ projAddOpenS }}" aria-label="Add a repository" placeholder="Add a repository…" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" onFocus="{{ openProjAdd }}" onBlur="{{ blurProjAdd }}" onKeyDown="{{ projAddKey }}"></label>
-<sc-if value="{{ projAddOpen }}">
-<div class="op-listbox" role="listbox" style="right:0">
-<sc-for list="{{ projAddOpts }}" as="o" hint-placeholder-count="4">
-<button class="op-option" type="button" role="option" onMouseDown="{{ o.pick }}" style="padding:7px 10px;gap:10px;font-size:13px">
-<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;opacity:.7;filter:var(--brand-glyph-filter,none)">
-<span class="op-option__stack" style="min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.full }}</span><span class="op-option__desc" style="margin-top:1px;font-size:11.5px">{{ o.desc }}</span></span>
-</button>
-</sc-for>
-<sc-if value="{{ projAddNone }}"><div class="op-listbox__empty">{{ projAddEmpty }}</div></sc-if>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="display:flex;align-items:center;gap:5px">
+<span class="op-label">Default repositories</span>
+<x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Tooltip" label="Ticked in every new session. Add others per session." side="top" hint-size="15px,15px">
+<button type="button" aria-label="About default repositories" style="display:flex;padding:0;border:0;background:none;color:var(--fg-subtle);cursor:help"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="help-circle" size="14" hint-size="14px,14px"></x-import></button>
+</x-import>
+</span>
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums">{{ projDefCount }} of {{ projRepoCount }} by default</span>
 </div>
-</sc-if>
+<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid var(--border-subtle)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--fg-subtle)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<input type="text" placeholder="Search repositories…" aria-label="Search repositories" value="{{ projRepoQuery }}" onChange="{{ setProjRepoQuery }}" style="flex:1;min-width:0;padding:0;border:0;outline:none;background:none;font:inherit;font-size:13px;color:var(--fg)">
 </div>
-<sc-if value="{{ projSelAny }}">
-<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px">
-<sc-for list="{{ projSelRows }}" as="r" hint-placeholder-count="2">
-<div style="display:flex;align-items:center;gap:10px;min-height:40px;padding:0 6px 0 12px;border-top:{{ r.sep }}">
-<img src="./assets/brand/github.svg" alt="" style="flex:none;width:15px;height:15px;object-fit:contain;opacity:.7;filter:var(--brand-glyph-filter,none)">
-<span style="flex:1;min-width:0;font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ r.full }}">{{ r.full }}</span>
-<button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Remove {{ r.full }}" onClick="{{ r.toggle }}" style="flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="14" hint-size="14px,14px"></x-import></button>
-</div>
-</sc-for>
-</div>
-</sc-if>
-<sc-if value="{{ projSelNone }}" hint-placeholder-val="{{ true }}"><span class="op-hint">Sessions in this project can clone these. Add at least one.</span></sc-if>
-</div>
-<div style="display:flex;flex-direction:column">
-<button type="button" aria-expanded="{{ projMoreOpenS }}" onClick="{{ toggleProjMore }}" style="display:flex;align-items:center;gap:8px;width:100%;padding:0;border:0;background:none;font:inherit;color:var(--fg);cursor:pointer;text-align:left"><span class="op-label">Defaults</span><span style="font-size:13px;color:var(--fg-subtle)">optional</span><span style="flex:1"></span><span style="font-size:12.5px;color:var(--fg-subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">{{ projMoreSum }}</span><span style="display:flex;color:var(--fg-subtle);transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ projMoreRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="15" hint-size="15px,15px"></x-import></span></button>
-<sc-if value="{{ projMoreOpen }}">
-<div style="display:flex;flex-direction:column;gap:18px;margin-top:14px">
-<p style="margin:0;font-size:13px;color:var(--fg-muted);text-wrap:pretty">What every new session in this project starts with. Each can be changed per session.</p>
-<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12.5px;color:var(--fg-muted)">Host</span><div class="op-pchips"><sc-for list="{{ projHostChips }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div></div>
-<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12.5px;color:var(--fg-muted)">Agent</span><div class="op-pchips"><sc-for list="{{ projAgentChips }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}" style="gap:7px"><sc-if value="{{ c.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ c.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></span></sc-if>{{ c.label }}</button></sc-for></div></div>
-<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12.5px;color:var(--fg-muted)">Cloned by default</span>
-<sc-if value="{{ projSelNone }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:12.5px;color:var(--fg-subtle)">Select repositories above first.</p></sc-if>
-<sc-if value="{{ projSelAny }}"><div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:14px">
-<sc-for list="{{ projSelRows }}" as="r" hint-placeholder-count="2">
-<div class="op-prepo" data-on="{{ r.defS }}">
+<div style="height:{{ projRepoListH }};overflow-y:auto;overscroll-behavior:contain">
+<sc-for list="{{ projRepoRows }}" as="r" hint-placeholder-count="4">
+<div class="op-prepo" data-on="{{ r.onS }}">
 <label class="op-check" style="flex:1;min-width:0;align-items:center">
-<input type="checkbox" checked="{{ r.defOn }}" onChange="{{ r.toggleDef }}">
+<input type="checkbox" checked="{{ r.on }}" onChange="{{ r.toggle }}">
 <span class="op-check__box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
-<span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="{{ r.full }}">{{ r.full }}</span></span>
+<span class="op-check__text" style="flex:1;min-width:0"><span style="font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.short }}</span></span>
 </label>
+<button class="op-chip" type="button" data-selected="{{ r.defS }}" aria-pressed="{{ r.defS }}" onClick="{{ r.toggleDef }}" title="Cloned by default in new sessions" style="flex:none;visibility:{{ r.vis }}">Default</button>
 <div class="op-prepo__base">
 <button class="op-bpick" type="button" aria-label="Base branch for {{ r.short }}" aria-haspopup="listbox" aria-expanded="{{ r.bOpenS }}" data-open="{{ r.bOpenS }}" onClick="{{ r.bToggle }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="13" hint-size="13px,13px"></x-import><span class="op-bpick__v" key="{{ r.base }}">{{ r.base }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="12" hint-size="12px,12px"></x-import></span></button>
 <sc-if value="{{ r.bOpen }}"><div class="op-listbox op-bpick__menu" role="listbox" onClick="{{ stop }}" style="top:{{ r.bTop }};bottom:{{ r.bBottom }};left:{{ r.bLeft }}">
@@ -256,37 +251,67 @@
 </div>
 </div>
 </sc-for>
-</div></sc-if>
+<sc-if value="{{ projRepoNone }}"><p style="margin:0;padding:12px;font-size:12.5px;color:var(--fg-subtle)">No repository matches “{{ projRepoQuery }}”.</p></sc-if>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ projS2Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Default host</span><span class="op-st__sub">Where new sessions run unless you pick another.</span><span class="op-st__sum" key="{{ projS2Sum }}">{{ projS2Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-pchips"><sc-for list="{{ projHostChips }}" as="c" hint-placeholder-count="3"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}">{{ c.label }}</button></sc-for></div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ projS3Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">3</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Default agent</span><span class="op-st__sub">Started in every new session. Change it per session.</span><span class="op-st__sum" key="{{ projS3Sum }}">{{ projS3Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-pchips"><sc-for list="{{ projAgentChips }}" as="c" hint-placeholder-count="4"><button class="op-chip" type="button" data-selected="{{ c.on }}" onClick="{{ c.pick }}" style="gap:7px"><sc-if value="{{ c.isClaude }}"><img src="./assets/agents/claude.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isCodex }}"><img src="./assets/agents/codex.svg" alt="" style="flex:none;width:14px;height:14px;object-fit:contain;filter:var(--brand-glyph-filter,none)"></sc-if><sc-if value="{{ c.isOpenCode }}"><img src="./assets/agents/opencode.png" alt="" style="flex:none;width:14px;height:14px;object-fit:contain"></sc-if><sc-if value="{{ c.isShell }}"><span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="terminal" size="14" hint-size="14px,14px"></x-import></span></sc-if>{{ c.label }}</button></sc-for></div>
+</div>
+</div>
+</div>
+</div>
+<sc-if value="{{ projEditing }}">
+<div style="display:flex;align-items:center;gap:16px;margin-top:32px;padding:16px 20px;background:var(--card);border:1px solid var(--border-subtle);border-radius:18px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span style="font-weight:500">Delete project</span><span style="font-size:13px;color:var(--fg-muted);text-wrap:pretty">{{ projDeleteHint }}. Automations targeting it are paused.</span></div>
+<button class="op-btn op-btn--danger op-btn--sm" type="button" onClick="{{ deleteProject }}" disabled="{{ projDeleteBlocked }}">Delete project</button>
 </div>
 </sc-if>
-</div>
-</div>
-<div class="op-dialog__foot">
-<sc-if value="{{ projEditing }}"><button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ deleteProject }}" disabled="{{ projDeleteBlocked }}" title="{{ projDeleteHint }}" style="color:var(--danger)">Delete project</button><span style="flex:1"></span></sc-if>
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeProj }}">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ projSaveBlocked }}" onClick="{{ saveProject }}">{{ projSaveLabel }}</button>
 </div>
 </div>
 </div>
 </sc-if>
 
 <sc-if value="{{ hostPageOpen }}">
-<div class="op-scrim" onClick="{{ closeAddHost }}" style="z-index:210">
-<div class="op-dialog" role="dialog" aria-modal="true" aria-labelledby="host-title" onClick="{{ stop }}" style="max-width:520px">
-<div class="op-dialog__head"><h2 class="op-dialog__title" id="host-title" style="margin:0">Add a host</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeAddHost }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
-<p class="op-dialog__desc" style="margin:0;text-wrap:pretty">Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.</p>
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:18px">
-<div style="display:flex;flex-direction:column;gap:10px">
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ copyCmdOnly }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="copy" size="14" hint-size="14px,14px"></x-import>{{ hostCmdLabel }}</button>
-<button class="op-btn op-btn--ghost op-btn--md" type="button" onClick="{{ copyPromptOnly }}" style="gap:7px"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="14" hint-size="14px,14px"></x-import>{{ hostPromptLabel }}</button>
+<div class="op-rpage">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeAddHost }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ closeAddHost }}">{{ pageBackLabel }}</button><span>/</span><span class="op-ph__here">Add a host</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
+<h1 class="op-ph__title">Add a host</h1>
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeAddHost }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" onClick="{{ useNewHost }}" disabled="{{ hostWaiting }}">Use this host</button>
 </div>
-<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--fg-subtle)"><span style="font-family:var(--font-mono);font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span><a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a></div>
 </div>
-<div style="display:flex;flex-direction:column">
-<button type="button" aria-expanded="{{ hostInspectOpenS }}" onClick="{{ toggleHostInspect }}" style="display:flex;align-items:center;gap:8px;width:100%;padding:0;border:0;background:none;font:inherit;color:var(--fg);cursor:pointer;text-align:left"><span style="font-size:13px;color:var(--fg-muted)">Inspect command and prompt</span><span style="flex:1"></span><span style="display:flex;color:var(--fg-subtle);transition:transform 140ms cubic-bezier(.4,0,.2,1);transform:rotate({{ hostInspectRot }})"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="15" hint-size="15px,15px"></x-import></span></button>
-<sc-if value="{{ hostInspectOpen }}"><div style="margin-top:10px">
+<div class="op-ph__meta"><span>Nothing on the host is exposed to the internet.</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ hostS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Install</span><span class="op-st__sub">Run this once on the machine, or hand it to an agent already there.</span><span class="op-st__sum" key="{{ hostS1Sum }}">{{ hostS1Sum }}</span></div>
+<div class="op-st__body">
+<div style="display:flex;flex-direction:column;gap:8px">
 <div style="border-radius:10px;background:var(--hover-surface);overflow:hidden">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 6px 6px 6px;border-bottom:1px solid var(--border-subtle)">
 <div role="tablist" aria-label="Install format" style="display:flex;gap:2px">
@@ -322,52 +347,112 @@ Do not open inbound ports, change firewall rules, or edit files outside ~/.oppen
 </sc-if>
 </div>
 </div>
-</div></sc-if>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+<span style="font-family:var(--font-mono);font-size:11.5px;color:var(--fg-subtle);font-variant-numeric:tabular-nums;white-space:nowrap">Token expires in {{ hostCountdown }} · single use</span>
+<a href="#" onClick="{{ regenerateToken }}" style="font-size:11.5px;white-space:nowrap">New token</a>
 </div>
-<div style="min-height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;border:1px solid var(--border-subtle);border-radius:14px">
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ hostS2Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Connect</span><span class="op-st__sub">The runner registers itself with the hostname it reports.</span><span class="op-st__sum" key="{{ hostS2Sum }}">{{ hostS2Sum }}</span></div>
+<div class="op-st__body">
+<div style="min-height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;background:var(--card);border:1px solid var(--border-subtle);border-radius:14px">
 <sc-if value="{{ hostWaiting }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg-muted)">
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--fg-subtle);animation:op-pulse-dot 1.4s ease-in-out infinite"></span>
-Waiting for the host to connect…
+Listening for this host…
 </div>
 </sc-if>
 <sc-if value="{{ hostRegistered }}">
 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
 <span style="width:7px;height:7px;flex:none;border-radius:980px;background:var(--success)"></span>
 <span style="font-family:var(--font-mono);font-size:13px">mac-studio</span>
-<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · git, tmux, claude ready</span>
+<span style="font-size:12px;color:var(--fg-muted)">macOS 15 · echo 38 ms</span>
+<span style="flex:1"></span>
+<span style="font-size:12px;color:var(--fg-muted)">git, tmux, claude ready</span>
 </div>
 </sc-if>
 </div>
 </div>
-<div class="op-dialog__foot">
-<button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeAddHost }}">Cancel</button>
-<button class="op-btn op-btn--primary op-btn--md" type="button" onClick="{{ useNewHost }}" disabled="{{ hostWaiting }}">Use this host</button>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </sc-if>
 
 <sc-if value="{{ rDlgOpen }}">
-<div class="op-scrim" onClick="{{ closeRDlg }}">
-<div class="op-dialog op-dialog--lg" role="dialog" aria-modal="true" aria-labelledby="r-title" onClick="{{ stopR }}" style="overflow:visible">
-<div class="op-dialog__head"><h2 class="op-dialog__title" id="r-title" style="margin:0">{{ rDlgTitle }}</h2><button class="op-iconbtn op-iconbtn--sm" type="button" aria-label="Close" onClick="{{ closeRDlg }}" style="margin:-4px -6px 0 0"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="x" size="16" hint-size="16px,16px"></x-import></button></div>
-<div role="tablist" aria-label="Automation steps" style="display:flex;gap:2px;margin:18px 28px 0;padding:3px;border-radius:980px;background:var(--hover-surface)">
-<button type="button" role="tab" aria-selected="{{ rTab0S }}" onClick="{{ goRStep0 }}" disabled="{{ rTab0Off }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;transition:background 80ms,color 80ms,opacity 80ms;background:{{ rTab0Bg }};color:{{ rTab0Fg }}"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-family:var(--font-mono);font-size:10.5px;font-variant-numeric:tabular-nums;background:{{ rTab0NumBg }};color:{{ rTab0NumFg }}"><sc-if value="{{ rTab0Done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if><sc-if value="{{ rTab0Todo }}" hint-placeholder-val="{{ true }}">1</sc-if></span>Task</button>
-<button type="button" role="tab" aria-selected="{{ rTab1S }}" onClick="{{ goRStep1 }}" disabled="{{ rTab1Off }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;transition:background 80ms,color 80ms,opacity 80ms;background:{{ rTab1Bg }};color:{{ rTab1Fg }}"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-family:var(--font-mono);font-size:10.5px;font-variant-numeric:tabular-nums;background:{{ rTab1NumBg }};color:{{ rTab1NumFg }}"><sc-if value="{{ rTab1Done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if><sc-if value="{{ rTab1Todo }}" hint-placeholder-val="{{ true }}">2</sc-if></span>Trigger</button>
-<button type="button" role="tab" aria-selected="{{ rTab2S }}" onClick="{{ goRStep2 }}" disabled="{{ rTab2Off }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:30px;padding:0 12px;border:0;border-radius:980px;font:inherit;font-size:13px;cursor:pointer;transition:background 80ms,color 80ms,opacity 80ms;background:{{ rTab2Bg }};color:{{ rTab2Fg }}"><span style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:980px;font-family:var(--font-mono);font-size:10.5px;font-variant-numeric:tabular-nums;background:{{ rTab2NumBg }};color:{{ rTab2NumFg }}"><sc-if value="{{ rTab2Done }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="11" hint-size="11px,11px"></x-import></sc-if><sc-if value="{{ rTab2Todo }}" hint-placeholder-val="{{ true }}">3</sc-if></span>Where it runs</button>
+<div class="op-rpage" onClick="{{ stopR }}">
+<div class="op-rpage__scroll">
+<div class="op-rpage__body">
+<button class="op-rpage__back" type="button" onClick="{{ closeRDlg }}"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-left" size="15" hint-size="15px,15px"></x-import>Back</button>
+<header class="op-ph" style="margin-bottom:28px">
+<nav class="op-ph__crumbs" aria-label="Breadcrumb"><button type="button" onClick="{{ rCrumbAll }}">Automations</button><span>/</span><sc-if value="{{ rCrumbName }}"><button type="button" onClick="{{ closeRDlg }}">{{ rCrumbName }}</button><span>/</span></sc-if><span class="op-ph__here">{{ rDlgTitle }}</span></nav>
+<div class="op-ph__row">
+<span class="op-ph__icon"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="zap" size="16" hint-size="16px,16px"></x-import></span>
+<input class="op-ph__title op-ph__input" type="text" aria-label="Automation name" placeholder="Name this automation" value="{{ rName }}" onChange="{{ setRName }}">
+<div class="op-ph__actions">
+<button class="op-btn op-btn--secondary op-btn--sm" type="button" onClick="{{ closeRDlg }}">Cancel</button>
+<button class="op-btn op-btn--primary op-btn--sm" type="button" disabled="{{ rSaveBlocked }}" onClick="{{ saveR }}">{{ rSaveLabel }}</button>
 </div>
-<div class="op-dialog__body" style="display:flex;flex-direction:column;gap:20px;min-height:300px">
-<sc-if value="{{ rStep0 }}" hint-placeholder-val="{{ true }}">
-<label class="op-field"><span class="op-label">Name</span><span class="op-input op-input--md"><input class="op-input__el" type="text" autoFocus="{{ rCreating }}" placeholder="Name this automation" value="{{ rName }}" onChange="{{ setRName }}"></span></label>
-<label class="op-field"><span class="op-label">What should the agent do?</span>
-<textarea class="op-textarea" aria-label="Instructions" placeholder="Describe the work for every run…" value="{{ rPrompt }}" onChange="{{ setRPrompt }}" style="min-height:112px;resize:vertical"></textarea>
-<span class="op-hint">The pull request, issue or commit that fired the run is passed in as context.</span>
-</label>
-</sc-if>
-<sc-if value="{{ rStep1 }}">
-<div class="op-field">
-<span style="font-size:13px;color:var(--fg-muted)">Any trigger starts a run.</span>
+</div>
+<div class="op-ph__meta"><span class="op-recap" data-ready="{{ rReady }}" key="{{ rRecap }}">{{ rRecap }}</span></div>
+</header>
+<div class="op-steps">
+<div class="op-st" data-done="{{ rS1Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">1</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Where</span><span class="op-st__sub">The code it works on, and the machine it runs on.</span><span class="op-st__sum" key="{{ rS1Sum }}">{{ rS1Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-st__grid" data-cols="3">
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Project</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rProjSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rProjSel.openS }}" onClick="{{ rProjSel.toggle }}"><span class="op-fsel__val" key="{{ rProjSel.label }}">{{ rProjSel.label }}</span><span class="op-fsel__meta">{{ rProjSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rProjSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rProjSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rProjSel.ph }}" value="{{ rProjSel.q }}" onChange="{{ rProjSel.setQ }}" onKeyDown="{{ rProjSel.onKey }}"></div>
+<sc-if value="{{ rProjSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rProjSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rProjSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rProjSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rProjSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Repositories</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rRepoSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rRepoSel.openS }}" onClick="{{ rRepoSel.toggle }}"><span class="op-fsel__val" key="{{ rRepoSel.label }}">{{ rRepoSel.label }}</span><span class="op-fsel__meta">{{ rRepoSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rRepoSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rRepoSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rRepoSel.ph }}" value="{{ rRepoSel.q }}" onChange="{{ rRepoSel.setQ }}" onKeyDown="{{ rRepoSel.onKey }}"></div>
+<sc-if value="{{ rRepoSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rRepoSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rRepoSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rRepoSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rRepoSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Host</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rHostSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rHostSel.openS }}" onClick="{{ rHostSel.toggle }}"><span class="op-fsel__val" key="{{ rHostSel.label }}">{{ rHostSel.label }}</span><span class="op-fsel__meta">{{ rHostSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rHostSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rHostSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
+<sc-if value="{{ rHostSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rHostSel.ph }}" value="{{ rHostSel.q }}" onChange="{{ rHostSel.setQ }}" onKeyDown="{{ rHostSel.onKey }}"></div></sc-if>
+<sc-if value="{{ rHostSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rHostSel.head }}</div></sc-if>
+<div class="op-fsel__list"><sc-for list="{{ rHostSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
+<sc-if value="{{ rHostSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rHostSel.q }}”</div></sc-if>
+</div></sc-if>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ rS2Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">2</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">When</span><span class="op-st__sub">Any trigger starts a run.</span><span class="op-st__sum" key="{{ rS2Sum }}">{{ rS2Sum }}</span></div>
+<div class="op-st__body">
 <sc-for list="{{ rTriggers }}" as="t" hint-placeholder-count="1">
 <div class="op-rd__trig" key="{{ t.id }}">
 <div class="op-rd__trow">
@@ -409,95 +494,56 @@ Waiting for the host to connect…
 </sc-for>
 </div></sc-if>
 </div>
-</div>
-</sc-if>
-<sc-if value="{{ rStep2 }}">
-<div style="display:flex;flex-direction:column;gap:20px">
-<div style="display:flex;flex-direction:column;gap:8px">
-<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Code</span>
-<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:18px">
-<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="boxes" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Project</span>
-<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
-<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rProjSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rProjSel.openS }}" onClick="{{ rProjSel.toggle }}"><span class="op-fsel__val" key="{{ rProjSel.label }}">{{ rProjSel.label }}</span><span class="op-fsel__meta">{{ rProjSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
-<sc-if value="{{ rProjSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rProjSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
-<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rProjSel.ph }}" value="{{ rProjSel.q }}" onChange="{{ rProjSel.setQ }}" onKeyDown="{{ rProjSel.onKey }}"></div>
-<sc-if value="{{ rProjSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rProjSel.head }}</div></sc-if>
-<div class="op-fsel__list"><sc-for list="{{ rProjSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
-<sc-if value="{{ rProjSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rProjSel.q }}”</div></sc-if>
-</div></sc-if>
-</div></div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-top:1px solid var(--border-subtle);">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="git-branch" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Repositories</span>
-<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
-<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rRepoSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rRepoSel.openS }}" onClick="{{ rRepoSel.toggle }}"><span class="op-fsel__val" key="{{ rRepoSel.label }}">{{ rRepoSel.label }}</span><span class="op-fsel__meta">{{ rRepoSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
-<sc-if value="{{ rRepoSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rRepoSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
-<div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rRepoSel.ph }}" value="{{ rRepoSel.q }}" onChange="{{ rRepoSel.setQ }}" onKeyDown="{{ rRepoSel.onKey }}"></div>
-<sc-if value="{{ rRepoSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rRepoSel.head }}</div></sc-if>
-<div class="op-fsel__list"><sc-for list="{{ rRepoSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
-<sc-if value="{{ rRepoSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rRepoSel.q }}”</div></sc-if>
-</div></sc-if>
-</div></div>
+
 </div>
 </div>
 </div>
-<div style="display:flex;flex-direction:column;gap:8px">
-<span style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.02em;color:var(--fg-subtle)">Runs on</span>
-<div style="display:flex;flex-direction:column;border:1px solid var(--border-subtle);border-radius:18px">
-<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="cpu" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Host</span>
-<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
-<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rHostSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rHostSel.openS }}" onClick="{{ rHostSel.toggle }}"><span class="op-fsel__val" key="{{ rHostSel.label }}">{{ rHostSel.label }}</span><span class="op-fsel__meta">{{ rHostSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
-<sc-if value="{{ rHostSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rHostSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
-<sc-if value="{{ rHostSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rHostSel.ph }}" value="{{ rHostSel.q }}" onChange="{{ rHostSel.setQ }}" onKeyDown="{{ rHostSel.onKey }}"></div></sc-if>
-<sc-if value="{{ rHostSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rHostSel.head }}</div></sc-if>
-<div class="op-fsel__list"><sc-for list="{{ rHostSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
-<sc-if value="{{ rHostSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rHostSel.q }}”</div></sc-if>
-</div></sc-if>
-</div></div>
+<div class="op-st" data-done="{{ rS3Done }}" data-last="false">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">3</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">What</span><span class="op-st__sub">Instructions for every run.</span><span class="op-st__sum" key="{{ rS3Sum }}">{{ rS3Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-rd__compose">
+<textarea class="op-rd__ta" aria-label="Instructions" placeholder="What should the agent do each time it runs?" value="{{ rPrompt }}" onChange="{{ setRPrompt }}"></textarea>
 </div>
-<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-top:1px solid var(--border-subtle);">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="bot" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Agent</span>
-<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
-<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rAgentSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rAgentSel.openS }}" onClick="{{ rAgentSel.toggle }}"><span class="op-fsel__val" key="{{ rAgentSel.label }}">{{ rAgentSel.label }}</span><span class="op-fsel__meta">{{ rAgentSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
-<sc-if value="{{ rAgentSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rAgentSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
+<span class="op-st__note">The pull request, issue or commit that fired the run is passed in as context.</span>
+</div>
+</div>
+</div>
+<div class="op-st" data-done="{{ rS4Done }}" data-last="true">
+<div class="op-st__rail"><span class="op-st__num"><span class="op-st__n">4</span><span class="op-st__ok"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="check" size="12" hint-size="12px,12px"></x-import></span></span><span class="op-st__line"></span></div>
+<div class="op-st__main">
+<div class="op-st__head"><span class="op-st__title">Agent</span><span class="op-st__sub">Each run is its own session.</span><span class="op-st__sum" key="{{ rS4Sum }}">{{ rS4Sum }}</span></div>
+<div class="op-st__body">
+<div class="op-st__grid">
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Agent</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rAgentSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rAgentSel.openS }}" onClick="{{ rAgentSel.toggle }}"><span class="op-fsel__val" key="{{ rAgentSel.label }}">{{ rAgentSel.label }}</span><span class="op-fsel__meta">{{ rAgentSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rAgentSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rAgentSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
 <sc-if value="{{ rAgentSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rAgentSel.ph }}" value="{{ rAgentSel.q }}" onChange="{{ rAgentSel.setQ }}" onKeyDown="{{ rAgentSel.onKey }}"></div></sc-if>
 <sc-if value="{{ rAgentSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rAgentSel.head }}</div></sc-if>
 <div class="op-fsel__list"><sc-for list="{{ rAgentSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
 <sc-if value="{{ rAgentSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rAgentSel.q }}”</div></sc-if>
 </div></sc-if>
-</div></div>
 </div>
-<div style="display:flex;align-items:center;gap:12px;min-height:52px;padding:0 8px 0 16px;border-top:1px solid var(--border-subtle);">
-<span style="display:flex;flex:none;color:var(--fg-subtle)"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="layers" size="16" hint-size="16px,16px"></x-import></span>
-<span style="flex:1;min-width:0;font-size:14px">Model</span>
-<div style="flex:none;min-width:0;max-width:60%;display:flex;justify-content:flex-end"><div class="op-fsel">
-<button class="op-fsel__btn" type="button" style-hover="background:var(--hover-surface)" style="width:auto;max-width:100%;height:32px;padding:0 8px 0 12px;gap:6px;border:1px solid transparent;border-radius:980px;background:transparent;font-size:13.5px" data-open="{{ rModelSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rModelSel.openS }}" onClick="{{ rModelSel.toggle }}"><span class="op-fsel__val" key="{{ rModelSel.label }}">{{ rModelSel.label }}</span><span class="op-fsel__meta">{{ rModelSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
-<sc-if value="{{ rModelSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rModelSel.multi }}" onClick="{{ stop }}" style="left:auto;right:0;min-width:280px;z-index:40;padding:4px">
+</div>
+<div class="op-st__field" style="min-width:0"><span class="op-st__flabel">Model</span>
+<div class="op-fsel">
+<button class="op-fsel__btn" type="button" data-open="{{ rModelSel.openS }}" aria-haspopup="listbox" aria-expanded="{{ rModelSel.openS }}" onClick="{{ rModelSel.toggle }}"><span class="op-fsel__val" key="{{ rModelSel.label }}">{{ rModelSel.label }}</span><span class="op-fsel__meta">{{ rModelSel.meta }}</span><span class="op-tok__chev"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="chevron-down" size="14" hint-size="14px,14px"></x-import></span></button>
+<sc-if value="{{ rModelSel.openList }}"><div class="op-listbox" role="listbox" aria-multiselectable="{{ rModelSel.multi }}" onClick="{{ stop }}" style="left:0;right:0;min-width:0;z-index:40;padding:4px">
 <sc-if value="{{ rModelSel.ph }}"><div class="op-fsel__search"><x-import component-from-global-scope="OppenheimerDesignSystem_9a2556.Icon" name="search" size="14" hint-size="14px,14px"></x-import><input type="text" autoFocus="{{ true }}" aria-label="Search" placeholder="{{ rModelSel.ph }}" value="{{ rModelSel.q }}" onChange="{{ rModelSel.setQ }}" onKeyDown="{{ rModelSel.onKey }}"></div></sc-if>
 <sc-if value="{{ rModelSel.head }}"><div class="op-tpop__label" style="padding:6px 10px 4px">{{ rModelSel.head }}</div></sc-if>
 <div class="op-fsel__list"><sc-for list="{{ rModelSel.options }}" as="o" hint-placeholder-count="3"><button class="op-option" type="button" role="option" data-selected="{{ o.selected }}" aria-selected="{{ o.aria }}" onClick="{{ o.pick }}" style="padding:6px 10px;gap:10px;font-size:13px;line-height:1.35"><sc-if value="{{ o.box }}"><span class="op-cbox" data-on="{{ o.box }}"></span></sc-if><span class="op-option__stack"><span>{{ o.label }}</span><sc-if value="{{ o.desc }}"><span class="op-option__desc" style="margin-top:0;font-size:11px;line-height:1.35">{{ o.desc }}</span></sc-if></span><span class="op-option__check">✓</span></button></sc-for></div>
 <sc-if value="{{ rModelSel.empty }}"><div class="op-fsel__empty">No matches for “{{ rModelSel.q }}”</div></sc-if>
 </div></sc-if>
-</div></div>
 </div>
 </div>
 </div>
-<span class="op-hint">Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.</span>
+<span class="op-st__note">Works on a fresh opp/ branch, so nothing lands on main without a pull request.</span>
 </div>
-</sc-if>
 </div>
-<div class="op-dialog__foot">
-<span class="op-recap" data-ready="{{ rReady }}" key="{{ rMissingShort }}" style="flex:1;min-width:0;font-size:12.5px;color:var(--fg-muted);text-wrap:pretty">{{ rMissingShort }}</span>
-<sc-if value="{{ rCanBack }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ rBack }}">Back</button></sc-if>
-<sc-if value="{{ rFirst }}" hint-placeholder-val="{{ true }}"><button class="op-btn op-btn--secondary op-btn--md" type="button" onClick="{{ closeRDlg }}">Cancel</button></sc-if>
-<sc-if value="{{ rCanNext }}" hint-placeholder-val="{{ true }}"><button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ rNextBlocked }}" onClick="{{ rNext }}">Next</button></sc-if>
-<sc-if value="{{ rLast }}"><button class="op-btn op-btn--primary op-btn--md" type="button" disabled="{{ rSaveBlocked }}" onClick="{{ saveR }}">{{ rSaveLabel }}</button></sc-if>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -1637,7 +1683,7 @@ class Component extends DCLogic {
     const draft = p
       ? { name: p.name, repos: p.repos.map(r => ({ ...r })), host: p.host, agent: p.agent, instructions: p.instructions || '' }
       : { name: '', repos: [], host: 'optimus', agent: 'claude-code', instructions: '' };
-    this.setState({ projDlg: id || 'new', draft, open: null, sessionMenu: null, projRepoQuery: '', projMore: false });
+    this.setState({ projDlg: id || 'new', draft, open: null, sessionMenu: null, projRepoQuery: '' });
   }
   patchDraft(patch) { this.setState(st => ({ draft: { ...st.draft, ...patch } })); }
 
@@ -1672,8 +1718,6 @@ class Component extends DCLogic {
     this._esc = (e) => {
       if (e.key !== 'Escape') return;
       if (this.state.addHost) this.closeAddHost();
-      else if (this.state.rDraft && !this.state.rMenu) this.setState({ rDraft: null });
-      else if (this.state.projDlg) this.setState({ projDlg: null, draft: null });
       else if (this.state.zoom) this.setState({ zoom: false });
     };
     document.addEventListener('keydown', this._esc);
@@ -1938,7 +1982,7 @@ class Component extends DCLogic {
   };
 
   openAddHost() {
-    this.setState({ addHost: true, hostAdded: false, hostSecs: 3581, open: null, query: '', hostTab: 'cmd', hostCopied: null, hostInspect: false });
+    this.setState({ addHost: true, hostAdded: false, hostSecs: 3581, open: null, query: '', hostTab: 'cmd', hostCopied: null });
     clearInterval(this._hostTick);
     clearTimeout(this._hostReg);
     this._hostTick = setInterval(() => this.setState(st => ({ hostSecs: Math.max(0, st.hostSecs - 1) })), 1000);
@@ -2039,7 +2083,7 @@ class Component extends DCLogic {
     const p = st.projects.find(x => x.id === st.curProject) || st.projects[0];
     const d = src ? { ...src, triggers: src.triggers.map(t => ({ ...t })) }
       : { id: null, name: '', active: true, project: p ? p.id : 'mobile', agent: 'claude-code', model: 'sonnet', host: 'optimus', prompt: '', triggers: [], runs: [] };
-    this.setState({ view: 'routine', section: 'routines', rDraft: d, rMenu: null, rStep: 0, open: null, filterOpen: false, accountOpen: false });
+    this.setState({ view: 'routine', section: 'routines', rDraft: d, rMenu: null, open: null, filterOpen: false, accountOpen: false });
   }
   addTrigger(kind, val) {
     const r = this.state.rDraft; if (!r) return;
@@ -2311,7 +2355,7 @@ class Component extends DCLogic {
       goSessions: e => { if (e) e.stopPropagation(); if (this.props.page === 'routines') { window.location.href = 'SessionsConsole.dc.html'; return; } this.setState(s => ({ section: 'sessions', view: s.view === 'routine' ? 'terminal' : s.view, rMenu: null })); },
       goRoutines: e => { if (e) e.stopPropagation(); if (this.props.page !== 'routines') { window.location.href = 'Routines.dc.html'; return; } this.setState({ section: 'routines', view: 'routine', selR: null, rMenu: null, open: null }); },
       newRoutine: e => { if (e) e.stopPropagation(); this.openRDlg(null); },
-      isRoutines: inR && !runSel ? 'true' : undefined,
+      isRoutines: inR && !st.rDraft && !runSel ? 'true' : undefined,
       ...runVals,
       rTabRoutines: st.rTab === 'routines' ? 'true' : 'false', rTabRuns: st.rTab === 'runs' ? 'true' : 'false',
       rTabRoutinesOn: !selR && st.rTab === 'routines' ? 'true' : undefined, rTabRunsOn: selR || st.rTab === 'runs' ? 'true' : undefined,
@@ -2454,27 +2498,7 @@ class Component extends DCLogic {
       ...vals,
       rDlgOpen: 'true',
       rCrumbName: r.id ? ((st.routines.find(y => y.id === r.id) || {}).name || '') : '',
-      rCrumbAll: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null, selR: null, selRun: null }); }, rDlgTitle: r.id ? 'Edit automation' : 'New automation',
-      rMoreOpen: st.rMore ? 'true' : undefined, rMoreOpenS: st.rMore ? 'true' : 'false', rMoreRot: st.rMore ? '180deg' : '0deg',
-      toggleRMore: e => { if (e) e.stopPropagation(); this.setState(x => ({ rMore: !x.rMore, rMenu: null })); },
-      rMoreSum: st.rMore ? '' : [proj ? proj.name : '', repoL, findL(HOSTS, r.host), findL(AGENTS, r.agent)].filter(Boolean).join(' · '),
-      ...(() => {
-        const k = st.rStep || 0, done = [!!(r.name.trim() && r.prompt.trim()), !!r.triggers.length, true];
-        const go = n => e => { if (e) e.stopPropagation(); this.setState({ rStep: n, rMenu: null }); };
-        const o = { rStep0: k === 0 ? 'true' : undefined, rStep1: k === 1 ? 'true' : undefined, rStep2: k === 2 ? 'true' : undefined,
-          rCanBack: k > 0 ? 'true' : undefined, rFirst: k === 0 ? 'true' : undefined, rCanNext: k < 2 ? 'true' : undefined, rLast: k === 2 ? 'true' : undefined,
-          rBack: go(Math.max(0, k - 1)), rNext: go(Math.min(2, k + 1)), rNextBlocked: !done[k] };
-        const reach = i => i === 0 || done.slice(0, i).every(Boolean);
-        [0, 1, 2].forEach(i => {
-          const on = i === k, ok = done[i] && !on && (i < 2 || k === 2);
-          Object.assign(o, { ['rTab' + i + 'S']: on ? 'true' : 'false', ['goRStep' + i]: go(i), ['rTab' + i + 'Off']: reach(i) ? undefined : true,
-            ['rTab' + i + 'Bg']: on ? 'var(--popover)' : 'transparent', ['rTab' + i + 'Fg']: on ? 'var(--fg)' : 'var(--fg-muted)',
-            ['rTab' + i + 'NumBg']: ok ? 'var(--success)' : on ? 'var(--fg)' : 'var(--border-subtle)', ['rTab' + i + 'NumFg']: ok || on ? 'var(--popover)' : 'var(--fg-muted)',
-            ['rTab' + i + 'Done']: ok ? 'true' : undefined, ['rTab' + i + 'Todo']: ok ? undefined : 'true' });
-        });
-        return o;
-      })(),
-      rMissingShort: !r.name.trim() ? 'Add a name.' : !r.prompt.trim() ? 'Describe the work.' : !r.triggers.length ? 'Add a trigger.' : '',
+      rCrumbAll: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null, selR: null, selRun: null }); }, rDlgTitle: r.id ? 'Edit' : 'New automation',
       rEditing: r.id ? 'true' : undefined, rCreating: r.id ? undefined : 'true',
       stopR: e => { e.stopPropagation(); if (this.state.rMenu) this.setState({ rMenu: null }); },
       closeRDlg: e => { if (e) e.stopPropagation(); this.setState({ rDraft: null, rMenu: null }); },
@@ -2528,20 +2552,17 @@ class Component extends DCLogic {
   renderVals() {
     const v = this._renderVals();
     const st = this.state, d = st.draft;
-    const hostOn = !!st.addHost, projOn = !!st.projDlg;
+    const hostOn = !!st.addHost, projOn = !!st.projDlg && !hostOn;
     const back = st.section === 'routines' ? 'Automations' : st.view === 'new' ? 'New session' : 'Sessions';
     const out = { ...v, projPageOpen: projOn ? 'true' : undefined, hostPageOpen: hostOn ? 'true' : undefined, pageBackLabel: back };
     if (!hostOn && !projOn) return out;
+    Object.assign(out, { isNew: false, isProvisioning: false, isTerminal: false, isEmpty: false, isRoutines: undefined, isRunView: undefined, rDlgOpen: undefined });
     if (projOn && d) {
       const lab = (list, val) => ((list.find(x => x.value === val) || {}).label || val);
       const nDef = d.repos.filter(x => x.def !== false).length;
       const s1 = d.repos.length ? d.repos.length + (d.repos.length === 1 ? ' repository' : ' repositories') + ' · ' + nDef + ' default' : '';
       Object.assign(out, {
-        projRepoListH: 4 * 41 - 1 + 'px',
-        projMoreOpen: st.projMore ? 'true' : undefined, projMoreOpenS: st.projMore ? 'true' : 'false', projMoreRot: st.projMore ? '180deg' : '0deg',
-        toggleProjMore: () => this.setState(x => ({ projMore: !x.projMore })),
-        projMoreSum: st.projMore ? '' : lab(HOSTS, d.host) + ' · ' + lab(AGENTS, d.agent) + (d.repos.length ? ' · ' + nDef + ' cloned' : ''),
-        projSelNone: d.repos.length ? undefined : 'true', projSelAny: d.repos.length ? 'true' : undefined,
+        projRepoListH: 5 * 41 - 1 + 'px',
         projS1Done: d.repos.length && nDef ? 'true' : 'false', projS1Sum: s1,
         projS2Done: d.host ? 'true' : 'false', projS2Sum: lab(HOSTS, d.host),
         projS3Done: d.agent ? 'true' : 'false', projS3Sum: lab(AGENTS, d.agent),
@@ -2552,10 +2573,6 @@ class Component extends DCLogic {
       });
     }
     if (hostOn) Object.assign(out, {
-      hostInspectOpen: st.hostInspect ? 'true' : undefined, hostInspectOpenS: st.hostInspect ? 'true' : 'false', hostInspectRot: st.hostInspect ? '180deg' : '0deg',
-      toggleHostInspect: e => { if (e) e.stopPropagation(); this.setState(x => ({ hostInspect: !x.hostInspect })); },
-      hostCmdLabel: st.hostCopied === 'cmd' ? 'Copied' : 'Copy command', hostPromptLabel: st.hostCopied === 'prompt' ? 'Copied' : 'Copy agent prompt',
-      copyCmdOnly: this.copyInstall('cmd'), copyPromptOnly: this.copyInstall('prompt'),
       hostS1Done: st.hostAdded ? 'true' : 'false', hostS1Sum: st.hostAdded ? 'Installed' : '',
       hostS2Done: st.hostAdded ? 'true' : 'false', hostS2Sum: st.hostAdded ? 'mac-studio · macOS 15' : '',
     });
@@ -2709,20 +2726,20 @@ class Component extends DCLogic {
       projRepoCount: d ? d.repos.length : 0,
       projDefCount: d ? d.repos.filter(x => x.def !== false).length : 0,
       projRepoQuery: this.state.projRepoQuery || '',
-      setProjRepoQuery: e => this.setState({ projRepoQuery: e.target.value, projAdd: true }),
+      setProjRepoQuery: e => this.setState({ projRepoQuery: e.target.value }),
       // Fixed to the unfiltered height so typing never resizes the dialog.
       projRepoListH: 4 * 41 - 1 + 'px',
       projRepoNone: ACCESS_REPOS.filter(r => r.label.toLowerCase().includes((this.state.projRepoQuery || '').trim().toLowerCase())).length === 0 ? 'true' : undefined,
-      projRepoRows: (this._mkRow = r => {
+      projRepoRows: ACCESS_REPOS.filter(r => r.label.toLowerCase().includes((this.state.projRepoQuery || '').trim().toLowerCase())).map(r => {
         const on = d ? d.repos.find(x => x.repo === r.value) : null;
         return {
-          short: r.label.split('/').pop(), full: r.label, desc: r.desc,
+          short: r.label.split('/').pop(), desc: r.desc,
           on: !!on, onS: on ? 'true' : 'false', base: on ? on.base : baseOf(r.value),
-          defS: on && on.def !== false ? 'true' : 'false', defOn: !!(on && on.def !== false), vis: on ? 'visible' : 'hidden',
+          defS: on && on.def !== false ? 'true' : 'false', vis: on ? 'visible' : 'hidden',
           toggleDef: () => this.setState(st => ({ draft: { ...st.draft, repos: st.draft.repos.map(x => x.repo === r.value ? { ...x, def: x.def === false } : x) } })),
           toggle: () => this.setState(st => {
             const has = st.draft.repos.some(x => x.repo === r.value);
-            return { draft: { ...st.draft, repos: has ? st.draft.repos.filter(x => x.repo !== r.value) : st.draft.repos.concat([{ repo: r.value, base: baseOf(r.value), def: true }]) } };
+            return { draft: { ...st.draft, repos: has ? st.draft.repos.filter(x => x.repo !== r.value) : st.draft.repos.concat([{ repo: r.value, base: baseOf(r.value), def: st.draft.repos.length === 0 }]) } };
           }),
           ...(() => {
             const cur = on ? on.base : baseOf(r.value);
@@ -2753,27 +2770,7 @@ class Component extends DCLogic {
             };
           })(),
         };
-      }, ACCESS_REPOS.filter(r => r.label.toLowerCase().includes((this.state.projRepoQuery || '').trim().toLowerCase())).map(this._mkRow)),
-      projSelRows: ACCESS_REPOS.filter(r => d && d.repos.some(x => x.repo === r.value)).map(this._mkRow).map((x, i) => ({ ...x, sep: i ? '1px solid var(--border-subtle)' : '0' })),
-      ...(() => {
-        const q = (this.state.projRepoQuery || '').trim().toLowerCase();
-        const opts = ACCESS_REPOS.filter(r => !(d && d.repos.some(x => x.repo === r.value)) && (!q || r.label.toLowerCase().includes(q)));
-        const add = r => this.setState(st => ({ projRepoQuery: '', draft: { ...st.draft, repos: st.draft.repos.concat([{ repo: r.value, base: baseOf(r.value), def: true }]) } }));
-        const open = !!this.state.projAdd;
-        return {
-          projAddOpen: open ? 'true' : undefined, projAddOpenS: open ? 'true' : 'false',
-          projAddOpts: opts.map(r => ({ full: r.label, desc: r.desc, pick: e => { e.preventDefault(); add(r); } })),
-          projAddNone: opts.length ? undefined : 'true',
-          projAddEmpty: q ? 'No repository matches “' + this.state.projRepoQuery.trim() + '”' : 'Every repository is added',
-          openProjAdd: () => this.setState({ projAdd: true }),
-          blurProjAdd: () => this.setState({ projAdd: false }),
-          projAddKey: e => {
-            if (e.key === 'Escape') { e.stopPropagation(); e.currentTarget.blur(); }
-            else if (e.key === 'Enter' && opts[0]) { e.preventDefault(); add(opts[0]); }
-            else if (!this.state.projAdd) this.setState({ projAdd: true });
-          },
-        };
-      })(),
+      }),
       projHostChips: HOSTS.map(h => ({ label: h.label, on: d && d.host === h.value ? 'true' : 'false', pick: () => this.patchDraft({ host: h.value }) })),
       projAgentChips: AGENTS.map(a => ({ label: a.label, on: d && d.agent === a.value ? 'true' : 'false', pick: () => this.patchDraft({ agent: a.value }),
         isClaude: a.value === 'claude-code' ? 'true' : undefined, isCodex: a.value === 'codex' ? 'true' : undefined,
@@ -2782,7 +2779,7 @@ class Component extends DCLogic {
       setProjInstr: e => this.patchDraft({ instructions: e.target.value }),
       projInstrCount: d ? d.instructions.length.toLocaleString('en-US') : '0',
       projSaveLabel: this.state.projDlg === 'new' ? 'Create project' : 'Save changes',
-      projSaveBlocked: !d || !d.name.trim() || d.repos.length === 0 || d.repos.some(x => !x.base.trim()),
+      projSaveBlocked: !d || !d.name.trim() || d.repos.length === 0 || !d.repos.some(x => x.def !== false) || d.repos.some(x => !x.base.trim()),
       projDeleteBlocked: projSessions > 0,
       projDeleteHint: projSessions > 0 ? 'Move or delete its ' + projSessions + (projSessions === 1 ? ' session' : ' sessions') + ' first' : 'Delete this project',
       closeProj: () => this.setState({ projDlg: null, draft: null }),
