@@ -714,7 +714,8 @@ describe('Hosts & pairing (integration)', () => {
         loadAverage: 1.5,
         roundTripMillis: 12,
       });
-      expect((host.body?.capabilities as Record<string, unknown>).diskFreeBytes).toBe(99);
+      const capabilities = host.body?.capabilities as Record<string, unknown> | undefined;
+      expect(capabilities?.diskFreeBytes).toBe(99);
 
       // Free disk moving is presence, not a change to the machine.
       const [after] = await rows(`SELECT "changedAt" FROM "host_inventory" WHERE "hostId" = $1`, [
