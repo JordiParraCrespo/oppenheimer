@@ -26,7 +26,7 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
   // The list is grouped by project now, under a head that counts them; the
   // rail to the left of it is where the console's lists are switched.
   await expect(page.getByText('Projects', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Sessions', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sessions', exact: true })).toBeVisible();
 
   // The starter's chrome bar and its search trigger are gone with it.
   await expect(page.getByRole('button', { name: 'Search' })).toHaveCount(0);
@@ -66,8 +66,9 @@ test('a URL the console does not have answers inside the shell', async ({ page }
   await page.goto('/nowhere');
 
   // The 404 keeps the sidebar: the reader is still in the product, with New
-  // session one click away, rather than on a bare page.
-  await expect(page.getByRole('link', { name: 'New session', exact: true })).toBeVisible();
+  // session one click away, rather than on a bare page — the sidebar's link,
+  // and the page's own offer of the same.
+  await expect(page.getByRole('link', { name: 'New session', exact: true })).toHaveCount(2);
   await expect(page.getByText('That page does not exist')).toBeVisible();
 
   await owner.api.dispose();

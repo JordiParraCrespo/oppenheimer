@@ -32,13 +32,13 @@ test('settings opens from the account menu, walks its sections and comes back', 
 
   // Add host opens a page inside Settings, the settings sidebar still
   // beside it: Hosts as its parent crumb, Done as its primary, Cancel back
-  // to the list. (A button-styled link reads as a button to assistive tech.)
-  await page.getByRole('button', { name: 'Add host' }).click();
+  // to the list.
+  await page.getByRole('link', { name: 'Add host' }).click();
   await expect(page).toHaveURL(/\/settings\/hosts\/new$/);
   await expect(page.getByRole('heading', { name: 'Add a host' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to console' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Done' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('link', { name: 'Cancel' }).click();
   await expect(page).toHaveURL(/\/settings\/hosts$/);
 
   await page.getByRole('link', { name: 'Back to console' }).click();

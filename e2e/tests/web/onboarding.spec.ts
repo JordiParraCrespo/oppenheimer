@@ -54,6 +54,12 @@ async function registerWithoutWorkspace(
   await registerThroughUi(page, user);
   await expect(page).toHaveURL(/\/onboarding\/workspace/, { timeout: 30_000 });
   const account = await findUserByEmail(user.email);
+  // A workspace owns its projects — at least the Unassigned one sign-up makes —
+  // so they go first, or the foreign key refuses the delete.
+  await query(
+    `DELETE FROM "project" WHERE "organizationId" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,
+    [account?.id ?? ''],
+  );
   await query(
     `DELETE FROM "organization" WHERE "id" IN (SELECT "organizationId" FROM "member" WHERE "userId" = $1)`,
     [account?.id ?? ''],
@@ -71,7 +77,10 @@ test('an account with no workspace is served by the workspace step', async ({ pa
   await expect(page.getByRole('heading', { name: /name your workspace/i })).toBeVisible();
   await expect(page.locator('[data-slot="alert"]')).toHaveCount(0);
 
-  await page.getByLabel('Workspace name').fill('Nora & Co');
+  // A name no earlier run has claimed: the address it becomes is unique across
+  // the deployment, and the stack's database outlives a run.
+  const workspaceName = `Nora & Co ${Date.now().toString(36)}`;
+  await page.getByLabel('Workspace name').fill(workspaceName);
   await expect(page.getByText(/is available/i)).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Continue' }).click();
 
@@ -81,7 +90,7 @@ test('an account with no workspace is served by the workspace step', async ({ pa
 
   const account = await findUserByEmail(user.email);
   const memberships = await findOrganizationsForUser(account?.id ?? '');
-  expect(memberships).toEqual([expect.objectContaining({ role: 'owner', orgName: 'Nora & Co' })]);
+  expect(memberships).toEqual([expect.objectContaining({ role: 'owner', orgName: workspaceName })]);
 });
 
 test('the workspace step does not ask the server for an empty name', async ({ page }) => {
