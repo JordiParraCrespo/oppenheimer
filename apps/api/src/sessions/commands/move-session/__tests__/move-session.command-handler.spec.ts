@@ -3,7 +3,6 @@ import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectLookupPort } from '../../../../projects/application/project-lookup.port';
 import { ProjectEntity } from '../../../../projects/domain/project.entity';
-import { ProjectRepositoryEntity } from '../../../../projects/domain/project-repository.entity';
 import type { WorkSessionRepositoryPort } from '../../../database/work-session.repository.port';
 import { SessionCheckoutEntity } from '../../../domain/session-checkout.entity';
 import { SESSION_EVENT_KINDS } from '../../../domain/session-state.policy';
@@ -11,115 +10,145 @@ import { WorkSessionEntity } from '../../../domain/work-session.entity';
 import { MoveSessionCommand } from '../move-session.command';
 import { MoveSessionCommandHandler } from '../move-session.command-handler';
 
-const scope: AccessScope = {
-  userId: 'member-1',
+const SCOPE: AccessScope = {
+  userId: 'user-1',
   organizationId: 'org-acme',
   teamIds: [],
   grants: new Map(),
   bypass: false,
 };
 
-function project(id: string, repositories: string[]) {
-  const entity = ProjectEntity.createNew({
-    organizationId: 'org-acme',
-    name: id,
-    slug: id,
-    repositories: repositories.map((githubRepoId) =>
-      ProjectRepositoryEntity.createNew({
-        installationId: 'inst-1',
+function project(id: string, githubRepoIds: string[]): ProjectEntity {
+  return ProjectEntity.create({
+    id,
+    props: {
+      organizationId: 'org-acme',
+      name: `Project ${id}`,
+      slug: id,
+      archivedAt: null,
+      createdByUserId: 'user-1',
+      defaultHostId: null,
+      defaultAgent: null,
+      isUnassigned: false,
+      repositories: githubRepoIds.map((githubRepoId, index) => ({
+        installationId: 'installation-1',
         githubRepoId,
-        fullName: `acme/repo-${githubRepoId}`,
-      }),
-    ),
+        repositoryFullName: `acme/repo-${githubRepoId}`,
+        baseBranch: 'main',
+        isDefault: index === 0,
+      })),
+    },
   });
-  Object.defineProperty(entity, 'id', { value: id });
-  return entity;
 }
 
-function session() {
-  const entity = WorkSessionEntity.request({
+function session(githubRepoIds: string[]): WorkSessionEntity {
+  const work = WorkSessionEntity.request({
     organizationId: 'org-acme',
-    projectId: 'from',
-    projectSlug: 'xrp-mobile',
-    createdByUserId: 'member-1',
+    projectId: 'home',
+    createdByUserId: 'user-1',
     hostId: 'host-1',
-    slug: 'brave-otter-a1b2c3',
+    slug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
-    idempotencyKey: 'key-1',
   });
-  entity.attachCheckout(
-    SessionCheckoutEntity.createNew({
-      organizationId: 'org-acme',
-      sessionId: entity.id,
-      installationId: 'inst-1',
-      githubRepoId: '42',
-      repositoryFullName: 'acme/repo-42',
-      directoryName: 'repo-42',
-      baseBranch: 'main',
-      branch: 'oppenheimer/from/brave-otter-a1b2c3',
-    }),
-  );
-  return entity;
+  for (const githubRepoId of githubRepoIds) {
+    work.attachCheckout(
+      SessionCheckoutEntity.createNew({
+        organizationId: 'org-acme',
+        sessionId: work.id,
+        installationId: 'installation-1',
+        githubRepoId,
+        repositoryFullName: `acme/repo-${githubRepoId}`,
+        directoryName: `repo-${githubRepoId}`,
+        baseBranch: 'main',
+        branch: `oppenheimer/home/${work.slug}`,
+      }),
+    );
+  }
+  return work;
 }
 
 describe('MoveSessionCommandHandler', () => {
-  let sessions: Pick<WorkSessionRepositoryPort, 'findOneById' | 'appendEvents'>;
-  let projects: Pick<ProjectLookupPort, 'findOneById'>;
+  let work: WorkSessionEntity;
+  let sessions: WorkSessionRepositoryPort;
+  let projects: ProjectLookupPort;
   let handler: MoveSessionCommandHandler;
-  let current: WorkSessionEntity;
 
   beforeEach(() => {
-    current = session();
+    work = session(['42']);
     sessions = {
-      findOneById: vi.fn().mockResolvedValue(Some(current)),
-      appendEvents: vi.fn().mockResolvedValue({ accepted: [], rejected: [], appended: [] }),
-    };
-    projects = { findOneById: vi.fn().mockResolvedValue(Some(project('to', ['42', '7']))) };
-    handler = new MoveSessionCommandHandler(
-      sessions as WorkSessionRepositoryPort,
-      projects as ProjectLookupPort,
-    );
+      findOneById: vi.fn(async () => Some(work)),
+      appendMove: vi.fn(async (moved: WorkSessionEntity, target: string, events) => {
+        moved.recordEvent({
+          seq: 9,
+          kind: events[0].kind,
+          payload: events[0].payload,
+          occurredAt: new Date(),
+        });
+        expect(target).toBe(events[0].payload.to);
+        return 'moved' as const;
+      }),
+    } as unknown as WorkSessionRepositoryPort;
+    projects = {
+      findOneById: vi.fn(async (_scope: AccessScope, id: string) =>
+        Some(id === 'narrow' ? project('narrow', ['7']) : project(id, ['42', '7'])),
+      ),
+    } as unknown as ProjectLookupPort;
+    handler = new MoveSessionCommandHandler(sessions, projects);
   });
 
-  const command = (projectId = 'to') =>
-    new MoveSessionCommand({ scope, sessionId: current.id, projectId });
+  const move = (projectId: string) =>
+    handler.execute(new MoveSessionCommand({ scope: SCOPE, sessionId: work.id, projectId }));
 
-  it('records the move as one event the row folds, and tells no host', async () => {
-    const result = await handler.execute(command());
+  it('lists the session under the target', async () => {
+    const { sessionId, hints } = await move('wide');
 
-    expect(result.hints).toEqual([]);
-    expect(sessions.appendEvents).toHaveBeenCalledWith(current, [
+    expect(sessionId).toBe(work.id);
+    expect(hints).toEqual([]);
+    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('wide');
+    expect(vi.mocked(sessions.appendMove).mock.calls[0][2]).toEqual([
       expect.objectContaining({
         kind: SESSION_EVENT_KINDS.MOVED,
         source: 'api',
-        payload: { projectId: 'to', fromProjectId: 'from' },
+        payload: { from: 'home', to: 'wide' },
       }),
     ]);
   });
 
-  it('refuses a project that does not hold every repository the session checked out', async () => {
-    vi.mocked(projects.findOneById).mockResolvedValue(Some(project('to', ['7'])));
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_018' });
-    expect(sessions.appendEvents).not.toHaveBeenCalled();
+  it('moves a session to a project that does not hold its repository', async () => {
+    // No membership rule: a project's repositories are suggestions, and a
+    // session may work on any repository in any project.
+    await move('narrow');
+    expect(sessions.appendMove).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(sessions.appendMove).mock.calls[0][1]).toBe('narrow');
   });
 
-  it('is a no-op when the session is already in that project', async () => {
-    await handler.execute(command('from'));
+  it('writes nothing when the session is already there', async () => {
+    await move('home');
 
     expect(projects.findOneById).not.toHaveBeenCalled();
-    expect(sessions.appendEvents).not.toHaveBeenCalled();
-  });
-
-  it('reports a project the scope cannot see, or has retired, as not found', async () => {
-    vi.mocked(projects.findOneById).mockResolvedValue(None);
-
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
+    expect(sessions.appendMove).not.toHaveBeenCalled();
   });
 
   it('refuses a closed session', async () => {
-    vi.spyOn(current, 'isResolved', 'get').mockReturnValue(true);
+    work.recordEvent({
+      seq: 1,
+      kind: SESSION_EVENT_KINDS.CLOSED,
+      payload: {},
+      occurredAt: new Date(),
+    });
 
-    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'SESSIONS_005' });
+    await expect(move('wide')).rejects.toMatchObject({ code: 'SESSIONS_005' });
+  });
+
+  it('reports a target the caller cannot see as not found', async () => {
+    vi.mocked(projects.findOneById).mockResolvedValue(None);
+
+    await expect(move('elsewhere')).rejects.toMatchObject({ code: 'PROJECTS_001' });
+  });
+
+  it('refuses when an archive of the target committed first', async () => {
+    vi.mocked(sessions.appendMove).mockResolvedValue('project-archived');
+
+    await expect(move('wide')).rejects.toMatchObject({ code: 'SESSIONS_006' });
   });
 });

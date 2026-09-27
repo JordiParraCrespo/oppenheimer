@@ -235,6 +235,26 @@ and 11 gain the project noun in the same pull request.
 The auto-create race gets an integration test with two concurrent
 creates on a fresh repository.
 
+**Changed 2026-09-26** (10, "`projects/`"): a project is a saved scope a
+person creates, and auto-creation is gone. The slice now also holds
+`commands/create-project/` (`POST /projects`, the slug from the name),
+a widened `update-project` (name, repositories as a set, defaults),
+`domain/project-repositories.policy.ts`,
+`database/project-repository.orm-entity.ts` and
+`application/project-settings.resolver.ts` (repositories resolved live
+through GitHub, the default host checked against the caller). The lookup
+port reads `findOneById` and `unassigned`, which provisions the
+workspace's Unassigned project if it has none; a handler on the personal
+workspace's provisioning event provisions it too. Migration
+`AddProjectDefaultsAndRepositories` adds `project_repository` and the
+defaults; `NameProjectsAndFlattenSessions` keys that table to the
+workspace, backfills each auto-created project's origin as its one
+default repository, drops `originGithubRepoId`, gives every workspace its
+Unassigned project, and moves the session slug's uniqueness to
+`(organizationId, slug)`. The sessions slice gains
+`commands/move-session/` (`POST /sessions/{id}/move`) and the list
+filters.
+
 ## Slice 4 — `sessions/`: the aggregate, the log, the fold — no relay yet
 
 ```
@@ -369,7 +389,8 @@ is the order of work.
   `apikeys` and the TCP `/v1/ws` retire. Types come from
   `packages/go/protocol`, generated from slice 0's Zod.
 - **R3, with slice 6**: sessions on the note 10 layout —
-  `workspaces/<org>/projects/<project>/{repos,sessions}`, the
+  `workspaces/<org>/{repos,sessions}` (no project level since
+  2026-09-26), the
   `.oppenheimer` marker first, bare stores found by
   `oppenheimer.repo-id`, several checkouts, `prompt.first` from the
   agent transcript, `<runId>:<n>` idempotency keys, report-not-reap on

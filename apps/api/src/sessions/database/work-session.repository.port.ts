@@ -1,6 +1,6 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import type { Paginated } from '@oppenheimer/backend-ddd';
-import type { SessionState } from '@oppenheimer/shared';
+import type { SessionSortDto, SessionState } from '@oppenheimer/shared';
 import type { Option } from 'oxide.ts';
 import type { SessionCheckoutEntity } from '../domain/session-checkout.entity';
 import type { WorkSessionEntity } from '../domain/work-session.entity';
@@ -40,6 +40,11 @@ export interface SessionFilters {
   hostId?: string;
   /** The stored lifecycle. The derived group is computed on read and cannot be filtered. */
   state?: SessionState;
+  /** Sessions with a live checkout of this repository. */
+  githubRepoId?: number;
+  agent?: string;
+  /** Last activity first by default. */
+  sort?: SessionSortDto;
 }
 
 export interface SessionEventPage {
@@ -64,12 +69,11 @@ export interface SessionEventPage {
  */
 /**
  * A session on a host as the link's hello reconciliation reads it: the row,
- * the project's slug (a path segment on the host) and the first prompt if the
+ * and the first prompt if the
  * log holds one — everything a re-dispatched `session.create` needs.
  */
 export interface HostSessionRow {
   session: WorkSessionEntity;
-  projectSlug: string;
   prompt?: string;
 }
 
@@ -121,6 +125,19 @@ export interface WorkSessionRepositoryPort {
     session: WorkSessionEntity,
     events: NewSessionEvent[],
   ): Promise<SessionAppendOutcome>;
+
+  /**
+   * Append a move and fold it, in one transaction with a share lock on the target
+   * project — the same lock creating a session takes, and for the same reason: the
+   * archive command takes `FOR UPDATE` on that row and then counts the sessions
+   * listed in it, so a move and an archive cannot both win. `project-archived`
+   * when the archive committed first.
+   */
+  appendMove(
+    session: WorkSessionEntity,
+    targetProjectId: string,
+    events: NewSessionEvent[],
+  ): Promise<'moved' | 'project-archived'>;
 
   /** Add a checkout to a session, with the log entries that explain it. */
   insertCheckout(

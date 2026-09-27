@@ -197,5 +197,10 @@
   "agents": {
     "claude-code": "Claude Code",
     "codex": "Codex"
+  },
+  "row": {
+    "actions": "Acciones de la sesión",
+    "move": "Mover a un proyecto…",
+    "moveTitle": "Mover a un proyecto"
   }
 }

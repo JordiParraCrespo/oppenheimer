@@ -1,33 +1,27 @@
+import { randomUUID } from 'node:crypto';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import { ProjectRepositoriesResolver } from '../../application/project-repositories.resolver';
+import { ProjectSettingsResolver } from '../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../database/project.repository.port';
 import { ProjectEntity } from '../../domain/project.entity';
-import type { ProjectRepositoryEntity } from '../../domain/project-repository.entity';
-import {
-  projectSlugCandidates,
-  projectSlugFromRepositoryName,
-} from '../../domain/project-slug.policy';
+import { projectSlugCandidates } from '../../domain/project-slug.policy';
 import { ProjectErrors } from '../../domain/projects.errors';
 import { PROJECT_REPOSITORY } from '../../projects.di-tokens';
 import { CreateProjectCommand } from './create-project.command';
 
 /**
- * A project made on the console (`product/versions/mvp/12-projects-on-the-console.md`).
+ * Creates a project a person asked for: a name, the repositories it holds and the
+ * defaults a new session is offered (`product/versions/mvp/10-api-modules-and-data-model.md`).
  *
- * The repositories and the host are confirmed first, because they are the
- * fields somebody else's answer can refuse; the slug is derived from what
- * they confirmed — the first default repository, else the first repository,
- * else the name — through the same candidates a first session uses, so the
- * directory can still be read back to what named it.
+ * This is the only way a named project comes to exist. The one other project is
+ * the workspace's Unassigned, which the workspace is given rather than asks for;
+ * nothing derives a project from a repository.
  *
- * **No origin.** The origin is the identity of an auto-created project ("this
- * repository's project"), and the partial unique on it must keep answering
- * that question for API callers that send checkouts without a project. A
- * project made here is found by id, and two of them may hold one repository.
- * That also means the insert can only be refused on the slug, and the last
- * candidate carries GitHub's own id, so the loop always ends inserted.
+ * The slug is derived from the **name**, once. The id is minted first so the
+ * fallback candidate can be derived from the row itself; the only race is the
+ * slug, and the database's unique constraint is what answers it — nothing here
+ * asks whether a slug is free and then acts on the answer.
  */
 @CommandHandler(CreateProjectCommand)
 export class CreateProjectCommandHandler
@@ -36,50 +30,35 @@ export class CreateProjectCommandHandler
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projects: ProjectRepositoryPort,
-    private readonly resolver: ProjectRepositoriesResolver,
+    private readonly settings: ProjectSettingsResolver,
   ) {}
 
-  async execute(command: CreateProjectCommand): Promise<ProjectEntity> {
-    const { scope, input } = command;
-    if (!scope.organizationId) throw new AppError(ProjectErrors.NO_ACTIVE_ORGANIZATION);
+  async execute({ scope, input }: CreateProjectCommand): Promise<ProjectEntity> {
+    const { organizationId } = scope;
+    if (!organizationId) throw new AppError(ProjectErrors.NO_ACTIVE_ORGANIZATION);
 
-    await this.resolver.assertHost(scope, input.defaultHostId);
-    const repositories = await this.resolver.resolveRepositories(scope, input.repositories);
+    await this.settings.assertUsableHost(scope, input.defaultHostId);
+    const repositories = await this.settings.repositories(scope, input.repositories);
 
-    for (const slug of slugCandidatesFor(input.name, repositories)) {
+    const id = randomUUID();
+    for (const slug of projectSlugCandidates(input.name, id)) {
       const project = ProjectEntity.createNew({
-        organizationId: scope.organizationId,
+        id,
+        organizationId,
         name: input.name,
         slug,
+        repositories,
+        createdByUserId: scope.userId,
         defaultHostId: input.defaultHostId ?? null,
         defaultAgent: input.defaultAgent ?? null,
-        repositories,
       });
-      const outcome = await this.projects.insertIfUnclaimed(project);
-      if (outcome === 'inserted') return project;
-      // 'origin-taken' cannot happen with no origin; 'slug-taken' means the
-      // directory name belongs to another project, so try the next candidate.
+      if ((await this.projects.insert(project)) === 'inserted') return project;
     }
 
-    // Unreachable when the project has a repository (the id-suffixed candidate
-    // is unique by construction) and a sign, when it has none, that the name
-    // itself is a directory somebody already holds.
-    throw new AppError(ProjectErrors.NAME_TAKEN, {
-      detail: `A project named ${input.name} already holds that directory name`,
+    // The last candidate carries the project's own id, so this is not a name
+    // somebody else is using by accident; report it rather than loop.
+    throw new AppError(ProjectErrors.SLUG_UNAVAILABLE, {
+      detail: `Every slug derived from “${input.name}” is taken`,
     });
   }
-}
-
-/** The directory names to try, from what names the project. */
-function slugCandidatesFor(
-  name: string,
-  repositories: readonly ProjectRepositoryEntity[],
-): string[] {
-  const source = repositories.find((repository) => repository.isDefault) ?? repositories[0];
-  if (!source) return [projectSlugFromRepositoryName(name)];
-  return projectSlugCandidates({
-    owner: source.owner,
-    name: source.name,
-    githubRepoId: source.githubRepoId,
-  });
 }

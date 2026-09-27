@@ -13,9 +13,13 @@ import { WORK_SESSION_REPOSITORY } from '../../sessions.di-tokens';
 import { MoveSessionCommand } from './move-session.command';
 
 /**
- * The move route of `product/versions/mvp/03-control-plane.md`: the check
- * that the project holds the session's repositories, then the append. The
- * host is told nothing; the paths it holds carry `session.projectSlug`.
+ * Lists a session under another project — an **entry in its log**, folded onto
+ * `projectId`, like a rename.
+ *
+ * Nothing moves on disk and no host is told: a project is metadata, and a
+ * session's directory and branch never name it, so this is the whole of a move
+ * (`product/versions/mvp/10-api-modules-and-data-model.md`). There is no rule
+ * about repositories: a session may work on any, in any project.
  */
 @CommandHandler(MoveSessionCommand)
 export class MoveSessionCommandHandler
@@ -41,27 +45,23 @@ export class MoveSessionCommandHandler
         detail: `Session ${session.slug} is closed`,
       });
     }
-    // Already there: a retried request after a lost response is not a change.
+    // Already there: nothing to record, and a retry is not a conflict.
     if (session.projectId === command.projectId) return { sessionId: session.id, hints: [] };
 
-    const project = await requireActiveProject(this.projects, command.scope, command.projectId);
-    const missing = session.liveCheckouts.find(
-      (checkout) => !project.includesRepository(checkout.githubRepoId),
-    );
-    if (missing) {
-      throw new AppError(SessionErrors.PROJECT_LACKS_REPOSITORY, {
-        detail: `Project ${project.slug} does not include ${missing.repositoryFullName}`,
-      });
-    }
-
-    await this.sessions.appendEvents(session, [
+    const target = await requireActiveProject(this.projects, command.scope, command.projectId);
+    const outcome = await this.sessions.appendMove(session, target.id, [
       {
         idempotencyKey: WorkSessionEntity.apiIdempotencyKey(command.id, SESSION_EVENT_KINDS.MOVED),
         source: 'api',
         kind: SESSION_EVENT_KINDS.MOVED,
-        payload: { projectId: project.id, fromProjectId: session.projectId },
+        payload: { from: session.projectId, to: target.id },
       },
     ]);
+    if (outcome === 'project-archived') {
+      throw new AppError(SessionErrors.PROJECT_ARCHIVED, {
+        detail: `Project ${target.slug} is archived`,
+      });
+    }
     return { sessionId: session.id, hints: [] };
   }
 }

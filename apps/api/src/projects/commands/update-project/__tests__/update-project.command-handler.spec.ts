@@ -1,11 +1,11 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
+import type { ProjectRepositoryInputDto } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectRepositoriesResolver } from '../../../application/project-repositories.resolver';
+import type { ProjectSettingsResolver } from '../../../application/project-settings.resolver';
 import type { ProjectRepositoryPort } from '../../../database/project.repository.port';
 import { ProjectEntity } from '../../../domain/project.entity';
-import { ProjectRepositoryEntity } from '../../../domain/project-repository.entity';
 import { UpdateProjectCommand } from '../update-project.command';
 import { UpdateProjectCommandHandler } from '../update-project.command-handler';
 
@@ -17,9 +17,17 @@ const scope: AccessScope = {
   bypass: false,
 };
 
+const XRP = {
+  installationId: 'installation-1',
+  githubRepoId: '42',
+  repositoryFullName: 'acme/xrp-mobile',
+  baseBranch: 'main',
+  isDefault: true,
+};
+
 describe('UpdateProjectCommandHandler', () => {
-  let projects: Pick<ProjectRepositoryPort, 'findOneById' | 'saveIfActive'>;
-  let resolver: Pick<ProjectRepositoriesResolver, 'assertHost' | 'resolveRepositories'>;
+  let projects: Pick<ProjectRepositoryPort, 'findOneById' | 'saveSettingsIfActive'>;
+  let settings: Pick<ProjectSettingsResolver, 'repositories' | 'assertUsableHost'>;
   let handler: UpdateProjectCommandHandler;
   let project: ProjectEntity;
 
@@ -28,28 +36,30 @@ describe('UpdateProjectCommandHandler', () => {
       organizationId: 'org-acme',
       name: 'xrp-mobile',
       slug: 'xrp-mobile',
-      originGithubRepoId: '821374923',
+      repositories: [XRP],
     });
     projects = {
       findOneById: vi.fn().mockResolvedValue(Some(project)),
-      saveIfActive: vi.fn(async (_scope: AccessScope, entity: ProjectEntity) => Some(entity)),
-    };
-    resolver = {
-      assertHost: vi.fn().mockResolvedValue(undefined),
-      resolveRepositories: vi.fn(
-        async (_scope: AccessScope, rows: readonly { githubRepoId: number }[]) =>
-          rows.map((row) =>
-            ProjectRepositoryEntity.createNew({
-              installationId: 'installation-1',
-              githubRepoId: String(row.githubRepoId),
-              fullName: `acme/repo-${row.githubRepoId}`,
-            }),
-          ),
+      saveSettingsIfActive: vi.fn(async (_scope: AccessScope, entity: ProjectEntity) =>
+        Some(entity),
       ),
+    };
+    settings = {
+      repositories: vi.fn(
+        async (_scope: AccessScope, inputs: readonly ProjectRepositoryInputDto[]) =>
+          inputs.map((input) => ({
+            installationId: input.installationId,
+            githubRepoId: String(input.githubRepoId),
+            repositoryFullName: `acme/repo-${input.githubRepoId}`,
+            baseBranch: input.baseBranch,
+            isDefault: input.isDefault,
+          })),
+      ),
+      assertUsableHost: vi.fn(async () => undefined),
     };
     handler = new UpdateProjectCommandHandler(
       projects as ProjectRepositoryPort,
-      resolver as ProjectRepositoriesResolver,
+      settings as ProjectSettingsResolver,
     );
   });
 
@@ -61,39 +71,53 @@ describe('UpdateProjectCommandHandler', () => {
 
     expect(renamed.id).toBe(project.id);
     expect(renamed.name).toBe('XRP Mobile');
-    expect(projects.saveIfActive).toHaveBeenCalledWith(scope, project);
+    expect(projects.saveSettingsIfActive).toHaveBeenCalledWith(scope, project);
   });
 
   it('leaves the slug alone', async () => {
     expect((await handler.execute(command())).slug).toBe('xrp-mobile');
   });
 
-  it('changes only what was given', async () => {
-    // A rename must not clear the defaults, and a repository set given replaces
-    // the old one; the host is confirmed only when a new one is named.
-    project.change({ defaultHostId: 'host-1', defaultAgent: 'codex' });
+  it('leaves absent fields as they are and clears a default given null', async () => {
+    project.configure({ defaultAgent: 'codex', defaultHostId: 'host-1' });
 
+    const saved = await handler.execute(command({ defaultAgent: null }));
+
+    expect(saved.defaultAgent).toBeNull();
+    expect(saved.defaultHostId).toBe('host-1');
+    expect(saved.repositories).toEqual([XRP]);
+    expect(settings.repositories).not.toHaveBeenCalled();
+  });
+
+  it('replaces the repositories as a set, resolved live, in the order given', async () => {
     const saved = await handler.execute(
       command({
-        repositories: [{ installationId: 'installation-1', githubRepoId: 7, isDefault: true }],
+        repositories: [
+          {
+            installationId: 'installation-1',
+            githubRepoId: 7,
+            baseBranch: 'dev',
+            isDefault: false,
+          },
+          {
+            installationId: 'installation-1',
+            githubRepoId: 42,
+            baseBranch: 'main',
+            isDefault: true,
+          },
+        ],
       }),
     );
 
-    expect(saved.name).toBe('xrp-mobile');
-    expect(saved.defaultHostId).toBe('host-1');
-    expect(saved.defaultAgent).toBe('codex');
-    expect(saved.repositories.map((repository) => repository.githubRepoId)).toEqual(['7']);
-    expect(resolver.assertHost).toHaveBeenCalledWith(scope, undefined);
+    expect(settings.repositories).toHaveBeenCalledTimes(1);
+    expect(saved.repositories.map((repository) => repository.githubRepoId)).toEqual(['7', '42']);
+    expect(saved.repositories[0].repositoryFullName).toBe('acme/repo-7');
   });
 
-  it('clears a default when told null, and confirms a new host', async () => {
-    project.change({ defaultHostId: 'host-1' });
+  it('checks a default host the caller names', async () => {
+    await handler.execute(command({ defaultHostId: 'host-1' }));
 
-    const saved = await handler.execute(command({ defaultHostId: null, defaultAgent: null }));
-    expect(saved.defaultHostId).toBeNull();
-
-    await handler.execute(command({ defaultHostId: 'host-2' }));
-    expect(resolver.assertHost).toHaveBeenLastCalledWith(scope, 'host-2');
+    expect(settings.assertUsableHost).toHaveBeenCalledWith(scope, 'host-1');
   });
 
   it('loads through the caller’s scope, so another workspace’s project is not found', async () => {
@@ -102,14 +126,14 @@ describe('UpdateProjectCommandHandler', () => {
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
     await expect(handler.execute(command())).rejects.toBeInstanceOf(AppError);
     expect(projects.findOneById).toHaveBeenCalledWith(scope, project.id);
-    expect(projects.saveIfActive).not.toHaveBeenCalled();
+    expect(projects.saveSettingsIfActive).not.toHaveBeenCalled();
   });
 
   it('does not resurrect a project the write found retired', async () => {
     // The row is the authority on whether the project is still active: the
     // targeted update matches nothing, and a save must not report success —
     // nor write a stale `archivedAt` over an archive that landed meanwhile.
-    vi.mocked(projects.saveIfActive).mockResolvedValue(None);
+    vi.mocked(projects.saveSettingsIfActive).mockResolvedValue(None);
 
     await expect(handler.execute(command())).rejects.toMatchObject({ code: 'PROJECTS_001' });
   });

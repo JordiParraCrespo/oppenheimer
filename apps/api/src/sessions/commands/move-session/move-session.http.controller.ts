@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -41,29 +40,22 @@ export class MoveSessionHttpController {
   ) {}
 
   @Post(':id/move')
-  @HttpCode(200)
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
     operationId: 'moveSession',
-    summary: 'Move a session to another project',
+    summary: 'List a session under another project',
     description:
-      'Only a project that includes every repository the session checked out can take it. The branch and the worktree stay where they are: the directory carries the slug of the project that created the session, and nothing on the host changes.',
+      'Nothing moves on disk: a project is metadata, and a session’s directory and branch never name it. Any active project in the workspace can take any session.',
   })
-  @ApiResponse({ status: 200, type: SessionResponseDto })
+  @ApiResponse({ status: 201, type: SessionResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Session not found', code: 'SESSIONS_001' })
-  @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
   @ApiProblemResponse({ status: 409, description: 'That session is closed', code: 'SESSIONS_005' })
   @ApiProblemResponse({
     status: 409,
     description: 'That project is archived',
     code: 'SESSIONS_006',
-  })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'That project does not include this session’s repository',
-    code: 'SESSIONS_018',
   })
   async move(
     @CurrentAccessScope() scope: AccessScope,

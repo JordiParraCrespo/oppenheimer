@@ -49,7 +49,10 @@ side, built so the rail is whole, and what the export draws for the rest.
 - The editor sits under the `_editor` layout, the frame the project page
   and Add a host use.
 - The sidebar lists the projects as groups, each empty until an
-  automation exists; the search and the rows arrive with them.
+  automation exists; the search and the rows arrive with them. The
+  workspace's Unassigned project has no group, nor does it count: it holds
+  the sessions that name no project, and an automation is set up for one
+  (2026-09-27).
 - The console's feature is `apps/web/src/features/automations/`, on the
   app's allowlist because its pages render no entity yet; the product
   package gains its module when the control plane names the resource.

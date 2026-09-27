@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
 import { None, type Option, Some } from 'oxide.ts';
 import { type EntityManager, In, Repository } from 'typeorm';
-import type { ProjectEntity } from '../domain/project.entity';
+import {
+  type ProjectEntity,
+  UNASSIGNED_PROJECT_NAME,
+  UNASSIGNED_PROJECT_SLUG,
+} from '../domain/project.entity';
 import { ProjectMapper } from '../project.mapper';
 import { ProjectResource } from '../projects.resource';
 import { ProjectOrmEntity } from './project.orm-entity';
@@ -14,17 +18,16 @@ import type {
 } from './project.repository.port';
 import { ProjectRepositoryOrmEntity } from './project-repository.orm-entity';
 
+/** Postgres' unique-violation class, and the constraint that guards a slug. */
 const UNIQUE_VIOLATION = '23505';
 const SLUG_CONSTRAINT = 'UQ_project_organization_slug';
 
 /**
- * The project aggregate's store. Every read loads the repository rows, because
- * the aggregate is not whole without them and every consumer — the listing,
- * the create path, the sidebar — prints or checks them; the two mappings
- * declare no relation, so this is where they are joined, in one query for a
- * whole listing. Every write of the rows goes through {@link saveIfActive} or
- * {@link insertIfUnclaimed}, in the same transaction as the project row, so a
- * project never exists half-saved.
+ * TypeORM adapter for the project aggregate.
+ *
+ * The reads carry no tenant clause of their own: extending
+ * `ScopedRepositoryBase` and naming the resource is the whole of it, so a query
+ * and an `ability.can()` cannot disagree about what a scope means.
  */
 @Injectable()
 export class ProjectRepository
@@ -42,42 +45,23 @@ export class ProjectRepository
     super();
   }
 
-  async insertIfUnclaimed(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
-    const record = this.mapper.toPersistence(entity);
-    const table = this.repository.metadata.tableName;
+  async insert(entity: ProjectEntity): Promise<ProjectInsertOutcome> {
     try {
-      return await this.repository.manager.transaction(async (manager) => {
-        const inserted: { id: string }[] = await manager.query(
-          `INSERT INTO "${table}"
-             ("id", "organizationId", "name", "slug", "originGithubRepoId", "defaultHostId", "defaultAgent")
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
-           -- The index is partial, so its predicate has to be repeated here or
-           -- Postgres cannot infer which constraint is meant.
-           ON CONFLICT ("organizationId", "originGithubRepoId")
-             WHERE "originGithubRepoId" IS NOT NULL
-             DO NOTHING
-           RETURNING "id"`,
-          [
-            record.id,
-            record.organizationId,
-            record.name,
-            record.slug,
-            record.originGithubRepoId,
-            record.defaultHostId,
-            record.defaultAgent,
-          ],
-        );
-        if (inserted.length === 0) return 'origin-taken';
-        await this.writeRepositories(manager, entity);
-        return 'inserted';
+      await this.repository.manager.transaction(async (manager) => {
+        await manager.getRepository(ProjectOrmEntity).insert(this.mapper.toPersistence(entity));
+        await this.insertRepositories(manager, entity);
       });
+      return 'inserted';
     } catch (error) {
       if (isSlugConflict(error)) return 'slug-taken';
       throw error;
     }
   }
 
-  async saveIfActive(scope: AccessScope, entity: ProjectEntity): Promise<Option<ProjectEntity>> {
+  async saveSettingsIfActive(
+    scope: AccessScope,
+    entity: ProjectEntity,
+  ): Promise<Option<ProjectEntity>> {
     // The scope's own predicate, reused verbatim as a sub-query: an UPDATE cannot
     // carry the kernel's clauses directly, and rewriting them here by hand is how
     // a write ends up scoped differently from the reads beside it.
@@ -85,33 +69,45 @@ export class ProjectRepository
       .select(`${this.alias}.id`)
       .getQueryAndParameters();
     const table = this.repository.metadata.tableName;
-    const record = this.mapper.toPersistence(entity);
+    const at = parameters.length;
 
     return this.repository.manager.transaction(async (manager) => {
       // TypeORM's Postgres driver returns `[rows, affectedCount]` for an UPDATE.
-      const [updated]: [{ id: string }[], number] = await manager.query(
+      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
         `UPDATE "${table}"
-            SET "name" = $${parameters.length + 1},
-                "defaultHostId" = $${parameters.length + 2},
-                "defaultAgent" = $${parameters.length + 3},
+            SET "name" = $${at + 1},
+                "defaultHostId" = $${at + 2},
+                "defaultAgent" = $${at + 3},
                 "updatedAt" = now()
-          WHERE "id" = $${parameters.length + 4}
+          WHERE "id" = $${at + 4}
             AND "archivedAt" IS NULL
             AND "id" IN (${reachable})
-          RETURNING "id"`,
-        [...parameters, record.name, record.defaultHostId, record.defaultAgent, record.id],
+          RETURNING *`,
+        [...parameters, entity.name, entity.defaultHostId, entity.defaultAgent, entity.id],
       );
       if (updated.length === 0) return None;
 
-      // The set is replaced rather than diffed: the dialog sends the whole list,
-      // and a row's identity is the repository, which the unique on
-      // (projectId, githubRepoId) already enforces.
-      await manager.delete(ProjectRepositoryOrmEntity, { projectId: record.id });
-      await this.writeRepositories(manager, entity);
-      return Some(await this.reload(manager, record.id));
+      // The whole set, replaced: a project's repositories are configuration, and
+      // what a session checked out lives on the session's own rows.
+      await manager.getRepository(ProjectRepositoryOrmEntity).delete({ projectId: entity.id });
+      const repositories = await this.insertRepositories(manager, entity);
+      return Some(this.mapper.toDomain(updated[0], repositories));
     });
   }
 
+  /**
+   * The lock, the question and the write, in that order and in one transaction.
+   *
+   * `FOR UPDATE` on the project row is what serialises this against creating a
+   * session, whose insert transaction takes `FOR SHARE` on the same row: an archive
+   * that commits first turns that read into zero rows, and one that arrives second
+   * waits here and then sees the session it would have stranded. Asking the
+   * question between the lock and the write is the whole point — a check that ran
+   * before the lock could be true and stale by the time `archivedAt` lands.
+   *
+   * The scope's own predicate is reused verbatim as a sub-query, so a project in
+   * another workspace is `not-found` here exactly as it is on every read.
+   */
   async archiveIfUnused(
     scope: AccessScope,
     projectId: string,
@@ -123,27 +119,35 @@ export class ProjectRepository
     const table = this.repository.metadata.tableName;
 
     return this.repository.manager.transaction(async (manager) => {
-      const locked: { id: string; archivedAt: Date | null }[] = await manager.query(
-        `SELECT "id", "archivedAt" FROM "${table}"
+      const locked: ProjectOrmEntity[] = await manager.query(
+        `SELECT * FROM "${table}"
           WHERE "id" = $${parameters.length + 1} AND "id" IN (${reachable})
           FOR UPDATE`,
         [...parameters, projectId],
       );
       if (locked.length === 0) return { result: 'not-found' as const };
 
-      const project = await this.reload(manager, projectId);
+      const repositories = await this.repositoriesOf([projectId], manager);
+      const project = this.mapper.toDomain(locked[0], repositories.get(projectId));
       // Already retired: nothing to ask and nothing to write, and a retried request
       // after a lost response is not a conflict.
       if (project.isArchived) return { result: 'archived' as const, project };
+      // Where work that names no project goes; retiring it would strand that work.
+      if (project.isUnassigned) return { result: 'unassigned' as const, project };
 
       if (await stillInUse()) return { result: 'in-use' as const, project };
 
       project.archive(new Date());
-      await manager.query(
-        `UPDATE "${table}" SET "archivedAt" = $2, "updatedAt" = now() WHERE "id" = $1`,
+      const [updated]: [ProjectOrmEntity[], number] = await manager.query(
+        `UPDATE "${table}" SET "archivedAt" = $2, "updatedAt" = now()
+          WHERE "id" = $1
+        RETURNING *`,
         [projectId, project.archivedAt],
       );
-      return { result: 'archived' as const, project: await this.reload(manager, projectId) };
+      return {
+        result: 'archived' as const,
+        project: this.mapper.toDomain(updated[0], repositories.get(projectId)),
+      };
     });
   }
 
@@ -153,59 +157,85 @@ export class ProjectRepository
   ): Promise<ProjectEntity[]> {
     const query = this.scopedQuery(scope).orderBy('project.createdAt', 'DESC');
     if (!options.includeArchived) query.andWhere('project.archivedAt IS NULL');
-    return this.assemble(this.repository.manager, await query.getMany());
+    const records = await query.getMany();
+    const repositories = await this.repositoriesOf(records.map((record) => record.id));
+    return records.map((record) => this.mapper.toDomain(record, repositories.get(record.id)));
   }
 
   async findOneById(scope: AccessScope, id: string): Promise<Option<ProjectEntity>> {
     const record = await this.scopedQuery(scope).andWhere('project.id = :id', { id }).getOne();
-    return this.one(record);
+    return this.withRepositories(record);
   }
 
-  async findOneByOrigin(scope: AccessScope, githubRepoId: string): Promise<Option<ProjectEntity>> {
-    const record = await this.scopedQuery(scope)
-      .andWhere('project.originGithubRepoId = :githubRepoId', { githubRepoId })
-      .getOne();
-    return this.one(record);
+  async findUnassigned(scope: AccessScope): Promise<Option<ProjectEntity>> {
+    const record = await this.scopedQuery(scope).andWhere('project.isUnassigned = true').getOne();
+    return this.withRepositories(record);
   }
 
-  private async one(record: ProjectOrmEntity | null): Promise<Option<ProjectEntity>> {
+  /**
+   * One statement, so there is no window between asking and writing. The slug is
+   * `unassigned` unless a project of the workspace already holds it, else that
+   * with the first eight characters of the new id; `ON CONFLICT DO NOTHING`
+   * covers both the one-per-workspace index and a slug race, and either way the
+   * workspace ends with exactly one Unassigned project.
+   */
+  async provisionUnassigned(organizationId: string): Promise<void> {
+    const table = this.repository.metadata.tableName;
+    await this.repository.query(
+      `INSERT INTO "${table}" ("id", "organizationId", "name", "slug", "isUnassigned")
+       SELECT id, $1, $2,
+              CASE WHEN EXISTS (
+                SELECT 1 FROM "${table}" WHERE "organizationId" = $1 AND "slug" = $3
+              ) THEN $3 || '-' || substr(id::text, 1, 8) ELSE $3 END,
+              true
+         FROM (SELECT gen_random_uuid() AS id) minted
+       ON CONFLICT DO NOTHING`,
+      [organizationId, UNASSIGNED_PROJECT_NAME, UNASSIGNED_PROJECT_SLUG],
+    );
+  }
+
+  /** One project and its repositories, read by the id the scoped read verified. */
+  private async withRepositories(record: ProjectOrmEntity | null): Promise<Option<ProjectEntity>> {
     if (!record) return None;
-    const [project] = await this.assemble(this.repository.manager, [record]);
-    return Some(project);
+    const repositories = await this.repositoriesOf([record.id]);
+    return Some(this.mapper.toDomain(record, repositories.get(record.id)));
   }
 
-  /** The rows of every project in the list, in one query, then each aggregate whole. */
-  private async assemble(
-    manager: EntityManager,
-    records: ProjectOrmEntity[],
-  ): Promise<ProjectEntity[]> {
-    if (records.length === 0) return [];
-    const rows = await manager.find(ProjectRepositoryOrmEntity, {
-      where: { projectId: In(records.map((record) => record.id)) },
-    });
+  /**
+   * The child rows of projects the caller already reached through the scoped
+   * read. Never called with an id that did not come from one: the child table
+   * declares no resource and carries no scoping of its own.
+   */
+  private async repositoriesOf(
+    projectIds: readonly string[],
+    manager: EntityManager = this.repository.manager,
+  ): Promise<Map<string, ProjectRepositoryOrmEntity[]>> {
     const byProject = new Map<string, ProjectRepositoryOrmEntity[]>();
+    if (projectIds.length === 0) return byProject;
+    const rows = await manager.getRepository(ProjectRepositoryOrmEntity).find({
+      where: { projectId: In([...projectIds]) },
+      order: { position: 'ASC' },
+    });
     for (const row of rows) {
       const list = byProject.get(row.projectId) ?? [];
       list.push(row);
       byProject.set(row.projectId, list);
     }
-    return records.map((record) => this.mapper.toDomain(record, byProject.get(record.id) ?? []));
+    return byProject;
   }
 
-  private async writeRepositories(manager: EntityManager, entity: ProjectEntity): Promise<void> {
-    const rows = this.mapper.repositoriesToPersistence(entity);
-    if (rows.length === 0) return;
-    await manager.insert(ProjectRepositoryOrmEntity, rows);
-  }
-
-  /** The aggregate as stored, inside the writing transaction so it sees its own rows. */
-  private async reload(manager: EntityManager, id: string): Promise<ProjectEntity> {
-    const record = await manager.findOneOrFail(ProjectOrmEntity, { where: { id } });
-    const [project] = await this.assemble(manager, [record]);
-    return project;
+  private async insertRepositories(
+    manager: EntityManager,
+    entity: ProjectEntity,
+  ): Promise<ProjectRepositoryOrmEntity[]> {
+    const records = this.mapper.toRepositoryRecords(entity);
+    if (records.length === 0) return [];
+    await manager.getRepository(ProjectRepositoryOrmEntity).insert(records);
+    return records;
   }
 }
 
+/** Whether a driver error is the slug constraint refusing the insert. */
 function isSlugConflict(error: unknown): boolean {
   const driver = error as { code?: string; constraint?: string };
   return driver?.code === UNIQUE_VIOLATION && driver?.constraint === SLUG_CONSTRAINT;

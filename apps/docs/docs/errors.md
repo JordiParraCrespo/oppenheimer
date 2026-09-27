@@ -343,10 +343,12 @@ sends whoever hit it to the right place.
 
 ## Projects
 
-A project is a body of work sessions belong to, and its `slug` is the name of its
-directory on every host that holds it — derived from the GitHub repository
-(`<repo>`, or `<owner>--<repo>` when another repository already holds that name)
-and never renamed.
+A project is a saved scope a person creates — the repositories its sessions usually
+work on and the defaults a new session is offered. It is metadata only: a session's
+directory and branch never name it. Its `slug` is a stable handle derived once from
+its first name and never reissued. Every workspace also has one **Unassigned**
+project, where a session that names no project is listed. See
+`product/versions/mvp/10-api-modules-and-data-model.md`.
 
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
@@ -355,7 +357,9 @@ and never renamed.
 | `PROJECTS_003` <a id="projects_003" /> | Projects cannot be archived right now | 503 |
 | `PROJECTS_004` <a id="projects_004" /> | That project is archived            | 409  |
 | `PROJECTS_005` <a id="projects_005" /> | That project still has open sessions | 409 |
-| `PROJECTS_006` <a id="projects_006" /> | That name is a directory another project already holds | 409 |
+| `PROJECTS_006` <a id="projects_006" /> | A project needs at least one repository, one of them a default | 400 |
+| `PROJECTS_007` <a id="projects_007" /> | No slug is free for that project   | 409  |
+| `PROJECTS_008` <a id="projects_008" /> | The Unassigned project cannot be renamed or archived | 409 |
 
 `PROJECTS_001` is also returned for a project that exists in another workspace:
 the scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -365,15 +369,22 @@ project" is a question only the module that owns sessions can answer, asked over
 query bus; if nothing answers it, the archive refuses rather than assuming the answer
 it would prefer.
 
-`PROJECTS_006` is a project made on the console with **no repository** whose
-name sanitises to a directory another project already holds. With a repository
-the directory name is derived from it and the last candidate carries GitHub's
-own id, so it cannot collide; with none the name is all there is.
+`PROJECTS_006` is a repository list a project cannot hold: none, none offered by
+default, one repository twice, more than twenty, or a blank base branch. The
+`detail` names which. The request schema refuses the same bodies earlier; this is the
+project holding its own invariants whatever the caller.
 
-`PROJECTS_004` is the tombstone on the create path. A project's slug is a directory
-name on every host that held it and is never reissued, so a session cannot be started
-in a retired project — including the first session of a repository whose project was
-archived.
+`PROJECTS_007` should never be seen: the last slug a new project tries carries part
+of its own id. It is reported rather than retried.
+
+`PROJECTS_008` protects the one project every workspace has for sessions that name
+none. Its repositories and defaults can be edited like any project's; its name and
+its place cannot.
+
+`PROJECTS_004` is no longer raised. It answered a session's first repository whose
+auto-created project was archived; projects are no longer created from repositories,
+and a session named for a retired project is `SESSIONS_006`. The code stays reserved
+so it is never reused for something else.
 
 ## Sessions
 
@@ -393,7 +404,7 @@ are never reissued.
 | `SESSIONS_006` <a id="sessions_006" /> | That project is archived                        | 409  |
 | `SESSIONS_007` <a id="sessions_007" /> | That repository has used every directory name it can take here | 409 |
 | `SESSIONS_008` <a id="sessions_008" /> | A terminal ticket could not be issued           | 503  |
-| `SESSIONS_009` <a id="sessions_009" /> | A session with no repositories must name its project | 400 |
+| `SESSIONS_009` <a id="sessions_009" /> | A session must name its project (no longer raised) | 400 |
 | `SESSIONS_010` <a id="sessions_010" /> | A session checks out one repository             | 409  |
 | `SESSIONS_011` <a id="sessions_011" /> | This host's runner cannot start that agent      | 409  |
 | `SESSIONS_012` <a id="sessions_012" /> | That image is too large to give the session     | 413  |
@@ -402,7 +413,7 @@ are never reissued.
 | `SESSIONS_015` <a id="sessions_015" /> | No image was attached                           | 400  |
 | `SESSIONS_016` <a id="sessions_016" /> | The session’s host is offline                   | 503  |
 | `SESSIONS_017` <a id="sessions_017" /> | The session’s host cannot take images until its runner is updated | 409 |
-| `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository | 409 |
+| `SESSIONS_018` <a id="sessions_018" /> | That project does not include this session’s repository (no longer raised) | 409 |
 
 `SESSIONS_001` is also returned for a session that exists in another workspace: the
 scoped read cannot see it, and distinguishing the two would confirm the id.
@@ -411,6 +422,9 @@ scoped read cannot see it, and distinguishing the two would confirm the id.
 stopped, restarted or given another checkout — the row is a tombstone for its
 directory name, and reopening one would put new work into a directory a coding agent
 already keys conversation state by.
+
+`SESSIONS_009` is no longer raised. A session that names no project is listed in the
+workspace's Unassigned project. The code stays reserved so it is never reused.
 
 `SESSIONS_010` is the MVP's one repository per session: a runner makes one worktree
 per session, so a second repository is refused here — on create by the body's own
@@ -423,10 +437,9 @@ inventory has no entry for that command runs a build that would refuse the
 launch; updating the runner is the fix. Whether the agent is *installed* is never
 checked here — that is a hint on the engine button, and the terminal says so.
 
-`SESSIONS_018` is a move (`POST /sessions/{id}/move`) to a project that does not hold
-every repository the session checked out. A project is what a session's repositories
-belong to, so one that lacks them would group work it cannot explain; the branch and
-the worktree never move, whichever project the session is in.
+`SESSIONS_018` is no longer raised. It refused a move to a project that did not hold the
+session's repositories; a session moves to any project now, because a project is
+metadata. The code stays reserved.
 
 `SESSIONS_012`–`SESSIONS_017` belong to pasting an image into a session's prompt
 (`POST /sessions/{id}/images`). `012` is the upload's cap; `013` is bytes that are not

@@ -428,7 +428,6 @@ describe('runner link', () => {
       commandId,
       sessionId: SESSION,
       organizationSlug: 'jordi',
-      projectSlug: 'xrp',
       sessionSlug: 'swift-wren-7gyezw',
       agent: 'claude-code',
       launch: { permission: 'ask' },

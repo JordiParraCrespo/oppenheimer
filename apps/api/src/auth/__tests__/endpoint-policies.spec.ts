@@ -9,6 +9,7 @@ import { FindFeatureFlagsHttpController } from '../../feature-flags/queries/find
 import { MembersController } from '../../organizations/members.controller';
 import { ArchiveProjectHttpController } from '../../projects/commands/archive-project/archive-project.http.controller';
 import { CreateProjectHttpController } from '../../projects/commands/create-project/create-project.http.controller';
+import { UpdateProjectHttpController } from '../../projects/commands/update-project/update-project.http.controller';
 import { FindProjectHttpController } from '../../projects/queries/find-project/find-project.http.controller';
 import { FindProjectsHttpController } from '../../projects/queries/find-projects/find-projects.http.controller';
 import { FindRolesHttpController } from '../../roles/queries/find-roles/find-roles.http.controller';
@@ -52,8 +53,9 @@ const HANDLERS: Record<GuardedEndpoint, { controller: object; handler: string }>
     handler: 'findFeatureFlags',
   },
   'GET /projects': { controller: FindProjectsHttpController, handler: 'list' },
-  'POST /projects': { controller: CreateProjectHttpController, handler: 'create' },
   'GET /projects/:id': { controller: FindProjectHttpController, handler: 'get' },
+  'POST /projects': { controller: CreateProjectHttpController, handler: 'create' },
+  'PATCH /projects/:id': { controller: UpdateProjectHttpController, handler: 'update' },
   'DELETE /projects/:id': { controller: ArchiveProjectHttpController, handler: 'archive' },
   'GET /sessions': { controller: FindSessionsHttpController, handler: 'list' },
   'GET /sessions/:id': { controller: FindSessionHttpController, handler: 'get' },

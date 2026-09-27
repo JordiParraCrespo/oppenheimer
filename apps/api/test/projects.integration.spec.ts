@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
 import { AddProjectRolePermissions1789000100000 } from '../src/migrations/1789000100000-AddProjectRolePermissions';
-import { ProjectLookupResolver } from '../src/projects/application/project-lookup.resolver';
 import { ProjectOrmEntity } from '../src/projects/database/project.orm-entity';
 import { ProjectRepository } from '../src/projects/database/project.repository';
 import { ProjectRepositoryOrmEntity } from '../src/projects/database/project-repository.orm-entity';
@@ -11,23 +10,30 @@ import { ProjectMapper } from '../src/projects/project.mapper';
 import { runAllMigrations } from './run-migrations';
 
 /**
- * The auto-creation races, against a real Postgres.
+ * Projects against a real Postgres: the slug constraint, the repository set and
+ * its composite keys, the scoped writes and the archive.
  *
- * The unit tests double the two unique constraints; this is the layer that
- * proves Postgres behaves the way the double claims — and that the migration
- * actually created the constraints the statements name. Get either wrong and two
- * concurrent first sessions on one repository quietly produce two projects, two
- * directories and two branches, which is a bug no unit test could catch.
+ * The unit tests double the constraints; this is the layer that proves Postgres
+ * behaves the way the doubles claim, and that the migration created what the
+ * statements name.
  *
  * The schema is built by running the **whole migration chain**, so a mistake in a
  * migration fails here rather than in production.
  */
-describe('projects: race-safe auto-creation (integration)', () => {
+describe('projects: the saved scope (integration)', () => {
   let pgContainer: StartedTestContainer;
   let dataSource: DataSource;
-  let resolver: ProjectLookupResolver;
   let repository: ProjectRepository;
   let organizationId: string;
+  let installationId: string;
+
+  const held = (githubRepoId: string, isDefault = true) => ({
+    installationId,
+    githubRepoId,
+    repositoryFullName: `acme/repo-${githubRepoId}`,
+    baseBranch: 'main',
+    isDefault,
+  });
 
   const scope = () => ({
     userId: randomUUID(),
@@ -36,13 +42,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
     grants: new Map<string, Set<string>>(),
     bypass: false,
   });
-
-  const projectRows = (): Promise<{ id: string; slug: string; name: string }[]> =>
-    dataSource.query(
-      `SELECT "id", "slug", "name", "originGithubRepoId" FROM "project"
-        WHERE "organizationId" = $1 ORDER BY "createdAt"`,
-      [organizationId],
-    );
 
   beforeAll(async () => {
     pgContainer = await new GenericContainer('postgres:16-alpine')
@@ -67,9 +66,9 @@ describe('projects: race-safe auto-creation (integration)', () => {
       username: 'test',
       password: 'test',
       database: 'test',
-      // No Nest container here on purpose: the races live in the repository and
-      // the resolver, and booting the application would only add Redis and
-      // Better Auth to the set of things that can make this suite red.
+      // No Nest container here on purpose: what is proved lives in the repository,
+      // and booting the application would only add Redis and Better Auth to the
+      // set of things that can make this suite red.
       entities: [ProjectOrmEntity, ProjectRepositoryOrmEntity],
       synchronize: false,
     });
@@ -79,7 +78,6 @@ describe('projects: race-safe auto-creation (integration)', () => {
       dataSource.getRepository(ProjectOrmEntity),
       new ProjectMapper(),
     );
-    resolver = new ProjectLookupResolver(repository);
   }, 180000);
 
   afterAll(async () => {
@@ -88,135 +86,65 @@ describe('projects: race-safe auto-creation (integration)', () => {
   });
 
   beforeEach(async () => {
-    // A workspace per test: `project.organizationId` has a foreign key, and both
-    // uniqueness rules are per workspace.
+    // A workspace per test: `project.organizationId` has a foreign key, and the
+    // slug is unique per workspace.
     organizationId = randomUUID();
     await dataSource.query(
       `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
       [organizationId, 'Acme', `acme-${organizationId.slice(0, 8)}`],
     );
+    installationId = await insertInstallation(organizationId);
   });
 
-  it('resolves two concurrent first sessions on one repository to a single project', async () => {
-    const origin = { githubRepoId: '4242', owner: 'acme', name: 'xrp-mobile' };
+  async function insertInstallation(org: string): Promise<string> {
+    const id = randomUUID();
+    const [user] = await dataSource.query(
+      `INSERT INTO "user" ("id", "name", "email", "firstName", "lastName")
+       VALUES ($1, 'Ana', $2, 'Ana', 'Díaz') RETURNING "id"`,
+      [randomUUID(), `${randomUUID()}@example.com`],
+    );
+    await dataSource.query(
+      `INSERT INTO "github_installation"
+         ("id", "organizationId", "githubInstallationId", "accountLogin", "accountType",
+          "repositorySelection", "installedByUserId")
+       VALUES ($1, $2, $3, 'acme', 'Organization', 'all', $4)`,
+      [id, org, Math.floor(Math.random() * 1_000_000_000), user.id],
+    );
+    return id;
+  }
+
+  const newProject = (slug: string, repositories = [held('11')]) =>
+    ProjectEntity.createNew({ organizationId, name: slug, slug, repositories });
+
+  it('scopes every read and every save to the workspace', async () => {
     const caller = scope();
-
-    const [left, right] = await Promise.all([
-      resolver.ensureForRepository(caller, origin),
-      resolver.ensureForRepository(caller, origin),
-    ]);
-
-    expect(left.id).toBe(right.id);
-    const rows = await projectRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: left.id, slug: 'xrp-mobile', name: 'xrp-mobile' });
-    // A bigint comes back as a string, and stays one.
-    expect(rows[0].originGithubRepoId).toBe('4242');
-  });
-
-  it('holds the origin unique even when the plain directory name is already taken', async () => {
-    // The race a slug-keyed conflict target cannot win: both callers lose the
-    // plain name to a different repository, both derive `<owner>--<repo>`, and
-    // only the unique origin stops both of them landing.
-    await resolver.ensureForRepository(scope(), {
-      githubRepoId: '1',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
-
-    const origin = { githubRepoId: '2', owner: 'other', name: 'xrp-mobile' };
-    const [left, right] = await Promise.all([
-      resolver.ensureForRepository(scope(), origin),
-      resolver.ensureForRepository(scope(), origin),
-    ]);
-
-    expect(left.id).toBe(right.id);
-    expect(left.slug).toBe('other--xrp-mobile');
-    const rows = await projectRows();
-    expect(rows).toHaveLength(2);
-    expect(rows.map((row) => row.slug)).toEqual(['xrp-mobile', 'other--xrp-mobile']);
-  });
-
-  it('reports each conflict as what it is, from the statement itself', async () => {
-    // The two outcomes on their own: a second repository wanting a taken
-    // directory name, and a second create for a repository that already has a
-    // project. Both come back from the write rather than as a thrown violation.
-    const first = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'xrp-mobile',
-      originGithubRepoId: '1',
-    });
-    const sameSlug = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'xrp-mobile',
-      originGithubRepoId: '2',
-    });
-    const sameOrigin = ProjectEntity.createNew({
-      organizationId,
-      name: 'xrp-mobile',
-      slug: 'acme--xrp-mobile',
-      originGithubRepoId: '1',
-    });
-
-    expect(await repository.insertIfUnclaimed(first)).toBe('inserted');
-    expect(await repository.insertIfUnclaimed(sameSlug)).toBe('slug-taken');
-    expect(await repository.insertIfUnclaimed(sameOrigin)).toBe('origin-taken');
-    expect(await projectRows()).toHaveLength(1);
-  });
-
-  it('keeps the same repository’s project across a GitHub rename', async () => {
-    const caller = scope();
-
-    const first = await resolver.ensureForRepository(caller, {
-      githubRepoId: '7',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
-    const again = await resolver.ensureForRepository(caller, {
-      githubRepoId: '7',
-      owner: 'acme',
-      name: 'xrp-wallet',
-    });
-
-    expect(again.id).toBe(first.id);
-  });
-
-  it('scopes every read and every rename to the workspace', async () => {
-    const caller = scope();
-    const project = await resolver.ensureForRepository(caller, {
-      githubRepoId: '11',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
+    const project = newProject('xrp-mobile');
+    await repository.insert(project);
 
     const other = { ...caller, organizationId: randomUUID() };
     expect(await repository.findAll(other)).toEqual([]);
     expect((await repository.findOneById(other, project.id)).isNone()).toBe(true);
 
     project.rename('XRP Mobile');
-    expect((await repository.saveIfActive(other, project)).isNone()).toBe(true);
-    expect((await repository.saveIfActive(caller, project)).unwrap().name).toBe('XRP Mobile');
+    expect((await repository.saveSettingsIfActive(other, project)).isNone()).toBe(true);
+    expect((await repository.saveSettingsIfActive(caller, project)).unwrap().name).toBe(
+      'XRP Mobile',
+    );
   });
 
-  it('never lets a rename revive a project that was retired meanwhile', async () => {
+  it('never lets a save revive a project that was retired meanwhile', async () => {
     const caller = scope();
-    const project = await resolver.ensureForRepository(caller, {
-      githubRepoId: '12',
-      owner: 'acme',
-      name: 'xrp-mobile',
-    });
+    const project = newProject('xrp-mobile');
+    await repository.insert(project);
 
-    // The column the slice that owns sessions will write. The rename below loaded
-    // before it was set, which is exactly the stale snapshot a whole-aggregate
-    // save would write back over the archive.
+    // The save below loaded before the archive landed, which is exactly the stale
+    // snapshot a whole-aggregate write would put back over it.
     await dataSource.query(`UPDATE "project" SET "archivedAt" = now() WHERE "id" = $1`, [
       project.id,
     ]);
     project.rename('XRP Mobile');
 
-    expect((await repository.saveIfActive(caller, project)).isNone()).toBe(true);
+    expect((await repository.saveSettingsIfActive(caller, project)).isNone()).toBe(true);
     const [row] = await dataSource.query(
       `SELECT "name", "archivedAt" FROM "project" WHERE "id" = $1`,
       [project.id],
@@ -225,6 +153,110 @@ describe('projects: race-safe auto-creation (integration)', () => {
     expect(row.name).toBe('xrp-mobile');
     // And the listing leaves a retired project out.
     expect(await repository.findAll(caller)).toEqual([]);
+  });
+
+  it('creates a named project with its repositories, in order, and its defaults', async () => {
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client sites',
+      slug: 'client-sites',
+      repositories: [held('31'), held('32', false)],
+      defaultAgent: 'codex',
+    });
+
+    expect(await repository.insert(project)).toBe('inserted');
+
+    const stored = (await repository.findOneById(scope(), project.id)).unwrap();
+    expect(stored.repositories.map((held) => held.githubRepoId)).toEqual(['31', '32']);
+    expect(stored.repositories.map((held) => held.isDefault)).toEqual([true, false]);
+    expect(stored.defaultAgent).toBe('codex');
+    expect(stored.isUnassigned).toBe(false);
+  });
+
+  it('reports a taken directory name, and leaves no repository rows behind', async () => {
+    const first = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client sites',
+      slug: 'client-sites',
+      repositories: [held('41')],
+    });
+    const second = ProjectEntity.createNew({
+      organizationId,
+      name: 'Client Sites',
+      slug: 'client-sites',
+      repositories: [held('42')],
+    });
+
+    expect(await repository.insert(first)).toBe('inserted');
+    expect(await repository.insert(second)).toBe('slug-taken');
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int FROM "project_repository" WHERE "projectId" = $1`,
+      [second.id],
+    );
+    expect(count).toBe(0);
+  });
+
+  it('lets two projects hold the same repository', async () => {
+    for (const slug of ['one', 'two']) {
+      const project = ProjectEntity.createNew({
+        organizationId,
+        name: slug,
+        slug,
+        repositories: [held('51')],
+      });
+      expect(await repository.insert(project)).toBe('inserted');
+    }
+
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int FROM "project_repository"
+        WHERE "organizationId" = $1 AND "githubRepoId" = '51'`,
+      [organizationId],
+    );
+    expect(count).toBe(2);
+  });
+
+  it('replaces the repository set on save, and keeps it on an archived project', async () => {
+    const caller = scope();
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Atlas',
+      slug: 'atlas',
+      repositories: [held('61'), held('62', false)],
+    });
+    await repository.insert(project);
+
+    project.configure({ repositories: [held('63')], defaultHostId: null, defaultAgent: 'codex' });
+    const saved = (await repository.saveSettingsIfActive(caller, project)).unwrap();
+
+    expect(saved.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
+    expect(saved.defaultAgent).toBe('codex');
+
+    const archived = await repository.archiveIfUnused(caller, project.id, async () => false);
+    expect(archived.result).toBe('archived');
+    if (archived.result !== 'not-found') {
+      expect(archived.project.repositories.map((held) => held.githubRepoId)).toEqual(['63']);
+    }
+  });
+
+  it('refuses a project holding another workspace’s installation, by constraint', async () => {
+    const otherOrganization = randomUUID();
+    await dataSource.query(
+      `INSERT INTO "organization" ("id", "name", "slug") VALUES ($1, $2, $3)`,
+      [otherOrganization, 'Other', `other-${otherOrganization.slice(0, 8)}`],
+    );
+    const foreign = await insertInstallation(otherOrganization);
+    const project = ProjectEntity.createNew({
+      organizationId,
+      name: 'Stolen',
+      slug: 'stolen',
+      repositories: [{ ...held('71'), installationId: foreign }],
+    });
+
+    await expect(repository.insert(project)).rejects.toThrow(
+      /FK_project_repository_installation|foreign key/i,
+    );
+    // The transaction rolled the project back with its repositories.
+    expect((await repository.findOneById(scope(), project.id)).isNone()).toBe(true);
   });
 
   it('grants a workspace owner its projects, and bumps the cached role version', async () => {
@@ -268,5 +300,54 @@ describe('projects: race-safe auto-creation (integration)', () => {
     await runner.release();
     expect(await ownerRules()).toContainEqual(rule);
     expect(await roleVersion()).toBe(before + 1);
+  });
+
+  describe('the Unassigned project', () => {
+    it('is provisioned once per workspace, however often it is asked for', async () => {
+      await Promise.all([
+        repository.provisionUnassigned(organizationId),
+        repository.provisionUnassigned(organizationId),
+      ]);
+      await repository.provisionUnassigned(organizationId);
+
+      const rows = await dataSource.query(
+        `SELECT "name", "slug" FROM "project" WHERE "organizationId" = $1 AND "isUnassigned"`,
+        [organizationId],
+      );
+      expect(rows).toEqual([{ name: 'Unassigned', slug: 'unassigned' }]);
+
+      const found = (await repository.findUnassigned(scope())).unwrap();
+      expect(found.isUnassigned).toBe(true);
+      expect(found.repositories).toEqual([]);
+    });
+
+    it('takes another slug when a project already holds `unassigned`', async () => {
+      await repository.insert(
+        ProjectEntity.createNew({
+          organizationId,
+          name: 'Unassigned work',
+          slug: 'unassigned',
+          repositories: [held('81')],
+        }),
+      );
+
+      await repository.provisionUnassigned(organizationId);
+
+      const found = (await repository.findUnassigned(scope())).unwrap();
+      expect(found.slug).toMatch(/^unassigned-[0-9a-f]{8}$/);
+    });
+
+    it('cannot be archived', async () => {
+      await repository.provisionUnassigned(organizationId);
+      const unassigned = (await repository.findUnassigned(scope())).unwrap();
+
+      const outcome = await repository.archiveIfUnused(scope(), unassigned.id, async () => false);
+
+      expect(outcome.result).toBe('unassigned');
+      const [row] = await dataSource.query(`SELECT "archivedAt" FROM "project" WHERE "id" = $1`, [
+        unassigned.id,
+      ]);
+      expect(row.archivedAt).toBeNull();
+    });
   });
 });

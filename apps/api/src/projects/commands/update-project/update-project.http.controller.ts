@@ -42,24 +42,28 @@ export class UpdateProjectHttpController {
   @RequireScopes('projects:write')
   @ApiOperation({
     operationId: 'updateProject',
-    summary: 'Edit a project',
+    summary: 'Change a project',
     description:
-      'Every field is optional and only the given ones change: the name, the host and agent New session picks first (null clears one), and the repositories, which replace the set when given. The slug is the project’s directory name on every host that holds it and cannot be changed.',
+      'The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.',
   })
   @ApiResponse({ status: 200, type: ProjectResponseDto })
-  @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
-  @ApiProblemResponse({ status: 404, description: 'Host not found', code: 'HOSTS_001' })
   @ApiProblemResponse({
-    status: 404,
-    description: 'That repository is not one this GitHub installation covers',
-    code: 'GITHUB_010',
+    status: 400,
+    description: 'The repository list is not one a project can hold',
+    code: 'PROJECTS_006',
+  })
+  @ApiProblemResponse({ status: 404, description: 'Project not found', code: 'PROJECTS_001' })
+  @ApiProblemResponse({
+    status: 409,
+    description: 'The Unassigned project cannot be renamed or archived',
+    code: 'PROJECTS_008',
   })
   async update(
     @CurrentAccessScope() scope: AccessScope,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateProjectRequest,
   ): Promise<ProjectResponseDto> {
-    // The command returns the renamed aggregate, so there is no follow-up query:
+    // The command returns the saved aggregate, so there is no follow-up query:
     // the write already read the row back through the caller's scope.
     const project = await this.commandBus.execute<UpdateProjectCommand, ProjectEntity>(
       new UpdateProjectCommand({ scope, projectId: id, changes: body }),

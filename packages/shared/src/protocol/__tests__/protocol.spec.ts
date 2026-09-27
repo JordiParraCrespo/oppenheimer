@@ -108,7 +108,6 @@ const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     commandId,
     sessionId,
     organizationSlug: 'jordi',
-    projectSlug: 'xrp-mobile',
     sessionSlug: 'bold-otter-3f9a7k',
     agent: 'claude-code',
     launch: { model: 'opus', permission: 'ask', effort: 'medium' },

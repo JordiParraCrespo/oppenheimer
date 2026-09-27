@@ -24,7 +24,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
 | 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
 | 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 | 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
@@ -403,13 +402,16 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   `POST /projects`, the two defaults and a `project_repository` table; a
   project made in the dialog has no origin, so the auto-created path for
   callers that send only checkouts is unchanged. The grouped sidebar and
-  the row menu are the next slice.
+  the row menu are the next slice. (12 was folded into 05 and 10 and
+  deleted the same day; the entries below changed most of it.)
 - 2026-09-26: **a session's paths keep the project that created it.** A
   session moves between projects (`POST /sessions/{id}/move`, one
   `session.moved` event the row folds, 03), and its worktree and branch do
   not: `work_session.projectSlug` snapshots the directory name at request,
   and every later launch reads it from the row rather than from the project
-  the session is in now.
+  the session is in now. (Reversed the same day: the layout lost its
+  project level, so a move touches nothing on disk and there is no slug to
+  keep; see the entry on projects as metadata below.)
 - 2026-09-26: **Settings is a page, not a drawer.** The export draws it
   beside the console, opened from the account menu: `/settings` with
   Profile and Hosts as sections, Add host opening the console's one
@@ -444,5 +446,20 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-26: 14's first open question is settled: the host card's
   location slot, drawn as "eu-west" / "local", shows the city and country
   code of the host's connecting address from DB-IP Lite (15).
+- 2026-09-26: **a project is a saved scope a person creates, and metadata
+  only** (00, 01, 02, 03, 05, 10, 11). It holds repositories (each on a base,
+  offered by default or not) and a default host and agent; none is
+  auto-created, and a session that names no project is listed in the
+  workspace's **Unassigned** project, which cannot be renamed or archived.
+  Nothing on a host is named after a project — the layout is
+  `workspaces/<org>/{repos,sessions}` and the branch `oppenheimer/<session>`
+  — so moving a session to any project is a label change, with no rule about
+  its repositories (`SESSIONS_018` retired). `work_session.projectSlug` goes
+  with the project level. The console is the evening export's: the grouped
+  sidebar with Unassigned first, the project page, Move to any project. A
+  session checks out any repositories, usually one.
 - 2026-09-26: **the automations routes exist ahead of their API**, so the
   rail is whole; automations themselves stay after the MVP (00, 13).
+- 2026-09-27: **the automations sidebar leaves out Unassigned**: an
+  automation is set up for a project, and Unassigned only holds the
+  sessions that name none (13).

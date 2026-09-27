@@ -83,7 +83,9 @@
     "PROJECTS_003": "Projects cannot be archived right now. Try again in a moment.",
     "PROJECTS_004": "That project is archived, so no new work can go in it.",
     "PROJECTS_005": "That project still has sessions nobody has closed.",
-    "PROJECTS_006": "That name is already a project’s directory. Add a repository, or pick another name.",
+    "PROJECTS_006": "A project needs at least one repository, and at least one of them offered by default.",
+    "PROJECTS_007": "We could not find a free name for that project. Try a different name.",
+    "PROJECTS_008": "The Unassigned project keeps its name, and it can’t be deleted.",
     "SESSIONS_001": "We could not find that session.",
     "SESSIONS_002": "Choose a workspace before working with sessions.",
     "SESSIONS_003": "We could not find that checkout on this session.",
@@ -92,7 +94,7 @@
     "SESSIONS_006": "That project is archived, so no new work can go in it.",
     "SESSIONS_007": "That repository has already used every folder name it can take in this session.",
     "SESSIONS_008": "We could not open a terminal right now. Try again in a moment.",
-    "SESSIONS_009": "Choose a project, or add a repository to take one from.",
+    "SESSIONS_009": "Choose a project for this session.",
     "SESSIONS_010": "A session works on one repository. Start a new session for another.",
     "SESSIONS_011": "This host's runner is too old for that agent. Update the runner, or pick another agent.",
     "HOSTS_001": "That host could not be found.",
@@ -125,7 +127,6 @@
     "SESSIONS_015": "No image was attached. Paste or drop the image again.",
     "SESSIONS_016": "This session's host is offline, so the image was not sent.",
     "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-    "SESSIONS_018": "That project does not include this session's repository. Add the repository to it first.",
     "HOSTS_007": "No image is waiting for that command."
   },
   "notFound": {
