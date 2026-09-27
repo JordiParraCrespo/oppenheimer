@@ -211,8 +211,14 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		return nil
 	}
 
+	// Only what the worktree is about to be made from is fetched: the base a
+	// new branch is cut from, or the existing branch checked out.
+	fetch := session.BaseBranch
+	if in.Existing {
+		fetch = session.Branch
+	}
 	if err := run(domain.StageClone, func() error {
-		return s.worktrees.Ensure(ctx, in.Repo, in.Remote)
+		return s.worktrees.Ensure(ctx, in.Repo, in.Remote, fetch)
 	}); err != nil {
 		return domain.Session{}, err
 	}

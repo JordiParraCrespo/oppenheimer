@@ -27,7 +27,7 @@ type heldClone struct {
 	forID   []string
 }
 
-func (h *heldClone) Ensure(ctx context.Context, repo, remote string) error {
+func (h *heldClone) Ensure(ctx context.Context, repo, remote string, branches ...string) error {
 	h.mu.Lock()
 	h.clones++
 	h.forID = append(h.forID, sessionsdomain.SessionOf(ctx))
@@ -36,7 +36,7 @@ func (h *heldClone) Ensure(ctx context.Context, repo, remote string) error {
 	if err := ctx.Err(); err != nil {
 		return sessionsdomain.ErrGitAbandoned.WithCause(err)
 	}
-	return h.Worktrees.Ensure(ctx, repo, remote)
+	return h.Worktrees.Ensure(ctx, repo, remote, branches...)
 }
 
 func newCreateHarness(t *testing.T) (*linkHandler, *sessionsapp.Service, *heldClone, *fake.Terminals) {

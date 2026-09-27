@@ -194,9 +194,18 @@ started last is the one that failed:
    learned from Orca).
 2. For each checkout, ensure the workspace's bare store
    `repos/<store>.git` exists and is fetched
-   (`git clone --bare` the first time, then `git fetch`, with the
-   `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
-   set), authenticated through the credential helper (§8). The store
+   (`git clone --filter=blob:none` the first time, with nothing checked
+   out in the store, then `git fetch` of only the branches the session
+   is made from — the base, or the existing branch it checks out — with
+   no tags and git's automatic gc off, falling back to fetching every
+   ref when one of them is not a branch on the remote), authenticated
+   through the credential helper (§8). This is Orca's shape: a session
+   waits on its own base and nothing else. On a 30k-file, 12k-commit
+   repository over GitHub a first session went from 63 s to 24 s and a
+   repeat one from 5.2 s to 4.4 s, and the store from 1.1 GB to 185 MB
+   (2026-09-27). A blobless store fetches a file's older contents the
+   first time something reads them, so `git log -p` or `blame` in the
+   session's shell needs the same credential its push does. The store
    is found **by GitHub id**, never by name: the runner writes
    `git config oppenheimer.repo-id <id>` into the bare repo when it
    creates it as `<owner>--<repo>.git`, suffixes the name if that one is

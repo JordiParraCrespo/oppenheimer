@@ -22,7 +22,7 @@ type gatedGit struct {
 	clones  []string // the session each clone ran for
 }
 
-func (g *gatedGit) Ensure(ctx context.Context, repo, remote string) error {
+func (g *gatedGit) Ensure(ctx context.Context, repo, remote string, branches ...string) error {
 	g.mu.Lock()
 	g.clones = append(g.clones, domain.SessionOf(ctx))
 	g.mu.Unlock()
@@ -30,7 +30,7 @@ func (g *gatedGit) Ensure(ctx context.Context, repo, remote string) error {
 	if g.err != nil {
 		return g.err
 	}
-	return g.Worktrees.Ensure(ctx, repo, remote)
+	return g.Worktrees.Ensure(ctx, repo, remote, branches...)
 }
 
 func gatedService(t *testing.T, err error) (*app.Service, *gatedGit, *memoryStore) {

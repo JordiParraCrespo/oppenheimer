@@ -61,8 +61,10 @@ type Attachment interface {
 
 // Worktrees is git, at the granularity a session needs.
 type Worktrees interface {
-	// Ensure makes sure `<root>/<repo>/main` exists and is fetched.
-	Ensure(ctx context.Context, repo, remote string) error
+	// Ensure makes sure `<root>/<repo>/main` exists and that branches — the
+	// ones the session is about to cut from or check out — are fresh in it.
+	// No branches means fetch everything.
+	Ensure(ctx context.Context, repo, remote string, branches ...string) error
 	// Add creates a worktree at path, on branch, cut from base.
 	Add(ctx context.Context, repo, path, branch, base string, newBranch bool) error
 	// Remove deletes a worktree and prunes the record.

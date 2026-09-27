@@ -82,6 +82,97 @@ func TestEnsureClonesThenFetches(t *testing.T) {
 	}
 }
 
+// advance lands a commit on branch in the origin, from a scratch clone.
+func advance(t *testing.T, remote, branch string) {
+	t.Helper()
+	work := filepath.Join(t.TempDir(), "advance")
+	git(t, "", "clone", "-q", remote, work)
+	git(t, work, "-c", "user.email=test@example.com", "-c", "user.name=Test",
+		"commit", "--allow-empty", "-q", "-m", "upstream moved")
+	git(t, work, "push", "-q", "origin", "HEAD:refs/heads/"+branch)
+}
+
+func remoteRef(t *testing.T, mirror, ref string) string {
+	t.Helper()
+	cmd := exec.Command("git", "rev-parse", "--verify", "--quiet", "refs/remotes/origin/"+ref)
+	cmd.Dir = mirror
+	out, _ := cmd.Output()
+	return strings.TrimSpace(string(out))
+}
+
+func TestEnsureClonesBloblessWithNothingCheckedOut(t *testing.T) {
+	bare := origin(t)
+	// A local path clones by copying the object store, filter or not; the
+	// file transport is how git behaves against a server.
+	git(t, bare, "config", "uploadpack.allowFilter", "true")
+	c, layout := client(t)
+	ctx := context.Background()
+
+	if err := c.Ensure(ctx, repo, "file://"+bare, "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	mirror := layout.Mirror(repo)
+	if got := strings.TrimSpace(git(t, mirror, "config", "remote.origin.partialclonefilter")); got != "blob:none" {
+		t.Fatalf("partialclonefilter = %q, want blob:none", got)
+	}
+	if _, err := os.Stat(filepath.Join(mirror, "README.md")); !os.IsNotExist(err) {
+		t.Fatalf("the mirror has a working tree: %v", err)
+	}
+	// A worktree cut from it still has every file: the checkout fetches them.
+	worktree := layout.Worktree(repo, "blobless")
+	if err := c.Add(ctx, repo, worktree, "oppenheimer/blobless", "main", true); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(worktree, "README.md")); err != nil {
+		t.Fatalf("the worktree has no files: %v", err)
+	}
+}
+
+func TestEnsureFetchesOnlyTheBranchesItIsGiven(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	mirror := layout.Mirror(repo)
+	before := remoteRef(t, mirror, "main")
+	advance(t, remote, "main")
+	advance(t, remote, "elsewhere")
+
+	if err := c.Ensure(ctx, repo, "", "main"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	if remoteRef(t, mirror, "main") == before {
+		t.Fatal("origin/main did not move")
+	}
+	if remoteRef(t, mirror, "elsewhere") != "" {
+		t.Fatal("a branch nobody asked for was fetched")
+	}
+}
+
+func TestEnsureFetchesEverythingWhenANamedBranchCannotBeFetched(t *testing.T) {
+	remote := origin(t)
+	c, layout := client(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	advance(t, remote, "elsewhere")
+
+	// Not a branch on the remote: the named fetch fails and the wide one
+	// runs instead, so whatever the worktree is cut from next is there.
+	if err := c.Ensure(ctx, repo, "", "no-such-branch"); err != nil {
+		t.Fatalf("ensure: %v", err)
+	}
+
+	if remoteRef(t, layout.Mirror(repo), "elsewhere") == "" {
+		t.Fatal("the fallback fetch did not bring every branch")
+	}
+}
+
 func TestEnsureRefusesARepositoryItHasNeverSeenWithNoRemote(t *testing.T) {
 	c, _ := client(t)
 

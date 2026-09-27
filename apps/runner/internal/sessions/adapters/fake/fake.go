@@ -319,7 +319,7 @@ func NewWorktrees() *Worktrees {
 }
 
 // Ensure implements app.Worktrees.
-func (w *Worktrees) Ensure(_ context.Context, repo, _ string) error {
+func (w *Worktrees) Ensure(_ context.Context, repo, _ string, _ ...string) error {
 	if err := domain.ValidateRepo(repo); err != nil {
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
