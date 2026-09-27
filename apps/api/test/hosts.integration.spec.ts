@@ -6,6 +6,9 @@ import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import { DataSource } from 'typeorm';
+import type { HostPresencePort } from '../src/hosts/application/host-presence.port';
+import type { HostMetadataRepositoryPort } from '../src/hosts/database/host-metadata.repository.port';
+import { HOST_METADATA_REPOSITORY, HOST_PRESENCE } from '../src/hosts/hosts.di-tokens';
 import { runAllMigrations } from './run-migrations';
 
 /**
@@ -633,6 +636,178 @@ describe('Hosts & pairing (integration)', () => {
 
       expect(refused.status).toBe(401);
       expect(refused.body?.code).toBe('HOSTS_005');
+    });
+  });
+
+  /**
+   * The four side tables a host's metadata lives in since the switch-over
+   * (`product/versions/mvp/15-host-metadata.md`). Their writes are raw SQL —
+   * upserts, keyset reads, batched deletes — so nothing but a real Postgres
+   * checks them. The heartbeat and the connect go through `HostPresencePort`,
+   * the same entry the runner link calls.
+   */
+  describe('host metadata', () => {
+    let hostId: string;
+    let presence: HostPresencePort;
+    let metadata: HostMetadataRepositoryPort;
+
+    const rows = async (sql: string, params: unknown[] = []) =>
+      (await dataSource.query(sql, params)) as Record<string, unknown>[];
+    const kinds = async () =>
+      (
+        await rows(
+          `SELECT "kind" FROM "host_event" WHERE "hostId" = $1 ORDER BY "occurredAt" DESC, "id" DESC`,
+          [hostId],
+        )
+      ).map((row) => row.kind);
+
+    beforeAll(async () => {
+      presence = app.get<HostPresencePort>(HOST_PRESENCE);
+      metadata = app.get<HostMetadataRepositoryPort>(HOST_METADATA_REPOSITORY);
+      const minted = await mintPairingToken('Metadata box');
+      const registered = await register(minted.secret, hostKey());
+      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
+      hostId = registered.body?.hostId as string;
+    });
+
+    it('registers an inventory and a paired entry, and no presence until the link reports', async () => {
+      const [inventory] = await rows(
+        `SELECT "platform", "hostname", "facts" FROM "host_inventory" WHERE "hostId" = $1`,
+        [hostId],
+      );
+      expect(inventory).toMatchObject({ platform: 'macos', hostname: 'devbox.local' });
+      // The report is kept as it arrived, live reading included.
+      expect(inventory?.facts).toEqual(FACTS);
+      expect(
+        await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
+      ).toHaveLength(0);
+      expect(await kinds()).toEqual(['paired']);
+    });
+
+    it('keeps one presence row across heartbeats, and answers the newest free disk', async () => {
+      const [before] = await rows(`SELECT "changedAt" FROM "host_inventory" WHERE "hostId" = $1`, [
+        hostId,
+      ]);
+
+      expect(
+        await presence.observe(hostId, {
+          facts: { ...FACTS, diskFreeBytes: 100 },
+          loadAverage: 1.5,
+        }),
+      ).toBe(true);
+      expect(
+        await presence.observe(hostId, {
+          facts: { ...FACTS, diskFreeBytes: 99 },
+          roundTripMillis: 12,
+        }),
+      ).toBe(true);
+
+      expect(
+        await rows(`SELECT 1 FROM "host_presence" WHERE "hostId" = $1`, [hostId]),
+      ).toHaveLength(1);
+      const host = await call(`/api/v1/hosts/${hostId}`, { token: user.sessionToken });
+      expect(host.status).toBe(200);
+      expect(host.body).toMatchObject({ online: true, status: 'idle' });
+      // A value a beat did not report keeps what is on file.
+      expect(host.body?.vitals).toMatchObject({
+        diskFreeBytes: 99,
+        loadAverage: 1.5,
+        roundTripMillis: 12,
+      });
+      expect((host.body?.capabilities as Record<string, unknown>).diskFreeBytes).toBe(99);
+
+      // Free disk moving is presence, not a change to the machine.
+      const [after] = await rows(`SELECT "changedAt" FROM "host_inventory" WHERE "hostId" = $1`, [
+        hostId,
+      ]);
+      expect(after?.changedAt).toEqual(before?.changedAt);
+      expect(await kinds()).toEqual(['paired']);
+    });
+
+    it('logs a changed fact with its diff, and a newly known one as nothing', async () => {
+      // Registration did not report a CPU count: learning it is not a change.
+      await presence.observe(hostId, { facts: { ...FACTS, cpus: 8 } });
+      expect(await kinds()).toEqual(['paired']);
+      const [learned] = await rows(`SELECT "cpuCount" FROM "host_inventory" WHERE "hostId" = $1`, [
+        hostId,
+      ]);
+      expect(learned?.cpuCount).toBe(8);
+
+      await presence.observe(hostId, { facts: { ...FACTS, cpus: 16 } });
+      const [entry] = await rows(
+        `SELECT "kind", "payload" FROM "host_event" WHERE "hostId" = $1 ORDER BY "occurredAt" DESC, "id" DESC LIMIT 1`,
+        [hostId],
+      );
+      expect(entry).toMatchObject({
+        kind: 'facts_changed',
+        payload: { changed: { cpuCount: [8, 16] } },
+      });
+    });
+
+    it('records each address once and puts a move on the timeline', async () => {
+      await presence.connectedFrom(hostId, '203.0.113.7');
+      await presence.connectedFrom(hostId, '203.0.113.7');
+      expect(await rows(`SELECT 1 FROM "host_network" WHERE "hostId" = $1`, [hostId])).toHaveLength(
+        1,
+      );
+      expect((await kinds()).filter((kind) => kind === 'network_changed')).toHaveLength(0);
+
+      await presence.connectedFrom(hostId, '198.51.100.9');
+      expect(await rows(`SELECT 1 FROM "host_network" WHERE "hostId" = $1`, [hostId])).toHaveLength(
+        2,
+      );
+      expect((await kinds())[0]).toBe('network_changed');
+
+      const host = await call(`/api/v1/hosts/${hostId}`, { token: user.sessionToken });
+      expect(host.body?.network).toMatchObject({ ip: '198.51.100.9' });
+    });
+
+    it('pages the timeline newest first, each entry once', async () => {
+      const all = await kinds();
+      expect(all.length).toBeGreaterThanOrEqual(3);
+
+      const seen: string[] = [];
+      let before: string | null = null;
+      do {
+        const query: string = before ? `?limit=2&before=${encodeURIComponent(before)}` : '?limit=2';
+        const page = await call(`/api/v1/hosts/${hostId}/timeline${query}`, {
+          token: user.sessionToken,
+        });
+        expect(page.status, JSON.stringify(page.body)).toBe(200);
+        const entries = page.body?.entries as { id: string; kind: string }[];
+        expect(entries.length).toBeLessThanOrEqual(2);
+        seen.push(...entries.map((entry) => entry.kind));
+        before = (page.body?.next as string | null) ?? null;
+      } while (before);
+
+      expect(seen).toEqual(all);
+    });
+
+    it('retention drops old events and unseen networks, never the current one', async () => {
+      const day = 24 * 60 * 60 * 1000;
+      await dataSource.query(
+        `UPDATE "host_network" SET "firstSeenAt" = now() - interval '100 days', "lastSeenAt" = now() - interval '100 days' WHERE "hostId" = $1`,
+        [hostId],
+      );
+      await dataSource.query(
+        `UPDATE "host_event" SET "occurredAt" = now() - interval '200 days' WHERE "hostId" = $1 AND "kind" = 'network_changed'`,
+        [hostId],
+      );
+
+      expect(await metadata.deleteNetworksUnseenSince(new Date(Date.now() - 90 * day), 5000)).toBe(
+        1,
+      );
+      expect(await metadata.deleteTimelineBefore(new Date(Date.now() - 180 * day), 5000)).toBe(1);
+
+      const left = await rows(
+        `SELECT n."ip" FROM "host_network" n JOIN "host_presence" p ON p."currentNetworkId" = n."id" WHERE n."hostId" = $1`,
+        [hostId],
+      );
+      expect(left.map((row) => row.ip)).toEqual(['198.51.100.9']);
+      expect(await rows(`SELECT 1 FROM "host_network" WHERE "hostId" = $1`, [hostId])).toHaveLength(
+        1,
+      );
+      expect(await kinds()).not.toContain('network_changed');
     });
   });
 

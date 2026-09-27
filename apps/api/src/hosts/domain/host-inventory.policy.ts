@@ -86,7 +86,10 @@ export function inventoryFromFacts(facts: HostFactsDto, channel: string | null):
     channel,
     serviceManager: facts.serviceManager ?? null,
     tools: facts.tools,
-    facts: staticFactsOf(facts),
+    // The report as it arrived, live readings included: it is what the host
+    // answers as `capabilities`. Only the hash leaves the live ones out, so a
+    // beat that moves free disk is not a change to the inventory.
+    facts: { ...facts },
   };
 }
 

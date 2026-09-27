@@ -26,7 +26,10 @@ export interface HostInventory {
   channel: string | null;
   serviceManager: string | null;
   tools: HostToolDto[];
-  /** The static facts as reported, for the fields nothing has promoted yet. */
+  /**
+   * The report as the runner sent it when the static facts last changed, live
+   * readings included; a read overlays the newer ones from presence.
+   */
   facts: Record<string, unknown>;
 }
 

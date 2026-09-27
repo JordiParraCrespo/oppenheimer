@@ -63,6 +63,18 @@ export interface HostResponseView {
 }
 
 /** Maps the host aggregate between its domain, persistence and response shapes. */
+/**
+ * What a host answers as `capabilities`: the report the inventory kept, with
+ * the live readings replaced by presence's newer ones once a heartbeat has
+ * brought them. Before the first beat the report's own reading is the latest
+ * there is (`product/versions/mvp/15-host-metadata.md`).
+ */
+function capabilitiesOf(inventory: HostInventory, vitals: HostVitals | null): Record<string, unknown> {
+  const capabilities: Record<string, unknown> = { ...inventory.facts };
+  if (vitals?.diskFreeBytes != null) capabilities.diskFreeBytes = vitals.diskFreeBytes;
+  return capabilities;
+}
+
 @Injectable()
 export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostResponseDto> {
   /**
@@ -141,7 +153,9 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
         os: inventory ? platformLabel(inventory) : record.os,
         arch: inventory ? inventory.arch : record.arch,
         runnerVersion: inventory ? inventory.runnerVersion : record.runnerVersion,
-        capabilities: inventory ? { ...inventory.facts } : record.capabilities,
+        capabilities: inventory
+          ? capabilitiesOf(inventory, metadata?.vitals ?? null)
+          : record.capabilities,
         publicKey: record.publicKey,
         publicKeyFingerprint: record.publicKeyFingerprint,
         lastSeenAt: metadata ? (metadata.vitals?.lastSeenAt ?? null) : record.lastSeenAt,

@@ -48,7 +48,8 @@ describe('inventoryFromFacts', () => {
       runnerVersion: '0.14.2',
     });
     expect(inventory.bootedAt).toEqual(new Date('2026-09-20T08:14:03Z'));
-    expect(inventory.facts).not.toHaveProperty('diskFreeBytes');
+    // The report is kept whole; only the hash leaves the live reading out.
+    expect(inventory.facts).toEqual(facts);
   });
 
   it('reads what an older runner did not send as unknown', () => {
