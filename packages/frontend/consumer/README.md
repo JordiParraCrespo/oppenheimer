@@ -47,23 +47,12 @@ An app becomes the consumer product by loading `consumerModules` into
 
 `@oppenheimer/frontend-consumer/react` (`src/react/index.ts`):
 
-- `useConsumerApp` — the product's services off the kernel container.
-- Hosts: `useHosts`, `usePairHost`, `useRemoveHost`, `hostsKeys`.
-- Projects: `useProjects`, `useCreateProject`, `useUpdateProject`,
-  `useArchiveProject`, `projectsKeys`.
-- Sessions: `useSessions`, `useSession`, `useCreateSession`,
-  `useRenameSession`, `useMoveSession`, `useCloseSession`, `useStopSession`, `sessionsKeys`, `useSessionStream` (a stable factory
-  over `openStream`, for the effect that mounts a terminal).
-- Organizations (personal workspace only): `useOrganizations`,
-  `useCreateOrganization`, `useUpdateOrganization`, `organizationsKeys`.
-- Profile: `useMyProfile`, `useUpdateMyProfile`, `useChangeOwnPassword`,
-  `useUploadAvatar`, `useDeleteAvatar`, `useProfileSessions`,
-  `useRevokeProfileSession`, `useRevokeOtherProfileSessions`, `profileKeys`.
-- API tokens: `useApiTokens`, `useCreateApiToken`, `useRevokeApiToken`,
-  `useCurrentCredential`, `usePermissionCatalog`, `apiTokensKeys`.
-- Sign-up: `useRegister` (only this product has a registration flow).
-- `CONSUMER_NON_PERSISTED_FEATURES` — the feature prefixes an app keeps out
-  of the persisted query cache.
+The TanStack Query hooks and key factories for each module above — one
+`<module>.queries.ts` per module, a `use…` hook per read or write and a
+`<module>Keys` factory — plus `useConsumerApp`, the product's services off
+the kernel container, and `CONSUMER_NON_PERSISTED_FEATURES`, the prefixes an
+app keeps out of the persisted query cache. The barrel is the catalog; it is
+not repeated here.
 
 ## How to use it
 

@@ -37,7 +37,7 @@ function WorkspaceStep() {
     setClaimedOnArrival(organizations[0] ? !isProvisionalSlug(organizations[0].slug) : false);
   }
 
-  if (claimedOnArrival) return <Navigate to="/sessions" replace />;
+  if (claimedOnArrival) return <Navigate to="/sessions/new" replace />;
 
   return <OnboardingWorkspaceScreen />;
 }

@@ -9,15 +9,19 @@ import { cn } from '../lib/utils';
  * something changed (Discard, Save changes), and reads "Saved" for a
  * moment after. A `tone="danger"` group holds the one destructive setting
  * (Delete account) with its red button.
+ *
+ * `SettingsForm` is the same card as a `<form>`, for a group whose rows are
+ * edited and saved together: the rows stay its direct children, so the
+ * hairlines fall between them, and the save row's Save changes submits it.
  */
+const groupClass = 'flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card';
+
 function SettingsGroup({ className, ...props }: React.ComponentProps<'section'>) {
-  return (
-    <section
-      data-slot="settings-group"
-      className={cn('flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-card', className)}
-      {...props}
-    />
-  );
+  return <section data-slot="settings-group" className={cn(groupClass, className)} {...props} />;
+}
+
+function SettingsForm({ className, ...props }: React.ComponentProps<'form'>) {
+  return <form data-slot="settings-group" className={cn(groupClass, className)} {...props} />;
 }
 
 function SettingsRow({
@@ -25,8 +29,18 @@ function SettingsRow({
   hint,
   className,
   children,
+  control = 'auto',
   ...props
-}: React.ComponentProps<'div'> & { label: React.ReactNode; hint?: React.ReactNode }) {
+}: React.ComponentProps<'div'> & {
+  label: React.ReactNode;
+  hint?: React.ReactNode;
+  /**
+   * `auto` sizes the control column to what it holds (a button, a value);
+   * `field` gives it the system's field width, shared by the inputs in it,
+   * so every text field in a settings card lines up.
+   */
+  control?: 'auto' | 'field';
+}) {
   return (
     <div
       data-slot="settings-row"
@@ -37,7 +51,17 @@ function SettingsRow({
         <span className="text-sm font-medium text-fg">{label}</span>
         {hint ? <span className="text-[13px] text-fg-muted">{hint}</span> : null}
       </div>
-      {children ? <div className="flex shrink-0 items-center gap-2 text-sm text-fg-muted">{children}</div> : null}
+      {children ? (
+        <div
+          data-slot="settings-row-control"
+          className={cn(
+            'flex shrink-0 items-center gap-2 text-sm text-fg-muted',
+            control === 'field' && 'w-70 max-w-full *:min-w-0 *:flex-1',
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -66,4 +90,4 @@ function SettingsHeading({ className, ...props }: React.ComponentProps<'h2'>) {
   );
 }
 
-export { SettingsGroup, SettingsHeading, SettingsRow, SettingsSaveRow };
+export { SettingsForm, SettingsGroup, SettingsHeading, SettingsRow, SettingsSaveRow };

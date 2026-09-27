@@ -53,6 +53,8 @@ function SessionItem({
   menuOpen,
   rename,
   className,
+  render,
+  nativeButton,
   ...props
 }: Omit<ButtonPrimitive.Props, 'children'> & {
   name: string;
@@ -76,6 +78,10 @@ function SessionItem({
       data-active={active || undefined}
       role={withAction ? undefined : 'listitem'}
       aria-current={active ? 'true' : undefined}
+      // A row rendered as a router link is an anchor, not a <button>: Base UI
+      // keeps link semantics only when told so, as Button does.
+      render={render}
+      nativeButton={nativeButton ?? render === undefined}
       className={cn(
         'group/session flex h-[30px] w-full items-center gap-[9px] rounded-sm px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         withAction && 'group-hover/row:not-data-active:bg-hover-surface group-data-menu-open/row:not-data-active:bg-hover-surface',

@@ -38,4 +38,11 @@ export interface PersonalWorkspaceRepositoryPort {
    * decides then whether an invitee also gets a workspace of their own.
    */
   provision(workspace: PersonalWorkspaceEntity): Promise<boolean>;
+
+  /**
+   * Delete the given workspaces. Members, roles, invitations and GitHub
+   * installations cascade; the sessions and projects in them are their
+   * modules' to remove first (they refuse to lose their workspace).
+   */
+  erase(organizationIds: readonly string[]): Promise<void>;
 }

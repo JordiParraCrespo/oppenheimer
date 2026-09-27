@@ -1,9 +1,9 @@
-import { Body, Controller, HttpCode, Post, Req, UseGuards, Version } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, Res, UseGuards, Version } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -48,10 +48,11 @@ export class ChangePasswordHttpController {
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
   async changePassword(
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @CurrentUser('id') userId: string,
     @Body() body: ChangePasswordRequest,
   ): Promise<void> {
-    await this.commandBus.execute(
+    const cookies = await this.commandBus.execute<ChangePasswordCommand, string[]>(
       new ChangePasswordCommand({
         headers: request.headers,
         userId,
@@ -60,5 +61,8 @@ export class ChangePasswordHttpController {
         revokeOtherSessions: body.revokeOtherSessions ?? true,
       }),
     );
+    // The session this request came in on was replaced; the browser keeps
+    // working only if it stores the new cookie.
+    if (cookies.length > 0) response.setHeader('set-cookie', cookies);
   }
 }

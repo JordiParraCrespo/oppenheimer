@@ -1,10 +1,20 @@
 import {
-  ProfileApi,
+  heyApiSdk,
   type ProfileResponseDto,
   type UserSessionResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
-import type { ChangeOwnPasswordDto, UpdateProfileDto } from '@oppenheimer/shared/schemas/profile';
+import {
+  AppError,
+  type ErrorDefinition,
+  MapApiError,
+  toAppError,
+} from '@oppenheimer/frontend-core';
+import type {
+  ChangeEmailDto,
+  ChangeOwnPasswordDto,
+  DeleteAccountDto,
+  UpdateProfileDto,
+} from '@oppenheimer/shared/schemas/profile';
 import { injectable } from 'inversify';
 import { ProfileEntity, UserSessionEntity } from './profile.entity';
 import { ProfileErrors } from './profile.errors';
@@ -17,6 +27,7 @@ function toProfile(data: ProfileResponseDto): ProfileEntity {
     data.lastName,
     data.phone,
     data.jobTitle,
+    data.username ?? null,
     data.avatarUrl,
     data.role,
     data.emailVerified,
@@ -40,54 +51,96 @@ function toSession(data: UserSessionResponseDto): UserSessionEntity {
   );
 }
 
+/**
+ * The generated SDK's answer, unwrapped: the body, or the problem document the
+ * API sent as an `AppError` built on `fallback`. Every call in this repository
+ * goes through it, so there is one mapping and one client.
+ */
+async function unwrap<T>(
+  call: Promise<{ data?: T; error?: unknown; response?: Response }>,
+  fallback: ErrorDefinition,
+): Promise<T> {
+  const { data, error, response } = await call;
+  if (error !== undefined) throw toAppError({ status: response?.status, body: error }, fallback);
+  return data as T;
+}
+
+/** The same, for a call whose success is a body. An empty one is a failed read. */
+async function unwrapBody<T>(
+  call: Promise<{ data?: T; error?: unknown; response?: Response }>,
+  fallback: ErrorDefinition,
+): Promise<T> {
+  const data = await unwrap(call, fallback);
+  if (data === undefined || data === null) throw new AppError(fallback);
+  return data;
+}
+
 @injectable()
 export class ProfileRepository {
   @MapApiError(ProfileErrors.FETCH_FAILED)
   async get(): Promise<ProfileEntity> {
-    const data = await ProfileApi.getProfile();
-    if (!data) throw new AppError(ProfileErrors.FETCH_FAILED);
-    return toProfile(data);
+    return toProfile(await unwrapBody(heyApiSdk.getProfile(), ProfileErrors.FETCH_FAILED));
   }
 
   @MapApiError(ProfileErrors.UPDATE_FAILED)
   async update(dto: UpdateProfileDto): Promise<ProfileEntity> {
-    const data = await ProfileApi.updateProfile(dto);
-    if (!data) throw new AppError(ProfileErrors.UPDATE_FAILED);
-    return toProfile(data);
+    return toProfile(
+      await unwrapBody(heyApiSdk.updateProfile({ body: dto }), ProfileErrors.UPDATE_FAILED),
+    );
   }
 
   @MapApiError(ProfileErrors.UPLOAD_AVATAR_FAILED)
   async uploadAvatar(file: Blob): Promise<ProfileEntity> {
-    const data = await ProfileApi.uploadAvatar({ file });
-    if (!data) throw new AppError(ProfileErrors.UPLOAD_AVATAR_FAILED);
-    return toProfile(data);
+    return toProfile(
+      await unwrapBody(
+        heyApiSdk.uploadAvatar({ body: { file } }),
+        ProfileErrors.UPLOAD_AVATAR_FAILED,
+      ),
+    );
   }
 
   @MapApiError(ProfileErrors.DELETE_AVATAR_FAILED)
   async deleteAvatar(): Promise<ProfileEntity> {
-    const data = await ProfileApi.deleteAvatar();
-    if (!data) throw new AppError(ProfileErrors.DELETE_AVATAR_FAILED);
-    return toProfile(data);
+    return toProfile(
+      await unwrapBody(heyApiSdk.deleteAvatar(), ProfileErrors.DELETE_AVATAR_FAILED),
+    );
   }
 
   @MapApiError(ProfileErrors.CHANGE_PASSWORD_FAILED)
   async changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
-    await ProfileApi.changePassword(dto);
+    await unwrap(heyApiSdk.changePassword({ body: dto }), ProfileErrors.CHANGE_PASSWORD_FAILED);
+  }
+
+  /**
+   * Ask for a link at the new address. The account moves only when it is
+   * followed, so nothing on the profile changes here.
+   */
+  @MapApiError(ProfileErrors.CHANGE_EMAIL_FAILED)
+  async changeEmail(dto: ChangeEmailDto): Promise<void> {
+    await unwrap(heyApiSdk.changeEmail({ body: dto }), ProfileErrors.CHANGE_EMAIL_FAILED);
+  }
+
+  @MapApiError(ProfileErrors.DELETE_ACCOUNT_FAILED)
+  async deleteAccount(dto: DeleteAccountDto): Promise<void> {
+    await unwrap(heyApiSdk.deleteOwnAccount({ body: dto }), ProfileErrors.DELETE_ACCOUNT_FAILED);
   }
 
   @MapApiError(ProfileErrors.FETCH_SESSIONS_FAILED)
   async getSessions(): Promise<UserSessionEntity[]> {
-    const data = await ProfileApi.findSessions();
-    return (data ?? []).map(toSession);
+    const data = await unwrapBody(heyApiSdk.findSessions(), ProfileErrors.FETCH_SESSIONS_FAILED);
+    return data.map(toSession);
   }
 
   @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
   async revokeSession(sessionId: string): Promise<void> {
-    await ProfileApi.revokeSession(sessionId);
+    await unwrap(
+      heyApiSdk.revokeSession({ path: { id: sessionId } }),
+      ProfileErrors.REVOKE_SESSION_FAILED,
+    );
   }
 
   @MapApiError(ProfileErrors.REVOKE_SESSION_FAILED)
   async revokeOtherSessions(): Promise<void> {
-    await ProfileApi.revokeOtherSessions();
+    await unwrap(heyApiSdk.revokeOtherSessions(), ProfileErrors.REVOKE_SESSION_FAILED);
   }
 }

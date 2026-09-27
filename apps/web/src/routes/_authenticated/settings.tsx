@@ -24,7 +24,7 @@ function SettingsLayout() {
   return (
     <SettingsShell>
       <SettingsSidebar
-        back="/sessions"
+        back="/sessions/new"
         groups={[
           {
             labelKey: 'account',

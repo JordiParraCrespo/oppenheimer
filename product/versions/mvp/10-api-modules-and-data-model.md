@@ -57,6 +57,13 @@ This is the shape the whole design turns on, so it comes first.
   project of notes, documents and bots needs. herdr-projects models the
   same case as a thread of kind `tab`, and a project with `repos = []`
   is ordinary there.
+  **Changed 2026-09-27:** the create body takes **exactly one** checkout
+  in the MVP. The runner makes a session as one worktree of one
+  repository, so a session sent with none was recorded, then refused by
+  the host at launch (`SESS_002`) and shown as failed. The API refuses it
+  before a row is written, and the console keeps its composer disabled
+  until a repository is picked. The model keeps zero as a valid
+  count; a session with no git returns when a runner can make one.
 
 A project is **not** a repository, and a session is **not** a
 repository. Sessions belong to projects, and repositories are what a
@@ -1096,6 +1103,28 @@ with no principal.
 
 Not HTTP at all: the runner uplink (`GET /relay/runner`, WebSocket, host
 assertion) and everything it carries.
+
+The account's own routes under `/profile` (Settings → Profile, 05) are
+the starter's profile module plus three; every write that touches a
+credential is session-only (08):
+
+```
+PATCH  /profile                   the caller           profile:write  + username (unique, USER_002)
+POST   /profile/email             the caller           session only   body: { newEmail, callbackURL? }
+DELETE /profile                   the caller           session only   body: { confirmation }
+```
+
+`user.username` is the users module's column: unique
+(`UQ_user_username`, the constraint is the rule), normalised by the
+shared schema and the aggregate's `Username`, and the database checks the
+same pattern. `DELETE /profile` is the same `DeleteUserCommand` as the
+admin's `DELETE /users/{id}`. Each module that holds something for an
+account contributes its step (`UsersModule.contributeAccountErasure`),
+run in order: hosts unpaired (which stops their sessions and closes their
+links), the owned workspace's sessions, its projects, the workspace; then
+the user row, with its sign-ins, tokens, grants and preferences
+cascading from it in one write. Every step is idempotent, so a delete
+that fails part way is asked again.
 
 The install command and the agent install prompt are served from
 `POST /hosts/pairing`'s response, templated from deploy-owned runner

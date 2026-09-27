@@ -153,7 +153,7 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
   const create = useCreateProject({
     onSuccess: (created) => navigate({ to: '/sessions/new', search: { project: created.id } }),
   });
-  const update = useUpdateProject({ onSuccess: () => navigate({ to: '/sessions' }) });
+  const update = useUpdateProject({ onSuccess: () => navigate({ to: '/sessions/new' }) });
   const pending = create.isPending || update.isPending;
   const failure = create.error ?? update.error;
 
@@ -200,7 +200,7 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
       });
   }
 
-  const back = editing ? { to: '/sessions' as const } : { to: '/sessions/new' as const };
+  const back = editing ? { to: '/sessions/new' as const } : { to: '/sessions/new' as const };
   const loadingRows = installations.isPending || repositories.isPending;
   const repositoriesDone = summary.count > 0 && summary.defaults > 0;
 
@@ -413,7 +413,7 @@ function ProjectForm({ project }: { project: ProjectEntity | undefined }) {
         <DeleteProjectDialog
           project={project}
           onClose={() => setDeleting(false)}
-          onDeleted={() => navigate({ to: '/sessions' })}
+          onDeleted={() => navigate({ to: '/sessions/new' })}
         />
       ) : null}
     </>

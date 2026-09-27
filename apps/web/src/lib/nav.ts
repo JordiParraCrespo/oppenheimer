@@ -1,11 +1,12 @@
-import { Plus, Settings, Terminal } from '@oppenheimer/design-system-web/icons';
+import { Plus, Settings } from '@oppenheimer/design-system-web/icons';
 import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
 
 /**
  * The workspace's destinations.
  *
- * There are two, and the console shows neither as a nav row: its sidebar *is*
- * the session list, and New session sits above it as a button. The list is
+ * There is one, New session, and the console does not show it as a nav row:
+ * its sidebar *is* the session list, with New session above it as a button.
+ * With nothing open, New session is where the console lands. The list is
  * what `useAuthorizedNav` and the landing route read, which is why it still
  * exists — an app whose sidebar is its content still has to be able to answer
  * "where does a reader who chose nothing go".
@@ -23,7 +24,6 @@ import type { NavItem, NavLink } from '@oppenheimer/frontend-web';
  * entry.
  */
 export const NAV = [
-  { to: '/sessions', icon: Terminal, labelKey: 'sessions', policies: [] },
   { to: '/sessions/new', icon: Plus, labelKey: 'newSession', policies: [] },
 ] as const satisfies readonly NavItem[];
 

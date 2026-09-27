@@ -123,10 +123,7 @@ export class SessionEntity {
     return this.lifecycle === 'open' && this.stoppedAt === null;
   }
 
-  /**
-   * Whether the host closed it: pushed, removed its worktrees, done for good.
-   * The API keeps the row as a tombstone; the console's lists leave it out.
-   */
+  /** Whether the host closed it: pushed, removed its worktrees, done for good. */
   get isResolved(): boolean {
     return this.lifecycle === 'resolved';
   }
@@ -170,7 +167,8 @@ export interface CreateSessionCheckout {
 export interface CreateSessionInput {
   hostId: string;
   agent: SessionAgent;
-  checkouts: CreateSessionCheckout[];
+  /** Exactly one: a runner makes a session as one worktree of one repository. */
+  checkouts: [CreateSessionCheckout];
   /** Which checkout the agent is launched in. Must name one of `checkouts`. */
   cwdGithubRepoId?: number;
   launch?: Partial<SessionLaunch>;

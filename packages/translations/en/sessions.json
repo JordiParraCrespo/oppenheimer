@@ -42,7 +42,8 @@
     "resolved": "Done"
   },
   "closed": {
-    "description": "This session has stopped. Its work is on its branch."
+    "description": "This session has stopped. Its work is on its branch.",
+    "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
   },
   "new": {
     "title": "New session",

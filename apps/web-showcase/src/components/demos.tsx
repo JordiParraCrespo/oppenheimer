@@ -149,6 +149,7 @@ import {
   RunsListHead,
 } from '@oppenheimer/design-system-web/runs-list';
 import {
+  SettingsForm,
   SettingsGroup,
   SettingsHeading,
   SettingsRow,
@@ -1710,7 +1711,7 @@ export function SettingsGroupDemo() {
   const dirty = name !== 'Jordi Parra Crespo';
   return (
     <div className="flex w-full max-w-[680px] flex-col gap-6">
-      <SettingsGroup>
+      <SettingsForm onSubmit={(event) => event.preventDefault()}>
         <SettingsRow label="Profile picture" hint="Shown beside your sessions and routines">
           <Avatar size="lg" variant="accent">
             <AvatarFallback>JP</AvatarFallback>
@@ -1725,18 +1726,20 @@ export function SettingsGroupDemo() {
             Change
           </Button>
         </SettingsRow>
-        <SettingsRow label="Full name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" className="w-[280px]" />
+        <SettingsRow label="Full name" control="field">
+          <Input value={name} onChange={(e) => setName(e.target.value)} aria-label="Full name" />
         </SettingsRow>
         {dirty ? (
           <SettingsSaveRow>
-            <Button variant="ghost" size="sm" onClick={() => setName('Jordi Parra Crespo')}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setName('Jordi Parra Crespo')}>
               Discard
             </Button>
-            <Button size="sm">Save changes</Button>
+            <Button type="submit" size="sm">
+              Save changes
+            </Button>
           </SettingsSaveRow>
         ) : null}
-      </SettingsGroup>
+      </SettingsForm>
       <SettingsHeading>Account</SettingsHeading>
       <SettingsGroup>
         <SettingsRow label="Delete account" hint="Stops every session and removes your routines and host registrations. This cannot be undone.">

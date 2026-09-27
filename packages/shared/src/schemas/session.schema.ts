@@ -107,12 +107,13 @@ const createSessionFields = z.object({
   projectId: z.string().uuid().optional(),
   name: displayNameSchema.optional(),
   /**
-   * At most one in the MVP: a runner makes one worktree per session, so a
-   * second repository is refused here, before a row is written and the first
-   * prompt spent on a session no host can make (#56, 00). Empty is a session
-   * with no git at all, on purpose.
+   * Exactly one in the MVP: a runner makes one worktree per session, so a
+   * second repository, or none, is refused here, before a row is written and
+   * the first prompt spent on a session no host can make (#56, 00). A session
+   * with no git at all was allowed until 2026-09-27; the runner refused it at
+   * launch, so it is refused here instead until a runner can make one (10).
    */
-  checkouts: z.array(sessionCheckoutInputSchema).max(MAX_SESSION_CHECKOUTS),
+  checkouts: z.array(sessionCheckoutInputSchema).min(1).max(MAX_SESSION_CHECKOUTS),
   /** Which checkout the agent is launched inside. Must be one of `checkouts`. */
   cwdGithubRepoId: githubRepoIdSchema.optional(),
   /** The composer's foot row. Absent is `ask` with each agent's own defaults. */

@@ -43,7 +43,7 @@ export function LoginScreen({
         // Split rather than pass the whole string as `to`: the target may
         // carry search params (`/settings?section=security`), and `to` is a
         // path — everything after the `?` would be swallowed into the pathname.
-        const [pathname, query] = (redirectTo ?? '/sessions').split('?');
+        const [pathname, query] = (redirectTo ?? '/sessions/new').split('?');
         navigate({
           to: pathname,
           search: Object.fromEntries(new URLSearchParams(query ?? '')),

@@ -4,7 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { GithubModule } from '../github/github.module';
 import { HostsModule } from '../hosts/hosts.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
+import { UsersModule } from '../users/user.module';
 import { PersonalWorkspaceProvisionedDomainEventHandler } from './application/event-handlers/personal-workspace-provisioned.domain-event-handler';
+import { ProjectAccountErasure } from './application/project-account-erasure.resolver';
 import { ProjectLookupResolver } from './application/project-lookup.resolver';
 import { ProjectSettingsResolver } from './application/project-settings.resolver';
 import type { ProjectUsagePort } from './application/project-usage.port';
@@ -52,6 +55,8 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     // reaches them; and whether a default host is one the caller can use.
     GithubModule,
     HostsModule,
+    // Which workspace an account owns, for deleting it.
+    OrganizationsModule,
     TypeOrmModule.forFeature([ProjectOrmEntity, ProjectRepositoryOrmEntity]),
     AuthzKernelModule.forFeature([ProjectResource]),
   ],
@@ -65,6 +70,7 @@ const repositories: Provider[] = [{ provide: PROJECT_REPOSITORY, useClass: Proje
     ProjectSettingsResolver,
     PersonalWorkspaceProvisionedDomainEventHandler,
     { provide: PROJECT_LOOKUP, useClass: ProjectLookupResolver },
+    ...UsersModule.contributeAccountErasure([ProjectAccountErasure]),
   ],
   // `PROJECT_LOOKUP` is the module's whole published surface: what owns sessions
   // injects it to resolve the project a session is listed under — the one it
