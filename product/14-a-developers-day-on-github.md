@@ -95,14 +95,29 @@ Three moves follow from it:
 
 ## 3. Three lanes
 
-Every PR in the queue lands in exactly one lane. Rules decide first, and
-Jev's gated answers second (`next-steps/0.2-pull-requests.md` §8). The
-lane is shown on the row, with its reasons.
+Every PR lands in exactly one lane, and **Jev decides which** (owner,
+2026-09-27). The lane is one `choice` question with three options, asked
+over the PR's state — title, commits, paths, the diff hunks
+(`next-steps/0.2-pull-requests.md` §8.6) — together with facts code has
+already computed and passed in as context: size, the paths that match
+the repository's risky list, check status, and whether the PR is only
+docs, tests or formatting. Jev weighs them and code does not override
+it. Below the confidence gate (0.9), the PR goes one lane up: an unsure
+*Auto* becomes *Quick*, and an unsure *Quick* becomes *Deep*. The lane is
+on the row with Jev's probabilities and the facts it was given.
+
+Every lane gets an agent, sized to the lane (§5):
+
+- **Auto**: a verification run. The agent checks out the PR, runs the
+  affected checks, and merges if nothing is found.
+- **Quick**: a summary agent. It writes the short brief — purpose, what
+  changed, what it ran — that you read before pressing `a`.
+- **Deep**: the full review session (§5.1–§5.4).
 
 | Lane | What it means | What you do | Typical PRs |
 |------|---------------|-------------|-------------|
-| **Auto** | Meets the repository's auto-merge policy, and the review session found nothing | Nothing. It merges when green, and you see it in *While you were away* | Docs, tests only, formatting, images, patch dependency bumps, generated files, small refactors that both Jev and the session say change nothing |
-| **Quick** | Needs a person, but is small and clear | One key in triage, with the brief on screen: `a` to approve, `r` to request changes | Small fixes and features outside risky paths, with checks green and no findings |
+| **Auto** | Jev says Auto above the gate, the policy's hard lines hold (§4.2), and the verification run found nothing | Nothing. It merges when green, and you see it in *While you were away* | Docs, tests only, formatting, images, patch dependency bumps, generated files, small refactors that both Jev and the session say change nothing |
+| **Quick** | Needs a person, but is small and clear | Read the summary agent's brief, then one key in triage: `a` to approve, `r` to request changes | Small fixes and features outside risky paths, with checks green and no findings |
 | **Deep** | Risky paths, large, or the session found something | Open the prepared review session (§5) | Auth, migrations, public APIs, billing, workflows, XL PRs, anything with findings |
 
 Triage (0.2 §0) walks **Quick** first when you have a few minutes, and
@@ -133,8 +148,9 @@ the code.
 
 ### 4.2 Our policy
 
-Each repository has a policy in the console, read top to bottom like the
-turn table (0.2 §3.1). A PR is **Auto** only when every line holds:
+Jev picks the lane (§3). The policy is the short list of hard lines an
+**Auto** PR must also pass, whatever Jev says. It is read top to bottom
+like the turn table (0.2 §3.1), and every line must hold:
 
 1. **Allowed shape.** Any one of:
    - only docs, tests, images or formatting (gitStream's rule);
@@ -182,23 +198,27 @@ happen:
 Every auto-merge is in an audit log with its policy version and its
 evidence.
 
-### 4.5 Who approves
+### 4.5 Approving and merging
 
-This decides where auto-merge works on day one.
+Auto-merge covers **every PR** in the repository that passes (owner,
+2026-09-27): ours, our agents', and anyone else's.
 
-- **Repositories without required reviews** (most personal ones): the
-  console merges through the App when the policy holds. Nothing else is
-  needed.
-- **Repositories that require an approval**: an agent PR is opened with
-  the person's authorization, so the person is its author, and GitHub
-  will not let them approve it. The approval has to come from another
-  reviewer identity. There are two options to verify before building:
-  - whether a review by our GitHub App counts toward the required
-    approvals, the way Copilot's now can (path-scoped);
-  - a bypass list in the repository's rules that names the App.
+When the repository requires an approval, **we approve**. The approving
+review comes from the Oppenheimer GitHub App, as its own reviewer
+identity: an agent PR is opened under the person's account, and GitHub
+does not let an author approve their own PR. The review body carries the
+lane, Jev's probabilities, the policy lines and the verification run's
+evidence. The App then merges.
 
-  Until one of them is verified, these repositories get **Quick** instead
-  of **Auto**.
+Two build steps, not open questions:
+
+- The App needs *Pull requests: write* to approve and *Contents: write*
+  to merge (note 09 §3 already asks for both).
+- Where a repository's rules do not count an App's approval toward the
+  required reviews, the console detects it on the first auto-merge
+  attempt and shows the one setting that fixes it: add the App to the
+  ruleset's bypass list, or allow app approvals. It links to that
+  GitHub settings page.
 
 ## 5. The review session
 
@@ -209,8 +229,12 @@ only read diffs.
 
 ### 5.1 Prepared before you open it
 
-When a PR enters *Needs your review*, or lands in **Deep**, the console
-starts its review session on your default host, in the background:
+Review is an **automation** (13), not a new kind of thing. Its trigger is
+*a pull request enters the queue* (opened, ready for review, or a new
+push). Its What step is the review, sized by the lane. Its Agent step is
+the same one the automation editor already has: agent, model, permission
+and effort, **picked by the person**. When a Deep PR's automation runs,
+the console starts a review session on your host, in the background:
 
 1. A worktree at the PR's head, with dependencies installed from the
    host's warm cache.
@@ -279,14 +303,24 @@ reviewer asks, and the agent answers by doing:
 
 A finding the reviewer confirms becomes a review comment with one key.
 
-### 5.5 Review presets
+### 5.5 Review automations per repository
 
-How a repository is reviewed is saved as a **preset**, beside the
-automation templates (13). A preset holds the agent and model, the setup
-commands, which checks to run, how to start the app, extra review rules,
-and the auto-merge policy. It is created from a first review and edited
-like a project's defaults. New PRs in that repository use it without
-asking.
+What was called a preset is a **review automation**, built in the
+automation editor like any other:
+
+- **Where:** the project and its repositories, and the host.
+- **When:** a pull request enters the queue, with the PR filters the
+  GitHub trigger already has (note 05 §7): base branch, labels, author,
+  draft.
+- **What:** the review, with the setup commands, the checks to run, how
+  to start the app, and extra review rules. Each lane's agent (§3) is a
+  step of it.
+- **Agent:** agent, model, permission and effort, picked per automation.
+  A cheaper model for the Quick summary and a stronger one for Deep
+  reviews is one automation with two steps.
+
+The auto-merge policy's hard lines live on the same automation, so
+"how this repository is reviewed" is one page.
 
 ## 6. Also worth building
 
@@ -332,21 +366,19 @@ review-load fairness as a feature.
 | Auto-merge in **dry run** (§4.2–§4.3) | Proves the number on the owner's own history before anything merges by itself |
 | Evidence pack (§6.3) | Feeds all three above |
 
-After those: auto-merge switched on for repositories without required
-reviews, then the collision radar, then presets.
+After those: auto-merge switched on, with the App approving where
+approval is required, then the collision radar.
 
-## 8. Questions for the owner
+## 8. Decided (owner, 2026-09-27)
 
-1. For auto-merge in repositories that require an approval (§4.5), which
-   do we verify first: whether an App review counts, or a bypass list?
-   And which repositories come first?
-2. Should a review session be prepared for every PR in *Needs your
-   review*, or only for the **Deep** lane? The first is faster to open;
-   the second spends less agent time.
-3. Which agent and model should a review session use by default: the
-   same as authoring sessions, or a separate choice per preset?
-4. Does auto-merge cover only the owner's own and their agents' PRs, or
-   anyone's PR in the repository once the policy holds?
+1. **Approvals:** when a repository requires one, the Oppenheimer App
+   approves and merges (§4.5).
+2. **Lanes:** Jev decides the lane. Every lane has an agent: a
+   verification run for Auto, a summary for Quick, the full review
+   session for Deep (§3).
+3. **Review is an automation**, with the agent and model picked in its
+   Agent step (§5.1, §5.5).
+4. **Auto-merge covers every PR** in the repository that passes (§4.5).
 
 ## 9. Sources
 

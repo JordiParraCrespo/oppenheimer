@@ -230,3 +230,8 @@ earlier note:
   who push hard. Note 14 now goes after the review bottleneck instead,
   with lanes, auto-merge for easy PRs, and a review session prepared
   with the context.
+- Note 14 then settled its own questions with the owner (2026-09-27):
+  Jev picks the lane, and each lane has an agent (verification, summary,
+  full review); review is an automation with the agent picked in its
+  Agent step; the Oppenheimer App approves when a repository requires
+  approval; auto-merge covers every PR that passes.
