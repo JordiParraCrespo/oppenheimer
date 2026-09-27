@@ -20,6 +20,12 @@ export interface AbilityRequest {
  * remains the one place an ability is built and memoized.
  */
 export interface AbilityPort {
-  /** The ability for this request, built once and memoized on the request. */
-  forRequest(request: AbilityRequest): Promise<AppAbility>;
+  /**
+   * The ability for this request, built once and memoized on the request.
+   *
+   * `organizationId` is the organization the route acts on, when it names one
+   * (`@OrganizationScoped`); it wins over the session's active organization.
+   * Omitted or `null`, the session's active organization decides.
+   */
+  forRequest(request: AbilityRequest, organizationId?: string | null): Promise<AppAbility>;
 }
