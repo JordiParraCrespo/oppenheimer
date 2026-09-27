@@ -166,8 +166,7 @@ function triggersWithinRepositories(value: {
   if (!value.repositories || !value.triggers) return true;
   const allowed = new Set(value.repositories.map((repository) => repository.githubRepoId));
   return value.triggers.every(
-    (trigger) =>
-      trigger.source !== 'github' || trigger.repositories.every((id) => allowed.has(id)),
+    (trigger) => trigger.source !== 'github' || trigger.repositories.every((id) => allowed.has(id)),
   );
 }
 

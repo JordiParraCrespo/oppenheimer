@@ -174,7 +174,7 @@ export function foldTurnEvent(
       );
     }
     case SESSION_EVENT_KINDS.STARTED: {
-      if (!latest || latest.state !== 'queued') return latest;
+      if (latest?.state !== 'queued') return latest;
       return { ...latest, state: 'in_progress', startedAt: latest.startedAt ?? at };
     }
     case SESSION_EVENT_KINDS.RESTARTED: {

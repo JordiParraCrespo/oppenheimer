@@ -21,6 +21,8 @@ import { HostInventoryOrmEntity } from '../hosts/database/host-inventory.orm-ent
 import { HostNetworkOrmEntity } from '../hosts/database/host-network.orm-entity';
 import { HostPairingTokenOrmEntity } from '../hosts/database/host-pairing-token.orm-entity';
 import { HostPresenceOrmEntity } from '../hosts/database/host-presence.orm-entity';
+import { InboundDeliveryOrmEntity } from '../inbound-events/database/inbound-delivery.orm-entity';
+import { InboundEventOrmEntity } from '../inbound-events/database/inbound-event.orm-entity';
 import { ProvisionPersonalWorkspaceCommand } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command';
 import { ProvisionPersonalWorkspaceCommandHandler } from '../organizations/commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from '../organizations/database/invitation.orm-entity';
@@ -38,9 +40,9 @@ import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserRoleRepository } from '../roles/database/user-role.repository';
 import { RoleMapper } from '../roles/roles.mapper';
 import { SessionCheckoutOrmEntity } from '../sessions/database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
-import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
 
 const dataSource = new DataSource({
@@ -79,6 +81,8 @@ const dataSource = new DataSource({
     SessionCheckoutOrmEntity,
     WorkSessionEventOrmEntity,
     SessionTurnOrmEntity,
+    InboundDeliveryOrmEntity,
+    InboundEventOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

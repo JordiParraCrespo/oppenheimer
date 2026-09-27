@@ -47,6 +47,7 @@ import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
 import { GithubModule } from './github/github.module';
 import { HealthModule } from './health/health.module';
 import { HostsModule } from './hosts/hosts.module';
+import { InboundEventsModule } from './inbound-events/inbound-events.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { OutboxModule } from './outbox/outbox.module';
 import { ProfileModule } from './profile/profile.module';
@@ -198,6 +199,9 @@ import { UsersModule } from './users/user.module';
     // (hosts, installations, projects, sessions, relay) follow it here as they
     // land.
     OrganizationsModule,
+    // What external systems tell us, stored once and normalized: the hub the
+    // providers below feed and automations consume.
+    InboundEventsModule,
     // What GitHub grants a workspace, and how the platform exercises it. The
     // first of the product contexts named above.
     GithubModule,

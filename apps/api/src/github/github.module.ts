@@ -2,6 +2,7 @@ import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
+import { InboundEventsModule } from '../inbound-events/inbound-events.module';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
 import { ConnectInstallationCommandHandler } from './commands/connect-installation/connect-installation.command-handler';
 import { ConnectInstallationHttpController } from './commands/connect-installation/connect-installation.http.controller';
@@ -14,6 +15,7 @@ import { GithubInstallationRepository } from './database/github-installation.rep
 import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY, REPOSITORY_ACCESS } from './github.di-tokens';
 import { InstallationResource } from './github.resource';
 import { GithubInstallationMapper } from './github-installation.mapper';
+import { GithubEventSource } from './infrastructure/github-event-source.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { FindInstallationQueryHandler } from './queries/find-installation/find-installation.query-handler';
 import { FindInstallationsHttpController } from './queries/find-installations/find-installations.http.controller';
@@ -74,9 +76,18 @@ const adapters: Provider[] = [
     CqrsModule,
     TypeOrmModule.forFeature([GithubInstallationOrmEntity]),
     AuthzKernelModule.forFeature([InstallationResource]),
+    // The hub its non-installation deliveries go to, and the registry this
+    // module contributes its event source to.
+    InboundEventsModule,
   ],
   controllers: [...httpControllers],
-  providers: [...commandHandlers, ...queryHandlers, ...mappers, ...adapters],
+  providers: [
+    ...commandHandlers,
+    ...queryHandlers,
+    ...mappers,
+    ...adapters,
+    ...InboundEventsModule.contributeSources([GithubEventSource]),
+  ],
   // `REPOSITORY_ACCESS` and nothing else. The GitHub client and the unscoped
   // installation lookup are this module's own: exporting them is how `sessions/`
   // and `relay/` would end up minting with GitHub's numeric id, past the port

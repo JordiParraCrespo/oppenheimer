@@ -40,9 +40,9 @@ import { RestartSessionHttpController } from './commands/restart-session/restart
 import { StopSessionCommandHandler } from './commands/stop-session/stop-session.command-handler';
 import { StopSessionHttpController } from './commands/stop-session/stop-session.http.controller';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
+import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from './database/work-session.orm-entity';
 import { WorkSessionRepository } from './database/work-session.repository';
-import { SessionTurnOrmEntity } from './database/session-turn.orm-entity';
 import { WorkSessionEventOrmEntity } from './database/work-session-event.orm-entity';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';

@@ -98,9 +98,8 @@ export class CreateSessionCommandHandler
 
     // The name is asked for *while* the host is told about the session, so the
     // model's round trip overlaps the dispatch rather than following it. It
-    // resolves within the namer's deadline and never rejects: a model that is
-    // not quick is replaced by the prompt's own words, and the response then
-    // carries a readable name rather than the slug.
+    // resolves within the namer's deadline and never rejects: a slow model is
+    // replaced by the prompt's own words, so the response carries a readable name.
     const naming = input.prompt
       ? this.naming.propose(created.session, input.prompt)
       : Promise.resolve(null);
