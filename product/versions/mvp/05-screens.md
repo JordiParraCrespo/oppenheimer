@@ -178,6 +178,14 @@
   alias that moves under it. The foot row's two menus are denser than
   the sidebar's, and the design system owns that density. Runtime
   and lifetime chips arrive with the VM slice.
+- **When the composer can send.** A host is picked and still one this
+  workspace has, and exactly one repository is picked. Until both hold,
+  the text area and the send button are disabled; the chips stay live,
+  since they are how the gap is closed. The host may be offline (the
+  session is owed to it, above); a session with no repository may not,
+  because the runner makes a session as one worktree of one repository
+  and refuses one with none (`SESS_002`), and the API refuses it first
+  (10, changed 2026-09-27).
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
   stored; "Ask for approval" / "Approve for me" / "Full access" on the

@@ -32,7 +32,10 @@ vi.mock('../components/project-select', () => ({
 }));
 vi.mock('../components/host-select', () => ({ HostSelect: chip('host', 'host-2') }));
 vi.mock('../components/repository-branch-select', () => ({
-  RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }]),
+  RepositoryBranchSelect: chip('repositories', [{ id: 'installation-1:42', branch: 'main' }], {
+    // A row whose key no longer parses: `toCheckouts` drops it from the body.
+    stale: [{ id: 'installation-1:gone', branch: 'main' }],
+  }),
 }));
 vi.mock('../components/branch-select', () => ({ BranchSelect: chip('branch', 'develop') }));
 vi.mock('../components/permission-select', () => ({
@@ -107,14 +110,24 @@ const PROJECTS = [
   },
 ];
 
-/** A chip stub: counts its renders and picks `pick` when pressed. */
-function chip(name: string, pick: unknown) {
+/**
+ * A chip stub: counts its renders and picks `pick` when pressed. Each of
+ * `others` is one more button, named `<name>:<key>`, that picks its value.
+ */
+function chip(name: string, pick: unknown, others: Record<string, unknown> = {}) {
   return function Chip({ onValueChange }: { onValueChange: (value: unknown) => void }) {
     renders.set(name, (renders.get(name) ?? 0) + 1);
     return (
-      <button type="button" onClick={() => onValueChange(pick)}>
-        {name}
-      </button>
+      <>
+        <button type="button" onClick={() => onValueChange(pick)}>
+          {name}
+        </button>
+        {Object.entries(others).map(([key, value]) => (
+          <button key={key} type="button" onClick={() => onValueChange(value)}>
+            {`${name}:${key}`}
+          </button>
+        ))}
+      </>
     );
   };
 }
@@ -186,15 +199,35 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual([]);
   });
 
-  /** A runner makes one worktree per session: with no repository there is nothing to send. */
-  it('keeps the composer disabled until a repository is picked', () => {
-    act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
-    fireEvent.click(screen.getByRole('button', { name: 'host' }));
-    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
-    expect(textarea.disabled).toBe(true);
+  /** The send gate (05): a host still in the workspace and one repository the body can carry. */
+  describe('the send gate', () => {
+    function composer() {
+      return {
+        field: screen.getByRole<HTMLTextAreaElement>('textbox'),
+        send: screen.getByRole<HTMLButtonElement>('button', { name: 'sessions.new.composer.send' }),
+      };
+    }
 
-    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
-    expect(textarea.disabled).toBe(false);
+    beforeEach(() => {
+      act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+      fireEvent.click(screen.getByRole('button', { name: 'host' }));
+      fireEvent.change(composer().field, { target: { value: 'Fix the build' } });
+    });
+
+    it('holds the field and the send button until a repository is picked', () => {
+      expect(composer().field.disabled).toBe(true);
+      expect(composer().send.disabled).toBe(true);
+
+      fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+      expect(composer().field.disabled).toBe(false);
+      expect(composer().send.disabled).toBe(false);
+    });
+
+    it('stays shut for a pick the request would drop', () => {
+      fireEvent.click(screen.getByRole('button', { name: 'repositories:stale' }));
+      expect(composer().field.disabled).toBe(true);
+      expect(composer().send.disabled).toBe(true);
+    });
   });
 
   it('remembers a pick for the next visit, but never the permission level', () => {

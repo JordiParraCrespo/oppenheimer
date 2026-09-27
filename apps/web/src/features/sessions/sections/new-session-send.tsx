@@ -18,9 +18,11 @@ import { toCheckouts, toLaunchInput } from '../lib/session-options';
  * The composer of New session, and the one request the draft makes.
  *
  * What this section reads during render is only what it must: whether a host
- * is picked and still paired, and whether a repository is picked, because the
- * composer cannot send without either, and the request's state. The rest of the draft, and the projects, are read once, when the task
- * is sent — so a pick of effort or a refetch of the projects never reaches it.
+ * is picked and still paired, and whether the pick names one repository the
+ * request can carry — the composer cannot send without both (05) — and the
+ * request's state. The rest of the draft, and the projects, are read once,
+ * when the task is sent — so a pick of effort or a refetch of the projects
+ * never reaches it.
  *
  * `scope`, `tools` and `engine` are the chips, built by the section above and
  * placed here untouched. They arrive as elements rather than being built here
@@ -41,15 +43,11 @@ export function NewSessionSend({
   const resolveError = useErrorMessage();
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
-  // Whether a repository is picked. A runner makes a session as one worktree of
-  // one repository, so a session sent with none is recorded and then fails on
-  // the host ("This host makes sessions with one repository"). The composer
-  // stays disabled until one is picked instead. A boolean, so picking a second
-  // branch or swapping repositories does not re-render this section.
-  const hasRepository = useWatch({
+  // What `start` posts, not what the picker holds, so the gate and the body agree.
+  const hasCheckout = useWatch({
     control,
     name: 'scope',
-    compute: (scope) => scope.length > 0,
+    compute: (picked) => toCheckouts(picked).length > 0,
   });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled
@@ -83,9 +81,6 @@ export function NewSessionSend({
 
   function start(prompt: string) {
     const draft = getValues();
-    // One repository, exactly: the API refuses a session with none. A row
-    // whose key no longer parses is dropped by `toCheckouts`, so this also
-    // holds the send when the only pick named a repository gone since.
     const [checkout] = toCheckouts(draft.scope);
     if (!draft.hostId || hostKnown === false || !checkout) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
@@ -107,7 +102,7 @@ export function NewSessionSend({
       <NewSessionComposer
         onSubmit={start}
         busy={create.isPending}
-        disabled={!hostId || hostKnown === false || !hasRepository}
+        disabled={!hostId || hostKnown === false || !hasCheckout}
         scope={scope}
         tools={tools}
         engine={engine}
