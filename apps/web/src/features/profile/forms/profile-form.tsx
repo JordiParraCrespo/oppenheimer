@@ -4,6 +4,7 @@ import {
   Button,
   FieldError,
   Input,
+  SettingsForm,
   SettingsRow,
   SettingsSaveRow,
 } from '@oppenheimer/design-system-web';
@@ -13,15 +14,16 @@ import {
   updateProfileSchema,
   usernameSchema,
 } from '@oppenheimer/shared/schemas/profile';
-import { useId } from 'react';
+import type * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 /**
  * The name fields as the form holds them: the username is a string, and an
- * empty one is how it is cleared. The shared schema states the constraints;
- * the names are trimmed so a stray space cannot pass for a name.
+ * empty one is how it is cleared. The shared schemas are the contract — the
+ * username's normalises (trims, lowercases) as it checks — and the names are
+ * trimmed so a stray space cannot pass for one.
  */
 const profileFormSchema = z.object({
   firstName: z.string().trim().pipe(updateProfileSchema.shape.firstName.unwrap()),
@@ -32,15 +34,14 @@ const profileFormSchema = z.object({
 export type ProfileFormValues = z.input<typeof profileFormSchema>;
 
 /**
- * Full name and username (`design/version1/Settings.dc.html`), each a row of
- * the profile card, and the save row that appears only when something
- * changed — Discard and Save changes — and reads Saved after a save until
- * the next edit. `values` is the saved profile: the form follows it, so a
- * save or a refetch resets the card to what the server holds.
+ * The profile card (`design/version1/Settings.dc.html`) as one form: the rows
+ * above the fields (`children` — picture, email) are the card's too, then
+ * Full name and Username, then the save row that appears only when something
+ * changed and reads Saved after a save until the next edit. `values` is the
+ * saved profile: the form follows it, so a save or a refetch resets the card
+ * to what the server holds.
  *
- * The design draws one Full name field; the account keeps first and last
- * name apart (sign-up asks for both, and the initials are built from them),
- * so the row holds the two side by side.
+ * Full name is two fields: the account keeps first and last name apart.
  */
 export function ProfileForm({
   values,
@@ -49,6 +50,7 @@ export function ProfileForm({
   error,
   onSubmit,
   onDiscard,
+  children,
 }: {
   values: ProfileFormValues;
   isPending: boolean;
@@ -58,9 +60,10 @@ export function ProfileForm({
   error?: string;
   onSubmit: (dto: UpdateProfileDto) => void;
   onDiscard: () => void;
+  /** The card's rows above the fields, which save on their own. */
+  children?: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const formId = useId();
   // Controlled fields, not `register`: the React Compiler keeps the ref
   // callbacks `register` hands out, so a reset — Discard, or the saved
   // profile arriving — would change the form's values and not the inputs.
@@ -84,9 +87,11 @@ export function ProfileForm({
   });
 
   return (
-    <>
+    <SettingsForm onSubmit={submit} noValidate>
+      {children}
       <SettingsRow
         label={t('settings.profile.fullName')}
+        control="field"
         hint={
           errors.firstName || errors.lastName ? (
             <FieldError errors={[errors.firstName ?? errors.lastName]} />
@@ -99,8 +104,6 @@ export function ProfileForm({
           render={({ field, fieldState }) => (
             <Input
               {...field}
-              form={formId}
-              className="w-34"
               autoComplete="given-name"
               aria-label={t('settings.profile.firstName')}
               aria-invalid={fieldState.invalid}
@@ -114,8 +117,6 @@ export function ProfileForm({
           render={({ field, fieldState }) => (
             <Input
               {...field}
-              form={formId}
-              className="w-34"
               autoComplete="family-name"
               aria-label={t('settings.profile.lastName')}
               aria-invalid={fieldState.invalid}
@@ -126,6 +127,7 @@ export function ProfileForm({
       </SettingsRow>
       <SettingsRow
         label={t('settings.profile.username')}
+        control="field"
         hint={
           errors.username ? (
             <FieldError errors={[errors.username]} />
@@ -140,11 +142,6 @@ export function ProfileForm({
           render={({ field, fieldState }) => (
             <Input
               {...field}
-              form={formId}
-              // Handles are lowercase; typing one in capitals is not a
-              // mistake worth an error message.
-              onChange={(event) => field.onChange(event.target.value.toLowerCase())}
-              className="w-70"
               leading={<span className="font-mono text-sm">@</span>}
               autoComplete="username"
               spellCheck={false}
@@ -176,16 +173,13 @@ export function ProfileForm({
           >
             {t('settings.profile.discard')}
           </Button>
-          <Button type="submit" form={formId} size="sm" disabled={isPending}>
+          <Button type="submit" size="sm" disabled={isPending}>
             {isPending ? t('settings.profile.saving') : t('settings.profile.saveChanges')}
           </Button>
         </SettingsSaveRow>
       ) : saved ? (
         <SettingsSaveRow role="status">{t('settings.profile.saved')}</SettingsSaveRow>
       ) : null}
-      {/* The rows are the card's own children, so its dividers fall between
-          them; the inputs and Save changes reach this form by its id. */}
-      <form id={formId} onSubmit={submit} noValidate hidden />
-    </>
+    </SettingsForm>
   );
 }

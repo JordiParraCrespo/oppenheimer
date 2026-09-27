@@ -6,6 +6,7 @@ import {
 import type { Role } from '@oppenheimer/shared';
 import { UserDeletedDomainEvent } from './events/user-deleted.domain-event';
 import { Email } from './value-objects/email.value-object';
+import { Username } from './value-objects/username.value-object';
 
 export interface UserProps {
   email: Email;
@@ -13,7 +14,7 @@ export interface UserProps {
   lastName: string;
   phone: string | null;
   jobTitle: string | null;
-  username: string | null;
+  username: Username | null;
   avatarUrl: string | null;
   role: Role;
   isActive: boolean;
@@ -67,7 +68,7 @@ export class UserEntity extends AggregateRoot<UserProps> {
   }
 
   get username(): string | null {
-    return this.props.username;
+    return this.props.username?.value ?? null;
   }
 
   get avatarUrl(): string | null {
@@ -92,7 +93,9 @@ export class UserEntity extends AggregateRoot<UserProps> {
     if (props.lastName !== undefined) this.props.lastName = props.lastName;
     if (props.phone !== undefined) this.props.phone = props.phone;
     if (props.jobTitle !== undefined) this.props.jobTitle = props.jobTitle;
-    if (props.username !== undefined) this.props.username = props.username;
+    if (props.username !== undefined) {
+      this.props.username = props.username === null ? null : Username.from(props.username);
+    }
     if (props.avatarUrl !== undefined) this.props.avatarUrl = props.avatarUrl;
     if (props.role !== undefined) this.props.role = props.role;
     if (props.isActive !== undefined) this.props.isActive = props.isActive;

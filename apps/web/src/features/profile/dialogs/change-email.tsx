@@ -69,7 +69,13 @@ export function ChangeEmailDialog({
                 ) : null}
                 <ChangeEmailForm
                   isPending={change.isPending}
-                  onSubmit={(dto) => change.mutate(dto)}
+                  onSubmit={(dto) =>
+                    change.mutate({
+                      ...dto,
+                      // The screen the link returns to, which says the address moved.
+                      callbackURL: `${window.location.origin}/settings/profile?emailChanged=1`,
+                    })
+                  }
                   onCancel={onClose}
                 />
               </div>

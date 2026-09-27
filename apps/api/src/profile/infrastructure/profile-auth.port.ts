@@ -38,7 +38,11 @@ export interface ProfileAuthPort {
 
   /**
    * Send a link to `newEmail` that moves the caller's account there when it
-   * is followed. Nothing changes until then.
+   * is followed, returning to `callbackURL`. Nothing changes until then.
    */
-  requestEmailChange(headers: IncomingHttpHeaders, newEmail: string): Promise<void>;
+  requestEmailChange(
+    headers: IncomingHttpHeaders,
+    newEmail: string,
+    callbackURL?: string,
+  ): Promise<void>;
 }

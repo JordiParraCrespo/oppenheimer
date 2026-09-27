@@ -66,24 +66,4 @@ export const ProfileErrors = {
     message: 'That is already your email address',
     httpStatus: 400,
   },
-  /**
-   * Deleting an account is confirmed by typing its email address; what was
-   * typed was something else.
-   */
-  DELETE_CONFIRMATION_MISMATCH: {
-    code: 'PROFILE_010',
-    message: 'The confirmation does not match your email address',
-    httpStatus: 400,
-  },
-  /**
-   * The account started sessions or connected GitHub in a workspace somebody
-   * else is also in. Those rows name their creator, and deleting them would
-   * take work from people who did not ask; the account has to leave that
-   * workspace first.
-   */
-  ACCOUNT_HAS_SHARED_WORK: {
-    code: 'PROFILE_011',
-    message: 'The account has work in a workspace shared with others',
-    httpStatus: 409,
-  },
 } as const satisfies Record<string, ErrorDefinition>;

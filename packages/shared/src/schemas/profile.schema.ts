@@ -32,13 +32,22 @@ export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 /**
  * A username: the handle session logs and commit trailers carry. Lowercase
  * letters, digits and single hyphens between them, 1 to 39 characters — the
- * shape GitHub allows, so the same handle reads the same in both places. It
- * is stored as typed; a client lowercases on input rather than the schema
- * rewriting what it was given.
+ * shape GitHub allows, so the same handle reads the same in both places.
+ *
+ * The one spelling of the rule: the user aggregate's `Username` value object
+ * matches it, and the migration's CHECK quotes `USERNAME_PATTERN.source`
+ * (a test holds the two equal), so it is written with no JS-only syntax.
+ * The schema is the contract, so it normalises — trims and lowercases —
+ * before it checks, and every door hands the domain the same value.
  */
 export const USERNAME_MAX_LENGTH = 39;
-export const USERNAME_PATTERN = /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$/;
-export const usernameSchema = z.string().max(USERNAME_MAX_LENGTH).regex(USERNAME_PATTERN);
+export const USERNAME_PATTERN = /^[a-z0-9](-?[a-z0-9])*$/;
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(USERNAME_MAX_LENGTH)
+  .regex(USERNAME_PATTERN);
 
 /**
  * Editable profile fields. Every field is optional — the screen saves the whole
@@ -61,6 +70,11 @@ export const updateProfileSchema = z.object({
  */
 export const changeEmailSchema = z.object({
   newEmail: z.string().email().max(254),
+  /**
+   * Where the link returns once followed. The client names its own screen;
+   * Better Auth refuses one outside the deployment's trusted origins.
+   */
+  callbackURL: z.string().url().max(2048).optional(),
 });
 
 /**

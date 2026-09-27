@@ -45,7 +45,12 @@ export class ChangeEmailHttpController {
     @Body() body: ChangeEmailRequest,
   ): Promise<void> {
     await this.commandBus.execute(
-      new ChangeEmailCommand({ headers: request.headers, userId, newEmail: body.newEmail }),
+      new ChangeEmailCommand({
+        headers: request.headers,
+        userId,
+        newEmail: body.newEmail,
+        callbackURL: body.callbackURL,
+      }),
     );
   }
 }

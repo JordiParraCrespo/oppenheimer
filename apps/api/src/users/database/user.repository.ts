@@ -16,6 +16,7 @@ import { UserOrmEntity } from './user.orm-entity';
 import type { FindUsersParams, UserRepositoryPort } from './user.repository.port';
 
 const UNIQUE_VIOLATION = '23505';
+/** The name `UserOrmEntity` and the migration give the constraint. */
 const USERNAME_CONSTRAINT = 'UQ_user_username';
 
 /**
@@ -51,8 +52,8 @@ export class UserRepository implements UserRepositoryPort {
       );
       return this.mapper.toDomain(record);
     } catch (error) {
-      // The handler looked the handle up first; this is the request that lost
-      // the race between that lookup and the write.
+      // The constraint is the rule; this is where a taken handle becomes the
+      // catalog's answer rather than a 500.
       if (isUsernameTaken(error)) throw new AppError(UserErrors.USERNAME_TAKEN);
       throw error;
     }
@@ -65,11 +66,6 @@ export class UserRepository implements UserRepositoryPort {
 
   async findOneByEmail(email: string): Promise<Option<UserEntity>> {
     const record = await this.repository.findOneBy({ email });
-    return record ? Some(this.mapper.toDomain(record)) : None;
-  }
-
-  async findOneByUsername(username: string): Promise<Option<UserEntity>> {
-    const record = await this.repository.findOneBy({ username });
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 

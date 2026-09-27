@@ -7,8 +7,10 @@ import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { UsersModule } from '../users/user.module';
 import { HostUnpairedStopsSessionsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
 import { RecordSessionEventsResolver } from './application/record-session-events.resolver';
+import { SessionAccountErasure } from './application/session-account-erasure.resolver';
 import { SessionHostUsage } from './application/session-host-usage.resolver';
 import { SessionLaunchSpecFactory } from './application/session-launch.factory';
 import { SessionLookupResolver } from './application/session-lookup.resolver';
@@ -155,6 +157,7 @@ const adapters: Provider[] = [
     ...ProjectsModule.contributeUsage([SessionProjectUsage]),
     // The same shape for hosts: what runs on a machine, for its row in Settings.
     ...HostsModule.contributeUsage([SessionHostUsage]),
+    ...UsersModule.contributeAccountErasure([SessionAccountErasure]),
     // Removing a host stops what runs on it.
     HostUnpairedStopsSessionsDomainEventHandler,
     { provide: WORK_SESSION_REPOSITORY, useClass: WorkSessionRepository },

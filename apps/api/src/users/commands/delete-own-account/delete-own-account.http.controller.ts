@@ -6,47 +6,47 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
-import { DeleteAccountCommand } from './delete-account.command';
-import { DeleteAccountRequest } from './delete-account.request.dto';
+import { DeleteUserCommand } from '../delete-user/delete-user.command';
+import { DeleteOwnAccountRequest } from './delete-own-account.request.dto';
 
+/**
+ * Settings → Profile's Delete account. The same deletion as the admin's
+ * `DELETE /users/{id}` — one handler — asked by the account itself, which
+ * confirms with its email typed out.
+ */
 @ApiTags('Profile')
 @ApiBearerAuth()
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
 @Controller('profile')
-export class DeleteAccountHttpController {
+export class DeleteOwnAccountHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Delete()
   @NoPolicy('deletes the caller’s own account')
   @Version('1')
-  // No `@RequireScopes` on purpose — see the note on `POST /profile/password`.
-  // Nothing acting on a person's behalf may end their account.
+  // No `@RequireScopes` on purpose, like `POST /profile/password`: nothing
+  // acting on a person's behalf may end their account.
   @HttpCode(204)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Delete the current user’s account',
     description:
-      'Session-authenticated only. Stops the sessions and unpairs the hosts, then removes the workspaces nobody else is in, the account and every sign-in. Cannot be undone.',
+      'Session-authenticated only. Unpairs the hosts, removes the personal workspace and its work, then the account and every sign-in. Cannot be undone.',
   })
   @ApiResponse({ status: 204, description: 'Account deleted' })
   @ApiProblemResponse({
     status: 400,
     description: 'The confirmation is not the account’s email',
-    code: 'PROFILE_010',
-  })
-  @ApiProblemResponse({
-    status: 409,
-    description: 'The account has work in a workspace shared with others',
-    code: 'PROFILE_011',
+    code: 'USER_003',
   })
   @ApiProblemResponse({ status: 429, description: 'Rate limit reached', code: 'RATE_001' })
-  async deleteAccount(
+  async deleteOwnAccount(
     @CurrentUser('id') userId: string,
-    @Body() body: DeleteAccountRequest,
+    @Body() body: DeleteOwnAccountRequest,
   ): Promise<void> {
-    await this.commandBus.execute(
-      new DeleteAccountCommand({ userId, confirmation: body.confirmation }),
+    await this.commandBus.execute<DeleteUserCommand, void>(
+      new DeleteUserCommand({ userId, confirmation: body.confirmation }),
     );
   }
 }

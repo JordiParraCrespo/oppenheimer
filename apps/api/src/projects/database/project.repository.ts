@@ -179,6 +179,10 @@ export class ProjectRepository
    * covers both the one-per-workspace index and a slug race, and either way the
    * workspace ends with exactly one Unassigned project.
    */
+  async eraseWorkspace(organizationId: string): Promise<void> {
+    await this.repository.delete({ organizationId });
+  }
+
   async provisionUnassigned(organizationId: string): Promise<void> {
     const table = this.repository.metadata.tableName;
     await this.repository.query(

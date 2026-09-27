@@ -25,7 +25,17 @@ export function ChangeEmailForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+    <form
+      onSubmit={(event) => {
+        // This dialog opens from a row of the profile card, which is itself a
+        // form. The dialog is portalled out of it in the DOM but not in React,
+        // and React delivers a submit through the portal to the card too.
+        event.stopPropagation();
+        return handleSubmit(onSubmit)(event);
+      }}
+      noValidate
+      className="flex flex-col gap-5"
+    >
       <Field data-invalid={Boolean(errors.newEmail)}>
         <FieldLabel htmlFor="new-email">{t('settings.changeEmail.newEmail')}</FieldLabel>
         <Input

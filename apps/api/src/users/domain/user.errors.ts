@@ -13,12 +13,21 @@ export const UserErrors = {
   },
   /**
    * Usernames are unique across accounts and somebody else holds this one.
-   * Raised by the profile's own update and by the repository when two
-   * requests race for the same handle, so the loser gets this and not a 500.
+   * The unique constraint decides; the repository reports its violation as
+   * this rather than a 500.
    */
   USERNAME_TAKEN: {
     code: 'USER_002',
     message: 'That username is already taken',
     httpStatus: 409,
+  },
+  /**
+   * Deleting your own account is confirmed by typing its email address;
+   * what was typed was something else.
+   */
+  DELETE_CONFIRMATION_MISMATCH: {
+    code: 'USER_003',
+    message: 'The confirmation does not match your email address',
+    httpStatus: 400,
   },
 } as const satisfies Record<string, ErrorDefinition>;

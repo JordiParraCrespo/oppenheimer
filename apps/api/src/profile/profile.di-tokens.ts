@@ -16,9 +16,3 @@ export const PROFILE_AUTH = Symbol('PROFILE_AUTH');
 
 /** Which language to write to someone who is not making a request. */
 export const LOCALE_RESOLVER = Symbol('LOCALE_RESOLVER');
-
-/** The cross-module rows deleting an account removes (`AccountErasurePort`). */
-export const ACCOUNT_ERASURE = Symbol('ACCOUNT_ERASURE');
-
-/** Stopping sessions and unpairing hosts before an account goes (`WorkspaceShutdownPort`). */
-export const WORKSPACE_SHUTDOWN = Symbol('WORKSPACE_SHUTDOWN');

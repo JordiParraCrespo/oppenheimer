@@ -1,7 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { expectProblemDocument, newContext, newUser, signUp } from '../../support/auth';
+import { WEB_URL } from '../../playwright.config';
+import {
+  expectProblemDocument,
+  newContext,
+  newUser,
+  signedUpContext,
+  signUp,
+} from '../../support/auth';
 import { findUserByEmail, query } from '../../support/db';
 import { waitForEmailUrl } from '../../support/mail';
+import {
+  connectInstallation,
+  createProject,
+  createSession,
+  pairHost,
+} from '../../support/sessions';
 import { provisionedUser } from '../../support/web';
 
 /**
@@ -17,7 +30,8 @@ test.describe('username', () => {
     const { api } = await provisionedUser('username');
     const username = handle('adri');
 
-    const set = await api.patch('/api/v1/profile', { data: { username } });
+    // Sent in capitals; the schema is the contract and normalises it.
+    const set = await api.patch('/api/v1/profile', { data: { username: username.toUpperCase() } });
     expect(set.status()).toBe(200);
     expect((await set.json()).username).toBe(username);
     expect((await (await api.get('/api/v1/profile')).json()).username).toBe(username);
@@ -61,7 +75,9 @@ test.describe('changing the email address', () => {
     const { api, user } = await provisionedUser('moving');
     const newEmail = newUser('moved').email;
 
-    const response = await api.post('/api/v1/profile/email', { data: { newEmail } });
+    const response = await api.post('/api/v1/profile/email', {
+      data: { newEmail, callbackURL: `${WEB_URL}/settings/profile?emailChanged=1` },
+    });
     expect(response.status()).toBe(202);
     // Nothing moves on the request alone.
     expect((await findUserByEmail(user.email))?.email).toBe(user.email.toLowerCase());
@@ -100,22 +116,42 @@ test.describe('deleting the account', () => {
       failOnStatusCode: false,
     });
 
-    await expectProblemDocument(response, { status: 400, code: 'PROFILE_010' });
+    await expectProblemDocument(response, { status: 400, code: 'USER_003' });
     expect(await findUserByEmail(user.email)).toBeDefined();
     await api.dispose();
   });
 
-  test('removes the account, its workspace and its sign-ins', async () => {
-    const { api, user, userId, organizationId } = await provisionedUser('deleteme');
+  test('removes the account, its hosts, its workspace and the work in it', async () => {
+    // Pairing redeems a token at an IP-throttled route; see `pairHost`.
+    test.slow();
+    const { api, user, userId } = await signedUpContext('deleteme');
+    const hostId = await pairHost(api, 'Doomed box');
+    const installationId = await connectInstallation(api);
+    const projectId = await createProject(api, installationId);
+    const sessionId = await createSession(api, hostId, installationId);
+    const [workspace] = await query<{ organizationId: string }>(
+      'SELECT "organizationId" FROM "member" WHERE "userId" = $1',
+      [userId],
+    );
 
     const response = await api.delete('/api/v1/profile', { data: { confirmation: user.email } });
-    expect(response.status()).toBe(204);
+    expect(response.status(), await response.text()).toBe(204);
 
     expect(await findUserByEmail(user.email)).toBeUndefined();
-    expect(await query('SELECT 1 FROM "organization" WHERE "id" = $1', [organizationId])).toEqual(
-      [],
-    );
-    expect(await query('SELECT 1 FROM "session" WHERE "userId" = $1', [userId])).toEqual([]);
+    for (const [table, column, id] of [
+      ['organization', 'id', workspace.organizationId],
+      ['project', 'id', projectId],
+      ['work_session', 'id', sessionId],
+      ['work_session_event', 'sessionId', sessionId],
+      ['host', 'id', hostId],
+      ['github_installation', 'id', installationId],
+      ['session', 'userId', userId],
+      ['account', 'userId', userId],
+    ]) {
+      expect(await query(`SELECT 1 FROM "${table}" WHERE "${column}" = $1`, [id]), table).toEqual(
+        [],
+      );
+    }
     // The cookie the browser still holds names a session that is gone.
     expect((await api.get('/api/v1/profile', { failOnStatusCode: false })).status()).toBe(401);
 

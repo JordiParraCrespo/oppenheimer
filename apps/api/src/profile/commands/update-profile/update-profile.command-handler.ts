@@ -3,7 +3,6 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
 import type { UserRepositoryPort } from '../../../users/database/user.repository.port';
-import { UserErrors } from '../../../users/domain/user.errors';
 import { USER_REPOSITORY } from '../../../users/user.di-tokens';
 import { ProfileErrors } from '../../domain/profile.errors';
 import { UpdateProfileCommand } from './update-profile.command';
@@ -15,9 +14,8 @@ import { UpdateProfileCommand } from './update-profile.command';
  * which someone promotes themselves — the fields simply are not reachable from
  * here, rather than being filtered out somewhere downstream.
  *
- * A username is unique across accounts. The lookup below is what turns a
- * taken one into `USER_002`; the unique constraint is what holds when two
- * requests race past it, and the repository reports that as the same error.
+ * A username is unique across accounts. The unique constraint is the rule,
+ * and the repository reports a violation as `USER_002`.
  */
 @CommandHandler(UpdateProfileCommand)
 export class UpdateProfileCommandHandler
@@ -33,11 +31,6 @@ export class UpdateProfileCommandHandler
     if (found.isNone()) throw new AppError(ProfileErrors.NOT_FOUND);
 
     const user = found.unwrap();
-    if (command.username && command.username !== user.username) {
-      const holder = await this.userRepository.findOneByUsername(command.username);
-      if (holder.isSome()) throw new AppError(UserErrors.USERNAME_TAKEN);
-    }
-
     user.updateProfile({
       firstName: command.firstName,
       lastName: command.lastName,

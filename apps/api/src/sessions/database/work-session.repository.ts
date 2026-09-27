@@ -343,6 +343,23 @@ export class WorkSessionRepository
     return new Map(rows.map((row) => [row.hostId, Number(row.count)]));
   }
 
+  async eraseWorkspace(organizationId: string): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      // Children first: the log and the checkouts refuse to lose their session.
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from(WorkSessionEventOrmEntity)
+        .where(
+          `"sessionId" IN (SELECT "id" FROM "work_session" WHERE "organizationId" = :organizationId)`,
+          { organizationId },
+        )
+        .execute();
+      await manager.delete(SessionCheckoutOrmEntity, { organizationId });
+      await manager.delete(WorkSessionOrmEntity, { organizationId });
+    });
+  }
+
   async findEvents(
     session: WorkSessionEntity,
     afterSeq: number | undefined,

@@ -38,7 +38,7 @@ const superadminAc = defaultAc.newRole({
 /** OIDC's standard scopes plus this deployment's own permission catalog. */
 const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', ...SCOPES];
 
-export const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
 // Read through `orUndefined` so a blank `DB_X=` means "unset" here exactly as
 // it does in `database.config.ts`. Better Auth owns its own pool rather than

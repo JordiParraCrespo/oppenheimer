@@ -1,6 +1,6 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
 import type { Role } from '@oppenheimer/shared';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 /**
  * Persistence model for the Better Auth `user` table. This is infrastructure —
@@ -12,6 +12,9 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } fro
  * `isActive` are Better Auth "additional fields" declared in `auth.ts`.
  */
 @Entity('user')
+// Named once, here and in the migration: the repository maps a violation of
+// exactly this constraint to USER_002.
+@Unique('UQ_user_username', ['username'])
 export class UserOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   id!: string;
@@ -41,10 +44,11 @@ export class UserOrmEntity {
   jobTitle!: string | null;
 
   /**
-   * The handle the account chose, unique across accounts. The application's
-   * alone: Better Auth does not know the column, so sign-up leaves it `null`.
+   * The handle the account chose, unique across accounts (`UQ_user_username`
+   * above). The application's alone: Better Auth does not know the column, so
+   * sign-up leaves it `null`.
    */
-  @Column({ type: 'varchar', length: 39, nullable: true, unique: true })
+  @Column({ type: 'varchar', length: 39, nullable: true })
   username!: string | null;
 
   @Column({ type: 'varchar', default: 'user' })

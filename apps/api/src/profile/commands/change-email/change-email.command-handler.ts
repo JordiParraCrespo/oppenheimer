@@ -38,6 +38,6 @@ export class ChangeEmailCommandHandler implements ICommandHandler<ChangeEmailCom
       throw new AppError(ProfileErrors.EMAIL_UNCHANGED);
     }
 
-    await this.profileAuth.requestEmailChange(command.headers, newEmail);
+    await this.profileAuth.requestEmailChange(command.headers, newEmail, command.callbackURL);
   }
 }

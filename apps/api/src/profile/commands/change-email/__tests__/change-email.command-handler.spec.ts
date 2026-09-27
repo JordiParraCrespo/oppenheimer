@@ -43,7 +43,7 @@ describe('ChangeEmailCommandHandler', () => {
       new ChangeEmailCommand({ headers, userId: 'user-uuid', newEmail: ' Adri@New.example ' }),
     );
 
-    expect(auth.requestEmailChange).toHaveBeenCalledWith(headers, 'adri@new.example');
+    expect(auth.requestEmailChange).toHaveBeenCalledWith(headers, 'adri@new.example', undefined);
   });
 
   it('refuses the address the account already uses', async () => {

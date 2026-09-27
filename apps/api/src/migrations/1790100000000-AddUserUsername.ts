@@ -1,20 +1,23 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
+ * The username rule as the database checks it. The same text as
+ * `USERNAME_PATTERN.source` in `@oppenheimer/shared` — quoted rather than
+ * imported, so this migration means tomorrow what it meant when it ran;
+ * `users/__tests__/username.value-object.spec.ts` fails if the two differ.
+ */
+export const USERNAME_CHECK = '^[a-z0-9](-?[a-z0-9])*$';
+
+/**
  * `user.username`: the handle Settings → Profile edits, which session logs
  * and commit trailers carry.
  *
  * Nullable: every account that exists has none, and one is never invented
- * for it — a handle somebody did not choose would be the first thing they
- * had to undo. Unique across accounts, since two people answering to one
- * handle in a commit trailer is the confusion it exists to prevent; the
- * constraint is the rule, the handler's lookup only makes the error kind.
- * The check mirrors `USERNAME_PATTERN` in `@oppenheimer/shared`, so a row
- * written around the API still cannot hold an uppercase or malformed handle
- * that would never compare equal to what the form sends.
+ * for it. Unique across accounts under `UQ_user_username`, the name the
+ * entity declares and the repository maps to USER_002.
  */
-export class AddUserUsername1789900000000 implements MigrationInterface {
-  name = 'AddUserUsername1789900000000';
+export class AddUserUsername1790100000000 implements MigrationInterface {
+  name = 'AddUserUsername1790100000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "user" ADD "username" character varying(39)`);
@@ -23,7 +26,7 @@ export class AddUserUsername1789900000000 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE "user" ADD CONSTRAINT "CHK_user_username"
-         CHECK ("username" IS NULL OR "username" ~ '^[a-z0-9](-?[a-z0-9])*$')`,
+         CHECK ("username" IS NULL OR "username" ~ '${USERNAME_CHECK}')`,
     );
   }
 

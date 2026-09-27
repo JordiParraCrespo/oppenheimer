@@ -122,6 +122,7 @@ export type ChangePasswordRequest = {
 
 export type ChangeEmailRequest = {
     newEmail: string;
+    callbackURL?: string;
 };
 
 export type UpdateProfileRequest = {
@@ -130,10 +131,6 @@ export type UpdateProfileRequest = {
     phone?: string | null;
     jobTitle?: string | null;
     username?: string | null;
-};
-
-export type DeleteAccountRequest = {
-    confirmation: string;
 };
 
 export type UserResponseDto = {
@@ -181,6 +178,10 @@ export type MyPermissionsResponseDto = {
 export type UpdateUserRequest = {
     firstName?: string;
     lastName?: string;
+};
+
+export type DeleteOwnAccountRequest = {
+    confirmation: string;
 };
 
 export type ResourceActionDto = {
@@ -1846,16 +1847,16 @@ export type ChangeEmailResponses = {
     202: unknown;
 };
 
-export type DeleteAccountData = {
-    body: DeleteAccountRequest;
+export type DeleteOwnAccountData = {
+    body: DeleteOwnAccountRequest;
     path?: never;
     query?: never;
     url: '/api/v1/profile';
 };
 
-export type DeleteAccountErrors = {
+export type DeleteOwnAccountErrors = {
     /**
-     * PROFILE_010 — The confirmation is not the account’s email
+     * USER_003 — The confirmation is not the account’s email
      */
     400: ProblemDetailsDto;
     /**
@@ -1867,25 +1868,21 @@ export type DeleteAccountErrors = {
      */
     403: ProblemDetailsDto;
     /**
-     * PROFILE_011 — The account has work in a workspace shared with others
-     */
-    409: ProblemDetailsDto;
-    /**
      * RATE_001 — Rate limit reached
      */
     429: ProblemDetailsDto;
 };
 
-export type DeleteAccountError = DeleteAccountErrors[keyof DeleteAccountErrors];
+export type DeleteOwnAccountError = DeleteOwnAccountErrors[keyof DeleteOwnAccountErrors];
 
-export type DeleteAccountResponses = {
+export type DeleteOwnAccountResponses = {
     /**
      * Account deleted
      */
     204: void;
 };
 
-export type DeleteAccountResponse = DeleteAccountResponses[keyof DeleteAccountResponses];
+export type DeleteOwnAccountResponse = DeleteOwnAccountResponses[keyof DeleteOwnAccountResponses];
 
 export type GetProfileData = {
     body?: never;

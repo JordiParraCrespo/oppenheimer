@@ -68,9 +68,9 @@
   Use this host, all back to the list. It is the same screen the console
   mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
   opened the console's page with `?from=settings`; the frame keeps
-  Settings around it.) The rows a host card draws — rename, remove, the install command and
-  the preflight — are their own slices; the frame, the routes
-  and the way back are built (2026-09-26).
+  Settings around it.) The rows a host card draws — rename, remove, the
+  install command and the preflight — are their own slices; the frame,
+  the routes and the way back are built (2026-09-26).
 
   **Profile** holds, in order: the card — picture (Upload, Remove once
   there is one), email with Change, full name, `@`username, and the save

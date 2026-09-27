@@ -9,8 +9,6 @@ import { ChangeEmailCommandHandler } from './commands/change-email/change-email.
 import { ChangeEmailHttpController } from './commands/change-email/change-email.http.controller';
 import { ChangePasswordCommandHandler } from './commands/change-password/change-password.command-handler';
 import { ChangePasswordHttpController } from './commands/change-password/change-password.http.controller';
-import { DeleteAccountCommandHandler } from './commands/delete-account/delete-account.command-handler';
-import { DeleteAccountHttpController } from './commands/delete-account/delete-account.http.controller';
 import { DeleteAvatarCommandHandler } from './commands/delete-avatar/delete-avatar.command-handler';
 import { DeleteAvatarHttpController } from './commands/delete-avatar/delete-avatar.http.controller';
 import { RevokeOtherSessionsCommandHandler } from './commands/revoke-other-sessions/revoke-other-sessions.command-handler';
@@ -23,21 +21,17 @@ import { UpdateUserSettingsCommandHandler } from './commands/update-user-setting
 import { UpdateUserSettingsHttpController } from './commands/update-user-settings/update-user-settings.http.controller';
 import { UploadAvatarCommandHandler } from './commands/upload-avatar/upload-avatar.command-handler';
 import { UploadAvatarHttpController } from './commands/upload-avatar/upload-avatar.http.controller';
-import { AccountErasureRepository } from './database/account-erasure.repository';
 import { SessionRepository } from './database/session.repository';
 import { UserSettingsOrmEntity } from './database/user-settings.orm-entity';
 import { UserSettingsRepository } from './database/user-settings.repository';
 import { AvatarStorageAdapter } from './infrastructure/avatar-storage.adapter';
 import { ProfileAuthGateway } from './infrastructure/profile-auth.gateway';
-import { WorkspaceShutdownGateway } from './infrastructure/workspace-shutdown.gateway';
 import {
-  ACCOUNT_ERASURE,
   AVATAR_STORAGE,
   LOCALE_RESOLVER,
   PROFILE_AUTH,
   SESSION_READER,
   USER_SETTINGS_REPOSITORY,
-  WORKSPACE_SHUTDOWN,
 } from './profile.di-tokens';
 import { ProfileMapper } from './profile.mapper';
 import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
@@ -62,7 +56,6 @@ const httpControllers = [
   ChangeEmailHttpController,
   GetProfileHttpController,
   UpdateProfileHttpController,
-  DeleteAccountHttpController,
 ];
 
 const commandHandlers: Provider[] = [
@@ -74,7 +67,6 @@ const commandHandlers: Provider[] = [
   RevokeSessionCommandHandler,
   RevokeOtherSessionsCommandHandler,
   ChangeEmailCommandHandler,
-  DeleteAccountCommandHandler,
 ];
 
 const queryHandlers: Provider[] = [
@@ -86,7 +78,6 @@ const queryHandlers: Provider[] = [
 const repositories: Provider[] = [
   { provide: USER_SETTINGS_REPOSITORY, useClass: UserSettingsRepository },
   { provide: SESSION_READER, useClass: SessionRepository },
-  { provide: ACCOUNT_ERASURE, useClass: AccountErasureRepository },
 ];
 
 // Every outbound dependency is bound to the token its port is named by, so a
@@ -95,12 +86,11 @@ const adapters: Provider[] = [
   { provide: AVATAR_STORAGE, useClass: AvatarStorageAdapter },
   { provide: PROFILE_AUTH, useClass: ProfileAuthGateway },
   { provide: LOCALE_RESOLVER, useClass: LocaleResolver },
-  { provide: WORKSPACE_SHUTDOWN, useClass: WorkspaceShutdownGateway },
 ];
 
 /**
- * The caller's own account: profile fields, preferences, email, password,
- * sessions, and deleting it.
+ * The caller's own account: profile fields, preferences, email, password and
+ * sessions.
  *
  * Imports `UsersModule` for its `USER_REPOSITORY` — the `user` row is that
  * module's aggregate, and this module reads and updates the profile columns on

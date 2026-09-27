@@ -19,12 +19,12 @@ test('the profile card saves the name and the username', async ({ page }) => {
 
   await page.getByLabel('First name').fill('Ada');
   const username = `ada-${Date.now().toString(36)}`;
-  // Typed in capitals, kept in lowercase.
+  // Typed in capitals; the schema normalises it, and the card shows what was saved.
   await page.getByLabel('Username').fill(username.toUpperCase());
-  await expect(page.getByLabel('Username')).toHaveValue(username);
 
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+  await expect(page.getByLabel('Username')).toHaveValue(username);
 
   await page.reload();
   await expect(page.getByLabel('First name')).toHaveValue('Ada');

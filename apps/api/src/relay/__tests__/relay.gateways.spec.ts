@@ -127,6 +127,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
   const workspaces: WorkspaceLookupPort = {
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
+    ownedBy: vi.fn().mockResolvedValue([]),
   };
   const config = {
     get: (key: string) =>

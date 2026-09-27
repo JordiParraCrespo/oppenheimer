@@ -46,10 +46,9 @@ export function ProfileDetailsSection() {
   }
 
   return (
-    <SettingsGroup>
+    <ProfileNameSection profile={profile.data}>
       <ProfilePictureSection profile={profile.data} />
       <ProfileEmailSection profile={profile.data} />
-      <ProfileNameSection profile={profile.data} />
-    </SettingsGroup>
+    </ProfileNameSection>
   );
 }

@@ -3,9 +3,9 @@ import { ProfileSettingsScreen } from '@/features/profile/screens/profile-settin
 
 /**
  * Settings → Profile: the account's own facts, how it signs in, and deleting
- * it. `?emailChanged=1` is where the link that moves the account to a new
- * address lands (the API names this URL when it sends the link), and the
- * screen says so. Unknown keys are carried through, as `__root.tsx` asks.
+ * it. `?emailChanged=1` is how the change-email dialog asks the emailed link
+ * to return here, and the screen says so. Unknown keys are carried through,
+ * as `__root.tsx` asks.
  */
 export const Route = createFileRoute('/_authenticated/settings/profile')({
   component: ProfileSettingsScreen,
