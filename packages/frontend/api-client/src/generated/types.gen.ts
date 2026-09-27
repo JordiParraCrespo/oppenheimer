@@ -6550,7 +6550,12 @@ export type MoveSessionResponse = MoveSessionResponses[keyof MoveSessionResponse
 export type ListAutomationsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * One project’s automations
+         */
+        projectId?: string;
+    };
     url: '/api/v1/automations';
 };
 
@@ -6874,7 +6879,32 @@ export type RunAutomationResponse = RunAutomationResponses[keyof RunAutomationRe
 export type ListAutomationRunsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Default 10
+         */
+        limit?: number;
+        /**
+         * From 1
+         */
+        page?: number;
+        /**
+         * Default `30d`
+         */
+        window?: '24h' | '7d' | '30d';
+        /**
+         * Comma-separated, any of queued, running, completed, failed, cancelled, skipped, expired. Default: every status but skipped and expired
+         */
+        status?: string;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
     url: '/api/v1/automation-runs';
 };
 
@@ -6900,7 +6930,24 @@ export type ListAutomationRunsResponse = ListAutomationRunsResponses[keyof ListA
 export type GetAutomationRunHistoryData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * The viewer’s IANA zone, whose midnights split the days. Default `UTC`
+         */
+        timezone?: string;
+        /**
+         * Default 30
+         */
+        days?: number;
+        /**
+         * One project’s runs
+         */
+        projectId?: string;
+        /**
+         * One automation’s runs
+         */
+        automationId?: string;
+    };
     url: '/api/v1/automation-runs/history';
 };
 

@@ -154,9 +154,17 @@ const PR_TRIGGER = {
 };
 
 test.describe('Automations', () => {
+  // One workspace, host and installation for the file: pairing a host spends
+  // the per-IP registration limit every spec shares, so the file pays it once.
+  // The tests stay independent — each reads only its own automation's runs.
+  test.describe.configure({ mode: 'default' });
+  let shared: Awaited<ReturnType<typeof setUp>>;
+  test.beforeAll(async () => {
+    test.setTimeout(180_000);
+    shared = await setUp('automations');
+  });
   test('a GitHub event fires an automation, once, as a session of its owner', async () => {
-    test.slow();
-    const setup = await setUp('automationgh');
+    const setup = shared;
     const { api } = setup;
 
     const created = await api.post('/api/v1/automations', {
@@ -242,8 +250,7 @@ test.describe('Automations', () => {
   });
 
   test('Run now works while paused, and editing makes a revision', async () => {
-    test.slow();
-    const setup = await setUp('automationrun');
+    const setup = shared;
     const { api } = setup;
     const created = await api.post('/api/v1/automations', {
       data: automationBody(
@@ -305,8 +312,7 @@ test.describe('Automations', () => {
   });
 
   test('duplicate and delete: the copy is the caller’s, past runs outlive the original', async () => {
-    test.slow();
-    const setup = await setUp('automationdel');
+    const setup = shared;
     const { api } = setup;
     const automation = await (
       await api.post('/api/v1/automations', { data: automationBody(setup, [PR_TRIGGER]) })
@@ -332,8 +338,7 @@ test.describe('Automations', () => {
   });
 
   test('another workspace cannot see or run an automation', async () => {
-    test.slow();
-    const setup = await setUp('automationowner');
+    const setup = shared;
     const automation = await (
       await setup.api.post('/api/v1/automations', { data: automationBody(setup, [PR_TRIGGER]) })
     ).json();
@@ -353,8 +358,7 @@ test.describe('Automations', () => {
   });
 
   test('refuses what cannot run: the blank terminal, and a once in the past', async () => {
-    test.slow();
-    const setup = await setUp('automationrefuse');
+    const setup = shared;
     const blank = await setup.api.post('/api/v1/automations', {
       data: { ...automationBody(setup, [PR_TRIGGER]), agent: 'shell' },
       failOnStatusCode: false,
@@ -379,7 +383,9 @@ test.describe('Automations', () => {
   });
 
   test('the scheduler fires a due slot within the minute', async () => {
-    test.setTimeout(180_000);
+    test.setTimeout(240_000);
+    // Its own host: the runs before it are live on the shared one (no runner
+    // starts their sessions), and a host takes two headless runs at a time.
     const setup = await setUp('automationtick');
     const now = new Date(Date.now() + 60_000);
     const automation = await (

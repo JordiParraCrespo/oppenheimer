@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -36,6 +36,12 @@ export class FindAutomationsHttpController {
     summary: 'List the workspace’s automations',
     description:
       'Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.',
+  })
+  @ApiQuery({
+    name: 'projectId',
+    required: false,
+    type: String,
+    description: 'One project’s automations',
   })
   @ApiResponse({ status: 200, type: [AutomationResponseDto] })
   async list(

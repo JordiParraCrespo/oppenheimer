@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
@@ -32,6 +32,20 @@ export class FindRunHistoryHttpController {
     summary: 'Run history by day',
     description:
       'One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.',
+  })
+  @ApiQuery({
+    name: 'automationId',
+    required: false,
+    type: String,
+    description: 'One automation’s runs',
+  })
+  @ApiQuery({ name: 'projectId', required: false, type: String, description: 'One project’s runs' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Default 30' })
+  @ApiQuery({
+    name: 'timezone',
+    required: false,
+    type: String,
+    description: 'The viewer’s IANA zone, whose midnights split the days. Default `UTC`',
   })
   @ApiResponse({ status: 200, type: RunHistoryResponseDto })
   async history(

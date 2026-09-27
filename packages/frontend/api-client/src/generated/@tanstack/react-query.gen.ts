@@ -2700,6 +2700,38 @@ export const listAutomationRunsOptions = (options?: Options<ListAutomationRunsDa
     queryKey: listAutomationRunsQueryKey(options)
 });
 
+export const listAutomationRunsInfiniteQueryKey = (options?: Options<ListAutomationRunsData>): QueryKey<Options<ListAutomationRunsData>> => createQueryKey('listAutomationRuns', options, true);
+
+/**
+ * List automation runs
+ *
+ * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
+ */
+export const listAutomationRunsInfiniteOptions = (options?: Options<ListAutomationRunsData>) => {
+    const opts = infiniteQueryOptions<ListAutomationRunsResponse, ListAutomationRunsError, InfiniteData<ListAutomationRunsResponse>, QueryKey<Options<ListAutomationRunsData>>, number | Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listAutomationRuns({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listAutomationRunsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 export const getAutomationRunHistoryQueryKey = (options?: Options<GetAutomationRunHistoryData>) => createQueryKey('getAutomationRunHistory', options);
 
 /**

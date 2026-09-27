@@ -1,7 +1,8 @@
 import { Controller, Get, Query, UseGuards, UseInterceptors, Version } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { AUTOMATION_RUN_STATUSES, RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
@@ -37,6 +38,22 @@ export class FindAutomationRunsHttpController {
     description:
       'The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.',
   })
+  @ApiQuery({
+    name: 'automationId',
+    required: false,
+    type: String,
+    description: 'One automation’s runs',
+  })
+  @ApiQuery({ name: 'projectId', required: false, type: String, description: 'One project’s runs' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: `Comma-separated, any of ${AUTOMATION_RUN_STATUSES.join(', ')}. Default: every status but skipped and expired`,
+  })
+  @ApiQuery({ name: 'window', required: false, enum: RUN_WINDOWS, description: 'Default `30d`' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'From 1' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Default 10' })
   @ApiResponse({ status: 200, type: AutomationRunPageResponseDto })
   async list(
     @CurrentAccessScope() scope: AccessScope,
