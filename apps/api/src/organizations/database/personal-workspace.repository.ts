@@ -45,6 +45,11 @@ export class PersonalWorkspaceRepository implements PersonalWorkspaceRepositoryP
     private readonly userRoles: UserRoleRepositoryPort,
   ) {}
 
+  async erase(organizationIds: readonly string[]): Promise<void> {
+    if (organizationIds.length === 0) return;
+    await this.dataSource.getRepository(OrganizationOrmEntity).delete([...organizationIds]);
+  }
+
   async provision(workspace: PersonalWorkspaceEntity): Promise<boolean> {
     const records = toPersonalWorkspaceRecords(workspace);
 

@@ -31,8 +31,9 @@
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
   console's lists — Sessions and Automations, both links, the one under
-  the address current, and the automations list is the second sidebar
-  (13) — the head reads Projects with the
+  the address current, each named with its list's count beside the rail
+  the moment it is hovered or focused, and the automations list is the
+  second sidebar (13) — the head reads Projects with the
   count, a New project button and the filter menu, a live search box
   narrows the rows, and each project is a folding header with its count
   and two hover actions — New session here (`/sessions/new?project=`,
@@ -45,7 +46,9 @@
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a
   confirm over the close that says whether to discard work that is not
-  pushed. The workspace's **Unassigned** project is the first group: a
+  pushed. The row stays until the host confirms the close, and the
+  sidebar never lists a resolved session (the API keeps it as a
+  tombstone). The workspace's **Unassigned** project is the first group: a
   session that names no project is listed there. Its settings edit its
   repositories and defaults like any project's, but its name is fixed
   and it has no Delete (`PROJECTS_008`).
@@ -68,10 +71,20 @@
   Use this host, all back to the list. It is the same screen the console
   mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
   opened the console's page with `?from=settings`; the frame keeps
-  Settings around it.) The rows each section draws — picture, name, email,
-  password on Profile; rename, remove, the install command and the
-  preflight on a host card — are their own slices; the frame, the routes
-  and the way back are built (2026-09-26).
+  Settings around it.) The rows a host card draws — rename, remove, the
+  install command and the preflight — are their own slices; the frame,
+  the routes and the way back are built (2026-09-26).
+
+  **Profile** holds, in order: the card — picture (Upload, Remove once
+  there is one), email with Change, full name, `@`username, and the save
+  row (Discard, Save changes, then Saved) that appears only when
+  something changed; **Sign-in**, the password changed in a dialog;
+  **Devices**, each signed-in browser with when it was last active, this
+  one marked, Sign out on the others and Sign out of all other devices;
+  and **Account**, Delete account behind a dialog that asks for the
+  email typed out. Full name is **two fields side by side**, not the
+  export's one, because the account stores first and last name apart
+  and splitting one string on its first space gets names wrong.
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the
@@ -167,6 +180,14 @@
   alias that moves under it. The foot row's two menus are denser than
   the sidebar's, and the design system owns that density. Runtime
   and lifetime chips arrive with the VM slice.
+- **When the composer can send.** A host is picked and still one this
+  workspace has, and exactly one repository is picked. Until both hold,
+  the text area and the send button are disabled; the chips stay live,
+  since they are how the gap is closed. The host may be offline (the
+  session is owed to it, above); a session with no repository may not,
+  because the runner makes a session as one worktree of one repository
+  and refuses one with none (`SESS_002`), and the API refuses it first
+  (10, changed 2026-09-27).
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
   stored; "Ask for approval" / "Approve for me" / "Full access" on the

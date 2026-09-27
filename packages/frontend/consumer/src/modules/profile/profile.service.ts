@@ -7,7 +7,9 @@ import { AppError } from '@oppenheimer/frontend-core';
 import {
   AVATAR_MAX_BYTES,
   AVATAR_MIME_TYPES,
+  type ChangeEmailDto,
   type ChangeOwnPasswordDto,
+  type DeleteAccountDto,
   type UpdateProfileDto,
 } from '@oppenheimer/shared/schemas/profile';
 import { inject, injectable } from 'inversify';
@@ -54,6 +56,14 @@ export class ProfileService {
 
   async changePassword(dto: ChangeOwnPasswordDto): Promise<void> {
     return this.profileRepository.changePassword(dto);
+  }
+
+  async changeEmail(dto: ChangeEmailDto): Promise<void> {
+    return this.profileRepository.changeEmail(dto);
+  }
+
+  async deleteAccount(dto: DeleteAccountDto): Promise<void> {
+    return this.profileRepository.deleteAccount(dto);
   }
 
   async getSessions(): Promise<UserSessionEntity[]> {

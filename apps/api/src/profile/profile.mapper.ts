@@ -83,6 +83,7 @@ export class ProfileMapper
     dto.lastName = user.lastName;
     dto.phone = user.phone;
     dto.jobTitle = user.jobTitle;
+    dto.username = user.username;
     dto.avatarUrl = avatarUrl;
     dto.role = user.role;
     dto.emailVerified = user.emailVerified;

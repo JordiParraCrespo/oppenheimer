@@ -43,4 +43,12 @@ export const ProfileErrors = {
     code: 'PROFILE_CLIENT_009',
     message: 'Failed to sign out that session',
   },
+  CHANGE_EMAIL_FAILED: {
+    code: 'PROFILE_CLIENT_012',
+    message: 'Failed to send the confirmation to that address',
+  },
+  DELETE_ACCOUNT_FAILED: {
+    code: 'PROFILE_CLIENT_013',
+    message: 'Failed to delete the account',
+  },
 } as const satisfies Record<string, ErrorDefinition>;

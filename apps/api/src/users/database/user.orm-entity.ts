@@ -13,6 +13,9 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColu
  */
 @Entity('user')
 @Unique('UQ_user_email', ['email'])
+// Named once, here and in the migration: the repository maps a violation of
+// exactly this constraint to USER_002.
+@Unique('UQ_user_username', ['username'])
 export class UserOrmEntity {
   @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_user' })
   id!: string;
@@ -40,6 +43,14 @@ export class UserOrmEntity {
 
   @Column({ type: 'varchar', nullable: true })
   jobTitle!: string | null;
+
+  /**
+   * The handle the account chose, unique across accounts (`UQ_user_username`
+   * above). The application's alone: Better Auth does not know the column, so
+   * sign-up leaves it `null`.
+   */
+  @Column({ type: 'varchar', length: 39, nullable: true })
+  username!: string | null;
 
   @Column({ type: 'varchar', default: 'user' })
   role!: Role;

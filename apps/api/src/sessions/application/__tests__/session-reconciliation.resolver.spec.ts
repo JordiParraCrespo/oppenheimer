@@ -34,6 +34,7 @@ function harness(rows: { session: WorkSessionEntity; prompt?: string }[]) {
   const launches = new SessionLaunchSpecFactory({
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn(),
+    ownedBy: vi.fn().mockResolvedValue([]),
   });
   return {
     sessions,

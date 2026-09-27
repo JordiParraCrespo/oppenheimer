@@ -79,4 +79,10 @@ export interface ProjectRepositoryPort {
    * workspace's own provisioning calls it before anyone has a scope in it.
    */
   provisionUnassigned(organizationId: string): Promise<void>;
+  /**
+   * Delete every project of a workspace, its repositories with it. Only
+   * deleting the account that owns the workspace asks it, after the sessions
+   * that refuse to lose their project are gone.
+   */
+  eraseWorkspace(organizationId: string): Promise<void>;
 }

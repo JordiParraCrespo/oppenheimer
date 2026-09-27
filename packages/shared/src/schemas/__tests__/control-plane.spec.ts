@@ -166,7 +166,11 @@ describe('the two installation ids cannot be confused', () => {
 describe('createSessionSchema', () => {
   it('takes a session that names no project: the API lists it in Unassigned', () => {
     expect(
-      createSessionSchema.safeParse({ hostId: uuid, agent: 'claude-code', checkouts: [] }).success,
+      createSessionSchema.safeParse({
+        hostId: uuid,
+        agent: 'claude-code',
+        checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      }).success,
     ).toBe(true);
   });
 
@@ -196,11 +200,15 @@ describe('createSessionSchema', () => {
     if (!result.success) expect(result.error.issues[0].path).toEqual(['checkouts']);
   });
 
-  it('accepts no checkouts at all — a session with no git is a real session', () => {
-    expect(
-      createSessionSchema.parse({ hostId: uuid, projectId: uuid, agent: 'codex', checkouts: [] })
-        .checkouts,
-    ).toEqual([]);
+  it('refuses no checkouts at all: a runner makes a session from one repository', () => {
+    const result = createSessionSchema.safeParse({
+      hostId: uuid,
+      projectId: uuid,
+      agent: 'codex',
+      checkouts: [],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0].path).toEqual(['checkouts']);
   });
 
   it('takes no branch: the working branch is always the session’s own', () => {
@@ -215,13 +223,21 @@ describe('createSessionSchema', () => {
 
   it('refuses an agent outside the catalog', () => {
     expect(
-      createSessionSchema.safeParse({ hostId: uuid, agent: 'cursor', checkouts: [] }).success,
+      createSessionSchema.safeParse({
+        hostId: uuid,
+        agent: 'cursor',
+        checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      }).success,
     ).toBe(false);
   });
 
   it('refuses a host or installation id that is not a uuid', () => {
     expect(
-      createSessionSchema.safeParse({ hostId: 'host-1', agent: 'codex', checkouts: [] }).success,
+      createSessionSchema.safeParse({
+        hostId: 'host-1',
+        agent: 'codex',
+        checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
+      }).success,
     ).toBe(false);
     expect(
       createSessionSchema.safeParse({
@@ -245,7 +261,7 @@ describe('createSessionSchema', () => {
     }
   });
 
-  it('refuses a missing checkouts array — empty is explicit, absent is a mistake', () => {
+  it('refuses a missing checkouts array', () => {
     expect(createSessionSchema.safeParse({ hostId: uuid, agent: 'codex' }).success).toBe(false);
   });
 
@@ -276,25 +292,13 @@ describe('createSessionSchema', () => {
       }
     });
 
-    it('refuses a cwd when there are no checkouts at all', () => {
-      expect(
-        createSessionSchema.safeParse({
-          hostId: uuid,
-          projectId: uuid,
-          agent: 'codex',
-          checkouts: [],
-          cwdGithubRepoId: 42,
-        }).success,
-      ).toBe(false);
-    });
-
     it('leaves a session with no cwd alone', () => {
       expect(
         createSessionSchema.safeParse({
           hostId: uuid,
           projectId: uuid,
           agent: 'codex',
-          checkouts: [],
+          checkouts: [{ installationId: otherUuid, githubRepoId: 42 }],
         }).success,
       ).toBe(true);
     });

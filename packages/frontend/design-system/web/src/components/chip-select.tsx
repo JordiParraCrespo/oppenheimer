@@ -381,6 +381,12 @@ function ChipSelectEmpty({
  * rows of the density rather than at a round number of pixels, and it is sized
  * from `total` (the pane's whole list) rather than from what a search has left
  * standing, or the box would resize under the cursor with every keystroke.
+ *
+ * The list is the only part of a pane that scrolls. When the popup's height
+ * caps it, the list shrinks inside it and scrolls on its own, so the back row
+ * and search above it and the action band below never move and no row slides
+ * underneath them. Scrolling the whole popup instead left the rows visible in
+ * its padding above the sticky search.
  */
 function ChipSelectList({
   density = 'chip',
@@ -413,7 +419,11 @@ function ChipSelectList({
   return (
     <div
       data-slot="chip-select-list"
-      className={cn(rows !== undefined && 'overflow-y-auto [scrollbar-width:none]', className)}
+      className={cn(
+        'min-h-0 overflow-y-auto',
+        rows === undefined ? '[scrollbar-width:thin]' : '[scrollbar-width:none]',
+        className,
+      )}
       style={capped === undefined ? style : { maxHeight: capped, ...style }}
       {...props}
     >

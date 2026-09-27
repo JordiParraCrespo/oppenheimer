@@ -60,4 +60,10 @@ export const ProfileErrors = {
     message: 'The account service could not complete that request',
     httpStatus: 502,
   },
+  /** The new address is the one the account already uses. */
+  EMAIL_UNCHANGED: {
+    code: 'PROFILE_009',
+    message: 'That is already your email address',
+    httpStatus: 400,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

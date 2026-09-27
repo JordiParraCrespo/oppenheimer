@@ -50,6 +50,8 @@
       "AUTH_001": "Please sign in to continue.",
       "AUTH_002": "You do not have permission to do that.",
       "USER_001": "That user could not be found.",
+      "USER_002": "That username is already taken. Try another.",
+      "USER_003": "Type your email address exactly to confirm.",
       "TOKEN_001": "That API token could not be found.",
       "TOKEN_002": "You cannot grant a token more access than you have yourself.",
       "TOKEN_003": "That API token is invalid or has expired.",
@@ -155,8 +157,11 @@
       "PROFILE_006": "That new password is not strong enough.",
       "PROFILE_007": "You cannot sign out the device you are using right now.",
       "PROFILE_008": "We could not reach the account service. Please try again.",
+      "PROFILE_009": "That is already your email address.",
       "PROFILE_CLIENT_010": "That file type cannot be used as a profile picture.",
       "PROFILE_CLIENT_011": "That image is too large. Pick one under 2 MB.",
+      "PROFILE_CLIENT_012": "We could not send the confirmation to that address.",
+      "PROFILE_CLIENT_013": "We could not delete your account. Nothing was removed.",
       "FLAG_001": "That feature flag does not exist.",
       "FLAG_002": "Those targeting rules are not valid for this flag.",
       "FLAG_003": "This feature is not available right now.",
@@ -418,7 +423,8 @@
       "resolved": "Done"
     },
     "closed": {
-      "description": "This session has stopped. Its work is on its branch."
+      "description": "This session has stopped. Its work is on its branch.",
+      "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
     },
     "new": {
       "title": "New session",
@@ -661,7 +667,7 @@
       "cancel": "Cancel",
       "remove": "Remove host",
       "removeTitle": "Remove {{name}}?",
-      "removeRunning_one": "{{count}} session is running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
     }
@@ -676,9 +682,82 @@
     },
     "profile": {
       "title": "Profile",
+      "failed": "The profile could not be loaded.",
+      "emailChanged": "Your email address is updated. Sign in with it from now on.",
+      "picture": "Profile picture",
+      "pictureHint": "Shown beside your sessions and automations",
+      "upload": "Upload",
+      "uploading": "Uploading…",
+      "removePicture": "Remove",
+      "pictureFailed": "The picture could not be changed.",
       "email": "Email",
       "emailHint": "Used to sign in and for run notifications",
-      "failed": "The profile could not be loaded."
+      "unverified": "Not verified",
+      "change": "Change",
+      "fullName": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "username": "Username",
+      "usernameHint": "Appears in session logs and commit trailers",
+      "discard": "Discard",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "saveFailed": "Your changes could not be saved."
+    },
+    "changeEmail": {
+      "title": "Change email",
+      "description": "We send a link to the new address. Your account moves there when you follow it; until then you sign in with {{email}}.",
+      "newEmail": "New email",
+      "send": "Send link",
+      "sending": "Sending…",
+      "sentTitle": "Check your inbox",
+      "sent": "If {{email}} can be used, a link is on its way there. Follow it to finish the change.",
+      "done": "Done",
+      "failed": "The link could not be sent."
+    },
+    "security": {
+      "heading": "Sign-in",
+      "password": "Password",
+      "passwordHint": "Changing it signs out every other device",
+      "change": "Change"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "description": "Every other device signed in to your account is signed out.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "mismatch": "The passwords do not match.",
+      "submit": "Change password",
+      "submitting": "Changing…",
+      "done": "Password changed. Other devices are signed out.",
+      "failed": "The password could not be changed."
+    },
+    "devices": {
+      "heading": "Devices",
+      "unknown": "Unknown device",
+      "current": "This device",
+      "lastSeen": "Active {{when}}",
+      "activeNow": "Active now",
+      "signOut": "Sign out",
+      "signOutOthers": "Sign out of all other devices",
+      "failed": "The devices could not be loaded.",
+      "revokeFailed": "That device could not be signed out."
+    },
+    "account": {
+      "heading": "Account",
+      "delete": "Delete account",
+      "deleteHint": "Stops every session and removes your automations and host registrations. This cannot be undone."
+    },
+    "deleteAccount": {
+      "title": "Delete your account?",
+      "description": "Every session stops, your hosts are unpaired and your workspace, projects and sign-ins are removed. This cannot be undone.",
+      "confirmLabel": "Type {{email}} to confirm",
+      "mismatch": "Type your email address exactly.",
+      "confirm": "Delete account",
+      "deleting": "Deleting…",
+      "failed": "Your account could not be deleted."
     },
     "hosts": {
       "title": "Hosts",

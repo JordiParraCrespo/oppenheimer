@@ -22,11 +22,12 @@ Under `version1/`, each one a standalone `.dc.html` page at 1440×900.
 | [`SetPassword`](version1/SetPassword.dc.html) | Set a new password |
 | [`CreateWorkspace`](version1/CreateWorkspace.dc.html) | Onboarding step 2 — name your workspace and pick its address |
 | [`ConnectGitHub`](version1/ConnectGitHub.dc.html) | Onboarding step 3 — connect GitHub |
-| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host |
+| [`AddHost`](version1/AddHost.dc.html) | Onboarding step 4 — add your first host; the command and agent prompt fold behind "Inspect command and prompt" |
 | [`Ready`](version1/Ready.dc.html) | You're all set — workspace, code and host summary, into the console |
 | [`SessionsConsole`](version1/SessionsConsole.dc.html) | The console: a rail for sessions and automations, the sidebar grouped by project, terminal, composer |
 | [`Routines`](version1/Routines.dc.html) | The console on its automations page — automations grouped by project, their triggers, steps and run history |
 | [`Settings`](version1/Settings.dc.html) | Settings — profile, workspace and hosts (rename, remove, and an Add a host page with the install command and agent prompt) |
+| [`Emails`](version1/Emails.dc.html) | Index of the transactional emails, each framed live from `version1/emails/` with when it is sent and its link lifetime |
 | [`Components`](version1/Components.dc.html) | Inventory — every component the screens are built from |
 
 States inside the onboarding screens are live: the workspace address checks
@@ -48,6 +49,19 @@ rename is in the copy only: the file is still `Routines.dc.html` and the
 frames' internal names (`page="routines"`, the `routine` state) are
 unchanged. The same export turned Add a host from a dialog into a page,
 in the console and in Settings.
+
+The 2026-09-27 export turns the console's pages back into dialogs over
+the console: New project and Project settings, New and Edit automation,
+and Add a host. Settings keeps its Add a host page. The onboarding
+AddHost folds the install command and agent prompt behind an "Inspect
+command and prompt" disclosure. The export keeps the versions it replaced
+as `SessionsConsole (pages).dc.html` and `AddHost (cards).dc.html`,
+byte-for-byte the 2026-09-26 frames.
+
+`Emails` and `version1/emails/` are the transactional emails: verify
+email, welcome (workspace ready), reset password, password changed,
+change email, new sign-in, session completed, failed and needs input,
+and workspace invite.
 
 `version1/assets/agents/` holds the coding-agent marks (Claude Code, OpenCode and
 Codex are wired into the composer's harness button; Copilot, Gemini and Cursor
@@ -96,5 +110,12 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   One departure from the frames: Move lists every other project rather
   than only those that include the session's repository, because a
   project is metadata and a session may move anywhere (10).
+- As of the 2026-09-27 export the frames draw New project, Project
+  settings, the automation editor and the console's Add a host as dialogs,
+  while `../05-screens.md` (and the console built from it) still has them
+  as pages (`/projects/{id}`, `/hosts/new`, the `.op-rpage` layout). The
+  note has not been reconciled with these frames yet. The workspace-invite
+  email also runs ahead of the notes, which keep workspaces personal with
+  no invitations.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.
