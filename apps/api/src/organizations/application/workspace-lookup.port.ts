@@ -12,4 +12,9 @@ export interface WorkspaceLookupPort {
   slugOf(organizationId: string): Promise<string | null>;
   /** Whether `userId` holds a membership row in `organizationId` right now. */
   isMember(organizationId: string, userId: string): Promise<boolean>;
+  /**
+   * The workspaces `userId` owns — in the MVP, the one personal workspace
+   * sign-up gave them. What deleting an account removes the work of.
+   */
+  ownedBy(userId: string): Promise<string[]>;
 }

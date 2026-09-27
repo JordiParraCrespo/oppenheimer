@@ -8,9 +8,82 @@
   },
   "profile": {
     "title": "Perfil",
+    "failed": "No se ha podido cargar el perfil.",
+    "emailChanged": "Tu dirección de correo se ha actualizado. A partir de ahora, inicia sesión con ella.",
+    "picture": "Foto de perfil",
+    "pictureHint": "Se muestra junto a tus sesiones y automatizaciones",
+    "upload": "Subir",
+    "uploading": "Subiendo…",
+    "removePicture": "Quitar",
+    "pictureFailed": "No se ha podido cambiar la foto.",
     "email": "Correo",
-    "emailHint": "Se usa para iniciar sesión y para las notificaciones de ejecuciones",
-    "failed": "No se pudo cargar el perfil."
+    "emailHint": "Para iniciar sesión y para los avisos de ejecuciones",
+    "unverified": "Sin verificar",
+    "change": "Cambiar",
+    "fullName": "Nombre completo",
+    "firstName": "Nombre",
+    "lastName": "Apellidos",
+    "username": "Nombre de usuario",
+    "usernameHint": "Aparece en los registros de sesión y en los trailers de los commits",
+    "discard": "Descartar",
+    "saveChanges": "Guardar cambios",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "saveFailed": "No se han podido guardar los cambios."
+  },
+  "changeEmail": {
+    "title": "Cambiar correo",
+    "description": "Enviamos un enlace a la nueva dirección. Tu cuenta pasa a ella cuando lo sigas; hasta entonces inicias sesión con {{email}}.",
+    "newEmail": "Nuevo correo",
+    "send": "Enviar enlace",
+    "sending": "Enviando…",
+    "sentTitle": "Revisa tu bandeja de entrada",
+    "sent": "Si {{email}} se puede usar, te hemos enviado un enlace. Síguelo para terminar el cambio.",
+    "done": "Hecho",
+    "failed": "No se ha podido enviar el enlace."
+  },
+  "security": {
+    "heading": "Inicio de sesión",
+    "password": "Contraseña",
+    "passwordHint": "Al cambiarla se cierra la sesión en los demás dispositivos",
+    "change": "Cambiar"
+  },
+  "changePassword": {
+    "title": "Cambiar contraseña",
+    "description": "Se cerrará la sesión en todos los demás dispositivos conectados a tu cuenta.",
+    "current": "Contraseña actual",
+    "new": "Nueva contraseña",
+    "confirm": "Confirma la nueva contraseña",
+    "mismatch": "Las contraseñas no coinciden.",
+    "submit": "Cambiar contraseña",
+    "submitting": "Cambiando…",
+    "done": "Contraseña cambiada. Se ha cerrado la sesión en los demás dispositivos.",
+    "failed": "No se ha podido cambiar la contraseña."
+  },
+  "devices": {
+    "heading": "Dispositivos",
+    "unknown": "Dispositivo desconocido",
+    "current": "Este dispositivo",
+    "lastSeen": "Activo {{when}}",
+    "activeNow": "Activo ahora",
+    "signOut": "Cerrar sesión",
+    "signOutOthers": "Cerrar sesión en los demás dispositivos",
+    "failed": "No se han podido cargar los dispositivos.",
+    "revokeFailed": "No se ha podido cerrar la sesión en ese dispositivo."
+  },
+  "account": {
+    "heading": "Cuenta",
+    "delete": "Eliminar cuenta",
+    "deleteHint": "Detiene todas las sesiones y elimina tus automatizaciones y los hosts registrados. No se puede deshacer."
+  },
+  "deleteAccount": {
+    "title": "¿Eliminar tu cuenta?",
+    "description": "Todas las sesiones se detienen, tus hosts se desvinculan y se eliminan tu espacio de trabajo, tus proyectos y tus inicios de sesión. No se puede deshacer.",
+    "confirmLabel": "Escribe {{email}} para confirmar",
+    "mismatch": "Escribe tu dirección de correo exactamente.",
+    "confirm": "Eliminar cuenta",
+    "deleting": "Eliminando…",
+    "failed": "No se ha podido eliminar tu cuenta."
   },
   "hosts": {
     "title": "Hosts",

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ORGANIZATION_ROLES } from '@oppenheimer/shared';
 import { Repository } from 'typeorm';
 import type { WorkspaceLookupPort } from '../application/workspace-lookup.port';
 import { MemberOrmEntity } from './member.orm-entity';
@@ -29,5 +30,13 @@ export class WorkspaceLookupRepository implements WorkspaceLookupPort {
 
   async isMember(organizationId: string, userId: string): Promise<boolean> {
     return this.members.exist({ where: { organizationId, userId } });
+  }
+
+  async ownedBy(userId: string): Promise<string[]> {
+    const owned = await this.members.find({
+      where: { userId, role: ORGANIZATION_ROLES.OWNER },
+      select: { organizationId: true },
+    });
+    return owned.map((member) => member.organizationId);
   }
 }

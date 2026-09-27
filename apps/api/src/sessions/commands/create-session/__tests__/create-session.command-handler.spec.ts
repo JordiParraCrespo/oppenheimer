@@ -55,6 +55,7 @@ function launches(): SessionLaunchSpecFactory {
   return new SessionLaunchSpecFactory({
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn(),
+    ownedBy: vi.fn().mockResolvedValue([]),
   });
 }
 

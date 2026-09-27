@@ -179,6 +179,7 @@ async function boot(): Promise<World> {
   const workspaces_: WorkspaceLookupPort = {
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
+    ownedBy: vi.fn().mockResolvedValue([]),
   };
 
   const registry = new InProcessLinkRegistry(() => 0);

@@ -3,6 +3,7 @@ import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserRepositoryPort } from '../../../../users/database/user.repository.port';
 import { UserEntity } from '../../../../users/domain/user.entity';
+import { UserErrors } from '../../../../users/domain/user.errors';
 import { Email } from '../../../../users/domain/value-objects/email.value-object';
 import { UpdateProfileCommand } from '../update-profile.command';
 import { UpdateProfileCommandHandler } from '../update-profile.command-handler';
@@ -16,6 +17,7 @@ function makeUser(): UserEntity {
       lastName: 'Rodrigo',
       phone: '+34 600 123 456',
       jobTitle: 'Founder',
+      username: null,
       avatarUrl: 'avatars/user-uuid.png',
       role: 'user',
       isActive: true,
@@ -87,6 +89,38 @@ describe('UpdateProfileCommandHandler', () => {
 
     expect(user.role).toBe('user');
     expect(user.isActive).toBe(true);
+  });
+
+  it('sets the username the schema normalised, as the aggregate holds it', async () => {
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'Adri ' }));
+
+    expect(user.username).toBe('adri');
+  });
+
+  it('lets a taken username surface as the repository reports it', async () => {
+    // The unique constraint is the rule; there is no lookup to race.
+    repo.save = vi.fn().mockRejectedValue(new AppError(UserErrors.USERNAME_TAKEN));
+
+    const error = await service
+      .execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'taken' }))
+      .catch((e) => e as AppError);
+
+    expect((error as AppError).code).toBe('USER_002');
+  });
+
+  it('refuses a malformed username at the aggregate', async () => {
+    await expect(
+      service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: 'no spaces' })),
+    ).rejects.toThrow();
+    expect(repo.save).not.toHaveBeenCalled();
+  });
+
+  it('clears the username when sent null', async () => {
+    user.updateProfile({ username: 'adri' });
+
+    await service.execute(new UpdateProfileCommand({ userId: 'user-uuid', username: null }));
+
+    expect(user.username).toBeNull();
   });
 
   it('reports a missing profile', async () => {

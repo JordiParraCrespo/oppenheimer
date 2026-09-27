@@ -95,6 +95,12 @@ export interface WorkSessionRepositoryPort {
    * answer is a count, never a row. A host with none is absent from the map.
    */
   countRunningByHost(hostIds: readonly string[]): Promise<Map<string, number>>;
+  /**
+   * Delete every session of a workspace with its checkouts and log, in one
+   * transaction. Only deleting the account that owns the workspace asks it:
+   * a session is otherwise never hard-deleted.
+   */
+  eraseWorkspace(organizationId: string): Promise<void>;
 
   /**
    * Insert the session, its checkouts and the first entries of its log in one

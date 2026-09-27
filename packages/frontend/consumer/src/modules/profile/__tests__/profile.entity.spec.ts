@@ -10,6 +10,7 @@ function profile(firstName: string, lastName: string): ProfileEntity {
     null,
     null,
     null,
+    null,
     'owner',
     true,
     false,

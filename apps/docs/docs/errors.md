@@ -86,13 +86,16 @@ is short of, the more precise `TOKEN_*` codes are used instead.
 
 ## Users
 
-| Code                           | Title          | HTTP |
-| ------------------------------ | -------------- | ---- |
-| `USER_001` <a id="user_001" /> | User not found | 404  |
+| Code                           | Title                                              | HTTP |
+| ------------------------------ | -------------------------------------------------- | ---- |
+| `USER_001` <a id="user_001" /> | User not found                                     | 404  |
+| `USER_002` <a id="user_002" /> | That username is already taken                     | 409  |
+| `USER_003` <a id="user_003" /> | The confirmation does not match your email address | 400  |
 
 ## Profile
 
-The caller's own account: profile fields, avatar, password and sessions.
+The caller's own account: profile fields, avatar, email, password and
+sessions. Deleting it is `USER_*`.
 
 | Code                                 | Title                                                 | HTTP |
 | ------------------------------------ | ----------------------------------------------------- | ---- |
@@ -104,6 +107,7 @@ The caller's own account: profile fields, avatar, password and sessions.
 | `PROFILE_006` <a id="profile_006" /> | The new password does not meet the password policy    | 400  |
 | `PROFILE_007` <a id="profile_007" /> | The session you are currently using cannot be revoked | 409  |
 | `PROFILE_008` <a id="profile_008" /> | The account service could not complete that request   | 502  |
+| `PROFILE_009` <a id="profile_009" /> | That is already your email address                    | 400  |
 
 `PROFILE_003` is returned for a session belonging to someone else as well as one
 that does not exist, so session ids cannot be probed.

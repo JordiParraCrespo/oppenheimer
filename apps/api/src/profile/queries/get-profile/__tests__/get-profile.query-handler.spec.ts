@@ -15,6 +15,7 @@ const USER = UserEntity.create({
     lastName: 'Rodrigo',
     phone: null,
     jobTitle: null,
+    username: null,
     avatarUrl: null,
     role: 'user',
     isActive: true,

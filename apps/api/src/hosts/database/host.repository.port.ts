@@ -92,6 +92,11 @@ export interface HostRepositoryPort {
    * scope by.
    */
   findOneByIdForMachine(id: string): Promise<Option<HostEntity>>;
+  /**
+   * Every host a person owns, paired or not, with no access scope: deleting
+   * the account is the system acting on the account's own machines.
+   */
+  findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]>;
   save(entity: HostEntity): Promise<HostEntity>;
   /**
    * Spend a pairing token and create the host it pairs, in **one transaction**.
