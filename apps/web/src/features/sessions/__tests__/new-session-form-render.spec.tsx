@@ -152,10 +152,13 @@ describe('NewSessionForm', () => {
     expect(rendered()).toEqual(['host', 'send']);
   });
 
-  /** The branch chip reads the same field, and appears for a lone repository. */
-  it('renders the repository and branch chips when a repository is picked', () => {
+  /**
+   * The branch chip reads the same field, and appears for a lone repository;
+   * the send gate opens, since a session needs a repository.
+   */
+  it('renders the repository and branch chips and the send gate when a repository is picked', () => {
     fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
-    expect(rendered()).toEqual(['branch', 'repositories']);
+    expect(rendered()).toEqual(['branch', 'repositories', 'send']);
   });
 
   /** An agent switch decides which foot controls exist, so those three redraw. */
@@ -181,6 +184,17 @@ describe('NewSessionForm', () => {
     fireEvent.change(textarea, { target: { value: 'F' } });
     fireEvent.change(textarea, { target: { value: 'Fix' } });
     expect(rendered()).toEqual([]);
+  });
+
+  /** A runner makes one worktree per session: with no repository there is nothing to send. */
+  it('keeps the composer disabled until a repository is picked', () => {
+    act(() => reads.set({ ...reads.get(), hosts: [{ id: 'host-2' }] }));
+    fireEvent.click(screen.getByRole('button', { name: 'host' }));
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox');
+    expect(textarea.disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'repositories' }));
+    expect(textarea.disabled).toBe(false);
   });
 
   it('remembers a pick for the next visit, but never the permission level', () => {
