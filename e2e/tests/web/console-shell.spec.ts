@@ -27,6 +27,15 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
   // rail to the left of it is where the console's lists are switched.
   await expect(page.getByText('Projects', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sessions', exact: true })).toBeVisible();
+  // Side by side, not stacked: the sidebar's panel is fixed to the viewport,
+  // and it once started under the rail, which hid its first column.
+  // Polled, because the panel animates its `left` into place.
+  const rail = await page.getByRole('navigation', { name: 'Main navigation' }).boundingBox();
+  await expect
+    .poll(
+      async () => (await page.getByRole('textbox', { name: 'Search sessions' }).boundingBox())?.x,
+    )
+    .toBeGreaterThanOrEqual((rail?.x ?? 0) + (rail?.width ?? 0));
 
   // The starter's chrome bar and its search trigger are gone with it.
   await expect(page.getByRole('button', { name: 'Search' })).toHaveCount(0);
