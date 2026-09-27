@@ -41,7 +41,8 @@ export const sessionsKeys = {
 const PROVISIONING_POLL_MS = 2000;
 
 /**
- * The sessions this console asked to close and has not yet seen resolve.
+ * The sessions this console asked to close and has not yet seen resolve, each
+ * with the timer that ends its watch.
  *
  * A close is answered by the host, not by the request, so the row stays `open`
  * for a beat after Delete — the same "not settled, and nothing pushes it" as a
@@ -49,13 +50,22 @@ const PROVISIONING_POLL_MS = 2000;
  * its row leaves the list, or after {@link CLOSE_WATCH_MS} for a host that is
  * offline and will answer only when it is back.
  */
-const closing = new Set<string>();
+const closing = new Map<string, ReturnType<typeof setTimeout>>();
 
 const CLOSE_WATCH_MS = 60_000;
 
+/** Watch a close; asking again restarts the watch rather than adding a second. */
 function watchClose(id: string): void {
-  closing.add(id);
-  setTimeout(() => closing.delete(id), CLOSE_WATCH_MS);
+  clearTimeout(closing.get(id));
+  closing.set(
+    id,
+    setTimeout(() => closing.delete(id), CLOSE_WATCH_MS),
+  );
+}
+
+function unwatchClose(id: string): void {
+  clearTimeout(closing.get(id));
+  closing.delete(id);
 }
 
 /**
@@ -93,8 +103,8 @@ export function useSessions<TData = SessionEntity[]>(
         queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
       }
       const listed = sessions.filter((session) => !session.isResolved);
-      for (const id of closing) {
-        if (!listed.some((session) => session.id === id)) closing.delete(id);
+      for (const id of closing.keys()) {
+        if (!listed.some((session) => session.id === id)) unwatchClose(id);
       }
       return listed;
     },

@@ -44,7 +44,11 @@ type linkHandler struct {
 	// with it, and a stop queued behind a create must not run on a socket
 	// that is already gone. Outcomes travel through the reporter, which
 	// resends them on the next link.
-	life context.Context
+	//
+	// It ends only when the daemon does, or when the host is unpaired
+	// (endLife): no command runs for a host that is no longer one.
+	life    context.Context
+	endLife context.CancelFunc
 	// lanes orders each session's commands off the read loop.
 	lanes *lanes
 
@@ -83,9 +87,11 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		logger.Error("could not mint a run id; the link stays down", slog.Any("error", err))
 		return
 	}
+	life, endLife := context.WithCancel(ctx)
+	defer endLife()
 	handler := &linkHandler{
 		app: a, identity: identity, logger: logger, attachments: map[uint32]*attachment{}, decided: map[string]bool{},
-		bootToken: a.Pairing.BootToken, life: ctx, lanes: newLanes(),
+		bootToken: a.Pairing.BootToken, life: life, endLife: endLife, lanes: newLanes(),
 	}
 	client, err := link.New(link.Options{
 		ControlPlaneURL: identity.ControlPlaneURL,
@@ -96,23 +102,11 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 		Logger:          logger,
 		// Unpaired is terminal. Recorded in the identity so the next boot does
 		// not dial either and `runner status` can say why the host is quiet.
-		//
-		// It is also a person removing this host, and removing a host stops the
-		// sessions on it (03, 14): the control plane has already recorded each
-		// one stopped, and the remove dialog promised their terminals close. An
-		// agent left running here would keep working where no console can see
-		// it. Stopping keeps every checkout on disk — it is not a close.
 		OnUnpaired: func() {
 			if _, err := a.Pairing.MarkRevoked(); err != nil {
 				logger.Error("could not record that this host was unpaired", slog.Any("error", err))
 			}
-			ended, err := a.Sessions.EndAll(context.WithoutCancel(ctx))
-			if err != nil {
-				logger.Error("could not stop every session of this unpaired host", slog.Any("error", err))
-			}
-			if len(ended) > 0 {
-				logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
-			}
+			handler.unpaired(ctx)
 		},
 	})
 	if err != nil {
@@ -132,6 +126,36 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 	// a side effect of losing the control plane. Unpaired is the exception,
 	// because it is a decision (OnUnpaired above).
 	_ = client.Run(ctx)
+}
+
+// unpairedDrain bounds how long an unpaired host waits for the commands it
+// was running to return before it stops its sessions anyway.
+const unpairedDrain = 30 * time.Second
+
+// unpaired is a person removing this host, and removing a host stops the
+// sessions on it (03, 14): the control plane has already recorded each one
+// stopped, and the remove dialog promised their terminals close. An agent left
+// running here would keep working where no console can see it. Stopping keeps
+// every checkout on disk — it is not a close.
+//
+// The order is the point. Commands in flight are cancelled and the lanes
+// closed and drained first, so a create still cloning cannot start its tmux
+// session after the stop has already looked; then every session goes. A
+// create that got as far as tmux before the cancel is ended by the same stop.
+func (h *linkHandler) unpaired(ctx context.Context) {
+	if h.endLife != nil {
+		h.endLife()
+	}
+	if !h.lanes.close(unpairedDrain) {
+		h.logger.Warn("commands were still running when this host was unpaired; stopping its sessions anyway")
+	}
+	ended, err := h.app.Sessions.EndAll(context.WithoutCancel(ctx))
+	if err != nil {
+		h.logger.Error("could not stop every session of this unpaired host", slog.Any("error", err))
+	}
+	if len(ended) > 0 {
+		h.logger.Info("stopped the sessions of this unpaired host", slog.Any("sessions", ended))
+	}
 }
 
 /* ---------------------------------------------------------------- link.Handler */
