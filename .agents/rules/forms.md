@@ -31,7 +31,7 @@ import {
 } from "@oppenheimer/design-system-web";
 import { type LoginDto, loginSchema } from "@oppenheimer/shared/schemas/auth";
 import { useForm } from "react-hook-form";
-import { useZodResolver } from "@/lib/use-zod-resolver";
+import { useZodResolver } from "@oppenheimer/frontend-web";
 
 const {
   register,
