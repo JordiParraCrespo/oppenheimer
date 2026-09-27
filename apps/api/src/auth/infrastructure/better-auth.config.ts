@@ -257,6 +257,13 @@ export const auth = betterAuth({
     // Declared in @oppenheimer/auth so the web/mobile clients' `inferAdditionalFields`
     // consume the same schema and cannot drift from the server.
     additionalFields: userAdditionalFields,
+    // Settings → Profile's Change. With no `sendChangeEmailConfirmation` and
+    // no `updateEmailWithoutVerification`, Better Auth takes one path for
+    // every account: the verification email goes to the *new* address, and
+    // the account moves only when that link is followed. An unverified
+    // address never becomes the sign-in address, which is what
+    // `requireLocalEmailVerified` above relies on.
+    changeEmail: { enabled: true },
   },
   databaseHooks: {
     user: {

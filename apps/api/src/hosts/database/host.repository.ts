@@ -77,6 +77,15 @@ export class HostRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async findOwnedBySystem(ownerUserId: string): Promise<HostEntity[]> {
+    const records = await this.unscopedQuery(
+      'deleting an account lets go of every machine it owns; the account is the scope',
+    )
+      .where('host.ownerUserId = :ownerUserId', { ownerUserId })
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   /**
    * The row, the outbox entries its events owe, and the timeline entries they
    * stand for, in one transaction. An unpaired host's current network stops

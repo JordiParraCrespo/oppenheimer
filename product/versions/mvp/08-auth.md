@@ -110,6 +110,11 @@ history) to work on the MVP.
   refuses it is the answer, so a stale credential never falls back to a
   session. What a credential authorizes (`ScopeContext`) and what the
   guards do with it are unchanged.
+- **Credential writes are session-only.** Changing the password or the
+  email, signing devices out and deleting the account carry no scope, so
+  no API token or OAuth client reaches them: a leaked token that could do
+  any of them is the account. A new email is used only once a link sent
+  to it is followed (10 lists the routes).
 - **Roles.** The platform roles (`user`, `admin`, `superadmin`) and the
   org-scoped `owner` role are the only ones the MVP needs. The role
   editor and the admin console are carried for later, not part of the
