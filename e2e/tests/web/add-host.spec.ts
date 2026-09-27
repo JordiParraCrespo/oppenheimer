@@ -51,7 +51,7 @@ test('pairs a machine from the console and selects it for the next session', asy
 
   // The status line, which is a different element from the panel the command
   // is printed in — asserting on text alone would match the token's own name.
-  const status = pane.locator('[data-slot="status-dot"]');
+  const status = pane.locator('[data-slot="host-pairing-status"]');
   await expect(status).toContainText('Listening for this host…');
   await expect(pane.getByRole('button', { name: 'Use this host' })).toBeDisabled();
 
@@ -61,11 +61,11 @@ test('pairs a machine from the console and selects it for the next session', asy
   await expect(panel).toContainText('OPPENHEIMER_REGISTRATION_TOKEN=', { timeout: 30_000 });
   const firstCommand = (await panel.innerText()).trim();
 
-  await pane.getByRole('button', { name: 'Agent prompt' }).click();
+  await pane.getByRole('tab', { name: 'Agent prompt' }).click();
   const agentPrompt = (await panel.innerText()).trim();
   expect(agentPrompt, 'the switch shows the other form of the instruction').not.toBe(firstCommand);
   expect(agentPrompt, 'the agent prompt carries the same token').toContain(tokenFrom(firstCommand));
-  await pane.getByRole('button', { name: 'Command' }).click();
+  await pane.getByRole('tab', { name: 'Command' }).click();
 
   // ── A new token replaces the one on screen ───────────────────────────────
   await pane.getByRole('button', { name: 'New token' }).click();

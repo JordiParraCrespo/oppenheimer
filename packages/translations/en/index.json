@@ -637,6 +637,33 @@
       },
       "crumbHosts": "Hosts",
       "done": "Done"
+    },
+    "settings": {
+      "state": {
+        "running_one": "Running · {{count}} session",
+        "running_other": "Running · {{count}} sessions",
+        "idle": "Idle",
+        "offline": "Offline"
+      },
+      "seen": {
+        "connected": "connected",
+        "lastSeen": "last seen {{when}}",
+        "now": "now"
+      },
+      "meta": {
+        "cpus": "{{count}} vCPU",
+        "runner": "runner {{version}}"
+      },
+      "actions": "{{name}} actions",
+      "rename": "Rename",
+      "renameLabel": "Host name",
+      "save": "Save",
+      "cancel": "Cancel",
+      "remove": "Remove host",
+      "removeTitle": "Remove {{name}}?",
+      "removeRunning_one": "{{count}} session is running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
     }
   },
   "settings": {
@@ -658,7 +685,7 @@
       "description": "Servers your sessions run on. Nothing on a host is exposed to the internet.",
       "add": "Add host",
       "empty": "No hosts yet",
-      "emptyHint": "Add one and your sessions have somewhere to run.",
+      "emptyHint": "Hosts you connect appear here with their live session count. Sessions cannot start until one is online.",
       "online": "Online",
       "offline": "Offline",
       "failed": "The hosts could not be loaded."
@@ -1422,6 +1449,18 @@
       "helper": "If you paired it, there is nothing to do. On that machine, the runner’s status command shows the same fingerprint, so you can check it is the one you meant.",
       "closing": "Don't recognise it? Someone used one of your pairing tokens. The console cannot unpair a host yet. If you can reach the machine, run the runner’s uninstall command on it; if you cannot, unpair it through the API with DELETE /v1/hosts/{{hostId}}. Your unspent tokens expire within the hour.",
       "unknownMachine": "no hostname reported",
+      "footerNote": "This is a security email, so you always receive it."
+    },
+    "hostNetworkChanged": {
+      "subject": "{{hostName}} is connecting from a new network",
+      "preview": "{{hostName}} moved from {{from}} to {{to}}. If you did not move it, act now.",
+      "heading": "A host moved to a new network",
+      "body": "{{hostName}} used to connect from {{from}}. It now connects from {{to}}, at {{ip}}.",
+      "action": "Open Oppenheimer",
+      "helper": "If you took the machine somewhere new, or its provider changed, there is nothing to do. We only write when the country or the network operator changes, not for every new address.",
+      "closing": "Don't recognise the move? The host's key may be in use somewhere else. Remove the host from Settings, or through the API with DELETE /v1/hosts/{{hostId}}; its runner is refused from that moment, and the sessions on it are stopped.",
+      "unknownPlace": "an unknown network",
+      "attribution": "IP geolocation by DB-IP.",
       "footerNote": "This is a security email, so you always receive it."
     }
   }

@@ -1,5 +1,8 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
+import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -24,7 +27,9 @@ import { cn } from '../lib/utils';
  *
  * It navigates, it is a `Link`; it acts, it is a `Button`. The one crossover is a
  * step's primary action that also routes ("Continue"): pass `render={<a />}` or
- * the router's link.
+ * the router's link. A `render` that navigates — an `<a>`, or any element given
+ * `href` or `to` — keeps its link role: Base UI's button would stamp
+ * `role="button"` on it, and a reader would hear a button where there is a link.
  */
 const buttonVariants = cva(
   'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-pill border border-transparent bg-transparent font-medium whitespace-nowrap transition-[background-color,color,border-color,opacity,transform] duration-fast ease-standard outline-none select-none active:scale-[0.975] active:duration-instant disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0',
@@ -69,6 +74,13 @@ const buttonVariants = cva(
 
 type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
 
+/** Whether a `render` element navigates, so the button drawn with it is a link. */
+function isLinkElement(render: ButtonProps['render']): render is React.ReactElement {
+  if (!React.isValidElement(render)) return false;
+  const props = render.props as Record<string, unknown>;
+  return render.type === 'a' || 'href' in props || 'to' in props;
+}
+
 function Button({
   className,
   variant = 'primary',
@@ -78,6 +90,17 @@ function Button({
   nativeButton,
   ...props
 }: ButtonProps) {
+  if (isLinkElement(render)) {
+    return (
+      <LinkButton
+        render={render}
+        className={cn(buttonVariants({ variant, size, block, className }))}
+        variant={variant}
+        size={size}
+        {...props}
+      />
+    );
+  }
   return (
     <ButtonPrimitive
       data-slot="button"
@@ -89,6 +112,45 @@ function Button({
       {...props}
     />
   );
+}
+
+/**
+ * The button drawn on a link: the button's classes and slots on the element the
+ * caller passed, with no button role. Disabled, it is `aria-disabled`, out of
+ * the tab order and inert to a click, since a link has no `disabled`.
+ */
+function LinkButton({
+  render,
+  className,
+  variant,
+  size,
+  disabled,
+  ...props
+}: Omit<ButtonPrimitive.Props, 'render' | 'className'> & {
+  render: React.ReactElement;
+  className: string;
+  variant: string | null | undefined;
+  size: string | null | undefined;
+}) {
+  return useRender({
+    render,
+    props: mergeProps<'a'>(
+      {
+        className,
+        'data-slot': 'button',
+        'data-variant': variant ?? undefined,
+        'data-size': size ?? undefined,
+        ...(disabled
+          ? {
+              'aria-disabled': true,
+              tabIndex: -1,
+              onClick: (event: React.MouseEvent) => event.preventDefault(),
+            }
+          : {}),
+      } as React.ComponentProps<'a'>,
+      props as React.ComponentProps<'a'>,
+    ),
+  });
 }
 
 export { Button, buttonVariants };

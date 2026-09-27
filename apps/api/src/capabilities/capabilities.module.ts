@@ -2,7 +2,7 @@ import { Global, Logger, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
 import type { DeploymentCapabilities } from '@oppenheimer/shared';
-import { hostsAreConfigured } from '../config/hosts.config';
+import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
 
 /**
@@ -63,6 +63,9 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // from their prompt's own words instead — a supported configuration, which is
     // why this exists to answer "why are titles never a model's" from the log.
     session_namer: sessionNamerIsConfigured(configService),
+    // A database on disk to place a host's network with. Without it networks
+    // are recorded by address only, and no new-network email can be judged.
+    ip_geolocation: ipGeolocationIsConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
     email_delivery:
       (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||

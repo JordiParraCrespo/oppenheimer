@@ -1,4 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { HOST_STATUSES, type HostStatus } from '@oppenheimer/shared';
+import {
+  HostMachineResponseDto,
+  HostNetworkResponseDto,
+  HostVitalsResponseDto,
+} from './host-metadata.response.dto';
 
 export class HostResponseDto {
   @ApiProperty({ format: 'uuid' })
@@ -45,8 +51,44 @@ export class HostResponseDto {
   })
   online!: boolean;
 
+  @ApiProperty({
+    enum: HOST_STATUSES,
+    enumName: 'HostStatus',
+    description:
+      'One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.',
+  })
+  status!: HostStatus;
+
+  @ApiProperty({
+    minimum: 0,
+    description:
+      'Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.',
+  })
+  runningSessionCount!: number;
+
   @ApiPropertyOptional({ nullable: true, type: Date })
   lastSeenAt!: Date | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostMachineResponseDto,
+    description: 'What the machine is. Null until the runner has reported its facts.',
+  })
+  machine!: HostMachineResponseDto | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostVitalsResponseDto,
+    description: 'Its last live numbers. Null until its first link.',
+  })
+  vitals!: HostVitalsResponseDto | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    type: () => HostNetworkResponseDto,
+    description: 'Where its current (or last) link came from. Null until one has.',
+  })
+  network!: HostNetworkResponseDto | null;
 
   @ApiPropertyOptional({
     nullable: true,

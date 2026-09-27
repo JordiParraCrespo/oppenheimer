@@ -19,7 +19,7 @@ import { Button } from './button';
  * `layout="panel"` is the Add host dialog's form: a tonal 10px panel at
  * 11.5px with a header band of its own — pill `tabs` on the left (Command,
  * Agent prompt) and one small ghost Copy on the right, a hairline under it,
- * then the code at a fixed height so switching tabs never moves the token
+ * then the code at a fixed 152px so switching tabs never moves the token
  * line under it. One block, two ways to read it, one Copy: the same block
  * opens from the composer's host chip and from Settings. Without `tabs` the
  * band holds Copy alone.
@@ -38,6 +38,7 @@ function CodeBlock({
   dim,
   layout = 'card',
   tabs,
+  tabsLabel = 'Format',
   tab,
   onTabChange,
   maxLines,
@@ -55,6 +56,8 @@ function CodeBlock({
   layout?: 'card' | 'panel';
   /** Panel only: the ways to read the block, as pill tabs in the band. The caller swaps `code`. */
   tabs?: CodeBlockTab[];
+  /** Panel only: what the tabs choose between, for assistive tech. */
+  tabsLabel?: string;
   tab?: string;
   onTabChange?: (value: string) => void;
   /**
@@ -107,7 +110,7 @@ function CodeBlock({
           className="flex items-center justify-between gap-2.5 border-b border-border-subtle p-1.5"
         >
           {tabs && tabs.length > 0 ? (
-            <div role="tablist" aria-label="Format" className="flex gap-0.5">
+            <div role="tablist" aria-label={tabsLabel} className="flex gap-0.5">
               {tabs.map((option) => {
                 const selected = option.value === tab;
                 return (
@@ -147,7 +150,7 @@ function CodeBlock({
           style={capStyle}
           className={cn(
             'm-0 p-3 font-mono text-[11.5px] leading-[1.7] break-normal whitespace-pre-wrap text-fg [overflow-wrap:anywhere]',
-            tabs ? 'h-24 overflow-y-auto' : 'min-h-[76px]',
+            tabs ? 'h-38 overscroll-contain overflow-y-auto' : 'min-h-[76px]',
             maxLines && 'max-h-[calc(var(--code-max-lines)*1.7em)] overflow-y-auto',
           )}
         >

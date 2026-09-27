@@ -62,6 +62,15 @@ export class EmailProcessor extends WorkerHost {
         await this.emailService.sendHostPaired(target.to, this.mapper.toHostPaired(job.data, t));
         break;
       }
+      case 'host-network-changed': {
+        const target = this.mapper.toLocaleTarget(job.data);
+        const t = await this.formatter(target);
+        await this.emailService.sendHostNetworkChanged(
+          target.to,
+          this.mapper.toHostNetworkChanged(job.data, t),
+        );
+        break;
+      }
       default:
         this.logger.warn(`Unknown email job: ${job.name}`);
     }

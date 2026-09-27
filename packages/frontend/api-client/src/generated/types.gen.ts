@@ -660,6 +660,64 @@ export type RepositoryBranchResponseDto = {
     isDefault: boolean;
 };
 
+/**
+ * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+ */
+export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
+
+export type HostMachineResponseDto = {
+    osName?: string | null;
+    kernelVersion?: string | null;
+    cpuModel?: string | null;
+    cpuCount?: number | null;
+    memoryTotalBytes?: number | null;
+    diskTotalBytes?: number | null;
+    /**
+     * `none`, `vm` or `container`, as the runner read it from local files.
+     */
+    virtualization?: string | null;
+    /**
+     * The vendor the firmware names; never the answer of a metadata call.
+     */
+    cloudProvider?: string | null;
+    timezone?: string | null;
+    bootedAt?: string | null;
+    channel?: string | null;
+    serviceManager?: string | null;
+    /**
+     * When the machine last changed, not when it last reported.
+     */
+    changedAt: string;
+};
+
+export type HostVitalsResponseDto = {
+    /**
+     * When the current (or last) link opened.
+     */
+    connectedAt?: string | null;
+    /**
+     * The link’s last ping/pong.
+     */
+    roundTripMillis?: number | null;
+    /**
+     * One-minute load average.
+     */
+    loadAverage?: number | null;
+    memoryAvailableBytes?: number | null;
+    diskFreeBytes?: number | null;
+};
+
+export type HostNetworkResponseDto = {
+    ip: string;
+    countryCode?: string | null;
+    region?: string | null;
+    city?: string | null;
+    asn?: number | null;
+    asnOrg?: string | null;
+    firstSeenAt: string;
+    lastSeenAt: string;
+};
+
 export type HostResponseDto = {
     id: string;
     /**
@@ -685,7 +743,27 @@ export type HostResponseDto = {
      * Whether the runner has sent a heartbeat recently enough to be considered attached. Derived on read, never stored.
      */
     online: boolean;
+    /**
+     * One word for the row: `running` (online with a session whose agent is up), `idle` (online, nothing running), `offline` (no recent heartbeat) or `unpaired`. Derived on read from `online`, `runningSessionCount` and `unpairedAt`.
+     */
+    status: HostStatus;
+    /**
+     * Sessions on this host that are neither stopped nor resolved — what removing the host would stop. Counted across every workspace, because the host is one person’s.
+     */
+    runningSessionCount: number;
     lastSeenAt?: string | null;
+    /**
+     * What the machine is. Null until the runner has reported its facts.
+     */
+    machine?: HostMachineResponseDto | null;
+    /**
+     * Its last live numbers. Null until its first link.
+     */
+    vitals?: HostVitalsResponseDto | null;
+    /**
+     * Where its current (or last) link came from. Null until one has.
+     */
+    network?: HostNetworkResponseDto | null;
     /**
      * When the host was unpaired. The row is kept so its history survives.
      */
@@ -720,6 +798,38 @@ export type PairingTokenResponseDto = {
      */
     redeemedHostId?: string | null;
     createdAt: string;
+};
+
+export type PairingTokenStatusResponseDto = {
+    id: string;
+    /**
+     * The name the machine will adopt when it registers with this token.
+     */
+    name: string;
+    /**
+     * Non-secret display prefix. The secret is shown once, in the install command.
+     */
+    prefix: string;
+    /**
+     * Where the token was minted from. Behind a proxy this is the real client only once TRUST_PROXY names the hop count.
+     */
+    createdFromIp?: string | null;
+    /**
+     * Where it was spent from — a different fact from where it was minted.
+     */
+    redeemedFromIp?: string | null;
+    expiresAt: string;
+    revokedAt?: string | null;
+    redeemedAt?: string | null;
+    /**
+     * The host this token created.
+     */
+    redeemedHostId?: string | null;
+    createdAt: string;
+    /**
+     * The host this token paired, as the hosts list shows it. Null until a runner spends the token.
+     */
+    host?: HostResponseDto | null;
 };
 
 export type MintPairingTokenRequest = {
@@ -787,7 +897,18 @@ export type RegisterHostRequest = {
         }> | null;
         workspacePath: string;
         diskFreeBytes: number;
+        cpus?: number;
         runnerVersion: string;
+        osName?: string;
+        kernelVersion?: string;
+        cpuModel?: string;
+        memoryTotalBytes?: number;
+        diskTotalBytes?: number;
+        virtualization?: string;
+        cloudProvider?: string;
+        timezone?: string;
+        bootedAt?: string;
+        serviceManager?: string;
     };
 };
 
@@ -808,6 +929,29 @@ export type HostRegistrationResponseDto = {
      * Where the runner fetches signed release artifacts from.
      */
     releaseBaseUrl?: string;
+};
+
+export type HostTimelineEntryResponseDto = {
+    /**
+     * Opaque; increases with time.
+     */
+    id: string;
+    kind: 'paired' | 'renamed' | 'unpaired' | 'facts_changed' | 'network_changed' | 'runner_updated' | 'runner_rolled_back';
+    /**
+     * `renamed`: `{ from, to }`. `facts_changed`: `{ changed: { field: [before, after] } }`. `network_changed`: `{ from, to }` networks. `runner_updated`: `{ from, to }` versions.
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    occurredAt: string;
+};
+
+export type HostTimelinePageResponseDto = {
+    entries: Array<HostTimelineEntryResponseDto>;
+    /**
+     * Pass as `before` for the next, older page; null at the end.
+     */
+    next?: string | null;
 };
 
 export type RenameHostRequest = {
@@ -3831,7 +3975,12 @@ export type DisconnectInstallationResponse = DisconnectInstallationResponses[key
 export type List6Data = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Add the hosts that were removed — for naming the host of a session that outlived it.
+         */
+        include?: 'unpaired';
+    };
     url: '/api/v1/hosts';
 };
 
@@ -3952,6 +4101,38 @@ export type Revoke3Responses = {
 };
 
 export type Revoke3Response = Revoke3Responses[keyof Revoke3Responses];
+
+export type GetPairingTokenData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/pairing/{id}';
+};
+
+export type GetPairingTokenErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_002 — Pairing token not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetPairingTokenError = GetPairingTokenErrors[keyof GetPairingTokenErrors];
+
+export type GetPairingTokenResponses = {
+    200: PairingTokenStatusResponseDto;
+};
+
+export type GetPairingTokenResponse = GetPairingTokenResponses[keyof GetPairingTokenResponses];
 
 export type RegisterData = {
     body: RegisterHostRequest;
@@ -4135,6 +4316,38 @@ export type RenameResponses = {
 };
 
 export type RenameResponse = RenameResponses[keyof RenameResponses];
+
+export type GetHostTimelineData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/hosts/{id}/timeline';
+};
+
+export type GetHostTimelineErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type GetHostTimelineError = GetHostTimelineErrors[keyof GetHostTimelineErrors];
+
+export type GetHostTimelineResponses = {
+    200: HostTimelinePageResponseDto;
+};
+
+export type GetHostTimelineResponse = GetHostTimelineResponses[keyof GetHostTimelineResponses];
 
 export type ListUsersData = {
     body?: never;

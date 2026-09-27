@@ -3,7 +3,7 @@ import { HostsSettingsScreen } from '@/features/hosts/screens/hosts-settings';
 
 /**
  * Settings → Hosts: the machines the workspace's sessions run on. Add host
- * is the console's one pairing page, `/hosts/new?from=settings`.
+ * opens inside Settings, at `/settings/hosts/new`.
  */
 export const Route = createFileRoute('/_authenticated/settings/hosts/')({
   component: HostsSettingsScreen,

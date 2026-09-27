@@ -1,7 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { HostUnpairedDomainEvent } from '../domain/events/host-unpaired.domain-event';
-import { HostEntity } from '../domain/host.entity';
+import { HostEntity, platformLabelOf } from '../domain/host.entity';
 import { keyFingerprint } from '../infrastructure/host-assertion.util';
 
 function key() {
@@ -111,5 +111,24 @@ describe('invariants', () => {
   it('refuses an empty name, on create and on rename', () => {
     expect(() => host({ name: '' })).toThrow();
     expect(() => host().rename('  ')).toThrow();
+  });
+});
+
+describe('platformLabelOf', () => {
+  it('puts the platform before a bare release', () => {
+    expect(platformLabelOf('macos', '15.2')).toBe('macos 15.2');
+    expect(platformLabelOf('ubuntu', '24.04')).toBe('ubuntu 24.04');
+  });
+
+  it('lets a distribution name that already says the platform stand alone', () => {
+    expect(platformLabelOf('ubuntu', 'Ubuntu 24.04.4 LTS')).toBe('Ubuntu 24.04.4 LTS');
+    expect(platformLabelOf('debian', 'Debian GNU/Linux 12 (bookworm)')).toBe(
+      'Debian GNU/Linux 12 (bookworm)',
+    );
+  });
+
+  it('is the platform alone when no release is known', () => {
+    expect(platformLabelOf('linux', null)).toBe('linux');
+    expect(platformLabelOf('linux', '')).toBe('linux');
   });
 });

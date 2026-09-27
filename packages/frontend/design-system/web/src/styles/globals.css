@@ -111,6 +111,10 @@
        lift between `--canvas` and `--card` is what separates them. */
     --canvas: var(--op-white);
     --background: var(--canvas);
+    /* The grey ground a page of cards sits on. The console is one white
+       surface, but Settings still draws white cards on the old grey
+       (`design/version1/Settings.dc.html`), so that ground keeps a name. */
+    --canvas-recessed: var(--op-gray-50);
     --card: var(--op-white); /* the only lit surface on the canvas */
     /* A lit surface that is also a control — the social sign-in buttons — needs
        somewhere to go on hover. It cannot be the canvas, or the button would
@@ -421,6 +425,7 @@
   [data-theme="dark"] {
     --canvas: #121213;
     --background: var(--canvas);
+    --canvas-recessed: var(--canvas); /* dark lifts the card instead */
     --card: #1a1a1c;
     --card-hover: #212124;
     --card-active: #27272b;
@@ -659,6 +664,7 @@
 
   /* ---- Semantic colours as utilities (bg-canvas, text-fg-muted, …) ------ */
   --color-canvas: var(--canvas);
+  --color-canvas-recessed: var(--canvas-recessed);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);

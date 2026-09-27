@@ -1,5 +1,6 @@
 import type {
   EmailVerificationEmailParams,
+  HostNetworkChangedEmailParams,
   HostPairedEmailParams,
   InvitationEmailParams,
   PasswordResetEmailParams,
@@ -89,6 +90,37 @@ export class EmailJobMapper {
     };
   }
 
+  /**
+   * A host connected from another country or network operator. The two
+   * places are what the IP database said at the time — "Barcelona, ES ·
+   * Telefonica" — and DB-IP's licence asks for its attribution beside any
+   * location it gave, so the helper line carries it.
+   */
+  toHostNetworkChanged(input: unknown, t: LocalizedFormatter): HostNetworkChangedEmailParams {
+    const data = this.record(input);
+    const unknown = t.t('emails.hostNetworkChanged.unknownPlace');
+    const moved = this.record(data.toNetwork);
+    const vars = {
+      hostName: this.required(data, 'hostName'),
+      from: this.placeOf(this.record(data.fromNetwork), unknown),
+      to: this.placeOf(moved, unknown),
+      ip: this.required(moved, 'ip'),
+    };
+    return {
+      ...this.securityFrame(t, 'hostNetworkChanged', vars),
+      heading: t.t('emails.hostNetworkChanged.heading'),
+      body: t.t('emails.hostNetworkChanged.body', vars),
+      actionLabel: t.t('emails.hostNetworkChanged.action'),
+      url: this.required(data, 'url'),
+      helperText: `${t.t('emails.hostNetworkChanged.helper')} ${t.t('emails.hostNetworkChanged.attribution')}`,
+      fallbackLabel: t.t('emails.common.pasteLink'),
+      closingText: t.t('emails.hostNetworkChanged.closing', {
+        hostId: this.required(data, 'hostId'),
+      }),
+      recipientEmail: this.required(data, 'to'),
+    };
+  }
+
   toWelcome(input: unknown, t: LocalizedFormatter): WelcomeEmailParams {
     const data = this.record(input);
     const name = this.required(data, 'name');
@@ -149,7 +181,7 @@ export class EmailJobMapper {
 
   private securityFrame(
     t: LocalizedFormatter,
-    template: 'passwordReset' | 'emailVerification' | 'hostPaired',
+    template: 'passwordReset' | 'emailVerification' | 'hostPaired' | 'hostNetworkChanged',
     vars: Record<string, string> = {},
   ) {
     return {
@@ -159,6 +191,15 @@ export class EmailJobMapper {
       brandName: t.t('emails.common.brandName'),
       footer: `${t.t('emails.common.footer')}\n${t.t(`emails.${template}.footerNote`)}`,
     };
+  }
+
+  /** "Barcelona, ES · Telefonica", from whichever parts the database knew. */
+  private placeOf(network: Record<string, unknown>, unknown: string): string {
+    const where = [this.optional(network, 'city'), this.optional(network, 'countryCode')]
+      .filter(Boolean)
+      .join(', ');
+    const place = [where, this.optional(network, 'asnOrg')].filter(Boolean).join(' · ');
+    return place || unknown;
   }
 
   private initials(name: string): string {

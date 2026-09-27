@@ -39,7 +39,7 @@ function workspaceInitial(name: string): string {
  */
 export function AppSidebar() {
   const { t } = useTranslation();
-  const { workspace, sidebar, brand, chrome = true } = useShell();
+  const { workspace, sidebar, brand, rail, chrome = true } = useShell();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -53,7 +53,14 @@ export function AppSidebar() {
   const workspaceName = workspace?.name ?? t('common.appName');
 
   return (
-    <Sidebar mobileTitle={t('nav.sidebarTitle')} mobileDescription={t('nav.sidebarDescription')}>
+    <Sidebar
+      mobileTitle={t('nav.sidebarTitle')}
+      mobileDescription={t('nav.sidebarDescription')}
+      // The sidebar's panel is fixed to the viewport's left edge, and its gap
+      // alone makes room for it in the flow; with a rail in front, the panel
+      // starts past the rail's 56px too, or the rail covers its first column.
+      className={rail ? 'data-[side=left]:left-14' : undefined}
+    >
       <SidebarHeader className="h-14 flex-none flex-row items-center justify-between gap-2 py-0 pr-3 pl-4">
         {brand ?? (
           <div className="flex min-w-0 items-center gap-2.5">

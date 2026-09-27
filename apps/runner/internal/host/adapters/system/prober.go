@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/app"
@@ -25,7 +26,11 @@ var _ app.Prober = (*Prober)(nil)
 const probeTimeout = time.Second
 
 // Prober is the operating system.
-type Prober struct{}
+type Prober struct {
+	mu        sync.Mutex
+	machine   domain.Machine
+	machineAt time.Time
+}
 
 // New builds the prober.
 func New() *Prober { return &Prober{} }

@@ -16,7 +16,7 @@ function RoutineSteps({ className, ...props }: React.ComponentProps<'ol'>) {
   return (
     <ol
       data-slot="routine-steps"
-      className={cn('m-0 flex list-none flex-col p-0', className)}
+      className={cn('m-0 mt-6.5 flex list-none flex-col p-0', className)}
       {...props}
     />
   );

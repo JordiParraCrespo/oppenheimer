@@ -724,7 +724,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
 
 **`hosts/`**
 
-- `host` — `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
+- `host` — (its metadata columns move to four side tables in 15) `id`, `ownerUserId`, `name`, `hostname`, `os`, `arch`,
   `runnerVersion`, `capabilities` jsonb (git/tmux/disk and the detected
   agents), `publicKey` text, `publicKeyFingerprint`,
   `previousPublicKey` text null, `previousPublicKeyFingerprint` null,
@@ -997,13 +997,14 @@ Console-facing, all `/api/v1`, all with `@CheckPolicies` +
 `@RequireScopes` + Swagger decorators:
 
 ```
-GET    /hosts                     read Host          hosts:read
+GET    /hosts                     read Host          hosts:read    ?include=unpaired (14)
 GET    /hosts/{id}                read Host          hosts:read
+GET    /hosts/{id}/timeline       read Host          hosts:read    keyset, newest first (15)
 PATCH  /hosts/{id}                update Host        hosts:write
 DELETE /hosts/{id}                delete Host        hosts:write
 POST   /hosts/pairing             create Host        hosts:write   body: { name }
 GET    /hosts/pairing             read Host          hosts:read    (F5: source IP)
-GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId
+GET    /hosts/pairing/{id}        read Host          hosts:read    → redeemedHostId, and the host (14)
 DELETE /hosts/pairing/{id}        delete Host        hosts:write
 
 GET    /installations             read Installation  repositories:read

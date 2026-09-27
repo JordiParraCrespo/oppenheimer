@@ -4,16 +4,13 @@ import { cn } from '../lib/utils';
 
 /**
  * HostCard — one card per host on the Settings page: a status dot on the
- * left (green running, a green ring when connected, grey idle, a hollow
- * grey ring when offline), the mono name and a meta line (OS, size, region,
- * runner version), the state and last-seen on the right in mono, and an
- * ellipsis whose menu holds Rename, Copy host ID and Remove host.
- *
- * `connected` is "the runner is up", said by the control plane, and no
- * more: whether it is running sessions or idle is a count this card is not
- * always given. `running` and `idle` are for a caller that has it.
+ * left (green running, grey idle, a hollow grey ring when offline), the
+ * mono name and a meta line (OS, size, region, runner version), the state
+ * and last-seen on the right in mono, and an ellipsis whose menu holds
+ * Rename, Copy host ID and Remove host. Measured against
+ * `design/version1/Components.dc.html` ("Host card").
  */
-type HostCardStatus = 'running' | 'connected' | 'idle' | 'offline';
+type HostCardStatus = 'running' | 'idle' | 'offline';
 
 function HostCard({
   name,
@@ -22,6 +19,7 @@ function HostCard({
   state,
   seen,
   action,
+  rename,
   className,
   ...props
 }: React.ComponentProps<'div'> & {
@@ -33,13 +31,15 @@ function HostCard({
   /** Mono: "connected", "last seen 2 days ago". */
   seen?: React.ReactNode;
   action?: React.ReactNode;
+  /** The inline rename row, drawn where the name is while it is open. */
+  rename?: React.ReactNode;
 }) {
   return (
     <div
       data-slot="host-card"
       data-status={status}
       className={cn(
-        'flex items-center gap-4 rounded-lg border border-border-subtle bg-card py-4 pr-3.5 pl-5',
+        'flex items-center gap-3.5 rounded-lg border border-border-subtle bg-card py-4.5 pr-4 pl-5',
         className,
       )}
       {...props}
@@ -49,18 +49,17 @@ function HostCard({
         className={cn(
           'size-[7px] shrink-0 rounded-pill',
           status === 'running' && 'bg-success',
-          status === 'connected' && 'border-[1.5px] border-success',
           status === 'idle' && 'bg-fg-subtle',
           status === 'offline' && 'border-[1.5px] border-fg-subtle',
         )}
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-mono text-[13.5px] text-fg">{name}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.75">
+        {rename ?? <span className="truncate font-mono text-operate text-fg">{name}</span>}
         {meta ? <span className="truncate text-[12.5px] text-fg-muted">{meta}</span> : null}
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+      <div className="flex min-w-30 shrink-0 flex-col items-end gap-0.75 text-right">
         <span className="text-[13px] text-fg">{state}</span>
-        {seen ? <span className="figures text-[11px] text-fg-subtle">{seen}</span> : null}
+        {seen ? <span className="figures text-[11.5px] text-fg-subtle">{seen}</span> : null}
       </div>
       {action ? <span className="shrink-0 [&_button]:text-fg-muted [&_button:hover]:text-fg">{action}</span> : null}
     </div>

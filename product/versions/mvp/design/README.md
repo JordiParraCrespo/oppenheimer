@@ -89,6 +89,7 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   Settings is: `../05-screens.md` records it as the one destination
   beside the console, with its routes, the catalog row and the decision
   log in `../README.md` say the same, and `../../../brief.html` follows.
+  The Hosts section's backend is `../14-hosts-settings.md`.
 - Projects as the frames draw them are in the notes as of 2026-09-26:
   the project chip, the project page, the grouped sidebar and Move in
   `../05-screens.md`, the schema in `../10-api-modules-and-data-model.md`.
