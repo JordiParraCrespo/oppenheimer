@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOKENS } from '../../di/tokens';
 import type { SessionEntity } from '../../modules/sessions/session.entity';
-import { sessionsKeys, useSession, useSessions } from '../sessions.queries';
+import { sessionsKeys, useCloseSession, useSession, useSessions } from '../sessions.queries';
 import { fakeKernel } from './fake-kernel';
 
 /**
@@ -20,7 +20,7 @@ const starting = { id: 's-1', isProvisioning: true } as SessionEntity;
 const open = { id: 's-1', isProvisioning: false } as SessionEntity;
 
 function setup(
-  service: { findById?: unknown; findAll?: unknown },
+  service: { findById?: unknown; findAll?: unknown; close?: unknown },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
     defaultOptions: { queries: { retry: false } },
@@ -113,6 +113,118 @@ describe('useSessions', () => {
     await waitFor(() => expect(result.current.data).toHaveLength(1), { timeout: 5_000 });
     expect(findAll.mock.calls.length).toBeGreaterThanOrEqual(2);
   }, 10_000);
+});
+
+/**
+ * Delete is a close the host answers: the request comes back with the row still
+ * `open`, and only a later read sees it resolved. The list leaves resolved rows
+ * out and keeps reading while a close it asked for is pending.
+ */
+describe('a deleted session', () => {
+  const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
+  const resolved = { id: 'c-1', isProvisioning: false, isResolved: true } as SessionEntity;
+
+  function closing(findAll: ReturnType<typeof vi.fn>) {
+    const close = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper,
+    });
+    return { result, close };
+  }
+
+  it('is not listed once resolved', async () => {
+    const { wrapper } = setup({ findAll: vi.fn().mockResolvedValue([resolved]) });
+    const { result } = renderHook(() => useSessions(), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual([]));
+  });
+
+  it('is read again until its host has resolved it, then the reads stop', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([live])
+      .mockResolvedValueOnce([live])
+      .mockResolvedValue([resolved]);
+    const { result } = closing(findAll);
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.list.data).toEqual([]), { timeout: 8_000 });
+    const reads = findAll.mock.calls.length;
+    await pause(2_500);
+    expect(findAll).toHaveBeenCalledTimes(reads);
+  }, 15_000);
+
+  it('is watched by a reader that selects less than the rows', async () => {
+    const findAll = vi
+      .fn()
+      .mockResolvedValueOnce([live])
+      .mockResolvedValueOnce([live])
+      .mockResolvedValue([resolved]);
+    const close = vi.fn().mockResolvedValue(live);
+    const { wrapper } = setup({ findAll, close });
+    const { result } = renderHook(
+      () => ({
+        empty: useSessions({ select: (rows) => rows.length === 0 }),
+        close: useCloseSession(),
+      }),
+      { wrapper },
+    );
+    await waitFor(() => expect(result.current.empty.data).toBe(false));
+
+    result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(result.current.empty.data).toBe(true), { timeout: 8_000 });
+  }, 15_000);
+
+  it('is watched by the client that asked, not by another', async () => {
+    const asked = setup({
+      findAll: vi.fn().mockResolvedValue([live]),
+      close: vi.fn().mockResolvedValue(live),
+    });
+    const other = vi.fn().mockResolvedValue([live]);
+    const bystander = setup({ findAll: other });
+    const mine = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
+      wrapper: asked.wrapper,
+    });
+    const theirs = renderHook(() => useSessions(), { wrapper: bystander.wrapper });
+    await waitFor(() => expect(mine.result.current.list.data).toHaveLength(1));
+    await waitFor(() => expect(theirs.result.current.data).toHaveLength(1));
+
+    mine.result.current.close.mutate({ id: 'c-1' });
+    await waitFor(() => expect(mine.result.current.close.isSuccess).toBe(true));
+    // The other client reads its list for its own reasons while the watch is
+    // live; that read must not start it polling for a close it never asked.
+    await bystander.queryClient.refetchQueries();
+    const reads = other.mock.calls.length;
+    await pause(2_500);
+    expect(other).toHaveBeenCalledTimes(reads);
+  }, 10_000);
+
+  it('asked again, is watched for a full window from the second ask', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      // A host that is offline: the row never resolves.
+      const findAll = vi.fn().mockResolvedValue([live]);
+      const { result } = closing(findAll);
+      await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+      result.current.close.mutate({ id: 'c-1' });
+      await vi.advanceTimersByTimeAsync(50_000);
+      result.current.close.mutate({ id: 'c-1' });
+      // Past the first ask's window, inside the second's: still reading.
+      await vi.advanceTimersByTimeAsync(20_000);
+      const at70 = findAll.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(findAll.mock.calls.length).toBeGreaterThan(at70);
+      // Past the second window: the reads stop.
+      await vi.advanceTimersByTimeAsync(40_000);
+      const after = findAll.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(findAll).toHaveBeenCalledTimes(after);
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 15_000);
 });
 
 /**

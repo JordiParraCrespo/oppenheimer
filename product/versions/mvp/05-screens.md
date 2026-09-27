@@ -46,7 +46,9 @@
   menu listing every other project — moving is a label change, nothing
   on the host moves (10), so it asks for no confirmation — and Delete, a
   confirm over the close that says whether to discard work that is not
-  pushed. The workspace's **Unassigned** project is the first group: a
+  pushed. The row stays until the host confirms the close, and the
+  sidebar never lists a resolved session (the API keeps it as a
+  tombstone). The workspace's **Unassigned** project is the first group: a
   session that names no project is listed there. Its settings edit its
   repositories and defaults like any project's, but its name is fixed
   and it has no Delete (`PROJECTS_008`).

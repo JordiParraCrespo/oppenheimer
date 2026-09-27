@@ -158,7 +158,11 @@ What belongs here is what the runner does with it:
   `config.json`, and later boots do not dial either — the daemon stays up,
   quiet, so the service manager does not restart it into the same refusal
   every few seconds. `runner status` says what happened; a fresh
-  registration replaces the revoked identity without `--force`.
+  registration replaces the revoked identity without `--force`. The
+  verdict also stops the runner's sessions (tmux ends, every checkout
+  stays): unpairing is a person removing the host, which stops the
+  sessions on it (03, 14), and an agent left running would work where no
+  console can see it. A dropped link still leaves sessions running.
 - **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
   port with one transport adapter, as §3 says; the composition root maps
   each message onto the session service. The launch argv comes from

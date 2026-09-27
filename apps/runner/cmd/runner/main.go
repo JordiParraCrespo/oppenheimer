@@ -409,10 +409,16 @@ Exit codes: 0 ok, 1 failure, 2 usage, 3 auth, 4 forbidden, 5 not found, 6 unreac
 func message(err error) string {
 	var prob *problem.Error
 	if errors.As(err, &prob) {
+		text := prob.Title
 		if prob.Detail != "" {
-			return prob.Title + ": " + prob.Detail
+			text += ": " + prob.Detail
 		}
-		return prob.Title
+		// The catalog code is the stable part of the line: what a script, a
+		// support thread or an installer can match on when the words change.
+		if prob.Code != "" {
+			text += " (" + prob.Code + ")"
+		}
+		return text
 	}
 	return err.Error()
 }
