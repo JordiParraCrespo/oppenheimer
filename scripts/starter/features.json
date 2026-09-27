@@ -11,7 +11,8 @@
         ".agents/skills/shadcn/evals/evals.json",
         "scripts/evals/query-keys",
         "scripts/evals/frontend-audit",
-        ".agents/skills/frontend-audit"
+        ".agents/skills/frontend-audit",
+        ".agents/skills/scaffold-feature/evals"
       ],
       "scripts": ["dev:mvp"]
     },
