@@ -15,7 +15,12 @@ import type { HostPresenceOrmEntity } from './database/host-presence.orm-entity'
 import { HostRegisteredDomainEvent } from './domain/events/host-registered.domain-event';
 import { HostRenamedDomainEvent } from './domain/events/host-renamed.domain-event';
 import { HostUnpairedDomainEvent } from './domain/events/host-unpaired.domain-event';
-import { HostEntity, hostPlatformOf, type RegisterHostProps } from './domain/host.entity';
+import {
+  HostEntity,
+  hostPlatformOf,
+  platformLabelOf,
+  type RegisterHostProps,
+} from './domain/host.entity';
 import { inventoryFromFacts } from './domain/host-inventory.policy';
 import type {
   HostInventory,
@@ -69,7 +74,10 @@ export interface HostResponseView {
  * brought them. Before the first beat the report's own reading is the latest
  * there is (`product/versions/mvp/15-host-metadata.md`).
  */
-function capabilitiesOf(inventory: HostInventory, vitals: HostVitals | null): Record<string, unknown> {
+function capabilitiesOf(
+  inventory: HostInventory,
+  vitals: HostVitals | null,
+): Record<string, unknown> {
   const capabilities: Record<string, unknown> = { ...inventory.facts };
   if (vitals?.diskFreeBytes != null) capabilities.diskFreeBytes = vitals.diskFreeBytes;
   return capabilities;
@@ -387,5 +395,5 @@ function toNumber(value: string | number | null): number | null {
  * than `macos` alone. The same rule `hostPlatformOf` applies to fresh facts.
  */
 function platformLabel(inventory: StoredHostInventory): string {
-  return inventory.osVersion ? `${inventory.platform} ${inventory.osVersion}` : inventory.platform;
+  return platformLabelOf(inventory.platform, inventory.osVersion);
 }

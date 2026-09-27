@@ -61,9 +61,22 @@ export interface RegisterHostProps {
 }
 
 /** A 64-character lowercase hex digest — SHA-256 of the raw key. */
-/** `<platform> <osVersion>` when the runner knew the version, the platform alone otherwise. */
+/**
+ * `<platform> <osVersion>` when the runner knew the version — `macos 15.2` —
+ * the platform alone otherwise. On Linux the runner reports the distribution's
+ * own name as the version ("Ubuntu 24.04.4 LTS"), which already says the
+ * platform, so it stands alone rather than read "ubuntu Ubuntu 24.04.4 LTS".
+ */
+export function platformLabelOf(platform: string, osVersion: string | null | undefined): string {
+  if (!osVersion) return platform;
+  return osVersion.toLowerCase().startsWith(platform.toLowerCase())
+    ? osVersion
+    : `${platform} ${osVersion}`;
+}
+
+/** The host's platform label from a fresh facts document (`platformLabelOf`). */
 export function hostPlatformOf(facts: HostFactsDto): string {
-  return facts.osVersion ? `${facts.platform} ${facts.osVersion}` : facts.platform;
+  return platformLabelOf(facts.platform, facts.osVersion);
 }
 
 const FINGERPRINT = /^[0-9a-f]{64}$/;
