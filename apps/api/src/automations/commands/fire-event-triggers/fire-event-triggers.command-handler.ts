@@ -88,7 +88,7 @@ export class FireEventTriggersCommandHandler
         verdict.kind === 'skip'
           ? AutomationRunEntity.skipped(props, verdict.reason, now)
           : AutomationRunEntity.fire(props, now);
-      if ((await this.runs.insertFiring(run)) && run.isPending) queued += 1;
+      if ((await this.runs.insertFiring(run)).inserted && run.isPending) queued += 1;
     }
     return queued;
   }

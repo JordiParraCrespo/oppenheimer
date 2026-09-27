@@ -19,9 +19,11 @@ export interface RunFilters {
 export interface AutomationRunRepositoryPort {
   /**
    * Insert a firing unless its cause already fired this automation, and stage
-   * its dispatch when it is pending — together. `false` for a duplicate cause.
+   * its dispatch when it is pending — together. A duplicate cause inserts
+   * nothing and answers with the run that cause already made, so a retried
+   * request reads the same run.
    */
-  insertFiring(run: AutomationRunEntity): Promise<boolean>;
+  insertFiring(run: AutomationRunEntity): Promise<{ runId: string; inserted: boolean }>;
 
   findOneForSystem(id: string): Promise<Option<AutomationRunEntity>>;
 

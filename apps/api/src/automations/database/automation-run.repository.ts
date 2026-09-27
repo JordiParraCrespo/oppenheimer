@@ -139,12 +139,19 @@ export class AutomationRunRepository
     super();
   }
 
-  async insertFiring(run: AutomationRunEntity): Promise<boolean> {
+  async insertFiring(run: AutomationRunEntity): Promise<{ runId: string; inserted: boolean }> {
     const inserted = await this.dataSource.transaction((manager) =>
       insertRunWithin(manager, this.outbox, this.mapper, run),
     );
-    if (inserted && run.isPending) await this.outbox.wake();
-    return inserted;
+    if (inserted) {
+      if (run.isPending) await this.outbox.wake();
+      return { runId: run.id, inserted };
+    }
+    const existing: { id: string }[] = await this.dataSource.query(
+      `SELECT "id" FROM "automation_run" WHERE "automationId" = $1 AND "causeKey" = $2`,
+      [run.automationId, run.causeKey],
+    );
+    return { runId: existing[0]?.id ?? run.id, inserted };
   }
 
   async findOneForSystem(id: string): Promise<Option<AutomationRunEntity>> {

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AutomationEntity } from '../automation.entity';
-import type { AutomationTriggerProps } from '../automation.types';
-import { DEFAULT_PLATFORM_LIMITS, resolveAutomationLimits } from '../automation-limits.policy';
-import { AutomationRunEntity } from '../automation-run.entity';
+import { AutomationEntity } from '../domain/automation.entity';
+import type { AutomationTriggerProps } from '../domain/automation.types';
+import {
+  DEFAULT_PLATFORM_LIMITS,
+  resolveAutomationLimits,
+} from '../domain/automation-limits.policy';
+import { AutomationRunEntity } from '../domain/automation-run.entity';
 import {
   capacityGuard,
   firstRefusal,
@@ -12,16 +15,16 @@ import {
   pausedGuard,
   rateGuard,
   staleGuard,
-} from '../fire-guard.policy';
-import { fillHistory, historyWindow } from '../run-history.policy';
+} from '../domain/fire-guard.policy';
+import { fillHistory, historyWindow } from '../domain/run-history.policy';
 import {
   composeRunPrompt,
   eventCauseSummary,
   type RunEventView,
   runCheckout,
-} from '../run-launch.policy';
-import { runRefusalOf } from '../run-refusal.policy';
-import { triggerFromInput } from '../trigger-config.policy';
+} from '../domain/run-launch.policy';
+import { runRefusalOf } from '../domain/run-refusal.policy';
+import { triggerFromInput } from '../domain/trigger-config.policy';
 
 const now = new Date('2026-09-27T10:00:00Z');
 const repositories = [

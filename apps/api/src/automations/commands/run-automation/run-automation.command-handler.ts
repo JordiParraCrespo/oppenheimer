@@ -45,7 +45,6 @@ export class RunAutomationCommandHandler
       },
       new Date(),
     );
-    await this.runs.insertFiring(run);
-    return run.id;
+    return (await this.runs.insertFiring(run)).runId;
   }
 }
