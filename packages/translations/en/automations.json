@@ -19,11 +19,13 @@
   },
   "editor": {
     "newTitle": "New automation",
-    "name": "Automation name",
+    "name": "Name",
     "namePlaceholder": "Name this automation",
-    "back": "Back",
-    "crumb": "Automations",
-    "create": "Create automation",
-    "recap": "Name the automation, then say where it runs."
+    "prompt": "What should the agent do?",
+    "promptPlaceholder": "Describe the work for every run…",
+    "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
+    "forProject": "For {{name}}.",
+    "soon": "The trigger, where it runs and Create arrive with the automations API.",
+    "create": "Create automation"
   }
 }

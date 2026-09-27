@@ -82,10 +82,17 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **A callout never carries a button.** `Callout` is a note in the flow on
   a tonal fill; `neutral` is the default and takes no hue; a tinted tone
   only when something is in that state. The action lives in the form.
-- **One instruction block, one Copy.** Add a host shows the install command
-  and the agent prompt as tabs on the header band of one
-  `CodeBlock layout="panel"`, at a fixed height so the token line under it
-  never moves. Never two blocks with two copy buttons.
+- **Copy first, read second.** Add a host is two buttons — Copy install
+  command, Copy agent prompt — then the instruction behind a `Disclosure`
+  as one `CodeBlock layout="panel"` with Command / Agent prompt tabs on its
+  band; the Settings page shows the panel outright. Never two blocks with
+  two copy buttons.
+- **A fold is a `Disclosure`**: one row that reads as a label, an optional
+  word, a summary while closed, a chevron that turns; the panel opens 14px
+  under it. Defaults in the project dialog, Inspect in Add a host. Its two
+  tones are the only two.
+- **A dialog has three widths**, `md`, `form` and `lg`, and a caller never
+  sets one.
 
 ## Conventions
 

@@ -3,33 +3,36 @@
     "tokenExpires": "El token caduca en {{time}} · un solo uso",
     "tokenExpired": "Token caducado: genera uno nuevo.",
     "newToken": "Nuevo token",
-    "waiting": "Escuchando a este host…",
+    "waiting": "Esperando a que el host se conecte…",
     "registered": "Registrado: esperando a su runner",
     "online": "Runner conectado",
     "mintFailed": "No hemos podido crear un token de registro.",
-    "installerDigest": "SHA-256 del instalador: {{digest}}"
+    "installerDigest": "SHA-256 del instalador: {{digest}}",
+    "copyCommand": "Copiar comando de instalación",
+    "copyPrompt": "Copiar instrucción para el agente",
+    "inspect": "Ver comando e instrucción",
+    "format": "Formato de instalación",
+    "command": "Comando",
+    "agentPrompt": "Instrucción para el agente"
   },
   "add": {
     "title": "Añadir un host",
     "meta": "Nada del host queda expuesto a internet.",
     "back": "Atrás",
-    "crumbNewSession": "Nueva sesión",
     "use": "Usar este host",
     "defaultName": "Nuevo host",
     "install": {
       "title": "Instalar",
       "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
-      "done": "Instalado",
-      "format": "Formato de instalación",
-      "command": "Comando",
-      "agentPrompt": "Instrucción para el agente"
+      "done": "Instalado"
     },
     "connect": {
       "title": "Conectar",
       "subtitle": "El runner se registra con el nombre de máquina que reporta."
     },
     "crumbHosts": "Hosts",
-    "done": "Listo"
+    "done": "Listo",
+    "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
   },
   "settings": {
     "state": {

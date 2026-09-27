@@ -87,6 +87,7 @@ export {
   DialogTitle,
   DialogTrigger,
 } from './components/dialog';
+export { Disclosure, DisclosurePanel, DisclosureTrigger } from './components/disclosure';
 export {
   DropdownMenu,
   DropdownMenuBack,
@@ -176,6 +177,8 @@ export {
   PopoverTrigger,
 } from './components/popover';
 export { Rail, RailItem, RailMark } from './components/rail';
+export type { RepositoryAddOption } from './components/repository-add-field';
+export { RepositoryAddField } from './components/repository-add-field';
 export type {
   RepositoryRowBranch,
   RepositoryRowOption,

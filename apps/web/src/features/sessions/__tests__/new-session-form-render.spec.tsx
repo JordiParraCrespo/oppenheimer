@@ -1,3 +1,4 @@
+import { ConsoleDialogProvider } from '@oppenheimer/frontend-web';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,6 +21,8 @@ import { NewSessionForm } from '../sections/new-session-form';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+  // The kit's i18n concern registers itself on import.
+  initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useSearch: () => ({}) }));
@@ -142,7 +145,13 @@ function rendered(): string[] {
 beforeEach(() => {
   window.localStorage.clear();
   reads.set({ hosts: [], projects: PROJECTS });
-  render(<NewSessionForm />);
+  // The console's dialog owner sits above the composer in the app; here it
+  // holds nothing, so the chips can ask for a dialog and none opens.
+  render(
+    <ConsoleDialogProvider>
+      <NewSessionForm />
+    </ConsoleDialogProvider>,
+  );
   rendered();
 });
 

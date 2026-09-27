@@ -219,6 +219,12 @@ earlier note:
   `/hosts/new`) since the 2026-09-26 evening export, and the second rail
   item reads Automations. A project needs a repository to be saved from the
   console (2026-09-26).
+- `versions/mvp/05-screens.md` and `13-automations.md`: those pages went
+  back to dialogs over the console with the 2026-09-27 export — New
+  project and Project settings, the console's Add a host, the automation
+  editor as a three-step wizard — while Settings keeps its Add a host
+  page. Add a host copies first and shows the instruction behind a fold,
+  in the console and in onboarding (2026-09-27).
 - `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
   console's automations list and its pages have their routes now, so the
   rail is whole; the automation itself — scheduler, trigger, runs — stays

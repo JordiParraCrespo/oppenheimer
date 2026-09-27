@@ -1,6 +1,11 @@
 import { Wordmark } from '@oppenheimer/design-system-web';
 import { useOrganizations } from '@oppenheimer/frontend-consumer/react';
-import { AppShell, RouteError, useConsoleList } from '@oppenheimer/frontend-web';
+import {
+  AppShell,
+  ConsoleDialogProvider,
+  RouteError,
+  useConsoleList,
+} from '@oppenheimer/frontend-web';
 import { createFileRoute, Navigate, Outlet, redirect, useMatches } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationsSidebar } from '@/features/automations/sections/automations-sidebar';
@@ -8,6 +13,7 @@ import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import { NAV, USER_MENU } from '@/lib/nav';
+import { ConsoleDialogs } from '@/providers/console-dialogs';
 
 declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
@@ -59,6 +65,10 @@ export const Route = createFileRoute('/_authenticated')({
  *
  * A route that declares `shell: 'own'` (Settings) is rendered bare: it goes
  * through the same guard and the same redirect, and draws its own chrome.
+ *
+ * The console's dialogs — New project, Add a host, New automation — have
+ * one owner, here: `ConsoleDialogProvider` holds which is up and
+ * `ConsoleDialogs` mounts it, so a chip or a sidebar button only asks.
  */
 function AuthenticatedShell() {
   const { t } = useTranslation();
@@ -77,18 +87,21 @@ function AuthenticatedShell() {
   if (ownShell) return <Outlet />;
 
   return (
-    <AppShell
-      nav={NAV}
-      userMenuLinks={USER_MENU}
-      rail={<ConsoleRail />}
-      sidebar={SIDEBARS[list]}
-      // The brand row names the product, not the workspace — version 1 has one
-      // workspace per account. `chrome={false}` is the bar, the palette and
-      // the foot's hairline; `AppShell` and `use-shell.ts` say why.
-      brand={<Wordmark size={18} product={t('common.product')} />}
-      chrome={false}
-    >
-      <Outlet />
-    </AppShell>
+    <ConsoleDialogProvider>
+      <AppShell
+        nav={NAV}
+        userMenuLinks={USER_MENU}
+        rail={<ConsoleRail />}
+        sidebar={SIDEBARS[list]}
+        // The brand row names the product, not the workspace — version 1 has one
+        // workspace per account. `chrome={false}` is the bar, the palette and
+        // the foot's hairline; `AppShell` and `use-shell.ts` say why.
+        brand={<Wordmark size={18} product={t('common.product')} />}
+        chrome={false}
+      >
+        <Outlet />
+      </AppShell>
+      <ConsoleDialogs />
+    </ConsoleDialogProvider>
   );
 }

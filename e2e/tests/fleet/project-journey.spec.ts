@@ -32,11 +32,17 @@ test('a project made in the console starts a session its host builds', async ({ 
 
   await signInAs(page, user);
 
+  // New project is a dialog over the console: the name, a repository added
+  // from the field (cloned by default), the default host in the Defaults fold.
   await page.getByRole('button', { name: 'New project' }).click();
-  await page.getByLabel('Project name').fill(project);
-  await page.getByRole('checkbox', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).check();
-  await page.getByRole('button', { name: box.host.name }).click();
-  await page.getByRole('button', { name: 'Create project' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New project' });
+  await dialog.getByLabel('Name').fill(project);
+  await dialog.getByRole('button', { name: 'Add a repository…' }).click();
+  await dialog.getByRole('option', { name: new RegExp(STUB_REPOSITORIES.mobile.name) }).click();
+  await dialog.getByRole('button', { name: /^Defaults/ }).click();
+  await dialog.getByRole('button', { name: box.host.name }).click();
+  await dialog.getByRole('button', { name: 'Create project' }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(header(0)).toBeVisible();
 
   await page.goto('/sessions/new');

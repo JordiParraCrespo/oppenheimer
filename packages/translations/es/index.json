@@ -310,68 +310,48 @@
     "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "Nuevo proyecto",
       "editTitle": "Ajustes del proyecto",
-      "name": "Nombre del proyecto",
+      "gone": "Ese proyecto ya no está aquí.",
+      "name": "Nombre",
       "namePlaceholder": "Ponle nombre al proyecto",
-      "back": "Atrás",
-      "crumbSessions": "Sesiones",
-      "crumbNewSession": "Nueva sesión",
+      "repositories": "Repositorios",
+      "addRepository": "Añadir un repositorio…",
+      "repositoriesHint": "Las sesiones de este proyecto pueden clonarlos. Añade al menos uno.",
+      "noMatch": "Ningún repositorio coincide con “{{query}}”",
+      "allAdded": "Ya están añadidos todos los repositorios",
+      "remove": "Quitar {{name}}",
+      "defaults": "Valores por defecto",
+      "optional": "opcional",
+      "defaultsHint": "Con lo que empieza cada sesión nueva de este proyecto. Cada uno se puede cambiar por sesión.",
+      "host": "Host",
+      "noHost": "Todavía no hay ningún host emparejado.",
+      "agent": "Agente",
+      "clonedByDefault": "Se clonan por defecto",
+      "clonedTitle": "Se clona por defecto en las sesiones nuevas",
+      "selectFirst": "Elige repositorios arriba primero.",
+      "clonedCount_one": "{{count}} clonado",
+      "clonedCount_other": "{{count}} clonados",
+      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
       "create": "Crear proyecto",
       "creating": "Creando…",
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "failed": "No se pudo crear el proyecto.",
       "saveFailed": "No se pudo guardar el proyecto.",
-      "recap": {
-        "name": "Ponle nombre al proyecto y elige sus repositorios.",
-        "repositories": "Elige al menos un repositorio.",
-        "default": "Marca al menos un repositorio por defecto."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositorios",
-          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-          "label": "Repositorios por defecto",
-          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-          "defaultCount": "{{defaults}} de {{count}} por defecto",
-          "search": "Buscar repositorios…",
-          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-          "none": "Todavía no hay ningún repositorio conectado.",
-          "default": "Por defecto",
-          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-        },
-        "host": {
-          "title": "Host por defecto",
-          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-          "none": "Todavía no hay ningún host emparejado."
-        },
-        "agent": {
-          "title": "Agente por defecto",
-          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-        }
-      },
-      "delete": {
-        "title": "Eliminar proyecto",
-        "hint": "Elimina este proyecto.",
-        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
-        "action": "Eliminar proyecto",
-        "deleting": "Eliminando…",
-        "failed": "No se pudo eliminar el proyecto."
-      },
+      "delete": "Eliminar proyecto",
+      "deleteHint": "Elimina este proyecto",
+      "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
+      "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
       "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
-      "confirm": "Eliminar proyecto"
+      "confirm": "Eliminar proyecto",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar el proyecto."
     },
     "unassigned": "Sin asignar"
   },
@@ -599,12 +579,14 @@
     },
     "editor": {
       "newTitle": "Nueva automatización",
-      "name": "Nombre de la automatización",
+      "name": "Nombre",
       "namePlaceholder": "Ponle nombre a la automatización",
-      "back": "Atrás",
-      "crumb": "Automatizaciones",
-      "create": "Crear automatización",
-      "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
+      "prompt": "¿Qué debe hacer el agente?",
+      "promptPlaceholder": "Describe el trabajo de cada ejecución…",
+      "promptHint": "El pull request, la incidencia o el commit que disparó la ejecución se pasa como contexto.",
+      "forProject": "Para {{name}}.",
+      "soon": "El disparador, dónde se ejecuta y Crear llegan con la API de automatizaciones.",
+      "create": "Crear automatización"
     }
   },
   "hosts": {
@@ -612,33 +594,36 @@
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "tokenExpired": "Token caducado: genera uno nuevo.",
       "newToken": "Nuevo token",
-      "waiting": "Escuchando a este host…",
+      "waiting": "Esperando a que el host se conecte…",
       "registered": "Registrado: esperando a su runner",
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
-      "installerDigest": "SHA-256 del instalador: {{digest}}"
+      "installerDigest": "SHA-256 del instalador: {{digest}}",
+      "copyCommand": "Copiar comando de instalación",
+      "copyPrompt": "Copiar instrucción para el agente",
+      "inspect": "Ver comando e instrucción",
+      "format": "Formato de instalación",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente"
     },
     "add": {
       "title": "Añadir un host",
       "meta": "Nada del host queda expuesto a internet.",
       "back": "Atrás",
-      "crumbNewSession": "Nueva sesión",
       "use": "Usar este host",
       "defaultName": "Nuevo host",
       "install": {
         "title": "Instalar",
         "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
-        "done": "Instalado",
-        "format": "Formato de instalación",
-        "command": "Comando",
-        "agentPrompt": "Instrucción para el agente"
+        "done": "Instalado"
       },
       "connect": {
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
       },
       "crumbHosts": "Hosts",
-      "done": "Listo"
+      "done": "Listo",
+      "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
     },
     "settings": {
       "state": {
@@ -1136,10 +1121,7 @@
       },
       "host": {
         "title": "Añade tu primer host",
-        "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
-        "installCommand": "Comando de instalación",
-        "agentPrompt": "Prompt para un agente de IA",
-        "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+        "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
         "defaultName": "Mi primer host",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."

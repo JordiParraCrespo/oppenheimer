@@ -9,6 +9,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Plus, Zap } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
+import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,8 @@ import { useTranslation } from 'react-i18next';
  * (`product/versions/mvp/13-automations.md`): New automation on top, the
  * Projects line with its count, then All automations and a folding header
  * per project — each with New automation in it — over the project's
- * automations.
+ * automations. New automation, everywhere it appears, asks the console for
+ * its editor dialog, for the project whose header it sits in.
  *
  * The projects are read because the groups are theirs, all but the
  * workspace's Unassigned: it holds the sessions that name no project, and an
@@ -34,13 +36,14 @@ export function AutomationsSidebar() {
   const projects = useProjects();
   const named = projects.data?.filter((project) => !project.isUnassigned);
   const [closed, setClosed] = useState<string[]>([]);
+  const dialogs = useConsoleDialog();
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-3 pb-2.5">
-        <Button size="sm" block render={<Link to="/automations/new" />}>
+        <Button size="sm" block onClick={() => dialogs.open({ kind: 'automation' })}>
           {t('automations.sidebar.new')}
         </Button>
       </div>
@@ -85,7 +88,7 @@ export function AutomationsSidebar() {
                       size="xs"
                       variant="quiet"
                       aria-label={t('automations.sidebar.newHere', { name: project.name })}
-                      render={<Link to="/automations/new" search={{ project: project.id }} />}
+                      onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
                     >
                       <Plus />
                     </IconButton>
@@ -94,9 +97,12 @@ export function AutomationsSidebar() {
                 {open ? (
                   <SidebarEmptyRow>
                     {t('automations.sidebar.emptyProject')}{' '}
-                    <Link to="/automations/new" search={{ project: project.id }}>
+                    <button
+                      type="button"
+                      onClick={() => dialogs.open({ kind: 'automation', projectId: project.id })}
+                    >
                       {t('automations.sidebar.createOne')}
-                    </Link>
+                    </button>
                   </SidebarEmptyRow>
                 ) : null}
               </div>

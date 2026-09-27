@@ -1,5 +1,10 @@
 import { cn, Separator, StatusDot, Link as TextLink } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
+import {
+  HostPairingCopyButtons,
+  HostPairingInstruction,
+  type PairingInstruction,
+} from './pairing-install';
 import { TokenCountdown } from './token-countdown';
 
 /**
@@ -14,24 +19,19 @@ export interface PairingHost {
 }
 
 /**
- * The pairing chrome: the token's clock, the way to replace it, and the status
- * line that resolves in place when a runner spends it.
+ * The pairing column: the copy buttons, the token's clock and the way to
+ * replace it, the instruction behind its fold, a rule, and the status line
+ * that resolves in place when a runner spends the token.
  *
- * One place because two surfaces show the same three facts — the onboarding
+ * One place because two surfaces draw the same column — the onboarding
  * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host page — and a feature may not import another feature. What
- * differs between them is *above* this: the step lays the two forms of the
- * instruction out as cards, the page puts them behind a switch. What this
- * owns is everything below that, which the two had written twice.
- *
- * The page draws the two halves apart — the token line under its Install
- * step, the status row as its Connect step — so they are exported on their
- * own too, `HostPairingToken` and `HostPairingStatus`; this is the two
- * stacked with a rule between, which is the step's shape.
- *
- * `layout` is the export's two sizes, not a theme: the step's line is 12px on
- * the muted ramp (`design/version1/AddHost.dc.html`), the page's 11.5px on
- * the subtle one (`…/Components.dc.html`). Same vocabulary as `CodeBlock`.
+ * Add a host dialog (`.../sessions/dialogs/add-host.tsx`) — and a feature
+ * may not import another feature. `layout` is the export's two sizes: the
+ * step's large buttons and 12px line (`design/version1/AddHost.dc.html`),
+ * the dialog's medium buttons and 11.5px line (`SessionsConsole.dc.html`).
+ * Settings pairs on a page of its own with the instruction shown outright,
+ * so it composes the parts — `HostPairingToken`, `HostPairingInstruction`
+ * with its panel layout, `HostPairingStatus` — rather than this column.
  *
  * The status word says what the API said: a host row exists once the runner
  * registers, and `online` is the only thing the control plane reports about it.
@@ -41,6 +41,7 @@ export interface PairingHost {
  * arrives with the capabilities themselves.
  */
 export function HostPairingChrome({
+  pairing,
   expiresAt,
   expired,
   onRegenerate,
@@ -48,6 +49,8 @@ export function HostPairingChrome({
   host,
   layout = 'dialog',
 }: {
+  /** Absent while the token is being minted. */
+  pairing: PairingInstruction | null;
   /**
    * When the token runs out. The countdown ticks in `TokenCountdown`, so a
    * second passing re-renders that line and not this chrome or its surface.
@@ -59,18 +62,23 @@ export function HostPairingChrome({
   busy?: boolean;
   /** The machine this token paired, once one has spent it. */
   host: PairingHost | null;
-  /** `step`: onboarding's 12px line. `dialog`: the 11.5px of Add a host. */
+  /** `step`: onboarding's sizes. `dialog`: Add a host's. */
   layout?: 'step' | 'dialog';
 }) {
+  const step = layout === 'step';
   return (
     <>
-      <HostPairingToken
-        expiresAt={expiresAt}
-        expired={expired}
-        onRegenerate={onRegenerate}
-        busy={busy}
-        layout={layout}
-      />
+      <div className="flex flex-col gap-2.5">
+        <HostPairingCopyButtons pairing={pairing} size={step ? 'lg' : 'md'} />
+        <HostPairingToken
+          expiresAt={expiresAt}
+          expired={expired}
+          onRegenerate={onRegenerate}
+          busy={busy}
+          layout={layout}
+        />
+      </div>
+      <HostPairingInstruction pairing={pairing} layout="fold" />
       <Separator />
       <HostPairingStatus host={host} layout={layout} />
     </>
@@ -89,21 +97,18 @@ export function HostPairingToken({
   expired: boolean;
   onRegenerate: () => void;
   busy?: boolean;
+  /** `step`: onboarding's 12px line. `dialog`: the 11.5px of Add a host. */
   layout?: 'step' | 'dialog';
 }) {
   const { t } = useTranslation();
   const step = layout === 'step';
 
   return (
-    <div
-      className={
-        step ? 'flex flex-wrap items-baseline gap-3' : 'flex items-baseline justify-between gap-3'
-      }
-    >
+    <div className="flex flex-wrap items-baseline gap-2.5">
       <span
         className={
           step
-            ? 'figures text-xs whitespace-nowrap text-fg-muted'
+            ? 'figures text-xs whitespace-nowrap text-fg-subtle'
             : 'figures text-[11.5px] whitespace-nowrap text-fg-subtle'
         }
       >

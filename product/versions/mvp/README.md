@@ -473,3 +473,11 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-27: **nothing open is New session**: the console lands on
   `/sessions/new`, and `/sessions` redirects there, instead of a "no
   sessions open" pane (05).
+- 2026-09-27: **New project, Project settings, the console's Add a host
+  and the automation editor are dialogs over the console again**, as the
+  2026-09-27 export draws them; the `_editor` pages of 2026-09-26 are
+  gone. Settings keeps its Add a host page. Add a host copies first —
+  Copy install command, Copy agent prompt — and shows the instruction
+  behind an Inspect fold, in the console and in onboarding; the
+  automation editor holds its Task step alone until the API names a
+  trigger (05, 13).

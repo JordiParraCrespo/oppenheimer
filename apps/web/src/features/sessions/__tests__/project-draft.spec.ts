@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { projectBlock, repositorySummary } from '../lib/project-draft';
+import { projectBlock } from '../lib/project-draft';
 
 const row = (id: string, isDefault: boolean) => ({ id, isDefault, branch: 'main' });
 
@@ -22,26 +22,5 @@ describe('projectBlock', () => {
         defaultAgent: null,
       }),
     ).toBeNull();
-  });
-});
-
-describe('repositorySummary', () => {
-  it('counts the rows and the defaults among them', () => {
-    expect(repositorySummary([row('a', true), row('b', false)])).toEqual({
-      count: 2,
-      defaults: 1,
-    });
-  });
-
-  it('lets the Unassigned project save with no repository, but not with no default', () => {
-    const draft = { rows: [], defaultHostId: 'host-1', defaultAgent: null };
-    expect(projectBlock('Unassigned', draft, { holdsNone: true })).toBeNull();
-    expect(
-      projectBlock(
-        'Unassigned',
-        { ...draft, rows: [{ id: 'inst:1', isDefault: false, branch: 'main' }] },
-        { holdsNone: true },
-      ),
-    ).toBe('default');
   });
 });

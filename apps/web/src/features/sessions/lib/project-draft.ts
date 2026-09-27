@@ -1,9 +1,9 @@
 import type { RepositoryRowValue } from '@oppenheimer/design-system-web';
 
 /**
- * What the project page holds while it is being filled, apart from the
- * name, which is the form's: the rows the picker ticked, the default host,
- * the default agent.
+ * What the project dialog holds while it is being filled, apart from the
+ * name, which is the form's: the rows added, the default host, the default
+ * agent.
  */
 export interface ProjectDraft {
   rows: readonly RepositoryRowValue[];
@@ -11,7 +11,7 @@ export interface ProjectDraft {
   defaultAgent: string | null;
 }
 
-/** Why Save is off, in the order the recap line reads them; `null` is ready. */
+/** Why Save is off, in the order they are checked; `null` is ready. */
 export type ProjectBlock = 'name' | 'repositories' | 'default';
 
 /**
@@ -34,9 +34,4 @@ export function projectBlock(
   if (draft.rows.length === 0) return options.holdsNone ? null : 'repositories';
   if (!draft.rows.some((row) => row.isDefault)) return 'default';
   return null;
-}
-
-/** The repositories step's summary, as counts: how many, and how many default. */
-export function repositorySummary(rows: readonly RepositoryRowValue[]) {
-  return { count: rows.length, defaults: rows.filter((row) => row.isDefault).length };
 }

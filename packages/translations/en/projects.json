@@ -1,66 +1,46 @@
 {
-  "page": {
+  "dialog": {
     "newTitle": "New project",
     "editTitle": "Project settings",
-    "name": "Project name",
-    "namePlaceholder": "Name this project",
-    "back": "Back",
-    "crumbSessions": "Sessions",
-    "crumbNewSession": "New session",
+    "gone": "That project is no longer here.",
+    "name": "Name",
+    "namePlaceholder": "Name your project",
+    "repositories": "Repositories",
+    "addRepository": "Add a repository…",
+    "repositoriesHint": "Sessions in this project can clone these. Add at least one.",
+    "noMatch": "No repository matches “{{query}}”",
+    "allAdded": "Every repository is added",
+    "remove": "Remove {{name}}",
+    "defaults": "Defaults",
+    "optional": "optional",
+    "defaultsHint": "What every new session in this project starts with. Each can be changed per session.",
+    "host": "Host",
+    "noHost": "No host is paired yet.",
+    "agent": "Agent",
+    "clonedByDefault": "Cloned by default",
+    "clonedTitle": "Cloned by default in new sessions",
+    "selectFirst": "Select repositories above first.",
+    "clonedCount_one": "{{count}} cloned",
+    "clonedCount_other": "{{count}} cloned",
+    "branchEmpty": "No branch named “{{query}}”",
     "create": "Create project",
     "creating": "Creating…",
     "save": "Save changes",
     "saving": "Saving…",
     "failed": "The project could not be created.",
     "saveFailed": "The project could not be saved.",
-    "recap": {
-      "name": "Name the project, then pick its repositories.",
-      "repositories": "Pick at least one repository.",
-      "default": "Mark at least one repository as default."
-    },
-    "summary": {
-      "repositories_one": "{{count}} repository · {{defaults}} default",
-      "repositories_other": "{{count}} repositories · {{defaults}} default"
-    },
-    "steps": {
-      "repositories": {
-        "title": "Repositories",
-        "subtitle": "The code sessions in this project can clone.",
-        "label": "Default repositories",
-        "hint": "Ticked in every new session. Add others per session.",
-        "defaultCount": "{{defaults}} of {{count}} by default",
-        "search": "Search repositories…",
-        "noMatch": "No repository matches “{{query}}”.",
-        "none": "No repository is connected yet.",
-        "default": "Default",
-        "defaultTitle": "Cloned by default in new sessions",
-        "branchEmpty": "No branch named “{{query}}”"
-      },
-      "host": {
-        "title": "Default host",
-        "subtitle": "Where new sessions run unless you pick another.",
-        "none": "No host is paired yet."
-      },
-      "agent": {
-        "title": "Default agent",
-        "subtitle": "Started in every new session. Change it per session."
-      }
-    },
-    "delete": {
-      "title": "Delete project",
-      "hint": "Delete this project.",
-      "blocked_one": "Move or delete its {{count}} session first.",
-      "blocked_other": "Move or delete its {{count}} sessions first.",
-      "action": "Delete project",
-      "deleting": "Deleting…",
-      "failed": "The project could not be deleted."
-    },
+    "delete": "Delete project",
+    "deleteHint": "Delete this project",
+    "deleteBlocked_one": "Move or delete its {{count}} session first",
+    "deleteBlocked_other": "Move or delete its {{count}} sessions first",
     "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
   },
   "deleteDialog": {
     "title": "Delete {{name}}?",
     "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
-    "confirm": "Delete project"
+    "confirm": "Delete project",
+    "deleting": "Deleting…",
+    "failed": "The project could not be deleted."
   },
   "unassigned": "Unassigned"
 }

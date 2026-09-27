@@ -49,10 +49,7 @@
     },
     "host": {
       "title": "Añade tu primer host",
-      "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
-      "installCommand": "Comando de instalación",
-      "agentPrompt": "Prompt para un agente de IA",
-      "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+      "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
       "defaultName": "Mi primer host",
       "skip": "Saltar por ahora",
       "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."

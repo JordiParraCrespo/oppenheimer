@@ -58,6 +58,7 @@ describe('HostPairingChrome', () => {
     clock.set(START);
     render(
       <HostPairingChrome
+        pairing={{ installCommand: 'curl …', agentPrompt: 'Install …' }}
         expiresAt={new Date(START + 10 * 60_000)}
         expired={false}
         onRegenerate={() => {}}

@@ -49,10 +49,7 @@
     },
     "host": {
       "title": "Add your first host",
-      "description": "A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.",
-      "installCommand": "Install command",
-      "agentPrompt": "Prompt for an AI agent",
-      "agentNote": "Paste into Claude Code or Codex already running on that machine.",
+      "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
       "defaultName": "My first host",
       "skip": "Skip for now",
       "skipNote": "You can pair a machine later. Sessions need one before they can run."

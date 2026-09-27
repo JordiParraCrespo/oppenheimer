@@ -55,11 +55,12 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 - Building a screen this console does not have. There is no profile page
   inside the console and no settings pane in it: Settings is its own chrome
   beside the console (`routes/_authenticated/settings.tsx`), and its sections
-  are features named after their modules (`profile`, `hosts`). There is one
-  pairing screen, `AddHostScreen`, mounted twice: at `/hosts/new` over the
-  console's main column for the composer's host chip, and at
-  `/settings/hosts/new` inside Settings, where `from="settings"` makes its
-  header read Hosts and Done (`product/versions/mvp/05-screens.md`).
+  are features named after their modules (`profile`, `hosts`). The console
+  pairs a machine in a dialog, `sessions/dialogs/add-host.tsx`, from the
+  composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
+  own at `/settings/hosts/new`. New project, Project settings and the
+  automation editor are dialogs too, not pages
+  (`product/versions/mvp/05-screens.md`, `13-automations.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `packages/frontend/web/src/auth/components/password-requirements.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:

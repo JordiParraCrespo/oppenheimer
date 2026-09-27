@@ -2,7 +2,6 @@ import {
   Alert,
   AlertDescription,
   Button,
-  CodeBlock,
   EditorPageBack,
   PageHeader,
   PageHeaderCrumbs,
@@ -11,66 +10,48 @@ import {
   PageHeaderRow,
   RoutineStep,
   RoutineSteps,
-  Skeleton,
 } from '@oppenheimer/design-system-web';
 import { Cpu } from '@oppenheimer/design-system-web/icons';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { HostPairingStatus, HostPairingToken } from '@oppenheimer/frontend-web';
+import {
+  HostPairingInstruction,
+  HostPairingStatus,
+  HostPairingToken,
+} from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** The two ways to read one instruction, and the key each reads its label by. */
-const FORMATS = ['command', 'agentPrompt'] as const;
-type Format = (typeof FORMATS)[number];
-
-const isFormat = (value: string): value is Format => (FORMATS as readonly string[]).includes(value);
-
 /**
- * Add a host — pairing a machine without leaving the console
- * (`product/versions/mvp/05-screens.md`).
+ * Settings → Hosts → Add a host: pairing a machine from Settings
+ * (`design/version1/Settings.dc.html`, `product/versions/mvp/05-screens.md`).
  *
- * The 2026-09-26 evening export made it a page over the main column rather
- * than a dialog, built like the automation editor: a page header with
- * Cancel and Use this host on its right and one fact under the title —
- * nothing on the host is exposed to the internet — then two numbered steps.
- * Install is the instruction in two forms, the Command / Agent prompt pills
- * in the panel's own band beside Copy, then the token line; Connect is the status row
- * that resolves in place when a runner spends the token. Both steps tick
- * themselves done on the same event, because installing is what connects.
+ * A page inside the Settings frame, built like the automation editor once
+ * was: a page header with Cancel and Done on its right and one fact under
+ * the title — nothing on the host is exposed to the internet — then two
+ * numbered steps. Install is the kit's instruction panel shown outright,
+ * the Command / Agent prompt pills in its band beside Copy, then the token
+ * line; Connect is the status row that resolves in place when a runner
+ * spends the token. Both steps tick themselves done on the same event,
+ * because installing is what connects. Back, the crumb, Cancel and Done all
+ * return to the list.
  *
- * The frame around it — the scrolling column and the body — is the `_editor`
- * layout route's; this is what fills it.
- *
- * The footer's primary arms on a **registered** host rather than an online
- * one, unlike onboarding's Continue: a session may be started on a machine
- * whose runner is still coming up — the control plane records it and owes
- * it to that host the moment it connects. Using the host lands on New session
- * with it picked (`?host=`), the way a new project lands there picked. Mounted
- * in Settings (`/settings/hosts/new`, inside the Settings frame) the same page
- * reads Hosts as its parent and Done as its primary, back to the list.
+ * The console pairs a machine in a dialog instead
+ * (`sessions/dialogs/add-host.tsx`, the 2026-09-27 export); this page is
+ * Settings' own, because its frame keeps Settings around it.
  *
  * Both forms of the instruction come from the API with the secret already in
  * them: it is shown once, the server is the only place that knows it, so
  * neither string is assembled here.
  */
-export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settings' }) {
+export function AddHostScreen() {
   const { t } = useTranslation();
-  // Where the page is mounted says where it was opened from, and the header
-  // reads everything it says — crumb, Cancel, Back, the primary — off this
-  // one fact: in Settings the parent is Hosts and the primary is Done,
-  // because nothing there is picking a machine for a session.
-  const settings = from === 'settings';
-  const back = settings ? { to: '/settings/hosts' as const } : { to: '/sessions/new' as const };
+  const back = { to: '/settings/hosts' as const };
   const navigate = useNavigate();
   const resolveError = useErrorMessage();
   const { pairing, expiresAt, expired, host, isPending, error, regenerate } = useHostPairing(
     t('hosts.add.defaultName'),
   );
-  // Which way the same instruction is being read. The page is the lowest
-  // component that reads it, and the switch changes nothing else on screen.
-  const [format, setFormat] = useState<Format>('command');
   const connected = host !== null;
 
   return (
@@ -79,9 +60,7 @@ export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settin
 
       <PageHeader className="mb-7">
         <PageHeaderCrumbs>
-          <Link {...back}>
-            {settings ? t('hosts.add.crumbHosts') : t('hosts.add.crumbNewSession')}
-          </Link>
+          <Link {...back}>{t('hosts.add.crumbHosts')}</Link>
           <span>/</span>
           <PageHeaderHere>{t('hosts.add.title')}</PageHeaderHere>
         </PageHeaderCrumbs>
@@ -97,14 +76,9 @@ export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settin
                 type="button"
                 size="sm"
                 disabled={!host}
-                onClick={() =>
-                  host &&
-                  (settings
-                    ? navigate(back)
-                    : navigate({ to: '/sessions/new', search: { host: host.id } }))
-                }
+                onClick={() => host && navigate(back)}
               >
-                {settings ? t('hosts.add.done') : t('hosts.add.use')}
+                {t('hosts.add.done')}
               </Button>
             </>
           }
@@ -131,32 +105,7 @@ export function AddHostScreen({ from = 'console' }: { from?: 'console' | 'settin
           summary={t('hosts.add.install.done')}
         >
           <div className="flex flex-col gap-2">
-            {pairing ? (
-              <CodeBlock
-                layout="panel"
-                tabs={FORMATS.map((option) => ({
-                  value: option,
-                  label: t(`hosts.add.install.${option}` as const),
-                }))}
-                tab={format}
-                onTabChange={(next) => {
-                  // The block speaks strings; the guard is what keeps that at
-                  // the boundary instead of casting it away.
-                  if (isFormat(next)) setFormat(next);
-                }}
-                tabsLabel={t('hosts.add.install.format')}
-                code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
-                note={
-                  format === 'command' && pairing.installScriptSha256
-                    ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
-                    : undefined
-                }
-                copyLabel={t('common.copy')}
-                copiedLabel={t('common.copied')}
-              />
-            ) : (
-              <Skeleton className="h-48 w-full" />
-            )}
+            <HostPairingInstruction pairing={pairing ?? null} layout="panel" />
 
             <HostPairingToken
               expiresAt={expiresAt}
