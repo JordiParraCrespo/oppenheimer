@@ -2562,8 +2562,17 @@
     },
     "/api/v1/organizations/{orgId}/members/me": {
       "get": {
-        "operationId": "active",
-        "parameters": [],
+        "operationId": "getMembership",
+        "parameters": [
+          {
+            "name": "orgId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2631,7 +2640,7 @@
             "bearer": []
           }
         ],
-        "summary": "Get the caller's membership in the active organization",
+        "summary": "Get the caller's own membership in an organization",
         "tags": ["Organization members"]
       }
     },

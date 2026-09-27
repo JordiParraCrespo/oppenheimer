@@ -2856,14 +2856,16 @@ export type SetActiveResponses = {
 
 export type SetActiveResponse = SetActiveResponses[keyof SetActiveResponses];
 
-export type ActiveData = {
+export type GetMembershipData = {
     body?: never;
-    path?: never;
+    path: {
+        orgId: string;
+    };
     query?: never;
     url: '/api/v1/organizations/{orgId}/members/me';
 };
 
-export type ActiveErrors = {
+export type GetMembershipErrors = {
     /**
      * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
      */
@@ -2888,13 +2890,13 @@ export type ActiveErrors = {
     502: ProblemDetailsDto;
 };
 
-export type ActiveError = ActiveErrors[keyof ActiveErrors];
+export type GetMembershipError = GetMembershipErrors[keyof GetMembershipErrors];
 
-export type ActiveResponses = {
+export type GetMembershipResponses = {
     200: MemberResponseDto;
 };
 
-export type ActiveResponse = ActiveResponses[keyof ActiveResponses];
+export type GetMembershipResponse = GetMembershipResponses[keyof GetMembershipResponses];
 
 export type List3Data = {
     body?: never;
