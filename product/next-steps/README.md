@@ -47,3 +47,7 @@ where these land is the first open question below.
 - 2026-09-27: 0.2 gains a second document, the Pull requests area:
   a rail item with a rule-based queue (whose turn it is), saved views
   and analytics, algorithmic first with any agent help later.
+- 2026-09-27: the owner set the Pull requests area's first cut to the
+  simplest version: a PR list like Codex's plus a keyboard triage that
+  always opens the next PR to review. Sections, views and analytics
+  stay the direction, after it.
