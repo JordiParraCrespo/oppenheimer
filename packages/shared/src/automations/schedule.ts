@@ -36,7 +36,7 @@ export interface ScheduleRule {
   readonly timezone: string;
 }
 
-interface WallTime {
+export interface WallTime {
   year: number;
   month: number; // 1–12
   day: number;

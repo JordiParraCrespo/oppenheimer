@@ -175,7 +175,17 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-      "HOSTS_007": "No image is waiting for that command."
+      "HOSTS_007": "No image is waiting for that command.",
+      "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
+      "AUTOMATIONS_002": "Choose a workspace before working with automations.",
+      "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
+      "AUTOMATIONS_004": "One of the repositories isn't available to this workspace.",
+      "AUTOMATIONS_005": "That agent can't run an automation.",
+      "AUTOMATIONS_006": "A trigger would never fire. Pick a later time.",
+      "AUTOMATIONS_007": "That project can't hold automations.",
+      "AUTOMATIONS_008": "That run doesn't exist.",
+      "INBOUND_001": "That event source isn't known.",
+      "INBOUND_002": "The delivery carries no delivery id."
     },
     "notFound": {
       "title": "That page does not exist",

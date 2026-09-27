@@ -11,6 +11,12 @@ import { Session } from '../auth/database/session.orm-entity';
 import { Verification } from '../auth/database/verification.orm-entity';
 import { auth, closeAuthConnections } from '../auth/infrastructure/better-auth.config';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
+import { AutomationOrmEntity } from '../automations/database/automation.orm-entity';
+import { AutomationRevisionOrmEntity } from '../automations/database/automation-revision.orm-entity';
+import { AutomationRunOrmEntity } from '../automations/database/automation-run.orm-entity';
+import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
+import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
+import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
 import { FeatureFlagOrmEntity } from '../feature-flags/database/feature-flag.orm-entity';
 import { FlagChangeOrmEntity } from '../feature-flags/database/flag-change.orm-entity';
 import { FlagSegmentOrmEntity } from '../feature-flags/database/flag-segment.orm-entity';
@@ -83,6 +89,12 @@ const dataSource = new DataSource({
     SessionTurnOrmEntity,
     InboundDeliveryOrmEntity,
     InboundEventOrmEntity,
+    AutomationOrmEntity,
+    AutomationRevisionOrmEntity,
+    AutomationTriggerOrmEntity,
+    AutomationTriggerSubjectOrmEntity,
+    AutomationRunOrmEntity,
+    AutomationSettingsOrmEntity,
     FeatureFlagOrmEntity,
     FlagSegmentOrmEntity,
     FlagChangeOrmEntity,

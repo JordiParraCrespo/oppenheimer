@@ -28,9 +28,11 @@ import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
 import { auth } from './auth/infrastructure/better-auth.config';
 import { AuthzModule } from './authz/authz.module';
+import { AutomationsModule } from './automations/automations.module';
 import { CapabilitiesModule } from './capabilities/capabilities.module';
 import {
   appConfig,
+  automationsConfig,
   databaseConfig,
   emailConfig,
   githubAppConfig,
@@ -76,6 +78,7 @@ import { UsersModule } from './users/user.module';
         hostsConfig,
         llmConfig,
         sessionsConfig,
+        automationsConfig,
       ],
     }),
     // Request logging with hardened defaults (credential redaction, no
@@ -215,6 +218,8 @@ import { UsersModule } from './users/user.module';
     // The module the other three feed into: the sessions themselves, their
     // checkouts, and the append-only log the row is a fold of.
     SessionsModule,
+    // Saved prompts and their triggers, whose every run is a session above.
+    AutomationsModule,
     RelayModule,
     HealthModule,
     QueueModule,

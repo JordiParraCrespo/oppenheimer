@@ -175,7 +175,17 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
+      "HOSTS_007": "No hay ninguna imagen esperando para esa orden.",
+      "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
+      "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
+      "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
+      "AUTOMATIONS_004": "Uno de los repositorios no está disponible en este espacio de trabajo.",
+      "AUTOMATIONS_005": "Ese agente no puede ejecutar una automatización.",
+      "AUTOMATIONS_006": "Un disparador no se activaría nunca. Elige una hora posterior.",
+      "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
+      "AUTOMATIONS_008": "Esa ejecución no existe.",
+      "INBOUND_001": "Esa fuente de eventos no se conoce.",
+      "INBOUND_002": "La entrega no incluye un identificador de entrega."
     },
     "notFound": {
       "title": "Esta página no existe",

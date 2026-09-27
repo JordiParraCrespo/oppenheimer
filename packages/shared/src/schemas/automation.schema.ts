@@ -241,3 +241,38 @@ export const triggerPreviewSchema = githubTriggerInputSchema.extend({
 });
 
 export type TriggerPreviewDto = z.infer<typeof triggerPreviewSchema>;
+
+/**
+ * `PATCH /automation-settings` — the workspace's level of the limits. Each
+ * field optional; `null` clears it back to the platform default. The platform
+ * ceilings still apply over whatever is set here.
+ */
+export const updateAutomationSettingsSchema = z.object({
+  maxRunsPerAutomationHour: z.number().int().min(1).max(10_000).nullable().optional(),
+  maxRunsPerWorkspaceHour: z.number().int().min(1).max(100_000).nullable().optional(),
+  headlessRunsPerHost: z.number().int().min(1).max(100).nullable().optional(),
+  overlap: z.enum(AUTOMATION_OVERLAP_POLICIES).nullable().optional(),
+  staleTtlSeconds: z
+    .number()
+    .int()
+    .min(60)
+    .max(7 * 24 * 3600)
+    .nullable()
+    .optional(),
+  missedGraceSeconds: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 3600)
+    .nullable()
+    .optional(),
+  maxRunSeconds: z
+    .number()
+    .int()
+    .min(60)
+    .max(7 * 24 * 3600)
+    .nullable()
+    .optional(),
+});
+
+export type UpdateAutomationSettingsDto = z.infer<typeof updateAutomationSettingsSchema>;
