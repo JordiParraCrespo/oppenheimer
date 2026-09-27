@@ -18,14 +18,16 @@ export interface PairingHost {
  * line that resolves in place when a runner spends it.
  *
  * One place because two surfaces show the same three facts — the onboarding
- * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and the console's
- * Add a host page — and a feature may not import another feature. What
+ * step (`apps/web/.../hosts/screens/onboarding-host.tsx`) and Add a host,
+ * the console's dialog and Settings' page — and a feature may not import
+ * another feature. What
  * differs between them is *above* this: the step lays the two forms of the
- * instruction out as cards, the page puts them behind a switch. What this
+ * instruction out as cards, Add a host puts them behind a switch
+ * (`HostInstallInstruction`). What this
  * owns is everything below that, which the two had written twice.
  *
- * The page draws the two halves apart — the token line under its Install
- * step, the status row as its Connect step — so they are exported on their
+ * Add a host draws the two halves apart — the token line under the
+ * instruction, the status row on its own — so they are exported on their
  * own too, `HostPairingToken` and `HostPairingStatus`; this is the two
  * stacked with a rule between, which is the step's shape.
  *

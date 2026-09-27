@@ -5,7 +5,7 @@ export type ConsoleList = 'sessions' | 'automations';
 
 /**
  * Which of the console's lists the address is under: `automations` for
- * everything under `/automations`, the editor included, and `sessions` for
+ * everything under `/automations`, the overview and its runs, and `sessions` for
  * the rest. One predicate, asked of the router, so the rail's current item
  * and the sidebar beside it can never disagree.
  */
