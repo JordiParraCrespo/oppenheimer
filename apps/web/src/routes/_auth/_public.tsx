@@ -11,5 +11,5 @@ import { createFileRoute } from '@tanstack/react-router';
  */
 export const Route = createFileRoute('/_auth/_public')({
   beforeLoad: ({ context, location }) =>
-    redirectSignedIn({ context, location, landing: '/sessions' }),
+    redirectSignedIn({ context, location, landing: '/sessions/new' }),
 });

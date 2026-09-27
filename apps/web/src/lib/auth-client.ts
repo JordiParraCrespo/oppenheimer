@@ -62,7 +62,7 @@ export const webAuthClient: IAuthClient = {
         provider,
         // Signing in returns to the console; signing *up* has a workspace to
         // name first, the same first-run flow the email form opens.
-        callbackURL: url(intent === 'sign-up' ? '/onboarding/workspace' : '/sessions'),
+        callbackURL: url(intent === 'sign-up' ? '/onboarding/workspace' : '/sessions/new'),
         // A failed round-trip comes back here with `?error=<code>` appended, so
         // it has to land on the screen the person actually started from —
         // otherwise a rejected sign-up reports itself on the login screen,

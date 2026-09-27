@@ -260,8 +260,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-21: **the console is one screen.** The sidebar is the
   navigation — New session, the session list, the account menu — and the
   pane beside it is a route: the composer, a terminal, the provisioning
-  steps, a closed session, "no sessions open", or a 404 that keeps the
-  sidebar. The starter's chrome went with it: no 56px bar over the pane,
+  steps, a closed session, or a 404 that keeps the sidebar; with nothing
+  open it is the composer (changed 2026-09-27, below). The starter's chrome went with it: no 56px bar over the pane,
   no ⌘K palette, and no Settings or Profile page — those screens and
   their features were deleted rather than left unnavigated, and
   appearance and language moved into the account menu, which is where
@@ -470,3 +470,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   (`SESS_002`) and shown as failed. The create body now takes one checkout,
   no fewer, and the console's composer stays disabled until a repository is
   picked. A session with no git returns when a runner can make one (00, 10).
+- 2026-09-27: **nothing open is New session**: the console lands on
+  `/sessions/new`, and `/sessions` redirects there, instead of a "no
+  sessions open" pane (05).

@@ -1,8 +1,4 @@
 {
-  "home": {
-    "openTitle": "No session open",
-    "openDescription": "Pick one from the sidebar, or start another."
-  },
   "provisioning": {
     "title": "Starting your session",
     "failedTitle": "The session did not start",
