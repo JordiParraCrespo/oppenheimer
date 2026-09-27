@@ -17,7 +17,7 @@ export class FindAuthzCatalogQueryHandler
   async execute(query: FindAuthzCatalogQuery): Promise<AuthzCatalogResponseDto> {
     const ability = await this.abilityFactory.createForUser(
       { id: query.userId, role: query.role },
-      { activeOrganizationId: query.activeOrganizationId ?? null },
+      { organizationId: query.activeOrganizationId ?? null },
     );
 
     return toCatalogResponse(this.registry, ability);

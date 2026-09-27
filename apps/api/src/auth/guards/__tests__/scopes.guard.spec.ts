@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CredentialScopeResolver } from '../../application/credential-scope.resolver';
+import { RequestTenantResolver } from '../../application/request-tenant.resolver';
 import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../../decorators/require-scopes.decorator';
 import type { ScopeContext } from '../../domain/scope-context.types';
@@ -26,6 +27,9 @@ const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({
   expiresAt: null,
   ...overrides,
 });
+
+const ORG_1 = '11111111-1111-4111-8111-111111111111';
+const ORG_2 = '22222222-2222-4222-8222-222222222222';
 
 describe('ScopesGuard', () => {
   let guard: ScopesGuard;
@@ -51,7 +55,11 @@ describe('ScopesGuard', () => {
       ((key: string) => metadata[key]) as never,
     );
     credentials = { resolve: vi.fn().mockResolvedValue(null) };
-    guard = new ScopesGuard(reflector, credentials as CredentialScopeResolver);
+    guard = new ScopesGuard(
+      reflector,
+      credentials as CredentialScopeResolver,
+      new RequestTenantResolver(reflector),
+    );
   });
 
   const useCredential = (ctx: ScopeContext | null) => {
@@ -140,10 +148,10 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.params = { orgId: 'org-1' };
+      request.params = { orgId: ORG_1 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
@@ -152,10 +160,10 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.params = { orgId: 'org-2' };
+      request.params = { orgId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
@@ -164,7 +172,7 @@ describe('ScopesGuard', () => {
 
     it('ignores the restriction for an unrestricted credential', async () => {
       useCredential(tokenContext({ scopes: ['members:read'] }));
-      request.params = { orgId: 'org-2' };
+      request.params = { orgId: ORG_2 };
 
       await expect(guard.canActivate(context())).resolves.toBe(true);
     });
@@ -174,10 +182,10 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.body = { organizationId: 'org-2' };
+      request.body = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
@@ -189,14 +197,26 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
-      request.query = { organizationId: 'org-2' };
+      request.query = { organizationId: ORG_2 };
 
       await expect(guard.canActivate(context())).rejects.toMatchObject({
         code: 'TOKEN_007',
       });
+    });
+
+    it('refuses a malformed organization id in the path before anything reads it', async () => {
+      useCredential(
+        tokenContext({
+          scopes: ['members:read'],
+          resourceScope: toResourceScope([ORG_1]),
+        }),
+      );
+      request.params = { orgId: 'not-a-uuid' };
+
+      await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'AUTHZ_003' });
     });
 
     it('allows a route that names no organization at all', async () => {
@@ -204,7 +224,7 @@ describe('ScopesGuard', () => {
       useCredential(
         tokenContext({
           scopes: ['members:read'],
-          resourceScope: toResourceScope(['org-1']),
+          resourceScope: toResourceScope([ORG_1]),
         }),
       );
 

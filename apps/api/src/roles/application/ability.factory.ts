@@ -6,6 +6,7 @@ import {
   SYSTEM_ROLE_PERMISSIONS,
 } from '@oppenheimer/shared';
 import type { AbilityPort } from '../../auth/application/ability.port';
+import { type RequestTenant, tenantOrganizationIdOf } from '../../auth/domain/request-tenant.types';
 import type { RoleRepositoryPort } from '../database/role.repository.port';
 import type { UserRoleRepositoryPort } from '../database/user-role.repository.port';
 import { ROLE_REPOSITORY, USER_ROLE_REPOSITORY } from '../roles.di-tokens';
@@ -21,21 +22,33 @@ export interface AuthenticatedUser {
 /** Where the per-request ability is memoized. */
 const ABILITY_CACHE = Symbol('authz.ability');
 
+/** A memoized ability and the organization it was built for. */
+interface CachedAbility {
+  organizationId: string | null;
+  ability: AppAbility;
+}
+
 /** The subset of the request object the factory reads and writes. */
 export interface AbilityRequest {
   user?: AuthenticatedUser;
   session?: {
-    activeOrganizationId?: string | null;
     activeTeamId?: string | null;
   } | null;
+  /** The organization the request acts in, stamped by `ApiAuthGuard`. */
+  tenant?: RequestTenant;
   ability?: AppAbility;
-  [ABILITY_CACHE]?: AppAbility;
+  [ABILITY_CACHE]?: CachedAbility;
 }
 
 /** Request-scoped context used to interpolate resource-scoping conditions. */
 export interface AbilityScope {
-  /** The caller's active organization (from `session.activeOrganizationId`). */
-  activeOrganizationId?: string | null;
+  /**
+   * The organization the ability is built in: the caller's roles scoped to it
+   * count, and the `${activeOrganizationId}` condition placeholder resolves to
+   * it. For a request, its tenant — on an `@OrganizationScoped` route the
+   * organization the path names, not necessarily the session's active one.
+   */
+  organizationId?: string | null;
   /** The caller's active workspace/team (from `session.activeTeamId`). */
   activeTeamId?: string | null;
 }
@@ -61,26 +74,30 @@ export class AbilityFactory implements AbilityPort {
   ) {}
 
   /**
-   * The caller's ability for this request, built once and memoized on the
-   * request object.
+   * The caller's ability for this request, built in the request's tenant and
+   * memoized on the request object.
    *
    * Four call sites resolve the ability during a single request (the guard plus
    * three api-token handlers). Without the memo each one re-reads the role
    * tables, so the same answer is computed up to four times per request.
    *
-   * `organizationId` is the organization the route acts on, when it names one
-   * (`@OrganizationScoped`); it wins over the session's active organization.
-   * The guard passes it, and runs first, so the memo holds that answer.
+   * The organization comes from the request (`request.tenant`, written once by
+   * `ApiAuthGuard`), never from an argument: an argument the memo could not see
+   * is how the first caller's organization came to be served to every later
+   * caller asking about another. The memo also records the organization it was
+   * built for and is only reused for that one.
    */
-  async forRequest(request: AbilityRequest, organizationId?: string | null): Promise<AppAbility> {
-    if (request[ABILITY_CACHE]) return request[ABILITY_CACHE];
+  async forRequest(request: AbilityRequest): Promise<AppAbility> {
+    const organizationId = tenantOrganizationIdOf(request);
+    const cached = request[ABILITY_CACHE];
+    if (cached && cached.organizationId === organizationId) return cached.ability;
 
     const ability = await this.createForUser(request.user ?? {}, {
-      activeOrganizationId: organizationId ?? request.session?.activeOrganizationId ?? null,
+      organizationId,
       activeTeamId: request.session?.activeTeamId ?? null,
     });
 
-    request[ABILITY_CACHE] = ability;
+    request[ABILITY_CACHE] = { organizationId, ability };
     request.ability = ability;
     return ability;
   }
@@ -94,33 +111,35 @@ export class AbilityFactory implements AbilityPort {
     user: AuthenticatedUser,
     scope: AbilityScope = {},
   ): Promise<PermissionDefinition[]> {
-    return this.resolvePermissions(user, scope.activeOrganizationId ?? null);
+    return this.resolvePermissions(user, scope.organizationId ?? null);
   }
 
   async createForUser(user: AuthenticatedUser, scope: AbilityScope = {}): Promise<AppAbility> {
-    const permissions = await this.resolvePermissions(user, scope.activeOrganizationId ?? null);
-    // Pass the principal and active-org scope so resource-scoping conditions
+    const permissions = await this.resolvePermissions(user, scope.organizationId ?? null);
+    // Pass the principal and the organization so resource-scoping conditions
     // (e.g. `${user.id}`, `${activeOrganizationId}`) can be interpolated when
-    // the ability is built.
+    // the ability is built. The placeholder keeps its name because role rows
+    // store it (the `owner` role's migrations); what it resolves to is the
+    // organization this ability is built in.
     return defineAbilitiesFromPermissions(permissions, {
       user,
-      activeOrganizationId: scope.activeOrganizationId ?? null,
+      activeOrganizationId: scope.organizationId ?? null,
       activeTeamId: scope.activeTeamId ?? null,
     });
   }
 
   private async resolvePermissions(
     user: AuthenticatedUser,
-    activeOrganizationId: string | null,
+    organizationId: string | null,
   ): Promise<PermissionDefinition[]> {
     const permissions: PermissionDefinition[] = [];
 
     // 1. Roles assigned through the `user_role` join (dynamic RBAC), narrowed
-    //    to the active organization. The repository unions the caller's global
+    //    to the organization. The repository unions the caller's global
     //    assignments with the ones scoped to that organization, so a role
     //    granted in one tenant has no effect in another.
     if (user.id) {
-      const roles = await this.userRoleRepository.findRolesForUser(user.id, activeOrganizationId);
+      const roles = await this.userRoleRepository.findRolesForUser(user.id, organizationId);
       for (const role of roles) {
         permissions.push(...role.permissions.map((permission) => permission.toDefinition()));
       }

@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule, SCOPE_RESOLVER } from '@oppenheimer/backend-authz';
 import { ApiTokenResource } from '../api-tokens/api-tokens.resource';
+import { ACTIVE_ORGANIZATION } from '../auth/auth.di-tokens';
 import { FeatureFlagResource } from '../feature-flags/feature-flags.resource';
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
@@ -90,6 +91,9 @@ const repositories: Provider[] = [
     ...mappers,
     ...repositories,
     ActiveOrganizationResolver,
+    // The kernel stamps each request's tenant and asks this which organization
+    // a request that names none acts in (the session's, or a checked header).
+    { provide: ACTIVE_ORGANIZATION, useExisting: ActiveOrganizationResolver },
     PrincipalResidencyChecker,
     AccessScopeInterceptor,
     // Behind the port, so an application needing hierarchical scope resolution
@@ -102,6 +106,7 @@ const repositories: Provider[] = [
     ACCESS_GRANT_REPOSITORY,
     AccessScopeInterceptor,
     ActiveOrganizationResolver,
+    ACTIVE_ORGANIZATION,
     TypeOrmModule,
   ],
 })

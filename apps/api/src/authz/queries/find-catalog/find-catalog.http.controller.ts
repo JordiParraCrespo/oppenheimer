@@ -5,6 +5,7 @@ import { ApiAuthProblemResponses } from '@oppenheimer/backend-core';
 import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { AuthzCatalogResponseDto } from '../../dtos/authz-catalog.response.dto';
@@ -32,15 +33,11 @@ export class FindAuthzCatalogHttpController {
     @Req() request: ScopedRequest,
     @CurrentUser() user: { id: string; role?: string },
   ): Promise<AuthzCatalogResponseDto> {
-    const session = request.session as {
-      activeOrganizationId?: string | null;
-    } | null;
-
     return this.queryBus.execute<FindAuthzCatalogQuery, AuthzCatalogResponseDto>(
       new FindAuthzCatalogQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: session?.activeOrganizationId ?? null,
+        activeOrganizationId: tenantOrganizationIdOf(request),
       }),
     );
   }

@@ -7,7 +7,7 @@ describe('flagContextOf', () => {
       flagContextOf(
         {
           user: { id: 'u1', email: 'ada@acme.com', role: 'admin' },
-          session: { activeOrganizationId: 'org-1' },
+          tenant: { organizationId: 'org-1', source: 'session' },
         },
         { platform: 'ios', appVersion: '2.1.0' },
       ),
@@ -22,7 +22,7 @@ describe('flagContextOf', () => {
   });
 
   it('is empty for an anonymous caller', () => {
-    expect(flagContextOf({ user: null, session: null })).toEqual({
+    expect(flagContextOf({ user: null })).toEqual({
       userId: null,
       email: null,
       platformRole: null,

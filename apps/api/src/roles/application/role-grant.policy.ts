@@ -42,7 +42,7 @@ export class RoleGrantPolicy {
 
     const ability = await this.abilityFactory.createForUser(
       { id: actor.id, role: actor.role },
-      { activeOrganizationId: actor.activeOrganizationId ?? null },
+      { organizationId: actor.activeOrganizationId ?? null },
     );
 
     const ungrantable = ungrantablePermissions(ability, permissions);
@@ -70,7 +70,7 @@ export class RoleGrantPolicy {
 
     const ability = await this.abilityFactory.createForUser(
       { id: actor.id, role: actor.role },
-      { activeOrganizationId: actor.activeOrganizationId ?? null },
+      { organizationId: actor.activeOrganizationId ?? null },
     );
 
     const row = { id: role.id, organizationId: role.organizationId };

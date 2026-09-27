@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AppError } from '@oppenheimer/backend-core';
 import type { Repository } from 'typeorm';
+import type { ActiveOrganizationPort } from '../../auth/application/active-organization.port';
 import { MemberOrmEntity } from '../../organizations/database/member.orm-entity';
 import { AuthzErrors } from '../domain/authz.errors';
 
-/** Header a client uses to act in an organization other than the session's. */
-export const ACTIVE_ORGANIZATION_HEADER = 'x-active-organization';
-
 /**
- * Resolves which organization a request acts in.
+ * Resolves which organization a request that names none in its path acts in.
+ * Bound to the auth kernel's `ACTIVE_ORGANIZATION` port, which
+ * `RequestTenantResolver` asks once while stamping the request's tenant.
  *
  * The session's `activeOrganizationId` is the default. A client may override it
  * per request with the `X-Active-Organization` header — useful for a tab acting
@@ -21,7 +21,7 @@ export const ACTIVE_ORGANIZATION_HEADER = 'x-active-organization';
  * authenticated user read another organization's data simply by naming it.
  */
 @Injectable()
-export class ActiveOrganizationResolver {
+export class ActiveOrganizationResolver implements ActiveOrganizationPort {
   constructor(
     @InjectRepository(MemberOrmEntity)
     private readonly members: Repository<MemberOrmEntity>,

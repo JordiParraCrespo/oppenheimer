@@ -41,6 +41,25 @@ export const AuthErrors = {
     httpStatus: 500,
   },
   /**
+   * An `@OrganizationScoped` route whose path value is not an organization id.
+   * Refused before anything is looked up — the request is never authorized in
+   * the session's organization instead of the one the path names.
+   */
+  ROUTE_ORGANIZATION_INVALID: {
+    code: 'AUTHZ_003',
+    message: 'The organization in the path is not a valid organization id',
+    httpStatus: 400,
+  },
+  /**
+   * A 500 for the same reason as `AUTHZ_002`: `@OrganizationScoped` names a
+   * parameter the route does not have, which no client request can cause.
+   */
+  ROUTE_ORGANIZATION_MISSING: {
+    code: 'AUTHZ_004',
+    message: 'This route names an organization parameter it does not declare',
+    httpStatus: 500,
+  },
+  /**
    * One opaque answer for every unusable credential — unknown, revoked,
    * expired, or owned by an account that is gone or deactivated. Telling the
    * caller which it was would hand them a probing oracle.

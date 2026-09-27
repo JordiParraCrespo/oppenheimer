@@ -6,6 +6,7 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
@@ -62,10 +63,6 @@ export class CreateApiTokenHttpController {
     @CurrentUser() user: { id: string; role?: string },
     @Body() body: CreateApiTokenRequest,
   ): Promise<CreatedApiTokenResponseDto> {
-    const session = request.session as {
-      activeOrganizationId?: string | null;
-    } | null;
-
     const { tokenId, secret } = await this.commandBus.execute<
       CreateApiTokenCommand,
       CreateApiTokenResult
@@ -74,7 +71,7 @@ export class CreateApiTokenHttpController {
         actor: {
           id: user.id,
           role: user.role,
-          activeOrganizationId: session?.activeOrganizationId ?? null,
+          activeOrganizationId: tenantOrganizationIdOf(request),
         },
         name: body.name,
         scopes: body.scopes,

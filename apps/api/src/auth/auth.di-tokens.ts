@@ -20,3 +20,9 @@ export const CREDENTIAL_OWNER = Symbol('CREDENTIAL_OWNER');
 
 /** Builds the caller's effective CASL ability for a request. */
 export const ABILITY = Symbol('ABILITY');
+
+/**
+ * Which organization a request that names none acts in — the session's, or a
+ * checked `X-Active-Organization` override. `authz` binds it.
+ */
+export const ACTIVE_ORGANIZATION = Symbol('ACTIVE_ORGANIZATION');

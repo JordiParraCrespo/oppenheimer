@@ -12,7 +12,7 @@ export class FindGrantablePermissionsQueryHandler
   async execute(query: FindGrantablePermissionsQuery): Promise<Scope[]> {
     const ability = await this.abilityFactory.createForUser(
       { id: query.userId, role: query.role },
-      { activeOrganizationId: query.activeOrganizationId ?? null },
+      { organizationId: query.activeOrganizationId ?? null },
     );
     return grantableScopes(ability);
   }

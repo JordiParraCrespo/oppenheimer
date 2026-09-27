@@ -1,6 +1,7 @@
 import { type CanActivate, type ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import type { CredentialScopePort } from '../application/credential-scope.port';
+import { RequestTenantResolver } from '../application/request-tenant.resolver';
 import { CREDENTIAL_SCOPE, DELEGATED_SESSION } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
 import { isHostCredential, type ScopedRequest } from '../domain/scope-context.types';
@@ -10,7 +11,9 @@ import type { DelegatedSessionPort } from '../infrastructure/delegated-session.p
 
 /**
  * Authenticates a request by any of the three supported credentials and
- * populates `request.user` / `request.session` / `request.scopeContext`.
+ * populates `request.user` / `request.session` / `request.scopeContext`, then
+ * stamps `request.tenant` — the one organization the request acts in (see
+ * `RequestTenantResolver`) — before any guard or handler builds an ability.
  *
  * Replaces Better Auth's own `AuthGuard`, which only understands session
  * cookies. For a scoped credential this guard additionally mints a short-lived
@@ -29,10 +32,17 @@ export class ApiAuthGuard implements CanActivate {
     private readonly credentials: CredentialScopePort,
     @Inject(DELEGATED_SESSION)
     private readonly delegatedSessions: DelegatedSessionPort,
+    protected readonly tenants: RequestTenantResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<ScopedRequest>();
+    await this.authenticate(request);
+    await this.tenants.stamp(context, request);
+    return true;
+  }
+
+  private async authenticate(request: ScopedRequest): Promise<void> {
     const scopeContext = await this.credentials.resolve(request);
 
     if (!scopeContext) return this.authenticateSession(request);
@@ -73,16 +83,14 @@ export class ApiAuthGuard implements CanActivate {
       activeOrganizationId: pinnedOrganizationId,
       activeTeamId: null,
     };
-
-    return true;
   }
 
   /**
    * Cookie-session path. Note that `request.session` is set to the session
    * itself (not Better Auth's `{ session, user }` envelope), which is the shape
-   * `PoliciesGuard` reads `activeOrganizationId` from.
+   * `RequestTenantResolver` reads `activeOrganizationId` from.
    */
-  private async authenticateSession(request: ScopedRequest): Promise<boolean> {
+  private async authenticateSession(request: ScopedRequest): Promise<void> {
     const session = await auth.api.getSession({
       headers: betterAuthHeaders(request.headers),
     });
@@ -99,6 +107,5 @@ export class ApiAuthGuard implements CanActivate {
         detail: 'No valid session cookie or bearer credential was presented.',
       });
     }
-    return true;
   }
 }

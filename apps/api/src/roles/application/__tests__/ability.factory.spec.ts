@@ -1,3 +1,4 @@
+import { canAccessRow } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RoleRepositoryPort } from '../../database/role.repository.port';
@@ -48,22 +49,71 @@ describe('AbilityFactory', () => {
     expect(ability.can('delete', 'User')).toBe(false);
   });
 
-  it('builds a request ability in the route organization over the session’s active one', async () => {
-    await factory.forRequest(
-      { user: { id: 'user-1' }, session: { activeOrganizationId: 'org-a' } },
-      'org-b',
-    );
-
-    expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', 'org-b');
-  });
-
-  it('builds a request ability in the session’s active organization when the route names none', async () => {
-    await factory.forRequest({
+  describe('forRequest', () => {
+    /** A request `ApiAuthGuard` stamped with its tenant. */
+    const requestIn = (organizationId: string | null, source: 'route' | 'session' = 'route') => ({
       user: { id: 'user-1' },
-      session: { activeOrganizationId: 'org-a' },
+      session: { activeTeamId: null },
+      tenant: { organizationId, source },
     });
 
-    expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', 'org-a');
+    it("builds the ability in the request's tenant", async () => {
+      await factory.forRequest(requestIn('org-b'));
+
+      expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', 'org-b');
+    });
+
+    it('resolves the organization placeholder to the tenant', async () => {
+      vi.mocked(userRoleRepo.findRolesForUser).mockResolvedValue([
+        makeRole('owner', [
+          Permission.fromDefinition({
+            action: 'read',
+            subject: 'Member',
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: a stored condition placeholder
+            conditions: { organizationId: '${activeOrganizationId}' },
+          }),
+        ]),
+      ]);
+
+      const ability = await factory.forRequest(requestIn('org-b'));
+
+      expect(canAccessRow(ability, 'read', 'Member', { organizationId: 'org-b' })).toBe(true);
+      expect(canAccessRow(ability, 'read', 'Member', { organizationId: 'org-a' })).toBe(false);
+    });
+
+    it('acts in no organization on a request no guard stamped: only global roles count', async () => {
+      await factory.forRequest({ user: { id: 'user-1' } });
+
+      expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', null);
+    });
+
+    it('builds the ability once per request and serves every later caller the same one', async () => {
+      const request = requestIn('org-b');
+
+      const first = await factory.forRequest(request);
+      const second = await factory.forRequest(request);
+
+      expect(second).toBe(first);
+      expect(request).toMatchObject({ ability: first });
+      expect(userRoleRepo.findRolesForUser).toHaveBeenCalledTimes(1);
+    });
+
+    it("never serves one organization's memoized ability for another", async () => {
+      // The contract has no organization argument to disagree with the memo:
+      // the organization is the request's, and a memo built for one tenant is
+      // not reused once the request names another.
+      expect(factory.forRequest.length).toBe(1);
+      const request: { user: { id: string }; tenant: { organizationId: string; source: 'route' } } =
+        { user: { id: 'user-1' }, tenant: { organizationId: 'org-a', source: 'route' } };
+
+      const inA = await factory.forRequest(request);
+      request.tenant = { organizationId: 'org-b', source: 'route' };
+      const inB = await factory.forRequest(request);
+
+      expect(inB).not.toBe(inA);
+      expect(userRoleRepo.findRolesForUser).toHaveBeenNthCalledWith(1, 'user-1', 'org-a');
+      expect(userRoleRepo.findRolesForUser).toHaveBeenNthCalledWith(2, 'user-1', 'org-b');
+    });
   });
 
   it('falls back to the legacy role name via the DB role when no assignments exist', async () => {

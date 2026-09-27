@@ -5,10 +5,8 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { DeleteRoleCommand } from './delete-role.command';
@@ -41,7 +39,7 @@ export class DeleteRoleHttpController {
     await this.commandBus.execute<DeleteRoleCommand, void>(
       new DeleteRoleCommand({
         roleId: id,
-        activeOrganizationId: activeOrganizationIdOf(request),
+        activeOrganizationId: tenantOrganizationIdOf(request),
         actorId: actor.id,
         actorRole: actor.role,
       }),

@@ -3,8 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { AppError } from '@oppenheimer/backend-core';
 import { isOrganizationAllowed, missingScopes, type Scope } from '@oppenheimer/shared';
 import type { CredentialScopePort } from '../application/credential-scope.port';
+import { RequestTenantResolver } from '../application/request-tenant.resolver';
 import { CREDENTIAL_SCOPE } from '../auth.di-tokens';
-import { ORGANIZATION_PARAM_KEY } from '../decorators/organization-scoped.decorator';
 import { ALLOW_ANY_SCOPE_KEY, REQUIRE_SCOPES_KEY } from '../decorators/require-scopes.decorator';
 import { AuthErrors } from '../domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
@@ -32,6 +32,7 @@ export class ScopesGuard implements CanActivate {
     private readonly reflector: Reflector,
     @Inject(CREDENTIAL_SCOPE)
     private readonly credentials: CredentialScopePort,
+    private readonly tenants: RequestTenantResolver,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -89,18 +90,13 @@ export class ScopesGuard implements CanActivate {
 
   /**
    * The organization this request acts on: the parameter the route declared
-   * via `@OrganizationScoped`, falling back to an explicit `organizationId` in
-   * the body or query string.
+   * via `@OrganizationScoped` — read, and refused when malformed, by the same
+   * `RequestTenantResolver` that stamps the request's tenant — falling back to
+   * an explicit `organizationId` in the body or query string on a route that
+   * names none.
    */
   private organizationIdFor(context: ExecutionContext, request: ScopedRequest): string | null {
-    const param = this.reflector.getAllAndOverride<string>(ORGANIZATION_PARAM_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    const params = request.params as Record<string, unknown> | undefined;
-    const candidate = param ? params?.[param] : undefined;
-    const fromParam = typeof candidate === 'string' ? candidate : undefined;
+    const fromParam = this.tenants.routeOrganizationId(context, request);
     const body = request.body as Record<string, unknown> | undefined;
     const fromBody = typeof body?.organizationId === 'string' ? body.organizationId : undefined;
     const query = request.query as Record<string, unknown> | undefined;

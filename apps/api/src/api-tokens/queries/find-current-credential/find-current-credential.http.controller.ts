@@ -6,6 +6,7 @@ import { NoPolicy } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentScope } from '../../../auth/decorators/current-scope.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { AllowAnyScope } from '../../../auth/decorators/require-scopes.decorator';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
 import type { ScopeContext, ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { CurrentCredentialResponseDto } from '../../dtos/current-credential.response.dto';
@@ -37,10 +38,6 @@ export class FindCurrentCredentialHttpController {
     @CurrentUser() user: { id: string; email: string; role?: string },
     @CurrentScope() scope: ScopeContext | null,
   ): Promise<CurrentCredentialResponseDto> {
-    const session = request.session as {
-      activeOrganizationId?: string | null;
-    } | null;
-
     // This route describes a *person's* credential. A host's assertion is a
     // credential with no person behind it and never reaches here — `ApiAuthGuard`
     // refuses it before the handler runs — so narrowing it away keeps the
@@ -54,7 +51,7 @@ export class FindCurrentCredentialHttpController {
       new FindCurrentCredentialQuery({
         userId: user.id,
         role: user.role,
-        activeOrganizationId: session?.activeOrganizationId ?? null,
+        activeOrganizationId: tenantOrganizationIdOf(request),
         grantedScopes: credential?.scopes ?? null,
       }),
     );

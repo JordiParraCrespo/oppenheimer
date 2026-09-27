@@ -47,7 +47,7 @@ export class CreateApiTokenCommandHandler
   async execute(command: CreateApiTokenCommand): Promise<CreateApiTokenResult> {
     const ability = await this.abilityFactory.createForUser(
       { id: command.actor.id, role: command.actor.role },
-      { activeOrganizationId: command.actor.activeOrganizationId ?? null },
+      { organizationId: command.actor.activeOrganizationId ?? null },
     );
 
     const exceeded = ungrantableScopes(ability, command.scopes);

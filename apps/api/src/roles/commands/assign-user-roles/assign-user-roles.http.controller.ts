@@ -14,10 +14,8 @@ import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backen
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
-import {
-  activeOrganizationIdOf,
-  type ScopedRequest,
-} from '../../../auth/domain/scope-context.types';
+import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
+import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import type { RoleEntity } from '../../domain/role.entity';
@@ -61,7 +59,7 @@ export class AssignUserRolesHttpController {
     @CurrentUser() actor: { id: string; role?: string },
     @Req() request: ScopedRequest,
   ): Promise<RoleResponseDto[]> {
-    const activeOrganizationId = activeOrganizationIdOf(request);
+    const activeOrganizationId = tenantOrganizationIdOf(request);
     await this.commandBus.execute<AssignUserRolesCommand, void>(
       new AssignUserRolesCommand({
         userId,
