@@ -18,7 +18,6 @@ vi.mock('../../auth/infrastructure/better-auth.config', () => ({
       removeMember: vi.fn(),
       updateMemberRole: vi.fn(),
       leaveOrganization: vi.fn(),
-      getActiveMember: vi.fn(),
       createTeam: vi.fn(),
       addTeamMember: vi.fn(),
       setActiveTeam: vi.fn(),
@@ -99,7 +98,10 @@ describe('OrganizationsService', () => {
       unwrap: () => ({ id: 'system-role' }),
     }),
   };
-  const userRoles = { setRolesForUser: vi.fn().mockResolvedValue(undefined) };
+  const userRoles = {
+    setRolesForUser: vi.fn().mockResolvedValue(undefined),
+    findRoleIdsForUser: vi.fn().mockResolvedValue([]),
+  };
   const memberRecords = { findOne: vi.fn().mockResolvedValue(null) };
   const sessions = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
   const accessGrants = { delete: vi.fn().mockResolvedValue({ affected: 0 }) };
@@ -126,6 +128,7 @@ describe('OrganizationsService', () => {
       unwrap: () => ({ id: 'system-role' }),
     });
     memberRecords.findOne.mockResolvedValue(null);
+    userRoles.findRoleIdsForUser.mockResolvedValue([]);
     service = new OrganizationsService(
       users as never,
       userRoleRecords as never,
@@ -472,6 +475,26 @@ describe('OrganizationsService', () => {
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
     });
 
+    it('keeps custom roles scoped to the organization when the membership role changes', async () => {
+      api.updateMemberRole.mockResolvedValue(memberRecord);
+      roles.findOneByName.mockImplementation(async (name: string) => ({
+        isNone: () => false,
+        unwrap: () => ({ id: `${name}-role` }),
+      }));
+      // Scoped reads include the global assignments; the global read is those alone.
+      userRoles.findRoleIdsForUser.mockImplementation(async (_userId: string, scope: unknown) =>
+        scope === null ? ['global-role'] : ['global-role', 'user-role', 'custom-role'],
+      );
+
+      await service.updateMemberRole(headers, 'org1', 'm1', 'admin');
+
+      expect(userRoles.setRolesForUser).toHaveBeenCalledWith(
+        'u1',
+        ['custom-role', 'owner-role'],
+        'org1',
+      );
+    });
+
     it('leaves an organization', async () => {
       api.leaveOrganization.mockResolvedValue(memberRecord);
       const result = await service.leave(headers, 'org1');
@@ -479,10 +502,25 @@ describe('OrganizationsService', () => {
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', [], 'org1');
     });
 
-    it('gets the active member', async () => {
-      api.getActiveMember.mockResolvedValue(memberRecord);
-      const result = await service.getActiveMember(headers);
-      expect(result.userId).toBe('u1');
+    it("reads the caller's own membership row in the organization named", async () => {
+      memberRecords.findOne.mockResolvedValue({ ...memberRecord, createdAt: new Date() });
+
+      const result = await service.getMembership('org1', 'u1');
+
+      // The organization comes from the path, never the session's active one.
+      expect(memberRecords.findOne).toHaveBeenCalledWith({
+        where: { organizationId: 'org1', userId: 'u1' },
+      });
+      expect(result).toMatchObject({ id: 'm1', organizationId: 'org1', userId: 'u1' });
+      expect(result.user).toMatchObject({ email: 'member@x.com' });
+    });
+
+    it('refuses a caller with no membership there as not a member (ORG_003)', async () => {
+      memberRecords.findOne.mockResolvedValue(null);
+
+      await expect(service.getMembership('org1', 'u1')).rejects.toMatchObject({
+        code: 'ORG_003',
+      });
     });
   });
 });

@@ -12,17 +12,18 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn, Unique, UpdateDateColu
  * `isActive` are Better Auth "additional fields" declared in `auth.ts`.
  */
 @Entity('user')
+@Unique('UQ_user_email', ['email'])
 // Named once, here and in the migration: the repository maps a violation of
 // exactly this constraint to USER_002.
 @Unique('UQ_user_username', ['username'])
 export class UserOrmEntity {
-  @PrimaryColumn({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_user' })
   id!: string;
 
   @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   email!: string;
 
   @Column({ type: 'boolean', default: false })

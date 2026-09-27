@@ -48,6 +48,24 @@ describe('AbilityFactory', () => {
     expect(ability.can('delete', 'User')).toBe(false);
   });
 
+  it('builds a request ability in the route organization over the session’s active one', async () => {
+    await factory.forRequest(
+      { user: { id: 'user-1' }, session: { activeOrganizationId: 'org-a' } },
+      'org-b',
+    );
+
+    expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', 'org-b');
+  });
+
+  it('builds a request ability in the session’s active organization when the route names none', async () => {
+    await factory.forRequest({
+      user: { id: 'user-1' },
+      session: { activeOrganizationId: 'org-a' },
+    });
+
+    expect(userRoleRepo.findRolesForUser).toHaveBeenCalledWith('user-1', 'org-a');
+  });
+
   it('falls back to the legacy role name via the DB role when no assignments exist', async () => {
     vi.mocked(userRoleRepo.findRolesForUser).mockResolvedValue([]);
     vi.mocked(roleRepo.findOneByName).mockResolvedValue(

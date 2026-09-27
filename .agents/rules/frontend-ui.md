@@ -116,7 +116,7 @@ when a second list does.
 
 A row in `apps/web/src/lib/nav.ts` that needs a permission takes its `policies`
 from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint
-the screen reads — `policies: ENDPOINT_POLICIES['/tokens']`. Never a literal
+the screen reads — `policies: ENDPOINT_POLICIES['GET /tokens']`. Never a literal
 `[{ action, subject }]`: that is a second copy of a rule the server already
 owns, and `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` holds the
 controller to the catalog entry, not to your copy. Why: a row declared

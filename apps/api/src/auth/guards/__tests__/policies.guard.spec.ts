@@ -6,6 +6,7 @@ import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AbilityPort } from '../../application/ability.port';
 import { CHECK_POLICIES_KEY } from '../../decorators/check-policies.decorator';
+import { ORGANIZATION_PARAM_KEY } from '../../decorators/organization-scoped.decorator';
 import { AuthErrors } from '../../domain/auth.errors';
 import { PoliciesGuard } from '../policies.guard';
 
@@ -116,5 +117,36 @@ describe('PoliciesGuard', () => {
     await guard.canActivate(contextWith(request));
 
     expect(abilities.forRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("judges an organization-scoped route by the caller's roles in the path's organization", async () => {
+    const guard = new PoliciesGuard(
+      reflectorFor({
+        [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }],
+        [ORGANIZATION_PARAM_KEY]: 'orgId',
+      }),
+      abilities,
+    );
+    const request = {
+      user: { id: 'u1' },
+      params: { orgId: 'org-b' },
+      session: { activeOrganizationId: 'org-a' },
+    };
+
+    await guard.canActivate(contextWith(request));
+
+    expect(abilities.forRequest).toHaveBeenCalledWith(request, 'org-b');
+  });
+
+  it("falls back to the session's active organization on a route that names none", async () => {
+    const guard = new PoliciesGuard(
+      reflectorFor({ [CHECK_POLICIES_KEY]: [{ action: 'read', subject: 'Project' }] }),
+      abilities,
+    );
+    const request = { user: { id: 'u1' }, session: { activeOrganizationId: 'org-a' } };
+
+    await guard.canActivate(contextWith(request));
+
+    expect(abilities.forRequest).toHaveBeenCalledWith(request, null);
   });
 });

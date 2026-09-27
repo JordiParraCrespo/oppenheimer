@@ -251,8 +251,12 @@ calls them through the `adminClient()` / `organizationClient()` client plugins,
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
-- **Org-scoped CASL** — `PoliciesGuard` reads `session.activeOrganizationId` and
-  passes it to `AbilityFactory.createForUser(user, scope)`. Scope tenant
+- **Org-scoped CASL** — `PoliciesGuard` asks the `ABILITY` port
+  (`AbilityFactory.forRequest`) for the caller's ability in one organization:
+  on an `@OrganizationScoped` route, the one the path names; elsewhere,
+  `session.activeOrganizationId`. A caller who is not a member of the path's
+  organization holds no roles there, so only their global roles count; the
+  placeholder `${activeOrganizationId}` resolves to that same organization. Scope tenant
   resources with a condition placeholder:
   `{ action: 'read', subject: 'Article', conditions: { organizationId: '${activeOrganizationId}' } }`,
   then enforce per-row in the handler via `request.ability.can('read', subject('Article', row))`.

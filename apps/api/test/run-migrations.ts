@@ -36,7 +36,7 @@ export async function runAllMigrations(): Promise<void> {
  * Every migration class, ordered by the timestamp in its filename — the same
  * order TypeORM applies them in production.
  */
-async function loadMigrations(): Promise<(new () => MigrationInterface)[]> {
+export async function loadMigrations(): Promise<(new () => MigrationInterface)[]> {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
     .sort();
