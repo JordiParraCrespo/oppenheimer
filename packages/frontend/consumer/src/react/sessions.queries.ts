@@ -22,6 +22,8 @@ export const sessionsKeys = {
   lists: () => [...sessionsKeys.all, 'list'] as const,
   list: () => [...sessionsKeys.lists()] as const,
   details: () => [...sessionsKeys.all, 'detail'] as const,
+  /** The closes this console asked for and has not seen land: `{ [id]: askedAt }`. */
+  closing: () => [...sessionsKeys.all, 'closing'] as const,
   detail: (id: string | undefined) => [...sessionsKeys.details(), id] as const,
   start: (id: string | undefined, failed: boolean) =>
     [...sessionsKeys.detail(id), 'start', { failed }] as const,
@@ -41,7 +43,34 @@ export const sessionsKeys = {
 const PROVISIONING_POLL_MS = 2000;
 
 /**
+ * How long a close is watched for. Closing is a request the host answers
+ * (`session.closed`), usually within a second or two; a host that is offline
+ * answers when it is back, and polling until then would be a request every two
+ * seconds for nothing. Past this the next read that happens anyway shows it.
+ */
+const CLOSE_WATCH_MS = 60_000;
+
+type ClosingSessions = Record<string, number>;
+
+/** Whether `sessions` still holds a close this console asked for recently. */
+function awaitingClose(
+  queryClient: ReturnType<typeof useQueryClient>,
+  sessions: readonly SessionEntity[] | undefined,
+): boolean {
+  const closing = queryClient.getQueryData<ClosingSessions>(sessionsKeys.closing());
+  if (!closing || !sessions) return false;
+  const since = Date.now() - CLOSE_WATCH_MS;
+  return sessions.some((session) => (closing[session.id] ?? 0) > since);
+}
+
+/**
  * The sessions in the caller's workspace: the sidebar and the sessions list.
+ *
+ * A resolved session is a tombstone the API keeps so its directory and branch
+ * are never reissued; nothing here lists it, so it is left out — its detail is
+ * still written, for a screen that has it open. While a close this console
+ * asked for has not landed, the list polls, because the host is what resolves
+ * it and nothing pushes that to the console yet.
  *
  * Each row it reads is also written to that session's detail, so opening a
  * session from the list renders on the click instead of waiting on a second
@@ -69,13 +98,16 @@ export function useSessions<TData = SessionEntity[]>(
         // changed nothing leaves the open session's screen alone.
         queryClient.setQueryData<SessionEntity>(key, (current) => shareEntities(current, session));
       }
-      return sessions;
+      return sessions.filter((session) => !session.isResolved);
     },
     // Entities are classes: without this every poll is a new object per row,
     // and the sidebar re-renders every row every two seconds.
     structuralSharing: shareEntities,
     refetchInterval: (query) =>
-      query.state.data?.some((session) => session.isProvisioning) ? PROVISIONING_POLL_MS : false,
+      query.state.data?.some((session) => session.isProvisioning) ||
+      awaitingClose(queryClient, query.state.data)
+        ? PROVISIONING_POLL_MS
+        : false,
     ...options,
   });
 }
@@ -211,7 +243,13 @@ export function useCloseSession(
   return useMutation({
     mutationFn: ({ id, acceptUnpushedWork }: CloseSessionVariables) =>
       app.sessions.close(id, acceptUnpushedWork),
-    ...withCacheOnSuccess(options, () => {
+    ...withCacheOnSuccess(options, (session) => {
+      // The answer is the request, not the outcome: the row stays `open` until
+      // the host reports it closed, so the list is told to watch for that.
+      queryClient.setQueryData<ClosingSessions>(sessionsKeys.closing(), (current) => ({
+        ...current,
+        [session.id]: Date.now(),
+      }));
       queryClient.invalidateQueries({ queryKey: sessionsKeys.all });
     }),
   });

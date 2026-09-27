@@ -123,6 +123,14 @@ export class SessionEntity {
     return this.lifecycle === 'open' && this.stoppedAt === null;
   }
 
+  /**
+   * Whether the host closed it: pushed, removed its worktrees, done for good.
+   * The API keeps the row as a tombstone; the console's lists leave it out.
+   */
+  get isResolved(): boolean {
+    return this.lifecycle === 'resolved';
+  }
+
   /** Whether the host has not picked this session up yet. */
   get isProvisioning(): boolean {
     return this.lifecycle === 'starting';

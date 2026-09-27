@@ -104,9 +104,11 @@ export function SessionRow({
           onRename={() => rows.onRename(session)}
           onMove={(projectId) => rows.onMove(session, projectId)}
           onDelete={() => rows.onDelete(session)}
-          projects={rows
-            .moveTargets(session)
-            .map((target) => ({ id: target.id, name: target.name }))}
+          projects={rows.moveTargets(session).map((target) => ({
+            id: target.id,
+            name: target.name,
+            isUnassigned: target.isUnassigned,
+          }))}
         />
       }
     />
