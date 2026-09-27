@@ -17,7 +17,7 @@ const MAX_BATCHES = 200;
 const SCHEDULER_ID = 'host-retention-daily';
 
 /**
- * Deletes what `product/versions/mvp/14-host-metadata.md` says is not kept:
+ * Deletes what `product/versions/mvp/15-host-metadata.md` says is not kept:
  * networks unseen for 90 days (never a host's current one), timeline entries
  * past 180 days. Both go in batches through their own index, as the
  * migration's Q7 and Q8.

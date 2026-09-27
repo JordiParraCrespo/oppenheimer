@@ -2,7 +2,7 @@ import type { HostNetwork } from './host-metadata.types';
 
 /**
  * Whether a host moving from one network to another is worth an email to its
- * owner (decided 2026-09-26, `product/versions/mvp/14-host-metadata.md`).
+ * owner (decided 2026-09-26, `product/versions/mvp/15-host-metadata.md`).
  *
  * Only a change of **country** or of **network operator** (ASN) is. A laptop
  * moving between cafés on the same ISP, or a server its provider renumbers,

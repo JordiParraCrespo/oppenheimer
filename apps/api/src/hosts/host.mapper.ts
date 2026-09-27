@@ -126,7 +126,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
    * side tables when they are loaded (`metadata`), and from the row's own
    * columns only for a read that did not load them. Those columns are the
    * expand step's leftovers: the heartbeat no longer writes them, and a later
-   * migration drops them (`product/versions/mvp/14-host-metadata.md`).
+   * migration drops them (`product/versions/mvp/15-host-metadata.md`).
    */
   toDomain(record: HostOrmEntity, metadata?: HostMetadata): HostEntity {
     const inventory = metadata?.inventory ?? null;

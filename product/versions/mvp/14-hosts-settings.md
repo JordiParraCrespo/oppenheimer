@@ -18,7 +18,7 @@ already on the wire for it.
 | Hosts nav item with a count | `GET /hosts` length | built |
 | The host's name, mono | `name` | built |
 | Meta line: platform, CPUs, runner version | `os`, `capabilities.cpus`, `runnerVersion` | **CPUs added** |
-| Meta line: region or "local" | `network.city`, `network.countryCode` (14) | **city and country code**, decided 2026-09-26 |
+| Meta line: region or "local" | `network.city`, `network.countryCode` (15) | **city and country code**, decided 2026-09-26 |
 | Dot and word: Running · N sessions / Idle / Offline | `status`, `runningSessionCount` | **added** |
 | "connected" / "last seen 2 days ago" | `online`, `lastSeenAt` | built |
 | Rename in place | `PATCH /hosts/{id}` | built |
@@ -119,7 +119,7 @@ already on the wire for it.
 
 1. ~~**Region, and "local".**~~ Settled 2026-09-26: the slot shows the
    city and country code the API placed the host's connecting address in
-   (DB-IP Lite, 14) — "Madrid, ES", or "ES" when only the country is
+   (DB-IP Lite, 15) — "Madrid, ES", or "ES" when only the country is
    known, and nothing when the address is private or the database is
    absent. The frame's "eu-west" and "local" are not facts a runner has;
    a cloud region can come with VMs, where it is ours to know.

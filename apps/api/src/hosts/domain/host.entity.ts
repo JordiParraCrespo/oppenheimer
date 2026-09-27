@@ -33,7 +33,7 @@ export interface HostProps {
   /**
    * Last heartbeat, read from `host_presence`. `online` is derived from it,
    * never stored, and nothing on this aggregate writes it: a heartbeat is
-   * presence, not a change to the host (`product/versions/mvp/14-host-metadata.md`).
+   * presence, not a change to the host (`product/versions/mvp/15-host-metadata.md`).
    */
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */

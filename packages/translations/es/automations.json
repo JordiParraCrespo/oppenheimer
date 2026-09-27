@@ -1,0 +1,29 @@
+{
+  "sidebar": {
+    "new": "Nueva automatización",
+    "projects": "Proyectos",
+    "all": "Todas las automatizaciones",
+    "emptyProject": "Todavía no hay automatizaciones.",
+    "createOne": "Crea una",
+    "newHere": "Nueva automatización en {{name}}",
+    "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
+  },
+  "page": {
+    "tabs": {
+      "automations": "Automatizaciones",
+      "runs": "Ejecuciones"
+    },
+    "new": "Nueva automatización",
+    "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
+    "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
+  },
+  "editor": {
+    "newTitle": "Nueva automatización",
+    "name": "Nombre de la automatización",
+    "namePlaceholder": "Ponle nombre a la automatización",
+    "back": "Atrás",
+    "crumb": "Automatizaciones",
+    "create": "Crear automatización",
+    "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
+  }
+}

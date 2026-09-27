@@ -1,0 +1,29 @@
+{
+  "sidebar": {
+    "new": "New automation",
+    "projects": "Projects",
+    "all": "All automations",
+    "emptyProject": "No automations yet.",
+    "createOne": "Create one",
+    "newHere": "New automation in {{name}}",
+    "noProjects": "No project yet. Make one from New session, and its automations gather here."
+  },
+  "page": {
+    "tabs": {
+      "automations": "Automations",
+      "runs": "Runs"
+    },
+    "new": "New automation",
+    "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
+    "runsEmpty": "No runs yet. Each run appears here with the session it started."
+  },
+  "editor": {
+    "newTitle": "New automation",
+    "name": "Automation name",
+    "namePlaceholder": "Name this automation",
+    "back": "Back",
+    "crumb": "Automations",
+    "create": "Create automation",
+    "recap": "Name the automation, then say where it runs."
+  }
+}

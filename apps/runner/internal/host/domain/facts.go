@@ -129,7 +129,7 @@ type Facts struct {
 
 	// The machine beyond what a session needs: what the console shows on a
 	// host row and what a rollout counts
-	// (product/versions/mvp/14-host-metadata.md). Every field is omitted when
+	// (product/versions/mvp/15-host-metadata.md). Every field is omitted when
 	// the prober could not read it, so an older control plane never sees the
 	// key and a newer one reads absence as unknown.
 	Machine

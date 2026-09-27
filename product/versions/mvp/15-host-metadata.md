@@ -1,6 +1,6 @@
 # Host metadata: the data model
 
-13 asked for more about each host: where it connects from, what the machine
+14 asked for more about each host: where it connects from, what the machine
 is, how it is doing. This note is where that data lives. The rule behind
 it is the one a large fleet teaches: **store each fact by how often it
 changes and who reads it**, never by which noun it happens to describe.
@@ -59,7 +59,7 @@ host (identity; unchanged, loses its metadata columns in the contract step)
   "Is this a new network for optimus?" is one probe on
   `UQ_host_network_host_ip`. The address is the one this process saw on the
   link, **never one the runner reports**. Private, LAN and VPN addresses are
-  not collected (13).
+  not collected (14).
 - **`host_event`**: append-only; `bigint` identity key, so inserts go to the
   end of the index. Kinds: `paired`, `renamed`, `unpaired`,
   `facts_changed` (with the diff), `network_changed`, `runner_updated`,

@@ -201,7 +201,7 @@ export const hostFactsSchema = z.object({
   runnerVersion: z.string(),
   /**
    * The machine beyond what a session needs, for the host row and a rollout
-   * (`product/versions/mvp/14-host-metadata.md`). All optional: runners before
+   * (`product/versions/mvp/15-host-metadata.md`). All optional: runners before
    * them do not send them, and Go omits each one it could not read.
    * `virtualization`, `cloudProvider` and `serviceManager` are the runner's
    * words and stay open strings, so a newer runner's value is kept rather

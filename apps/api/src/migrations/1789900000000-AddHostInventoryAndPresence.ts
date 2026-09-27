@@ -18,7 +18,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * at all.
  *
  * So metadata becomes four tables, each with one write rate and one reader
- * (`product/versions/mvp/14-host-metadata.md`):
+ * (`product/versions/mvp/15-host-metadata.md`):
  *
  * - `host_inventory` — **what the machine is.** One row per host, keyed by
  *   the host. Written only when the static facts change: the API hashes the

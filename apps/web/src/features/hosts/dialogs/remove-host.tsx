@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
  * Remove host — no hero, no close button, so the header keeps no room for
  * one, and the frame's taller title line and 24px above the buttons. The sessions running on it are
  * stopped (their logs kept) and its runner's token is revoked
- * (`product/versions/mvp/13-hosts-settings.md`). A failure stays in the
+ * (`product/versions/mvp/14-hosts-settings.md`). A failure stays in the
  * dialog, where the reader still is.
  */
 export function RemoveHostDialog({ host, onClose }: { host: HostEntity; onClose: () => void }) {

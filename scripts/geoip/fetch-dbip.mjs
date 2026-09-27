@@ -5,7 +5,7 @@
 //   node scripts/geoip/fetch-dbip.mjs [--out <dir>]    (default: .data/geoip)
 //
 // DB-IP Lite is free under CC BY 4.0 and needs no account
-// (product/versions/mvp/14-host-metadata.md). It is published monthly; this
+// (product/versions/mvp/15-host-metadata.md). It is published monthly; this
 // takes the current month and falls back to the previous one, since a new
 // month's files appear a day or two in. The licence asks for "IP geolocation
 // by DB-IP" wherever a location from it is shown.

@@ -4,7 +4,7 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * Settings → Hosts, in a browser, against the real control plane
- * (`product/versions/mvp/13-hosts-settings.md`, `design/version1/Settings.dc.html`).
+ * (`product/versions/mvp/14-hosts-settings.md`, `design/version1/Settings.dc.html`).
  *
  * The host is paired the way a runner pairs — its token spent anonymously —
  * but no runner dials in, so the card reads offline with no last-seen line: the

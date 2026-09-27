@@ -25,8 +25,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
 | 12 | [Projects on the console](12-projects-on-the-console.md) | The 2026-09-26 export: the project chip and dialog on New session, project defaults and repositories, the grouped sidebar, in slices |
-| 13 | [Hosts in Settings](13-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
-| 14 | [Host metadata](14-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
+| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
+| 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
+| 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
 
 ## Decision log
 
@@ -417,13 +418,13 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   described for hosts is gone; the host card's rows come with the hosts
   slice (05).
 - 2026-09-26: the version-1 frames gained a Settings page with a Hosts
-  section, and the hosts backend is designed against it (13). A host
+  section, and the hosts backend is designed against it (14). A host
   read now carries a derived `status` and the count of sessions running
   on it; `GET /hosts` leaves unpaired hosts out unless asked; removing a
   host stops the sessions running on it, where unpairing used to leave
   them `open`; `GET /hosts/pairing/{id}`, listed in 10, is built and
   returns the host the token paired; the runner reports its CPU count.
-- 2026-09-26: host metadata moves off the `host` row (14). What the
+- 2026-09-26: host metadata moves off the `host` row (15). What the
   machine is goes to `host_inventory` (written only when its facts
   change), whether it is there to `host_presence` (one narrow row
   rewritten per heartbeat), where it connects from to `host_network`
@@ -431,7 +432,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   to `host_event` (append-only, 180 days). Heartbeat history is
   deliberately not stored. `host` keeps its old columns until the code
   switches over (expand, switch, contract).
-- 2026-09-26: 14's two open questions are settled. Geography comes from
+- 2026-09-26: 15's two open questions are settled. Geography comes from
   DB-IP Lite (free, no account), and the owner is emailed about a new
   network only when the host's country or ASN changes.
 - 2026-09-26: **Add host from Settings stays in Settings.** It opens the
@@ -439,7 +440,9 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   its Back, as the frame draws it — not a dialog, and no longer the
   console's page with `?from=settings`. The console keeps `/hosts/new`;
   both mount the one screen. Copy host ID is left out of the host menu
-  for now (13).
-- 2026-09-26: 13's first open question is settled: the host card's
+  for now (14).
+- 2026-09-26: 14's first open question is settled: the host card's
   location slot, drawn as "eu-west" / "local", shows the city and country
-  code of the host's connecting address from DB-IP Lite (14).
+  code of the host's connecting address from DB-IP Lite (15).
+- 2026-09-26: **the automations routes exist ahead of their API**, so the
+  rail is whole; automations themselves stay after the MVP (00, 13).

@@ -16,7 +16,7 @@
 export type HostStatus = 'running' | 'idle' | 'offline' | 'unpaired';
 
 /**
- * What a host row says beyond identity (`product/versions/mvp/14-host-metadata.md`):
+ * What a host row says beyond identity (`product/versions/mvp/15-host-metadata.md`):
  * its status and running sessions, what the machine is, where it connects
  * from and how the link is doing. Every fact the runner has not reported is
  * `null`, never a placeholder.

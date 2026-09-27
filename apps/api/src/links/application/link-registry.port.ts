@@ -53,7 +53,7 @@ export interface RunnerLink {
   /**
    * The last ping/pong round trip on this link, in milliseconds; absent until
    * the first pong. Measured by the process holding the socket, so it is
-   * always the true one (`product/versions/mvp/14-host-metadata.md`).
+   * always the true one (`product/versions/mvp/15-host-metadata.md`).
    */
   readonly roundTripMillis?: number | null;
   /** The number of attachments open, for the heartbeat log and the tests. */

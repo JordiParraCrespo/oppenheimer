@@ -141,7 +141,7 @@ This note stays the projects-on-New-session note.
 
 ### Later slices, in order
 
-1. Routines (the second rail item) and Settings, each their own note.
+1. What 00 lists as later slices, each its own note.
 
 ## Decided since
 

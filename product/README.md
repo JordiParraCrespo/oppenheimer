@@ -209,6 +209,10 @@ earlier note:
   (`/projects/new`, `/projects/{id}`, `/hosts/new`) since the 2026-09-26
   evening export, and the second rail item reads Automations. A project
   needs a repository to be saved from the console (2026-09-26).
+- `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
+  console's automations list and its pages have their routes now, so the
+  rail is whole; the automation itself — scheduler, trigger, runs — stays
+  after (`versions/mvp/13-automations.md`, 2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
   then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
@@ -218,7 +222,7 @@ earlier note:
 - `versions/mvp/05-screens.md` said version 1 has no settings page and
   that hosts would be listed later in a drawer. The 2026-09-26 frames
   draw a Settings page with a Hosts section, and
-  `versions/mvp/13-hosts-settings.md` designs its backend. Two host
+  `versions/mvp/14-hosts-settings.md` designs its backend. Two host
   behaviours changed with it: removing a host now stops the sessions
   running on it (it used to close the link and leave them `open`), and
   `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
@@ -226,14 +230,14 @@ earlier note:
 - `versions/mvp/10-api-modules-and-data-model.md` kept a host's
   metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
   a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
-  heartbeat. `versions/mvp/14-host-metadata.md` splits it by rate of
+  heartbeat. `versions/mvp/15-host-metadata.md` splits it by rate of
   change into `host_inventory`, `host_presence`, `host_network` and
   `host_event`; the old columns go in a later contract step (2026-09-26).
 - `versions/mvp/05-screens.md` had Settings → Hosts open the console's
   Add a host page with `?from=settings`. It now opens the same screen
   inside Settings, at `/settings/hosts/new`, with the settings sidebar
   beside it, and the host menu drops Copy host ID for now (2026-09-26).
-- `versions/mvp/13-hosts-settings.md` left the host card's region or
+- `versions/mvp/14-hosts-settings.md` left the host card's region or
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
