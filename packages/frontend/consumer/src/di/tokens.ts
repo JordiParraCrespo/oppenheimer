@@ -9,6 +9,8 @@ export const TOKENS = {
   ...KERNEL_TOKENS,
   ApiTokensRepository: Symbol.for('ApiTokensRepository'),
   ApiTokensService: Symbol.for('ApiTokensService'),
+  AutomationsRepository: Symbol.for('AutomationsRepository'),
+  AutomationsService: Symbol.for('AutomationsService'),
   HostsRepository: Symbol.for('HostsRepository'),
   HostsService: Symbol.for('HostsService'),
   InstallationsRepository: Symbol.for('InstallationsRepository'),
