@@ -56,12 +56,14 @@ function RailItem({
   render,
   ...props
 }: useRender.ComponentProps<'button'> & {
-  /** The tooltip and the accessible name ("Sessions"). */
+  /** The accessible name, and what the tip beside the button reads ("Sessions"). */
   label: string;
-  /** Rides in the tooltip, mono ("Routines 5"). */
+  /** Shown after the name in the tip, and read out as the button's description. */
   count?: React.ReactNode;
   active?: boolean;
 }) {
+  const countId = React.useId();
+  const hasCount = count !== undefined && count !== null;
   // A list is a route, so the button is the router's link when the app hands
   // one through `render`; on its own it is a button.
   return useRender({
@@ -72,16 +74,19 @@ function RailItem({
       'data-slot': 'rail-item',
       'data-active': active || undefined,
       'aria-label': label,
+      'aria-describedby': hasCount ? countId : undefined,
       'aria-current': active ? 'page' : undefined,
       className: cn(
-        'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-(--dur-instant) ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
         className,
       ),
       ...props,
       children: (
         <>
           {children}
-          <RailTip count={count}>{label}</RailTip>
+          <RailTip count={hasCount ? count : undefined} countId={countId}>
+            {label}
+          </RailTip>
         </>
       ),
     },
@@ -89,23 +94,32 @@ function RailItem({
 }
 
 /**
- * The name beside a rail button (`.op-rail__tip`): a popover-surface pill
- * 10px past the button's edge, drawn by the button itself rather than a
- * portal, so it shows the moment the pointer or focus arrives, no delay,
- * fading in while it slides the last 4px into place. The rail sits above the
- * sidebar, so the pill lies over the sidebar's first column. It is decoration:
- * the button's `aria-label` already names it.
+ * The button's name and count in a popover-surface pill to its right, drawn
+ * by the button rather than through a portal so it shows the moment the
+ * pointer or focus arrives, with the fade-and-rise every appearing thing
+ * takes. The pill is hidden from assistive technology: the button's label is
+ * its name, and the count is its description through `countId`.
  */
-function RailTip({ count, children }: { count?: React.ReactNode; children: React.ReactNode }) {
+function RailTip({
+  count,
+  countId,
+  children,
+}: {
+  count?: React.ReactNode;
+  countId: string;
+  children: React.ReactNode;
+}) {
   return (
     <span
       aria-hidden
       data-slot="rail-tip"
-      className="pointer-events-none absolute top-1/2 left-[calc(100%+10px)] flex -translate-x-1 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md bg-popover px-2.5 py-[5px] text-[13px] text-fg opacity-0 shadow-popover transition-[opacity,translate] duration-(--dur-fast) [transition-timing-function:var(--ease-standard),var(--ease-out)] group-hover/rail-item:translate-x-0 group-hover/rail-item:opacity-100 group-focus-visible/rail-item:translate-x-0 group-focus-visible/rail-item:opacity-100"
+      className="pointer-events-none absolute top-1/2 left-[calc(100%+var(--space-5))] flex -translate-x-1 -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.25 text-sm text-fg opacity-0 shadow-popover transition-[opacity,translate] duration-fast [transition-timing-function:var(--ease-standard),var(--ease-out)] group-hover/rail-item:translate-x-0 group-hover/rail-item:opacity-100 group-focus-visible/rail-item:translate-x-0 group-focus-visible/rail-item:opacity-100"
     >
       {children}
       {count !== undefined ? (
-        <span className="font-mono text-[11px] text-fg-subtle tabular-nums">{count}</span>
+        <span id={countId} className="figures text-micro text-fg-subtle">
+          {count}
+        </span>
       ) : null}
     </span>
   );

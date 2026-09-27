@@ -657,10 +657,11 @@
   --animate-label-in: op-label-in 200ms cubic-bezier(0, 0, 0.2, 1) both;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
-  --duration-instant: var(--dur-instant);
-  --duration-fast: var(--dur-fast);
-  --duration-base: var(--dur-base);
-  --duration-slow: var(--dur-slow);
+  /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
+  --transition-duration-instant: var(--dur-instant);
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
 
   /* ---- Semantic colours as utilities (bg-canvas, text-fg-muted, …) ------ */
   --color-canvas: var(--canvas);
