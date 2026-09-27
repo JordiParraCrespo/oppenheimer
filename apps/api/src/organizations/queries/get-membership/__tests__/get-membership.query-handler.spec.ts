@@ -10,7 +10,16 @@ const membership: Membership = {
   userId: 'u1',
   role: 'owner',
   createdAt: new Date('2026-09-27T00:00:00Z'),
-  user: null,
+  user: {
+    id: 'u1',
+    name: 'Ada',
+    email: 'ada@example.com',
+    image: null,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    isActive: true,
+    emailVerified: true,
+  },
 };
 
 describe('GetMembershipQueryHandler', () => {

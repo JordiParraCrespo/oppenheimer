@@ -2955,7 +2955,7 @@ export type GetMembershipData = {
 
 export type GetMembershipErrors = {
     /**
-     * AUTHZ_003 — The organization id in the path is not a UUID
+     * AUTHZ_003 — The organization id is not a UUID
      */
     400: ProblemDetailsDto;
     /**
@@ -2963,7 +2963,7 @@ export type GetMembershipErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * ORG_003 — The caller’s global roles pass the policy check but they hold no membership in this organization
+     * ORG_003 — The caller is not a member of this organization
      *
      * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
      */

@@ -8,18 +8,9 @@ import { MEMBER_REPOSITORY } from '../../organizations.di-tokens';
 import { GetMembershipQuery } from './get-membership.query';
 
 /**
- * Reads the caller's membership row in the organization the route names.
- *
- * Not Better Auth's `getActiveMember`, which answers for the session's
- * *active* organization: a cookie session may have another one selected, and
- * a token's delegated session has one only when the token is pinned to a
- * single organization.
- *
- * A caller who is not a member there has usually been refused already:
- * authorization runs in the organization the route names, where they hold no
- * roles, so `@CheckPolicies({ read Member })` answers `AUTH_002`. `ORG_003` is
- * for the caller whose *global* roles pass that check (a platform admin) but
- * who has no membership of their own to show.
+ * The caller's membership in the organization the route names — not Better
+ * Auth's `getActiveMember`, which answers for the session's active one. Which
+ * error a non-member gets is `product/versions/mvp/08-auth.md`.
  */
 @QueryHandler(GetMembershipQuery)
 export class GetMembershipQueryHandler implements IQueryHandler<GetMembershipQuery, Membership> {

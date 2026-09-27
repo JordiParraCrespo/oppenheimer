@@ -1,40 +1,58 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MemberRepository } from '../member.repository';
 
-const memberRow = {
+/** A query builder that records what it was asked and answers `row`. */
+function builderAnswering(row: unknown) {
+  const calls: { method: string; args: unknown[] }[] = [];
+  const builder: Record<string, unknown> = {};
+  for (const method of ['innerJoin', 'select', 'addSelect', 'where', 'andWhere']) {
+    builder[method] = (...args: unknown[]) => {
+      calls.push({ method, args });
+      return builder;
+    };
+  }
+  builder.getRawOne = vi.fn().mockResolvedValue(row);
+  return { builder, calls };
+}
+
+const row = {
   id: 'm1',
   organizationId: 'org-b',
   userId: 'u1',
   role: 'owner',
   createdAt: new Date('2026-09-27T00:00:00Z'),
-};
-const userRow = {
-  id: 'u1',
-  name: 'Ada Lovelace',
-  email: 'ada@example.com',
-  image: null,
-  firstName: 'Ada',
-  lastName: 'Lovelace',
-  isActive: true,
-  emailVerified: true,
-  // Columns the read model must not carry along.
-  role: 'user',
-  banned: false,
+  userName: 'Ada Lovelace',
+  userEmail: 'ada@example.com',
+  userImage: null,
+  userFirstName: 'Ada',
+  userLastName: 'Lovelace',
+  userIsActive: true,
+  userEmailVerified: true,
 };
 
 describe('MemberRepository.findMembership', () => {
-  it('reads the member row in exactly that organization, with the account behind it', async () => {
-    const members = { findOne: vi.fn().mockResolvedValue(memberRow) };
-    const users = { findOne: vi.fn().mockResolvedValue(userRow) };
-    const repository = new MemberRepository(members as never, users as never);
+  it('reads the member row in exactly that organization joined to its account, in one query', async () => {
+    const { builder, calls } = builderAnswering(row);
+    const members = { createQueryBuilder: vi.fn().mockReturnValue(builder) };
+    const repository = new MemberRepository(members as never);
 
     const found = await repository.findMembership('org-b', 'u1');
 
-    expect(members.findOne).toHaveBeenCalledWith({
-      where: { organizationId: 'org-b', userId: 'u1' },
+    expect(members.createQueryBuilder).toHaveBeenCalledTimes(1);
+    expect(calls).toContainEqual({
+      method: 'where',
+      args: ['member.organizationId = :organizationId', { organizationId: 'org-b' }],
+    });
+    expect(calls).toContainEqual({
+      method: 'andWhere',
+      args: ['member.userId = :userId', { userId: 'u1' }],
     });
     expect(found.unwrap()).toEqual({
-      ...memberRow,
+      id: 'm1',
+      organizationId: 'org-b',
+      userId: 'u1',
+      role: 'owner',
+      createdAt: row.createdAt,
       user: {
         id: 'u1',
         name: 'Ada Lovelace',
@@ -49,13 +67,11 @@ describe('MemberRepository.findMembership', () => {
   });
 
   it('answers None for someone who is not a member there', async () => {
-    const users = { findOne: vi.fn() };
-    const repository = new MemberRepository(
-      { findOne: vi.fn().mockResolvedValue(null) } as never,
-      users as never,
-    );
+    const { builder } = builderAnswering(undefined);
+    const repository = new MemberRepository({
+      createQueryBuilder: vi.fn().mockReturnValue(builder),
+    } as never);
 
     expect((await repository.findMembership('org-b', 'u1')).isNone()).toBe(true);
-    expect(users.findOne).not.toHaveBeenCalled();
   });
 });

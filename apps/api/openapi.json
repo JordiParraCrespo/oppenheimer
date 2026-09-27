@@ -2698,7 +2698,6 @@
     },
     "/api/v1/organizations/{orgId}/members/me": {
       "get": {
-        "description": "Answers for the organization in the path, never the session’s active one. A caller who is not a member there holds no roles in it and is refused by the policy check (AUTH_002).",
         "operationId": "getMembership",
         "parameters": [
           {
@@ -2722,7 +2721,7 @@
             }
           },
           "400": {
-            "description": "AUTHZ_003 — The organization id in the path is not a UUID",
+            "description": "AUTHZ_003 — The organization id is not a UUID",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2742,7 +2741,7 @@
             }
           },
           "403": {
-            "description": "ORG_003 — The caller’s global roles pass the policy check but they hold no membership in this organization\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "description": "ORG_003 — The caller is not a member of this organization\n\nAUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
             "content": {
               "application/problem+json": {
                 "schema": {

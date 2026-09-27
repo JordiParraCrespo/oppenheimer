@@ -22,6 +22,5 @@ export interface Membership {
   userId: string;
   role: string;
   createdAt: Date;
-  /** `null` only if the account row is gone while the membership is not. */
-  user: MembershipUser | null;
+  user: MembershipUser;
 }
