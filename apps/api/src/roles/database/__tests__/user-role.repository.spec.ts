@@ -1,5 +1,6 @@
 import { In, IsNull } from 'typeorm';
 import { describe, expect, it, vi } from 'vitest';
+import { RoleOrmEntity } from '../role.orm-entity';
 import { UserRoleOrmEntity } from '../user-role.orm-entity';
 import { UserRoleRepository } from '../user-role.repository';
 
@@ -21,6 +22,7 @@ function repositoryWith() {
     execute: vi.fn().mockResolvedValue(undefined),
   };
   const manager = {
+    find: vi.fn().mockResolvedValue([{ id: 'owner-role' }, { id: 'user-role' }]),
     delete: vi.fn().mockResolvedValue({ affected: 1 }),
     createQueryBuilder: () => insertBuilder,
     query: vi.fn().mockResolvedValue(undefined),
@@ -30,21 +32,21 @@ function repositoryWith() {
       transaction: vi.fn(async (work: (m: typeof manager) => Promise<void>) => work(manager)),
     },
   };
-  const roles = {
-    find: vi.fn().mockResolvedValue([{ id: 'owner-role' }, { id: 'user-role' }]),
-  };
-  const repository = new UserRoleRepository(userRoles as never, roles as never, {} as never);
-  return { repository, manager, roles, inserted };
+  const repository = new UserRoleRepository(userRoles as never, {} as never, {} as never);
+  return { repository, manager, userRoles, inserted };
 }
 
 describe('UserRoleRepository.replaceMembershipRole', () => {
   it('removes the other membership role in exactly that organization and grants the new one', async () => {
-    const { repository, manager, roles, inserted } = repositoryWith();
+    const { repository, manager, userRoles, inserted } = repositoryWith();
 
     await repository.replaceMembershipRole('u1', 'org1', 'owner-role');
 
-    // Only the global system roles a membership maps onto are candidates.
-    expect(roles.find).toHaveBeenCalledWith(
+    // One transaction, and the candidate rows — only the global system roles a
+    // membership maps onto — are read inside it.
+    expect(userRoles.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(manager.find).toHaveBeenCalledWith(
+      RoleOrmEntity,
       expect.objectContaining({
         where: { name: In(['owner', 'user']), organizationId: IsNull() },
       }),
@@ -73,8 +75,8 @@ describe('UserRoleRepository.replaceMembershipRole', () => {
   });
 
   it('only grants when no other membership role is installed', async () => {
-    const { repository, manager, roles, inserted } = repositoryWith();
-    roles.find.mockResolvedValue([{ id: 'owner-role' }]);
+    const { repository, manager, inserted } = repositoryWith();
+    manager.find.mockResolvedValue([{ id: 'owner-role' }]);
 
     await repository.replaceMembershipRole('u1', 'org1', 'owner-role');
 
