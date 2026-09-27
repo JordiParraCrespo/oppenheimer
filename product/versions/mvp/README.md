@@ -431,3 +431,6 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   session checks out any repositories, usually one.
 - 2026-09-26: **the automations routes exist ahead of their API**, so the
   rail is whole; automations themselves stay after the MVP (00, 13).
+- 2026-09-27: **the automations sidebar leaves out Unassigned**: an
+  automation is set up for a project, and Unassigned only holds the
+  sessions that name none (13).

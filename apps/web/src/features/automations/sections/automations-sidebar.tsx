@@ -20,9 +20,11 @@ import { useTranslation } from 'react-i18next';
  * per project — each with New automation in it — over the project's
  * automations.
  *
- * The projects are read because the groups are theirs; every group is empty
- * until the API behind automations lands, and the empty row says so. The
- * rows, the search that narrows them and the expanded runs under the
+ * The projects are read because the groups are theirs, all but the
+ * workspace's Unassigned: it holds the sessions that name no project, and an
+ * automation is set up for one, so it has no group here. Every group is
+ * empty until the API behind automations lands, and the empty row says so.
+ * The rows, the search that narrows them and the expanded runs under the
  * selected one arrive with that slice — a search with nothing to narrow is
  * not mounted.
  */
@@ -30,6 +32,7 @@ export function AutomationsSidebar() {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
   const projects = useProjects();
+  const named = projects.data?.filter((project) => !project.isUnassigned);
   const [closed, setClosed] = useState<string[]>([]);
   const all =
     Boolean(matchRoute({ to: '/automations' })) || Boolean(matchRoute({ to: '/automations/runs' }));
@@ -44,9 +47,7 @@ export function AutomationsSidebar() {
 
       <div className="flex items-center gap-2 px-3 pt-0.5 pb-1.5">
         <span className="eyebrow min-w-0 flex-1">{t('automations.sidebar.projects')}</span>
-        {projects.data ? (
-          <span className="figures text-xs text-fg-muted">{projects.data.length}</span>
-        ) : null}
+        {named ? <span className="figures text-xs text-fg-muted">{named.length}</span> : null}
       </div>
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
@@ -65,8 +66,8 @@ export function AutomationsSidebar() {
             <Skeleton className="h-7.5 w-full" />
             <Skeleton className="h-7.5 w-full" />
           </div>
-        ) : projects.data?.length ? (
-          projects.data.map((project) => {
+        ) : named?.length ? (
+          named.map((project) => {
             const open = !closed.includes(project.id);
             return (
               <div key={project.id} className="mt-1.5 flex flex-col">
