@@ -66,7 +66,6 @@ import {
   ScopeChips,
   RepositoryRowListDemo,
   DisclosureDemo,
-  StepTabsDemo,
   SidebarDemo,
   CalloutDemo,
   PillTabsDemo,
@@ -982,16 +981,6 @@ export default function Page() {
         code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
       >
         <PillTabsDemo />
-      </Spec>
-
-      <Spec
-        id="steptabs"
-        title="StepTabs"
-        meta="step-tabs.tsx"
-        desc="The automation editor's steps under the dialog's title: Task, Trigger, Where it runs. A pill track on the hover wash with 3px of inset, each step 30px with a 16px round mono number; the open step lifts onto the popover colour, a finished one turns its number into a check on the success green, and a step not yet reachable is disabled rather than hidden. A wizard: the footer's Next moves forward, a tab goes back or skips ahead once everything before it is done."
-        code={`<StepTabs value={step} onValueChange={setStep}><StepTabsList><StepTab value="0" number={1} done>Task</StepTab>…</StepTabsList><StepTabsPanel value="0">…</StepTabsPanel></StepTabs>`}
-      >
-        <StepTabsDemo />
       </Spec>
 
       <Spec

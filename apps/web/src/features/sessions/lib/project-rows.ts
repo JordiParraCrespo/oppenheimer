@@ -8,7 +8,7 @@ import {
 } from '@oppenheimer/frontend-consumer';
 
 /**
- * The installations' repositories as the project page's rows, with the
+ * The installations' repositories as the project dialog's rows, with the
  * branches of the ones already ticked. Keyed like the scope chip, so a row
  * ticked here is the same repository the chip will hold.
  */
@@ -27,7 +27,7 @@ export function toProjectRepositoryRows(
 }
 
 /**
- * The page's rows as `POST /projects` takes them. A row whose id no longer
+ * The dialog's rows as `POST /projects` takes them. A row whose id no longer
  * parses is dropped rather than sent, for the same reason a checkout is.
  */
 export function toProjectRepositoryInputs(

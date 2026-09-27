@@ -275,7 +275,6 @@ export { Toaster, toast } from './components/sonner';
 export type { StatusState } from './components/status-dot';
 export { dotVariants, STATUS_LABEL, StatusDot } from './components/status-dot';
 export { StepHeader } from './components/step-header';
-export { StepTab, StepTabs, StepTabsList, StepTabsPanel } from './components/step-tabs';
 export type { Step, StepState } from './components/stepper';
 export { Stepper } from './components/stepper';
 export { SuccessMark } from './components/success-mark';

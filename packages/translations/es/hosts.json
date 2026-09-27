@@ -24,10 +24,7 @@
     "install": {
       "title": "Instalar",
       "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
-      "done": "Instalado",
-      "format": "Formato de instalación",
-      "command": "Comando",
-      "agentPrompt": "Instrucción para el agente"
+      "done": "Instalado"
     },
     "connect": {
       "title": "Conectar",

@@ -582,36 +582,13 @@
     },
     "editor": {
       "newTitle": "New automation",
-      "stepsLabel": "Automation steps",
-      "steps": {
-        "task": "Task",
-        "trigger": "Trigger",
-        "where": "Where it runs"
-      },
       "name": "Name",
       "namePlaceholder": "Name this automation",
       "prompt": "What should the agent do?",
       "promptPlaceholder": "Describe the work for every run…",
       "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
-      "anyTrigger": "Any trigger starts a run.",
-      "addTrigger": "Add a trigger",
-      "triggersSoon": "Schedules and GitHub events arrive with the automations API.",
-      "code": "Code",
-      "runsOn": "Runs on",
-      "project": "Project",
-      "repositories": "Repositories",
-      "host": "Host",
-      "agent": "Agent",
-      "model": "Model",
-      "notSet": "Not set",
-      "runsHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
-      "missing": {
-        "name": "Add a name.",
-        "prompt": "Describe the work.",
-        "trigger": "Add a trigger."
-      },
-      "back": "Back",
-      "next": "Next",
+      "forProject": "For {{name}}.",
+      "soon": "The trigger, where it runs and Create arrive with the automations API.",
       "create": "Create automation"
     }
   },
@@ -641,10 +618,7 @@
       "install": {
         "title": "Install",
         "subtitle": "Run this once on the machine, or hand it to an agent already there.",
-        "done": "Installed",
-        "format": "Install format",
-        "command": "Command",
-        "agentPrompt": "Agent prompt"
+        "done": "Installed"
       },
       "connect": {
         "title": "Connect",

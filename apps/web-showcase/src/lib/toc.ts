@@ -142,7 +142,6 @@ export const TOC: TocGroup[] = [
       { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'session-item'] },
       { id: 'routineitem', label: 'RoutineItem', icon: ZapIcon, components: ['routine-item'] },
       { id: 'pilltabs', label: 'PillTabs', icon: ToggleLeftIcon, components: ['pill-tabs'] },
-      { id: 'steptabs', label: 'StepTabs', icon: ListOrderedIcon, components: ['step-tabs'] },
       { id: 'editorpage', label: 'EditorPage', icon: PanelTopIcon, components: ['editor-page'] },
       { id: 'pageheader', label: 'PageHeader', icon: HeadingIcon, components: ['page-header'] },
       { id: 'stepper', label: 'Stepper', icon: ListOrderedIcon, components: ['stepper'] },

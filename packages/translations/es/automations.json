@@ -19,36 +19,13 @@
   },
   "editor": {
     "newTitle": "Nueva automatización",
-    "stepsLabel": "Pasos de la automatización",
-    "steps": {
-      "task": "Tarea",
-      "trigger": "Disparador",
-      "where": "Dónde se ejecuta"
-    },
     "name": "Nombre",
     "namePlaceholder": "Ponle nombre a la automatización",
     "prompt": "¿Qué debe hacer el agente?",
     "promptPlaceholder": "Describe el trabajo de cada ejecución…",
     "promptHint": "El pull request, la incidencia o el commit que disparó la ejecución se pasa como contexto.",
-    "anyTrigger": "Cualquier disparador inicia una ejecución.",
-    "addTrigger": "Añadir un disparador",
-    "triggersSoon": "Los horarios y los eventos de GitHub llegan con la API de automatizaciones.",
-    "code": "Código",
-    "runsOn": "Se ejecuta en",
-    "project": "Proyecto",
-    "repositories": "Repositorios",
-    "host": "Host",
-    "agent": "Agente",
-    "model": "Modelo",
-    "notSet": "Sin definir",
-    "runsHint": "Cada ejecución es una sesión propia en una rama opp/ nueva: nada llega a main sin un pull request.",
-    "missing": {
-      "name": "Añade un nombre.",
-      "prompt": "Describe el trabajo.",
-      "trigger": "Añade un disparador."
-    },
-    "back": "Atrás",
-    "next": "Siguiente",
+    "forProject": "Para {{name}}.",
+    "soon": "El disparador, dónde se ejecuta y Crear llegan con la API de automatizaciones.",
     "create": "Crear automatización"
   }
 }

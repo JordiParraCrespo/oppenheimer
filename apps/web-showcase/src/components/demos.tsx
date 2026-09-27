@@ -115,7 +115,6 @@ import {
   PageHeaderTitleInput,
 } from '@oppenheimer/design-system-web/page-header';
 import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
-import { StepTab, StepTabs, StepTabsList, StepTabsPanel } from '@oppenheimer/design-system-web/step-tabs';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@oppenheimer/design-system-web/disclosure';
 import { RepositoryAddField } from '@oppenheimer/design-system-web/repository-add-field';
 import { BotIcon, CopyIcon } from '@oppenheimer/design-system-web/icons';
@@ -203,76 +202,81 @@ const PROMPT =
   'Install the oppenheimer runner here, then run\noppenheimer-runner status and report the hostname.\ncurl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
 
 /**
- * Add a host, as the 2026-09-27 frames draw it: one sentence, the two copy
- * buttons, the token line, the command and the prompt behind Inspect, and
- * a status box that resolves in place so nothing under it moves.
+ * Add a host, from the inventory: one sentence, two copy Buttons, the token
+ * line, the instruction as a CodeBlock panel behind a Disclosure, and a
+ * StatusDot line that resolves in place so nothing under it moves. The
+ * product draws the same column from the kit's pairing parts.
  */
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
-  const [copied, setCopied] = React.useState<'cmd' | 'prompt' | null>(null);
   const [registered, setRegistered] = React.useState(false);
   return (
     <Dialog onOpenChange={(open) => !open && setRegistered(false)}>
       <DialogTrigger render={<Button variant="secondary" />}>Add a host…</DialogTrigger>
-      <DialogContent className="max-w-[520px]">
+      <DialogContent size="form">
         <DialogHeader>
           <DialogTitle>Add a host</DialogTitle>
           <DialogDescription>
             Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.
           </DialogDescription>
         </DialogHeader>
-        <DialogBody className="flex flex-col gap-[18px]">
-          <div className="flex flex-col gap-2.5">
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => setCopied('cmd')}>
-                <CopyIcon />
-                {copied === 'cmd' ? 'Copied' : 'Copy install command'}
-              </Button>
-              <Button variant="ghost" onClick={() => setCopied('prompt')}>
-                <BotIcon />
-                {copied === 'prompt' ? 'Copied' : 'Copy agent prompt'}
-              </Button>
-            </div>
-            <div className="flex flex-wrap items-baseline gap-2.5 text-xs text-fg-subtle">
-              <span className="figures text-[11.5px] whitespace-nowrap">Token expires in 59:41 · single use</span>
-              <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
-                New token
-              </Link>
-            </div>
-          </div>
-          <Disclosure>
-            <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
-            <DisclosurePanel className="mt-2.5">
-              <CodeBlock
-                layout="panel"
-                code={tab === 'cmd' ? INSTALL : PROMPT}
-                tabs={[
-                  { value: 'cmd', label: 'Command' },
-                  { value: 'prompt', label: 'Agent prompt' },
-                ]}
-                tab={tab}
-                onTabChange={setTab}
-              />
-            </DisclosurePanel>
-          </Disclosure>
-          <div className="flex min-h-11 flex-col justify-center rounded-md border border-border-subtle px-3.5">
-            {registered ? (
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span aria-hidden className="size-1.75 shrink-0 rounded-pill bg-success" />
-                <span className="font-mono text-[13px]">mac-studio</span>
-                <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
+        <DialogBody>
+          <div className="flex flex-col gap-4.5">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary">
+                  <CopyIcon />
+                  Copy install command
+                </Button>
+                <Button variant="ghost">
+                  <BotIcon />
+                  Copy agent prompt
+                </Button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setRegistered(true)}
-                className="flex items-center gap-2.5 text-left text-[13px] text-fg-muted"
-                title="Click to simulate the host registering"
-              >
-                <span aria-hidden className="size-1.75 shrink-0 animate-pulse-dot rounded-pill bg-fg-subtle" />
-                Waiting for the host to connect…
-              </button>
-            )}
+              <div className="flex flex-wrap items-baseline gap-2.5">
+                <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
+                  Token expires in 59:41 · single use
+                </span>
+                <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
+                  New token
+                </Link>
+              </div>
+            </div>
+            <Disclosure>
+              <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
+              <DisclosurePanel className="mt-2.5">
+                <CodeBlock
+                  layout="panel"
+                  code={tab === 'cmd' ? INSTALL : PROMPT}
+                  tabs={[
+                    { value: 'cmd', label: 'Command' },
+                    { value: 'prompt', label: 'Agent prompt' },
+                  ]}
+                  tab={tab}
+                  onTabChange={setTab}
+                />
+              </DisclosurePanel>
+            </Disclosure>
+            <div className="h-px bg-border-subtle" />
+            <div className="flex min-h-10.5 items-center">
+              {registered ? (
+                <StatusDot state="running" className="items-center">
+                  <span className="figures text-[13px]">mac-studio</span>
+                  <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
+                </StatusDot>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRegistered(true)}
+                  className="text-left"
+                  title="Click to simulate the host registering"
+                >
+                  <StatusDot state="pending" pulse>
+                    Waiting for the host to connect…
+                  </StatusDot>
+                </button>
+              )}
+            </div>
           </div>
         </DialogBody>
         <DialogFooter>
@@ -1181,46 +1185,6 @@ export function DisclosureDemo() {
           </p>
         </DisclosurePanel>
       </Disclosure>
-    </div>
-  );
-}
-
-/* ── StepTabs ────────────────────────────────────────────────────────────── */
-
-export function StepTabsDemo() {
-  const [step, setStep] = React.useState('1');
-  return (
-    <div className="flex w-full max-w-146 flex-col gap-5">
-      <StepTabs value={step} onValueChange={setStep}>
-        <StepTabsList aria-label="Automation steps">
-          <StepTab value="0" number={1} done>
-            Task
-          </StepTab>
-          <StepTab value="1" number={2}>
-            Trigger
-          </StepTab>
-          <StepTab value="2" number={3} disabled>
-            Where it runs
-          </StepTab>
-        </StepTabsList>
-        <StepTabsPanel value="0" >
-          <p className="m-0 pt-5 text-sm text-fg-muted">The name and the instructions for every run.</p>
-        </StepTabsPanel>
-        <StepTabsPanel value="1" >
-          <p className="m-0 pt-5 text-sm text-fg-muted">Any trigger starts a run.</p>
-        </StepTabsPanel>
-        <StepTabsPanel value="2" >
-          <p className="m-0 pt-5 text-sm text-fg-muted">The project, its repositories, the host, the agent and the model.</p>
-        </StepTabsPanel>
-      </StepTabs>
-      <div className="flex justify-end gap-2">
-        <Button variant="secondary" size="sm" disabled={step === '0'} onClick={() => setStep(String(Number(step) - 1))}>
-          Back
-        </Button>
-        <Button size="sm" disabled={step === '2'} onClick={() => setStep(String(Number(step) + 1))}>
-          Next
-        </Button>
-      </div>
     </div>
   );
 }

@@ -12,24 +12,18 @@ import {
 } from '@oppenheimer/design-system-web';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import {
-  HostPairingCopyButtons,
-  HostPairingInspect,
-  HostPairingStatus,
-  HostPairingToken,
-} from '@oppenheimer/frontend-web';
+import { HostPairingChrome } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
  * Add a host — pairing a machine without leaving the console
- * (`product/versions/mvp/05-screens.md`, the 2026-09-27 export).
+ * (`product/versions/mvp/05-screens.md`).
  *
- * A 520px dialog behind the host chip's foot row: one sentence, then the two
- * copy buttons — the way in is copying the instruction, not reading it —
- * the token line under them, the command and the prompt behind an Inspect
- * fold, and a status box that resolves in place when a runner spends the
- * token. Everything under the sentence is the kit's pairing parts, which
- * the onboarding step draws too; the flow under both is `useHostPairing`.
+ * The dialog behind the host chip's foot row: one sentence, then the kit's
+ * pairing column — the two copy buttons, the token line, the instruction
+ * behind its fold, and the status line that resolves in place when a
+ * runner spends the token. The onboarding step draws the same column at
+ * its larger size, and the flow under both is `useHostPairing`.
  *
  * The footer's primary arms on a **registered** host rather than an online
  * one, unlike onboarding's Continue: a session may be started on a machine
@@ -57,7 +51,7 @@ export function AddHostDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={t('common.close')} className="max-w-130">
+      <DialogContent size="form" closeLabel={t('common.close')}>
         <DialogHeader>
           <DialogTitle>{t('hosts.add.title')}</DialogTitle>
           <DialogDescription>{t('hosts.add.description')}</DialogDescription>
@@ -72,23 +66,14 @@ export function AddHostDialog({
                 </AlertDescription>
               </Alert>
             ) : null}
-
-            <div className="flex flex-col gap-2.5">
-              <HostPairingCopyButtons pairing={pairing ?? null} />
-              <HostPairingToken
-                expiresAt={expiresAt}
-                expired={expired}
-                onRegenerate={regenerate}
-                busy={isPending}
-                layout="inline"
-              />
-            </div>
-
-            <HostPairingInspect pairing={pairing ?? null} />
-
-            <div className="rounded-md border border-border-subtle px-3.5">
-              <HostPairingStatus host={host} />
-            </div>
+            <HostPairingChrome
+              pairing={pairing ?? null}
+              expiresAt={expiresAt}
+              expired={expired}
+              onRegenerate={regenerate}
+              busy={isPending}
+              host={host}
+            />
           </div>
         </DialogBody>
 

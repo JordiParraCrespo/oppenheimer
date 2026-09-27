@@ -6,6 +6,6 @@ export {
 } from './components/pairing-chrome';
 export {
   HostPairingCopyButtons,
-  HostPairingInspect,
+  HostPairingInstruction,
   type PairingInstruction,
 } from './components/pairing-install';

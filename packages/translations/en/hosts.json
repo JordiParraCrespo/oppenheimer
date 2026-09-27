@@ -24,10 +24,7 @@
     "install": {
       "title": "Install",
       "subtitle": "Run this once on the machine, or hand it to an agent already there.",
-      "done": "Installed",
-      "format": "Install format",
-      "command": "Command",
-      "agentPrompt": "Agent prompt"
+      "done": "Installed"
     },
     "connect": {
       "title": "Connect",

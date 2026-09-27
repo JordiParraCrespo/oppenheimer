@@ -31,16 +31,12 @@ export interface PairingInstruction {
 }
 
 /**
- * The 2026-09-27 export's way in (`design/version1/AddHost.dc.html`,
- * `SessionsConsole.dc.html`): a person copies the instruction rather than
- * reading it. Two buttons — Copy install command, the secondary, and Copy
- * agent prompt, ghost — each reading Copied for a moment after it is
- * pressed. `size` is the surface's: the onboarding step draws them large,
- * the console's dialog at the medium height.
- *
- * Kit rather than a feature because two features draw them — the onboarding
- * step in `hosts` and the Add a host dialog in `sessions` — and a feature
- * may not import another.
+ * The way in (`design/version1/AddHost.dc.html`, `SessionsConsole.dc.html`):
+ * a person copies the instruction rather than reading it. Two buttons —
+ * Copy install command, the secondary, and Copy agent prompt, ghost — each
+ * reading Copied for a moment after it is pressed. `size` is the surface's:
+ * the onboarding step draws them large, the console's dialog at the medium
+ * height.
  */
 export function HostPairingCopyButtons({
   pairing,
@@ -80,48 +76,61 @@ export function HostPairingCopyButtons({
 }
 
 /**
- * "Inspect command and prompt": the fold under the copy buttons that shows
- * what they copy, as one `CodeBlock` panel with the Command / Agent prompt
- * tabs on its band. Closed by default, because the buttons are the way in
- * and the text is for the person who wants to see it first.
+ * The instruction itself, the one place it is drawn: a `CodeBlock` panel
+ * with the Command / Agent prompt tabs on its band, the installer's digest
+ * under the command form when the deployment published one.
+ *
+ * `layout="panel"` shows it outright, which is Settings' Install step
+ * (`design/version1/Settings.dc.html`). `layout="fold"` puts it behind
+ * "Inspect command and prompt", closed by default, which is the onboarding
+ * step and the console's dialog: there the copy buttons are the way in and
+ * the text is for the person who wants to see it first.
  */
-export function HostPairingInspect({ pairing }: { pairing: PairingInstruction | null }) {
+export function HostPairingInstruction({
+  pairing,
+  layout = 'fold',
+}: {
+  pairing: PairingInstruction | null;
+  layout?: 'panel' | 'fold';
+}) {
   const { t } = useTranslation();
-  // Which way the same instruction is being read. This fold is the lowest
+  // Which way the same instruction is being read. This is the lowest
   // component that reads it, and the switch changes nothing else on screen.
   const [format, setFormat] = useState<PairingFormat>('command');
+
+  const panel = pairing ? (
+    <CodeBlock
+      layout="panel"
+      tabs={FORMATS.map((option) => ({
+        value: option,
+        label: t(`hosts.pairing.${option}` as const),
+      }))}
+      tab={format}
+      onTabChange={(next) => {
+        // The block speaks strings; the guard is what keeps that at the
+        // boundary instead of casting it away.
+        if (isFormat(next)) setFormat(next);
+      }}
+      tabsLabel={t('hosts.pairing.format')}
+      code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
+      note={
+        format === 'command' && pairing.installScriptSha256
+          ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
+          : undefined
+      }
+      copyLabel={t('common.copy')}
+      copiedLabel={t('common.copied')}
+    />
+  ) : (
+    <Skeleton className="h-48 w-full" />
+  );
+
+  if (layout === 'panel') return panel;
 
   return (
     <Disclosure>
       <DisclosureTrigger tone="muted">{t('hosts.pairing.inspect')}</DisclosureTrigger>
-      <DisclosurePanel className="mt-2.5">
-        {pairing ? (
-          <CodeBlock
-            layout="panel"
-            tabs={FORMATS.map((option) => ({
-              value: option,
-              label: t(`hosts.pairing.${option}` as const),
-            }))}
-            tab={format}
-            onTabChange={(next) => {
-              // The block speaks strings; the guard is what keeps that at
-              // the boundary instead of casting it away.
-              if (isFormat(next)) setFormat(next);
-            }}
-            tabsLabel={t('hosts.pairing.format')}
-            code={format === 'command' ? pairing.installCommand : pairing.agentPrompt}
-            note={
-              format === 'command' && pairing.installScriptSha256
-                ? t('hosts.pairing.installerDigest', { digest: pairing.installScriptSha256 })
-                : undefined
-            }
-            copyLabel={t('common.copy')}
-            copiedLabel={t('common.copied')}
-          />
-        ) : (
-          <Skeleton className="h-48 w-full" />
-        )}
-      </DisclosurePanel>
+      <DisclosurePanel className="mt-2.5">{panel}</DisclosurePanel>
     </Disclosure>
   );
 }

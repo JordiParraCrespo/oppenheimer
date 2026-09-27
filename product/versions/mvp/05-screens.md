@@ -12,10 +12,10 @@
   as you type with a spinner, a green check or a red cross and a hint
   in the same tone; Continue waits for an available address. (3)
   Connect GitHub, all or selected repos, skippable; until it is done the
-  repo chip lists nothing and its foot row is the way out (below). (4) Add a host, with two copyable blocks, the
-  install command and the prompt for an AI agent, both carrying the
-  same one-hour token, the screen flipping to the registered host when
-  the runner registers. Then Ready: a success ring, "You're all set", a
+  repo chip lists nothing and its foot row is the way out (below). (4) Add a host: Copy install command and
+  Copy agent prompt, the one-hour token's line under them, the
+  instruction itself behind an Inspect fold, and the status line
+  flipping to the registered host when the runner registers. Then Ready: a success ring, "You're all set", a
   summary card of workspace address, code and host, and one button into
   the console, where New session has its chips prefilled (the host just
   added, the first repo of the installation, its default branch, Claude
@@ -66,10 +66,10 @@
   with Add host on the right, which opens the Add a host page inside
   Settings (`/settings/hosts/new`, the settings sidebar still beside it,
   the Hosts row unlit): Back, Hosts as the parent crumb, Done rather than
-  Use this host, all back to the list. The console pairs in a dialog
-  since the 2026-09-27 export; Settings keeps its page, because its frame
-  keeps Settings around it, and shows the Command / Agent prompt panel
-  outright rather than behind a fold. The rows a host card draws — rename, remove, the
+  Use this host, all back to the list. The console pairs in a dialog;
+  Settings keeps its page, because its frame keeps Settings around it,
+  and shows the Command / Agent prompt panel outright rather than behind
+  a fold. The rows a host card draws — rename, remove, the
   install command and the preflight — are their own slices; the frame,
   the routes and the way back are built (2026-09-26).
 
@@ -94,8 +94,7 @@
   offers the rest; it starts on the workspace's **Unassigned** project,
   which is where a session that names none is listed, so the chip and
   the session never disagree. Its foot action is **New project…**, a
-  dialog over the console (the 2026-09-27 export; a page over the main
-  pane for one day before it): the name; Repositories as a field that
+  dialog over the console: the name; Repositories as a field that
   adds one at a time from the App's list (`RepositoryAddField`), the
   added ones listed under it with an X; then a **Defaults** fold,
   optional, that reads what is set while closed — the host as chips, the
@@ -153,9 +152,8 @@
   back to the onboarding step (`/onboarding/github`). A deployment with no
   App has no such page: the chip says so in its empty line and has no
   foot row. The host chip's
-  foot action opens the **Add a host dialog** (the 2026-09-27 export; a
-  page over the main column for one day before it, and a dialog before
-  that): one sentence — run one command on the machine — then **Copy
+  foot action opens the **Add a host dialog**: one sentence — run one
+  command on the machine — then **Copy
   install command** and **Copy agent prompt**, each reading Copied for a
   moment, because the way in is copying the instruction rather than
   reading it; the token line under them — whose New token replaces the

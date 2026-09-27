@@ -1,19 +1,7 @@
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Separator,
-  StepHeader,
-} from '@oppenheimer/design-system-web';
+import { Alert, AlertDescription, Button, StepHeader } from '@oppenheimer/design-system-web';
 import { useHostPairing } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import {
-  AuthLink,
-  HostPairingCopyButtons,
-  HostPairingInspect,
-  HostPairingStatus,
-  HostPairingToken,
-} from '@oppenheimer/frontend-web';
+import { AuthLink, HostPairingChrome } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
@@ -25,10 +13,10 @@ import { useTranslation } from 'react-i18next';
  * status line that resolves in place when the runner registers. Continue
  * waits for that.
  *
- * What is this step's is the layout and that wait. The buttons, the fold,
- * the token line and the status row are the kit's pairing parts, which the
- * console's Add a host dialog draws too, and the flow under both is
- * `useHostPairing`.
+ * What is this step's is the header and that wait. The column under it —
+ * the buttons, the token line, the fold, the status row — is the kit's
+ * `HostPairingChrome`, which the console's Add a host dialog draws too at
+ * its smaller size, and the flow under both is `useHostPairing`.
  *
  * Both forms come from the API with the secret already in them: it is shown
  * once, and the server is the only place that knows it, so neither string is
@@ -74,21 +62,15 @@ export function OnboardingHostScreen({
         </Alert>
       )}
 
-      <div className="flex flex-col gap-2.5">
-        <HostPairingCopyButtons pairing={pairing ?? null} size="lg" />
-        <HostPairingToken
-          expiresAt={expiresAt}
-          expired={expired}
-          onRegenerate={regenerate}
-          busy={isPending}
-          layout="step"
-        />
-      </div>
-
-      <HostPairingInspect pairing={pairing ?? null} />
-
-      <Separator />
-      <HostPairingStatus host={host} layout="step" />
+      <HostPairingChrome
+        pairing={pairing ?? null}
+        expiresAt={expiresAt}
+        expired={expired}
+        onRegenerate={regenerate}
+        busy={isPending}
+        host={host}
+        layout="step"
+      />
 
       <div className="flex flex-col items-start gap-3.5">
         {/* Online, not merely registered: the row appears when the runner

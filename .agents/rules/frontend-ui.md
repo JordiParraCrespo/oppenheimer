@@ -41,8 +41,7 @@ multi-line, so a grep for `export` misses most of them.
 | Which repositories are in a project | `RepositoryAddField` | a `RepositorySelect` in a dialog, a table of checkboxes |
 | What each of a project's repositories does in a new session, and from which branch | `RepositoryRowList` | a second `RepositoryAddField`, a table |
 | A fold inside a dialog or a step (Defaults, Inspect command and prompt) | `Disclosure` | a chevron button over a `useState`, Base UI's Collapsible directly |
-| A wizard's steps under a dialog's title | `StepTabs` | `PillTabs`, a `Stepper`, `RoutineSteps` |
-| The two ways to copy a pairing instruction, and the fold that shows it | the kit's `HostPairingCopyButtons` + `HostPairingInspect` | two `CodeBlock`s, a `CodeBlock` alone |
+| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `HostPairingChrome`, or its parts with `HostPairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
@@ -52,8 +51,8 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| A page over the main column (the automations overview; Add a host inside Settings) | `EditorPage` from a layout route, then `EditorPageTop` or `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column |
-| A form over the console (New project, Add a host, the automation editor) | a `Dialog` from the feature's `dialogs/`, `DialogBody` around its middle | a page under a layout route |
+| The automations overview, the one page over the main column | `EditorPage` from its layout route (`routes/_authenticated/automations.tsx`), `EditorPageTop` for its tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column, a new layout route |
+| A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 

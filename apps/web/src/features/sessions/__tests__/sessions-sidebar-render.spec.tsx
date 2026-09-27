@@ -1,5 +1,6 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { shareEntities } from '@oppenheimer/frontend-core/react';
+import { ConsoleDialogProvider } from '@oppenheimer/frontend-web';
 import { act, cleanup, render } from '@testing-library/react';
 import { useSyncExternalStore } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -131,7 +132,13 @@ function rendered(): string[] {
 
 beforeEach(() => {
   world.set({ sessions: ROWS, pathname: '/sessions/alpha', now: START });
-  render(<SessionsSidebar />);
+  // The console's dialog owner sits above the sidebar in the app; here it
+  // holds nothing and renders nothing, so it costs the budget no row.
+  render(
+    <ConsoleDialogProvider>
+      <SessionsSidebar />
+    </ConsoleDialogProvider>,
+  );
   rendered();
 });
 

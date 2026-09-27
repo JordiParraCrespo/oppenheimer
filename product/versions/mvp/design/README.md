@@ -104,21 +104,22 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   beside the console, with its routes, the catalog row and the decision
   log in `../README.md` say the same, and `../../../brief.html` follows.
   The Hosts section's backend is `../14-hosts-settings.md`.
-- Projects as the frames draw them are in the notes as of 2026-09-26:
-  the project chip, the project page, the grouped sidebar and Move in
-  `../05-screens.md`, the schema in `../10-api-modules-and-data-model.md`.
+- Projects as the frames draw them are in the notes: the project chip,
+  the project dialog, the grouped sidebar and Move in `../05-screens.md`,
+  the schema in `../10-api-modules-and-data-model.md`.
   One departure from the frames: Move lists every other project rather
   than only those that include the session's repository, because a
   project is metadata and a session may move anywhere (10).
-- The 2026-09-27 export's dialogs — New project and Project settings,
-  the automation editor, the console's Add a host — and the onboarding
-  step's Inspect fold are in `../05-screens.md` and `../13-automations.md`,
-  and the console follows them; the `.op-rpage` pages of the day before
-  stay only as `SessionsConsole (pages)` and `AddHost (cards)`. Two
-  departures: Delete project on the dialog's footer opens the confirm the
-  inventory draws rather than deleting outright, and the Inspect fold's
-  panel keeps its own Copy, as `CodeBlock`'s panel band has one. The
-  workspace-invite email runs ahead of the notes, which keep workspaces
-  personal with no invitations; the emails are their own slice.
+- The console's dialogs — New project and Project settings, Add a host,
+  the automation editor — and the onboarding step's copy buttons and
+  Inspect fold are in `../05-screens.md` and `../13-automations.md`;
+  `SessionsConsole (pages)` and `AddHost (cards)` are the frames they
+  replaced, kept for the record. Three departures: Delete project on the
+  dialog's footer opens the confirm the inventory draws rather than
+  deleting outright; the Inspect fold's panel keeps its own Copy, as
+  `CodeBlock`'s panel band has one; and the editor holds its Task step
+  alone until the API names a trigger. The workspace-invite email runs
+  ahead of the notes, which keep workspaces personal with no invitations;
+  the emails are their own slice.
 - `uploads/` from the export (the raw pasted screenshots) was left out; the
   photography those became lives in `version1/assets/imagery/`.

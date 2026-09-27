@@ -89,11 +89,10 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   two copy buttons.
 - **A fold is a `Disclosure`**: one row that reads as a label, an optional
   word, a summary while closed, a chevron that turns; the panel opens 14px
-  under it. Defaults in the project dialog, Inspect in Add a host.
-- **A wizard is `StepTabs`**: the steps as a segmented strip under a
-  dialog's title, numbered in mono, the finished ones ticked, the
-  unreachable ones disabled rather than hidden; the footer's Next moves
-  forward. `PillTabs` switch views; `Stepper` is onboarding's.
+  under it. Defaults in the project dialog, Inspect in Add a host. Its two
+  tones are the only two.
+- **A dialog has three widths**, `md`, `form` and `lg`, and a caller never
+  sets one.
 
 ## Conventions
 

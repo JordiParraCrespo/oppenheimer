@@ -100,7 +100,7 @@ export function ProjectDialog({
   if (projectId && !project) {
     return (
       <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent closeLabel={t('common.close')} className="max-w-135">
+        <DialogContent size="form" closeLabel={t('common.close')}>
           <DialogHeader>
             <DialogTitle>{t('projects.dialog.editTitle')}</DialogTitle>
           </DialogHeader>
@@ -244,10 +244,26 @@ function ProjectForm({
 
   const loadingRows = installations.isPending || repositories.isPending;
 
+  // Delete project closes this dialog into the confirm: one modal at a time.
+  // The form stays mounted under it, so Cancel on the confirm brings the
+  // dialog back with everything typed still there.
+  if (project && deleting) {
+    return (
+      <DeleteProjectDialog
+        project={project}
+        onClose={() => setDeleting(false)}
+        onDeleted={onClose}
+      />
+    );
+  }
+
   return (
     <>
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent closeLabel={t('common.close')} className="max-w-135">
+      {/* A save in flight keeps the dialog: its success picks or navigates
+          through the caller, and a dialog dismissed under it would do that
+          to a person who had walked away from it. */}
+      <Dialog open onOpenChange={(open) => !open && !pending && onClose()}>
+        <DialogContent size="form" closeLabel={t('common.close')} showCloseButton={!pending}>
           <form onSubmit={handleSubmit(submit)} noValidate className="flex min-h-0 flex-col">
             <DialogHeader>
               <DialogTitle>
@@ -433,14 +449,6 @@ function ProjectForm({
           </form>
         </DialogContent>
       </Dialog>
-
-      {project && deleting ? (
-        <DeleteProjectDialog
-          project={project}
-          onClose={() => setDeleting(false)}
-          onDeleted={onClose}
-        />
-      ) : null}
     </>
   );
 }
