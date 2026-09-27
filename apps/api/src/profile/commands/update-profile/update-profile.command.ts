@@ -13,6 +13,7 @@ export class UpdateProfileCommand extends CommandBase {
   readonly lastName?: string;
   readonly phone?: string | null;
   readonly jobTitle?: string | null;
+  readonly username?: string | null;
 
   constructor(props: CommandProps<UpdateProfileCommand>) {
     super(props);
@@ -21,5 +22,6 @@ export class UpdateProfileCommand extends CommandBase {
     this.lastName = props.lastName;
     this.phone = props.phone;
     this.jobTitle = props.jobTitle;
+    this.username = props.username;
   }
 }

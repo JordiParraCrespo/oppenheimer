@@ -12,7 +12,8 @@ export class ProfileResponseDto {
   id!: string;
 
   @ApiProperty({
-    description: 'Read-only here — changing it is an admin operation.',
+    description:
+      'Read-only here — `POST /profile/email` sends a link to a new address, which moves the account when followed.',
   })
   email!: string;
 
@@ -27,6 +28,13 @@ export class ProfileResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   jobTitle!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The handle session logs and commit trailers carry; unique across accounts.',
+  })
+  username!: string | null;
 
   @ApiProperty({ type: String, nullable: true })
   avatarUrl!: string | null;

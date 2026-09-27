@@ -16,6 +16,7 @@ function makeUser(overrides: { phone?: string | null; avatarUrl?: string | null 
       lastName: 'Rodrigo',
       phone: overrides.phone ?? '+34 600 123 456',
       jobTitle: 'Founder',
+      username: null,
       avatarUrl: overrides.avatarUrl ?? 'avatars/user-uuid.png',
       role: 'owner',
       isActive: true,

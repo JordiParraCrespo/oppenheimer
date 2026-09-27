@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AppError } from '@oppenheimer/backend-core';
 import {
   type AggregateID,
   OutboxService,
@@ -9,9 +10,14 @@ import {
 import { None, type Option, Some } from 'oxide.ts';
 import { DataSource, type FindOptionsWhere, ILike, type Repository } from 'typeorm';
 import type { UserEntity } from '../domain/user.entity';
+import { UserErrors } from '../domain/user.errors';
 import { UserMapper } from '../user.mapper';
 import { UserOrmEntity } from './user.orm-entity';
 import type { FindUsersParams, UserRepositoryPort } from './user.repository.port';
+
+const UNIQUE_VIOLATION = '23505';
+/** The name `UserOrmEntity` and the migration give the constraint. */
+const USERNAME_CONSTRAINT = 'UQ_user_username';
 
 /**
  * TypeORM-backed adapter for the user aggregate. Translates between the domain
@@ -40,10 +46,17 @@ export class UserRepository implements UserRepositoryPort {
   async save(entity: UserEntity): Promise<UserEntity> {
     // Only profile columns are written (see UserMapper.toPersistence); `name`
     // and `image` stay under Better Auth's control.
-    const record = await this.outbox.writeWithEvents([entity], (manager) =>
-      manager.getRepository(UserOrmEntity).save(this.mapper.toPersistence(entity)),
-    );
-    return this.mapper.toDomain(record);
+    try {
+      const record = await this.outbox.writeWithEvents([entity], (manager) =>
+        manager.getRepository(UserOrmEntity).save(this.mapper.toPersistence(entity)),
+      );
+      return this.mapper.toDomain(record);
+    } catch (error) {
+      // The constraint is the rule; this is where a taken handle becomes the
+      // catalog's answer rather than a 500.
+      if (isUsernameTaken(error)) throw new AppError(UserErrors.USERNAME_TAKEN);
+      throw error;
+    }
   }
 
   async findOneById(id: string): Promise<Option<UserEntity>> {
@@ -118,4 +131,9 @@ export class UserRepository implements UserRepositoryPort {
   transaction<T>(handler: () => Promise<T>): Promise<T> {
     return this.dataSource.transaction(() => handler());
   }
+}
+
+function isUsernameTaken(error: unknown): boolean {
+  const driver = error as { code?: string; constraint?: string };
+  return driver?.code === UNIQUE_VIOLATION && driver?.constraint === USERNAME_CONSTRAINT;
 }

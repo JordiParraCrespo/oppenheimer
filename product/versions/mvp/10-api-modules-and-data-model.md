@@ -1104,6 +1104,28 @@ with no principal.
 Not HTTP at all: the runner uplink (`GET /relay/runner`, WebSocket, host
 assertion) and everything it carries.
 
+The account's own routes under `/profile` (Settings → Profile, 05) are
+the starter's profile module plus three; every write that touches a
+credential is session-only (08):
+
+```
+PATCH  /profile                   the caller           profile:write  + username (unique, USER_002)
+POST   /profile/email             the caller           session only   body: { newEmail, callbackURL? }
+DELETE /profile                   the caller           session only   body: { confirmation }
+```
+
+`user.username` is the users module's column: unique
+(`UQ_user_username`, the constraint is the rule), normalised by the
+shared schema and the aggregate's `Username`, and the database checks the
+same pattern. `DELETE /profile` is the same `DeleteUserCommand` as the
+admin's `DELETE /users/{id}`. Each module that holds something for an
+account contributes its step (`UsersModule.contributeAccountErasure`),
+run in order: hosts unpaired (which stops their sessions and closes their
+links), the owned workspace's sessions, its projects, the workspace; then
+the user row, with its sign-ins, tokens, grants and preferences
+cascading from it in one write. Every step is idempotent, so a delete
+that fails part way is asked again.
+
 The install command and the agent install prompt are served from
 `POST /hosts/pairing`'s response, templated from deploy-owned runner
 release config (version, URLs, SHA-256 checksums) — not from a database

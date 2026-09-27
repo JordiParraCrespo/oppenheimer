@@ -23,7 +23,7 @@ describe('ProvisionPersonalWorkspaceCommandHandler', () => {
   const written = () => vi.mocked(workspaces.provision).mock.calls[0][0] as PersonalWorkspaceEntity;
 
   beforeEach(() => {
-    workspaces = { provision: vi.fn().mockResolvedValue(true) };
+    workspaces = { provision: vi.fn().mockResolvedValue(true), erase: vi.fn() };
     roles = { findOneByName: vi.fn().mockResolvedValue(Some({ id: 'owner-role-uuid' })) };
     service = new ProvisionPersonalWorkspaceCommandHandler(
       workspaces,

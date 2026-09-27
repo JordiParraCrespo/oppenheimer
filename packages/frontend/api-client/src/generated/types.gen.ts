@@ -76,13 +76,17 @@ export type UpdateUserSettingsRequest = {
 export type ProfileResponseDto = {
     id: string;
     /**
-     * Read-only here — changing it is an admin operation.
+     * Read-only here — `POST /profile/email` sends a link to a new address, which moves the account when followed.
      */
     email: string;
     firstName: string;
     lastName: string;
     phone: string | null;
     jobTitle: string | null;
+    /**
+     * The handle session logs and commit trailers carry; unique across accounts.
+     */
+    username: string | null;
     avatarUrl: string | null;
     role: string;
     emailVerified: boolean;
@@ -116,11 +120,17 @@ export type ChangePasswordRequest = {
     revokeOtherSessions?: boolean;
 };
 
+export type ChangeEmailRequest = {
+    newEmail: string;
+    callbackURL?: string;
+};
+
 export type UpdateProfileRequest = {
     firstName?: string;
     lastName?: string;
     phone?: string | null;
     jobTitle?: string | null;
+    username?: string | null;
 };
 
 export type UserResponseDto = {
@@ -168,6 +178,10 @@ export type MyPermissionsResponseDto = {
 export type UpdateUserRequest = {
     firstName?: string;
     lastName?: string;
+};
+
+export type DeleteOwnAccountRequest = {
+    confirmation: string;
 };
 
 export type ResourceActionDto = {
@@ -1799,6 +1813,78 @@ export type ChangePasswordResponses = {
 };
 
 export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type ChangeEmailData = {
+    body: ChangeEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/email';
+};
+
+export type ChangeEmailErrors = {
+    /**
+     * PROFILE_009 — The new address is the current one
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type ChangeEmailError = ChangeEmailErrors[keyof ChangeEmailErrors];
+
+export type ChangeEmailResponses = {
+    /**
+     * Confirmation link sent to the new address
+     */
+    202: unknown;
+};
+
+export type DeleteOwnAccountData = {
+    body: DeleteOwnAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type DeleteOwnAccountErrors = {
+    /**
+     * USER_003 — The confirmation is not the account’s email
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type DeleteOwnAccountError = DeleteOwnAccountErrors[keyof DeleteOwnAccountErrors];
+
+export type DeleteOwnAccountResponses = {
+    /**
+     * Account deleted
+     */
+    204: void;
+};
+
+export type DeleteOwnAccountResponse = DeleteOwnAccountResponses[keyof DeleteOwnAccountResponses];
 
 export type GetProfileData = {
     body?: never;
