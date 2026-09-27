@@ -5,7 +5,8 @@ The 2026-09-26 export (`design/version1/Routines.dc.html`, which is
 second list. Its copy says **Automations**; the export's internal names
 stay `routines` (`design/README.md`), and the console uses the product
 word. Automations themselves — the scheduler, the GitHub trigger, the
-runs — stay out of the MVP (00); what this note records is the console's
+runs — were out of the MVP when this note was written; they are in it
+since 2026-09-27, designed in 16. What this note records is the console's
 side, built so the rail is whole, and what the export draws for the rest.
 
 ## What the export draws
@@ -68,12 +69,11 @@ side, built so the rail is whole, and what the export draws for the rest.
 
 ## Open
 
-- **The data model.** A routine is a session template plus a trigger; a
-  run is a session the trigger started. Whether a run is a row of its own
-  or a session with a `routineId` decides most of the API, and 03, 10
-  and 11 own the tables and endpoints when they are decided.
-- **Templates.** The export's grid is a fixed catalog by category; whether
-  templates are code, rows, or both.
+- ~~**The data model.**~~ Decided in 16 (2026-09-27): a run is a row of
+  its own (`automation_run`, why it fired and what the guards decided)
+  that dispatches an ordinary session; execution lives on the session's
+  turns.
+- ~~**Templates.**~~ Decided in 16: a fixed catalog in code, not rows.
 - **Where runs are opened.** The export opens a run in the session pane
   with the sidebar still on automations; the sessions pane assumes the
   sessions list.
