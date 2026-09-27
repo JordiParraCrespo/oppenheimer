@@ -51,3 +51,7 @@ where these land is the first open question below.
   simplest version: a PR list like Codex's plus a keyboard triage that
   always opens the next PR to review. Sections, views and analytics
   stay the direction, after it.
+- 2026-09-27: PR classification (type, risk and effort, priority, area)
+  is rules first, with TypeSafe's Jev only for what rules cannot read,
+  gated by confidence, opt-in per workspace, and never reordering
+  triage in 0.2 (`0.2-pull-requests.md` §8).
