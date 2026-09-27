@@ -12,3 +12,4 @@ export * from './project.schema';
 export * from './role.schema';
 export * from './session.schema';
 export * from './user.schema';
+export * from './automation.schema';
