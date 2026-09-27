@@ -99,7 +99,10 @@ describe('OrganizationsService', () => {
       unwrap: () => ({ id: 'system-role' }),
     }),
   };
-  const userRoles = { setRolesForUser: vi.fn().mockResolvedValue(undefined) };
+  const userRoles = {
+    setRolesForUser: vi.fn().mockResolvedValue(undefined),
+    findRoleIdsForUser: vi.fn().mockResolvedValue([]),
+  };
   const memberRecords = { findOne: vi.fn().mockResolvedValue(null) };
   const sessions = { update: vi.fn().mockResolvedValue({ affected: 1 }) };
   const accessGrants = { delete: vi.fn().mockResolvedValue({ affected: 0 }) };
@@ -126,6 +129,7 @@ describe('OrganizationsService', () => {
       unwrap: () => ({ id: 'system-role' }),
     });
     memberRecords.findOne.mockResolvedValue(null);
+    userRoles.findRoleIdsForUser.mockResolvedValue([]);
     service = new OrganizationsService(
       users as never,
       userRoleRecords as never,
@@ -470,6 +474,26 @@ describe('OrganizationsService', () => {
       );
       expect(roles.findOneByName).toHaveBeenCalledWith('owner', null);
       expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', ['system-role'], 'org1');
+    });
+
+    it('keeps custom roles scoped to the organization when the membership role changes', async () => {
+      api.updateMemberRole.mockResolvedValue(memberRecord);
+      roles.findOneByName.mockImplementation(async (name: string) => ({
+        isNone: () => false,
+        unwrap: () => ({ id: `${name}-role` }),
+      }));
+      // Scoped reads include the global assignments; the global read is those alone.
+      userRoles.findRoleIdsForUser.mockImplementation(async (_userId: string, scope: unknown) =>
+        scope === null ? ['global-role'] : ['global-role', 'user-role', 'custom-role'],
+      );
+
+      await service.updateMemberRole(headers, 'org1', 'm1', 'admin');
+
+      expect(userRoles.setRolesForUser).toHaveBeenCalledWith(
+        'u1',
+        ['custom-role', 'owner-role'],
+        'org1',
+      );
     });
 
     it('leaves an organization', async () => {
