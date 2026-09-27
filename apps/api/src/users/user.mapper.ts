@@ -4,6 +4,7 @@ import type { CredentialOwner } from '../auth/domain/scope-context.types';
 import { UserOrmEntity } from './database/user.orm-entity';
 import { UserEntity } from './domain/user.entity';
 import { Email } from './domain/value-objects/email.value-object';
+import { Username } from './domain/value-objects/username.value-object';
 import { UserResponseDto } from './dtos/user.response.dto';
 
 /**
@@ -29,6 +30,7 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
     record.name = displayNameOf(entity);
     record.phone = entity.phone;
     record.jobTitle = entity.jobTitle;
+    record.username = entity.username;
     record.image = entity.avatarUrl;
     record.role = entity.role;
     record.isActive = entity.isActive;
@@ -47,6 +49,7 @@ export class UserMapper implements Mapper<UserEntity, UserOrmEntity, UserRespons
         lastName: record.lastName,
         phone: record.phone,
         jobTitle: record.jobTitle,
+        username: record.username === null ? null : Username.from(record.username),
         avatarUrl: record.image,
         role: record.role,
         isActive: record.isActive,

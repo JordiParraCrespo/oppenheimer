@@ -68,10 +68,20 @@
   Use this host, all back to the list. It is the same screen the console
   mounts at `/hosts/new`, not a dialog. (Until 2026-09-26 late, Settings
   opened the console's page with `?from=settings`; the frame keeps
-  Settings around it.) The rows each section draws — picture, name, email,
-  password on Profile; rename, remove, the install command and the
-  preflight on a host card — are their own slices; the frame, the routes
-  and the way back are built (2026-09-26).
+  Settings around it.) The rows a host card draws — rename, remove, the
+  install command and the preflight — are their own slices; the frame,
+  the routes and the way back are built (2026-09-26).
+
+  **Profile** holds, in order: the card — picture (Upload, Remove once
+  there is one), email with Change, full name, `@`username, and the save
+  row (Discard, Save changes, then Saved) that appears only when
+  something changed; **Sign-in**, the password changed in a dialog;
+  **Devices**, each signed-in browser with when it was last active, this
+  one marked, Sign out on the others and Sign out of all other devices;
+  and **Account**, Delete account behind a dialog that asks for the
+  email typed out. Full name is **two fields side by side**, not the
+  export's one, because the account stores first and last name apart
+  and splitting one string on its first space gets names wrong.
 - New session: chips for project, host, repository, branch, in the grey
   band fused to the top of the composer (the tabbed composer of the
   2026-09-26 export); a composer for the

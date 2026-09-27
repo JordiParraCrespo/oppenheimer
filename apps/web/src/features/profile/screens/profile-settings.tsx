@@ -1,45 +1,31 @@
-import {
-  Alert,
-  AlertDescription,
-  SettingsGroup,
-  SettingsRow,
-  SettingsTitle,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
-import { useErrorMessage, useProfile } from '@oppenheimer/frontend-core/react';
+import { Callout, SettingsTitle } from '@oppenheimer/design-system-web';
+import { useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { AccountSection } from '../sections/account';
+import { DevicesSection } from '../sections/devices';
+import { ProfileDetailsSection } from '../sections/profile-details';
+import { SignInSection } from '../sections/sign-in';
 
 /**
- * Settings → Profile (`design/version1/Settings.dc.html`): the title, then
- * the account's facts as settings rows. The export's rows — picture, name,
- * email, password — are the profile slice's; this is the page they land on,
- * with the one row that needs no form.
+ * Settings → Profile (`design/version1/Settings.dc.html`): the title, the
+ * account's facts — picture, email, name, username — then how it signs in
+ * and the devices that have, and the one destructive setting last.
+ *
+ * The screen fetches nothing: each section subscribes to what it draws, so
+ * saving the name does not redraw the device list.
  */
 export function ProfileSettingsScreen() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
-  const profile = useProfile();
+  const { emailChanged } = useSearch({ from: '/_authenticated/settings/profile' });
 
   return (
     <>
       <SettingsTitle title={t('settings.profile.title')} />
-      {profile.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(profile.error, t('settings.profile.failed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <SettingsGroup>
-          <SettingsRow label={t('settings.profile.email')} hint={t('settings.profile.emailHint')}>
-            {profile.data ? (
-              <span className="text-fg-muted">{profile.data.email}</span>
-            ) : (
-              <Skeleton className="h-5 w-40" />
-            )}
-          </SettingsRow>
-        </SettingsGroup>
-      )}
+      {emailChanged ? <Callout tone="success">{t('settings.profile.emailChanged')}</Callout> : null}
+      <ProfileDetailsSection />
+      <SignInSection />
+      <DevicesSection />
+      <AccountSection />
     </>
   );
 }

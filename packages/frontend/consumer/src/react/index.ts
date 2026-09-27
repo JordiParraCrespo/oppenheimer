@@ -45,7 +45,9 @@ export {
 export { CONSUMER_NON_PERSISTED_FEATURES } from './persistence';
 export {
   profileKeys,
+  useChangeEmail,
   useChangeOwnPassword,
+  useDeleteAccount,
   useDeleteAvatar,
   useMyProfile,
   useProfileSessions,

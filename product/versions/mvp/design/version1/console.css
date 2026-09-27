@@ -173,7 +173,7 @@
 .op-runrow__auto span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .op-runrow__time{display:flex;gap:8px;font-size:13px;color:var(--fg-muted);white-space:nowrap}
 .op-runrow__time span+span{font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
-.op-runs__filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 6px 8px 6px;border-bottom:1px solid var(--border-subtle);margin-bottom:2px}
+.op-runs__filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 6px 8px 6px;margin-bottom:2px}
 .op-runs__filters .op-rp__tab{height:28px;padding:0 11px;font-size:13px;gap:6px}
 .op-runs__filters .op-rp__tab[data-on="true"]{background:var(--hover-surface)}
 .op-runs__n{font-family:var(--font-mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg-subtle)}

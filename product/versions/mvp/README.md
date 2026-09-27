@@ -533,3 +533,5 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   headless-run note from 15 to 17 (`17-headless-runs.md`), because hosts
   in Settings and host metadata took 14 and 15 first. Only the numbers
   and the references to them changed.
+- 2026-09-27: Settings → Profile is specified in 05; credential writes
+  (password, email, devices, deleting the account) are session-only (08).

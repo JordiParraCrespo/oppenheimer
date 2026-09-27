@@ -26,6 +26,9 @@ const BY_UPSTREAM_CODE: Readonly<Record<string, ErrorDefinition>> = {
   // A credentials-less account (social sign-in only) has no password to change.
   CREDENTIAL_ACCOUNT_NOT_FOUND: ProfileErrors.INCORRECT_PASSWORD,
   USER_NOT_FOUND: ProfileErrors.NOT_FOUND,
+  // Configuration, not the caller: without these rows the 400s would fall
+  // through to "incorrect password" on a form that has no password field.
+  CHANGE_EMAIL_DISABLED: ProfileErrors.UPSTREAM_FAILURE,
 };
 
 /** Entry to use when the upstream code is unknown (or absent), keyed by status. */

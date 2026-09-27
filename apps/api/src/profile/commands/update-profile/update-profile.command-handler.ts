@@ -13,6 +13,9 @@ import { UpdateProfileCommand } from './update-profile.command';
  * The command carries no `role` or `isActive`, so this can never be the path by
  * which someone promotes themselves — the fields simply are not reachable from
  * here, rather than being filtered out somewhere downstream.
+ *
+ * A username is unique across accounts. The unique constraint is the rule,
+ * and the repository reports a violation as `USER_002`.
  */
 @CommandHandler(UpdateProfileCommand)
 export class UpdateProfileCommandHandler
@@ -33,6 +36,7 @@ export class UpdateProfileCommandHandler
       lastName: command.lastName,
       phone: command.phone,
       jobTitle: command.jobTitle,
+      username: command.username,
     });
 
     await this.userRepository.save(user);

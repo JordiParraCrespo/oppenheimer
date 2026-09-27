@@ -1,8 +1,11 @@
-import { Global, Module, type Provider } from '@nestjs/common';
+import { Global, Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CREDENTIAL_OWNER } from '../auth/auth.di-tokens';
+import type { AccountErasurePort } from './application/account-erasure.port';
+import { AccountErasureRegistry } from './application/account-erasure.registry';
 import { UserDeletedDomainEventHandler } from './application/event-handlers/user-deleted.domain-event-handler';
+import { DeleteOwnAccountHttpController } from './commands/delete-own-account/delete-own-account.http.controller';
 import { DeleteUserCommandHandler } from './commands/delete-user/delete-user.command-handler';
 import { DeleteUserHttpController } from './commands/delete-user/delete-user.http.controller';
 import { UpdateUserCommandHandler } from './commands/update-user/update-user.command-handler';
@@ -28,6 +31,7 @@ const httpControllers = [
   FindUserByIdHttpController,
   UpdateUserHttpController,
   DeleteUserHttpController,
+  DeleteOwnAccountHttpController,
 ];
 
 const commandHandlers: Provider[] = [UpdateUserCommandHandler, DeleteUserCommandHandler];
@@ -67,7 +71,33 @@ const ports: Provider[] = [{ provide: CREDENTIAL_OWNER, useClass: UserCredential
     ...mappers,
     ...repositories,
     ...ports,
+    AccountErasureRegistry,
   ],
-  exports: [USER_REPOSITORY, CREDENTIAL_OWNER, TypeOrmModule],
+  exports: [USER_REPOSITORY, CREDENTIAL_OWNER, TypeOrmModule, AccountErasureRegistry],
 })
-export class UsersModule {}
+export class UsersModule {
+  /**
+   * The providers a module adds to say what goes with an account:
+   *
+   * ```ts
+   * providers: [...UsersModule.contributeAccountErasure([HostAccountErasure])]
+   * ```
+   *
+   * The same shape as `HostsModule.contributeUsage`: the implementation is
+   * built in the injector of the module that owns the rows, so it uses that
+   * module's own repository and nothing is published application-wide.
+   */
+  static contributeAccountErasure(contributions: Type<AccountErasurePort>[]): Provider[] {
+    return [
+      ...contributions,
+      {
+        provide: Symbol('ACCOUNT_ERASURE_CONTRIBUTION'),
+        inject: [AccountErasureRegistry, ...contributions],
+        useFactory: (registry: AccountErasureRegistry, ...contributed: AccountErasurePort[]) => {
+          registry.registerAll(contributed);
+          return contributed;
+        },
+      },
+    ];
+  }
+}

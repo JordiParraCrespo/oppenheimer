@@ -1,0 +1,61 @@
+import {
+  Alert,
+  AlertDescription,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  toast,
+} from '@oppenheimer/design-system-web';
+import { useChangeOwnPassword } from '@oppenheimer/frontend-consumer/react';
+import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useTranslation } from 'react-i18next';
+import { ChangePasswordForm } from '../forms/change-password-form';
+
+/**
+ * Change password. Every other device is signed out with it — the usual
+ * reason to change a password is that someone else may know the old one —
+ * and the device list below refreshes on its own. A wrong current password
+ * is the API's answer and stays next to the form.
+ */
+export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const resolveError = useErrorMessage();
+  const change = useChangeOwnPassword({
+    onSuccess: () => {
+      toast.success(t('settings.changePassword.done'));
+      onClose();
+    },
+  });
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent closeLabel={t('common.close')} className="sm:max-w-105">
+        <DialogHeader>
+          <DialogTitle>{t('settings.changePassword.title')}</DialogTitle>
+          <DialogDescription>{t('settings.changePassword.description')}</DialogDescription>
+        </DialogHeader>
+        <DialogBody>
+          <div className="flex flex-col gap-4 pb-7">
+            {change.isError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {resolveError(change.error, t('settings.changePassword.failed')).message}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            <ChangePasswordForm
+              isPending={change.isPending}
+              onSubmit={({ currentPassword, newPassword }) =>
+                change.mutate({ currentPassword, newPassword, revokeOtherSessions: true })
+              }
+              onCancel={onClose}
+            />
+          </div>
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
+  );
+}

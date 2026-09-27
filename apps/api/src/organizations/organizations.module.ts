@@ -5,6 +5,8 @@ import { Session } from '../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../authz/database/access-grant.orm-entity';
 import { UserRoleOrmEntity } from '../roles/database/user-role.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { UsersModule } from '../users/user.module';
+import { WorkspaceAccountErasure } from './application/workspace-account-erasure.resolver';
 import { ProvisionPersonalWorkspaceCommandHandler } from './commands/provision-personal-workspace/provision-personal-workspace.command-handler';
 import { InvitationOrmEntity } from './database/invitation.orm-entity';
 import { MemberOrmEntity } from './database/member.orm-entity';
@@ -71,6 +73,7 @@ const repositories: Provider[] = [
     WorkspacesService,
     ...commandHandlers,
     ...repositories,
+    ...UsersModule.contributeAccountErasure([WorkspaceAccountErasure]),
   ],
   // The one published port: two facts about a workspace, for the modules that
   // put its slug on a host or re-check a membership at a socket. The tables
