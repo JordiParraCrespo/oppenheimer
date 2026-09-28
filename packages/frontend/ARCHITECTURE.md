@@ -15,7 +15,8 @@ described here. When they disagree, fix the code or update both together.
 belongs to the kernel or to a product. `core` is the kernel every app loads:
 session (`auth`), `users`, `user-settings`, `capabilities`, `analytics`, the
 InversifyJS container (`OppenheimerApp`, `TOKENS`) and `validation/`.
-`consumer` is the console's product — `sessions` and `hosts` — plus the
+`consumer` is the console's product — `sessions`, `projects`, `hosts`,
+`installations` and `automations` — plus the
 account chrome it keeps (`organizations` as the personal workspace, `profile`,
 `permissions` — the catalog OAuth consent names scopes from). An app loads exactly one product package, and the kernel never
 imports it.
@@ -126,9 +127,9 @@ createQueryPersistOptions(__APP_VERSION__, {
 The kernel never imports the product, so what the kernel defines for every
 product to follow is an export, not an import:
 
-- `KERNEL_NON_PERSISTED_FEATURES` names the features whose queries never
-  reach storage whatever the product (`auth`, `userSettings`);
-  `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`sessions`, `hosts`,
+- `createQueryPersistOptions` keeps the kernel's own features (`auth`,
+  `userSettings`, in `KERNEL_NON_PERSISTED_FEATURES`) out of storage whatever
+  the product passes; `CONSUMER_NON_PERSISTED_FEATURES` adds the consumer's (`sessions`, `hosts`,
   `installations`, `profile`, `projects`, `automations`), and the app passes
   it through `nonPersistedFeatures`.
 - `user-settings` is a kernel module, not a consumer one, because applying

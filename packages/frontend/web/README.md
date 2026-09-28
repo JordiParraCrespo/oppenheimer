@@ -10,7 +10,7 @@ The kit is organised by concern, not by kind: `src/<concern>/<kind>/`, with
 the same kind directories a feature has. A concern imports another only
 through that concern's `index.ts`, and the concerns are layered — `platform`,
 `theme`, `i18n`, `analytics` and `forms` are leaves, `layout` and
-`roles` build on them, `shell` and `auth` sit on top. The kit imports the
+`pairing` build on them, `shell` and `auth` sit on top. The kit imports the
 design system and `@oppenheimer/frontend-core`, never a product package: a
 component that needs a product hook is a feature in an app, not kit.
 
@@ -21,9 +21,9 @@ Everything is re-exported from the package root (`src/index.ts`):
 - **shell** — `AppShell` (its sidebar, top bar, user menu and command palette
   stay inside it), `SettingsSidebar`, `createDialogSlot`, and the nav types
   `NavItem`, `NavLink`, `NavPolicy`, `NavTo`, `ShellWorkspace`.
-- **auth** — `AuthLayout`, `BrandLogo`,
-  `SocialLoginButtons`, `OAuthCallbackNotice`, the auth primitives, the
-  provider icons, `redirectSignedIn`.
+- **auth** — `AuthLayout`, `BrandLogo`, `AuthFormFailure`,
+  `SocialLoginButtons`, `OAuthCallbackNotice`, `SessionRestoreError`, the auth
+  primitives, `redirectSignedIn`.
 - **layout** — `RouteError`/`RouteNotFound`, `AppPending`, `ConfirmDialog` (the
   destructive confirm: `confirmLabel`, `pendingLabel`, `error`, `children`,
   `form`), `QueryState` (a read's failed / loading / empty / there, in that

@@ -7,7 +7,10 @@ import { QueryProvider } from '@/providers/query-provider';
 import { App } from './app';
 import './styles/globals.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root')!);
+const container = document.getElementById('root');
+// index.html ships the mount point; without it there is nothing to render into.
+if (!container) throw new Error('index.html has no #root element to mount the app into');
+const root = ReactDOM.createRoot(container);
 
 const tree = (
   <StrictMode>
