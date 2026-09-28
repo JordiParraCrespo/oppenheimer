@@ -9,6 +9,7 @@ export {
   type AppErrorOptions,
   type ErrorDefinition,
 } from './errors/app.error';
+export { describeError } from './errors/describe-error';
 export {
   buildProblemDetails,
   DEFAULT_ERROR_TYPE_BASE_URL,
