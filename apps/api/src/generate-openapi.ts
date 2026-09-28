@@ -3,11 +3,8 @@ import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { patchNestJsSwagger } from 'nestjs-zod';
 import { AppModule } from './app.module';
-
-patchNestJsSwagger();
+import { createOpenApiDocument } from './openapi-document';
 
 async function generate() {
   const app = await NestFactory.create(AppModule, {
@@ -17,16 +14,7 @@ async function generate() {
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  const config = new DocumentBuilder()
-    .setTitle('Oppenheimer API')
-    .setDescription('Oppenheimer REST API documentation')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config, {
-    operationIdFactory: (_controller, method) => method,
-  });
+  const document = createOpenApiDocument(app);
   const outputPath = resolve(__dirname, '../openapi.json');
   writeFileSync(outputPath, JSON.stringify(document, null, 2));
   console.log(`OpenAPI spec written to ${outputPath}`);

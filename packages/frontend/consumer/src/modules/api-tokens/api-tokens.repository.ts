@@ -1,5 +1,5 @@
-import { type ApiTokenResponseDto, ApiTokensApi } from '@oppenheimer/api-client';
-import { AppError, MapApiError } from '@oppenheimer/frontend-core';
+import { type ApiTokenResponseDto, heyApiSdk } from '@oppenheimer/api-client';
+import { MapApiError, unwrap, unwrapBody } from '@oppenheimer/frontend-core';
 import type { CreateApiTokenDto } from '@oppenheimer/shared';
 import { injectable } from 'inversify';
 import {
@@ -33,22 +33,23 @@ function toDate(value: string | null | undefined): Date | null {
 export class ApiTokensRepository {
   @MapApiError(ApiTokensErrors.FETCH_LIST_FAILED)
   async findAll(): Promise<ApiTokenEntity[]> {
-    const result = await ApiTokensApi.findAll();
-    if (!result) throw new AppError(ApiTokensErrors.FETCH_LIST_FAILED);
+    const result = await unwrapBody(heyApiSdk.findApiTokens(), ApiTokensErrors.FETCH_LIST_FAILED);
     return result.map(toEntity);
   }
 
   @MapApiError(ApiTokensErrors.CREATE_FAILED)
   async create(dto: CreateApiTokenDto): Promise<CreatedApiToken> {
-    const result = await ApiTokensApi.create(dto);
-    if (!result) throw new AppError(ApiTokensErrors.CREATE_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.createApiToken({ body: dto }),
+      ApiTokensErrors.CREATE_FAILED,
+    );
 
     return { token: toEntity(result), secret: result.token };
   }
 
   @MapApiError(ApiTokensErrors.REVOKE_FAILED)
   async revoke(id: string): Promise<void> {
-    await ApiTokensApi.revoke(id);
+    await unwrap(heyApiSdk.revokeApiToken({ path: { id } }), ApiTokensErrors.REVOKE_FAILED);
   }
 
   /**
@@ -57,16 +58,20 @@ export class ApiTokensRepository {
    */
   @MapApiError(ApiTokensErrors.FETCH_PERMISSIONS_FAILED)
   async permissions(): Promise<PermissionCatalog> {
-    const result = await ApiTokensApi.permissions();
-    if (!result) throw new AppError(ApiTokensErrors.FETCH_PERMISSIONS_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.findGrantablePermissions(),
+      ApiTokensErrors.FETCH_PERMISSIONS_FAILED,
+    );
 
     return { groups: result.groups, grantable: result.grantable };
   }
 
   @MapApiError(ApiTokensErrors.FETCH_CREDENTIAL_FAILED)
   async currentCredential(): Promise<CurrentCredential> {
-    const result = await ApiTokensApi.current();
-    if (!result) throw new AppError(ApiTokensErrors.FETCH_CREDENTIAL_FAILED);
+    const result = await unwrapBody(
+      heyApiSdk.findCurrentCredential(),
+      ApiTokensErrors.FETCH_CREDENTIAL_FAILED,
+    );
 
     return {
       kind: result.kind,

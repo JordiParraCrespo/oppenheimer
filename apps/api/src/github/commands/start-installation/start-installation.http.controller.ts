@@ -31,7 +31,6 @@ export class StartInstallationHttpController {
   @CheckPolicies({ action: 'create', subject: 'Installation' })
   @RequireScopes('repositories:write')
   @ApiOperation({
-    operationId: 'startInstallation',
     summary: 'Start a GitHub App installation',
     description:
       'Mints the `state` a GitHub App install must come back with: single use, 15 minutes, bound to the caller and the active workspace. Returns the App’s installation URL with that state on it; `POST /installations` requires the state GitHub echoes on the redirect, and refuses anything else with `GITHUB_011`. Mint when the person clicks, not when the button renders.',

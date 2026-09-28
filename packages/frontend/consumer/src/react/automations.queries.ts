@@ -22,6 +22,7 @@ import type {
   UpdateAutomationInput,
 } from '../modules/automations/automation.entity';
 import { useConsumerApp } from './context';
+import { LIVE_POLL } from './live-poll';
 
 /**
  * Query key factory for the `automations` feature. Runs sit under the same
@@ -46,16 +47,6 @@ export const automationsKeys = {
 type GithubTriggerInput = Extract<TriggerInput, { source: 'github' }>;
 
 /**
- * How often a view holding a live run asks again.
- *
- * A run's status is its session's first turn, and nothing pushes that to the
- * console yet; a run is queued for seconds and runs for minutes, so a view
- * that shows one polls until it shows none. When session events are streamed
- * to the console this goes, with the sessions poll it copies.
- */
-const LIVE_RUN_POLL_MS = 5000;
-
-/**
  * The workspace's automations, oldest first: the sidebar's groups and the
  * overview's table read the same list. Each carries its status, its next run
  * and its last six runs, so neither needs a second request.
@@ -68,7 +59,7 @@ export function useAutomations<TData = AutomationEntity[]>(
     queryKey: automationsKeys.list(),
     queryFn: () => app.automations.findAll(),
     refetchInterval: (query) =>
-      query.state.data?.some((automation) => automation.isRunning) ? LIVE_RUN_POLL_MS : false,
+      query.state.data?.some((automation) => automation.isRunning) ? LIVE_POLL.liveRun : false,
     ...options,
   });
 }
@@ -82,7 +73,7 @@ export function useAutomation(
   return useQuery<AutomationEntity, Error>({
     queryKey: automationsKeys.detail(id),
     queryFn: id ? () => app.automations.findById(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isRunning ? LIVE_RUN_POLL_MS : false),
+    refetchInterval: (query) => (query.state.data?.isRunning ? LIVE_POLL.liveRun : false),
     ...options,
   });
 }
@@ -99,7 +90,7 @@ export function useAutomationRuns(filter: RunsFilter) {
     queryFn: () => app.automations.findRuns(filter),
     placeholderData: keepPreviousData,
     refetchInterval: (query) =>
-      query.state.data?.items.some((run) => run.isLive) ? LIVE_RUN_POLL_MS : false,
+      query.state.data?.items.some((run) => run.isLive) ? LIVE_POLL.liveRun : false,
   });
 }
 
@@ -109,7 +100,7 @@ export function useAutomationRun(id: string | undefined) {
   return useQuery<AutomationRunEntity, Error>({
     queryKey: automationsKeys.run(id),
     queryFn: id ? () => app.automations.findRun(id) : skipToken,
-    refetchInterval: (query) => (query.state.data?.isLive ? LIVE_RUN_POLL_MS : false),
+    refetchInterval: (query) => (query.state.data?.isLive ? LIVE_POLL.liveRun : false),
   });
 }
 

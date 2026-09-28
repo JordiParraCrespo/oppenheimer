@@ -2,6 +2,7 @@ import { EmptyState, SessionList, Skeleton } from '@oppenheimer/design-system-we
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useProjects, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { combineQueries, ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,8 +92,11 @@ export function SessionsSidebar() {
           t('sessions.filters.allProjects'),
         ),
         repository: repositoryOptions(all, t('sessions.filters.allRepositories')),
-        agent: agentOptions(all, t('sessions.filters.allAgents'), (agent) =>
-          t(`sessions.agents.${agent}` as 'sessions.agents.claude-code'),
+        // An agent's name is the vendor's product name, the catalog's own.
+        agent: agentOptions(
+          all,
+          t('sessions.filters.allAgents'),
+          (agent) => CODING_AGENTS[agent].label,
         ),
         host: hostOptions(all, hosts, t('sessions.filters.allHosts')),
       }

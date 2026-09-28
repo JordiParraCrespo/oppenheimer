@@ -32,7 +32,6 @@ export class UpdateAutomationSettingsHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'updateAutomationSettings',
     summary: 'Set the workspace’s automation limits',
     description:
       'Rate caps, runs at once per host, overlap, the stale TTL, the missed-slot grace and the longest run. Null clears a value back to the platform default; the platform ceilings still apply.',

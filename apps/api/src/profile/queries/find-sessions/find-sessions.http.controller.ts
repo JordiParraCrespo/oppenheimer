@@ -17,7 +17,7 @@ import { FindSessionsQuery } from './find-sessions.query';
 @ApiAuthProblemResponses()
 @UseGuards(ApiAuthGuard)
 @Controller('profile')
-export class FindSessionsHttpController {
+export class FindProfileSessionsHttpController {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly mapper: ProfileMapper,

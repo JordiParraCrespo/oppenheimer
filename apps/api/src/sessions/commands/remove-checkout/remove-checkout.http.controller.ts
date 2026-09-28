@@ -42,7 +42,6 @@ export class RemoveCheckoutHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'removeSessionCheckout',
     summary: 'Remove a repository from a session',
     description:
       'Removes the worktree on the host with the same refuse-on-unpushed-work posture as closing a session, then retires the checkout. The row is kept: the directory name it used is never reissued inside this session.',

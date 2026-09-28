@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { Reflector } from '@nestjs/core';
 import { describe, expect, it } from 'vitest';
+import { AdminUpdateUserHttpController } from '../../admin/commands/admin-update-user/admin-update-user.http.controller';
 import { BanUserHttpController } from '../../admin/commands/ban-user/ban-user.http.controller';
 import { CreateUserHttpController } from '../../admin/commands/create-user/create-user.http.controller';
 import { ImpersonateUserHttpController } from '../../admin/commands/impersonate-user/impersonate-user.http.controller';
@@ -12,7 +13,6 @@ import { SetUserPasswordHttpController } from '../../admin/commands/set-user-pas
 import { SetUserRoleHttpController } from '../../admin/commands/set-user-role/set-user-role.http.controller';
 import { StopImpersonatingHttpController } from '../../admin/commands/stop-impersonating/stop-impersonating.http.controller';
 import { UnbanUserHttpController } from '../../admin/commands/unban-user/unban-user.http.controller';
-import { UpdateUserHttpController } from '../../admin/commands/update-user/update-user.http.controller';
 import { GetUserHttpController } from '../../admin/queries/get-user/get-user.http.controller';
 import { ListUserSessionsHttpController } from '../../admin/queries/list-user-sessions/list-user-sessions.http.controller';
 import { ListUsersHttpController } from '../../admin/queries/list-users/list-users.http.controller';
@@ -34,7 +34,7 @@ import { SetActiveOrganizationHttpController } from '../../organizations/command
 import { SetActiveWorkspaceHttpController } from '../../organizations/commands/set-active-workspace/set-active-workspace.http.controller';
 import { UpdateMemberRoleHttpController } from '../../organizations/commands/update-member-role/update-member-role.http.controller';
 import { UpdateOrganizationHttpController } from '../../organizations/commands/update-organization/update-organization.http.controller';
-import { CheckOrganizationSlugHttpController } from '../../organizations/queries/check-organization-slug/check-organization-slug.http.controller';
+import { CheckSlugHttpController } from '../../organizations/queries/check-slug/check-slug.http.controller';
 import { GetInvitationHttpController } from '../../organizations/queries/get-invitation/get-invitation.http.controller';
 import { GetOrganizationHttpController } from '../../organizations/queries/get-organization/get-organization.http.controller';
 import { ListMembersHttpController } from '../../organizations/queries/list-members/list-members.http.controller';
@@ -47,7 +47,7 @@ import { ListWorkspacesHttpController } from '../../organizations/queries/list-w
 import { ChangeEmailHttpController } from '../../profile/commands/change-email/change-email.http.controller';
 import { ChangePasswordHttpController } from '../../profile/commands/change-password/change-password.http.controller';
 import { RevokeOtherSessionsHttpController } from '../../profile/commands/revoke-other-sessions/revoke-other-sessions.http.controller';
-import { RevokeSessionHttpController } from '../../profile/commands/revoke-session/revoke-session.http.controller';
+import { RevokeProfileSessionHttpController } from '../../profile/commands/revoke-session/revoke-session.http.controller';
 import { USES_BETTER_AUTH_SESSION_KEY } from '../decorators/uses-better-auth-session.decorator';
 
 /**
@@ -71,7 +71,7 @@ const CALLERS: Record<string, readonly (abstract new (...args: never[]) => unkno
     StopImpersonatingHttpController,
     RevokeUserSessionHttpController,
     GetUserHttpController,
-    UpdateUserHttpController,
+    AdminUpdateUserHttpController,
     RemoveUserHttpController,
     SetUserRoleHttpController,
     BanUserHttpController,
@@ -84,7 +84,7 @@ const CALLERS: Record<string, readonly (abstract new (...args: never[]) => unkno
   'organizations/infrastructure/organization-auth.gateway.ts': [
     CreateOrganizationHttpController,
     ListOrganizationsHttpController,
-    CheckOrganizationSlugHttpController,
+    CheckSlugHttpController,
     GetOrganizationHttpController,
     UpdateOrganizationHttpController,
     DeleteOrganizationHttpController,
@@ -119,7 +119,7 @@ const CALLERS: Record<string, readonly (abstract new (...args: never[]) => unkno
   ],
   'profile/infrastructure/profile-auth.gateway.ts': [
     ChangePasswordHttpController,
-    RevokeSessionHttpController,
+    RevokeProfileSessionHttpController,
     RevokeOtherSessionsHttpController,
     ChangeEmailHttpController,
   ],

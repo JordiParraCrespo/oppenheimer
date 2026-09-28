@@ -85,18 +85,16 @@ export function AuthFooterNote({ children, className }: React.ComponentProps<'p'
 /** A router link in the auth screens' voice: the link blue, underline on hover. */
 export function AuthLink({
   to,
-  search,
   children,
   className,
 }: {
   to: string;
-  search?: Record<string, unknown>;
   /** Optional so `Trans` can pass the element and fill it from the catalog. */
   children?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <TextLink className={className} render={<Link to={to} search={search as never} />}>
+    <TextLink className={className} render={<Link to={to} />}>
       {children}
     </TextLink>
   );

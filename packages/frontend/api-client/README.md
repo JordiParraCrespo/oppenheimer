@@ -1,7 +1,7 @@
 # @oppenheimer/api-client
 
 Typed HTTP client for `apps/api`, **generated** from the API's OpenAPI schema.
-The generated client is `src/generated/` (SDK, types, TanStack Query options);
+The generated client is `src/generated/` (the SDK and its types);
 it is overwritten on every regeneration, so never edit it by hand.
 
 ## Regenerating
@@ -11,10 +11,9 @@ pnpm generate:api-client   # from the repo root
 ```
 
 This runs `@hey-api/openapi-ts` against `apps/api/openapi.json` (config in
-`openapi-ts.config.ts`). Output lands in `src/generated/` (SDK, types, TanStack
-Query `queryOptions` / `queryKeys`). Screens still go through
-`@oppenheimer/frontend-core`, `-consumer` and `-admin` wrappers so persist policy
-and entity mapping stay in one place.
+`openapi-ts.config.ts`). Output lands in `src/generated/`. Screens go through
+the repositories and query hooks of `@oppenheimer/frontend-core` and
+`-consumer`, so persist policy and entity mapping stay in one place.
 
 Regenerate after any change to an API endpoint or its Swagger decorators.
 It needs no database, Redis or `.env`: the API boots its module graph without
@@ -23,19 +22,22 @@ connecting and stands in a placeholder `BETTER_AUTH_SECRET` when none is set
 on what they wrote, so a regeneration with no API change leaves git clean — a
 diff after one is a real change to commit.
 
-The legacy class clients under `src/data-access/api/openapi` (`*Api`) are not
-regenerated — the post-processing step only rebuilds their index files — and
-are kept only for the call sites that still use them. Do not add new callers:
-use the SDK in `src/generated/`. When a class's last caller moves to the SDK,
-delete the class.
+Every operation is named by one factory in the API
+(`apps/api/src/openapi-document.ts`): a slice's controller,
+`<UseCase>HttpController`, gives its use case (`FindHostsHttpController` is
+`findHosts`), and any other controller its method name. Two handlers on one
+name fail the document's generation, so the SDK never numbers a collision and
+a caller never falls back to a hand-written URL. There is one client: the
+package exports the SDK and nothing that would call the API around it, and
+`pnpm arch` fails on a path into its `src/`.
 
 ## What's inside
 
-| Export path                        | Contents                                                 |
-| ---------------------------------- | -------------------------------------------------------- |
-| `@oppenheimer/api-client`          | Client entry point                                       |
-| `@oppenheimer/api-client/models`   | Generated request/response models                        |
-| `@oppenheimer/api-client/services` | Legacy per-tag service classes (`*Api`), not regenerated |
+| Export                          | Contents                                                     |
+| ------------------------------- | ------------------------------------------------------------ |
+| `heyApiSdk`                     | One function per operation, returning `{ data, error, response }` |
+| `applyApiClientConfig`          | Base URL, credentials and auth headers, set once at boot     |
+| `*ResponseDto`, `*Request`      | Every wire type the API names                                |
 
 ## One runtime dependency — by design
 

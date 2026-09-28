@@ -1,6 +1,8 @@
 import { Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ADMIN_AUTH } from './admin.di-tokens';
+import { AdminUpdateUserCommandHandler } from './commands/admin-update-user/admin-update-user.command-handler';
+import { AdminUpdateUserHttpController } from './commands/admin-update-user/admin-update-user.http.controller';
 import { BanUserCommandHandler } from './commands/ban-user/ban-user.command-handler';
 import { BanUserHttpController } from './commands/ban-user/ban-user.http.controller';
 import { CreateUserCommandHandler } from './commands/create-user/create-user.command-handler';
@@ -21,8 +23,6 @@ import { StopImpersonatingCommandHandler } from './commands/stop-impersonating/s
 import { StopImpersonatingHttpController } from './commands/stop-impersonating/stop-impersonating.http.controller';
 import { UnbanUserCommandHandler } from './commands/unban-user/unban-user.command-handler';
 import { UnbanUserHttpController } from './commands/unban-user/unban-user.http.controller';
-import { UpdateUserCommandHandler } from './commands/update-user/update-user.command-handler';
-import { UpdateUserHttpController } from './commands/update-user/update-user.http.controller';
 import { AdminAuthGateway } from './infrastructure/admin-auth.gateway';
 import { GetUserHttpController } from './queries/get-user/get-user.http.controller';
 import { GetUserQueryHandler } from './queries/get-user/get-user.query-handler';
@@ -40,7 +40,7 @@ const httpControllers = [
   StopImpersonatingHttpController,
   RevokeUserSessionHttpController,
   GetUserHttpController,
-  UpdateUserHttpController,
+  AdminUpdateUserHttpController,
   RemoveUserHttpController,
   SetUserRoleHttpController,
   BanUserHttpController,
@@ -53,7 +53,7 @@ const httpControllers = [
 
 const commandHandlers: Provider[] = [
   CreateUserCommandHandler,
-  UpdateUserCommandHandler,
+  AdminUpdateUserCommandHandler,
   RemoveUserCommandHandler,
   SetUserRoleCommandHandler,
   SetUserPasswordCommandHandler,

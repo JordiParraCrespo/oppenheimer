@@ -43,7 +43,6 @@ export class UpdateAutomationHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'updateAutomation',
     summary: 'Save an automation',
     description:
       'What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.',

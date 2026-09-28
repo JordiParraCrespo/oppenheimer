@@ -27,7 +27,6 @@ export class FindAutomationSettingsHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'getAutomationSettings',
     summary: 'The workspace’s automation limits',
     description:
       'Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.',

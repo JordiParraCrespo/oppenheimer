@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { nullableEnum } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_PAUSED_REASONS,
   AUTOMATION_PERMISSIONS,
@@ -6,6 +7,7 @@ import {
   type AutomationPausedReason,
   type AutomationPermission,
   type AutomationRunStatus,
+  GITHUB_EVENT_TYPES,
   SCHEDULE_FREQUENCIES,
   type ScheduleFrequency,
   TRIGGER_SOURCES,
@@ -104,7 +106,12 @@ export class AutomationTriggerResponseDto {
   @ApiProperty({ enum: TRIGGER_SOURCES })
   source!: TriggerSource;
 
-  @ApiProperty({ description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).' })
+  // The enum is the contract: a trigger is written only through the catalog
+  // (`externalEventDefinition`), so a stored event is always one of these.
+  @ApiProperty({
+    enum: ['schedule', ...GITHUB_EVENT_TYPES],
+    description: '`schedule`, or the catalog event (`pr_opened`, `push`, …).',
+  })
   event!: string;
 
   @ApiPropertyOptional({ type: ScheduleResponseDto })
@@ -175,7 +182,7 @@ export class AutomationResponseDto {
   @ApiPropertyOptional({ nullable: true, type: Date })
   pausedAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, enum: AUTOMATION_PAUSED_REASONS })
+  @ApiPropertyOptional(nullableEnum(AUTOMATION_PAUSED_REASONS))
   pausedReason!: AutomationPausedReason | null;
 
   @ApiPropertyOptional({
@@ -191,7 +198,7 @@ export class AutomationResponseDto {
   @ApiProperty({ type: [AutomationTriggerResponseDto] })
   triggers!: AutomationTriggerResponseDto[];
 
-  @ApiPropertyOptional({ nullable: true, enum: ['skip', 'queue'] })
+  @ApiPropertyOptional(nullableEnum(['skip', 'queue']))
   overlap!: 'skip' | 'queue' | null;
 
   @ApiPropertyOptional({ nullable: true, type: Number })

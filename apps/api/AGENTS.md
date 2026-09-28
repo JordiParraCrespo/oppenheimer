@@ -79,9 +79,11 @@ that speaks to `auth.api.*`, and one use-case slice per operation.
   the module's `decorators/` (`AdminProblemResponses`,
   `OrganizationProblemResponses`, …), so each use-case controller carries the
   set without restating it.
-- The HTTP surface is what the generated client is built from: a controller's
-  method name is the operation id and a request DTO's class name is the schema
-  name. Moving a route between files must leave `openapi.json` unchanged.
+- The HTTP surface is what the generated client is built from: a slice's name
+  is its operation id (`openapi-document.ts`) and a request DTO's class name is
+  the schema name. Name a slice for what the client should call it — the admin
+  update is `admin-update-user` because the users module already has
+  `updateUser`.
 
 Use `betterAuthHeaders` from `src/auth/infrastructure/better-auth.util.ts`,
 and normalize every `auth.api` result through a mapper (see above). See

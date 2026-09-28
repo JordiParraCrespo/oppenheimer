@@ -48,7 +48,6 @@ export class CreateSessionHttpController {
   // The limit is about what a loop can do to a laptop, not about the API.
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({
-    operationId: 'createSession',
     summary: 'Start a session',
     description:
       'Several repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the working branch is always `oppenheimer/<project>/<session>`. The project is the one whose origin is the first checkout’s repository, created on the spot if that repository has never had a session.',

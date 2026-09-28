@@ -38,7 +38,6 @@ export class CollectSessionImageHttpController {
   @NoPolicy('the caller is a host, not a user: it is identified by the assertion it signed')
   @AllowAnyScope()
   @ApiOperation({
-    operationId: 'collectSessionImage',
     summary: 'Collect an image parked for the calling host',
     description:
       'Called by the runner when a `session.image` arrives on its link. Answers the image once; a second pull, an expired image and another host’s image are all 404.',

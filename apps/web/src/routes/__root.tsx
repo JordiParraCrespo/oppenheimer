@@ -1,26 +1,16 @@
 import { PageViewTracker } from '@oppenheimer/frontend-web';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
 import type { RouterContext } from '@/app';
 import { RootErrorScreen } from '@/features/public/screens/root-error';
 import { RootNotFoundScreen } from '@/features/public/screens/root-not-found';
 
-/**
- * `NuqsAdapter` is what lets `useQueryStates` read and write the URL, and it
- * has to sit *inside* the router — it works by calling the router's own
- * `useLocation` and `navigate`, so mounting it around `RouterProvider` in
- * `app.tsx` would throw. The root route's component is the first place inside.
- *
- * A route that declares `validateSearch` must let unknown keys through, or the
- * next navigation strips whatever nuqs wrote; `/login` is the one that does
- * and says so there.
- */
+/** Every route, and the page-view tracker the router's location drives. */
 function RootLayout() {
   return (
-    <NuqsAdapter>
+    <>
       <PageViewTracker />
       <Outlet />
-    </NuqsAdapter>
+    </>
   );
 }
 

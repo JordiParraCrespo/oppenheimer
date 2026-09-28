@@ -14,7 +14,7 @@ import { DeleteAvatarHttpController } from './commands/delete-avatar/delete-avat
 import { RevokeOtherSessionsCommandHandler } from './commands/revoke-other-sessions/revoke-other-sessions.command-handler';
 import { RevokeOtherSessionsHttpController } from './commands/revoke-other-sessions/revoke-other-sessions.http.controller';
 import { RevokeSessionCommandHandler } from './commands/revoke-session/revoke-session.command-handler';
-import { RevokeSessionHttpController } from './commands/revoke-session/revoke-session.http.controller';
+import { RevokeProfileSessionHttpController } from './commands/revoke-session/revoke-session.http.controller';
 import { UpdateProfileCommandHandler } from './commands/update-profile/update-profile.command-handler';
 import { UpdateProfileHttpController } from './commands/update-profile/update-profile.http.controller';
 import { UpdateUserSettingsCommandHandler } from './commands/update-user-settings/update-user-settings.command-handler';
@@ -34,7 +34,7 @@ import {
   USER_SETTINGS_REPOSITORY,
 } from './profile.di-tokens';
 import { ProfileMapper } from './profile.mapper';
-import { FindSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
+import { FindProfileSessionsHttpController } from './queries/find-sessions/find-sessions.http.controller';
 import { FindSessionsQueryHandler } from './queries/find-sessions/find-sessions.query-handler';
 import { GetProfileHttpController } from './queries/get-profile/get-profile.http.controller';
 import { GetProfileQueryHandler } from './queries/get-profile/get-profile.query-handler';
@@ -49,9 +49,9 @@ const httpControllers = [
   UpdateUserSettingsHttpController,
   UploadAvatarHttpController,
   DeleteAvatarHttpController,
-  FindSessionsHttpController,
+  FindProfileSessionsHttpController,
   RevokeOtherSessionsHttpController,
-  RevokeSessionHttpController,
+  RevokeProfileSessionHttpController,
   ChangePasswordHttpController,
   ChangeEmailHttpController,
   GetProfileHttpController,

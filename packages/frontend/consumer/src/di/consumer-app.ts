@@ -1,17 +1,17 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
-import type { ApiTokensService } from '../modules/api-tokens';
+import type { ApiTokensRepository } from '../modules/api-tokens';
 import { ApiTokensModule } from '../modules/api-tokens';
-import type { AutomationsService } from '../modules/automations';
+import type { AutomationsRepository } from '../modules/automations';
 import { AutomationsModule } from '../modules/automations';
-import type { HostsService } from '../modules/hosts';
+import type { HostsRepository } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
-import type { InstallationsService } from '../modules/installations';
+import type { InstallationsRepository } from '../modules/installations';
 import { InstallationsModule } from '../modules/installations';
 import type { OrganizationsService } from '../modules/organizations';
 import { OrganizationsModule } from '../modules/organizations';
 import type { ProfileService } from '../modules/profile';
 import { ProfileModule } from '../modules/profile';
-import type { ProjectsService } from '../modules/projects';
+import type { ProjectsRepository } from '../modules/projects';
 import { ProjectsModule } from '../modules/projects';
 import type { SessionsService } from '../modules/sessions';
 import { SessionsModule } from '../modules/sessions';
@@ -33,7 +33,9 @@ export const consumerModules = [
 ];
 
 /**
- * The consumer product's services, resolved from the kernel container.
+ * The consumer product's modules, resolved from the kernel container: a
+ * module's service where it has a use case to hold (sessions, profile,
+ * organizations), its repository where it has none.
  *
  * `OppenheimerApp` only knows the kernel; the product's services are reached
  * through the container, and this wrapper is the one place that does so, so
@@ -67,26 +69,26 @@ export class ConsumerApp {
   }
 
   /** The bodies of work sessions belong to, and what New session is prefilled with. */
-  get projects(): ProjectsService {
-    return this.kernel.container.get(TOKENS.ProjectsService);
+  get projects(): ProjectsRepository {
+    return this.kernel.container.get(TOKENS.ProjectsRepository);
   }
 
   /** Saved prompts that start sessions on a schedule or an event, and the runs they made. */
-  get automations(): AutomationsService {
-    return this.kernel.container.get(TOKENS.AutomationsService);
+  get automations(): AutomationsRepository {
+    return this.kernel.container.get(TOKENS.AutomationsRepository);
   }
 
-  get hosts(): HostsService {
-    return this.kernel.container.get(TOKENS.HostsService);
+  get hosts(): HostsRepository {
+    return this.kernel.container.get(TOKENS.HostsRepository);
   }
 
   /** The GitHub App installations this workspace has connected. */
-  get installations(): InstallationsService {
-    return this.kernel.container.get(TOKENS.InstallationsService);
+  get installations(): InstallationsRepository {
+    return this.kernel.container.get(TOKENS.InstallationsRepository);
   }
 
-  get apiTokens(): ApiTokensService {
-    return this.kernel.container.get(TOKENS.ApiTokensService);
+  get apiTokens(): ApiTokensRepository {
+    return this.kernel.container.get(TOKENS.ApiTokensRepository);
   }
 
   get organizations(): OrganizationsService {

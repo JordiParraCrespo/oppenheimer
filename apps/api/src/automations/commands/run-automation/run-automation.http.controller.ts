@@ -44,7 +44,6 @@ export class RunAutomationHttpController {
   @CheckPolicies({ action: 'update', subject: 'Automation' })
   @RequireScopes('automations:write')
   @ApiOperation({
-    operationId: 'runAutomation',
     summary: 'Run an automation now',
     description:
       'Queues a run that starts a session as the automation’s owner, whether or not it is paused. The run comes back queued; its session follows within seconds.',

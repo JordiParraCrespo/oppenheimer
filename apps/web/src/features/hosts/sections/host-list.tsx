@@ -1,5 +1,5 @@
 import { Skeleton } from '@oppenheimer/design-system-web';
-import { useHosts } from '@oppenheimer/frontend-consumer/react';
+import { useHostPresence } from '@oppenheimer/frontend-consumer/react';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { HostsEmpty } from '../components/hosts-empty';
@@ -17,7 +17,8 @@ import { HostRow } from './host-row';
  */
 export function HostList() {
   const { t } = useTranslation();
-  const hosts = useHosts({ refetchInterval: 15_000 });
+  // Each card shows whether its host is online, which this read keeps current.
+  const hosts = useHostPresence();
 
   return (
     <QueryState

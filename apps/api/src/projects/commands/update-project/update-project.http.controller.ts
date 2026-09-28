@@ -41,7 +41,6 @@ export class UpdateProjectHttpController {
   @CheckPolicies({ action: 'update', subject: 'Project' })
   @RequireScopes('projects:write')
   @ApiOperation({
-    operationId: 'updateProject',
     summary: 'Change a project',
     description:
       'The name, the repositories (replaced as a whole set), and the default host and agent. Absent fields are left as they are and `null` clears a default. The slug is the project’s stable handle and cannot be changed, and the Unassigned project keeps its name. Running sessions are unaffected.',

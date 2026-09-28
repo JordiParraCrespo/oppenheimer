@@ -102,19 +102,21 @@ it. The steps are the "Add a module to a product package" cookbook in
    placeholder (`HostDetails`).
 2. **Errors:** `THINGS_CLIENT_00n` fallbacks, used only when the API sent no
    problem document.
-3. **Repository:** calls `@oppenheimer/api-client` (`heyApiSdk`, or
-   `heyApiClient` with a status-keyed map where the generated names collide,
-   as `hosts.repository.ts` explains), maps DTOs to entities, puts
-   `@MapApiError` on every method, and throws `AppError` on an absent body.
-   An absent body is a failed read, never `[]`.
-4. **Service, module, tokens, `ConsumerApp` getter.**
+3. **Repository:** calls `heyApiSdk` from `@oppenheimer/api-client` through
+   `unwrap` / `unwrapBody` (the SDK function is the API slice's name:
+   `FindThingsHttpController` is `findThings`), maps DTOs to
+   entities, and puts `@MapApiError` on every method. An absent body is a
+   failed read, never `[]`.
+4. **Module, tokens, `ConsumerApp` getter** — and a **service only when a
+   method does more than call the repository**; otherwise the getter returns
+   the repository (`packages/frontend/ARCHITECTURE.md`, step 4).
 5. **Query hooks** in `src/react/<module>.queries.ts`:
    - A **key factory with one function per level**
      (`all → lists() → list(filters) → details() → detail(id)`, nested
      resources under their detail as in `installations.queries.ts`).
    - `skipToken` for a missing input, never `enabled` beside a `queryFn`.
-   - A query that returns entities passes `structuralSharing: shareEntities`
-     (from `@oppenheimer/frontend-core/react`). A list hook takes a narrowing
+   - `useQuery` / `useQueries` come from `@oppenheimer/frontend-core/react`,
+     which share entities across refetches. A list hook takes a narrowing
      `select`; a read that only happens in an event handler gets a
      `use…Snapshot()` instead of a subscription.
    - Mutation hooks take `options?: UseMutationOptions<…>` and write the cache
@@ -261,10 +263,11 @@ pieces from your plan, following `references/templates.md`:
     metadata), `toast`, `Field*`, `DialogBody`, `EditorPage` and the
     `PageHeader` parts, `ChipSelect`, `DropdownMenu*`. The table in
     `frontend-ui.md` says which one answers which need.
-  - There is no data table in the kit yet, and no console screen pages or
-    searches a long list. The first one keeps search, filters and page in the
-    URL (nuqs) and sends them to the API (`frontend-ui.md`, "A list's query
-    lives in the URL"); build it in the feature and promote it on the second.
+  - There is no data table in the kit yet. A list that pages or filters keeps
+    search, filters and page in the URL, as its routes' search schema, and
+    sends them to the API (`frontend-ui.md`, "A list's query lives in the
+    URL"; the runs list is the example); build it in the feature and promote
+    it on the second.
 - **Colour:** the semantic tokens: `text-fg`, `text-fg-muted`,
   `text-fg-subtle`, `text-link`, `bg-canvas`, `bg-surface-*`, `bg-control-*`,
   `border-border`, `border-border-subtle`, `--accent-*`, `--status-*`. The

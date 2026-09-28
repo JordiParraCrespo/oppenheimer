@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionsRepository } from '../sessions.repository';
 
 vi.mock('@oppenheimer/api-client', () => ({
-  heyApiSdk: { listSessions: vi.fn() },
+  heyApiSdk: { findSessions: vi.fn() },
 }));
 
 /** What the generated SDK resolves to on success. */
@@ -45,7 +45,7 @@ describe('SessionsRepository.findAll', () => {
   });
 
   it('follows nextCursor until it is null, and never asks for a page number', async () => {
-    vi.mocked(heyApiSdk.listSessions)
+    vi.mocked(heyApiSdk.findSessions)
       .mockResolvedValueOnce(page(['s1', 's2'], 'c1', { total: 5, page: 1, totalPages: 3 }))
       .mockResolvedValueOnce(page(['s3', 's4'], 'c2'))
       .mockResolvedValueOnce(page(['s5'], null));
@@ -53,19 +53,19 @@ describe('SessionsRepository.findAll', () => {
     const sessions = await repository.findAll();
 
     expect(sessions.map((each) => each.id)).toEqual(['s1', 's2', 's3', 's4', 's5']);
-    expect(vi.mocked(heyApiSdk.listSessions).mock.calls.map(([options]) => options?.query)).toEqual(
+    expect(vi.mocked(heyApiSdk.findSessions).mock.calls.map(([options]) => options?.query)).toEqual(
       [{ limit: 100 }, { limit: 100, cursor: 'c1' }, { limit: 100, cursor: 'c2' }],
     );
   });
 
   it('stops after one request when the first page is the last', async () => {
-    vi.mocked(heyApiSdk.listSessions).mockResolvedValueOnce(page([], null));
+    vi.mocked(heyApiSdk.findSessions).mockResolvedValueOnce(page([], null));
     await expect(repository.findAll()).resolves.toEqual([]);
-    expect(heyApiSdk.listSessions).toHaveBeenCalledTimes(1);
+    expect(heyApiSdk.findSessions).toHaveBeenCalledTimes(1);
   });
 
   it('treats an absent body as a failed read, not an empty list', async () => {
-    vi.mocked(heyApiSdk.listSessions).mockResolvedValue(ok(undefined));
+    vi.mocked(heyApiSdk.findSessions).mockResolvedValue(ok(undefined));
 
     const error = await repository.findAll().catch((e) => e as AppError);
 

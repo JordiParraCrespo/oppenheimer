@@ -33,6 +33,7 @@ export { useConsumerApp } from './context';
 export { type HostPairingFlow, useHostPairing } from './hosts.pairing';
 export {
   hostsKeys,
+  useHostPresence,
   useHosts,
   useHostsSnapshot,
   useRemoveHost,

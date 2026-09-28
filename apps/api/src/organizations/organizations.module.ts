@@ -66,8 +66,8 @@ import {
   WORKSPACE_AUTH,
   WORKSPACE_LOOKUP,
 } from './organizations.di-tokens';
-import { CheckOrganizationSlugHttpController } from './queries/check-organization-slug/check-organization-slug.http.controller';
-import { CheckOrganizationSlugQueryHandler } from './queries/check-organization-slug/check-organization-slug.query-handler';
+import { CheckSlugHttpController } from './queries/check-slug/check-slug.http.controller';
+import { CheckSlugQueryHandler } from './queries/check-slug/check-slug.query-handler';
 import { GetInvitationHttpController } from './queries/get-invitation/get-invitation.http.controller';
 import { GetInvitationQueryHandler } from './queries/get-invitation/get-invitation.query-handler';
 import { GetMembershipHttpController } from './queries/get-membership/get-membership.http.controller';
@@ -95,7 +95,7 @@ import { ListWorkspacesQueryHandler } from './queries/list-workspaces/list-works
 const httpControllers = [
   CreateOrganizationHttpController,
   ListOrganizationsHttpController,
-  CheckOrganizationSlugHttpController,
+  CheckSlugHttpController,
   GetOrganizationHttpController,
   UpdateOrganizationHttpController,
   DeleteOrganizationHttpController,
@@ -148,7 +148,7 @@ const commandHandlers: Provider[] = [
 
 const queryHandlers: Provider[] = [
   ListOrganizationsQueryHandler,
-  CheckOrganizationSlugQueryHandler,
+  CheckSlugQueryHandler,
   GetOrganizationQueryHandler,
   ListMembersQueryHandler,
   ListOrganizationInvitationsQueryHandler,

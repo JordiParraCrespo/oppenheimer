@@ -12,8 +12,8 @@ vi.mock('@oppenheimer/api-client', () => ({
     changePassword: vi.fn(),
     changeEmail: vi.fn(),
     deleteOwnAccount: vi.fn(),
-    findSessions: vi.fn(),
-    revokeSession: vi.fn(),
+    findProfileSessions: vi.fn(),
+    revokeProfileSession: vi.fn(),
     revokeOtherSessions: vi.fn(),
   },
 }));
@@ -61,7 +61,7 @@ describe('ProfileRepository', () => {
   it('maps a session’s updatedAt onto lastSeenAt', async () => {
     // The wire calls it `updatedAt`; every screen would otherwise repeat the
     // translation to "last seen".
-    vi.mocked(heyApiSdk.findSessions).mockResolvedValue(
+    vi.mocked(heyApiSdk.findProfileSessions).mockResolvedValue(
       ok([
         {
           id: 'session-1',
@@ -82,7 +82,7 @@ describe('ProfileRepository', () => {
   });
 
   it('treats an absent body as a failed read, not an empty list', async () => {
-    vi.mocked(heyApiSdk.findSessions).mockResolvedValue(ok(undefined));
+    vi.mocked(heyApiSdk.findProfileSessions).mockResolvedValue(ok(undefined));
 
     const error = await repository.getSessions().catch((e) => e as AppError);
 

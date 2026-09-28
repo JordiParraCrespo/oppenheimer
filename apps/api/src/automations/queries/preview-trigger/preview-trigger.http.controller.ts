@@ -41,7 +41,6 @@ export class PreviewTriggerHttpController {
   @CheckPolicies({ action: 'read', subject: 'Automation' })
   @RequireScopes('automations:read')
   @ApiOperation({
-    operationId: 'previewAutomationTrigger',
     summary: 'Replay a GitHub trigger against recent events',
     description:
       '“Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.',

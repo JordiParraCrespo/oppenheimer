@@ -169,19 +169,29 @@ Nothing moves before its second consumer appears; nothing is written twice.
    They apply only when the API sent no problem document; `toAppError` keeps
    the server's `code` otherwise.
 3. `src/modules/things/things.repository.ts` — `@injectable()`, calls
-   `@oppenheimer/api-client` services, maps DTOs to entities, each method under
-   `@MapApiError(ThingsErrors.X)`, throws `AppError` on an absent body.
-4. `src/modules/things/things.service.ts` — `@injectable()`, injects the
-   repository through `TOKENS.ThingsRepository`, holds the use cases.
+   `heyApiSdk` through `unwrap` / `unwrapBody`, maps DTOs to entities, each
+   method under `@MapApiError(ThingsErrors.X)`.
+4. **A service only when there is a use case to hold.**
+   `src/modules/things/things.service.ts` — `@injectable()`, injects the
+   repository through `TOKENS.ThingsRepository` — exists when a method does
+   more than call the repository: combines two calls (`sessions`' start
+   progress), owns a stream (`openStream`), or holds a rule
+   (`organizations.claimPersonalWorkspace`). A module whose every method
+   would be `return this.repository.same(…)` has none, and the hooks call the
+   repository: hosts, projects, installations, automations and API tokens are
+   that shape. A service that only forwards is a second place to add every
+   method, and Inversify already lets a test swap the repository.
 5. `src/modules/things/things.module.ts` — a `ContainerModule` binding
-   `TOKENS.ThingsRepository` and `TOKENS.ThingsService` in singleton scope.
+   `TOKENS.ThingsRepository` (and `TOKENS.ThingsService`, if there is one) in
+   singleton scope.
 6. `src/modules/things/index.ts` — export the entity, errors, module,
-   repository and service; add `export * from './things'` to
+   repository and any service; add `export * from './things'` to
    `src/modules/index.ts`.
-7. `src/di/tokens.ts` — add `ThingsRepository` and `ThingsService` symbols
-   next to the spread kernel `TOKENS`.
+7. `src/di/tokens.ts` — add the `ThingsRepository` symbol (and
+   `ThingsService`) next to the spread kernel `TOKENS`.
 8. `src/di/consumer-app.ts` — push `ThingsModule` into `consumerModules` and
-   add a `get things(): ThingsService` getter on `ConsumerApp`.
+   add a `get things()` getter on `ConsumerApp` returning the service, or the
+   repository when there is none. The hooks read `app.things` either way.
 9. `src/react/things.queries.ts` — `thingsKeys` (every key derived from
    `all: ['things']`), query and mutation hooks over `useConsumerApp()`;
    mutations invalidate by prefix in `onSuccess`.
@@ -218,6 +228,10 @@ in `packages/tsconfig/depcruise/`.
   package; a meeting point is a kernel contract.
 - `domain-knows-no-platform` — nothing imports a kit, `react-dom` or
   `@tanstack/react-router`.
+- `one-api-client` — the API is called through `@oppenheimer/api-client`'s
+  root, which exports `heyApiSdk` and nothing else that calls it; never a
+  path into its `src/`. The SDK's function names come from the API's
+  operation-id factory (`apps/api/src/openapi-document.ts`).
 
 `frontend-kit.cjs` (`web`):
 

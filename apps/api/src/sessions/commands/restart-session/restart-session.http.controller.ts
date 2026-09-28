@@ -51,7 +51,6 @@ export class RestartSessionHttpController {
   @CheckPolicies({ action: 'update', subject: 'Session' })
   @RequireScopes('sessions:write')
   @ApiOperation({
-    operationId: 'restartSession',
     summary: 'Restart a session',
     description:
       'Recreates window 0 in the worktrees the session already has — what a host reboot needs. It records a request: the session becomes open when the host says it did.',
