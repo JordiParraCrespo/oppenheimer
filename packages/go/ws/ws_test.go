@@ -134,6 +134,48 @@ func TestShutdownClosesGoingAwayDespiteRequestCancel(t *testing.T) {
 	}
 }
 
+// A malformed request is reported with the shared catalog's validation code,
+// not a copy of it.
+func TestABadSubscribeCarriesTheValidationCode(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	hub := NewHub(logger, DefaultOptions())
+	defer hub.Close(context.Background())
+	principal := &auth.Principal{ID: "k1", Kind: auth.KindAPIKey, Scopes: scope.NewSet("events:read")}
+	handler := Handler(hub, &problem.Writer{}, logger, nil)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler.ServeHTTP(w, r.WithContext(auth.WithPrincipal(r.Context(), principal)))
+	}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	c, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.CloseNow()
+	var hello Envelope
+	if err := wsjson.Read(ctx, c, &hello); err != nil || hello.Type != TypeHello {
+		t.Fatalf("hello: %+v %v", hello, err)
+	}
+
+	for i, in := range []Envelope{
+		{Type: TypeSubscribe, ID: "1"},
+		{Type: "nonsense", ID: "2"},
+	} {
+		if err := wsjson.Write(ctx, c, in); err != nil {
+			t.Fatal(err)
+		}
+		var rej Envelope
+		if err := wsjson.Read(ctx, c, &rej); err != nil {
+			t.Fatal(err)
+		}
+		if rej.Type != TypeError || rej.Error == nil || rej.Error.Code != problem.ErrValidation.Code {
+			t.Fatalf("request %d: want a %s error, got %+v", i, problem.ErrValidation.Code, rej)
+		}
+	}
+}
+
 func TestUnauthenticatedUpgradeIsRefused(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	handler := Handler(NewHub(logger, DefaultOptions()), &problem.Writer{}, logger, nil)
