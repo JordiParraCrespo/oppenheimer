@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
+import type { CommandBus } from '@nestjs/cqrs';
 import { describe, expect, it, vi } from 'vitest';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
 import { HandleGithubWebhookCommand } from '../handle-github-webhook.command';
@@ -30,17 +31,25 @@ function build(applied = true) {
     get: (key: string) => (key === 'githubApp.webhookSecret' ? SECRET : undefined),
   } as ConfigService;
 
+  const commandBus = { execute: vi.fn().mockResolvedValue('stored') };
+
   const handler = new HandleGithubWebhookCommandHandler(
     installations as unknown as GithubInstallationRepositoryPort,
     configService,
+    commandBus as unknown as CommandBus,
   );
 
-  return { handler, installations };
+  return { handler, installations, commandBus };
 }
 
 function delivery(action: string, event = 'installation') {
   const payload = JSON.stringify({ action, installation: { id: 45678901 } });
-  return new HandleGithubWebhookCommand({ payload, signature: sign(payload), event });
+  return new HandleGithubWebhookCommand({
+    payload,
+    signature: sign(payload),
+    event,
+    deliveryId: 'd-1',
+  });
 }
 
 describe('installation webhook', () => {
@@ -84,19 +93,48 @@ describe('installation webhook', () => {
       payload: JSON.stringify({ action: 'deleted', installation: { id: 45678901 } }),
       signature: sign('something else entirely'),
       event: 'installation',
+      deliveryId: 'd-2',
     });
 
     await expect(subject.handler.execute(forged)).rejects.toMatchObject({ code: 'GITHUB_007' });
     expect(subject.installations.applyStatusChange).not.toHaveBeenCalled();
   });
 
-  it('writes nothing for an event this module does not act on', async () => {
+  it('writes nothing for an installation action this module does not act on', async () => {
     const subject = build();
 
-    await subject.handler.execute(delivery('added', 'installation_repositories'));
     await subject.handler.execute(delivery('new_permissions_accepted'));
 
     expect(subject.installations.applyStatusChange).not.toHaveBeenCalled();
+    expect(subject.commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  it('hands every other verified event to the inbound-events hub, keyed by its delivery id', async () => {
+    const subject = build();
+
+    await subject.handler.execute(delivery('opened', 'pull_request'));
+
+    expect(subject.installations.applyStatusChange).not.toHaveBeenCalled();
+    const [command] = subject.commandBus.execute.mock.calls[0];
+    expect(command).toMatchObject({
+      source: 'github',
+      deliveryId: 'd-1',
+      eventName: 'pull_request',
+      payload: { action: 'opened' },
+    });
+  });
+
+  it('hands nothing to the hub when the signature is forged', async () => {
+    const subject = build();
+    const forged = new HandleGithubWebhookCommand({
+      payload: JSON.stringify({ action: 'opened' }),
+      signature: sign('other'),
+      event: 'pull_request',
+      deliveryId: 'd-3',
+    });
+
+    await expect(subject.handler.execute(forged)).rejects.toMatchObject({ code: 'GITHUB_007' });
+    expect(subject.commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('is quiet when no live installation matches', async () => {

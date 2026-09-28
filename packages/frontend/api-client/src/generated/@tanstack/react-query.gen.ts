@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { accept, active, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, create, create2, create3, create4, create5, createFlagSegment, createProject, createSession, createUser, current, deleteAvatar, deleteFlagSegment, deleteOwnAccount, deploymentCapabilities, disconnectInstallation, evaluateFeatureFlag, findAll, findAll2, findAll3, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findOne, findOne2, findSessions, findUserRoles, get, get2, getClientFeatureFlags, getFull, getHostTimeline, getPairingToken, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list2, list3, list4, list5, list6, list7, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessionEvents, listSessions, listUsers, listUserSessions, me, mint, moveSession, type Options, pasteSessionImage, permissions, permissions2, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, setActive, setActive2, setPassword, setRole, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstall, unpair, update, update2, update3, update4, updateFeatureFlag, updateFlagSegment, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
-import type { AcceptData, AcceptError, AcceptResponse, ActiveData, ActiveError, ActiveResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateData, CreateError, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetHostTimelineData, GetHostTimelineError, GetHostTimelineResponse, GetPairingTokenData, GetPairingTokenError, GetPairingTokenResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateData, UpdateError, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
+import { accept, add, addMember, addSessionCheckout, archiveProject, assign, ban, cancel, catalog, changeEmail, changePassword, check, checkSlug, closeSession, collectSessionImage, connectInstallation, create, create2, create3, create4, create5, createAutomation, createFlagSegment, createProject, createSession, createUser, current, deleteAutomation, deleteAvatar, deleteFlagSegment, deleteOwnAccount, deploymentCapabilities, disconnectInstallation, duplicateAutomation, evaluateFeatureFlag, findAll, findAll2, findAll3, findFeatureFlag, findFeatureFlags, findFlagChanges, findFlagSegments, findOne, findOne2, findSessions, findUserRoles, get, get2, getAutomation, getAutomationRun, getAutomationRunHistory, getAutomationSettings, getClientFeatureFlags, getFull, getHostTimeline, getMembership, getPairingToken, getProfile, getProject, getSession, getSettings, getUser, impersonate, invite, issueAttachTicket, leave, list, list2, list3, list4, list5, list6, list7, listAutomationRuns, listAutomations, listInstallationRepositories, listInstallations, listMembers, listMine, listMine2, listProjects, listRepositoryBranches, listSessionEvents, listSessions, listUsers, listUserSessions, me, mint, moveSession, type Options, pasteSessionImage, pauseAutomation, permissions, permissions2, previewAutomationTrigger, readiness, register, reject, remove, remove2, remove3, remove4, remove5, removeMember, removeSessionCheckout, removeUser, rename, renameSession, restartSession, resumeAutomation, revoke, revoke2, revoke3, revokeOtherSessions, revokeSession, revokeSession2, revokeSessions, runAutomation, setActive, setActive2, setPassword, setRole, stopImpersonating, stopSession, toggleFeatureFlag, unban, uninstall, unpair, update, update2, update3, update4, updateAutomation, updateAutomationSettings, updateFeatureFlag, updateFlagSegment, updatePermissions, updateProfile, updateProject, updateRole, updateSettings, updateUser, uploadAvatar } from '../sdk.gen';
+import type { AcceptData, AcceptError, AcceptResponse, AddData, AddError, AddMemberData, AddMemberError, AddMemberResponse, AddResponse, AddSessionCheckoutData, AddSessionCheckoutError, AddSessionCheckoutResponse, ArchiveProjectData, ArchiveProjectError, ArchiveProjectResponse, AssignData, AssignError, AssignResponse, BanData, BanError, BanResponse, CancelData, CancelError, CancelResponse, CatalogData, CatalogError, CatalogResponse, ChangeEmailData, ChangeEmailError, ChangePasswordData, ChangePasswordError, ChangePasswordResponse, CheckData, CheckError, CheckResponse, CheckSlugData, CheckSlugError, CheckSlugResponse, CloseSessionData, CloseSessionError, CloseSessionResponse, CollectSessionImageData, CollectSessionImageError, ConnectInstallationData, ConnectInstallationError, ConnectInstallationResponse, Create2Data, Create2Error, Create2Response, Create3Data, Create3Error, Create3Response, Create4Data, Create4Error, Create4Response, Create5Data, Create5Error, Create5Response, CreateAutomationData, CreateAutomationError, CreateAutomationResponse, CreateData, CreateError, CreateFlagSegmentData, CreateFlagSegmentError, CreateFlagSegmentResponse, CreateProjectData, CreateProjectError, CreateProjectResponse, CreateResponse, CreateSessionData, CreateSessionError, CreateSessionResponse, CreateUserData, CreateUserError, CreateUserResponse, CurrentData, CurrentError, CurrentResponse, DeleteAutomationData, DeleteAutomationError, DeleteAutomationResponse, DeleteAvatarData, DeleteAvatarError, DeleteAvatarResponse, DeleteFlagSegmentData, DeleteFlagSegmentError, DeleteFlagSegmentResponse, DeleteOwnAccountData, DeleteOwnAccountError, DeleteOwnAccountResponse, DeploymentCapabilitiesData, DeploymentCapabilitiesResponse, DisconnectInstallationData, DisconnectInstallationError, DisconnectInstallationResponse, DuplicateAutomationData, DuplicateAutomationError, DuplicateAutomationResponse, EvaluateFeatureFlagData, EvaluateFeatureFlagError, EvaluateFeatureFlagResponse, FindAll2Data, FindAll2Error, FindAll2Response, FindAll3Data, FindAll3Error, FindAll3Response, FindAllData, FindAllError, FindAllResponse, FindFeatureFlagData, FindFeatureFlagError, FindFeatureFlagResponse, FindFeatureFlagsData, FindFeatureFlagsError, FindFeatureFlagsResponse, FindFlagChangesData, FindFlagChangesError, FindFlagChangesResponse, FindFlagSegmentsData, FindFlagSegmentsError, FindFlagSegmentsResponse, FindOne2Data, FindOne2Error, FindOne2Response, FindOneData, FindOneError, FindOneResponse, FindSessionsData, FindSessionsError, FindSessionsResponse, FindUserRolesData, FindUserRolesError, FindUserRolesResponse, Get2Data, Get2Error, Get2Response, GetAutomationData, GetAutomationError, GetAutomationResponse, GetAutomationRunData, GetAutomationRunError, GetAutomationRunHistoryData, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, GetAutomationRunResponse, GetAutomationSettingsData, GetAutomationSettingsError, GetAutomationSettingsResponse, GetClientFeatureFlagsData, GetClientFeatureFlagsResponse, GetData, GetError, GetFullData, GetFullError, GetFullResponse, GetHostTimelineData, GetHostTimelineError, GetHostTimelineResponse, GetMembershipData, GetMembershipError, GetMembershipResponse, GetPairingTokenData, GetPairingTokenError, GetPairingTokenResponse, GetProfileData, GetProfileError, GetProfileResponse, GetProjectData, GetProjectError, GetProjectResponse, GetResponse, GetSessionData, GetSessionError, GetSessionResponse, GetSettingsData, GetSettingsError, GetSettingsResponse, GetUserData, GetUserError, GetUserResponse, ImpersonateData, ImpersonateError, ImpersonateResponse, InviteData, InviteError, InviteResponse, IssueAttachTicketData, IssueAttachTicketError, IssueAttachTicketResponse, LeaveData, LeaveError, LeaveResponse, List2Data, List2Error, List2Response, List3Data, List3Error, List3Response, List4Data, List4Error, List4Response, List5Data, List5Error, List5Response, List6Data, List6Error, List6Response, List7Data, List7Error, List7Response, ListAutomationRunsData, ListAutomationRunsError, ListAutomationRunsResponse, ListAutomationsData, ListAutomationsError, ListAutomationsResponse, ListData, ListError, ListInstallationRepositoriesData, ListInstallationRepositoriesError, ListInstallationRepositoriesResponse, ListInstallationsData, ListInstallationsError, ListInstallationsResponse, ListMembersData, ListMembersError, ListMembersResponse, ListMine2Data, ListMine2Error, ListMine2Response, ListMineData, ListMineError, ListMineResponse, ListProjectsData, ListProjectsError, ListProjectsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListResponse, ListSessionEventsData, ListSessionEventsError, ListSessionEventsResponse, ListSessionsData, ListSessionsError, ListSessionsResponse, ListUsersData, ListUsersError, ListUserSessionsData, ListUserSessionsError, ListUserSessionsResponse, ListUsersResponse, MeData, MeError, MeResponse, MintData, MintError, MintResponse, MoveSessionData, MoveSessionError, MoveSessionResponse, PasteSessionImageData, PasteSessionImageError, PauseAutomationData, PauseAutomationError, PauseAutomationResponse, Permissions2Data, Permissions2Error, Permissions2Response, PermissionsData, PermissionsError, PermissionsResponse, PreviewAutomationTriggerData, PreviewAutomationTriggerError, PreviewAutomationTriggerResponse, ReadinessData, ReadinessError, ReadinessResponse, RegisterData, RegisterError, RegisterResponse, RejectData, RejectError, RejectResponse, Remove2Data, Remove2Error, Remove3Data, Remove3Error, Remove3Response, Remove4Data, Remove4Error, Remove4Response, Remove5Data, Remove5Error, Remove5Response, RemoveData, RemoveError, RemoveMemberData, RemoveMemberError, RemoveMemberResponse, RemoveSessionCheckoutData, RemoveSessionCheckoutError, RemoveSessionCheckoutResponse, RemoveUserData, RemoveUserError, RemoveUserResponse, RenameData, RenameError, RenameResponse, RenameSessionData, RenameSessionError, RenameSessionResponse, RestartSessionData, RestartSessionError, RestartSessionResponse, ResumeAutomationData, ResumeAutomationError, ResumeAutomationResponse, Revoke2Data, Revoke2Error, Revoke2Response, Revoke3Data, Revoke3Error, Revoke3Response, RevokeData, RevokeError, RevokeOtherSessionsData, RevokeOtherSessionsError, RevokeOtherSessionsResponse, RevokeResponse, RevokeSession2Data, RevokeSession2Error, RevokeSession2Response, RevokeSessionData, RevokeSessionError, RevokeSessionResponse, RevokeSessionsData, RevokeSessionsError, RevokeSessionsResponse, RunAutomationData, RunAutomationError, RunAutomationResponse, SetActive2Data, SetActive2Error, SetActive2Response, SetActiveData, SetActiveError, SetActiveResponse, SetPasswordData, SetPasswordError, SetPasswordResponse, SetRoleData, SetRoleError, SetRoleResponse, StopImpersonatingData, StopImpersonatingError, StopImpersonatingResponse, StopSessionData, StopSessionError, StopSessionResponse, ToggleFeatureFlagData, ToggleFeatureFlagError, ToggleFeatureFlagResponse, UnbanData, UnbanError, UnbanResponse, UninstallData, UninstallError, UninstallResponse, UnpairData, UnpairError, UnpairResponse, Update2Data, Update2Error, Update2Response, Update3Data, Update3Error, Update3Response, Update4Data, Update4Error, Update4Response, UpdateAutomationData, UpdateAutomationError, UpdateAutomationResponse, UpdateAutomationSettingsData, UpdateAutomationSettingsError, UpdateAutomationSettingsResponse, UpdateData, UpdateError, UpdateFeatureFlagData, UpdateFeatureFlagError, UpdateFeatureFlagResponse, UpdateFlagSegmentData, UpdateFlagSegmentError, UpdateFlagSegmentResponse, UpdatePermissionsData, UpdatePermissionsError, UpdatePermissionsResponse, UpdateProfileData, UpdateProfileError, UpdateProfileResponse, UpdateProjectData, UpdateProjectError, UpdateProjectResponse, UpdateResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateSettingsData, UpdateSettingsError, UpdateSettingsResponse, UpdateUserData, UpdateUserError, UpdateUserResponse, UploadAvatarData, UploadAvatarError, UploadAvatarResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -891,14 +891,14 @@ export const setActiveMutation = (options?: Partial<Options<SetActiveData>>): Us
     return mutationOptions;
 };
 
-export const activeQueryKey = (options?: Options<ActiveData>) => createQueryKey('active', options);
+export const getMembershipQueryKey = (options: Options<GetMembershipData>) => createQueryKey('getMembership', options);
 
 /**
- * Get the caller's membership in the active organization
+ * Get the caller's own membership in an organization
  */
-export const activeOptions = (options?: Options<ActiveData>) => queryOptions<ActiveResponse, ActiveError, ActiveResponse, ReturnType<typeof activeQueryKey>>({
+export const getMembershipOptions = (options: Options<GetMembershipData>) => queryOptions<GetMembershipResponse, GetMembershipError, GetMembershipResponse, ReturnType<typeof getMembershipQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await active({
+        const { data } = await getMembership({
             ...options,
             ...queryKey[0],
             signal,
@@ -906,7 +906,7 @@ export const activeOptions = (options?: Options<ActiveData>) => queryOptions<Act
         });
         return data;
     },
-    queryKey: activeQueryKey(options)
+    queryKey: getMembershipQueryKey(options)
 });
 
 export const list3QueryKey = (options: Options<List3Data>) => createQueryKey('list3', options);
@@ -2480,6 +2480,327 @@ export const moveSessionMutation = (options?: Partial<Options<MoveSessionData>>)
     const mutationOptions: UseMutationOptions<MoveSessionResponse, MoveSessionError, Options<MoveSessionData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await moveSession({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listAutomationsQueryKey = (options?: Options<ListAutomationsData>) => createQueryKey('listAutomations', options);
+
+/**
+ * List the workspace’s automations
+ *
+ * Oldest first, as the sidebar groups them by project. Each carries its status (running while a run is live), its next run, its run count over the last 30 days and its last six runs.
+ */
+export const listAutomationsOptions = (options?: Options<ListAutomationsData>) => queryOptions<ListAutomationsResponse, ListAutomationsError, ListAutomationsResponse, ReturnType<typeof listAutomationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listAutomations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listAutomationsQueryKey(options)
+});
+
+/**
+ * Create an automation
+ *
+ * A saved prompt, where it runs and the triggers that start it. The caller becomes its owner: every run acts as them. It starts listening as soon as it is saved.
+ */
+export const createAutomationMutation = (options?: Partial<Options<CreateAutomationData>>): UseMutationOptions<CreateAutomationResponse, CreateAutomationError, Options<CreateAutomationData>> => {
+    const mutationOptions: UseMutationOptions<CreateAutomationResponse, CreateAutomationError, Options<CreateAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Replay a GitHub trigger against recent events
+ *
+ * “Would have run N times in the last 7 days”: the card, unsaved, matched against what the webhook actually received, with the two most recent matches. A POST because the card is a body, not because anything changes.
+ */
+export const previewAutomationTriggerMutation = (options?: Partial<Options<PreviewAutomationTriggerData>>): UseMutationOptions<PreviewAutomationTriggerResponse, PreviewAutomationTriggerError, Options<PreviewAutomationTriggerData>> => {
+    const mutationOptions: UseMutationOptions<PreviewAutomationTriggerResponse, PreviewAutomationTriggerError, Options<PreviewAutomationTriggerData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await previewAutomationTrigger({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete an automation
+ *
+ * Its triggers stop now. Past runs are kept, and read “Deleted automation”.
+ */
+export const deleteAutomationMutation = (options?: Partial<Options<DeleteAutomationData>>): UseMutationOptions<DeleteAutomationResponse, DeleteAutomationError, Options<DeleteAutomationData>> => {
+    const mutationOptions: UseMutationOptions<DeleteAutomationResponse, DeleteAutomationError, Options<DeleteAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getAutomationQueryKey = (options: Options<GetAutomationData>) => createQueryKey('getAutomation', options);
+
+/**
+ * Read one automation
+ */
+export const getAutomationOptions = (options: Options<GetAutomationData>) => queryOptions<GetAutomationResponse, GetAutomationError, GetAutomationResponse, ReturnType<typeof getAutomationQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAutomation({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAutomationQueryKey(options)
+});
+
+/**
+ * Save an automation
+ *
+ * What the editor changed, with the version it loaded. A change to what a run executes becomes the next revision; triggers, when sent, replace the set.
+ */
+export const updateAutomationMutation = (options?: Partial<Options<UpdateAutomationData>>): UseMutationOptions<UpdateAutomationResponse, UpdateAutomationError, Options<UpdateAutomationData>> => {
+    const mutationOptions: UseMutationOptions<UpdateAutomationResponse, UpdateAutomationError, Options<UpdateAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Pause an automation
+ *
+ * Triggers are ignored until it is resumed; Run now still works. Its schedule stops firing now.
+ */
+export const pauseAutomationMutation = (options?: Partial<Options<PauseAutomationData>>): UseMutationOptions<PauseAutomationResponse, PauseAutomationError, Options<PauseAutomationData>> => {
+    const mutationOptions: UseMutationOptions<PauseAutomationResponse, PauseAutomationError, Options<PauseAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await pauseAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Resume an automation
+ *
+ * Triggers listen again, and each schedule’s next slot is computed from now, so a paused week does not fire a burst of missed runs.
+ */
+export const resumeAutomationMutation = (options?: Partial<Options<ResumeAutomationData>>): UseMutationOptions<ResumeAutomationResponse, ResumeAutomationError, Options<ResumeAutomationData>> => {
+    const mutationOptions: UseMutationOptions<ResumeAutomationResponse, ResumeAutomationError, Options<ResumeAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resumeAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Duplicate an automation
+ *
+ * A copy named after the original, owned by the caller, with the same instructions, place and triggers and a first revision of its own.
+ */
+export const duplicateAutomationMutation = (options?: Partial<Options<DuplicateAutomationData>>): UseMutationOptions<DuplicateAutomationResponse, DuplicateAutomationError, Options<DuplicateAutomationData>> => {
+    const mutationOptions: UseMutationOptions<DuplicateAutomationResponse, DuplicateAutomationError, Options<DuplicateAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await duplicateAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Run an automation now
+ *
+ * Queues a run that starts a session as the automation’s owner, whether or not it is paused. The run comes back queued; its session follows within seconds.
+ */
+export const runAutomationMutation = (options?: Partial<Options<RunAutomationData>>): UseMutationOptions<RunAutomationResponse, RunAutomationError, Options<RunAutomationData>> => {
+    const mutationOptions: UseMutationOptions<RunAutomationResponse, RunAutomationError, Options<RunAutomationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await runAutomation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listAutomationRunsQueryKey = (options?: Options<ListAutomationRunsData>) => createQueryKey('listAutomationRuns', options);
+
+/**
+ * List automation runs
+ *
+ * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
+ */
+export const listAutomationRunsOptions = (options?: Options<ListAutomationRunsData>) => queryOptions<ListAutomationRunsResponse, ListAutomationRunsError, ListAutomationRunsResponse, ReturnType<typeof listAutomationRunsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listAutomationRuns({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listAutomationRunsQueryKey(options)
+});
+
+export const listAutomationRunsInfiniteQueryKey = (options?: Options<ListAutomationRunsData>): QueryKey<Options<ListAutomationRunsData>> => createQueryKey('listAutomationRuns', options, true);
+
+/**
+ * List automation runs
+ *
+ * The Runs tab, and one automation’s runs: newest first, a page of ten by default, with the total and the count per status tab under the same facets. Runs that never became a session (skipped, expired) are left out unless their status is asked for.
+ */
+export const listAutomationRunsInfiniteOptions = (options?: Options<ListAutomationRunsData>) => {
+    const opts = infiniteQueryOptions<ListAutomationRunsResponse, ListAutomationRunsError, InfiniteData<ListAutomationRunsResponse>, QueryKey<Options<ListAutomationRunsData>>, number | Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListAutomationRunsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listAutomationRuns({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listAutomationRunsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getAutomationRunHistoryQueryKey = (options?: Options<GetAutomationRunHistoryData>) => createQueryKey('getAutomationRunHistory', options);
+
+/**
+ * Run history by day
+ *
+ * One bucket per local day of the given zone, today last: runs that did not fail (running ones included) and runs that failed, under the same facets as the runs list.
+ */
+export const getAutomationRunHistoryOptions = (options?: Options<GetAutomationRunHistoryData>) => queryOptions<GetAutomationRunHistoryResponse, GetAutomationRunHistoryError, GetAutomationRunHistoryResponse, ReturnType<typeof getAutomationRunHistoryQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAutomationRunHistory({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAutomationRunHistoryQueryKey(options)
+});
+
+export const getAutomationRunQueryKey = (options: Options<GetAutomationRunData>) => createQueryKey('getAutomationRun', options);
+
+/**
+ * Read one automation run
+ *
+ * Why it ran, what the guards decided, the session it started and that session’s turn: the prompt the agent was given, the state, the result and the times.
+ */
+export const getAutomationRunOptions = (options: Options<GetAutomationRunData>) => queryOptions<GetAutomationRunResponse, GetAutomationRunError, GetAutomationRunResponse, ReturnType<typeof getAutomationRunQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAutomationRun({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAutomationRunQueryKey(options)
+});
+
+export const getAutomationSettingsQueryKey = (options?: Options<GetAutomationSettingsData>) => createQueryKey('getAutomationSettings', options);
+
+/**
+ * The workspace’s automation limits
+ *
+ * Effective values: the workspace’s own where set, the platform’s defaults elsewhere, under the platform ceilings.
+ */
+export const getAutomationSettingsOptions = (options?: Options<GetAutomationSettingsData>) => queryOptions<GetAutomationSettingsResponse, GetAutomationSettingsError, GetAutomationSettingsResponse, ReturnType<typeof getAutomationSettingsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAutomationSettings({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAutomationSettingsQueryKey(options)
+});
+
+/**
+ * Set the workspace’s automation limits
+ *
+ * Rate caps, runs at once per host, overlap, the stale TTL, the missed-slot grace and the longest run. Null clears a value back to the platform default; the platform ceilings still apply.
+ */
+export const updateAutomationSettingsMutation = (options?: Partial<Options<UpdateAutomationSettingsData>>): UseMutationOptions<UpdateAutomationSettingsResponse, UpdateAutomationSettingsError, Options<UpdateAutomationSettingsData>> => {
+    const mutationOptions: UseMutationOptions<UpdateAutomationSettingsResponse, UpdateAutomationSettingsError, Options<UpdateAutomationSettingsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateAutomationSettings({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

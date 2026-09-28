@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_auth/onboarding/host')({
   // `beforeLoad`, like Ready's: an address that is not the walk never mounts
   // the step, and `replace` keeps it from becoming the entry Back returns to.
   beforeLoad: ({ search }) => {
-    if (!search.walk) throw redirect({ to: '/sessions', replace: true });
+    if (!search.walk) throw redirect({ to: '/sessions/new', replace: true });
   },
   component: HostStep,
   // Two code cards side by side need the wide column.

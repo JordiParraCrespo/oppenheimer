@@ -32,7 +32,7 @@ earlier note:
 - Note 00 proposed the Claude Agent SDK as the core. Note 01 replaced it
   with a raw terminal; the SDK is a later add-on for unattended runs.
 - Note 01 left the Agent SDK as a later add-on for unattended runs.
-  `versions/mvp/17-headless-runs.md` runs them through the
+  `versions/mvp/18-headless-runs.md` runs them through the
   CLI's headless mode (`claude -p --output-format stream-json`) launched
   by the Go runner instead, so no host needs a Node or Python runtime;
   the SDK library stays the upgrade path for approvals mid-turn
@@ -112,6 +112,12 @@ earlier note:
   per session. The model keeps checkouts as a list with a primary, so several
   repositories returns with the runner slice that makes several worktrees.
   Recorded in 00, 05, 10 and the MVP decision log.
+- `versions/mvp/10-api-modules-and-data-model.md` said a session has zero or
+  more checkouts, zero being a session with no git. The runner makes a
+  session from exactly one repository, so a session with none was recorded,
+  then failed on the host. On 2026-09-27 the owner set the create body to
+  exactly one checkout, and the console's composer stays disabled until a
+  repository is picked. Recorded in 00, 10 and the MVP decision log.
 - `versions/mvp/08-auth.md` said first-run's gate is the claimed address
   off step 2. That still ends step 2, and it cannot end the flow: two
   steps run after the claim, so every legitimate arrival at the Ready
@@ -257,6 +263,12 @@ earlier note:
   `/hosts/new`) since the 2026-09-26 evening export, and the second rail
   item reads Automations. A project needs a repository to be saved from the
   console (2026-09-26).
+- `versions/mvp/05-screens.md` and `13-automations.md`: those pages went
+  back to dialogs over the console with the 2026-09-27 export — New
+  project and Project settings, the console's Add a host, the automation
+  editor as a three-step wizard — while Settings keeps its Add a host
+  page. Add a host copies first and shows the instruction behind a fold,
+  in the console and in onboarding (2026-09-27).
 - `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
   console's automations list and its pages have their routes now, so the
   rail is whole; the automation itself — scheduler, trigger, runs — stays
@@ -289,3 +301,18 @@ earlier note:
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
+- `versions/mvp/00-scope.md` kept automations out of the MVP, and
+  `versions/mvp/13-automations.md` built only their console routes. They
+  are in the MVP now, designed in `versions/mvp/16-automations-architecture.md`:
+  headless runs for any agent, an inbound-events hub for GitHub and later
+  Slack, schedules fired by a tick, a run acting as its owner. Note 05 §7's
+  API `POST /fire` trigger, its regex PR filters and its `claude/` branch
+  prefix are not in the frames and are not built; the frames' one filter
+  value per trigger and the event-dependent starting branch are
+  (2026-09-27).
+- The automations architecture capped **headless** runs per host; runs
+  are interactive sessions until the headless drive lands, so the cap
+  counts **live** runs of either drive — a run whose agent finished holds
+  no place — and a run past the run limit is stopped. A run opens in the
+  session pane under `/automations`, keeping the automations list beside
+  it (2026-09-28).

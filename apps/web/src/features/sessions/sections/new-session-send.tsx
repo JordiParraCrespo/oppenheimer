@@ -1,4 +1,5 @@
 import { Alert, AlertDescription } from '@oppenheimer/design-system-web';
+import type { CreateSessionInput } from '@oppenheimer/frontend-consumer';
 import {
   useCreateSession,
   useHosts,
@@ -17,9 +18,11 @@ import { toCheckouts, toLaunchInput } from '../lib/session-options';
  * The composer of New session, and the one request the draft makes.
  *
  * What this section reads during render is only what it must: whether a host
- * is picked and still paired, because the composer cannot send without one,
- * and the request's state. The rest of the draft, and the projects, are read once, when the task
- * is sent — so a pick of effort or a refetch of the projects never reaches it.
+ * is picked and still paired, and whether the pick names one repository the
+ * request can carry — the composer cannot send without both (05) — and the
+ * request's state. The rest of the draft, and the projects, are read once,
+ * when the task is sent — so a pick of effort or a refetch of the projects
+ * never reaches it.
  *
  * `scope`, `tools` and `engine` are the chips, built by the section above and
  * placed here untouched. They arrive as elements rather than being built here
@@ -40,6 +43,12 @@ export function NewSessionSend({
   const resolveError = useErrorMessage();
   const { control, getValues } = useNewSessionDraft();
   const hostId = useWatch({ control, name: 'hostId' });
+  // What `start` posts, not what the picker holds, so the gate and the body agree.
+  const hasCheckout = useWatch({
+    control,
+    name: 'scope',
+    compute: (picked) => toCheckouts(picked).length > 0,
+  });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled
   // with an id the API refuses. A boolean, so a refetch re-renders this only
@@ -72,13 +81,14 @@ export function NewSessionSend({
 
   function start(prompt: string) {
     const draft = getValues();
-    if (!draft.hostId || hostKnown === false) return;
+    const [checkout] = toCheckouts(draft.scope);
+    if (!draft.hostId || hostKnown === false || !checkout) return;
     const projectId = projects()?.find((project) => project.id === draft.projectId)?.id ?? null;
-    const input = {
+    const input: CreateSessionInput = {
       hostId: draft.hostId,
       agent: draft.agent,
       ...(projectId ? { projectId } : {}),
-      checkouts: toCheckouts(draft.scope),
+      checkouts: [checkout],
       launch: toLaunchInput(draft),
       prompt,
     };
@@ -92,7 +102,7 @@ export function NewSessionSend({
       <NewSessionComposer
         onSubmit={start}
         busy={create.isPending}
-        disabled={!hostId || hostKnown === false}
+        disabled={!hostId || hostKnown === false || !hasCheckout}
         scope={scope}
         tools={tools}
         engine={engine}

@@ -2,6 +2,7 @@ export * from './admin.schema';
 export * from './api-token.schema';
 export * from './auth.schema';
 export * from './authz.schema';
+export * from './automation.schema';
 export * from './github.schema';
 export * from './host.schema';
 export * from './organization.schema';

@@ -42,6 +42,11 @@ func (a *App) CreateSession(ctx context.Context, out io.Writer, opts CreateSessi
 	p.printf("branch   %s from %s\n", session.Branch, session.BaseBranch)
 	p.printf("worktree %s\n", session.Worktree)
 	p.printf("attach   %s sessions attach %s\n", binaryName(), session.ID)
+	// The next create's worktree is being checked out now; a process that
+	// exits under it leaves half a spare for the next one to throw away.
+	if a.Worktrees != nil {
+		a.Worktrees.Wait()
+	}
 	return p.err
 }
 

@@ -158,7 +158,11 @@ What belongs here is what the runner does with it:
   `config.json`, and later boots do not dial either — the daemon stays up,
   quiet, so the service manager does not restart it into the same refusal
   every few seconds. `runner status` says what happened; a fresh
-  registration replaces the revoked identity without `--force`.
+  registration replaces the revoked identity without `--force`. The
+  verdict also stops the runner's sessions (tmux ends, every checkout
+  stays): unpairing is a person removing the host, which stops the
+  sessions on it (03, 14), and an agent left running would work where no
+  console can see it. A dropped link still leaves sessions running.
 - **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
   port with one transport adapter, as §3 says; the composition root maps
   each message onto the session service. The launch argv comes from
@@ -188,11 +192,16 @@ started last is the one that failed:
    `sessions/<slug>/` **before** anything else. Only
    a directory carrying it is ours to delete, ever (10, the rules
    learned from Orca).
-2. For each checkout, ensure the workspace's bare store
-   `repos/<store>.git` exists and is fetched
-   (`git clone --bare` the first time, then `git fetch`, with the
-   `+refs/heads/*:refs/remotes/origin/*` refspec a bare clone does not
-   set), authenticated through the credential helper (§8). The store
+2. For each checkout, ensure the workspace's store
+   `repos/<store>.git` exists and is fetched (the runner still keeps it
+   at `<owner>/<repo>/main`, until note 10's layout lands). The store
+   is blobless and has no working tree: `git clone --filter=blob:none
+   --no-checkout` the first time. A create then fetches only the ref
+   its worktree is made from — the base, or the existing branch it
+   checks out — with no tags and git's automatic gc off, and a ref that
+   is not a branch on the remote fails the create. Both go through the
+   credential helper (§8), and so does a blob the session's shell reads
+   later (`git log -p`, `blame`). The store
    is found **by GitHub id**, never by name: the runner writes
    `git config oppenheimer.repo-id <id>` into the bare repo when it
    creates it as `<owner>--<repo>.git`, suffixes the name if that one is
@@ -214,6 +223,17 @@ started last is the one that failed:
    finished), a registration whose directory is gone is pruned, and a
    branch the attempt cut is reused only while it holds nothing the base
    does not. Anything else at the path is `SESS_004`.
+   Each store keeps one **spare** worktree beside the sessions'
+   (`worktrees/.spare`), detached at the base the last create used and
+   fully checked out. A create for a new branch moves it to the
+   session's path and checks out the session's branch there, which
+   writes only what changed on the base since; the runner then makes
+   the next spare in the background. A spare still being made is not
+   waited for, a finished one on disk is taken after a restart, and
+   something at `.spare` the store never registered is left alone.
+   A detached worktree at a session's path is a claim cut short
+   between the move and the checkout; the next attempt finishes it.
+   The cost is one checked-out tree per repository on the host.
 4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
    `<cwd>` is the checkout the control plane names as the working
    directory, or the session directory when it names none, with the
@@ -595,7 +615,7 @@ internal/
   for that session after the push and uploads them through the proxy
   before the VM is killed; on a create or restart that carries
   `snapshotDownloadUrl`, it unpacks them before relaunching the agent
-  with its resume flag. Capped at 50 MB, newest end kept (16 §5).
+  with its resume flag. Capped at 50 MB, newest end kept (17 §5).
 - **Firecracker snapshots** (memory restore) are not in v0.2: the boot
   on the kept disk is the resume, as it is for Claude Code on the web.
 

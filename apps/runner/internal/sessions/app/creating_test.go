@@ -22,7 +22,7 @@ type gatedGit struct {
 	clones  []string // the session each clone ran for
 }
 
-func (g *gatedGit) Ensure(ctx context.Context, repo, remote string) error {
+func (g *gatedGit) Ensure(ctx context.Context, repo, remote, ref string) error {
 	g.mu.Lock()
 	g.clones = append(g.clones, domain.SessionOf(ctx))
 	g.mu.Unlock()
@@ -30,7 +30,7 @@ func (g *gatedGit) Ensure(ctx context.Context, repo, remote string) error {
 	if g.err != nil {
 		return g.err
 	}
-	return g.Worktrees.Ensure(ctx, repo, remote)
+	return g.Worktrees.Ensure(ctx, repo, remote, ref)
 }
 
 func gatedService(t *testing.T, err error) (*app.Service, *gatedGit, *memoryStore) {
@@ -45,6 +45,43 @@ func gatedService(t *testing.T, err error) (*app.Service, *gatedGit, *memoryStor
 		t.Fatal(newErr)
 	}
 	return svc, git, store
+}
+
+// A create fetches the one branch its worktree is made from: the base a new
+// branch is cut from, or the existing branch it checks out.
+func TestCreateFetchesTheBranchItsWorktreeIsMadeFrom(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		edit func(*app.CreateInput)
+		want string
+	}{
+		{"a new branch fetches its base", func(in *app.CreateInput) { in.BaseBranch = "develop" }, "develop"},
+		{"no base fetches main", func(in *app.CreateInput) { in.BaseBranch = "" }, "main"},
+		{"an existing branch fetches itself", func(in *app.CreateInput) {
+			in.BaseBranch, in.Branch, in.Existing = "develop", "fix/wallet-empty-state", true
+		}, "fix/wallet-empty-state"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			git := fake.NewWorktrees()
+			svc, err := app.New(app.Options{
+				Terminals: fake.NewTerminals(), Worktrees: git, Classifier: manifest.New(manifest.Options{}),
+				Store: &memoryStore{}, Layout: domain.Layout{Root: "/home/jordi/oppenheimer-ai/workspaces"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			in := createInput()
+			tc.edit(&in)
+
+			if _, err := svc.Create(context.Background(), in); err != nil {
+				t.Fatalf("create: %v", err)
+			}
+
+			if got := git.FetchedRefs(); len(got) != 1 || got[0] != tc.want {
+				t.Fatalf("fetched %v, want [%s]", got, tc.want)
+			}
+		})
+	}
 }
 
 const creatingID = "2ec946ef-7204-46ce-a722-6fa5904b371e"

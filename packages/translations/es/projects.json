@@ -1,66 +1,46 @@
 {
-  "page": {
+  "dialog": {
     "newTitle": "Nuevo proyecto",
     "editTitle": "Ajustes del proyecto",
-    "name": "Nombre del proyecto",
+    "gone": "Ese proyecto ya no está aquí.",
+    "name": "Nombre",
     "namePlaceholder": "Ponle nombre al proyecto",
-    "back": "Atrás",
-    "crumbSessions": "Sesiones",
-    "crumbNewSession": "Nueva sesión",
+    "repositories": "Repositorios",
+    "addRepository": "Añadir un repositorio…",
+    "repositoriesHint": "Las sesiones de este proyecto pueden clonarlos. Añade al menos uno.",
+    "noMatch": "Ningún repositorio coincide con “{{query}}”",
+    "allAdded": "Ya están añadidos todos los repositorios",
+    "remove": "Quitar {{name}}",
+    "defaults": "Valores por defecto",
+    "optional": "opcional",
+    "defaultsHint": "Con lo que empieza cada sesión nueva de este proyecto. Cada uno se puede cambiar por sesión.",
+    "host": "Host",
+    "noHost": "Todavía no hay ningún host emparejado.",
+    "agent": "Agente",
+    "clonedByDefault": "Se clonan por defecto",
+    "clonedTitle": "Se clona por defecto en las sesiones nuevas",
+    "selectFirst": "Elige repositorios arriba primero.",
+    "clonedCount_one": "{{count}} clonado",
+    "clonedCount_other": "{{count}} clonados",
+    "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
     "create": "Crear proyecto",
     "creating": "Creando…",
     "save": "Guardar cambios",
     "saving": "Guardando…",
     "failed": "No se pudo crear el proyecto.",
     "saveFailed": "No se pudo guardar el proyecto.",
-    "recap": {
-      "name": "Ponle nombre al proyecto y elige sus repositorios.",
-      "repositories": "Elige al menos un repositorio.",
-      "default": "Marca al menos un repositorio por defecto."
-    },
-    "summary": {
-      "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-      "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-    },
-    "steps": {
-      "repositories": {
-        "title": "Repositorios",
-        "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-        "label": "Repositorios por defecto",
-        "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-        "defaultCount": "{{defaults}} de {{count}} por defecto",
-        "search": "Buscar repositorios…",
-        "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-        "none": "Todavía no hay ningún repositorio conectado.",
-        "default": "Por defecto",
-        "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-        "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-      },
-      "host": {
-        "title": "Host por defecto",
-        "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-        "none": "Todavía no hay ningún host emparejado."
-      },
-      "agent": {
-        "title": "Agente por defecto",
-        "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-      }
-    },
-    "delete": {
-      "title": "Eliminar proyecto",
-      "hint": "Elimina este proyecto.",
-      "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-      "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
-      "action": "Eliminar proyecto",
-      "deleting": "Eliminando…",
-      "failed": "No se pudo eliminar el proyecto."
-    },
+    "delete": "Eliminar proyecto",
+    "deleteHint": "Elimina este proyecto",
+    "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
+    "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
     "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
   },
   "deleteDialog": {
     "title": "¿Eliminar {{name}}?",
     "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
-    "confirm": "Eliminar proyecto"
+    "confirm": "Eliminar proyecto",
+    "deleting": "Eliminando…",
+    "failed": "No se pudo eliminar el proyecto."
   },
   "unassigned": "Sin asignar"
 }

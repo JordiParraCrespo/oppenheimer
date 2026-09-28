@@ -1,6 +1,8 @@
 import type { OppenheimerApp } from '@oppenheimer/frontend-core';
 import type { ApiTokensService } from '../modules/api-tokens';
 import { ApiTokensModule } from '../modules/api-tokens';
+import type { AutomationsService } from '../modules/automations';
+import { AutomationsModule } from '../modules/automations';
 import type { HostsService } from '../modules/hosts';
 import { HostsModule } from '../modules/hosts';
 import type { InstallationsService } from '../modules/installations';
@@ -22,6 +24,7 @@ import { TOKENS } from './tokens';
 export const consumerModules = [
   SessionsModule,
   ProjectsModule,
+  AutomationsModule,
   HostsModule,
   InstallationsModule,
   ApiTokensModule,
@@ -66,6 +69,11 @@ export class ConsumerApp {
   /** The bodies of work sessions belong to, and what New session is prefilled with. */
   get projects(): ProjectsService {
     return this.kernel.container.get(TOKENS.ProjectsService);
+  }
+
+  /** Saved prompts that start sessions on a schedule or an event, and the runs they made. */
+  get automations(): AutomationsService {
+    return this.kernel.container.get(TOKENS.AutomationsService);
   }
 
   get hosts(): HostsService {

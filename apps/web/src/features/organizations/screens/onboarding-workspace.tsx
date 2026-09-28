@@ -41,7 +41,7 @@ export function OnboardingWorkspaceScreen() {
   const { data: profile } = useProfile();
   // Back and "use a different account" both leave first-run for the sign-in
   // screen, which is only true if the session goes with them: a still-signed-in
-  // `/login` bounces straight to `/sessions` (PR #28).
+  // `/login` bounces straight to `/sessions/new` (PR #28).
   const logout = useLogout({ onSuccess: () => navigate({ to: '/login' }) });
   const leave = () => logout.mutate();
   // `isSuccess`, not merely `data`: submitting before this settles would take

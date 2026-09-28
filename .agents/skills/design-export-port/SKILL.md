@@ -52,7 +52,9 @@ Find the export root the user points at (ask if unsure). Read in order:
 3. any override the artboards load on top — it supersedes the tokens;
 4. the component CSS for a family only when you build that family;
 5. the artboards; an index page gives the order, a "components" page is
-   the export's own inventory (a hint, not the target).
+   the export's own inventory (a hint, not the target). Diff them against
+   the previous sync first: an export can reverse the one before it, and
+   its own README usually names the delta.
 
 Then the repo side: `globals.css`, the package README and AGENTS.md, the
 frontend rule, and every import of the package from the apps (`apps/web`
@@ -138,6 +140,13 @@ Keep the JS `tailwind.config.ts` preset in sync with the same values.
   that exist; delete what nothing imports.
 - Restyle the shadcn `Sidebar` rather than replacing it; the showcase
   shell uses its provider and mobile sheet.
+- Compose before adding: a picker composes `ChipSelect`'s parts, a fold
+  is `Disclosure`, a dialog's width is a `Dialog` size. A primitive with
+  one caller that cannot finish (a wizard strip for a form with no save)
+  is not a primitive yet.
+- In the app, a dialog lives in the feature whose surfaces open it and is
+  mounted once by the layout's dialog owner (`useConsoleDialog`); chrome
+  two features draw identically goes to the kit, with its hook.
 
 `references/modelling.md` also lists the Base UI traps that recur (typing
 `useRender` props, `nativeButton` when rendering an anchor, Select

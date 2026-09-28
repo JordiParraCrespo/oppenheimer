@@ -24,11 +24,12 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 | 09 | [Runner install and update](09-runner-install-and-update.md) | The install command, the agent prompt, pairing, the user service, signed releases, self-update and rollback |
 | 10 | [API: modules and data model](10-api-modules-and-data-model.md) | The module boundaries, the aggregates, the schema, the on-disk layout and the endpoint surface |
 | 11 | [API implementation plan](11-api-implementation-plan.md) | The order the API is built in, slice by slice |
-| 13 | [Automations](13-automations.md) | The console's second list, ahead of its API: what the export draws, the routes and frames built, the open questions; automations themselves stay after the MVP (00) |
+| 13 | [Automations](13-automations.md) | The console: what the export draws and what is built — the overview, the runs, an automation's page, the run view and the editor |
 | 14 | [Hosts in Settings](14-hosts-settings.md) | The 2026-09-26 Settings frame read against `hosts/`: status and running count, what removing a host stops, the pairing poll, the CPU count |
 | 15 | [Host metadata](15-host-metadata.md) | Where a host's facts live, split by how often they change: inventory, presence, networks, events; access patterns, retention, measured cost |
-| 16 | [Orchestration (v0.2)](16-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
-| 17 | [Headless runs](17-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
+| 16 | [Automations: the architecture](16-automations-architecture.md) | How a run is fired, guarded and dispatched: the inbound-events hub, the schedule tick, triggers, revisions, guards, configuration, the data model; and the headless drive that runs take next, in its slices |
+| 17 | [Orchestration (v0.2)](17-orchestration.md) | One runner per host, many hosts per person; placement as a ladder the control plane runs; machine jobs on BullMQ, events on the outbox, rows as the queue; the four layers of session persistence including the transcript snapshot; what survives what; the sweeper |
+| 18 | [Headless runs](18-headless-runs.md) | A routine's run is a session whose window 0 runs `claude -p` with `stream-json`: the launch, permissions with nobody watching, which repositories may run, turns and follow-ups, handing a run to a person with `--resume`, where triggers live, what a run records |
 
 ## Decision log
 
@@ -262,8 +263,8 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-21: **the console is one screen.** The sidebar is the
   navigation — New session, the session list, the account menu — and the
   pane beside it is a route: the composer, a terminal, the provisioning
-  steps, a closed session, "no sessions open", or a 404 that keeps the
-  sidebar. The starter's chrome went with it: no 56px bar over the pane,
+  steps, a closed session, or a 404 that keeps the sidebar; with nothing
+  open it is the composer (changed 2026-09-27, below). The starter's chrome went with it: no 56px bar over the pane,
   no ⌘K palette, and no Settings or Profile page — those screens and
   their features were deleted rather than left unnavigated, and
   appearance and language moved into the account menu, which is where
@@ -329,7 +330,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   catalog and the cloud-config that pairs a fresh machine. `hosts/` is
   its only consumer and still owns the rows and the policy (03 §Cloud
   hosts, 10).
-- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 and then 16 on 2026-09-27). One
+- 2026-09-22: **orchestration is 12** (13 on 2026-09-26, 14 and then 16 on 2026-09-27, 17 since 2026-09-28). One
   runner per host and many hosts per person; the control plane assigns a session to a host at
   create by a ladder (running host with room, stopped host, new host
   within the account's cap) and never lets hosts claim; a session
@@ -514,7 +515,7 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
 - 2026-09-26: orchestration renumbered from 12 to 13, because projects
   on the console took 12 first. Only the number and the references to it
   changed.
-- 2026-09-26: **automation runs through `claude -p`** (17). A routine's
+- 2026-09-26: **automation runs through `claude -p`** (18). A routine's
   run is an ordinary session whose window 0 is Claude Code headless with
   `--output-format stream-json`, started through `runner headless` so its
   output lands in a file the runner tails and tmux keeps the process
@@ -533,5 +534,43 @@ A bare number is a document in this directory (`02 §6`, `09 §5`);
   headless-run note from 15 to 17 (`17-headless-runs.md`), because hosts
   in Settings and host metadata took 14 and 15 first. Only the numbers
   and the references to them changed.
+- 2026-09-28: orchestration renumbered from 16 to 17 and the
+  headless-run note from 17 to 18 (`18-headless-runs.md`), because the
+  automations architecture took 16 first. 16 builds on the headless-runs
+  draft and governs where they differ, and 18 now says so at its head;
+  otherwise only the numbers and the references to them changed.
 - 2026-09-27: Settings → Profile is specified in 05; credential writes
   (password, email, devices, deleting the account) are session-only (08).
+- 2026-09-27: **a session checks out exactly one repository in the MVP.** A
+  session with none was accepted, then refused by the host at launch
+  (`SESS_002`) and shown as failed. The create body now takes one checkout,
+  no fewer, and the console's composer stays disabled until a repository is
+  picked. A session with no git returns when a runner can make one (00, 10).
+- 2026-09-27: **nothing open is New session**: the console lands on
+  `/sessions/new`, and `/sessions` redirects there, instead of a "no
+  sessions open" pane (05).
+- 2026-09-27: **New project, Project settings, the console's Add a host
+  and the automation editor are dialogs over the console again**, as the
+  2026-09-27 export draws them; the `_editor` pages of 2026-09-26 are
+  gone. Settings keeps its Add a host page. Add a host copies first —
+  Copy install command, Copy agent prompt — and shows the instruction
+  behind an Inspect fold, in the console and in onboarding; the
+  automation editor holds its Task step alone until the API names a
+  trigger (05, 13).
+- 2026-09-27: **automations move into the MVP** (00, 16). A run is a
+  headless session for any agent in the catalog, translated in the API;
+  `sessions/` owns execution (`session_turn`) and `automations/` only the
+  firing (`automation_run`); a run acts as its owner; external events go
+  through a provider-neutral `inbound-events/` hub; schedules are rows
+  fired by a one-minute tick; guards and limits are configurable at three
+  levels. 13's open data-model question is closed.
+- 2026-09-28: **the per-host cap counts live runs, not headless turns**,
+  since runs are interactive sessions until the headless drive (slice 2);
+  a run whose first turn ended holds no place, one past the run limit is
+  stopped, and the disk floor defers. **A run opens at
+  `/automations/$automationId/sessions/$sessionId`**, the session pane
+  with the automations list kept (05, 13, 16).
+- 2026-09-28: 02 §5's store was a `git clone --bare` refreshed by
+  fetching every branch. It is blobless with no working tree, a create
+  fetches only the ref its worktree is made from, and each repository
+  keeps one spare worktree checked out ahead of the next create (02).

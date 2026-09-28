@@ -59,7 +59,7 @@ import {
   DropdownMenuValue,
 } from '@oppenheimer/design-system-web/dropdown-menu';
 import { EmptyState } from '@oppenheimer/design-system-web/empty-state';
-import { FilterChip } from '@oppenheimer/design-system-web/chip';
+import { Chip, FilterChip } from '@oppenheimer/design-system-web/chip';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ImageCarousel } from '@oppenheimer/design-system-web/image-carousel';
 import { Rail, RailItem, RailMark } from '@oppenheimer/design-system-web/rail';
@@ -115,6 +115,9 @@ import {
   PageHeaderTitleInput,
 } from '@oppenheimer/design-system-web/page-header';
 import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
+import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@oppenheimer/design-system-web/disclosure';
+import { RepositoryAddField } from '@oppenheimer/design-system-web/repository-add-field';
+import { BotIcon, CopyIcon } from '@oppenheimer/design-system-web/icons';
 import { Popover, PopoverTrigger } from '@oppenheimer/design-system-web/popover';
 import {
   RoutineItem,
@@ -199,8 +202,10 @@ const PROMPT =
   'Install the oppenheimer runner here, then run\noppenheimer-runner status and report the hostname.\ncurl -fsSL https://app.oppenheimer.dev/install.sh | sh -s -- --token opk_7f3a9c';
 
 /**
- * The one dialog in v1. One instruction, two ways to read it, and a status
- * line that resolves in place so nothing below it moves.
+ * Add a host, from the inventory: one sentence, two copy Buttons, the token
+ * line, the instruction as a CodeBlock panel behind a Disclosure, and a
+ * StatusDot line that resolves in place so nothing under it moves. The
+ * product draws the same column from the kit's pairing parts.
  */
 export function AddHostDialogDemo() {
   const [tab, setTab] = React.useState('cmd');
@@ -208,55 +213,70 @@ export function AddHostDialogDemo() {
   return (
     <Dialog onOpenChange={(open) => !open && setRegistered(false)}>
       <DialogTrigger render={<Button variant="secondary" />}>Add a host…</DialogTrigger>
-      <DialogContent>
+      <DialogContent size="form">
         <DialogHeader>
           <DialogTitle>Add a host</DialogTitle>
+          <DialogDescription>
+            Run one command on the machine you want sessions on. Nothing on it is exposed to the internet.
+          </DialogDescription>
         </DialogHeader>
-        <DialogBody className="flex flex-col gap-[18px]">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-fg">Run this once on the host</span>
-            <CodeBlock
-              layout="panel"
-              code={tab === 'cmd' ? INSTALL : PROMPT}
-              tabs={[
-                { value: 'cmd', label: 'Command' },
-                { value: 'prompt', label: 'Agent prompt' },
-              ]}
-              tab={tab}
-              onTabChange={setTab}
-            />
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
-                Token expires in 59:41 · single use
-              </span>
-              <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
-                New token
-              </Link>
+        <DialogBody>
+          <div className="flex flex-col gap-4.5">
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary">
+                  <CopyIcon />
+                  Copy install command
+                </Button>
+                <Button variant="ghost">
+                  <BotIcon />
+                  Copy agent prompt
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-baseline gap-2.5">
+                <span className="figures text-[11.5px] whitespace-nowrap text-fg-subtle">
+                  Token expires in 59:41 · single use
+                </span>
+                <Link href="#dialog" className="text-[11.5px] whitespace-nowrap">
+                  New token
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="h-px bg-border-subtle" />
-          <div className="flex min-h-[52px] items-center">
-            {registered ? (
-              <div className="flex w-full flex-wrap items-center gap-2.5">
+            <Disclosure>
+              <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
+              <DisclosurePanel className="mt-2.5">
+                <CodeBlock
+                  layout="panel"
+                  code={tab === 'cmd' ? INSTALL : PROMPT}
+                  tabs={[
+                    { value: 'cmd', label: 'Command' },
+                    { value: 'prompt', label: 'Agent prompt' },
+                  ]}
+                  tab={tab}
+                  onTabChange={setTab}
+                />
+              </DisclosurePanel>
+            </Disclosure>
+            <div className="h-px bg-border-subtle" />
+            <div className="flex min-h-10.5 items-center">
+              {registered ? (
                 <StatusDot state="running" className="items-center">
                   <span className="figures text-[13px]">mac-studio</span>
+                  <span className="text-xs text-fg-muted">macOS 15 · git, tmux, claude ready</span>
                 </StatusDot>
-                <span className="text-xs text-fg-muted">macOS 15 · echo 38 ms</span>
-                <span className="flex-1" />
-                <span className="text-xs text-fg-muted">git, tmux, claude ready</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setRegistered(true)}
-                className="text-left"
-                title="Click to simulate the host registering"
-              >
-                <StatusDot state="pending" pulse>
-                  Listening for this host…
-                </StatusDot>
-              </button>
-            )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setRegistered(true)}
+                  className="text-left"
+                  title="Click to simulate the host registering"
+                >
+                  <StatusDot state="pending" pulse>
+                    Waiting for the host to connect…
+                  </StatusDot>
+                </button>
+              )}
+            </div>
           </div>
         </DialogBody>
         <DialogFooter>
@@ -1054,30 +1074,117 @@ export function CarouselDemo() {
   );
 }
 
-/* ── RepositoryRowList ───────────────────────────────────────────────────── */
+/* ── RepositoryAddField · RepositoryRowList ──────────────────────────────── */
 
 const PROJECT_REPOS = [
-  { id: 'xrp-mobile', name: 'xrp-mobile', defaultBranch: 'main', branches: [{ value: 'main', description: 'default · updated 3h ago' }, { value: 'develop', description: 'updated 1d ago' }, { value: 'port/121-api-config-hardening', description: 'ahead 4 · updated 32m ago' }] },
-  { id: 'atlas', name: 'atlas', defaultBranch: 'develop', branches: [{ value: 'develop', description: 'default' }, { value: 'main' }] },
-  { id: 'flama-ai', name: 'flama-ai', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
-  { id: 'adri-rodriguez', name: 'adri-rodriguez', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+  { id: 'xrp-mobile', name: 'acme/xrp-mobile', description: 'TypeScript · pushed 3h ago', defaultBranch: 'main', branches: [{ value: 'main', description: 'default · updated 3h ago' }, { value: 'develop', description: 'updated 1d ago' }, { value: 'port/121-api-config-hardening', description: 'ahead 4 · updated 32m ago' }] },
+  { id: 'atlas', name: 'acme/atlas', description: 'Go · pushed yesterday', defaultBranch: 'develop', branches: [{ value: 'develop', description: 'default' }, { value: 'main' }] },
+  { id: 'flama-ai', name: 'acme/flama-ai', description: 'Python · pushed 2d ago', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
+  { id: 'adri-rodriguez', name: 'acme/adri-rodriguez', description: 'Astro · pushed last week', defaultBranch: 'main', branches: [{ value: 'main', description: 'default' }] },
 ];
 
+/**
+ * The project dialog's two repository controls: the field that decides which
+ * repositories are in the project, and, in the Defaults fold under it, the
+ * list that says what each does in a new session. One `rows` state feeds
+ * both: adding a repository adds a row cloned by default on its own branch.
+ */
 export function RepositoryRowListDemo() {
   const [rows, setRows] = React.useState<RepositoryRowValue[]>([
     { id: 'xrp-mobile', isDefault: true, branch: 'main' },
     { id: 'atlas', isDefault: false, branch: 'develop' },
   ]);
-  const defaults = rows.filter((r) => r.isDefault).length;
+  const [host, setHost] = React.useState<string | null>('mac-studio');
+  const summary = [host, rows.filter((r) => r.isDefault).length + ' cloned'].filter(Boolean).join(' · ');
   return (
-    <div className="flex w-full max-w-[484px] flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium text-fg">Default repositories</span>
-        <span className="figures text-[11.5px] text-fg-subtle">
-          {defaults} of {rows.length} by default
-        </span>
+    <div className="flex w-full max-w-[484px] flex-col gap-[22px]">
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-fg">Repositories</span>
+        <RepositoryAddField
+          repositories={PROJECT_REPOS}
+          value={rows.map((r) => r.id)}
+          onValueChange={(ids) =>
+            setRows(
+              ids.map(
+                (id) =>
+                  rows.find((r) => r.id === id) ?? {
+                    id,
+                    isDefault: true,
+                    branch: PROJECT_REPOS.find((r) => r.id === id)?.defaultBranch ?? 'main',
+                  },
+              ),
+            )
+          }
+        />
+        {rows.length === 0 ? (
+          <span className="text-xs text-fg-subtle">Sessions in this project can clone these. Add at least one.</span>
+        ) : null}
       </div>
-      <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+      <Disclosure>
+        <DisclosureTrigger meta="optional" summary={summary}>
+          Defaults
+        </DisclosureTrigger>
+        <DisclosurePanel>
+          <div className="flex flex-col gap-4.5">
+          <p className="m-0 text-[13px] text-fg-muted">
+            What every new session in this project starts with. Each can be changed per session.
+          </p>
+          <div className="flex flex-col gap-2">
+            <span className="text-[12.5px] text-fg-muted">Host</span>
+            <div className="flex flex-wrap gap-1.5">
+              {['mac-studio', 'optimus', 'hetzner-1'].map((name) => (
+                <Chip key={name} selected={host === name} onClick={() => setHost(host === name ? null : name)}>
+                  {name}
+                </Chip>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-[12.5px] text-fg-muted">Cloned by default</span>
+            {rows.length ? (
+              <RepositoryRowList repositories={PROJECT_REPOS} value={rows} onValueChange={setRows} />
+            ) : (
+              <p className="m-0 text-[12.5px] text-fg-subtle">Select repositories above first.</p>
+            )}
+          </div>
+          </div>
+        </DisclosurePanel>
+      </Disclosure>
+    </div>
+  );
+}
+
+/* ── Disclosure ──────────────────────────────────────────────────────────── */
+
+export function DisclosureDemo() {
+  const [tab, setTab] = React.useState('cmd');
+  return (
+    <div className="flex w-full max-w-110 flex-col gap-6">
+      <Disclosure>
+        <DisclosureTrigger tone="muted">Inspect command and prompt</DisclosureTrigger>
+        <DisclosurePanel className="mt-2.5">
+          <CodeBlock
+            layout="panel"
+            code={tab === 'cmd' ? INSTALL : PROMPT}
+            tabs={[
+              { value: 'cmd', label: 'Command' },
+              { value: 'prompt', label: 'Agent prompt' },
+            ]}
+            tab={tab}
+            onTabChange={setTab}
+          />
+        </DisclosurePanel>
+      </Disclosure>
+      <Disclosure>
+        <DisclosureTrigger meta="optional" summary="mac-studio · Claude Code">
+          Defaults
+        </DisclosureTrigger>
+        <DisclosurePanel>
+          <p className="m-0 text-[13px] text-fg-muted">
+            What every new session in this project starts with. Each can be changed per session.
+          </p>
+        </DisclosurePanel>
+      </Disclosure>
     </div>
   );
 }

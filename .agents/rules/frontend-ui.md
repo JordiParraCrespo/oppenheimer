@@ -38,7 +38,10 @@ multi-line, so a grep for `export` misses most of them.
 | How hard the agent thinks | `EffortPicker` | a dropdown of five words |
 | What the agent may touch unattended | `PermissionMenu` | a toggle |
 | Switching between the console's lists (sessions, routines) | `Rail` | a second `Sidebar`, tabs |
-| Which repositories a project clones, and from which branch | `RepositoryRowList` | a `RepositorySelect` in a dialog, a table |
+| Which repositories are in a project | `RepositoryAddField` | a `RepositorySelect` in a dialog, a table of checkboxes |
+| What each of a project's repositories does in a new session, and from which branch | `RepositoryRowList` | a second `RepositoryAddField`, a table |
+| A fold inside a dialog or a step (Defaults, Inspect command and prompt) | `Disclosure` | a chevron button over a `useState`, Base UI's Collapsible directly |
+| Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `HostPairingChrome`, or its parts with `HostPairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
 | Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
@@ -48,7 +51,8 @@ multi-line, so a grep for `export` misses most of them.
 | A time or weekday pick | `TimeGrid` in a popover | a `<select>` of hours |
 | Runs per day | `RunHistory` | a chart library |
 | The routines overview, the runs, the templates | `RoutineTable`, `RunsList`, `TemplateGrid` | a hand-built `<table>`, cards |
-| A page over the main column that fills a thing in steps (New project, Add a host) | `EditorPage` from the `_editor` layout route, then `PageHeader` parts + `RoutineSteps` | a `Dialog`, a `Card` of `Field`s, a hand-rolled scroll column |
+| The automations overview, the one page over the main column | `EditorPage` from its layout route (`routes/_authenticated/automations.tsx`), `EditorPageTop` for its tabs; inside Settings, `PageHeader` parts + `RoutineSteps` | a `Card` of `Field`s, a hand-rolled scroll column, a new layout route |
+| A form over the console (New project, Add a host, the automation editor) | a `Dialog` at its `form` or `lg` size, opened through `useConsoleDialog` | a page under a layout route, a `useState` per surface, a width on the caller |
 | A settings page's rows | `SettingsGroup` + `SettingsRow` | a form of `Field`s in a `Card` |
 | A host on Settings | `HostCard` | a `Card`, a table row |
 
@@ -116,7 +120,7 @@ when a second list does.
 
 A row in `apps/web/src/lib/nav.ts` that needs a permission takes its `policies`
 from `ENDPOINT_POLICIES` in `@oppenheimer/shared/permissions`, keyed by the endpoint
-the screen reads — `policies: ENDPOINT_POLICIES['/tokens']`. Never a literal
+the screen reads — `policies: ENDPOINT_POLICIES['GET /tokens']`. Never a literal
 `[{ action, subject }]`: that is a second copy of a rule the server already
 owns, and `apps/api/src/auth/__tests__/endpoint-policies.spec.ts` holds the
 controller to the catalog entry, not to your copy. Why: a row declared

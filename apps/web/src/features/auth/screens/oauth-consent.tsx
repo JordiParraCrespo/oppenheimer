@@ -67,7 +67,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
   if (!search.consent_code) {
     return (
       <CenteredCard title={t('consent.invalidTitle')} description={t('consent.invalidDescription')}>
-        <Button render={<Link to="/sessions" />}>{t('consent.backToSessions')}</Button>
+        <Button render={<Link to="/sessions/new" />}>{t('consent.backToSessions')}</Button>
       </CenteredCard>
     );
   }

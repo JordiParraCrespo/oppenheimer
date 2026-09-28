@@ -276,6 +276,13 @@ Design for the table at a hundred times today's size.
   (`1789000000000-AddInvoices.ts`), with a header comment explaining **why**:
   the design decisions, the relationships that were considered, and anything
   deliberately left out. The existing headers are the model.
+- Its timestamp is later than the newest migration's and shared with none:
+  TypeORM orders by the timestamp in the class name, so two migrations with
+  the same one run in whatever order the loader finds them.
+  `apps/api/src/__tests__/migration-timestamps.spec.ts` fails on a shared one; the
+  three older pairs it allows were checked to be order-independent. Never
+  rename a migration that may have run: TypeORM records it by class name, and
+  a renamed one runs again.
 - `down()` reverses `up()` exactly: drop in reverse order, and restore data a
   backfill moved.
 - Statements that can run twice without harm when practical: `IF NOT EXISTS`,

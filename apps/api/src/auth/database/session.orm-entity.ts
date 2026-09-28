@@ -1,19 +1,39 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * Maps the Better Auth `session` table. Owned by Better Auth; declared here so
  * TypeORM creates/migrates the table alongside the rest of the schema.
+ * Foreign keys live in the migrations, as for every entity here: `userId`
+ * (`CascadeSignInsWithTheirUser`) and `impersonatedBy` (`HardenAuthTables`)
+ * reference `user` (ON DELETE CASCADE); `activeOrganizationId` and
+ * `activeTeamId` reference `organization` and `team` (ON DELETE SET NULL,
+ * `HardenAuthTables`).
  */
 @Entity('session')
+@Unique('UQ_session_token', ['token'])
+@Index('IDX_session_userId', ['userId'])
+@Index('IDX_session_impersonatedBy', ['impersonatedBy'], { where: '"impersonatedBy" IS NOT NULL' })
+@Index('IDX_session_activeOrganizationId', ['activeOrganizationId'], {
+  where: '"activeOrganizationId" IS NOT NULL',
+})
+@Index('IDX_session_activeTeamId', ['activeTeamId'], { where: '"activeTeamId" IS NOT NULL' })
 export class Session {
-  @PrimaryColumn({ type: 'uuid' })
+  @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_session' })
   id!: string;
 
   @Column({ type: 'uuid' })
   userId!: string;
 
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   token!: string;
 
   @Column({ type: TIMESTAMP_COLUMN_TYPE })

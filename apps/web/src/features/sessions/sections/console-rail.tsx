@@ -30,7 +30,7 @@ export function ConsoleRail() {
         label={t('nav.sessions')}
         count={sessions?.length}
         active={list === 'sessions'}
-        render={<Link to="/sessions" />}
+        render={<Link to="/sessions/new" />}
       >
         <Terminal />
       </RailItem>

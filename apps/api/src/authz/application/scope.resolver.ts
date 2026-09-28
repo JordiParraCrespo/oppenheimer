@@ -4,6 +4,8 @@ import type { AccessScope, ResolveScopeInput, ScopeResolverPort } from '@oppenhe
 import { In, type Repository } from 'typeorm';
 import { TeamOrmEntity } from '../../organizations/database/team.orm-entity';
 import { TeamMemberOrmEntity } from '../../organizations/database/team-member.orm-entity';
+import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
+import { USER_ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
 import { ACCESS_GRANT_REPOSITORY } from '../authz.di-tokens';
 import type { AccessGrantRepositoryPort } from '../database/access-grant.repository.port';
 
@@ -15,7 +17,8 @@ import type { AccessGrantRepositoryPort } from '../database/access-grant.reposit
  * 1. **Structural** — the teams the caller belongs to inside the active
  *    organization. No new tables: `teamMember` joined to `team`.
  * 2. **Explicit** — unexpired `access_grant` rows addressed to the caller
- *    directly or to one of their teams, read through the aggregate's port.
+ *    directly, to one of their teams or to a role they hold here (global or
+ *    scoped to the organization), read through the aggregate's port.
  *
  * **Nothing here is cached.** Team membership is written by Better Auth
  * (`auth.api.addTeamMember` / `removeTeamMember`) outside any application
@@ -34,6 +37,8 @@ export class ScopeResolver implements ScopeResolverPort {
     private readonly teams: Repository<TeamOrmEntity>,
     @Inject(ACCESS_GRANT_REPOSITORY)
     private readonly grants: AccessGrantRepositoryPort,
+    @Inject(USER_ROLE_REPOSITORY)
+    private readonly userRoles: UserRoleRepositoryPort,
   ) {}
 
   async resolve(input: ResolveScopeInput): Promise<AccessScope> {
@@ -61,8 +66,11 @@ export class ScopeResolver implements ScopeResolverPort {
       };
     }
 
-    const teamIds = await this.teamIdsFor(input.userId, input.organizationId);
-    const grants = await this.grantsFor(input.userId, teamIds, input.organizationId);
+    const [teamIds, roleIds] = await Promise.all([
+      this.teamIdsFor(input.userId, input.organizationId),
+      this.userRoles.findRoleIdsForUser(input.userId, input.organizationId),
+    ]);
+    const grants = await this.grantsFor(input.userId, teamIds, roleIds, input.organizationId);
 
     return {
       userId: input.userId,
@@ -94,13 +102,14 @@ export class ScopeResolver implements ScopeResolverPort {
   }
 
   /**
-   * Unexpired grants addressed to the caller or to one of their teams, folded
-   * into a per-subject map. A blanket grant collapses the whole subject to
-   * `'all'`.
+   * Unexpired grants addressed to the caller, one of their teams or one of
+   * their roles, folded into a per-subject map. A blanket grant collapses the
+   * whole subject to `'all'`.
    */
   private async grantsFor(
     userId: string,
     teamIds: readonly string[],
+    roleIds: readonly string[],
     organizationId: string,
   ): Promise<Map<string, Set<string> | 'all'>> {
     const rows = await this.grants.findActiveForPrincipals(organizationId, [
@@ -108,6 +117,10 @@ export class ScopeResolver implements ScopeResolverPort {
       ...teamIds.map((teamId) => ({
         principalType: 'team',
         principalId: teamId,
+      })),
+      ...roleIds.map((roleId) => ({
+        principalType: 'role',
+        principalId: roleId,
       })),
     ]);
 

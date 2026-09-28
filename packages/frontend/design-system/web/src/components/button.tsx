@@ -44,6 +44,9 @@ const buttonVariants = cva(
         social:
           'gap-2.5 border-border bg-card font-semibold text-fg hover:border-border-strong hover:bg-card-hover active:bg-card-active',
         destructive: 'bg-danger text-white hover:brightness-[1.08]',
+        // The quiet form of the same verb: Delete project on a dialog's foot, red
+        // ink on the hover wash, beside Cancel and Save.
+        'destructive-ghost': 'text-danger hover:bg-danger-surface active:bg-danger-surface',
         // Legacy aliases from the starter's components; not part of the system.
         default: 'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active',
         inverse: 'bg-fg text-fg-inverted hover:opacity-90',

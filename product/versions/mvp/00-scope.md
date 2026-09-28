@@ -30,7 +30,9 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   out **one repository** in the MVP (changed 2026-09-23, #56): the runner makes one worktree per session,
   and a session that asked for two was accepted, refused by the host and
   left spinning. The API refuses a second repository before a row is
-  written. The model still keeps checkouts as a list with a primary
+  written, and since 2026-09-27 it refuses a session with none too: the
+  runner refused one at launch, so it failed after it was recorded (10).
+  The model still keeps checkouts as a list with a primary
   (the `cwd` checkout, where the agent launches), so several
   repositories, one worktree each, is the next runner slice (11's R3)
   rather than a schema change; it was decided on 2026-09-19 and is
@@ -91,15 +93,23 @@ or a blank terminal in each session; Claude Code is the one the demo walks.
   applies — channels, the quiet window and what overrides it — is 09 §5,
   and that is the only place those clocks are written.
 
+- **Automations are in the MVP** (2026-09-27, 16). A saved prompt with a
+  project, repositories, a host, an agent and one or more triggers — a
+  schedule, a GitHub event, or Run now — where each run is one session
+  started as the automation's owner, guarded, limited and listed with its
+  history (13). Built: the control plane's pipeline and the console's
+  pages; a run's session takes its prompt as a person's does. Next, in
+  the slices of 16 §5: the headless drive (a run with no terminal, for any
+  agent, with its structured result), then resume. Slack, Linear and push
+  guardrails stay later.
+
 ## Out, for later slices
 
 Virtual machines in any form (Shared workspace VM, Clean VM,
 Firecracker, tart, cloud adapters), sleep tiers, account objects and
 volumes, the egress proxy, agents beyond the catalog (Cursor,
 Gemini and the rest Orca and Synara run), Create PR and diff
-view, preview URLs, auto-fix and automations — the scheduler, the
-GitHub trigger, the runs; the console's automations list and its pages
-have their routes so the rail is whole (05, 13) — usage meters, delegation,
+view, preview URLs, auto-fix, usage meters, delegation,
 Tailscale mode, orgs and billing, agent personalities and any other
 directory under `~/oppenheimer-ai`.
 

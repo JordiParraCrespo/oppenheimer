@@ -1,6 +1,8 @@
 import type { ProjectEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useHostsSnapshot, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { useSearch } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ProjectSelect } from '../components/project-select';
@@ -18,15 +20,17 @@ import { projectPrefill, toProjectOptions } from '../lib/session-options';
  * workspace has, so a refetch of the host list does not re-render it — what
  * it subscribes to is only whether that list has answered, because a pick
  * made before it has would drop the project's default host as if it were
- * gone. New project… is the project page (`/projects/new`), which lands back
- * here with what it made in the address — the same `?project=` the sidebar's
- * "New session here" names — and the chip picks it once the lists can.
+ * gone. New project… asks the console for its project dialog; what it
+ * makes is picked here once the list holds it, its defaults applied, the
+ * same way the sidebar's "New session here" names one in the address.
  */
 export function NewSessionProject() {
   const { t } = useTranslation();
   const { control, setValue } = useNewSessionDraft();
   const { field } = useController({ control, name: 'projectId' });
-  const navigate = useNavigate();
+  const dialogs = useConsoleDialog();
+  // The project the dialog just made, picked below once the list holds it.
+  const [created, setCreated] = useState<string | undefined>();
 
   const search = useSearch({ from: '/_authenticated/sessions/new' });
   const projects = useProjects();
@@ -57,8 +61,9 @@ export function NewSessionProject() {
     if (prefill.model !== undefined) setValue('model', prefill.model);
   }
 
-  // The sidebar's "New session here" names the project in the address.
-  useSearchPick(search.project, projects.data, hostsReady === true, pick);
+  // The sidebar's "New session here" names the project in the address; the
+  // dialog names the one it made. Either is picked once the lists can.
+  useSearchPick(created ?? search.project, projects.data, hostsReady === true, pick);
 
   return (
     <ProjectSelect
@@ -71,7 +76,9 @@ export function NewSessionProject() {
         const next = projects.data?.find((candidate) => candidate.id === id);
         if (next) pick(next);
       }}
-      onNewProject={() => navigate({ to: '/projects/new' })}
+      onNewProject={() =>
+        dialogs.open({ kind: 'project', onSaved: (project) => setCreated(project.id) })
+      }
       loading={projects.isPending}
       variant="tab"
     />

@@ -15,6 +15,7 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { useConsoleDialog } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -60,8 +61,9 @@ const DeleteSessionDialog = lazy(() =>
  * a rename commits from the inline input, a move from the row menu's pane.
  * The head is a component that draws what it is handed; each group and each
  * row are sections, because the highlight is theirs to subscribe to; the
- * delete dialog owns its own mutation, and New project and Project settings
- * are pages (`/projects/new`, `/projects/$projectId`).
+ * delete dialog owns its own mutation, and New project behind the plus and
+ * Project settings behind a header's cog are the console's project dialog,
+ * asked for through `useConsoleDialog`.
  *
  * The filters live here rather than in the menu because this is what they
  * narrow, and in state rather than the URL because they are a view of the
@@ -87,6 +89,7 @@ export function SessionsSidebar() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; draft: string } | null>(null);
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
+  const dialogs = useConsoleDialog();
 
   const rename = useRenameSession();
   const move = useMoveSession();
@@ -156,7 +159,15 @@ export function SessionsSidebar() {
         onFiltersClear={() => setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort }))}
         onFacetClear={(key) => setFilters((current) => ({ ...current, [key]: ALL }))}
         onQueryChange={setQuery}
-        onNewProject={() => navigate({ to: '/projects/new' })}
+        onNewProject={() =>
+          dialogs.open({
+            kind: 'project',
+            // A project made from here lands on New session with it picked,
+            // which is what a person who just made one wants next.
+            onSaved: (project) =>
+              navigate({ to: '/sessions/new', search: { project: project.id } }),
+          })
+        }
       />
 
       {failure ? (
@@ -205,9 +216,7 @@ export function SessionsSidebar() {
                 onNewSessionHere={(target) =>
                   navigate({ to: '/sessions/new', search: { project: target.id } })
                 }
-                onSettings={(target) =>
-                  navigate({ to: '/projects/$projectId', params: { projectId: target.id } })
-                }
+                onSettings={(target) => dialogs.open({ kind: 'project', projectId: target.id })}
                 rows={rows}
               />
             );

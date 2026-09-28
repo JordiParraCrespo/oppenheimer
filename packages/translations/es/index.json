@@ -175,7 +175,17 @@
       "SESSIONS_015": "No se adjuntó ninguna imagen. Vuelve a pegarla o arrastrarla.",
       "SESSIONS_016": "El equipo de esta sesión está desconectado, así que la imagen no se envió.",
       "SESSIONS_017": "El equipo de esta sesión necesita un runner más reciente para recibir imágenes. Actualízalo y vuelve a pegarla.",
-      "HOSTS_007": "No hay ninguna imagen esperando para esa orden."
+      "HOSTS_007": "No hay ninguna imagen esperando para esa orden.",
+      "AUTOMATIONS_001": "Esa automatización no existe o se ha eliminado.",
+      "AUTOMATIONS_002": "Elige un espacio de trabajo antes de usar automatizaciones.",
+      "AUTOMATIONS_003": "Alguien guardó esta automatización después de que la abrieras. Vuelve a cargarla e inténtalo de nuevo.",
+      "AUTOMATIONS_004": "Uno de los repositorios no está disponible en este espacio de trabajo.",
+      "AUTOMATIONS_005": "Ese agente no puede ejecutar una automatización.",
+      "AUTOMATIONS_006": "Un disparador no se activaría nunca. Elige una hora posterior.",
+      "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
+      "AUTOMATIONS_008": "Esa ejecución no existe.",
+      "INBOUND_001": "Esa fuente de eventos no se conoce.",
+      "INBOUND_002": "La entrega no incluye un identificador de entrega."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -310,76 +320,52 @@
     "passwordsDoNotMatch": "Las contraseñas no coinciden"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "Nuevo proyecto",
       "editTitle": "Ajustes del proyecto",
-      "name": "Nombre del proyecto",
+      "gone": "Ese proyecto ya no está aquí.",
+      "name": "Nombre",
       "namePlaceholder": "Ponle nombre al proyecto",
-      "back": "Atrás",
-      "crumbSessions": "Sesiones",
-      "crumbNewSession": "Nueva sesión",
+      "repositories": "Repositorios",
+      "addRepository": "Añadir un repositorio…",
+      "repositoriesHint": "Las sesiones de este proyecto pueden clonarlos. Añade al menos uno.",
+      "noMatch": "Ningún repositorio coincide con “{{query}}”",
+      "allAdded": "Ya están añadidos todos los repositorios",
+      "remove": "Quitar {{name}}",
+      "defaults": "Valores por defecto",
+      "optional": "opcional",
+      "defaultsHint": "Con lo que empieza cada sesión nueva de este proyecto. Cada uno se puede cambiar por sesión.",
+      "host": "Host",
+      "noHost": "Todavía no hay ningún host emparejado.",
+      "agent": "Agente",
+      "clonedByDefault": "Se clonan por defecto",
+      "clonedTitle": "Se clona por defecto en las sesiones nuevas",
+      "selectFirst": "Elige repositorios arriba primero.",
+      "clonedCount_one": "{{count}} clonado",
+      "clonedCount_other": "{{count}} clonados",
+      "branchEmpty": "No hay ninguna rama llamada “{{query}}”",
       "create": "Crear proyecto",
       "creating": "Creando…",
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "failed": "No se pudo crear el proyecto.",
       "saveFailed": "No se pudo guardar el proyecto.",
-      "recap": {
-        "name": "Ponle nombre al proyecto y elige sus repositorios.",
-        "repositories": "Elige al menos un repositorio.",
-        "default": "Marca al menos un repositorio por defecto."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repositorio · {{defaults}} por defecto",
-        "repositories_other": "{{count}} repositorios · {{defaults}} por defecto"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositorios",
-          "subtitle": "El código que las sesiones de este proyecto pueden clonar.",
-          "label": "Repositorios por defecto",
-          "hint": "Marcados en cada sesión nueva. Añade otros por sesión.",
-          "defaultCount": "{{defaults}} de {{count}} por defecto",
-          "search": "Buscar repositorios…",
-          "noMatch": "Ningún repositorio coincide con “{{query}}”.",
-          "none": "Todavía no hay ningún repositorio conectado.",
-          "default": "Por defecto",
-          "defaultTitle": "Se clona por defecto en las sesiones nuevas",
-          "branchEmpty": "No hay ninguna rama llamada “{{query}}”"
-        },
-        "host": {
-          "title": "Host por defecto",
-          "subtitle": "Donde se ejecutan las sesiones nuevas salvo que elijas otro.",
-          "none": "Todavía no hay ningún host emparejado."
-        },
-        "agent": {
-          "title": "Agente por defecto",
-          "subtitle": "Se inicia en cada sesión nueva. Cámbialo por sesión."
-        }
-      },
-      "delete": {
-        "title": "Eliminar proyecto",
-        "hint": "Elimina este proyecto.",
-        "blocked_one": "Mueve o elimina su {{count}} sesión primero.",
-        "blocked_other": "Mueve o elimina sus {{count}} sesiones primero.",
-        "action": "Eliminar proyecto",
-        "deleting": "Eliminando…",
-        "failed": "No se pudo eliminar el proyecto."
-      },
+      "delete": "Eliminar proyecto",
+      "deleteHint": "Elimina este proyecto",
+      "deleteBlocked_one": "Mueve o elimina su {{count}} sesión primero",
+      "deleteBlocked_other": "Mueve o elimina sus {{count}} sesiones primero",
       "unassignedHint": "Aquí se listan las sesiones que no indican proyecto. Conserva su nombre y no se puede eliminar."
     },
     "deleteDialog": {
       "title": "¿Eliminar {{name}}?",
       "description": "Sus sesiones se quedan donde están; una resuelta conserva el nombre de su directorio para siempre. Las automatizaciones que lo usan se pausan.",
-      "confirm": "Eliminar proyecto"
+      "confirm": "Eliminar proyecto",
+      "deleting": "Eliminando…",
+      "failed": "No se pudo eliminar el proyecto."
     },
     "unassigned": "Sin asignar"
   },
   "sessions": {
-    "home": {
-      "openTitle": "Ninguna sesión abierta",
-      "openDescription": "Elige una en la barra lateral o inicia otra."
-    },
     "provisioning": {
       "title": "Iniciando tu sesión",
       "failedTitle": "La sesión no se inició",
@@ -423,7 +409,8 @@
       "resolved": "Terminada"
     },
     "closed": {
-      "description": "Esta sesión se ha detenido. Su trabajo está en su rama."
+      "description": "Esta sesión se ha detenido. Su trabajo está en su rama.",
+      "deleted": "Esta sesión se eliminó. Su worktree ya no está en el host; los commits ya enviados siguen en el remoto."
     },
     "new": {
       "title": "Nueva sesión",
@@ -586,10 +573,16 @@
       "new": "Nueva automatización",
       "projects": "Proyectos",
       "all": "Todas las automatizaciones",
+      "search": "Buscar automatizaciones",
+      "clearSearch": "Borrar búsqueda",
+      "noMatch": "Ninguna automatización coincide con «{{query}}».",
       "emptyProject": "Todavía no hay automatizaciones.",
       "createOne": "Crea una",
       "newHere": "Nueva automatización en {{name}}",
-      "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí."
+      "noProjects": "Todavía no hay ningún proyecto. Crea uno desde Nueva sesión y sus automatizaciones se reunirán aquí.",
+      "noRuns": "Todavía no hay ejecuciones.",
+      "running": "En curso",
+      "paused": "En pausa"
     },
     "page": {
       "tabs": {
@@ -598,16 +591,268 @@
       },
       "new": "Nueva automatización",
       "empty": "Todavía no hay automatizaciones. Una automatización inicia una sesión según un horario o cuando pasa algo en GitHub.",
-      "runsEmpty": "Todavía no hay ejecuciones. Cada ejecución aparece aquí con la sesión que inició."
+      "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
+      "loadFailed": "No se han podido cargar las automatizaciones.",
+      "actionFailed": "No se ha podido completar."
+    },
+    "status": {
+      "active": "Activa",
+      "paused": "En pausa",
+      "running": "En curso"
+    },
+    "runStatus": {
+      "queued": "En cola",
+      "running": "En curso",
+      "completed": "Completada",
+      "failed": "Fallida",
+      "cancelled": "Cancelada",
+      "skipped": "Omitida",
+      "expired": "Caducada"
+    },
+    "skipReason": {
+      "paused": "Omitida: la automatización estaba en pausa",
+      "deleted": "Omitida: la automatización se eliminó",
+      "own_event": "Omitida: el evento era nuestro",
+      "automation_rate_limited": "Omitida: límite por hora de esta automatización",
+      "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
+      "overlapping": "Omitida: otra ejecución seguía en curso",
+      "missed": "Omitida: se perdió el turno",
+      "not_launchable": "Omitida: la sesión no pudo iniciarse",
+      "agent_unavailable": "Omitida: el agente no está en el host"
+    },
+    "pausedReason": {
+      "user": "En pausa. Los disparadores se ignoran hasta que la reanudes; Ejecutar ahora sigue funcionando.",
+      "project_archived": "En pausa porque se eliminó su proyecto. Muévela a otro proyecto para reanudarla.",
+      "host_unpaired": "En pausa porque se quitó su host. Elige otro host en Editar para reanudarla.",
+      "owner_lost_access": "En pausa porque su propietario ya no puede ejecutarla."
+    },
+    "frequency": {
+      "once": {
+        "label": "Una vez",
+        "desc": "En una fecha y hora concretas"
+      },
+      "hourly": {
+        "label": "Cada hora",
+        "desc": "Cada hora, en un minuto concreto"
+      },
+      "daily": {
+        "label": "Diaria",
+        "desc": "Cada día a una hora concreta"
+      },
+      "weekdays": {
+        "label": "Días laborables",
+        "desc": "De lunes a viernes a una hora concreta"
+      },
+      "weekly": {
+        "label": "Semanal",
+        "desc": "Los días que elijas"
+      },
+      "monthly": {
+        "label": "Mensual",
+        "desc": "Un día del mes"
+      }
+    },
+    "event": {
+      "pr_opened": {
+        "label": "Pull request abierta",
+        "desc": "Abierta, o un borrador marcado como listo para revisión"
+      },
+      "pr_draft": {
+        "label": "Borrador abierto",
+        "desc": "Abierta como borrador, o convertida en uno"
+      },
+      "pr_sync": {
+        "label": "Push a una pull request",
+        "desc": "Nuevos commits en una pull request abierta"
+      },
+      "pr_merged": {
+        "label": "Pull request fusionada",
+        "desc": "Cuando la fusión se completa"
+      },
+      "comment": {
+        "label": "Comentario añadido",
+        "desc": "En una pull request o incidencia"
+      },
+      "push": {
+        "label": "Push a una rama",
+        "desc": "Una ejecución por push, no por commit"
+      },
+      "issue_labeled": {
+        "label": "Etiqueta añadida",
+        "desc": "En una pull request o incidencia, una vez por etiqueta"
+      },
+      "check_failed": {
+        "label": "Check fallido",
+        "desc": "Cualquier workflow de Actions o check de estado"
+      },
+      "issue_opened": {
+        "label": "Incidencia abierta",
+        "desc": "Solo incidencias nuevas, no reabiertas"
+      },
+      "mention": {
+        "label": "Mención a @oppenheimer",
+        "desc": "En una incidencia, pull request o revisión"
+      },
+      "release": {
+        "label": "Release publicada",
+        "desc": "Sin incluir pre-releases"
+      }
+    },
+    "trigger": {
+      "once": "Una vez, {{date}} a las {{time}}",
+      "hourly": "Cada hora a los :{{minute}}",
+      "daily": "Cada día a las {{time}}",
+      "weekdays": "Días laborables a las {{time}}",
+      "weekly": "Cada {{days}} a las {{time}}",
+      "monthly": "Cada mes el día {{day}} a las {{time}}",
+      "event": "Al ocurrir: {{event}}",
+      "more": "{{summary}} +{{count}}",
+      "manual": "Solo manual",
+      "monFri": "lun–vie",
+      "weekend": "sáb, dom"
+    },
+    "next": {
+      "onEvent": "En el próximo evento",
+      "none": "—",
+      "today": "Hoy, {{time}}",
+      "tomorrow": "Mañana, {{time}}",
+      "in": "en {{time}}",
+      "nextIn": "Próxima en"
+    },
+    "table": {
+      "automation": "Automatización",
+      "trigger": "Disparador",
+      "next": "Próxima ejecución",
+      "status": "Estado",
+      "actions": "Acciones de la automatización",
+      "edit": "Editar",
+      "runNow": "Ejecutar ahora",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar"
+    },
+    "history": {
+      "title": "Historial de ejecuciones",
+      "range": "Últimos 30 días",
+      "succeeded": "Correctas",
+      "failed": "Fallidas",
+      "runs_one": "{{count}} ejecución",
+      "runs_other": "{{count}} ejecuciones"
+    },
+    "runs": {
+      "all": "Todas",
+      "completed": "Completadas",
+      "failed": "Fallidas",
+      "running": "En curso",
+      "run": "Ejecución",
+      "automation": "Automatización",
+      "time": "Hora",
+      "allAutomations": "Todas las automatizaciones",
+      "allProjects": "Todos los proyectos",
+      "window": {
+        "24h": "Últimas 24 horas",
+        "7d": "Últimos 7 días",
+        "30d": "Últimos 30 días"
+      },
+      "clear": "Borrar",
+      "noMatch": "Ninguna ejecución coincide con estos filtros.",
+      "range": "{{from}}–{{to}} de {{total}}",
+      "previous": "Página anterior",
+      "next": "Página siguiente",
+      "deleted": "Automatización eliminada",
+      "noSession": "Esta ejecución no inició ninguna sesión.",
+      "loadFailed": "No se han podido cargar las ejecuciones."
+    },
+    "detail": {
+      "back": "Atrás",
+      "crumb": "Automatizaciones",
+      "runNow": "Ejecutar ahora",
+      "edit": "Editar",
+      "more": "Más acciones",
+      "pause": "Pausar automatización",
+      "resume": "Reanudar automatización",
+      "duplicate": "Duplicar",
+      "delete": "Eliminar automatización",
+      "confirmDelete": "¿Eliminar esta automatización? Sus disparadores se detienen ahora. Las ejecuciones pasadas se conservan.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar",
+      "resumeAction": "Reanudar",
+      "notFound": "Esta automatización no existe o se eliminó."
     },
     "editor": {
       "newTitle": "Nueva automatización",
-      "name": "Nombre de la automatización",
-      "namePlaceholder": "Ponle nombre a la automatización",
+      "editTitle": "Editar automatización",
+      "steps": {
+        "label": "Pasos de la automatización",
+        "task": "Tarea",
+        "trigger": "Disparador",
+        "where": "Dónde se ejecuta"
+      },
+      "name": "Nombre",
+      "namePlaceholder": "Ponle nombre a esta automatización",
+      "prompt": "¿Qué debe hacer el agente?",
+      "promptPlaceholder": "Describe el trabajo de cada ejecución…",
+      "promptHint": "La pull request, incidencia o commit que inició la ejecución se le pasa como contexto.",
+      "triggerLead": "Cualquier disparador inicia una ejecución.",
+      "addTrigger": "Añadir disparador",
+      "addAnother": "Añadir otro disparador",
+      "groupSchedule": "Horario",
+      "groupGithub": "GitHub",
+      "removeTrigger": "Quitar disparador",
+      "on": "el",
+      "at": "a las",
+      "in": "en",
+      "onThe": "el día",
+      "targeting": "hacia",
+      "labeled": "con la etiqueta",
+      "anyBranch": "cualquier rama",
+      "anyLabel": "cualquier etiqueta",
+      "branchPlaceholder": "Nombre de la rama",
+      "labelPlaceholder": "Nombre de la etiqueta",
+      "anyOfRepos": "cualquiera de {{count}} repositorios",
+      "someRepos": "{{count}} repositorios",
+      "reposHead": "Repositorios · elige uno o más",
+      "atLeastOne": "Hace falta al menos uno",
+      "hour": "Hora",
+      "minute": "Minuto",
+      "minutesPast": "Minutos de cada hora",
+      "dayOfMonth": "Día del mes",
+      "days": "Días",
+      "nextRun": "Próxima ejecución",
+      "inRel": "· en",
+      "passed": "Esa hora ya ha pasado. Elige una posterior.",
+      "listening_one": "Escuchando en {{repos}} · se habría ejecutado una vez en los últimos 7 días",
+      "listening_other": "Escuchando en {{repos}} · se habría ejecutado {{count}} veces en los últimos 7 días",
+      "listeningNone": "Escuchando en {{repos}} · nada coincidió en los últimos 7 días",
+      "code": "Código",
+      "project": "Proyecto",
+      "chooseProject": "Elige un proyecto",
+      "searchProjects": "Buscar proyectos",
+      "noRepositories": "Sin repositorios",
+      "repositories": "Repositorios",
+      "searchRepositories": "Buscar repositorios",
+      "inProject": "En {{name}}",
+      "runsOn": "Se ejecuta en",
+      "host": "Host",
+      "chooseHost": "Elige un host",
+      "searchHosts": "Buscar hosts",
+      "agent": "Agente",
+      "searchAgents": "Buscar agentes",
+      "model": "Modelo",
+      "searchModels": "Buscar modelos",
+      "agentDefault": "El predeterminado del agente",
+      "branchHint": "Cada ejecución es su propia sesión en una rama opp/ nueva: nada llega a main sin una pull request.",
+      "missingName": "Añade un nombre.",
+      "missingPrompt": "Describe el trabajo.",
+      "missingTrigger": "Añade un disparador.",
+      "missingWhere": "Elige un proyecto, un repositorio y un host.",
       "back": "Atrás",
-      "crumb": "Automatizaciones",
+      "next": "Siguiente",
+      "save": "Guardar",
       "create": "Crear automatización",
-      "recap": "Ponle nombre a la automatización y di dónde se ejecuta."
+      "saveFailed": "No se ha podido guardar la automatización.",
+      "forProject": "Para {{name}}."
     }
   },
   "hosts": {
@@ -615,33 +860,36 @@
       "tokenExpires": "El token caduca en {{time}} · un solo uso",
       "tokenExpired": "Token caducado: genera uno nuevo.",
       "newToken": "Nuevo token",
-      "waiting": "Escuchando a este host…",
+      "waiting": "Esperando a que el host se conecte…",
       "registered": "Registrado: esperando a su runner",
       "online": "Runner conectado",
       "mintFailed": "No hemos podido crear un token de registro.",
-      "installerDigest": "SHA-256 del instalador: {{digest}}"
+      "installerDigest": "SHA-256 del instalador: {{digest}}",
+      "copyCommand": "Copiar comando de instalación",
+      "copyPrompt": "Copiar instrucción para el agente",
+      "inspect": "Ver comando e instrucción",
+      "format": "Formato de instalación",
+      "command": "Comando",
+      "agentPrompt": "Instrucción para el agente"
     },
     "add": {
       "title": "Añadir un host",
       "meta": "Nada del host queda expuesto a internet.",
       "back": "Atrás",
-      "crumbNewSession": "Nueva sesión",
       "use": "Usar este host",
       "defaultName": "Nuevo host",
       "install": {
         "title": "Instalar",
         "subtitle": "Ejecútalo una vez en la máquina, o pásaselo a un agente que ya esté allí.",
-        "done": "Instalado",
-        "format": "Formato de instalación",
-        "command": "Comando",
-        "agentPrompt": "Instrucción para el agente"
+        "done": "Instalado"
       },
       "connect": {
         "title": "Conectar",
         "subtitle": "El runner se registra con el nombre de máquina que reporta."
       },
       "crumbHosts": "Hosts",
-      "done": "Listo"
+      "done": "Listo",
+      "description": "Ejecuta un comando en la máquina donde quieras las sesiones. Nada de ella queda expuesto a internet."
     },
     "settings": {
       "state": {
@@ -666,7 +914,7 @@
       "cancel": "Cancelar",
       "remove": "Eliminar equipo",
       "removeTitle": "¿Eliminar {{name}}?",
-      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
+      "removeRunning_one": "Hay {{count}} sesión en marcha en {{name}}. Se detiene y se cierra su terminal; los registros se conservan. El token del runner se revoca.",
       "removeRunning_other": "Hay {{count}} sesiones en marcha en {{name}}. Se detienen y se cierran sus terminales; los registros se conservan. El token del runner se revoca.",
       "removeIdle": "No hay sesiones en marcha en {{name}}. El token del runner se revoca y las automatizaciones que lo usan se pausan."
     }
@@ -1139,10 +1387,7 @@
       },
       "host": {
         "title": "Añade tu primer host",
-        "description": "Un host es un servidor que controlas: una VM en la nube, una máquina de build o tu propio equipo. Las sesiones se ejecutan ahí y nada queda expuesto a internet.",
-        "installCommand": "Comando de instalación",
-        "agentPrompt": "Prompt para un agente de IA",
-        "agentNote": "Pégalo en Claude Code o Codex ya en marcha en esa máquina.",
+        "description": "Ejecuta un comando en el servidor donde quieras las sesiones: una VM en la nube, una máquina de build o tu propio equipo. Nada de él queda expuesto a internet.",
         "defaultName": "Mi primer host",
         "skip": "Saltar por ahora",
         "skipNote": "Puedes vincular una máquina más tarde. Las sesiones la necesitan para ejecutarse."

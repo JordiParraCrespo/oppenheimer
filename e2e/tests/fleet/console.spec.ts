@@ -49,7 +49,7 @@ test('the console streams a live session from a real runner', async ({ page }) =
   await signInAs(page, user);
   await page.goto(`/sessions/${sessionId}`);
   await expect.poll(() => screen.includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
-  await expect(page.getByText('Live')).toBeVisible();
+  await expect(page.getByText('Live', { exact: true })).toBeVisible();
 
   await page.locator('.xterm').first().click();
   await page.keyboard.type('echo console-$((6*7))');

@@ -175,7 +175,17 @@
       "SESSIONS_015": "No image was attached. Paste or drop the image again.",
       "SESSIONS_016": "This session's host is offline, so the image was not sent.",
       "SESSIONS_017": "This session's host needs a newer runner before it can take images. Update the runner, then paste again.",
-      "HOSTS_007": "No image is waiting for that command."
+      "HOSTS_007": "No image is waiting for that command.",
+      "AUTOMATIONS_001": "That automation doesn't exist, or it was deleted.",
+      "AUTOMATIONS_002": "Choose a workspace before working with automations.",
+      "AUTOMATIONS_003": "Someone saved this automation since you opened it. Reload it and try again.",
+      "AUTOMATIONS_004": "One of the repositories isn't available to this workspace.",
+      "AUTOMATIONS_005": "That agent can't run an automation.",
+      "AUTOMATIONS_006": "A trigger would never fire. Pick a later time.",
+      "AUTOMATIONS_007": "That project can't hold automations.",
+      "AUTOMATIONS_008": "That run doesn't exist.",
+      "INBOUND_001": "That event source isn't known.",
+      "INBOUND_002": "The delivery carries no delivery id."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -310,76 +320,52 @@
     "passwordsDoNotMatch": "Passwords do not match"
   },
   "projects": {
-    "page": {
+    "dialog": {
       "newTitle": "New project",
       "editTitle": "Project settings",
-      "name": "Project name",
-      "namePlaceholder": "Name this project",
-      "back": "Back",
-      "crumbSessions": "Sessions",
-      "crumbNewSession": "New session",
+      "gone": "That project is no longer here.",
+      "name": "Name",
+      "namePlaceholder": "Name your project",
+      "repositories": "Repositories",
+      "addRepository": "Add a repository…",
+      "repositoriesHint": "Sessions in this project can clone these. Add at least one.",
+      "noMatch": "No repository matches “{{query}}”",
+      "allAdded": "Every repository is added",
+      "remove": "Remove {{name}}",
+      "defaults": "Defaults",
+      "optional": "optional",
+      "defaultsHint": "What every new session in this project starts with. Each can be changed per session.",
+      "host": "Host",
+      "noHost": "No host is paired yet.",
+      "agent": "Agent",
+      "clonedByDefault": "Cloned by default",
+      "clonedTitle": "Cloned by default in new sessions",
+      "selectFirst": "Select repositories above first.",
+      "clonedCount_one": "{{count}} cloned",
+      "clonedCount_other": "{{count}} cloned",
+      "branchEmpty": "No branch named “{{query}}”",
       "create": "Create project",
       "creating": "Creating…",
       "save": "Save changes",
       "saving": "Saving…",
       "failed": "The project could not be created.",
       "saveFailed": "The project could not be saved.",
-      "recap": {
-        "name": "Name the project, then pick its repositories.",
-        "repositories": "Pick at least one repository.",
-        "default": "Mark at least one repository as default."
-      },
-      "summary": {
-        "repositories_one": "{{count}} repository · {{defaults}} default",
-        "repositories_other": "{{count}} repositories · {{defaults}} default"
-      },
-      "steps": {
-        "repositories": {
-          "title": "Repositories",
-          "subtitle": "The code sessions in this project can clone.",
-          "label": "Default repositories",
-          "hint": "Ticked in every new session. Add others per session.",
-          "defaultCount": "{{defaults}} of {{count}} by default",
-          "search": "Search repositories…",
-          "noMatch": "No repository matches “{{query}}”.",
-          "none": "No repository is connected yet.",
-          "default": "Default",
-          "defaultTitle": "Cloned by default in new sessions",
-          "branchEmpty": "No branch named “{{query}}”"
-        },
-        "host": {
-          "title": "Default host",
-          "subtitle": "Where new sessions run unless you pick another.",
-          "none": "No host is paired yet."
-        },
-        "agent": {
-          "title": "Default agent",
-          "subtitle": "Started in every new session. Change it per session."
-        }
-      },
-      "delete": {
-        "title": "Delete project",
-        "hint": "Delete this project.",
-        "blocked_one": "Move or delete its {{count}} session first.",
-        "blocked_other": "Move or delete its {{count}} sessions first.",
-        "action": "Delete project",
-        "deleting": "Deleting…",
-        "failed": "The project could not be deleted."
-      },
+      "delete": "Delete project",
+      "deleteHint": "Delete this project",
+      "deleteBlocked_one": "Move or delete its {{count}} session first",
+      "deleteBlocked_other": "Move or delete its {{count}} sessions first",
       "unassignedHint": "Sessions that name no project are listed here. It keeps its name and can’t be deleted."
     },
     "deleteDialog": {
       "title": "Delete {{name}}?",
       "description": "Its sessions stay where they are; a resolved one keeps its directory name for ever. Automations targeting it are paused.",
-      "confirm": "Delete project"
+      "confirm": "Delete project",
+      "deleting": "Deleting…",
+      "failed": "The project could not be deleted."
     },
     "unassigned": "Unassigned"
   },
   "sessions": {
-    "home": {
-      "openTitle": "No session open",
-      "openDescription": "Pick one from the sidebar, or start another."
-    },
     "provisioning": {
       "title": "Starting your session",
       "failedTitle": "The session did not start",
@@ -423,7 +409,8 @@
       "resolved": "Done"
     },
     "closed": {
-      "description": "This session has stopped. Its work is on its branch."
+      "description": "This session has stopped. Its work is on its branch.",
+      "deleted": "This session was deleted. Its worktree is gone from the host; commits already pushed stay on the remote."
     },
     "new": {
       "title": "New session",
@@ -586,10 +573,16 @@
       "new": "New automation",
       "projects": "Projects",
       "all": "All automations",
+      "search": "Search automations",
+      "clearSearch": "Clear search",
+      "noMatch": "No automations match “{{query}}”.",
       "emptyProject": "No automations yet.",
       "createOne": "Create one",
       "newHere": "New automation in {{name}}",
-      "noProjects": "No project yet. Make one from New session, and its automations gather here."
+      "noProjects": "No project yet. Make one from New session, and its automations gather here.",
+      "noRuns": "No runs yet.",
+      "running": "Running",
+      "paused": "Paused"
     },
     "page": {
       "tabs": {
@@ -598,16 +591,268 @@
       },
       "new": "New automation",
       "empty": "No automations yet. An automation starts a session on a schedule or when something happens on GitHub.",
-      "runsEmpty": "No runs yet. Each run appears here with the session it started."
+      "runsEmpty": "No runs yet. Each run appears here with the session it started.",
+      "loadFailed": "Automations could not be loaded.",
+      "actionFailed": "That did not go through."
+    },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "running": "Running"
+    },
+    "runStatus": {
+      "queued": "Queued",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "skipped": "Skipped",
+      "expired": "Expired"
+    },
+    "skipReason": {
+      "paused": "Skipped: the automation was paused",
+      "deleted": "Skipped: the automation was deleted",
+      "own_event": "Skipped: the event was our own",
+      "automation_rate_limited": "Skipped: this automation’s hourly limit",
+      "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
+      "overlapping": "Skipped: a run was still going",
+      "missed": "Skipped: the slot was missed",
+      "not_launchable": "Skipped: the session could not start",
+      "agent_unavailable": "Skipped: the agent is not on the host"
+    },
+    "pausedReason": {
+      "user": "Paused. Triggers are ignored until you resume it; Run now still works.",
+      "project_archived": "Paused because its project was deleted. Move it to another project to resume it.",
+      "host_unpaired": "Paused because its host was removed. Pick another host in Edit to resume it.",
+      "owner_lost_access": "Paused because its owner can no longer run it."
+    },
+    "frequency": {
+      "once": {
+        "label": "Once",
+        "desc": "On a chosen date and time"
+      },
+      "hourly": {
+        "label": "Hourly",
+        "desc": "Every hour, at a chosen minute"
+      },
+      "daily": {
+        "label": "Daily",
+        "desc": "Every day at a chosen time"
+      },
+      "weekdays": {
+        "label": "Weekdays",
+        "desc": "Monday to Friday at a chosen time"
+      },
+      "weekly": {
+        "label": "Weekly",
+        "desc": "On the days you pick"
+      },
+      "monthly": {
+        "label": "Monthly",
+        "desc": "On one day of the month"
+      }
+    },
+    "event": {
+      "pr_opened": {
+        "label": "Pull request opened",
+        "desc": "Opened, or a draft marked ready for review"
+      },
+      "pr_draft": {
+        "label": "Draft opened",
+        "desc": "Opened as a draft, or converted to one"
+      },
+      "pr_sync": {
+        "label": "Pull request pushed",
+        "desc": "New commits pushed to an open pull request"
+      },
+      "pr_merged": {
+        "label": "Pull request merged",
+        "desc": "After the merge lands"
+      },
+      "comment": {
+        "label": "Comment added",
+        "desc": "On a pull request or issue"
+      },
+      "push": {
+        "label": "Push to branch",
+        "desc": "One run per push, not per commit"
+      },
+      "issue_labeled": {
+        "label": "Label added",
+        "desc": "On a pull request or issue, once per label"
+      },
+      "check_failed": {
+        "label": "Check failed",
+        "desc": "Any Actions workflow or status check"
+      },
+      "issue_opened": {
+        "label": "Issue opened",
+        "desc": "New issues only, not reopened ones"
+      },
+      "mention": {
+        "label": "Mentioned @oppenheimer",
+        "desc": "In an issue, pull request or review"
+      },
+      "release": {
+        "label": "Release published",
+        "desc": "Pre-releases excluded"
+      }
+    },
+    "trigger": {
+      "once": "Once, {{date}} at {{time}}",
+      "hourly": "Hourly at :{{minute}}",
+      "daily": "Daily at {{time}}",
+      "weekdays": "Weekdays at {{time}}",
+      "weekly": "Every {{days}} at {{time}}",
+      "monthly": "Monthly on day {{day}} at {{time}}",
+      "event": "On {{event}}",
+      "more": "{{summary}} +{{count}}",
+      "manual": "Manual only",
+      "monFri": "Mon–Fri",
+      "weekend": "Sat, Sun"
+    },
+    "next": {
+      "onEvent": "On next event",
+      "none": "—",
+      "today": "Today, {{time}}",
+      "tomorrow": "Tomorrow, {{time}}",
+      "in": "in {{time}}",
+      "nextIn": "Next in"
+    },
+    "table": {
+      "automation": "Automation",
+      "trigger": "Trigger",
+      "next": "Next run",
+      "status": "Status",
+      "actions": "Automation actions",
+      "edit": "Edit",
+      "runNow": "Run now",
+      "pause": "Pause",
+      "resume": "Resume",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "history": {
+      "title": "Run history",
+      "range": "Last 30 days",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "runs_one": "{{count}} run",
+      "runs_other": "{{count}} runs"
+    },
+    "runs": {
+      "all": "All",
+      "completed": "Completed",
+      "failed": "Failed",
+      "running": "Running",
+      "run": "Run",
+      "automation": "Automation",
+      "time": "Time",
+      "allAutomations": "All automations",
+      "allProjects": "All projects",
+      "window": {
+        "24h": "Last 24 hours",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days"
+      },
+      "clear": "Clear",
+      "noMatch": "No runs match these filters.",
+      "range": "{{from}}–{{to}} of {{total}}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "deleted": "Deleted automation",
+      "noSession": "This run did not start a session.",
+      "loadFailed": "Runs could not be loaded."
+    },
+    "detail": {
+      "back": "Back",
+      "crumb": "Automations",
+      "runNow": "Run now",
+      "edit": "Edit",
+      "more": "More actions",
+      "pause": "Pause automation",
+      "resume": "Resume automation",
+      "duplicate": "Duplicate",
+      "delete": "Delete automation",
+      "confirmDelete": "Delete this automation? Its triggers stop now. Past runs are kept.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "resumeAction": "Resume",
+      "notFound": "This automation does not exist, or was deleted."
     },
     "editor": {
       "newTitle": "New automation",
-      "name": "Automation name",
+      "editTitle": "Edit automation",
+      "steps": {
+        "label": "Automation steps",
+        "task": "Task",
+        "trigger": "Trigger",
+        "where": "Where it runs"
+      },
+      "name": "Name",
       "namePlaceholder": "Name this automation",
+      "prompt": "What should the agent do?",
+      "promptPlaceholder": "Describe the work for every run…",
+      "promptHint": "The pull request, issue or commit that fired the run is passed in as context.",
+      "triggerLead": "Any trigger starts a run.",
+      "addTrigger": "Add trigger",
+      "addAnother": "Add another trigger",
+      "groupSchedule": "Schedule",
+      "groupGithub": "GitHub",
+      "removeTrigger": "Remove trigger",
+      "on": "on",
+      "at": "at",
+      "in": "in",
+      "onThe": "on day",
+      "targeting": "targeting",
+      "labeled": "labeled",
+      "anyBranch": "any branch",
+      "anyLabel": "any label",
+      "branchPlaceholder": "Branch name",
+      "labelPlaceholder": "Label name",
+      "anyOfRepos": "any of {{count}} repositories",
+      "someRepos": "{{count}} repositories",
+      "reposHead": "Repositories · pick one or more",
+      "atLeastOne": "At least one is required",
+      "hour": "Hour",
+      "minute": "Minute",
+      "minutesPast": "Minutes past the hour",
+      "dayOfMonth": "Day of the month",
+      "days": "Days",
+      "nextRun": "Next run",
+      "inRel": "· in",
+      "passed": "That time has passed. Pick a later one.",
+      "listening_one": "Listening on {{repos}} · would have run once in the last 7 days",
+      "listening_other": "Listening on {{repos}} · would have run {{count}} times in the last 7 days",
+      "listeningNone": "Listening on {{repos}} · nothing matched in the last 7 days",
+      "code": "Code",
+      "project": "Project",
+      "chooseProject": "Choose a project",
+      "searchProjects": "Search projects",
+      "noRepositories": "No repositories",
+      "repositories": "Repositories",
+      "searchRepositories": "Search repositories",
+      "inProject": "In {{name}}",
+      "runsOn": "Runs on",
+      "host": "Host",
+      "chooseHost": "Choose a host",
+      "searchHosts": "Search hosts",
+      "agent": "Agent",
+      "searchAgents": "Search agents",
+      "model": "Model",
+      "searchModels": "Search models",
+      "agentDefault": "The agent’s default",
+      "branchHint": "Each run is its own session on a fresh opp/ branch — nothing lands on main without a pull request.",
+      "missingName": "Add a name.",
+      "missingPrompt": "Describe the work.",
+      "missingTrigger": "Add a trigger.",
+      "missingWhere": "Pick a project, a repository and a host.",
       "back": "Back",
-      "crumb": "Automations",
+      "next": "Next",
+      "save": "Save",
       "create": "Create automation",
-      "recap": "Name the automation, then say where it runs."
+      "saveFailed": "The automation could not be saved.",
+      "forProject": "For {{name}}."
     }
   },
   "hosts": {
@@ -615,33 +860,36 @@
       "tokenExpires": "Token expires in {{time}} · single use",
       "tokenExpired": "Token expired — generate a new one.",
       "newToken": "New token",
-      "waiting": "Listening for this host…",
+      "waiting": "Waiting for the host to connect…",
       "registered": "Registered — waiting for its runner",
       "online": "Runner connected",
       "mintFailed": "We could not create a registration token.",
-      "installerDigest": "Installer SHA-256: {{digest}}"
+      "installerDigest": "Installer SHA-256: {{digest}}",
+      "copyCommand": "Copy install command",
+      "copyPrompt": "Copy agent prompt",
+      "inspect": "Inspect command and prompt",
+      "format": "Install format",
+      "command": "Command",
+      "agentPrompt": "Agent prompt"
     },
     "add": {
       "title": "Add a host",
       "meta": "Nothing on the host is exposed to the internet.",
       "back": "Back",
-      "crumbNewSession": "New session",
       "use": "Use this host",
       "defaultName": "New host",
       "install": {
         "title": "Install",
         "subtitle": "Run this once on the machine, or hand it to an agent already there.",
-        "done": "Installed",
-        "format": "Install format",
-        "command": "Command",
-        "agentPrompt": "Agent prompt"
+        "done": "Installed"
       },
       "connect": {
         "title": "Connect",
         "subtitle": "The runner registers itself with the hostname it reports."
       },
       "crumbHosts": "Hosts",
-      "done": "Done"
+      "done": "Done",
+      "description": "Run one command on the machine you want sessions on. Nothing on it is exposed to the internet."
     },
     "settings": {
       "state": {
@@ -666,7 +914,7 @@
       "cancel": "Cancel",
       "remove": "Remove host",
       "removeTitle": "Remove {{name}}?",
-      "removeRunning_one": "{{count}} session is running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
+      "removeRunning_one": "{{count}} session is running on {{name}}. It is stopped and its terminal closed; logs are kept. The runner’s token is revoked.",
       "removeRunning_other": "{{count}} sessions are running on {{name}}. They are stopped and their terminals closed; logs are kept. The runner’s token is revoked.",
       "removeIdle": "No sessions are running on {{name}}. The runner’s token is revoked and automations targeting it are paused."
     }
@@ -1139,10 +1387,7 @@
       },
       "host": {
         "title": "Add your first host",
-        "description": "A host is a server you control: a cloud VM, a build box, or your own workstation. Sessions run there, and nothing on it is ever exposed to the internet.",
-        "installCommand": "Install command",
-        "agentPrompt": "Prompt for an AI agent",
-        "agentNote": "Paste into Claude Code or Codex already running on that machine.",
+        "description": "Run one command on the server you want sessions on — a cloud VM, a build box, or your workstation. Nothing on it is exposed to the internet.",
         "defaultName": "My first host",
         "skip": "Skip for now",
         "skipNote": "You can pair a machine later. Sessions need one before they can run."

@@ -20,7 +20,9 @@ whose contract the API serves.
 | **Organizations** (name, slug, logo, members) | the Better Auth `organization` + `member` tables, unchanged — there is no `url` column today; one would be a nullable column on `organization`, not a table | no |
 | **Hosts** | `hosts/` → `host` (keys inline; owned by a **person**, borrowed by workspaces), `host_pairing_token` | yes |
 | **Projects** | `projects/` → `project`, `project_repository` (the repositories a project holds, and its defaults) | yes |
-| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event` | yes |
+| **Sessions** | `sessions/` → `work_session`, `session_checkout` (which is also where a repository is remembered), `work_session_event`, `session_turn` (a session's turns, folded from its log; a run's status is its first) | yes |
+| **External events** | `inbound-events/` → `inbound_delivery` (a webhook as it arrived, 7 days), `inbound_event` (one normalized event per workspace, 30 days); provider-neutral, GitHub its first source (16 §Q6–Q7) | yes |
+| **Automations** | `automations/` → `automation`, `automation_revision`, `automation_trigger`, `automation_trigger_subject`, `automation_run` (why a run fired and what the guards decided, and the session it dispatched), `automation_settings` (a workspace's limits); the design is 16, the console 13 | yes |
 | **Repositories** | **no table** — listed live from GitHub through the installation; a checkout records the GitHub id, the installation and a name snapshot inline | no table |
 | **GitHub allowed repositories** | *not stored at all* — the installation is the allowlist, and GitHub answers it | — |
 | **Coding agents** | a closed catalog in `packages/shared`, plus what the runner last saw on `host.capabilities` — a hint, never a gate | no table |
@@ -57,6 +59,13 @@ This is the shape the whole design turns on, so it comes first.
   project of notes, documents and bots needs. herdr-projects models the
   same case as a thread of kind `tab`, and a project with `repos = []`
   is ordinary there.
+  **Changed 2026-09-27:** the create body takes **exactly one** checkout
+  in the MVP. The runner makes a session as one worktree of one
+  repository, so a session sent with none was recorded, then refused by
+  the host at launch (`SESS_002`) and shown as failed. The API refuses it
+  before a row is written, and the console keeps its composer disabled
+  until a repository is picked. The model keeps zero as a valid
+  count; a session with no git returns when a runner can make one.
 
 A project is **not** a repository, and a session is **not** a
 repository. Sessions belong to projects, and repositories are what a
@@ -769,7 +778,7 @@ on the workspace-owned tables, exactly as `lead` does (all but
   `oci` | `alibaba`, a check constraint), `region`, `label`,
   `credential` (ciphertext under `MACHINES_ENCRYPTION_KEY`), `network`
   jsonb (the per-region VPC or VCN ids created on connect), `maxHosts`
-  (default 2, 16 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
+  (default 2, 17 §8), `revokedAt`, timestamps. Index `(ownerUserId)`. Person-owned like
   `host`: no `organizationId`, `keys: { owner, id }`.
 - `machine` (v0.2) — `id`, `cloudAccountId`, `hostId` null until
   paired, `providerRef` (the instance id), `spec` jsonb (the host's
@@ -905,7 +914,7 @@ there.
 
 - `work_session` — `id` (UUID v4, unguessable per F25, and also the tmux
   session name), `organizationId`, `projectId`, `createdByUserId`,
-  `hostId` (null while the session waits for a host, 16 §2), `machineId`
+  `hostId` (null while the session waits for a host, 17 §2), `machineId`
   null, `name`, `slug`, `agent`, `runtime` (`host` | `microvm`, v0.2;
   a check constraint), `cwdCheckoutId` null,
   `idempotencyKey` null, then the fold: `state`, `stateSeq`,

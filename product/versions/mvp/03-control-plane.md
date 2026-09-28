@@ -204,8 +204,8 @@ a host comes back as a `host_offline` hint on the response, not as a second
 entry from a second writer.
 
 **Creating a session sets how it is launched, and what it is for.**
-`POST /sessions` takes the host, the agent, the checkouts and an optional
-name, plus two fields the composer's foot row and text area set:
+`POST /sessions` takes the host, the agent, the checkouts (exactly one in
+the MVP, 10) and an optional name, plus two fields the composer's foot row and text area set:
 
 ```ts
 launch?: { model?: string, permission?: 'ask' | 'auto' | 'full', effort?: Effort }
@@ -520,13 +520,13 @@ control plane creates the per-region network on connect),
 closed; the network stays, because a network something else in the
 person's account might use is not ours to delete). `POST /sessions`
 accepts `cloudAccountId` in place of `hostId`: the session row is
-created `starting` and **placement** runs the ladder of 16 §2 — a
+created `starting` and **placement** runs the ladder of 17 §2 — a
 running host with room, a stopped one, a new one within the account's
 cap — inside the create transaction; a session with no host yet keeps
 its `machineId` and is dispatched when that machine's runner registers,
 the "created while its host is offline" path 01 already has, with the
 boot as the reason the host is offline. The provider calls behind that
-are the machine jobs of 16 §3, and `machine` rows fold `machine.*`
+are the machine jobs of 17 §3, and `machine` rows fold `machine.*`
 events as sessions fold theirs. `POST /sessions/{id}/stop` and `/restart`
 are unchanged and are what pause and resume are made of.
 

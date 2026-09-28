@@ -67,12 +67,16 @@ export class AbilityFactory implements AbilityPort {
    * Four call sites resolve the ability during a single request (the guard plus
    * three api-token handlers). Without the memo each one re-reads the role
    * tables, so the same answer is computed up to four times per request.
+   *
+   * `organizationId` is the organization the route acts on, when it names one
+   * (`@OrganizationScoped`); it wins over the session's active organization.
+   * The guard passes it, and runs first, so the memo holds that answer.
    */
-  async forRequest(request: AbilityRequest): Promise<AppAbility> {
+  async forRequest(request: AbilityRequest, organizationId?: string | null): Promise<AppAbility> {
     if (request[ABILITY_CACHE]) return request[ABILITY_CACHE];
 
     const ability = await this.createForUser(request.user ?? {}, {
-      activeOrganizationId: request.session?.activeOrganizationId ?? null,
+      activeOrganizationId: organizationId ?? request.session?.activeOrganizationId ?? null,
       activeTeamId: request.session?.activeTeamId ?? null,
     });
 

@@ -30,7 +30,7 @@ export const Route = createFileRoute('/_auth/onboarding/ready')({
   // and never renders a bounce. `replace`, so the address it refused does not
   // become the entry Back returns to.
   beforeLoad: ({ search }) => {
-    if (!search.walk) throw redirect({ to: '/sessions', replace: true });
+    if (!search.walk) throw redirect({ to: '/sessions/new', replace: true });
   },
   component: ReadyStep,
 });

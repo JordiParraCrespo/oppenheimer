@@ -4,8 +4,9 @@ import { useEffect, useRef } from 'react';
  * Apply an id named in the address once the list can answer it.
  *
  * The external system is the URL: the sidebar's "New session here" names a
- * project in `/sessions/new?project=`, and the Add a host page names the
- * machine it paired in `?host=`. The chip has to start on it, which needs the
+ * project in `/sessions/new?project=`, and a link may name a machine in
+ * `?host=`; the project chip also hands it the id the project dialog just
+ * made. The chip has to start on it, which needs the
  * entity and not just the id — and, for a project, the host list, since a
  * default host the list has not answered for yet would be skipped as if it
  * were gone. The pick runs once per address: a value the reader then changes

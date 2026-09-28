@@ -7,6 +7,24 @@ export {
   useRevokeApiToken,
 } from './api-tokens.queries';
 export { useRegister } from './auth.queries';
+export {
+  automationsKeys,
+  type PauseAutomationVariables,
+  type RunAutomationVariables,
+  type UpdateAutomationVariables,
+  useAutomation,
+  useAutomationRun,
+  useAutomationRuns,
+  useAutomations,
+  useCreateAutomation,
+  useDeleteAutomation,
+  useDuplicateAutomation,
+  useRunAutomation,
+  useRunHistory,
+  useSetAutomationPaused,
+  useTriggerPreview,
+  useUpdateAutomation,
+} from './automations.queries';
 export { useConsumerApp } from './context';
 // `useCurrentPairing`, `usePairingTokens` and the host poll are the flow's
 // internals: a surface that reached for them directly would be back to asking

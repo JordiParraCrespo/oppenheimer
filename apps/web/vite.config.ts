@@ -54,6 +54,10 @@ export default defineConfig({
       // flags and the effort stops out of it.
       '@oppenheimer/shared/agents',
       '@oppenheimer/shared/schemas/session',
+      // Automations: the trigger catalog and schedule arithmetic the editor
+      // previews with, and the Task step's schema.
+      '@oppenheimer/shared/automations',
+      '@oppenheimer/shared/schemas/automation',
       // The attach socket's control vocabulary and close codes.
       '@oppenheimer/shared/protocol',
     ],
