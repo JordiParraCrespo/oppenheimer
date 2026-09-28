@@ -597,6 +597,21 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `GIT_004` <a id="git_004" />           | The repository needs a credential the runner could not supply | 403 |
 | `GIT_005` <a id="git_005" />           | A git command was abandoned before it finished | 503 |
 
+`HOST_008` stops `runner run` before it opens its control socket, so the
+service keeps restarting into it. Its detail names the directory — the runner
+home (`~/.oppenheimer`, or `RUNNER_HOME`) or its `run/` — and why. A home that
+is a **symlink** (moved to another disk and linked back, say) was accepted by
+earlier runners and is refused now, because the runner keeps its key and the
+socket that hands out installation tokens only in a real directory it owns.
+Put the real directory back in its place — `target="$(readlink -f
+~/.oppenheimer)" && rm ~/.oppenheimer && mv "$target" ~/.oppenheimer` — or
+point `RUNNER_HOME` at the real path (the service unit carries the value
+`runner install` was run with, so install again with it set); then restart
+the service (`systemctl --user restart oppenheimer-runner` or
+`launchctl kickstart -k gui/$(id -u)/dev.oppenheimer.runner`). A directory
+another account owns is fixed with `chown`; a mode looser than `0700` is
+tightened by the runner itself.
+
 <!-- oppenheimer:end runner -->
 ## Domain invariants
 
