@@ -562,6 +562,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, and 1 for anything else.
 | `HOST_005` <a id="host_005" />         | Could not inspect the host                   | 500  |
 | `HOST_006` <a id="host_006" />         | This machine looks temporary                 | 412  |
 | `HOST_007` <a id="host_007" />         | The workspaces directory is not usable       | 400  |
+| `HOST_008` <a id="host_008" />         | The runner's own directory is not safe to use | 412 |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
