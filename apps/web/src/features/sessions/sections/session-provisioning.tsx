@@ -1,7 +1,7 @@
-import { Alert, AlertDescription, Stepper } from '@oppenheimer/design-system-web';
+import { Stepper } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessionStartProgress } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { CODING_AGENTS } from '@oppenheimer/shared/agents';
 import { useTranslation } from 'react-i18next';
 import { ElapsedClock } from '../components/elapsed-clock';
@@ -19,7 +19,6 @@ import { failureReason, PENDING_START, provisioningSteps } from '../lib/provisio
  */
 export function SessionProvisioning({ session }: { session: SessionEntity }) {
   const { t, i18n } = useTranslation();
-  const resolveError = useErrorMessage();
   const failed = session.lifecycle === 'failed';
   const progress = useSessionStartProgress(session.id, {
     starting: session.isProvisioning,
@@ -64,13 +63,11 @@ export function SessionProvisioning({ session }: { session: SessionEntity }) {
           {failed ? t('sessions.provisioning.failedLead') : session.scopeLabel}
         </p>
 
-        {progress.error ? (
-          <Alert variant="destructive" className="mt-6.5">
-            <AlertDescription>
-              {resolveError(progress.error, t('sessions.provisioning.progressFailed')).message}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+        <ErrorAlert
+          error={progress.error}
+          fallback={t('sessions.provisioning.progressFailed')}
+          className="mt-6.5"
+        />
 
         <Stepper
           className="mt-6.5"

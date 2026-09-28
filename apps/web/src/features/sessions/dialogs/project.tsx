@@ -1,7 +1,5 @@
 import {
   AgentMark,
-  Alert,
-  AlertDescription,
   Button,
   Chip,
   Dialog,
@@ -39,7 +37,7 @@ import {
   useUpdateProject,
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useServerFieldErrors, useZodResolver } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useServerFieldErrors, useZodResolver } from '@oppenheimer/frontend-web';
 import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheimer/shared/agents';
 import { createProjectSchema } from '@oppenheimer/shared/schemas/project';
 import { useState } from 'react';
@@ -94,7 +92,6 @@ export function ProjectDialog({
   onSaved: (project: ProjectEntity) => void;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const projects = useProjects();
   const project = projectId ? projects.data?.find((row) => row.id === projectId) : undefined;
 
@@ -111,11 +108,7 @@ export function ProjectDialog({
                 <Skeleton className="h-30 w-full" />
               ) : projects.isError ? (
                 // A failed read is not a deleted project.
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    {resolveError(projects.error, t('projects.dialog.loadFailed')).message}
-                  </AlertDescription>
-                </Alert>
+                <ErrorAlert error={projects.error} fallback={t('projects.dialog.loadFailed')} />
               ) : (
                 <FieldDescription>{t('projects.dialog.gone')}</FieldDescription>
               )}
@@ -192,12 +185,8 @@ function ProjectForm({
   const update = useUpdateProject({ onSuccess: onSaved });
   const pending = create.isPending || update.isPending;
   const saveFailure = lastFailure([create, update]).error;
-  const failure = saveFailure
-    ? resolveError(
-        saveFailure,
-        t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed'),
-      )
-    : null;
+  const saveFallback = t(editing ? 'projects.dialog.saveFailed' : 'projects.dialog.failed');
+  const failure = saveFailure ? resolveError(saveFailure, saveFallback) : null;
 
   const {
     register,
@@ -292,11 +281,7 @@ function ProjectForm({
 
             <DialogBody>
               <div className="flex flex-col gap-5.5">
-                {failure && showAlert ? (
-                  <Alert variant="destructive">
-                    <AlertDescription>{failure.message}</AlertDescription>
-                  </Alert>
-                ) : null}
+                <ErrorAlert error={showAlert ? saveFailure : null} fallback={saveFallback} />
 
                 <Field data-invalid={Boolean(errors.name)}>
                   <FieldLabel htmlFor="project-name">{t('projects.dialog.name')}</FieldLabel>

@@ -1,12 +1,9 @@
 import { Alert, AlertDescription, BrandGlyph, Button } from '@oppenheimer/design-system-web';
 import { Info } from '@oppenheimer/design-system-web/icons';
 import type { SocialAuthIntent } from '@oppenheimer/frontend-core';
-import {
-  useDeploymentCapabilities,
-  useErrorMessage,
-  useSocialLogin,
-} from '@oppenheimer/frontend-core/react';
+import { useDeploymentCapabilities, useSocialLogin } from '@oppenheimer/frontend-core/react';
 import { useTranslation } from 'react-i18next';
+import { ErrorAlert } from '../../forms';
 
 /**
  * The social sign-in row at the top of the sign-in and create-account
@@ -33,7 +30,6 @@ export function SocialLoginButtons({
   intent?: SocialAuthIntent;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const social = useSocialLogin();
   const { data, error } = useDeploymentCapabilities();
 
@@ -61,13 +57,7 @@ export function SocialLoginButtons({
       {/* Starting the round-trip can fail before the redirect ever happens —
           the API unreachable, the provider rejected server-side. It used to
           fail silently: the button simply stopped spinning. */}
-      {social.error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(social.error, t('auth.login.socialFailed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={social.error} fallback={t('auth.login.socialFailed')} />
       {google && (
         <Button
           variant="social"

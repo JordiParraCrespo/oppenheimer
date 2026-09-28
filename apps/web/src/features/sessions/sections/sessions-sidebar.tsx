@@ -1,13 +1,4 @@
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  Button,
-  EmptyState,
-  SessionList,
-  Skeleton,
-  useNow,
-} from '@oppenheimer/design-system-web';
+import { EmptyState, SessionList, Skeleton, useNow } from '@oppenheimer/design-system-web';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
@@ -16,8 +7,8 @@ import {
   useRenameSession,
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
-import { lastFailure, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog } from '@oppenheimer/frontend-web';
+import { lastFailure } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert, useConsoleDialog } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,7 +68,6 @@ const DeleteSessionDialog = lazy(() =>
 export function SessionsSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const { data: sessions, isPending, isError, error } = useSessions();
   const projects = useProjects();
   // Named by the host list, because a session carries only the host's id and
@@ -174,28 +164,22 @@ export function SessionsSidebar() {
         }
       />
 
-      {failure.error ? (
-        <Alert variant="destructive" className="mx-3 mb-2">
-          <AlertDescription>
-            {resolveError(failure.error, t('sessions.sidebar.writeFailed')).message}
-          </AlertDescription>
-          <AlertAction>
-            <Button variant="ghost" size="sm" onClick={failure.dismiss}>
-              {t('common.dismiss')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
+      <ErrorAlert
+        error={failure.error}
+        fallback={t('sessions.sidebar.writeFailed')}
+        onDismiss={failure.dismiss}
+        className="mx-3 mb-2"
+      />
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto pb-5">
         {isError || projects.isError ? (
           // A failed read is not an empty list and not a list still loading:
           // without this branch the skeleton below spun for ever.
-          <Alert variant="destructive" className="mx-3 mt-2">
-            <AlertDescription>
-              {resolveError(error ?? projects.error, t('sessions.sidebar.loadFailed')).message}
-            </AlertDescription>
-          </Alert>
+          <ErrorAlert
+            error={error ?? projects.error}
+            fallback={t('sessions.sidebar.loadFailed')}
+            className="mx-3 mt-2"
+          />
         ) : isPending || !settled ? (
           <SessionList className="px-3 pt-2">
             <Skeleton className="h-[30px] w-full rounded-sm" />

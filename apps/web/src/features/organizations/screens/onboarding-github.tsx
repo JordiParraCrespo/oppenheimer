@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   Card,
   Skeleton,
@@ -11,8 +9,8 @@ import {
   useInstallationRepositories,
   useInstallations,
 } from '@oppenheimer/frontend-consumer/react';
-import { useDeploymentCapabilities, useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { AuthLink } from '@oppenheimer/frontend-web';
+import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
+import { AuthLink, ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { InstallationCard } from '@/features/organizations/components/installation-card';
@@ -42,7 +40,6 @@ export function OnboardingGithubScreen({
   walk?: true;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   // Where the browser goes to install, as the deployment reports it. An
   // unreachable read leaves it undefined, which renders a disabled offer
   // rather than a link to a page that may not exist.
@@ -90,13 +87,7 @@ export function OnboardingGithubScreen({
         {t('onboarding.flow.github.description')}
       </StepHeader>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(error, t('onboarding.flow.github.failed')).message}
-          </AlertDescription>
-        </Alert>
-      )}
+      <ErrorAlert error={error} fallback={t('onboarding.flow.github.failed')} />
 
       {isPending || isExchanging ? (
         <Card className="flex-row items-center gap-3 px-[18px] py-4">

@@ -541,8 +541,7 @@
       "image": {
         "sending": "Enviando imagen",
         "hostOffline": "La imagen no se envió: el equipo está desconectado.",
-        "failedTitle": "La imagen no llegó a la sesión",
-        "dismiss": "Cerrar"
+        "failedTitle": "La imagen no llegó a la sesión"
       },
       "retryNow": "Reintentar ahora",
       "retry": "Intentar de nuevo",

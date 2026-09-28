@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   PillTab,
   PillTabs,
   RunRow,
@@ -16,8 +14,7 @@ import {
   useAutomations,
   useProjects,
 } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +42,6 @@ export function RunsTable({ automationId }: { automationId?: string }) {
   const { t } = useTranslation();
   const locale = useLocale();
   const navigate = useNavigate();
-  const resolveError = useErrorMessage();
   const filters = useRunsFilters({ automationId });
   const runs = useAutomationRuns(filters.filter);
   // The facets are the workspace-wide list's only; an automation's page has none.
@@ -137,11 +133,11 @@ export function RunsTable({ automationId }: { automationId?: string }) {
       />
 
       {runs.isError && !page ? (
-        <Alert variant="destructive" className="mx-1.5 mb-1.5">
-          <AlertDescription>
-            {resolveError(runs.error, t('automations.runs.loadFailed')).message}
-          </AlertDescription>
-        </Alert>
+        <ErrorAlert
+          error={runs.error}
+          fallback={t('automations.runs.loadFailed')}
+          className="mx-1.5 mb-1.5"
+        />
       ) : runs.isPending ? (
         <div className="flex flex-col gap-1 px-1.5">
           <Skeleton className="h-11 w-full" />

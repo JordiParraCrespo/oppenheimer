@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Button,
   Dialog,
   DialogBody,
@@ -11,7 +9,7 @@ import {
   DialogTitle,
 } from '@oppenheimer/design-system-web';
 import { useChangeEmail } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChangeEmailForm } from '../forms/change-email-form';
 
@@ -30,7 +28,6 @@ export function ChangeEmailDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const change = useChangeEmail();
 
   return (
@@ -60,13 +57,7 @@ export function ChangeEmailDialog({
             </DialogHeader>
             <DialogBody>
               <div className="flex flex-col gap-4 pb-7">
-                {change.isError ? (
-                  <Alert variant="destructive">
-                    <AlertDescription>
-                      {resolveError(change.error, t('settings.changeEmail.failed')).message}
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
+                <ErrorAlert error={change.error} fallback={t('settings.changeEmail.failed')} />
                 <ChangeEmailForm
                   isPending={change.isPending}
                   onSubmit={(dto) =>

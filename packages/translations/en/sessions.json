@@ -145,8 +145,7 @@
     "image": {
       "sending": "Sending image",
       "hostOffline": "The image was not sent: the host is offline.",
-      "failedTitle": "The image did not reach the session",
-      "dismiss": "Dismiss"
+      "failedTitle": "The image did not reach the session"
     },
     "retryNow": "Retry now",
     "retry": "Try again",

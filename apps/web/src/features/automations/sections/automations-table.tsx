@@ -1,9 +1,4 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  AlertTitle,
-  Button,
   RoutineTable,
   RoutineTableEmpty,
   RoutineTableHead,
@@ -11,8 +6,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Zap } from '@oppenheimer/design-system-web/icons';
 import { useAutomations, useProjects } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
-import { useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
+import { ErrorAlert, useConsoleDialog, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AutomationTableRow } from '../components/automation-table-row';
@@ -32,7 +26,6 @@ export function AutomationsTable() {
   const locale = useLocale();
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
-  const resolveError = useErrorMessage();
   const automations = useAutomations();
   const { data: projectNames } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
@@ -46,28 +39,13 @@ export function AutomationsTable() {
 
   return (
     <div className="flex flex-col gap-3">
-      {actions.failure ? (
-        <Alert variant="destructive">
-          {failedName ? (
-            <AlertTitle>{t('automations.page.actionFailedFor', { name: failedName })}</AlertTitle>
-          ) : null}
-          <AlertDescription>
-            {resolveError(actions.failure, t('automations.page.actionFailed')).message}
-          </AlertDescription>
-          <AlertAction>
-            <Button variant="ghost" size="sm" onClick={actions.dismissFailure}>
-              {t('common.dismiss')}
-            </Button>
-          </AlertAction>
-        </Alert>
-      ) : null}
-      {automations.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(automations.error, t('automations.page.loadFailed')).message}
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <ErrorAlert
+        error={actions.failure}
+        fallback={t('automations.page.actionFailed')}
+        title={failedName ? t('automations.page.actionFailedFor', { name: failedName }) : undefined}
+        onDismiss={actions.dismissFailure}
+      />
+      <ErrorAlert error={automations.error} fallback={t('automations.page.loadFailed')} />
       <RoutineTable>
         {automations.isPending ? (
           <div className="flex flex-col gap-1.5 p-1.5">

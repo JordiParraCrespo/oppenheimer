@@ -1,7 +1,4 @@
 import {
-  Alert,
-  AlertAction,
-  AlertDescription,
   Badge,
   Button,
   SettingsGroup,
@@ -15,7 +12,8 @@ import {
   useRevokeOtherProfileSessions,
   useRevokeProfileSession,
 } from '@oppenheimer/frontend-consumer/react';
-import { lastFailure, shareEntities, useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { lastFailure, shareEntities } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DeviceLastSeen } from '../components/device-last-seen';
 
@@ -28,7 +26,6 @@ import { DeviceLastSeen } from '../components/device-last-seen';
  */
 export function DevicesSection() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const devices = useProfileSessions({ structuralSharing: shareEntities });
   const revoke = useRevokeProfileSession();
   const revokeOthers = useRevokeOtherProfileSessions();
@@ -40,11 +37,7 @@ export function DevicesSection() {
     <section className="flex flex-col gap-3">
       <SettingsHeading>{t('settings.devices.heading')}</SettingsHeading>
       {devices.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {resolveError(devices.error, t('settings.devices.failed')).message}
-          </AlertDescription>
-        </Alert>
+        <ErrorAlert error={devices.error} fallback={t('settings.devices.failed')} />
       ) : devices.isPending ? (
         <Skeleton className="h-16 w-full" />
       ) : (
@@ -72,16 +65,11 @@ export function DevicesSection() {
           ))}
           {failure.error ? (
             <div className="border-t border-border-subtle px-5 py-3">
-              <Alert variant="destructive">
-                <AlertDescription>
-                  {resolveError(failure.error, t('settings.devices.revokeFailed')).message}
-                </AlertDescription>
-                <AlertAction>
-                  <Button variant="ghost" size="sm" onClick={failure.dismiss}>
-                    {t('common.dismiss')}
-                  </Button>
-                </AlertAction>
-              </Alert>
+              <ErrorAlert
+                error={failure.error}
+                fallback={t('settings.devices.revokeFailed')}
+                onDismiss={failure.dismiss}
+              />
             </div>
           ) : null}
           {sorted.some((device) => !device.current) ? (

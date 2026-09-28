@@ -1,6 +1,4 @@
 import {
-  Alert,
-  AlertDescription,
   Badge,
   Button,
   Card,
@@ -11,7 +9,8 @@ import {
   CardTitle,
 } from '@oppenheimer/design-system-web';
 import { usePermissionCatalog } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage, useProfile } from '@oppenheimer/frontend-core/react';
+import { useProfile } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +30,6 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
 
   const [pending, setPending] = useState<'accept' | 'deny' | null>(null);
   const [error, setError] = useState<unknown>(null);
-  const resolveError = useErrorMessage();
 
   // The catalog comes from the API rather than the shared package: it is the
   // deployment's own answer, and it keeps this screen correct if the two drift.
@@ -78,13 +76,7 @@ export function OAuthConsentScreen({ search }: { search: ConsentSearch }) {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription>
-                {resolveError(error, t('consent.failed')).message}
-              </AlertDescription>
-            </Alert>
-          ) : null}
+          <ErrorAlert error={error} fallback={t('consent.failed')} />
 
           <div className="divide-y rounded-md border">
             {scopes.length === 0 && (

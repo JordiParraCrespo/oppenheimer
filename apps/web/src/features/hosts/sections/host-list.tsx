@@ -1,6 +1,6 @@
-import { Alert, AlertDescription, Skeleton } from '@oppenheimer/design-system-web';
+import { Skeleton } from '@oppenheimer/design-system-web';
 import { useHosts } from '@oppenheimer/frontend-consumer/react';
-import { useErrorMessage } from '@oppenheimer/frontend-core/react';
+import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { HostsEmpty } from '../components/hosts-empty';
 import { HostRow } from './host-row';
@@ -17,18 +17,11 @@ import { HostRow } from './host-row';
  */
 export function HostList() {
   const { t } = useTranslation();
-  const resolveError = useErrorMessage();
   const hosts = useHosts({ refetchInterval: 15_000 });
 
   if (hosts.isPending) return <Skeleton className="h-18 w-full" />;
   if (hosts.isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          {resolveError(hosts.error, t('settings.hosts.failed')).message}
-        </AlertDescription>
-      </Alert>
-    );
+    return <ErrorAlert error={hosts.error} fallback={t('settings.hosts.failed')} />;
   }
   if (hosts.data.length === 0) {
     return <HostsEmpty title={t('settings.hosts.empty')} body={t('settings.hosts.emptyHint')} />;
